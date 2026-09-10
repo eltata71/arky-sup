@@ -1,0 +1,47 @@
+# Automated dependency updates.
+#
+# Sixteen runtime dependencies sat on caret ranges with nothing watching them —
+# `firebase`, `@google/genai` and `mermaid` among them. A caret range is not an
+# update policy: it means a fresh `npm ci` on a clean checkout can resolve
+# differently from the lockfile nobody re-generated, and a published advisory
+# goes unnoticed until someone happens to run `npm audit`.
+#
+# Weekly rather than daily, and grouped rather than one PR per package: a
+# review queue nobody can keep up with is how dependency PRs start being
+# rubber-stamped, which is worse than not having them.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      # Patch and minor bumps are the ones that should be boring. Grouping them
+      # keeps the queue to a couple of PRs a week.
+      minor-and-patch:
+        update-types: [minor, patch]
+      # The toolchain moves together; splitting it produces PRs that cannot
+      # pass CI on their own.
+      build-toolchain:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "vitest"
+          - "@vitest/*"
+          - "typescript"
+          - "typescript-eslint"
+          - "eslint"
+          - "@eslint/*"
+        update-types: [major, minor, patch]
+    labels: ["dependencies"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["dependencies", "ci"]

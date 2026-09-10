@@ -1,0 +1,257 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least-privilege: this workflow only needs to read the repo (checkout +
+# npm ci + build). Nothing here writes back or deploys — that lives in the
+# Vercel integration. Keeping contents read-only removes a broad default
+# token scope.
+permissions:
+  contents: read
+
+# Avoid wasting CI minutes on superseded commits.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The static gates and the build. Together they took 1 m 54 s of the old
+  # single job, which is why they are no longer queued behind the test suite:
+  # a typo that fails `tsc` should be visible in two minutes, not in twelve.
+  quality:
+    name: Static gates (typecheck + lint + budgets + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      # `.npmrc` already pins `legacy-peer-deps=true` so npm 10's strict
+      # resolver does not choke on transitive peerOptional ranges (Firebase /
+      # @testing-library / ESLint plugins). The package.json pins are the
+      # primary defence; the .npmrc is belt-and-suspenders.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      # Full `strict` for the modules that already hold it. The list in
+      # `tsconfig.strict.json` only grows: a module joins when someone does the
+      # work, which turns "activate strict" from a months-long branch into a
+      # habit. New code starts inside the boundary.
+      - name: TypeScript typecheck (strict boundary)
+        run: npm run typecheck:strict
+
+      - name: ESLint
+        run: npm run lint
+
+      # `no-explicit-any` cannot be switched on globally while the legacy
+      # monolith holds 21 of them, so the budget is the interim gate: the count
+      # may fall and must never rise. Lowering the number after a reduction is
+      # the workflow; raising it is how a gate stops meaning anything.
+      - name: Type-safety budget (no new any)
+        run: npm run check:any-budget
+
+      # The root collected eleven unreferenced codegen scripts one at a time,
+      # each obviously fine on its own. Mechanical rule instead of a convention.
+      - name: No orphan scripts in the repository root
+        run: npm run check:no-orphan-scripts
+
+      # CLAUDE.md has asked people not to grow the large modules for a long
+      # time and nothing checked it, which is how they got here: nobody added a
+      # thousand lines, everyone added forty. Each carries the ceiling it has
+      # today; a file may shrink and may not grow.
+      - name: Module size budget
+        run: npm run check:module-size
+
+      # `modules.json` declares the modules and how they may depend on each
+      # other; this refuses a new cycle, a new upward import through the layers
+      # and a new import that reaches past a module's `index.ts`. Folders do not
+      # enforce anything — that is how 24 cycles accumulated without breaking a
+      # rule, because there was no rule.
+      - name: Module boundaries
+        run: npm run check:module-boundaries
+
+      # Vite build does NOT need real env values to compile because all
+      # `VITE_*` access happens at runtime from `import.meta.env`. We provide
+      # placeholder values so the build does not fail on undefined accesses
+      # that some libraries make at module top-level.
+      - name: Build
+        env:
+          VITE_AI_PROXY_URL: /api/ai
+          VITE_AI_STRICT_PROXY: 'true'
+          VITE_FIREBASE_API_KEY: ci-placeholder
+          VITE_FIREBASE_AUTH_DOMAIN: ci.example.com
+          VITE_FIREBASE_PROJECT_ID: ci-project
+          VITE_FIREBASE_STORAGE_BUCKET: ci.example.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '0'
+          VITE_FIREBASE_APP_ID: '1:0:web:ci'
+          VITE_FIREBASE_MEASUREMENT_ID: G-CI
+        run: npm run build
+
+      # A provider key inlined into dist/ is served to every visitor, and the
+      # build succeeds either way — so it is checked mechanically rather than
+      # trusted to review. Firebase's public client key is not flagged.
+      - name: No provider credentials in the bundle
+        run: npm run check:bundle-secrets
+
+      # Measures the eager payload — the entry chunk plus what index.html
+      # preloads — rather than total build output, most of which is lazy and
+      # never reaches a visitor. Vite's own warning fires per chunk at 1.000 kB
+      # and says nothing about the critical path.
+      - name: Bundle budget
+        run: npm run check:bundle-budget
+
+  # The suite, in four parallel shards.
+  #
+  # It used to be one step of 8 m 49 s — 79 % of the whole job — and the reason
+  # was measured twice over. First, `environment: 'jsdom'` applied to all 371
+  # test files while ~270 of them never touch a DOM; that is fixed in
+  # `vite.config.ts` and cut the local run by a third. Second, whatever
+  # remained ran on a single standard runner, which has 2 vCPU: the work was
+  # split between two workers no matter how much of it there was.
+  #
+  # Sharding fixes the second half. Each shard gets its own runner, so the
+  # parallelism is real rather than redistributed, and the cost is CI minutes
+  # rather than wall-clock time — which is the trade a contributor waiting on
+  # a PR wants made.
+  tests:
+    name: Vitest (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      # One failing shard must not cancel the other three. A red suite should
+      # report everything that is red, not the first thing.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Coverage is collected per shard and written into the blob report; the
+      # thresholds are NOT applied here. A shard covers a quarter of the test
+      # files and therefore a quarter of the executed lines, so enforcing a
+      # whole-suite threshold against it would fail every time.
+      - name: Vitest shard ${{ matrix.shard }} of 4
+        env:
+          VITEST_SKIP_THRESHOLDS: '1'
+        run: npm run test:shard -- --shard=${{ matrix.shard }}/4
+
+      # `.vitest-reports/` is a dotted directory, and upload-artifact skips
+      # hidden files unless told otherwise — without the flag this uploads an
+      # empty artifact and the merge job fails with no obvious cause.
+      - name: Upload blob report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-blob-${{ matrix.shard }}
+          path: .vitest-reports/*
+          include-hidden-files: true
+          retention-days: 1
+
+  # The suite is only whole once the shards are put back together, so this is
+  # where the result is judged: the test count, and the coverage floors in
+  # `vite.config.ts` measured over one denominator instead of four.
+  coverage:
+    name: Merged coverage (thresholds)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download every shard's blob report
+        uses: actions/download-artifact@v4
+        with:
+          path: .vitest-reports
+          pattern: vitest-blob-*
+          merge-multiple: true
+
+      # `--merge-reports` runs no tests: it replays what the shards recorded,
+      # re-aggregates the coverage and applies the thresholds to the total.
+      - name: Merge reports and enforce coverage thresholds
+        run: npm run test:merge-reports
+
+      - name: Upload coverage report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+          retention-days: 7
+
+  rules:
+    name: Firestore rules (emulator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # `lib/authz` and `firestore.rules` implement the same permission matrix and
+    # are compared cell by cell — but only the emulator executes the rules. D-4
+    # was precisely a defect that reading the file could not reveal: `isAdmin()`
+    # looked correct and was permanently false. Until this ran in CI, the one
+    # check that would have caught it was optional.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      # The Firestore emulator is a Java process, and firebase-tools refuses to
+      # start it on anything below JDK 21.
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Firebase emulator
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
+      # Same command a contributor runs locally. `firebase-tools` is fetched
+      # on demand rather than added to devDependencies: it is a large package
+      # and only this job needs it, so making every `npm ci` pay for it would
+      # slow the gate that runs on every push.
+      - name: Firestore rules against the emulator
+        run: npm run test:rules

@@ -1,0 +1,433 @@
+rules_version = '2';
+
+// =============================================================================
+// Arky 10 — Firestore Security Rules
+//
+// This file is the *only* real authorization boundary in the product. Everything
+// in `lib/authz` runs in a browser that the caller controls; it decides what to
+// show. This file decides what is allowed.
+//
+// ## The defect these rules were rewritten to fix
+//
+// `isAdmin()` used to read `request.auth.token.role` — a custom claim. Nothing
+// in the codebase ever called `setCustomUserClaims`, so that claim was never
+// set, so every clause depending on it was permanently false while the UI —
+// which read the Firestore user document — cheerfully showed administrative
+// features the server then refused. Two sources of truth, no synchronisation,
+// and the disagreement was invisible because each half was internally coherent.
+//
+// The resolution: **the `users/{uid}` document is the source of truth**, and a
+// custom claim is honoured when one is present. A deployment that later seeds
+// claims server-side gets a faster check for free; one that never does still
+// enforces the same policy today. `callerRole()` is where that choice lives, and
+// it is the only place that needs to change if the decision is revisited.
+//
+// ## The matrix is duplicated on purpose, and checked
+//
+// The role→permission table below mirrors `lib/authz/permissions.ts`. Two
+// languages cannot share one definition, so the duplication is unavoidable; what
+// is avoidable is the *drift*. Each permission function carries an
+// `@permission` marker, and `__tests__/authz/rulesMatrix.test.ts` parses this
+// file and fails when a cell here disagrees with a cell there.
+//
+// Deploy with `npm run deploy:rules`. Rules are additive with respect to the
+// running app: deploy them *before* the code that needs the new paths.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------- identity
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // The role stored on the caller's own profile document.
+    function storedRole() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : '';
+    }
+
+    // The caller's role, from the custom claim when a deployment sets one and
+    // from their profile document otherwise.
+    //
+    // A signed-in identity with no profile document resolves to no role, and
+    // every permission below is then false. That is deliberate: an identity
+    // nobody provisioned is not a low-privilege user, it is a stranger.
+    function callerRole() {
+      return !signedIn() ? ''
+        : ('role' in request.auth.token ? request.auth.token.role : storedRole());
+    }
+
+    // The role after migrating the two names that predate the current model.
+    // `student` and `teacher` are stored on existing documents; mapping them
+    // here is a rename of what those people can already do, never a change to
+    // it — the same mapping `parseAuthRole` applies in the client.
+    function effectiveRole() {
+      return callerRole() == 'student' ? 'architect'
+        : (callerRole() == 'teacher' ? 'trainer' : callerRole());
+    }
+
+    function roleIn(roles) {
+      return signedIn() && effectiveRole() in roles;
+    }
+
+    // The role a written document claims.
+    //
+    // Not migrated: a legacy name is accepted on *read*, so nobody loses access,
+    // but never on write. A new document written with `student` would keep the
+    // old vocabulary alive indefinitely — `isKnownRole` refuses it.
+    function writtenRole() {
+      return request.resource.data.role;
+    }
+
+    function isKnownRole(role) {
+      return role in ['viewer', 'architect', 'reviewer', 'trainer', 'admin', 'superadmin'];
+    }
+
+    function isPrivilegedRole(role) {
+      return role in ['admin', 'superadmin'];
+    }
+
+    // ------------------------------------------------------------- the matrix
+    // Mirrors `lib/authz/permissions.ts`. Checked by __tests__/authz/rulesMatrix.
+
+    // @permission portfolio:read
+    function canReadPortfolio() {
+      return roleIn(['viewer', 'architect', 'reviewer', 'trainer', 'admin', 'superadmin']);
+    }
+
+    // @permission initiative:write
+    function canWriteInitiative() {
+      return roleIn(['architect', 'reviewer', 'admin', 'superadmin']);
+    }
+
+    // @permission project:write
+    function canWriteProject() {
+      return roleIn(['architect', 'reviewer', 'admin', 'superadmin']);
+    }
+
+    // @permission deliverable:write
+    function canWriteDeliverable() {
+      return roleIn(['architect', 'reviewer', 'admin', 'superadmin']);
+    }
+
+    // @permission artifact:write
+    function canWriteArtifact() {
+      return roleIn(['architect', 'reviewer', 'admin', 'superadmin']);
+    }
+
+    // @permission arb:decide
+    function canDecideArb() {
+      return roleIn(['reviewer', 'admin', 'superadmin']);
+    }
+
+    // @permission training:consume
+    function canConsumeTraining() {
+      return roleIn(['viewer', 'architect', 'reviewer', 'trainer', 'admin', 'superadmin']);
+    }
+
+    // @permission training:author
+    function canAuthorTraining() {
+      return roleIn(['trainer', 'admin', 'superadmin']);
+    }
+
+    // @permission users:read
+    function canReadUsers() {
+      return roleIn(['admin', 'superadmin']);
+    }
+
+    // @permission users:create
+    function canCreateUsers() {
+      return roleIn(['admin', 'superadmin']);
+    }
+
+    // @permission users:update
+    function canUpdateUsers() {
+      return roleIn(['admin', 'superadmin']);
+    }
+
+    // @permission users:delete
+    function canDeleteUsers() {
+      return roleIn(['admin', 'superadmin']);
+    }
+
+    // @permission users:grant-privileged
+    function canGrantPrivileged() {
+      return roleIn(['superadmin']);
+    }
+
+    // --------------------------------------------------------------- helpers
+
+    // Administrative reach across records someone else owns.
+    //
+    // Reading the whole portfolio is what `users:read` marks in the client
+    // (`AppContext` passes exactly this to `getAllProjects`), so the two agree
+    // by construction rather than by coincidence.
+    function isAdmin() {
+      return canReadUsers();
+    }
+
+    // Cross-owner read of the portfolio: administration, plus the review board.
+    //
+    // The board is deliberately included. Approval is separated from authorship
+    // precisely so the approver is *not* the owner of the work — and a board
+    // that cannot read what it governs cannot govern it. This is a real
+    // widening (a reviewer reads every record, not only their own) and it is
+    // the point of the role.
+    function canReadAnyPortfolio() {
+      return canReadUsers() || canDecideArb();
+    }
+
+    function projectOwner(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data.userId;
+    }
+
+    // -------------------------------------------------------------- projects
+
+    match /projects/{projectId} {
+      // Authoring an attention is a permission, not merely a consequence of
+      // being signed in: a `viewer` reads the portfolio and writes none of it.
+      allow create: if canWriteProject()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(resource.data.userId));
+      // An update may not hand the record to someone else.
+      allow update: if (isAdmin() || (canWriteProject() && isOwner(resource.data.userId)))
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isAdmin() || (canWriteProject() && isOwner(resource.data.userId));
+
+      match /artifacts/{artifactId} {
+        allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+        allow create, update, delete: if isAdmin()
+          || (canWriteArtifact() && isOwner(projectOwner(projectId)));
+
+        // Collaborative review — threaded comments.
+        // Read: any authorised project member. Write: any signed-in user, but
+        // the stored author must be the caller (no author spoofing). Updates
+        // by non-owners are limited to the comment's own author and may not
+        // rewrite the author field.
+        match /comments/{commentId} {
+          allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+          allow create: if canReadPortfolio()
+            && request.resource.data.author.id == request.auth.uid;
+          allow update: if isAdmin()
+            || (canWriteArtifact() && isOwner(projectOwner(projectId)))
+            || (canReadPortfolio()
+              && resource.data.author.id == request.auth.uid
+              && request.resource.data.author.id == resource.data.author.id);
+          allow delete: if isAdmin()
+            || (canWriteArtifact() && isOwner(projectOwner(projectId)))
+            || (canReadPortfolio() && resource.data.author.id == request.auth.uid);
+        }
+
+        // Collaborative review — immutable decision audit trail.
+        // Decisions can never be edited; only admins may delete them.
+        match /reviewDecisions/{decisionId} {
+          allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+          allow create: if canReadPortfolio()
+            && request.resource.data.author.id == request.auth.uid;
+          allow update: if false;
+          allow delete: if isAdmin();
+        }
+      }
+
+      // Aggregates that belong to the project but must not ride inside its
+      // document: the architecture graph rebuilds on every artifact change and
+      // grows with the artifact count. Same authorisation as the project —
+      // this is a storage split, not a new trust boundary.
+      // @permission artifacts:write
+      match /aggregates/{aggregateId} {
+        allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+        allow write: if isAdmin() || (canWriteArtifact() && isOwner(projectOwner(projectId)));
+      }
+
+      // One document per publication package. The array only ever grows and
+      // each package carries an append-only audit trail, so it is a collection
+      // rather than a field.
+      // @permission artifacts:write
+      match /publications/{packageId} {
+        allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+        allow write: if isAdmin() || (canWriteArtifact() && isOwner(projectOwner(projectId)));
+      }
+
+      match /history/{historyId} {
+        allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+        allow write: if isAdmin() || (canWriteArtifact() && isOwner(projectOwner(projectId)));
+      }
+
+      // Append-only log of agentic actions. The artifact versions themselves
+      // are the rollback source of truth, so entries are never rewritten.
+      match /agent_actions/{traceId} {
+        allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+        allow create: if isAdmin() || (canWriteArtifact() && isOwner(projectOwner(projectId)));
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+
+      // Architecture Office engagements. Kept out of the project document
+      // because the runner writes on every task transition.
+      //
+      // Separation of duties: the project owner may run an engagement, but only
+      // someone holding `arb:decide` may move it to `delivered` — that
+      // transition is the Architecture Review Board sign-off, and an author must
+      // not be able to approve their own work. Note this is `canDecideArb()`,
+      // not "is an administrator": governance is the reviewer's function, and an
+      // administrator signs off because the matrix also grants it.
+      match /engagements/{engagementId} {
+        allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+        allow create: if isAdmin() || (canWriteDeliverable() && isOwner(projectOwner(projectId)));
+        // Two disjoint updates, because the board is not the owner.
+        //
+        //  1. Signing off. Requires `arb:decide` and *nothing else* — in
+        //     particular not ownership, which is the whole separation: the
+        //     approver must not be the author.
+        //  2. Every other transition, which is the owner running their work.
+        allow update: if
+          (request.resource.data.status == 'delivered' && canDecideArb())
+          || (request.resource.data.status != 'delivered'
+            && (isAdmin() || (canWriteDeliverable() && isOwner(projectOwner(projectId)))));
+        allow delete: if isAdmin() || (canWriteDeliverable() && isOwner(projectOwner(projectId)));
+
+        // Immutable ARB record. The engagement document carries a mirror for
+        // fast reads; this subcollection is the tamper-evident original.
+        match /arbDecisions/{decisionId} {
+          allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(projectOwner(projectId)));
+          allow create: if canDecideArb()
+            && request.resource.data.actor.id == request.auth.uid;
+          allow update: if false;
+          allow delete: if isAdmin();
+        }
+      }
+    }
+
+    // --------------------------------------------------------- initiatives
+
+    // Business initiatives — the top of the hierarchy.
+    //
+    // Top-level rather than nested under a project: an initiative is the reason
+    // a project exists, and one initiative is commonly served by several of
+    // them, so nesting it under any single project would make the others'
+    // link the exception.
+    //
+    // Supporting documents live inline on the document (links or pasted text —
+    // the platform has no binary storage), so they need no rules of their own.
+    match /businessInitiatives/{initiativeId} {
+      allow create: if canWriteInitiative()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if canReadAnyPortfolio() || (canReadPortfolio() && isOwner(resource.data.userId));
+      // An update may not hand the initiative to someone else: without this,
+      // an owner could rewrite `userId` and silently take a peer's record, or
+      // push their own out of their list.
+      allow update: if (isAdmin() || (canWriteInitiative() && isOwner(resource.data.userId)))
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isAdmin() || (canWriteInitiative() && isOwner(resource.data.userId));
+    }
+
+    // ----------------------------------------------------------- preferences
+
+    match /settings/{settingsId} {
+      allow read, write: if signedIn()
+        && (settingsId == ('user_' + request.auth.uid) || isAdmin());
+    }
+
+    // -------------------------------------------------------------- training
+
+    // A course is either somebody's own — generated in the AI Lab, and theirs to
+    // keep or discard — or part of the shared curriculum. `training:author` is
+    // what separates the two, and it is the same distinction `canManageCourse`
+    // draws in the Training Center.
+    match /courses/{courseId} {
+      allow create: if canConsumeTraining()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if canAuthorTraining()
+        || (canConsumeTraining() && isOwner(resource.data.userId));
+      allow update: if canAuthorTraining()
+        || (canConsumeTraining()
+          && isOwner(resource.data.userId)
+          && request.resource.data.userId == resource.data.userId);
+      allow delete: if canAuthorTraining()
+        || (canConsumeTraining() && isOwner(resource.data.userId));
+    }
+
+    // ----------------------------------------------------------------- users
+
+    // The account directory, and the reason this rewrite exists.
+    //
+    // The previous `allow create: if request.auth.uid == uid` let any signed-in
+    // identity author its own profile document — including its `role` field.
+    // That is the whole access-control model handed to the caller. Accounts are
+    // now created by `services/userProvisioningService.ts`, which writes this
+    // document from the *administrator's* session, so the caller and the
+    // subject are deliberately different identities here.
+    //
+    // Bootstrapping: with self-service creation gone, the first administrator
+    // cannot come from the app. Seed one from the Firebase console (create the
+    // auth user, then the `users/{uid}` document with `role: 'superadmin'`) or
+    // via the Admin SDK. `docs/security-hardening.md` carries the procedure.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || canReadUsers();
+
+      // Only an administrator provisions an account, the document id must match
+      // the subject it describes, the role must be one this model knows, and a
+      // privileged role needs `users:grant-privileged`.
+      allow create: if canCreateUsers()
+        && request.resource.data.uid == uid
+        && isKnownRole(writtenRole())
+        && (!isPrivilegedRole(writtenRole()) || canGrantPrivileged());
+
+      // Two disjoint kinds of update.
+      //
+      //  1. The owner maintains their own profile — and may not touch `role`.
+      //     Without that clause every account could promote itself, which is
+      //     the same hole as before wearing a different verb.
+      //  2. An administrator changes somebody else's role. Never their own:
+      //     an administrator who can edit their own row can grant themselves
+      //     anything, and `users:grant-privileged` stops meaning anything.
+      allow update: if
+        (isOwner(uid) && request.resource.data.role == resource.data.role)
+        || (canUpdateUsers()
+          && request.auth.uid != uid
+          && isKnownRole(writtenRole())
+          && request.resource.data.uid == resource.data.uid
+          && (!isPrivilegedRole(writtenRole()) || canGrantPrivileged())
+          && (!isPrivilegedRole(resource.data.role) || canGrantPrivileged()));
+
+      // Deleting one's own account is not self-service either, and an
+      // administrator cannot delete themselves out of the directory.
+      allow delete: if canDeleteUsers() && request.auth.uid != uid;
+
+      /*
+       * La ficha configurada de cada agente de la Oficina.
+       *
+       * Del dueño y del administrador, como el resto de lo que cuelga de una
+       * persona: lo que una organización le enseña a Sofía sobre su canal de
+       * corredores es suyo, y viaja en sus prompts. El id del documento es el
+       * del agente, así que no hace falta validar más forma aquí — la fábrica
+       * `createAgentProfileOverride` rechaza un alias vacío o un avatar que no
+       * sea emoji antes de llegar, y estas reglas deciden *quién* escribe, que
+       * es lo que un navegador no puede decidir por sí mismo.
+       */
+      match /agentProfiles/{agentId} {
+        allow read, create, update, delete: if isAdmin() || isOwner(uid);
+      }
+
+      match /lms_notes/{noteId} {
+        allow read, create, update, delete: if isAdmin() || isOwner(uid);
+      }
+
+      match /lms_progress/{progressId} {
+        allow read, create, update, delete: if isAdmin() || isOwner(uid);
+      }
+
+      match /lms_context/{contextId} {
+        allow read, create, update, delete: if isAdmin() || isOwner(uid);
+      }
+    }
+  }
+}

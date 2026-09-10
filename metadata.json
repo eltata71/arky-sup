@@ -1,0 +1,7 @@
+{
+  "name": "Arky 10",
+  "description": "An intelligent application designed to assist software architects in creating, managing, and reviewing architectural projects. It leverages AI to generate diagrams, documents, and provide contextual insights, streamlining the entire architecture lifecycle from strategy to implementation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

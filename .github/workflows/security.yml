@@ -1,0 +1,135 @@
+name: Security
+
+# CodeQL and a dependency audit. Neither existed: the repository had no SAST,
+# no advisory gate and no automated dependency updates, while shipping a
+# browser app that handles authentication and renders model output.
+#
+# Runs on PRs so a finding arrives with the change that caused it, and weekly
+# so an advisory published against code nobody is touching still surfaces.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Monday morning, after Dependabot has opened its weekly PRs.
+    - cron: '0 7 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    name: CodeQL (JavaScript/TypeScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # The CodeQL action reads its own workflow run to fingerprint results.
+      # On a private repository that call needs `actions: read`, and without it
+      # the analyze step fails with "Resource not accessible by integration"
+      # after a perfectly successful scan.
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # `security-extended` over the default: the default query pack omits
+          # several of the DOM-injection and prototype-pollution queries, which
+          # are exactly the classes this codebase has had to fix by hand.
+          queries: security-extended
+
+      # `upload: never`, because this repository is private and uploading to
+      # the Security tab needs GitHub Advanced Security. Without it the
+      # analysis ran fine and the job still failed on the upload — a gate that
+      # is red for a reason nobody can act on is a gate people learn to ignore.
+      # The results are enforced here instead, and kept as an artifact.
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+          output: sarif-results
+          upload: never
+
+      # The findings are the gate. Anything CodeQL rates `error` fails the
+      # build; warnings and notes are reported and do not block, which is the
+      # same bar `npm audit` is held to in the job below.
+      - name: Fail on error-level findings
+        run: |
+          shopt -s nullglob
+          files=(sarif-results/*.sarif)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No SARIF produced — the analysis did not run."
+            exit 1
+          fi
+          total=0
+          for f in "${files[@]}"; do
+            errors=$(jq '[.runs[].results[]? | select((.level // "warning") == "error")] | length' "$f")
+            notes=$(jq '[.runs[].results[]?] | length' "$f")
+            echo "$f: $notes finding(s), $errors at error level"
+            total=$((total + errors))
+          done
+          if [ "$total" -gt 0 ]; then
+            echo "::error::CodeQL reported $total error-level finding(s)."
+            jq -r '.runs[].results[]? | select((.level // "warning") == "error")
+                   | "\(.ruleId): \(.message.text) — \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine)"' \
+              "${files[@]}"
+            exit 1
+          fi
+
+      - name: Upload CodeQL results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif
+          path: sarif-results
+          retention-days: 30
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fails on high and critical only. Auditing at `moderate` on a front-end
+      # tree means failing on advisories against build-time packages that never
+      # reach a browser, and a gate that fails for reasons nobody can act on
+      # gets switched off. Dependabot handles the rest on its own schedule.
+      - name: npm audit (high and critical)
+        run: npm audit --audit-level=high
+
+      # An SBOM per run, so "which version of what did that release ship?" is
+      # answerable after the fact rather than reconstructed from a lockfile
+      # diff.
+      - name: Generate SBOM
+        if: always()
+        run: npm sbom --sbom-format cyclonedx > sbom.cyclonedx.json || echo '{}' > sbom.cyclonedx.json
+
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cyclonedx.json
+          retention-days: 90

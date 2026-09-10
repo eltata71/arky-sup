@@ -1,0 +1,1 @@
+export { compileTablePresentation } from './markdownPresentationCompiler';

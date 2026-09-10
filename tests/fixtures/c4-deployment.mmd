@@ -1,0 +1,8 @@
+C4Deployment
+Deployment_Node(cloud, "AWS", "Cloud", "Infra") {
+  Node(k8s, "EKS", "Kubernetes", "Cluster") {
+    Container_Instance(app_i, "App", "Instance", "Node")
+  }
+}
+ContainerDb(db, "DB", "PostgreSQL", "Data")
+Rel(app_i, db, "Query", "TCP/5432")

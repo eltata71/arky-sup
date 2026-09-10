@@ -1,0 +1,93 @@
+{
+  // The base configuration now enforces full strictness repository-wide.
+  // This project remains as an additive high-risk gate: its enrolled modules
+  // must also have no unused declarations, explicit overrides and complete
+  // returns. It no longer represents the boundary of strict coverage.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": false
+  },
+  "include": [
+    "lib/authz/**/*.ts",
+    "lib/errorMessage.ts",
+    "lib/ids.ts",
+    "lib/richText/**/*.ts",
+    "lib/security.ts",
+    "lib/speechRecognition.ts",
+    "lib/traceId.ts",
+    "services/ai/aiProxyPolicy.ts",
+
+    // Ambient declarations the listed modules rely on. Without them
+    // `import.meta.env` is unknown here and every flag read looks like an
+    // error, and `dagre` — which ships none — reads as an implicit `any`.
+    "env.d.ts",
+    "types/dagre.d.ts",
+
+    // Wave 4. The modules that decide business rules, minus their Firestore
+    // repositories: `tsc` checks everything reachable, and a repository still
+    // delegates to `services/firestoreService.ts`, which has 57 errors under
+    // `strict`. Enrolling one would mean fixing that monolith first, which is
+    // exactly what the vertical-by-vertical migration is dismantling. The
+    // model and the rules — where the risk actually lives — are in.
+    //
+    // `services/chat/chatCompactor.ts` is out for the same reason at one
+    // remove: it imports the `services/ai` barrel, and a barrel is the whole
+    // module. Enrol it when the AI layer stops reaching the monolith.
+    "lib/diagram/**/*.ts",
+    "services/observability/**/*.ts",
+    "services/memory/**/*.ts",
+    "services/chat/ChatTypes.ts",
+    "services/chat/chatHistory.ts",
+    "services/architectureProjects/ArchitectureProjectTypes.ts",
+    "services/architectureProjects/architectureProjectFactory.ts",
+    "services/architectureProjects/attentionTracking.ts",
+    "services/businessInitiatives/BusinessInitiativeTypes.ts",
+    "services/businessInitiatives/initiativeDelivery.ts",
+    "services/businessInitiatives/initiativeMetrics.ts",
+    "services/review/ReviewTypes.ts",
+    "services/review/reviewTransitions.ts",
+    "services/review/localArtifactReviewRepository.ts",
+
+    // Captura asistida. El catálogo de campos y su contrato entran el día que
+    // se escriben, que es lo que `CLAUDE.md` pide del código nuevo: no
+    // dependen de nada — son declaraciones de la capa fundacional.
+    //
+    // `officeAgentProfile.ts` y `officeConsolidationReview.ts` son igual de
+    // puros y se quedaron fuera por la razón ya escrita arriba, a un paso de
+    // distancia: los dos leen `officeAgentPersonas`, que importa el barril de
+    // `services/agent` para declarar su puerto de persona, y un barril es el
+    // módulo entero. Entran cuando la capa de IA deje de alcanzar al motor.
+    "lib/capture/**/*.ts",
+
+    // La guía de uso de la plataforma, por lo mismo: el contrato, la búsqueda
+    // léxica y el catálogo de temas son declaraciones puras de la capa
+    // fundacional, y entran el día que se escriben.
+    "lib/platformGuide/**/*.ts",
+
+    // Ola 2. Los repositorios entran.
+    //
+    // No estaban por una sola razón, escrita arriba: `tsc` comprueba el cierre
+    // transitivo y todos delegaban en `services/firestoreService.ts`, que tenía
+    // 57 errores bajo `strict`. Un fichero mantenía fuera a los siete contextos
+    // que guardan datos. Ese fichero ya no existe: cada contexto tiene su
+    // adaptador sobre `services/persistence`, y con él el camino a `strict`.
+    //
+    // Los que faltan y por qué, para que nadie lo redescubra: los repositorios
+    // de chat y del agente llegan, vía `chatCompactor` y `agentTypes`, al
+    // barril de `services/ai` — y un barril es el módulo entero, `geminiService`
+    // incluido. Entran cuando la capa de IA deje de alcanzar al motor, en la
+    // Ola 5; es el mismo motivo por el que `chatCompactor` lleva fuera desde
+    // la Ola 4.
+    "services/persistence/**/*.ts",
+    "services/architectureProjects/projectCache.ts",
+    "services/architectureProjects/projectDocumentMapper.ts",
+    "services/architectureProjects/artifactDocumentMapper.ts",
+    "services/settings/**/*.ts"
+  ]
+}

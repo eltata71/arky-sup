@@ -1,0 +1,71 @@
+{
+  "$comment": [
+    "The modular monolith, declared.",
+    "",
+    "Until this file existed the modules were folders: `services/export` and",
+    "`services/quality` each imported the other, `lib/` — documented as the layer",
+    "with no dependencies — imported from `services/` in seven files, and 76",
+    "imports reached past a module's `index.ts` into its internals. None of it",
+    "broke a rule, because there was no rule. Folders do not enforce anything;",
+    "this file plus `scripts/checkModuleBoundaries.mjs` do.",
+    "",
+    "Three rules, all mechanical, all with a monotonic budget: today's count may",
+    "fall and must never rise. That is the same shape as `check:module-size` and",
+    "`check:any-budget`, and it works for the same reason — nobody has to agree",
+    "to a refactor before the bleeding stops.",
+    "",
+    "  1. LAYERS. A module may depend on its own layer or a lower one, never",
+    "     upwards. `foundation` (lib, utils) is the bottom: it must not know that",
+    "     `domain` exists. `domain` (services/*) must not know about `ui`.",
+    "  2. CYCLES. Two modules that import each other are one module with twice",
+    "     the surface, and neither can be read, tested or moved alone.",
+    "  3. PUBLIC API. A module that declares an `api` is entered through it. An",
+    "     import that reaches past `index.ts` into an internal file couples the",
+    "     caller to a decision the module never published."
+  ],
+
+  "layers": ["ui", "domain", "foundation"],
+
+  "modules": [
+    { "name": "pages", "path": "pages", "layer": "ui" },
+    { "name": "components", "path": "components", "layer": "ui" },
+    { "name": "context", "path": "context", "layer": "ui" },
+    { "name": "hooks", "path": "hooks", "layer": "ui" },
+    { "name": "api", "path": "api", "layer": "domain" },
+
+    { "name": "services/agent", "path": "services/agent", "layer": "domain", "api": "services/agent/index.ts" },
+    { "name": "services/ai", "path": "services/ai", "layer": "domain", "api": "services/ai/index.ts" },
+    { "name": "services/architectureKnowledgeGraph", "path": "services/architectureKnowledgeGraph", "layer": "domain", "api": "services/architectureKnowledgeGraph/index.ts" },
+    { "name": "services/architectureOffice", "path": "services/architectureOffice", "layer": "domain", "api": "services/architectureOffice/index.ts" },
+    { "name": "services/architectureProjects", "path": "services/architectureProjects", "layer": "domain", "api": "services/architectureProjects/index.ts" },
+    { "name": "services/artifactCompiler", "path": "services/artifactCompiler", "layer": "domain", "api": "services/artifactCompiler/index.ts" },
+    { "name": "services/artifacts", "path": "services/artifacts", "layer": "domain", "api": "services/artifacts/index.ts" },
+    { "name": "services/businessInitiatives", "path": "services/businessInitiatives", "layer": "domain", "api": "services/businessInitiatives/index.ts" },
+    { "name": "services/chat", "path": "services/chat", "layer": "domain", "api": "services/chat/index.ts" },
+    { "name": "services/contextGraph", "path": "services/contextGraph", "layer": "domain", "api": "services/contextGraph/index.ts" },
+    { "name": "services/diagram", "path": "services/diagram", "layer": "domain", "api": "services/diagram/index.ts" },
+    { "name": "services/export", "path": "services/export", "layer": "domain", "api": "services/export/index.ts" },
+    { "name": "services/identity", "path": "services/identity", "layer": "domain", "api": "services/identity/index.ts" },
+    { "name": "services/learning", "path": "services/learning", "layer": "domain", "api": "services/learning/index.ts" },
+    { "name": "services/lucid", "path": "services/lucid", "layer": "domain", "api": "services/lucid/index.ts" },
+    { "name": "services/memory", "path": "services/memory", "layer": "domain", "api": "services/memory/index.ts" },
+    { "name": "services/observability", "path": "services/observability", "layer": "domain", "api": "services/observability/index.ts" },
+    { "name": "services/persistence", "path": "services/persistence", "layer": "domain", "api": "services/persistence/index.ts" },
+    { "name": "services/portfolioGraph", "path": "services/portfolioGraph", "layer": "domain", "api": "services/portfolioGraph/index.ts" },
+    { "name": "services/presentation", "path": "services/presentation", "layer": "domain", "api": "services/presentation/index.ts" },
+    { "name": "services/publicationPipeline", "path": "services/publicationPipeline", "layer": "domain", "api": "services/publicationPipeline/index.ts" },
+    { "name": "services/quality", "path": "services/quality", "layer": "domain", "api": "services/quality/index.ts" },
+    { "name": "services/review", "path": "services/review", "layer": "domain", "api": "services/review/index.ts" },
+    { "name": "services/settings", "path": "services/settings", "layer": "domain", "api": "services/settings/index.ts" },
+
+    {
+      "name": "services (raíz)",
+      "path": "services",
+      "layer": "domain",
+      "$comment": "Not a module: the 19 loose files still sitting at the root of `services/`, matched last so the real modules win. They form cycles with eleven modules, which is why they are the largest number in the budget below. Each one that moves into a module lowers it."
+    },
+
+    { "name": "lib", "path": "lib", "layer": "foundation" },
+    { "name": "utils", "path": "utils", "layer": "foundation" }
+  ]
+}

@@ -1,0 +1,6 @@
+C4Context
+Person(user, "Usuario", "Actor de negocio")
+System(system, "Sistema Arky", "Plataforma de arquitectura")
+System_Ext(email, "Email Provider", "Notificaciones")
+Rel(user, system, "Consulta arquitectura", "HTTPS")
+Rel(system, email, "Envía notificación", "SMTP")

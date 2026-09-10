@@ -1,0 +1,6 @@
+C4Component
+Container_Boundary(api, "API") {
+  Component(auth, "Auth Component", "TS", "Auth")
+  Component(core, "Core Component", "TS", "Core")
+}
+Rel(auth, core, "Valida", "In-process")

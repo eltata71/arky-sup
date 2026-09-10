@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="arky-build-version" content="2026-05-10" />
+    <title>Arky · Oficina de Arquitectura</title>
+    <meta name="description" content="Arky · Oficina de Arquitectura: iniciativas de negocio, proyectos de arquitectura y solicitudes de entregables gobernadas por un equipo de agentes especialistas." />
+    <meta property="og:title" content="Arky · Oficina de Arquitectura" />
+    <meta property="og:description" content="AI-powered architecture design platform for modern software teams." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Arky · Oficina de Arquitectura" />
+    <!-- canonical URL set dynamically per deployment -->
+    <!-- Tailwind CSS ahora se compila en build-time via PostCSS (postcss.config.js +
+             tailwind.config.js + src/index.css). Se eliminó el CDN runtime (deuda tecnica M-2). -->
+        <!-- Fonts: Inter for UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- NOTE(ci/cicd): the heroicons CDN stylesheet was removed (unused — the
+         app renders icons via lucide-react) and the reactflow stylesheet now
+         ships from the locally-installed package via `import
+         'reactflow/dist/style.css'` in index.tsx, removing two fragile
+         runtime CDN dependencies that made the E2E smoke test flaky when the
+         CI sandbox blocked them. -->
+    <script>
+      // Suppress ResizeObserver loop errors
+      window.addEventListener('error', e => {
+        if (e.message === 'ResizeObserver loop limit exceeded' || e.message === 'Script error.') {
+          const resizeObserverErrDiv = document.getElementById(
+            'webpack-dev-server-client-overlay-div'
+          );
+          const resizeObserverErr = document.getElementById(
+            'webpack-dev-server-client-overlay'
+          );
+          if (resizeObserverErr) {
+            resizeObserverErr.setAttribute('style', 'display: none');
+          }
+          if (resizeObserverErrDiv) {
+                      resizeObserverErrDiv.setAttribute('style', 'display: none');
+                    }
+                  }
+                });
+              </script>
+
+    <style>
+      /* ============================================================
+       * Design tokens — exposed as CSS variables so non-Tailwind
+       * surfaces (Mermaid theme, ReactFlow, dynamic gradients) and
+       * future runtime theming can read them.  Stay in sync with
+       * tailwind.config above.
+       * ============================================================ */
+      :root {
+        --color-primary-50:  #eef2ff;
+        --color-primary-100: #e0e7ff;
+        --color-primary-200: #c7d2fe;
+        --color-primary-300: #a5b4fc;
+        --color-primary-400: #818cf8;
+        --color-primary-500: #6366f1;
+        --color-primary-600: #4f46e5;
+        --color-primary-700: #4338ca;
+        --color-primary-800: #3730a3;
+        --color-primary-900: #312e81;
+        --color-primary-950: #1e1b4b;
+
+        --color-ai-400:    #e879f9;
+        --color-ai-500:    #d946ef;
+        --color-ai-600:    #c026d3;
+
+        --color-audience-exec: #0ea5e9;
+        --color-audience-tech: #6366f1;
+        --color-audience-ops:  #f59e0b;
+
+        --color-surface:        #ffffff;
+        --color-surface-muted:  #fafafa;
+        --color-surface-raised: #ffffff;
+        --color-border-subtle:  #e4e4e7;
+        --color-border-strong:  #d4d4d8;
+        --color-text-primary:   #18181b;
+        --color-text-secondary: #52525b;
+        --color-text-muted:     #71717a;
+
+        --radius-xs: 4px;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --radius-xl: 18px;
+        --radius-2xl: 22px;
+
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 20px;
+        --space-6: 24px;
+        --space-8: 32px;
+        --space-10: 40px;
+        --space-12: 48px;
+        --space-16: 64px;
+
+        --shadow-soft: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+        --shadow-pop:  0 16px 48px -16px rgba(15,23,42,0.4);
+
+        --duration-fast:  150ms;
+        --duration-base:  250ms;
+        --duration-slow:  400ms;
+        --easing-out:    cubic-bezier(0.22, 1, 0.36, 1);
+        --easing-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .dark {
+        --color-surface:        #18181b;
+        --color-surface-muted:  #09090b;
+        --color-surface-raised: #27272a;
+        --color-border-subtle:  #27272a;
+        --color-border-strong:  #3f3f46;
+        --color-text-primary:   #fafafa;
+        --color-text-secondary: #d4d4d8;
+        --color-text-muted:     #a1a1aa;
+      }
+
+      /* CRITICAL: Ensure full height for iPad/Mobile layout stability */
+      html, body, #root {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent body scroll, handle inside app */
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        font-feature-settings: 'cv11', 'ss01', 'ss03';
+      }
+
+      /* Runtime resilience mode — automatically enabled on mobile Safari,
+       * low-memory devices, reduced-motion preference, or after an abnormal
+       * reload.  This intentionally removes costly backdrop filters and
+       * long-running decorative animations that can trigger iPadOS Safari
+       * page reloads under memory pressure. */
+      html.arky-resilience-mode *,
+      html.arky-resilience-mode *::before,
+      html.arky-resilience-mode *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+      html.arky-resilience-mode .backdrop-blur,
+      html.arky-resilience-mode .backdrop-blur-sm,
+      html.arky-resilience-mode .backdrop-blur-md,
+      html.arky-resilience-mode .backdrop-blur-lg,
+      html.arky-resilience-mode .backdrop-blur-xl,
+      html.arky-resilience-mode [class*="backdrop-blur"] {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+      }
+      html.arky-resilience-mode .shadow-2xl,
+      html.arky-resilience-mode .shadow-pop,
+      html.arky-resilience-mode .shadow-glow-ai,
+      html.arky-resilience-mode .shadow-glow-primary {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
+      }
+      html.arky-resilience-mode .progress-indeterminate::before,
+      html.arky-resilience-mode .streaming-caret::after,
+      html.arky-resilience-mode .ai-orbit::before,
+      html.arky-resilience-mode .animate-flow-dash,
+      html.arky-resilience-mode .animate-node-enter,
+      html.arky-resilience-mode .skeleton-shimmer {
+        animation: none !important;
+      }
+
+      /* Reduced motion — respect OS-level accessibility preference */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      /* Better focus rings — only when keyboard navigating */
+      :focus { outline: none; }
+      :focus-visible {
+        outline: 2px solid var(--color-primary-500);
+        outline-offset: 2px;
+        border-radius: 6px;
+      }
+      
+      /* Custom Scrollbar for Webkit */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d4d4d8;
+        border-radius: 4px;
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #3f3f46;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a1a1aa;
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
+        background: #52525b;
+      }
+
+      @media print {
+        .non-printable {
+          display: none !important;
+        }
+        body, html {
+          background-color: white !important;
+        }
+        #printable-area {
+          display: block !important;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          padding: 1rem;
+          overflow: visible;
+          background: white;
+        }
+        #printable-area, #printable-area * {
+          visibility: visible;
+        }
+         body > #root > div > main {
+            overflow: visible !important;
+        }
+        .react-flow__renderer {
+            overflow: visible !important;
+        }
+        .react-flow__viewport {
+            transform: none !important;
+        }
+        .dark .prose-invert, .dark .dark\:text-gray-100, .dark .dark\:text-gray-300, .dark .dark\:text-white {
+          color: #111827 !important;
+        }
+        .bg-white.dark\:bg-gray-800 {
+            background-color: white !important;
+        }
+      }
+      /* Flow dash animation for diagram edges */
+      @keyframes flow-dash {
+        0% { stroke-dashoffset: 28; }
+        100% { stroke-dashoffset: 0; }
+      }
+      .animate-flow-dash {
+        animation: flow-dash 1.5s linear infinite;
+      }
+
+      /* Node entry animation */
+      @keyframes node-enter {
+        0% { opacity: 0; transform: scale(0.85); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      .animate-node-enter {
+        animation: node-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      /* Shimmer skeleton — better than animate-pulse for perceived performance */
+      .skeleton-shimmer {
+        background-image: linear-gradient(
+          90deg,
+          rgba(228,228,231,0) 0%,
+          rgba(228,228,231,0.7) 50%,
+          rgba(228,228,231,0) 100%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.6s infinite linear;
+      }
+      .dark .skeleton-shimmer {
+        background-image: linear-gradient(
+          90deg,
+          rgba(63,63,70,0) 0%,
+          rgba(82,82,91,0.55) 50%,
+          rgba(63,63,70,0) 100%
+        );
+      }
+
+      /* AI gradient text — used by AI surfaces */
+      .text-ai-gradient {
+        background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-ai-500) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      /* AI gradient border on hover/active */
+      .border-ai-gradient {
+        position: relative;
+      }
+      .border-ai-gradient::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(135deg, var(--color-primary-500), var(--color-ai-500));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      /* Streaming caret used by chat surfaces */
+      .streaming-caret::after {
+        content: '▍';
+        margin-left: 2px;
+        opacity: 0.7;
+        animation: caretBlink 1.1s steps(1) infinite;
+      }
+      @keyframes caretBlink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+      }
+
+      /* Indeterminate progress bar */
+      .progress-indeterminate {
+        position: relative;
+        overflow: hidden;
+      }
+      .progress-indeterminate::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, var(--color-primary-500), transparent);
+        animation: progressIndeterminate 1.6s ease-in-out infinite;
+      }
+      @keyframes progressIndeterminate {
+        0%   { transform: translateX(-100%) scaleX(0.4); }
+        60%  { transform: translateX(40%)   scaleX(0.6); }
+        100% { transform: translateX(180%)  scaleX(0.4); }
+      }
+
+      /* Subtle rotating conic glow — used on AI surfaces */
+      @keyframes conic-spin {
+        to { transform: rotate(360deg); }
+      }
+      .ai-orbit::before {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        border-radius: inherit;
+        background: conic-gradient(from 0deg,
+          rgba(99,102,241,0.0) 0%,
+          rgba(99,102,241,0.55) 25%,
+          rgba(217,70,239,0.55) 50%,
+          rgba(99,102,241,0.0) 75%,
+          rgba(99,102,241,0.0) 100%);
+        animation: conic-spin 4s linear infinite;
+        z-index: 0;
+      }
+      .ai-orbit > * { position: relative; z-index: 1; }
+
+      /* Page transition base classes — wrap routes to fade between them */
+      .page-enter {
+        animation: fadeIn 0.25s ease-out, slideUp 0.25s ease-out;
+      }
+
+      /* Custom scrollbar utility — opt-in for content surfaces */
+      .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(161,161,170,0.45);
+        border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(82,82,91,0.65);
+      }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(63,63,70,0.7);
+      }
+
+      /* Safe-area padding for sticky composers (Arquitecto Agente input,
+         mobile bottom sheets, etc.). Adds the device's safe-area-inset-bottom
+         to the existing padding so the input is never tucked behind the
+         iPad/iPhone home indicator or the virtual keyboard. */
+      .safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem); }
+      @supports not (padding: env(safe-area-inset-bottom)) {
+        .safe-bottom { padding-bottom: 0.75rem; }
+      }
+    </style>
+
+    <!-- Theme bootstrap: auto-detect prefers-color-scheme on first load
+         and apply before React mounts to prevent dark/light flicker. -->
+    <script>
+      (function bootstrapTheme() {
+        try {
+          var stored = localStorage.getItem('arky_theme'); // 'light' | 'dark' | 'system'
+          var isDark;
+          if (stored === 'dark') {
+            isDark = true;
+          } else if (stored === 'light') {
+            isDark = false;
+          } else {
+            // 'system' or unset — follow OS preference
+            isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          if (isDark) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        } catch (e) {
+          // localStorage unavailable — default to OS preference
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none selection:bg-primary-200 dark:selection:bg-primary-900">
+    <div id="root">
+      <div id="arky-bootstrap-shell" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#09090b;color:#fafafa;font-family:Inter,system-ui,sans-serif;padding:24px;text-align:center;">
+        <div style="max-width:420px;border:1px solid rgba(129,140,248,.35);border-radius:22px;background:rgba(24,24,27,.92);box-shadow:0 24px 80px rgba(0,0,0,.35);padding:28px;">
+          <div style="width:56px;height:56px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#d946ef);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px;">✦</div>
+          <p style="margin:0 0 6px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#c4b5fd;font-weight:700;">Arky</p>
+          <h1 style="font-size:22px;line-height:1.25;margin:0 0 10px;">Inicializando aplicación resiliente</h1>
+          <p style="margin:0 0 14px;color:#d4d4d8;font-size:14px;line-height:1.6;">Si esta pantalla no cambia, usa las acciones de recuperación. Puedes reintentar carga, limpiar estado local corrupto o abrir una vista segura en modo texto.</p><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;"><button type="button" onclick="window.location.reload()" style="padding:9px 12px;border-radius:10px;border:0;background:#4f46e5;color:white;font-size:12px;font-weight:700;">Reintentar carga</button><button type="button" onclick="try{localStorage.removeItem('arky:last-stable-route');sessionStorage.clear();}catch(e){} window.location.href='/';" style="padding:9px 12px;border-radius:10px;border:1px solid #3f3f46;background:transparent;color:#e4e4e7;font-size:12px;font-weight:600;">Volver estable</button><button type="button" onclick="try{localStorage.clear();sessionStorage.clear();}catch(e){} window.location.reload();" style="padding:9px 12px;border-radius:10px;border:1px solid #3f3f46;background:transparent;color:#e4e4e7;font-size:12px;font-weight:600;">Limpiar estado</button><button type="button" onclick="window.location.href='/?safeMode=text';" style="padding:9px 12px;border-radius:10px;border:1px solid #3f3f46;background:transparent;color:#e4e4e7;font-size:12px;font-weight:600;">Vista texto</button></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Pre-React safety net. If a top-level module evaluation throws (e.g.
+      // firebase init, env-var failure, syntax error in a downstream import),
+      // `index.tsx` never runs and the static shell above stays visible
+      // forever. This listener swaps the shell for a diagnostic panel with
+      // copyable details and a reload button so the architect is never stuck.
+      (function arkyBootstrapGuard() {
+        var rendered = false;
+        var buildVersion = (document.querySelector('meta[name=arky-build-version]') && document.querySelector('meta[name=arky-build-version]').getAttribute('content')) || 'dev';
+        var lastBootstrapEvent = 'bootstrap-guard-installed';
+        function isStaleChunkError(value) {
+          return /loading chunk|failed to fetch dynamically imported module|importing a module script failed|module script|vite:preloadError/i.test(String(value || ''));
+        }
+        function tryReloadStaleBundleOnce(reason) {
+          if (!isStaleChunkError(reason)) return false;
+          try {
+            var key = 'arky:stale-bundle-reload:' + buildVersion;
+            if (sessionStorage.getItem(key) === '1') return false;
+            sessionStorage.setItem(key, '1');
+            if (window.caches && caches.keys) {
+              caches.keys().then(function (keys) { keys.forEach(function (keyName) { if (/vite|workbox|arky|precache/i.test(keyName)) caches.delete(keyName); }); });
+            }
+            window.location.reload();
+            return true;
+          } catch (_e) {
+            return false;
+          }
+        }
+        function show(reason, detail) {
+          if (rendered) return;
+          // If React already mounted, do not interfere — the React error
+          // boundary / runtime overlay will handle it.
+          if (document.documentElement.dataset.arkyMounted === 'true') return;
+          rendered = true;
+          var root = document.getElementById('root');
+          if (!root) return;
+          var safeReason = String(reason || 'Error desconocido durante el arranque');
+          if (tryReloadStaleBundleOnce(safeReason)) return;
+          var diagnostic = [
+            'buildVersion=' + buildVersion,
+            'url=' + window.location.href,
+            'userAgent=' + navigator.userAgent,
+            'timestamp=' + new Date().toISOString(),
+            'lastBootstrapEvent=' + lastBootstrapEvent,
+            'reason=' + safeReason,
+            detail ? 'detail=' + String(detail).slice(0, 1200) : ''
+          ].filter(Boolean).join('\n');
+          var safeDetail = diagnostic.slice(0, 1800);
+          // Build using DOM APIs to avoid any HTML-injection from error messages.
+          root.innerHTML = '';
+          var wrap = document.createElement('div');
+          wrap.style.cssText = 'min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#09090b;color:#fafafa;font-family:Inter,system-ui,sans-serif;padding:24px;';
+          var card = document.createElement('div');
+          card.style.cssText = 'max-width:520px;width:100%;border:1px solid rgba(244,63,94,.45);border-radius:22px;background:rgba(24,24,27,.94);box-shadow:0 24px 80px rgba(0,0,0,.45);padding:28px;';
+          var tag = document.createElement('p');
+          tag.style.cssText = 'margin:0 0 6px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#fda4af;font-weight:700;';
+          tag.textContent = 'Arranque protegido';
+          var h1 = document.createElement('h1');
+          h1.style.cssText = 'font-size:22px;line-height:1.25;margin:0 0 10px;';
+          h1.textContent = 'Arky no pudo iniciar';
+          var p = document.createElement('p');
+          p.style.cssText = 'margin:0 0 12px;color:#d4d4d8;font-size:14px;line-height:1.6;';
+          p.textContent = 'La aplicación detectó el fallo y conservó esta pantalla en lugar de quedar en blanco. Puedes copiar o descargar el diagnóstico, reintentar, limpiar estado local corrupto o abrir modo texto seguro.';
+          var pre = document.createElement('pre');
+          pre.style.cssText = 'margin:0 0 14px;max-height:160px;overflow:auto;white-space:pre-wrap;word-break:break-word;border-radius:14px;background:rgba(0,0,0,.45);padding:12px;font-size:12px;color:#e4e4e7;';
+          pre.textContent = safeDetail;
+          var actions = document.createElement('div');
+          actions.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;';
+          var copyBtn = document.createElement('button');
+          copyBtn.style.cssText = 'padding:10px 16px;border-radius:10px;border:1px solid #3f3f46;background:transparent;color:#e4e4e7;font-size:13px;font-weight:500;cursor:pointer;';
+          copyBtn.textContent = 'Copiar diagnóstico';
+          copyBtn.addEventListener('click', function () {
+            try {
+              navigator.clipboard.writeText(pre.textContent || '');
+              copyBtn.textContent = 'Diagnóstico copiado';
+            } catch (_e) {
+              copyBtn.textContent = 'No se pudo copiar';
+            }
+          });
+          var downloadBtn = document.createElement('button');
+          downloadBtn.style.cssText = 'padding:10px 16px;border-radius:10px;border:1px solid #3f3f46;background:transparent;color:#e4e4e7;font-size:13px;font-weight:500;cursor:pointer;';
+          downloadBtn.textContent = 'Descargar reporte';
+          downloadBtn.addEventListener('click', function () {
+            try {
+              var blob = new Blob([pre.textContent || ''], { type: 'text/plain;charset=utf-8' });
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'arky-bootstrap-report.txt';
+              a.click();
+              setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+            } catch (_e) {}
+          });
+          var clearBtn = document.createElement('button');
+          clearBtn.style.cssText = 'padding:10px 16px;border-radius:10px;border:1px solid #3f3f46;background:transparent;color:#e4e4e7;font-size:13px;font-weight:500;cursor:pointer;';
+          clearBtn.textContent = 'Limpiar estado';
+          clearBtn.addEventListener('click', function () { try { localStorage.clear(); sessionStorage.clear(); } catch (_e) {} window.location.reload(); });
+          var safeBtn = document.createElement('button');
+          safeBtn.style.cssText = 'padding:10px 16px;border-radius:10px;border:1px solid #3f3f46;background:transparent;color:#e4e4e7;font-size:13px;font-weight:500;cursor:pointer;';
+          safeBtn.textContent = 'Modo texto';
+          safeBtn.addEventListener('click', function () { window.location.href = '/?safeMode=text'; });
+          var reloadBtn = document.createElement('button');
+          reloadBtn.style.cssText = 'padding:10px 16px;border-radius:10px;border:0;background:linear-gradient(135deg,#6366f1,#d946ef);color:#fff;font-size:13px;font-weight:600;cursor:pointer;';
+          reloadBtn.textContent = 'Recargar';
+          reloadBtn.addEventListener('click', function () { window.location.reload(); });
+          actions.appendChild(copyBtn);
+          actions.appendChild(downloadBtn);
+          actions.appendChild(clearBtn);
+          actions.appendChild(safeBtn);
+          actions.appendChild(reloadBtn);
+          card.appendChild(tag);
+          card.appendChild(h1);
+          card.appendChild(p);
+          card.appendChild(pre);
+          card.appendChild(actions);
+          wrap.appendChild(card);
+          root.appendChild(wrap);
+        }
+        window.addEventListener('vite:preloadError', function (event) {
+          lastBootstrapEvent = 'vite:preloadError';
+          var message = event && event.message ? event.message : 'vite:preloadError';
+          if (tryReloadStaleBundleOnce(message)) return;
+          show(message, event && event.detail ? JSON.stringify(event.detail) : '');
+        });
+        window.addEventListener('error', function (event) {
+          lastBootstrapEvent = 'error';
+          show(event.message || 'Error global', (event.error && event.error.stack) ? event.error.stack : '');
+        });
+        window.addEventListener('unhandledrejection', function (event) {
+          lastBootstrapEvent = 'unhandledrejection';
+          var reason = event.reason;
+          var msg = (reason && reason.message) ? reason.message : String(reason);
+          show(msg, (reason && reason.stack) ? reason.stack : '');
+        });
+        // Watchdog: if React has not flagged itself as mounted within 12s,
+        // assume the bootstrap silently stalled (e.g. infinite suspense or a
+        // hung import) and surface the diagnostic with actionable controls.
+        setTimeout(function () {
+          if (document.documentElement.dataset.arkyMounted === 'true') return;
+          show(
+            'La aplicación no terminó de inicializar en el tiempo esperado.',
+            'Si tu conexión es estable y la URL es correcta, intenta recargar. Si el problema persiste, revisa la consola para detalles del SDK.'
+          );
+        }, 12000);
+      })();
+    </script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

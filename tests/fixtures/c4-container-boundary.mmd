@@ -1,0 +1,8 @@
+C4Container
+System_Boundary(s1, "ArkyPro") {
+  Container(ui, "Frontend", "React", "UI")
+  Container(api, "API", "Node", "Servicios")
+}
+ContainerDb(db, "DB", "PostgreSQL", "Persistencia")
+Rel(ui, api, "Invoca", "HTTPS")
+Rel(api, db, "Lee/Escribe", "TCP")
