@@ -65,15 +65,15 @@
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^4.1.5",
     "autoprefixer": "^10.5.4",
-    "eslint": "^9.39.4",
+    "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.6.0",
     "jsdom": "^28.1.0",
     "postcss": "^8.5.26",
     "tailwindcss": "^3.4.19",
-    "typescript": "~5.8.2",
+    "typescript": "~7.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^6.2.0",
-    "vitest": "^4.0.18"
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   }
 }
