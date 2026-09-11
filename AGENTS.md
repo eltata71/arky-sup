@@ -153,6 +153,7 @@ Reglas que no se negocian al trabajar aquí:
 ## Reglas de operación (Codex/Koder y Claude)
 
 1. Mantener arquitectura frontend-only (React + Firebase + Gemini), salvo requerimiento explícito de backend.
+   **Transición F1 aprobada (docs/fase-1/):** el diseño de dominio autoriza migrar a Supabase (Auth + PostgreSQL + Storage) con backend confiable mínimo (Edge Functions / RPC) para operaciones sensibles, y adaptadores intercambiables Firebase/Supabase por contexto (F3.2). El código nuevo de migración va contra los puertos de `docs/fase-1/mapa-contextos.md` y `docs/fase-1/agregados-invariantes-eventos.md`; la regla frontend-only sigue vigente para el resto hasta cada corte vertical (F5).
 2. No invocar Firestore/Gemini directamente desde componentes o páginas; usar siempre `services/`.
 3. La autorización se pregunta como permiso (`can(profile, 'x:y')` desde
    `lib/authz`), nunca comparando cadenas de rol. `firestore.rules` implementa
