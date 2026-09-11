@@ -1,0 +1,6 @@
+PASS: correctly signed local JWT without any profile lookup is accepted (membership absent by design).
+PASS control: /api/ai explicit non-allowlisted model rejected 403.
+CONFIRMED local: /api/ai omitted model bypasses configured allowlist; default model reaches MOCK provider.
+CONFIRMED local: /api/gemini arbitrary model bypasses configured allowlist and reaches MOCK provider.
+CONFIRMED local: opt-in unauthenticated flag accepts missing bearer; production flag state NOT checked.
+No real provider/network calls; generated signing key and token never printed; no Firestore emulator used.

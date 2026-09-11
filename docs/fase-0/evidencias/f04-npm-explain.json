@@ -1,0 +1,113 @@
+[
+  {
+    "name": "js-yaml",
+    "version": "4.3.1",
+    "location": "node_modules/js-yaml",
+    "isWorkspace": false,
+    "dependents": [
+      {
+        "type": "prod",
+        "name": "js-yaml",
+        "spec": "^4.1.1",
+        "from": {
+          "name": "@eslint/eslintrc",
+          "version": "3.3.5",
+          "location": "node_modules/@eslint/eslintrc",
+          "isWorkspace": false,
+          "dependents": [
+            {
+              "type": "prod",
+              "name": "@eslint/eslintrc",
+              "spec": "^3.3.5",
+              "from": {
+                "name": "eslint",
+                "version": "9.39.4",
+                "location": "node_modules/eslint",
+                "isWorkspace": false,
+                "dependents": [
+                  {
+                    "type": "dev",
+                    "name": "eslint",
+                    "spec": "^9.39.4",
+                    "from": {
+                      "location": "/home/tata/workspace/arky-sup"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "dev": true,
+    "optional": false,
+    "devOptional": true,
+    "peer": false,
+    "bundled": false,
+    "overridden": false
+  },
+  {
+    "name": "@vitest/mocker",
+    "version": "4.1.5",
+    "location": "node_modules/@vitest/mocker",
+    "isWorkspace": false,
+    "dependents": [
+      {
+        "type": "prod",
+        "name": "@vitest/mocker",
+        "spec": "4.1.5",
+        "from": {
+          "name": "vitest",
+          "version": "4.1.5",
+          "location": "node_modules/vitest",
+          "isWorkspace": false,
+          "dependents": [
+            {
+              "type": "dev",
+              "name": "vitest",
+              "spec": "^4.0.18",
+              "from": {
+                "location": "/home/tata/workspace/arky-sup"
+              }
+            }
+          ],
+          "dev": true,
+          "optional": false,
+          "devOptional": true,
+          "peer": false,
+          "bundled": false,
+          "overridden": false
+        }
+      }
+    ],
+    "dev": true,
+    "optional": false,
+    "devOptional": true,
+    "peer": false,
+    "bundled": false,
+    "overridden": false
+  },
+  {
+    "name": "vitest",
+    "version": "4.1.5",
+    "location": "node_modules/vitest",
+    "isWorkspace": false,
+    "dependents": [
+      {
+        "type": "dev",
+        "name": "vitest",
+        "spec": "^4.0.18",
+        "from": {
+          "location": "/home/tata/workspace/arky-sup"
+        }
+      }
+    ],
+    "dev": true,
+    "optional": false,
+    "devOptional": true,
+    "peer": false,
+    "bundled": false,
+    "overridden": false
+  }
+]

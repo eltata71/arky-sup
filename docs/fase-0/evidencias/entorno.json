@@ -1,0 +1,98 @@
+{
+  "node": "v20.19.5",
+  "npm": "10.8.2",
+  "installation": {
+    "directory": "/tmp/arky-f0-install-kEqflp",
+    "npm_ci_exit": 0,
+    "full_lifecycle_enabled": true
+  },
+  "lock_sha256": "611257c1a7ac8d3056734d4dcb1ab97493c389a571eec7538badb21c46a175cf",
+  "isolated_lock_sha256": "611257c1a7ac8d3056734d4dcb1ab97493c389a571eec7538badb21c46a175cf",
+  "env_local_exists": true,
+  "env_names_and_presence_only": [
+    {
+      "name": "VITE_GEMINI_API_KEY",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_GEMINI_PROXY_URL",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_OPENROUTER_API_KEY",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_AI_PROXY_URL",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_AI_STRICT_PROXY",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_ANTHROPIC_API_KEY",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_FIREBASE_API_KEY",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_FIREBASE_AUTH_DOMAIN",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_FIREBASE_PROJECT_ID",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_FIREBASE_STORAGE_BUCKET",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_FIREBASE_MESSAGING_SENDER_ID",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_FIREBASE_APP_ID",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_FIREBASE_MEASUREMENT_ID",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_LUCID_API_KEY",
+      "nonempty": false
+    },
+    {
+      "name": "VITE_DIAGRAM_PIPELINE",
+      "nonempty": true
+    },
+    {
+      "name": "VITE_ARTIFACT_REFINEMENT_ENABLED",
+      "nonempty": true
+    },
+    {
+      "name": "VITE_ARTIFACT_REFINEMENT_AI_ENABLED",
+      "nonempty": true
+    },
+    {
+      "name": "VITE_ARTIFACT_REFINEMENT_MAX_PASSES",
+      "nonempty": true
+    },
+    {
+      "name": "VITE_STRUCTURED_ARTIFACT_BRIEF_ENABLED",
+      "nonempty": true
+    },
+    {
+      "name": "VITE_AI_BRIEF_EXTRACTION_ENABLED",
+      "nonempty": true
+    },
+    {
+      "name": "VITE_TOP3_ARTIFACT_RECOMMENDATIONS_ENABLED",
+      "nonempty": true
+    }
+  ]
+}
