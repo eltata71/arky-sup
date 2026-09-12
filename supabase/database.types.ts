@@ -35,12 +35,52 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_permissions: { Args: never; Returns: string[] }
+      delete_user_profile: { Args: { target: string }; Returns: undefined }
+      provision_user_profile: {
+        Args: { target: string; target_name?: string; target_role: string }
+        Returns: undefined
+      }
+      set_user_role: {
+        Args: { new_role: string; target: string }
+        Returns: undefined
+      }
+      set_user_status: {
+        Args: { new_status: string; target: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

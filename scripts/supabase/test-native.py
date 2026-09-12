@@ -46,6 +46,11 @@ def main():
     tests = sorted((ROOT / "supabase/tests/database").glob("*.sql"))
     if not migrations or not tests:
         raise RuntimeError("Missing migrations or SQL tests")
+    # The mutation check is specific to the foundation probe policy; do not rely
+    # on `tests[0]`, which changes as test files are added.
+    foundation = [test for test in tests if test.name == "platform_foundation.test.sql"]
+    if not foundation:
+        raise RuntimeError("Missing platform_foundation.test.sql for the mutation check")
     for iteration in (1, 2):
         with tempfile.TemporaryDirectory(prefix="arky-sql-") as folder:
             directory = Path(folder)
@@ -77,7 +82,7 @@ def main():
                 print(f"Fresh reconstruction {iteration}: plpgsql_check: no findings", flush=True)
                 # Prove the tests reject a weakened RLS policy (not a false green).
                 run(psql + ["-c", "alter policy probe_select_owner on api.platform_probes using (true)"])
-                mutant = run(psql + ["-f", tests[0]])
+                mutant = run(psql + ["-f", foundation[0]])
                 try:
                     check_tap(mutant)
                 except RuntimeError:
