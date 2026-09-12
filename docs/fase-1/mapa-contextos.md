@@ -232,13 +232,13 @@ interface ArtifactPort {
 
 1. **Multitenencia — RESUELTA: una sola organización (opción simple).** No se añade `organizationId`/`tenantId`. RLS por usuario, rol y alcance de proyecto. El modelo sigue siendo *single-tenant*; la dimensión de organización no se prepara en esta PoC.
 2. **SSO/MFA — RESUELTA: simple.** Email/contraseña + Google, como hoy. Sin MFA y sin SSO corporativo (SAML/OIDC) en la PoC.
-3. **Residencia de datos**: pendiente (ver §7.1 abajo).
+3. **Residencia de datos — RESUELTA para la PoC: se mantiene `ca-central-1`.** Con condición de disparo; detalle abajo en §7.1.
 4. **Clasificación de información**: pendiente (§7.1).
 5. **Contratos de integración**: pendiente (§7.1).
 
 ### 7.1 Pendientes todavía
 
-- **Residencia**: ¿región única (EE. UU.) o por jurisdicción (LatAm/Caribe)? Hoy el proyecto existente está en `ca-central-1`. Afecta elección de región Supabase y buckets Storage.
+- **Residencia — RESUELTA para la PoC (2026-09-12): se mantiene `ca-central-1`.** El usuario reconoce que Canadá fue un error de elección, pero se conserva para no desviar el objetivo. **Compromiso explícito: no se cargan datos sensibles durante las pruebas.** Al terminar el proceso de pruebas, y antes de cargar cualquier dato sensible, el usuario creará el proyecto Supabase en **Estados Unidos** y lo comunicará para ejecutar la migración de plataforma. Esta decisión **no** certifica que Canadá sea equivalente a EE. UU. ante HIPAA o normativa estatal: es una postergación consciente con condición de disparo.
 - **Clasificación**: ¿la app maneja PHI/PII regulado? Determina BAA, cifrado en reposo, logging, retención.
 - **Integraciones**: ¿qué sistemas externos consumen/producen datos (ERP, CRM, core de seguros)? Define *Open Host Service* o *Anti-Corruption Layer* adicionales.
 
