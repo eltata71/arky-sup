@@ -6,15 +6,15 @@ La autorización del usuario sustituye la separación desarrollo/staging/producc
 
 ## F2.1: descubrimiento verificado
 
-- Proyecto: ArkyDB (`hgpemicaeriizllgaezj`).
-- Región existente: `ca-central-1`. Se conserva; no implica certificación de residencia o cumplimiento normativo.
-- Estado reportado por Management API: `ACTIVE_HEALTHY`.
-- PostgreSQL reportado: `17.6.1.166`.
-- CLI disponible: `2.117.0`.
-- `supabase projects list`: acceso autenticado confirmado.
-- `supabase db query --linked --project-ref hgpemicaeriizllgaezj`: consulta de catálogo ejecutada; no hay tablas de negocio en esquemas ajenos a los administrados por Supabase.
-- Plan, cuotas contratadas y destinatario de alertas: no verificados todavía. No se presuponen gratuitos ni se autorizan gastos.
-- Responsable de aprobar gastos y cambios de alcance: usuario solicitante; no se asignan personas operativas ficticias.
+**Proyecto activo: ArkyDB-US (`btbhkmckrazoayaoorys`), región `us-east-1`, creado 2026-09-12 por decisión del usuario** para cumplir la residencia en Estados Unidos (opción B de la decisión de clasificación: la PoC albergará PII de terceros, sin datos de salud).
+
+- Estado reportado por la API: `ACTIVE_HEALTHY`; PostgreSQL 17.
+- CLI: `2.117.0`. Plan de organización: **Free** (confirmado por el error de la API al intentar `--size`, que el plan Free no admite).
+- Contraseña de la base: generada localmente (48 caracteres hex) y guardada **fuera del repositorio** en `~/.arky/secrets/arky-us-db-password.txt` (permisos 0600, directorio 0700). No viaja en Git, ni en logs, ni en evidencias.
+
+**Proyecto anterior: ArkyDB (`hgpemicaeriizllgaezj`), `ca-central-1`.** Creado por el usuario y elegido antes de resolver la residencia. Se conserva **intacto** hasta verificar el nuevo (decisión del usuario). Ya no es el destino de trabajo; queda como respaldo y como ejemplo de por qué la región debe decidirse antes de aprovisionar.
+
+Se conserva el resto del alcance: un único proyecto activo, hosting Vercel, datos de PoC, sin multi-ambiente. No se crean más proyectos ni se autorizan gastos.
 
 ## Entrega y seguridad
 

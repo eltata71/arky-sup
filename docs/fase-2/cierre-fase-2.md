@@ -1,15 +1,21 @@
 # F2 — Cierre: plataforma Supabase y controles de entrega (PoC)
 
 Rama: `feature/fase2-plataforma-supabase`. Alcance vigente: `docs/fase-2/plataforma-poc.md`
-(un solo proyecto existente **ArkyDB**, hosting **Vercel**, datos de PoC, sin multi-ambiente).
+(un proyecto activo **ArkyDB-US** en `us-east-1`, hosting **Vercel**, datos de PoC, sin multi-ambiente).
 
-## F2.1 Descubrimiento verificado (lectura + catálogo, sin escrituras previas)
+## F2.1 Descubrimiento verificado y proyecto de EE. UU.
 
-- Proyecto: ArkyDB (`hgpemicaeriizllgaezj`), región `ca-central-1` (existente, se conserva),
-  estado `ACTIVE_HEALTHY`, PostgreSQL `17.6.1.166`, CLI `2.117.0`.
-- `supabase projects list` y `supabase db query --linked --project-ref …` funcionan.
-- Catálogo previo: **ninguna tabla de negocio**; Plan/cuotas y destinatario de alertas sin verificar
-  (no se presuponen gratuitos ni se autoriza gasto).
+**Proyecto activo: ArkyDB-US (`btbhkmckrazoayaoorys`), `us-east-1`**, creado el 2026-09-12 con
+`supabase projects create` tras resolver la residencia de datos. Estado `ACTIVE_HEALTHY`, PostgreSQL 17.
+Plan de la organización: **Free** (la API rechazó `--size`, que ese plan no admite). Contraseña de base
+generada localmente y guardada fuera del repositorio (`~/.arky/secrets/`, 0600); no entra en Git, logs
+ni evidencias. El proyecto anterior ArkyDB (`hgpemicaeriizllgaezj`, `ca-central-1`) se conserva intacto
+hasta verificar el nuevo, y ya no es destino de trabajo.
+
+Verificación independiente sobre el proyecto nuevo, por catálogo: migración `20260912001855` aplicada,
+`api.platform_probes` y `private.audit_events` con `rowsecurity`, grants solo a `authenticated` y
+`postgres`, **ninguno a `anon`**. Los tipos generados desde él son **idénticos byte a byte** al
+baseline commiteado (5460 bytes, sin drift).
 
 ## F2.2–F2.4 Fundación, grants/RLS y CI
 
@@ -28,14 +34,15 @@ Rama: `feature/fase2-plataforma-supabase`. Alcance vigente: `docs/fase-2/platafo
   política SELECT deliberadamente debilitada. Paridad PG17, `db reset` CLI y servicios
   Auth/REST/Storage requieren Docker (ausente aquí) y quedan para el stack de CI.
 - Tipos `supabase/database.types.ts`: **generación real** con
-  `supabase gen types typescript --project-id hgpemicaeriizllgaezj --schema api`
-  (CLI 2.117.0, solo lectura). Sin refs del proyecto, marcas de tiempo ni esquema `private`.
+  `supabase gen types typescript --project-id <ref> --schema api`
+  (CLI 2.117.0, solo lectura), reproducida contra ArkyDB-US con resultado **idéntico** al baseline
+  que se había generado contra ArkyDB — la paridad entre ambos proyectos queda demostrada. Sin refs
+  del proyecto, marcas de tiempo ni esquema `private`.
   `scripts/supabase/types.sh` rechaza sustitutos escritos a mano y la línea base ausente.
-- Despliegue controlado al PoC: `supabase db push --linked --project-ref hgpemicaeriizllgaezj --dry-run`
-  mostró solo `20260912001855_platform_foundation.sql` (sin seeds/roles); el push aplicó **solo**
-  esa migración. Verificación posterior por catálogo: `api.platform_probes` y
-  `private.audit_events` con `rowsecurity`, 4 políticas de propietario, grants solo a
-  `authenticated` (más `postgres`), **ninguno a `anon`**.
+- Despliegue controlado: `db push --dry-run` mostró solo `20260912001855_platform_foundation.sql`
+  (sin seeds/roles) y el push aplicó **solo** esa migración, primero a ArkyDB y después al proyecto
+  de EE. UU. Verificación por catálogo en ambos: `rowsecurity` activo, 4 políticas de propietario,
+  grants solo a `authenticated` (más `postgres`), **ninguno a `anon`**.
 - `.github/workflows/supabase.yml`: stack local efímero, reset, pgTAP, lint, advisors, drift de
   tipos y segunda reconstrucción; sin `pull_request_target`, sin refs remotas, sin secrets,
   sin despliegue. Escrito, no ejecutado aquí (requiere GitHub Actions con Docker).
