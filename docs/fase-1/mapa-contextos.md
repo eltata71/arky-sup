@@ -234,11 +234,11 @@ interface ArtifactPort {
 2. **SSO/MFA — RESUELTA: simple.** Email/contraseña + Google, como hoy. Sin MFA y sin SSO corporativo (SAML/OIDC) en la PoC.
 3. **Residencia de datos — RESUELTA: Estados Unidos.** Proyecto Supabase **`ArkyDB-US` (`btbhkmckrazoayaoorys`) en `us-east-1`**, creado el 2026-09-12. El proyecto anterior en `ca-central-1` se conserva intacto hasta verificar el nuevo y ya no es destino de trabajo.
 4. **Clasificación de información — RESUELTA: opción B**, PII de terceros (personas nombradas por la aseguradora), **sin datos de salud**. No exige HIPAA/BAA, pero sí régimen de protección de datos: acceso mínimo, retención definida, control de exportaciones y logs sin contenido sensible. La PoC sigue sin datos reales durante las pruebas.
-5. **Contratos de integración**: pendiente (§7.1).
+5. **Contratos de integración — RESUELTA: integración bidireccional (entrada y salida) con `ardoqq` (gestión de arquitectura), Box (gestión documental) y Confluence (documentación).** Detalle de diseño y fases en **ADR-008**.
 
 ### 7.1 Pendientes todavía
 
-- **Integraciones**: ¿qué sistemas externos consumen/producen datos (ERP, CRM, core de seguros)? Define *Open Host Service* o *Anti-Corruption Layer* adicionales. **Es la única decisión de diseño de F1 que sigue abierta.**
+Ninguna decisión de diseño de F1 queda abierta. Las cinco están resueltas (2026-09-12).
 
 ## 8. Métricas de acoplamiento (para seguimiento en F3/F5)
 

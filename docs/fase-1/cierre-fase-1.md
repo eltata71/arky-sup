@@ -27,9 +27,19 @@ Fecha de cierre técnico: 2026-09-12. Sin cambios de código productivo; solo `d
 
 ## 3. Pendientes externos (no bloquean F2/F3 documental)
 
-1. **P-03, P-04 y P-05 del cierre F0** siguen vigentes: CI/hosting, E2E webkit en CI y decisiones de tenencia/SSO-MFA/residencia/presupuesto (`docs/fase-1/mapa-contextos.md` §7 los detalla para F1). **P-01 y P-02 quedaron aprobados el 2026-09-12.**
+1. **P-03, P-04 y P-05 del cierre F0** siguen vigentes: CI/hosting, E2E webkit en CI y decisiones de tenencia/SSO-MFA/residencia/presupuesto. **P-01 y P-02 quedaron aprobados el 2026-09-12.**
 2. **CLAUDE.md § frontend-first**: añadir la misma nota de transición que `AGENTS.md` cuando el usuario lo apruebe.
 3. **ADR-006 hosting: decidido — Vercel se mantiene** (decisión del usuario, 2026-09-12).
+
+## 3.1 Decisiones de diseño cerradas (2026-09-12)
+
+Las cinco decisiones del §7 de `mapa-contextos.md` quedaron resueltas:
+
+1. **Multitenencia**: una sola organización (sin `organizationId`).
+2. **SSO/MFA**: simple — email/contraseña + Google, sin MFA ni SSO.
+3. **Residencia**: Estados Unidos; proyecto `ArkyDB-US` (`btbhkmkrazoayaoorys`, `us-east-1`).
+4. **Clasificación**: PII de terceros, sin datos de salud.
+5. **Integraciones**: bidireccionales con ardoqq, Box y Confluence (**ADR-008**).
 
 ## 4. Alcance PoC confirmado (retroalimentación del usuario, 2026-09-12)
 

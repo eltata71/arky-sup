@@ -150,3 +150,32 @@ Cada ADR sigue el formato: título, estado, contexto, decisión, consecuencias, 
 - Proveedor intercambiable sin tocar casos de uso.
 
 **Implementación**: F3.1 (puertos IA), F3.6 (kernel canónico), F3.4 (split geminiService).
+
+---
+
+## ADR-008: Integraciones externas — ardoqq, Box y Confluence
+
+**Estado**: Aprobado (decisión del usuario, 2026-09-12)
+
+**Contexto**: El usuario confirma que ARKY deberá integrarse **en ambas vías (entrada y salida)** con tres sistemas: **ardoqq** (gestión de arquitectura), **Box** (gestión documental) y **Confluence** (documentación). Hoy la aplicación es autocontenida; su única salida externa son los proveedores de IA a través del proxy. La PoC es single-tenant, sin SSO/MFA, con PII de terceros y sin datos reales durante las pruebas.
+
+**Decisión**:
+
+1. **Cada integración es un puerto con adaptador (Anti-Corruption Layer).** El contrato vive en `services/ports` (`ExternalSystemPort` por sistema) y el adaptador en `services/adapters`. El dominio nunca importa el modelo del proveedor: si ardoqq llama «application» a lo que el dominio llama «aplicación de negocio», la traducción ocurre en el adaptador y no cruza la frontera.
+2. **Credenciales de integración solo en servidor.** Nunca `VITE_*`. Box y Confluence se invocan desde el backend confiable (Vercel Functions o Edge Functions), no desde el navegador: son sistemas con tokens de larga vida y permisos amplios, y un token en el bundle es un incidente, no un ajuste.
+3. **Correspondencia de identidades externas explícita.** Tabla `integration_links` (sistema, `external_id`, entidad local, dirección, `content_hash`, `updated_at`) con clave única por (sistema, `external_id`). Sin ella, la segunda sincronización duplica y la tercera pierde datos.
+4. **Una fuente de verdad por tipo de dato.** «Ambas vías» no significa que los tres sistemas escriban lo mismo: para cada dato se declara dónde es autoritativo y en qué dirección fluye. Sincronización bidireccional sobre el mismo campo es la receta conocida de conflictos y bucles.
+5. **Fallo aislado.** Una integración caída no bloquea la aplicación ni pierde trabajo local: cada operación remota se registra con estado (pendiente/confirmada/rechazada), reintento acotado y reconciliación explícita. Un borrador no se reporta como publicado.
+6. **Mapeo por sistema (a confirmar con los dueños de cada plataforma):**
+   - **ardoqq** — catálogo de arquitectura (aplicaciones, capacidades, relaciones): entrada para poblar el portafolio, salida para publicar arquitecturas aprobadas.
+   - **Box** — documentos y paquetes: entrada de documentos de referencia, salida de paquetes publicados (solapa con F6, almacenamiento y documentos).
+   - **Confluence** — páginas de estándares y publicación: entrada de normas y lineamientos, salida de artefactos y decisiones aprobadas.
+7. **Secuenciación, no construcción simultánea.** Los contratos se diseñan ahora; la implementación entra por cortes verticales, empezando por **una** dirección de **un** sistema. La salida de publicación (F5) es el primer candidato; Box solapa con F6.
+
+**Consecuencias**:
+- Aparece una capacidad de soporte **integraciones**, con su propio presupuesto de acoplamiento y sus pruebas de contrato (fixtures en loopback, sin llamar a los sistemas reales desde el sandbox).
+- **Tres integraciones bidireccionales completas son un proyecto en sí mismo**, no una tarea de F4. Construirlas todas dentro de la PoC multiplicaría el alcance sin haber validado una sola.
+- Requiere que el usuario aporte, por sistema: URL/base, método de autenticación, permisos concedidos y dueño técnico. Sin eso, la implementación se bloquea honestamente en vez de suponerse.
+- Aumenta la superficie de datos compartidos con terceros, lo que refuerza la decisión de clasificación (PII de terceros): hay que declarar qué campos salen de ARKY y con qué retención.
+
+**Implementación**: contratos y puertos en F4 (diseño); adaptadores por corte en F5 (salida de publicación) y F6 (documentos/Box y Confluence).
