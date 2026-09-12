@@ -50,6 +50,8 @@
     { "name": "services/lucid", "path": "services/lucid", "layer": "domain", "api": "services/lucid/index.ts" },
     { "name": "services/memory", "path": "services/memory", "layer": "domain", "api": "services/memory/index.ts" },
     { "name": "services/observability", "path": "services/observability", "layer": "domain", "api": "services/observability/index.ts" },
+    { "name": "services/ports", "path": "services/ports", "layer": "domain", "api": "services/ports/index.ts" },
+    { "name": "services/adapters", "path": "services/adapters", "layer": "domain", "api": "services/adapters/index.ts" },
     { "name": "services/persistence", "path": "services/persistence", "layer": "domain", "api": "services/persistence/index.ts" },
     { "name": "services/portfolioGraph", "path": "services/portfolioGraph", "layer": "domain", "api": "services/portfolioGraph/index.ts" },
     { "name": "services/presentation", "path": "services/presentation", "layer": "domain", "api": "services/presentation/index.ts" },

@@ -116,7 +116,7 @@ export const DEEP_IMPORT_BUDGET = {
   'components -> services/agent': 2,
   'components -> services/ai': 3,
   'components -> services/architectureOffice': 44,
-  'components -> services/artifacts': 16,
+  'components -> services/artifacts': 14,
   'components -> services/businessInitiatives': 16,
   'components -> services/chat': 1,
   'components -> services/diagram': 20,

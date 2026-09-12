@@ -65,3 +65,23 @@ export {
   type ArtifactFactoryOptions,
   type NewArtifactDraft,
 } from './artifactFactory';
+
+/**
+ * Compilación de presentaciones y sus flags (F3.3).
+ *
+ * `PublicationCenter` los importaba por ruta profunda; entrar por el barril
+ * es lo que la regla de API pública exige a todo código perezoso (la ruta de
+ * publicación no está en el arranque). Solo se publican la función de
+ * compilación, su caché y los flags: los compiladores parciales
+ * (markdown/diagram/hybrid) siguen internos.
+ */
+export {
+  clearArtifactPresentationCache,
+  compileArtifactPresentation,
+  getArtifactPresentationStatus,
+} from './artifactPresentationCompiler';
+export {
+  isPresentationCompilerEnabled,
+  isPresentationExportEnabled,
+  isPublicationViewEnabled,
+} from './artifactPresentationFlags';
