@@ -128,6 +128,93 @@ export type Database = {
         }
         Relationships: []
       }
+      lms_context: {
+        Row: {
+          data: Json
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          data: Json
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lms_courses: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id: string
+          owner_id: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          owner_id?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lms_notes: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lms_progress: {
+        Row: {
+          data: Json
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          data: Json
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       office_arb_decisions: {
         Row: {
           created_at: string
@@ -305,6 +392,7 @@ export type Database = {
         Args: { p_expected_revision: number; p_id: string }
         Returns: undefined
       }
+      delete_course: { Args: { p_course_id: string }; Returns: undefined }
       delete_engagement:
         | {
             Args: { p_engagement_id: string; p_project_id: string }
@@ -318,6 +406,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      delete_note: { Args: { p_note_id: string }; Returns: undefined }
       delete_user_profile: { Args: { target: string }; Returns: undefined }
       list_business_initiatives: {
         Args: never
@@ -343,8 +432,12 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      list_courses: { Args: { p_include_all?: boolean }; Returns: Json }
+      list_notes: { Args: never; Returns: Json }
+      load_context: { Args: never; Returns: Json }
       load_engagements: { Args: { p_project_id: string }; Returns: Json }
       load_knowledge_graph: { Args: { p_project_id: string }; Returns: Json }
+      load_progress: { Args: never; Returns: Json }
       load_project_aggregate: { Args: { p_id: string }; Returns: Json }
       provision_user_profile: {
         Args: { target: string; target_name?: string; target_role: string }
@@ -371,6 +464,24 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "business_initiatives"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_context: { Args: { p_context: Json }; Returns: undefined }
+      save_course: {
+        Args: { p_course: Json; p_expected_revision: number }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lms_courses"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -418,6 +529,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_note: { Args: { p_note: Json }; Returns: undefined }
+      save_progress: { Args: { p_progress: Json }; Returns: undefined }
       save_project_aggregate: {
         Args: {
           p_artifacts: Json
@@ -467,96 +580,6 @@ export type Database = {
         Args: { new_status: string; target: string }
         Returns: undefined
       }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-  private: {
-    Tables: {
-      audit_events: {
-        Row: {
-          actor_id: string
-          entity_id: string
-          id: string
-          occurred_at: string
-          operation: string
-        }
-        Insert: {
-          actor_id: string
-          entity_id: string
-          id?: string
-          occurred_at?: string
-          operation: string
-        }
-        Update: {
-          actor_id?: string
-          entity_id?: string
-          id?: string
-          occurred_at?: string
-          operation?: string
-        }
-        Relationships: []
-      }
-      authorization_audit: {
-        Row: {
-          action: string
-          actor_id: string
-          from_role: string | null
-          id: string
-          occurred_at: string
-          target_id: string
-          to_role: string | null
-        }
-        Insert: {
-          action: string
-          actor_id: string
-          from_role?: string | null
-          id?: string
-          occurred_at?: string
-          target_id: string
-          to_role?: string | null
-        }
-        Update: {
-          action?: string
-          actor_id?: string
-          from_role?: string | null
-          id?: string
-          occurred_at?: string
-          target_id?: string
-          to_role?: string | null
-        }
-        Relationships: []
-      }
-      role_permissions: {
-        Row: {
-          permission: string
-          role: string
-        }
-        Insert: {
-          permission: string
-          role: string
-        }
-        Update: {
-          permission?: string
-          role?: string
-        }
-        Relationships: []
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      assert_role_is_not_self: { Args: { target: string }; Returns: undefined }
-      assert_session_active: { Args: never; Returns: undefined }
-      current_role: { Args: never; Returns: string }
-      current_session_id: { Args: never; Returns: string }
-      has_permission: { Args: { required: string }; Returns: boolean }
-      is_session_active: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -686,9 +709,6 @@ export type CompositeTypes<
 
 export const Constants = {
   api: {
-    Enums: {},
-  },
-  private: {
     Enums: {},
   },
 } as const
