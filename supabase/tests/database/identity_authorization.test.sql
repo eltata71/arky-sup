@@ -73,9 +73,17 @@ insert into api.user_profiles (id, role, status) values
   ('30000000-0000-4000-8000-000000000004', 'viewer', 'active'),
   ('30000000-0000-4000-8000-000000000005', 'admin', 'disabled');
 
+-- Sesiones vivas para los actores. Revocar = borrar la fila (contrato de
+-- Supabase Auth); no existe columna `revoked` que alguien pudiera olvidar.
+insert into auth.sessions (id, user_id, not_after) values
+  ('50000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', null),
+  ('50000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000002', null),
+  ('50000000-0000-4000-8000-000000000004', '30000000-0000-4000-8000-000000000004', null),
+  ('50000000-0000-4000-8000-000000000005', '30000000-0000-4000-8000-000000000005', null);
+
 /* --------------------------------------------------- un observador (viewer) */
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000004","role":"authenticated"}';
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000004","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000004"}';
 select results_eq($$select id from api.user_profiles$$,
   array['30000000-0000-4000-8000-000000000004'::uuid],
   'Un observador solo ve su propio perfil');
@@ -94,7 +102,7 @@ reset role;
 
 /* ------------------------------------------------------- cuenta deshabilitada */
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000005","role":"authenticated"}';
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000005","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000005"}';
 select is((select count(*)::int from api.user_profiles), 0,
   'Una cuenta deshabilitada no ve su propio perfil');
 select is((select 'users:read' in (select * from api.current_permissions())), false,
@@ -105,7 +113,7 @@ reset role;
 
 /* ---------------------------------------------------------------- el admin */
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000002","role":"authenticated"}';
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000002","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000002"}';
 select is((select count(*)::int from api.user_profiles), 5,
   'Un administrador ve el directorio completo');
 select lives_ok($$select api.set_user_role('30000000-0000-4000-8000-000000000003', 'reviewer')$$,
@@ -126,7 +134,7 @@ reset role;
 
 /* ------------------------------------------------------------ el superadmin */
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000001","role":"authenticated"}';
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000001"}';
 select lives_ok($$select api.set_user_role('30000000-0000-4000-8000-000000000003', 'admin')$$,
   'Un superadministrador sí concede roles administrativos');
 select lives_ok($$select api.set_user_status('30000000-0000-4000-8000-000000000004', 'disabled')$$,
@@ -135,6 +143,49 @@ select throws_ok($$select api.provision_user_profile('30000000-0000-4000-8000-00
   '23505', 'El perfil ya existe',
   'No se re-provisiona un perfil existente');
 reset role;
+
+/* ------------------------------------------------------- sesión (F4.6) */
+select ok(not has_function_privilege('authenticated', 'private.assert_session_active()', 'EXECUTE'),
+  'La guarda de sesión no es un RPC');
+select ok(not has_function_privilege('authenticated', 'private.is_session_active()', 'EXECUTE'),
+  'El cliente no consulta el estado de sesión directamente');
+
+-- Revocar una sesión en Supabase Auth es BORRAR la fila.
+delete from auth.sessions where id = '50000000-0000-4000-8000-000000000002';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000002","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000002"}';
+select throws_ok($$select api.set_user_role('30000000-0000-4000-8000-000000000003', 'trainer')$$,
+  '42501', 'La sesión no está activa: vuelva a iniciar sesión',
+  'Una sesión revocada no cambia roles');
+reset role;
+
+-- Token sin session_id: no se sustituye por el uid.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000001","role":"authenticated"}';
+select throws_ok($$select api.set_user_role('30000000-0000-4000-8000-000000000003', 'trainer')$$,
+  '42501', 'La sesión no está activa: vuelva a iniciar sesión',
+  'Un token sin session_id no ejecuta operaciones sensibles');
+reset role;
+
+-- Sesión viva, pero de OTRO usuario.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000004"}';
+select throws_ok($$select api.set_user_role('30000000-0000-4000-8000-000000000003', 'trainer')$$,
+  '42501', 'La sesión no está activa: vuelva a iniciar sesión',
+  'La sesión de otro usuario no sirve');
+reset role;
+
+-- Fecha techo pasada.
+update auth.sessions set not_after = now() - interval '1 minute'
+  where id = '50000000-0000-4000-8000-000000000001';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000001"}';
+select throws_ok($$select api.set_user_role('30000000-0000-4000-8000-000000000003', 'trainer')$$,
+  '42501', 'La sesión no está activa: vuelva a iniciar sesión',
+  'Una sesión pasada de su fecha techo no sirve');
+reset role;
+update auth.sessions set not_after = null
+  where id = '50000000-0000-4000-8000-000000000001';
 
 /* ---------------------------------------------------------------- auditoría */
 select is((select count(*)::int from private.authorization_audit), 3,
@@ -151,7 +202,7 @@ select is((select count(*)::int from private.authorization_audit
 
 /* ------------------------------------------------------- mutación rechazada */
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000001","role":"authenticated"}';
+set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"50000000-0000-4000-8000-000000000001"}';
 select throws_ok($$update api.user_profiles set role = 'viewer'
   where id = '30000000-0000-4000-8000-000000000003'$$,
   '42501', NULL,

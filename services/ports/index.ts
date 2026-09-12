@@ -6,11 +6,13 @@
  * React, Firebase o Supabase.
  */
 export type {
+  AuthSession,
   ClockPort,
   FileStoragePort,
+  IdentityFailureReason,
   IdentityPort,
   RepositoryPort,
   StoredFile,
 } from './ports';
-export { BackendUnavailableError, SystemClock } from './ports';
+export { BackendUnavailableError, IdentityError, isSessionUsable, SystemClock } from './ports';
 export { ManualClock, MemoryFileStorage, MemoryRepository } from './memory';

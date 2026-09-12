@@ -95,6 +95,13 @@ Cada ADR sigue el formato: título, estado, contexto, decisión, consecuencias, 
 
 **Implementación**: F2.1 (decisión managed vs self-hosted), F4.1–F4.6.
 
+**Estado de implementación (F4, 2026-09-12)**:
+- **Hecho**: adaptador `IdentityPort` para Supabase Auth con sesión y vencimiento explícitos (`services/adapters/supabaseIdentityAdapter.ts`); matriz de roles/permisos como datos con RLS y RPC auditadas; **revocación real** — `private.is_session_active()` exige que la sesión del token exista en `auth.sessions` y pertenezca al usuario, y las operaciones sensibles la comprueban. Verificado contra el PostgreSQL 17 del proyecto (23 casos, incluidos sesión revocada, token sin `session_id`, sesión ajena y fecha techo pasada).
+- **Pendiente**: creación de usuarios de Auth (`auth.admin.createUser`) en Edge Function con clave de servicio; cableado del adaptador en `context/AuthContext` durante el corte vertical; `user_identity_map` y la exportación de Firebase, que dependen de F5.
+- **Descartado en la PoC por decisión del usuario**: MFA y SSO corporativo. No hay tabla de membresías: single-tenant.
+
+**Corrección de la verificación**: la revocación en Supabase Auth **borra la fila** de `auth.sessions`; no existe columna `revoked`. La guarda se escribió después de comprobarlo en el catálogo real, no sobre la suposición contraria.
+
 ---
 
 ## ADR-005: Migración progresiva por cortes verticales
