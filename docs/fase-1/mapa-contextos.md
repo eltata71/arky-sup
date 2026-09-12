@@ -228,13 +228,19 @@ interface ArtifactPort {
 
 **Implementación**: *outbox pattern* en la misma transacción que la escritura del agregado; idempotencia por `eventId`; reintentos con backoff; dead-letter para fallos permanentes. No CQRS completo ni event sourcing.
 
-## 7. Decisiones pendientes (requieren validación con la oficina)
+## 7. Decisiones de diseño (resueltas 2026-09-12)
 
-1. **Multitenencia**: ¿Una sola organización (aseguradora) o varias filiales/países con aislamiento de datos? Hoy el modelo es *single-tenant* lógico; si hay multitenencia, añadir `organizationId`/`tenantId` a todas las claves y RLS.
-2. **SSO/MFA**: ¿Corporativo (SAML/OIDC) o solo email/Google? Afecta `IdentityPort` y `userProvisioningService`.
-3. **Residencia de datos**: ¿Región única (EE. UU.) o por jurisdicción (LatAm/Caribe)? Afecta elección de región Supabase y buckets Storage.
-4. **Clasificación de información**: ¿La app maneja PHI/PII regulado? Determina BAA, cifrado en reposo, logging, retención.
-5. **Contratos de integración**: ¿Qué sistemas externos consumen/producen datos (ERP, CRM, core de seguros)? Define *Open Host Service* o *Anti-Corruption Layer* adicionales.
+1. **Multitenencia — RESUELTA: una sola organización (opción simple).** No se añade `organizationId`/`tenantId`. RLS por usuario, rol y alcance de proyecto. El modelo sigue siendo *single-tenant*; la dimensión de organización no se prepara en esta PoC.
+2. **SSO/MFA — RESUELTA: simple.** Email/contraseña + Google, como hoy. Sin MFA y sin SSO corporativo (SAML/OIDC) en la PoC.
+3. **Residencia de datos**: pendiente (ver §7.1 abajo).
+4. **Clasificación de información**: pendiente (§7.1).
+5. **Contratos de integración**: pendiente (§7.1).
+
+### 7.1 Pendientes todavía
+
+- **Residencia**: ¿región única (EE. UU.) o por jurisdicción (LatAm/Caribe)? Hoy el proyecto existente está en `ca-central-1`. Afecta elección de región Supabase y buckets Storage.
+- **Clasificación**: ¿la app maneja PHI/PII regulado? Determina BAA, cifrado en reposo, logging, retención.
+- **Integraciones**: ¿qué sistemas externos consumen/producen datos (ERP, CRM, core de seguros)? Define *Open Host Service* o *Anti-Corruption Layer* adicionales.
 
 ## 8. Métricas de acoplamiento (para seguimiento en F3/F5)
 

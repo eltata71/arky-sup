@@ -81,16 +81,17 @@ Cada ADR sigue el formato: título, estado, contexto, decisión, consecuencias, 
 **Contexto**: Migración desde Firebase Auth. Usuarios existentes con Firebase UID, roles en `user_profiles.role`, claims personalizados. Supabase Auth usa `auth.users` (PostgreSQL) + JWT estándar.
 
 **Decisión**:
-1. **Proveedor único**: Supabase Auth (email/password, Google OAuth, SSO/MFA futuro). Sin convivencia Firebase+Supabase en producción.
-2. **Migración de usuarios**: Exportar de Firebase → importar a Supabase (`supabase-community/firebase-to-supabase`). Preservar `uid` **solo si** es UUID v4 estándar; si no, mapear `firebase_uid → supabase_uuid` en tabla `user_identity_map` y reescribir FKs en migración de datos.
-3. **Roles/permisos**: En `app_metadata` (no `user_metadata`) + tabla `user_profiles.role` + `user_memberships` para multi-tenencia. RLS/RPC leen de aquí, nunca de `user_metadata`.
+1. **Proveedor único**: Supabase Auth (email/contraseña + Google OAuth). **Sin MFA y sin SSO corporativo en la PoC** (decisión del usuario, 2026-09-12: modelo simple). Sin convivencia Firebase+Supabase en producción.
+2. **Migración de usuarios**: Exportar de Firebase → importar a Supabase (`supabase-community/firebase-to-supabase`). Preservar `uid` **solo si** es UUID v4 estándar; si no, mapear `firebase_uid → supabase_uuid` en tabla `user_identity_map` y reescribir FKs en migración de datos. El inventario productivo quedó **aprobado** (P-02, 2026-09-12).
+3. **Roles/permisos**: En `app_metadata` (no `user_metadata`) + tabla `user_profiles.role`. **Sin** tabla de membresías: la PoC es de una sola organización (decisión 2026-09-12). RLS/RPC leen de aquí, nunca de `user_metadata`.
 4. **Sesiones**: JWT corto (15-30 min) + refresh token rotativo. Revocación real via `auth.sessions` (validar `session_id` en operaciones sensibles).
 5. **Bootstrap superadmin**: Un solo script admin una vez (`supabase.auth.admin.createUser` + perfil `superadmin`); sin auto-provisión "primer usuario".
 
 **Consecuencias**:
 - No hay promesa de continuidad de contraseña ni sesiones sin prueba.
-- Requiere acceso autorizado a Firebase para exportación (F0.5 pendiente).
+- La exportación de usuarios de Firebase quedó habilitada por la aprobación del inventario productivo (P-02, 2026-09-12).
 - `deleteUser` en Firebase solo borraba perfil; en Supabase RPC `delete_user_profile` borra perfil + invoca `supabase.auth.admin.deleteUser` (service role) en misma transacción lógica.
+- Al ser single-tenant y sin MFA, el modelo de identidad queda reducido a: `auth.users` + `user_profiles.role` + permisos por alcance de proyecto. Si en el futuro se exige SSO o MFA, se añaden sobre este mismo proveedor sin cambiar el puerto.
 
 **Implementación**: F2.1 (decisión managed vs self-hosted), F4.1–F4.6.
 
