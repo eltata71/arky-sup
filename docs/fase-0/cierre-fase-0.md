@@ -1,8 +1,9 @@
-# Fase 0 — Cierre: línea base verificada, con dos pendientes externos
+# Fase 0 — Cierre: línea base verificada, con cinco pendientes externos
 
 Base: `8731fcdd9af7a5ee57eaaf3049b162ef722e55d7`.
-Fecha de cierre técnico: 2026-09-11. Rama de trabajo: main (documentación sin
-commit en este acto; ver §4).
+Fecha de cierre técnico: 2026-09-11. Rama de trabajo: `main`; entregables
+commiteados en `e579da5` (solo documentación y evidencias, sin push).
+Doble chequeo de cierre: 2026-09-12 (ver `docs/fase-3/doble-chequeo-fases-0-3.md`).
 
 ## 1. Estado por tarea
 
@@ -36,7 +37,7 @@ commit en este acto; ver §4).
 2. **P-02 Inventario productivo** (F0.5): acceso autorizado a colecciones,
    volúmenes, archivos, identidades y offline real.
 3. **P-03 CI/hosting**: lectura de ejecuciones, protección de ramas y
-   configuração de secretos por mecanismos seguros.
+   configuración de secretos por mecanismos seguros.
 4. **P-04 E2E webkit**: corre en CI; en este sandbox falta `sudo`
    (`pruebas-integracion.md` §3).
 5. **P-05 Decisiones F1**: responsables, tenencia, SSO/MFA, residencia y
