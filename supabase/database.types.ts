@@ -101,6 +101,63 @@ export type Database = {
         }
         Relationships: []
       }
+      office_arb_decisions: {
+        Row: {
+          created_at: string
+          data: Json
+          engagement_id: string
+          id: string
+          owner_id: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          engagement_id: string
+          id: string
+          owner_id: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          engagement_id?: string
+          id?: string
+          owner_id?: string
+          project_id?: string
+        }
+        Relationships: []
+      }
+      office_engagements: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          owner_id?: string
+          project_id?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_probes: {
         Row: {
           created_at: string
@@ -221,6 +278,19 @@ export type Database = {
         Args: { p_expected_revision: number; p_id: string }
         Returns: undefined
       }
+      delete_engagement:
+        | {
+            Args: { p_engagement_id: string; p_project_id: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_engagement_id: string
+              p_expected_revision: number
+              p_project_id: string
+            }
+            Returns: undefined
+          }
       delete_user_profile: { Args: { target: string }; Returns: undefined }
       list_business_initiatives: {
         Args: never
@@ -246,11 +316,13 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      load_engagements: { Args: { p_project_id: string }; Returns: Json }
       load_project_aggregate: { Args: { p_id: string }; Returns: Json }
       provision_user_profile: {
         Args: { target: string; target_name?: string; target_role: string }
         Returns: undefined
       }
+      record_arb_decision: { Args: { p_decision: Json }; Returns: undefined }
       save_business_initiative: {
         Args: { p_expected_revision: number; p_initiative: Json }
         Returns: {
@@ -271,6 +343,28 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "business_initiatives"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_engagement: {
+        Args: {
+          p_engagement: Json
+          p_expected_revision: number
+          p_project_id: string
+        }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "office_engagements"
           isOneToOne: true
           isSetofReturn: false
         }
