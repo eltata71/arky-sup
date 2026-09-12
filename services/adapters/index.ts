@@ -13,7 +13,12 @@ export type { BackendKind, BackendResolution } from './backendSelection';
 export { DEFAULT_BACKEND, isBackendHonored, resolveBackend } from './backendSelection';
 export { firebaseIdentityAdapter } from './firebaseIdentityAdapter';
 export { loadIdentityPort, resolveIdentityBackend } from './identityBackend';
-export { isSupabaseDataBackendConfigured, requireSupabaseDataBackend } from './supabaseDataBackend';
+export {
+  isSupabaseDataBackendConfigured,
+  loadSupabaseDataClient,
+  requireSupabaseDataBackend,
+  type SupabaseDataClientLike,
+} from './supabaseDataBackend';
 export {
   classifySupabaseAuthError,
   createSupabaseIdentityAdapter,

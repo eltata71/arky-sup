@@ -62,6 +62,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          revision: number
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          revision?: number
+          settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          revision?: number
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -72,6 +96,22 @@ export type Database = {
       provision_user_profile: {
         Args: { target: string; target_name?: string; target_role: string }
         Returns: undefined
+      }
+      save_user_settings: {
+        Args: { p_expected_revision: number; p_settings: Json }
+        Returns: {
+          created_at: string
+          id: string
+          revision: number
+          settings: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       set_user_role: {
         Args: { new_role: string; target: string }

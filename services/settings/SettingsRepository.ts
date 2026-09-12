@@ -30,6 +30,8 @@ import {
 } from '../persistence';
 import type { PersistenceResult } from '../persistence';
 import { MemoryCache } from '../../utils';
+import { createSupabaseSettingsRepository } from './SupabaseSettingsRepository';
+import { loadSupabaseDataClient, resolveBackend } from '../adapters';
 
 const SETTINGS_TTL_MS = 30 * 60 * 1000;
 
@@ -44,7 +46,7 @@ export interface SettingsRepository {
   clearCache(): void;
 }
 
-export const settingsRepository: SettingsRepository = {
+export const firebaseSettingsRepository: SettingsRepository = {
   async load(userId) {
     const cached = cache.get<Settings>(cacheKey(userId), SETTINGS_TTL_MS);
     if (cached) return cached;
@@ -79,5 +81,57 @@ export const settingsRepository: SettingsRepository = {
 
   clearCache() {
     cache.clear();
+  },
+};
+
+/**
+ * Corte F5: `settings` puede usar Supabase sin cambiar los demás contextos.
+ *
+ * Sin uid no hay fila con propietario, por lo que el documento global histórico
+ * sigue en Firebase/local. No hay lectura dual para una sesión autenticada:
+ * una vez activada la bandera, Supabase es la fuente única de este conjunto.
+ */
+const runtimeEnv = (): Record<string, string | undefined> => import.meta.env as Record<string, string | undefined>;
+
+export const settingsRepository: SettingsRepository = {
+  async load(userId) {
+    const env = runtimeEnv();
+    if (userId && resolveBackend(env, 'settings').backend === 'supabase') {
+      try {
+        const repository = createSupabaseSettingsRepository(
+          await loadSupabaseDataClient(env) as unknown as Parameters<typeof createSupabaseSettingsRepository>[0],
+        );
+        return await repository.load(userId);
+      } catch (error) {
+        observabilityService.reportError(error, {
+          source: 'operation',
+          title: 'No se pudieron cargar settings desde Supabase',
+          message: 'La lectura de configuración Supabase falló. Se intentará caché local si existe.',
+          operationName: 'loadUserSettings',
+          recoverable: true,
+          userVisible: true,
+          metadata: { errorCode: getErrorCode(error) },
+        });
+        return readLocal<Settings>(draftKeyFor(userId));
+      }
+    }
+    return firebaseSettingsRepository.load(userId);
+  },
+
+  async save(settings, userId) {
+    const env = runtimeEnv();
+    if (userId && resolveBackend(env, 'settings').backend === 'supabase') {
+      const repository = createSupabaseSettingsRepository(
+        await loadSupabaseDataClient(env) as unknown as Parameters<typeof createSupabaseSettingsRepository>[0],
+      );
+      const result = await repository.save(settings, userId);
+      if (!isWriteConfirmed(result) && result.status === 'offline') writeLocalDraft(draftKeyFor(userId), settings);
+      return result;
+    }
+    return firebaseSettingsRepository.save(settings, userId);
+  },
+
+  clearCache() {
+    firebaseSettingsRepository.clearCache();
   },
 };

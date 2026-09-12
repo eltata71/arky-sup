@@ -11,6 +11,7 @@ import {
   classifySupabaseAuthError,
   createSupabaseIdentityAdapter,
   loadSupabaseAuthClient,
+  loadSupabaseDataClient,
   loadIdentityPort,
   resetSupabaseAuthClientCache,
   sessionIdFromAccessToken,
@@ -187,6 +188,7 @@ describe('carga del cliente y selección de backend', () => {
   it('sin configuración no se construye un cliente a medias', async () => {
     resetSupabaseAuthClientCache();
     await expect(loadSupabaseAuthClient({})).rejects.toBeInstanceOf(BackendUnavailableError);
+    await expect(loadSupabaseDataClient({})).rejects.toBeInstanceOf(BackendUnavailableError);
   });
 
   it('el backend por defecto es Firebase y `memory` no sirve identidad', async () => {

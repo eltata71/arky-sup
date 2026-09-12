@@ -216,6 +216,34 @@ do $$ declare m text; begin
   insert into probe_results values ('18 anónimo no lee permisos', m);
 end $$;
 
+-- Caso 19: el piloto de preferencias solo escribe mediante RPC, con revisión.
+do $$ declare revision bigint; begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"40000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"60000000-0000-4000-8000-000000000001"}', true);
+  select (api.save_user_settings('{"theme":"dark","language":"es"}', 0)).revision into revision;
+  reset role;
+  insert into probe_results values ('19 preferencias crea revisión uno', case when revision = 1 then 'OK' else 'FALLO' end);
+end $$;
+
+do $$ declare m text; begin
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claims', '{"sub":"40000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"60000000-0000-4000-8000-000000000001"}', true);
+    perform api.save_user_settings('{"theme":"light"}', 0);
+    reset role;
+    m := 'FALLO: permitido';
+  exception when others then m := case when sqlstate = 'P0001' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
+  insert into probe_results values ('19b preferencias rechaza revisión obsoleta', m);
+end $$;
+
+do $$ declare n int; begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"40000000-0000-4000-8000-000000000004","role":"authenticated","session_id":"60000000-0000-4000-8000-000000000004"}', true);
+  select count(*) into n from api.user_settings;
+  reset role;
+  insert into probe_results values ('19c preferencias no se leen entre usuarios', case when n = 0 then 'OK' else 'FALLO: ' || n end);
+end $$;
+
 -- Caso 20: sesión revocada (en Supabase Auth, borrar la fila).
 delete from auth.sessions where id = '60000000-0000-4000-8000-000000000002';
 do $$ declare m text; begin

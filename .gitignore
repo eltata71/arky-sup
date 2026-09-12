@@ -16,6 +16,10 @@ coverage/
 dist-ssr
 *.local
 
+# Bytecode de las herramientas de migración Python.
+__pycache__/
+*.py[cod]
+
 # Playwright / E2E — artifactos de ejecución local (nunca versionar)
 test-results/
 playwright-report/
