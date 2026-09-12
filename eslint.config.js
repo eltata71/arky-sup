@@ -30,6 +30,9 @@ export default [
       'postcss.config.cjs',
       // Vendored types or auto-generated files.
       'env.d.ts',
+      // F0 diagnostic evidence: frozen local probes/fixtures, not shipped code.
+      // (f04-local-probes.cjs uses sandboxed require/Node globals by design.)
+      'docs/fase-0/evidencias/**',
     ],
   },
 

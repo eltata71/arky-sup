@@ -1,0 +1,64 @@
+name: Supabase local contracts
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'scripts/supabase/**'
+      - '.github/workflows/supabase.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'scripts/supabase/**'
+      - '.github/workflows/supabase.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+# No pull_request_target, remote project ref, environment, deployment, or secrets.
+# The PoC has ONE existing managed project; these containers are disposable tests.
+permissions:
+  contents: read
+concurrency:
+  group: supabase-local-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned CLI
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1
+        with:
+          version: 2.117.0
+      - name: Start isolated local stack
+        run: bash scripts/supabase/local.sh start
+      - name: Rebuild from migrations and synthetic seed
+        run: bash scripts/supabase/local.sh reset
+      - name: Positive and negative pgTAP contracts
+        run: bash scripts/supabase/local.sh test
+      - name: SQL function lint (warnings fail)
+        run: bash scripts/supabase/local.sh lint
+      - name: Security advisors
+        run: bash scripts/supabase/local.sh advisors
+      - name: Reject generated API type drift (missing baseline also fails)
+        run: bash scripts/supabase/local.sh types-check
+      - name: Reconstruct again and repeat contracts and drift check
+        run: |
+          bash scripts/supabase/local.sh reset
+          bash scripts/supabase/local.sh test
+          bash scripts/supabase/local.sh types-check
+      - name: Dispose local data
+        if: always()
+        run: bash scripts/supabase/local.sh stop
+
+# Intentionally no deploy job, including workflow_dispatch. Applying reviewed
+# migrations to the existing remote PoC requires a separate human operation;
+# never use db reset --linked, include-seed, or remote credentials in this CI.
