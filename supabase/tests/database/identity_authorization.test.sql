@@ -56,13 +56,15 @@ select ok((select prosecdef and proconfig = array['search_path=""'] from pg_proc
 
 /* ------------------------------------------------------------ escenario */
 truncate api.user_profiles, private.authorization_audit;
-delete from auth.users;
+-- Solo los usuarios de esta prueba: `auth.users` también contiene las fixtures
+-- de la migración de fundación, y borrarlas violaría la FK de `platform_probes`.
 insert into auth.users (id, email) values
   ('30000000-0000-4000-8000-000000000001', 'super@example.invalid'),
   ('30000000-0000-4000-8000-000000000002', 'admin@example.invalid'),
   ('30000000-0000-4000-8000-000000000003', 'arch@example.invalid'),
   ('30000000-0000-4000-8000-000000000004', 'viewer@example.invalid'),
-  ('30000000-0000-4000-8000-000000000005', 'disabled@example.invalid');
+  ('30000000-0000-4000-8000-000000000005', 'disabled@example.invalid')
+on conflict (id) do nothing;
 
 insert into api.user_profiles (id, role, status) values
   ('30000000-0000-4000-8000-000000000001', 'superadmin', 'active'),
@@ -77,8 +79,8 @@ set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000004","r
 select results_eq($$select id from api.user_profiles$$,
   array['30000000-0000-4000-8000-000000000004'::uuid],
   'Un observador solo ve su propio perfil');
-select is((select exists (select 1 from api.current_permissions())), false,
-  'Un observador sin perfil de directorio no obtiene permisos de más');
+select is((select 'users:read' in (select * from api.current_permissions())), false,
+  'Un observador no tiene el permiso de directorio');
 select is((select 'portfolio:read' in (select * from api.current_permissions())), true,
   'Un observador sí lee el portafolio');
 select throws_ok($$select api.set_user_role('30000000-0000-4000-8000-000000000003', 'admin')$$,
@@ -96,7 +98,7 @@ set local request.jwt.claims = '{"sub":"30000000-0000-4000-8000-000000000005","r
 select is((select count(*)::int from api.user_profiles), 0,
   'Una cuenta deshabilitada no ve su propio perfil');
 select is((select 'users:read' in (select * from api.current_permissions())), false,
-  'Un observador no tiene permiso de directorio');
+  'Una cuenta deshabilitada no tiene el permiso de directorio');
 select is((select count(*)::int from api.current_permissions()), 0,
   'Una cuenta deshabilitada no obtiene ningún permiso (falla cerrado)');
 reset role;

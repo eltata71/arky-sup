@@ -44,7 +44,15 @@ single-tenant, sin MFA y sin SSO.
 
 ## Verificación
 
-### Sonda funcional contra el PostgreSQL 17 real (19/19, cero fallos)
+### Arnés SQL local (PostgreSQL 16.15, dos reconstrucciones limpias)
+
+`python3 scripts/supabase/test-native.py` — **45/45 aserciones** de
+`identity_authorization.test.sql` y **41/41** de `platform_foundation.test.sql`,
+en dos reconstrucciones desde cero, con `plpgsql_check` sin hallazgos y la
+detección de política debilitada verificada. Cada iteración comprueba además que
+repetir el seed no duplica sondas ni auditoría.
+
+### Sonda funcional contra el PostgreSQL 17 real del proyecto (19/19, cero fallos)
 
 `scripts/supabase/authz-remote-probe.sql` — se ejecuta dentro de una transacción
 que **revierte**, de modo que no deja usuarios, perfiles ni auditoría. Casos
@@ -53,7 +61,8 @@ no se auto-provisiona), cuenta deshabilitada (sin filas ni permisos), `admin`
 (ve el directorio, cambia roles no privilegiados, **no** concede `admin`, no se
 cambia el suyo), `superadmin` (concede `admin`, no puede por `UPDATE` directo,
 sí edita su nombre), borrado directo cerrado, rol inventado, `anon` sin acceso, y
-auditoría con el número exacto de entradas.
+auditoría con el número exacto de entradas. **Dos plataformas, dos versiones de
+PostgreSQL: los mismos invariantes se cumplen en ambas.**
 
 ### Catálogo (consultado tras aplicar)
 
@@ -81,14 +90,25 @@ con `SELECT` y `UPDATE` **solo** de `display_name`.
 
 ## Pendiente y bloqueado
 
-- **Arnés SQL local (`scripts/supabase/test-native.py`)**: bloqueado por
-  expiración del aviso de aprobación en este entorno. Las pruebas pgTAP
-  (`identity_authorization.test.sql`) están escritas y sus semánticas
-  corregidas, pero **no se han ejecutado localmente**; la verificación real se
-  hizo contra el PostgreSQL 17 remoto con la sonda de 19 casos.
-- **`FORCE RLS` en `api.user_profiles`** no es posible sin recursión en la
-  política; se documenta en la migración y se compensa con privilegios.
 - **F4.1 y F4.6** siguen abiertos: adaptador de identidad en TypeScript y
   semántica de sesión/revocación.
+- **`FORCE RLS` en `api.user_profiles`** no es posible sin recursión en la
+  política; se documenta en la migración y se compensa con privilegios.
 - **Exposición de esquemas en el Data API remoto**: `config.toml` solo gobierna
   el entorno local; confirmar en el dashboard qué esquemas están expuestos.
+- **Docker ausente**: el arnés nativo no sustituye la paridad PG17 vía CLI, el
+  `db reset` de la CLI ni los servicios Auth/REST/Storage, que siguen
+  correspondiendo al workflow de CI.
+
+## Correcciones que produjo la verificación
+
+1. La prueba de paridad no leía `users:grant-privileged` (expresión regular sin
+   guion), y esa omisión aparecía como un permiso ausente en SQL.
+2. El archivo pgTAP llamaba `private.has_permission(...)` desde el cliente: en la
+   plataforma eso **falla** con `42501`. Se añadió `api.current_permissions()`.
+3. Una aserción afirmaba que un observador tiene **cero** permisos, cuando tiene
+   los suyos. Se corrigió a «no tiene el permiso de directorio».
+4. El borrado de `auth.users` en la prueba chocaba con la FK de `platform_probes`;
+   ahora solo se tocan las fixtures propias.
+5. El arnés usaba `tests[0]` para su prueba de mutante, y dejó de ser el archivo
+   correcto al añadirse el de autorización.

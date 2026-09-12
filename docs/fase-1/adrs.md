@@ -155,7 +155,7 @@ Cada ADR sigue el formato: título, estado, contexto, decisión, consecuencias, 
 
 ## ADR-008: Integraciones externas — ardoqq, Box y Confluence
 
-**Estado**: Aprobado (decisión del usuario, 2026-09-12)
+**Estado**: Aprobado y **DIFERIDO** (decisión del usuario, 2026-09-12: «dejemos lo de las integraciones; para más adelante continúa sin esto»). No se implementa en la PoC actual. El diseño de abajo queda como referencia para cuando se retome; **ninguna tarea de F4, F5 ni F6 debe asumir que existe una integración**.
 
 **Contexto**: El usuario confirma que ARKY deberá integrarse **en ambas vías (entrada y salida)** con tres sistemas: **ardoqq** (gestión de arquitectura), **Box** (gestión documental) y **Confluence** (documentación). Hoy la aplicación es autocontenida; su única salida externa son los proveedores de IA a través del proxy. La PoC es single-tenant, sin SSO/MFA, con PII de terceros y sin datos reales durante las pruebas.
 
