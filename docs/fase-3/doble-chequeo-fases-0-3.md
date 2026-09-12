@@ -76,11 +76,10 @@ Siguen abiertos:
 
 ## Pendiente de registro
 
-Los artefactos de P-01 y P-02 (acta de aceptación, exportación del inventario
-productivo) no están en el repositorio: el registro aquí es la aprobación, no su
-contenido. Si existen como documentos, conviene incorporarlos o referenciarlos
-para que F5/F6 trabajen sobre cifras reales en vez de sobre la inferencia del
-código.
+El usuario confirmó (2026-09-12) que **no existen artefactos separados** de P-01
+y P-02: el registro válido es la aprobación anotada arriba. Cuando se necesiten
+cifras reales de volumen para F5/F6, se pedirán en su momento y no se
+inventarán a partir de la inferencia del código.
 
 ## Correcciones aplicadas en este doble chequeo
 
