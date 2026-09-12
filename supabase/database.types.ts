@@ -14,6 +14,54 @@ export type Database = {
   }
   api: {
     Tables: {
+      business_initiatives: {
+        Row: {
+          code: string
+          created_at: string
+          data: Json
+          horizon: string
+          id: string
+          need: string
+          owner_id: string
+          priority: string
+          revision: number
+          risk_level: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          data: Json
+          horizon: string
+          id: string
+          need: string
+          owner_id: string
+          priority: string
+          revision?: number
+          risk_level: string
+          status: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          data?: Json
+          horizon?: string
+          id?: string
+          need?: string
+          owner_id?: string
+          priority?: string
+          revision?: number
+          risk_level?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_probes: {
         Row: {
           created_at: string
@@ -92,10 +140,62 @@ export type Database = {
     }
     Functions: {
       current_permissions: { Args: never; Returns: string[] }
+      delete_business_initiative: {
+        Args: { p_expected_revision: number; p_id: string }
+        Returns: undefined
+      }
       delete_user_profile: { Args: { target: string }; Returns: undefined }
+      list_business_initiatives: {
+        Args: never
+        Returns: {
+          code: string
+          created_at: string
+          data: Json
+          horizon: string
+          id: string
+          need: string
+          owner_id: string
+          priority: string
+          revision: number
+          risk_level: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "business_initiatives"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       provision_user_profile: {
         Args: { target: string; target_name?: string; target_role: string }
         Returns: undefined
+      }
+      save_business_initiative: {
+        Args: { p_expected_revision: number; p_initiative: Json }
+        Returns: {
+          code: string
+          created_at: string
+          data: Json
+          horizon: string
+          id: string
+          need: string
+          owner_id: string
+          priority: string
+          revision: number
+          risk_level: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "business_initiatives"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       save_user_settings: {
         Args: { p_expected_revision: number; p_settings: Json }

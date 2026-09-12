@@ -24,6 +24,7 @@ insert into api.user_profiles (id, role, status) values
 insert into auth.sessions (id, user_id, not_after) values
   ('60000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', null),
   ('60000000-0000-4000-8000-000000000002', '40000000-0000-4000-8000-000000000002', null),
+  ('60000000-0000-4000-8000-000000000003', '40000000-0000-4000-8000-000000000003', null),
   ('60000000-0000-4000-8000-000000000004', '40000000-0000-4000-8000-000000000004', null),
   ('60000000-0000-4000-8000-000000000005', '40000000-0000-4000-8000-000000000005', null);
 
@@ -95,6 +96,52 @@ do $$ declare n int; r boolean; begin
   reset role;
   insert into probe_results values ('07 deshabilitado: sin filas ni permisos',
     case when n = 0 and r is false then 'OK' else 'FALLO: ' || n || '/' || r end);
+end $$;
+
+-- Caso 7a: el arquitecto conserva un id Firebase textual y escribe por RPC.
+do $$ declare revision bigint; begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"40000000-0000-4000-8000-000000000003","role":"authenticated","session_id":"60000000-0000-4000-8000-000000000003"}', true);
+  select (api.save_business_initiative($json${
+    "id":"init_probe_001", "schemaVersion":1, "code":"NEG-2026-001",
+    "title":"Piloto alta digital", "need":"El alta tarda doce días", "driver":"",
+    "objectives":[], "expectedOutcomes":[], "affectedCapabilities":[], "businessUnits":[],
+    "status":"draft", "priority":"medium", "horizon":"next", "riskLevel":"medium",
+    "risks":[], "regulatoryDrivers":[], "kpis":[], "milestones":[], "stakeholders":[],
+    "documents":[], "dependsOnCodes":[], "notes":[], "provenance":"manual",
+    "userId":"40000000-0000-4000-8000-000000000003",
+    "createdAt":"2026-09-12T00:00:00.000Z", "updatedAt":"2026-09-12T00:00:00.000Z"
+  }$json$::jsonb, 0)).revision into revision;
+  reset role;
+  insert into probe_results values ('07a arquitecto crea iniciativa con id textual', case when revision = 1 then 'OK' else 'FALLO' end);
+end $$;
+
+do $$ declare n int; begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"40000000-0000-4000-8000-000000000004","role":"authenticated","session_id":"60000000-0000-4000-8000-000000000004"}', true);
+  select count(*) into n from api.list_business_initiatives();
+  reset role;
+  insert into probe_results values ('07b viewer no lee iniciativas ajenas', case when n = 0 then 'OK' else 'FALLO: ' || n end);
+end $$;
+
+do $$ declare m text; begin
+  begin
+    set local role authenticated;
+    perform set_config('request.jwt.claims', '{"sub":"40000000-0000-4000-8000-000000000003","role":"authenticated","session_id":"60000000-0000-4000-8000-000000000003"}', true);
+    perform api.save_business_initiative($json${
+      "id":"init_probe_001", "schemaVersion":1, "code":"NEG-2026-001",
+      "title":"Piloto alta digital", "need":"El alta tarda doce días", "driver":"",
+      "objectives":[], "expectedOutcomes":[], "affectedCapabilities":[], "businessUnits":[],
+      "status":"draft", "priority":"medium", "horizon":"next", "riskLevel":"medium",
+      "risks":[], "regulatoryDrivers":[], "kpis":[], "milestones":[], "stakeholders":[],
+      "documents":[], "dependsOnCodes":[], "notes":[], "provenance":"manual",
+      "userId":"40000000-0000-4000-8000-000000000003",
+      "createdAt":"2026-09-12T00:00:00.000Z", "updatedAt":"2026-09-12T00:00:00.000Z"
+    }$json$::jsonb, 0);
+    reset role;
+    m := 'FALLO: permitido';
+  exception when others then m := case when sqlstate = 'P0001' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
+  insert into probe_results values ('07c revisión obsoleta de iniciativa se rechaza', m);
 end $$;
 
 -- Caso 8: el administrador ve el directorio y cambia roles no privilegiados.
