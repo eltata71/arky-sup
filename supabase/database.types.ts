@@ -14,6 +14,33 @@ export type Database = {
   }
   api: {
     Tables: {
+      architecture_knowledge_graphs: {
+        Row: {
+          created_at: string
+          data: Json
+          owner_id: string
+          project_id: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          owner_id: string
+          project_id: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          owner_id?: string
+          project_id?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       architecture_projects: {
         Row: {
           artifact_count: number
@@ -317,6 +344,7 @@ export type Database = {
         }
       }
       load_engagements: { Args: { p_project_id: string }; Returns: Json }
+      load_knowledge_graph: { Args: { p_project_id: string }; Returns: Json }
       load_project_aggregate: { Args: { p_id: string }; Returns: Json }
       provision_user_profile: {
         Args: { target: string; target_name?: string; target_role: string }
@@ -365,6 +393,27 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "office_engagements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_knowledge_graph: {
+        Args: {
+          p_expected_revision: number
+          p_graph: Json
+          p_project_id: string
+        }
+        Returns: {
+          created_at: string
+          data: Json
+          owner_id: string
+          project_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "architecture_knowledge_graphs"
           isOneToOne: true
           isSetofReturn: false
         }

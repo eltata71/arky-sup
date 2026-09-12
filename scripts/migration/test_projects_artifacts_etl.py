@@ -17,6 +17,10 @@ def artifact():
     return {'id': 'art_legacy_001', 'name': 'Diagrama', 'type': 'mermaid-graph', 'versionGroupId': 'vg_001', 'version': 1, 'createdAt': '2026-09-12T00:00:00.000Z', 'phase': 'design', 'architecturalView': 'Vista Lógica y de Diseño', 'content': 'graph TD; A-->B', 'objective': 'Explicar la relación', 'keyConcepts': [{'term': 'A', 'definition': 'Origen'}], 'representation': 'diagram'}
 
 
+def knowledge_graph(project_id='proj_legacy_001'):
+    return {'projectId': project_id, 'version': 1, 'buildId': 'build_001', 'lastBuiltAt': '2026-09-12T00:00:00.000Z', 'entities': [], 'relations': [], 'quality': {'score': 80}, 'statistics': {'entityCount': 0}}
+
+
 class ProjectsArtifactsEtlTest(unittest.TestCase):
     def test_preserves_text_ids_and_uses_inline_artifacts_only_as_fallback(self):
         records, rejected = etl.transform([{'path': 'projects/proj_legacy_001', 'data': project()}], {'firebase-owner': OWNER})
@@ -82,6 +86,21 @@ class ProjectsArtifactsEtlTest(unittest.TestCase):
                 ], {'firebase-owner': OWNER})
                 self.assertEqual(records, [])
                 self.assertEqual(rejected, [{'path': 'projects/proj_legacy_001', 'reason': 'invalid-artifact'}])
+
+    def test_separates_inline_knowledge_graph_from_project_document(self):
+        records, rejected = etl.transform([
+            {'path': 'projects/proj_legacy_001', 'data': {**project(), 'architectureKnowledgeGraph': knowledge_graph()}},
+        ], {'firebase-owner': OWNER})
+        self.assertEqual(rejected, [])
+        self.assertNotIn('architectureKnowledgeGraph', records[0]['project'])
+        self.assertEqual(records[0]['knowledge_graph']['buildId'], 'build_001')
+
+    def test_rejects_inline_graph_of_another_project(self):
+        records, rejected = etl.transform([
+            {'path': 'projects/proj_legacy_001', 'data': {**project(), 'architectureKnowledgeGraph': knowledge_graph('proj_other')}},
+        ], {'firebase-owner': OWNER})
+        self.assertEqual(records, [])
+        self.assertEqual(rejected, [{'path': 'projects/proj_legacy_001', 'reason': 'invalid-knowledge-graph'}])
 
 
 if __name__ == '__main__': unittest.main()

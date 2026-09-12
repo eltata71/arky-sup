@@ -113,7 +113,10 @@ def transform(source: list[dict[str, Any]], identity_map: dict[str, str]) -> tup
         if len({item["id"] for item in artifacts}) != len(artifacts): rejected.append({"path": path, "reason": "duplicate-artifact-id"}); continue
         if provider_key(data): rejected.append({"path": path, "reason": "provider-key-present"}); continue
         project = copy.deepcopy(data); project["id"] = project_id; project["userId"] = destination; project.pop("artifacts", None)
-        records.append({"id": project_id, "owner_id": destination, "source_path": path, "artifact_source": "subcollection" if candidate_children is not None else "inline-fallback", "project": project, "artifacts": artifacts})
+        graph = project.pop("architectureKnowledgeGraph", None)
+        if graph is not None and not (isinstance(graph, dict) and graph.get("projectId") == project_id and isinstance(graph.get("entities"), list)):
+            rejected.append({"path": path, "reason": "invalid-knowledge-graph"}); continue
+        records.append({"id": project_id, "owner_id": destination, "source_path": path, "artifact_source": "subcollection" if candidate_children is not None else "inline-fallback", "project": project, "artifacts": artifacts, **({"knowledge_graph": graph} if graph is not None else {})})
     for project_id in sorted(set(children) - set(roots)):
         rejected.append({"path": f"projects/{project_id}/artifacts", "reason": "orphan-artifact-subcollection"})
     records.sort(key=lambda record: record["id"])
