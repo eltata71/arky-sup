@@ -119,13 +119,11 @@ Cada ADR sigue el formato: título, estado, contexto, decisión, consecuencias, 
 
 ## ADR-006: Hosting y operación
 
-**Estado**: Propuesto (requiere decisión de operaciones)
+**Estado**: Aprobado (decisión del usuario, 2026-09-12)
 
-**Contexto**: Hoy Vercel para React + Firebase Functions (proxy IA). Supabase Edge Functions sustituyen Functions; hosting puede seguir en Vercel o moverse.
+**Contexto**: Hoy Vercel para React + proxy IA (`api/`). Supabase aporta Auth, PostgreSQL y Storage; el hosting de la SPA sigue en Vercel.
 
-**Decisión** (por confirmar con operaciones):
-- Opción A: **Vercel sigue** (React build + preview deploy). Edge Functions en Supabase. DNS `app.dominio.com` → Vercel; `api.dominio.com` → Supabase (o mismo dominio con rewrite).
-- Opción B: **Supabase Hosting** (si maduro) o **Cloudflare Pages** + Workers para edge.
+**Decisión**: **Vercel se mantiene** como hosting de la aplicación, como hasta ahora. Supabase Edge Functions / RPC cubren el backend confiable mínimo (ADR-001) dentro del mismo proyecto Supabase ya creado; sin mover el frontend a otra plataforma.
 - **Secretos**: Solo en Vercel/Supabase dashboard (NUNCA en repo). `VITE_*` build-time inlined; runtime config via Edge Function env.
 - **Observabilidad**: Supabase Logs + Vercel Analytics + Sentry (si contratado).
 

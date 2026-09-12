@@ -29,7 +29,13 @@ Fecha de cierre técnico: 2026-09-12. Sin cambios de código productivo; solo `d
 
 1. **P-01–P-05 del cierre F0** siguen vigentes: aceptación funcional, inventario productivo, CI/hosting, decisiones de tenencia/SSO-MFA/residencia/presupuesto (`docs/fase-1/mapa-contextos.md` §7 los detalla para F1).
 2. **CLAUDE.md § frontend-first**: añadir la misma nota de transición que `AGENTS.md` cuando el usuario lo apruebe.
-3. **ADR-006 hosting**: confirmar con operaciones (Vercel sigue vs alternativa).
+3. **ADR-006 hosting: decidido — Vercel se mantiene** (decisión del usuario, 2026-09-12).
+
+## 4. Alcance PoC confirmado (retroalimentación del usuario, 2026-09-12)
+
+- La aplicación **no está en ambiente productivo y se mantiene como prueba de concepto**.
+- No se requieren múltiples bases/ambientes: se usa el **proyecto Supabase ya creado**.
+- Los datos actuales en Firebase son de PoC, sin datos productivos: **sin grandes migraciones ni volúmenes**; F5 se ejecuta como recarga/recreación de datos de prueba con reconciliación ligera.
 
 ## 4. Cambios en el árbol
 
