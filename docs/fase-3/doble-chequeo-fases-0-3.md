@@ -59,15 +59,28 @@ natural de "una rama por fase".
 
 ## Pendiente tuyo (organización)
 
-- **P-01** Aceptación funcional con la oficina; incluye validar F1.1 (el lenguaje
-  ubicuo se derivó del código, **no** de talleres) y las 5 decisiones de
-  `docs/fase-1/mapa-contextos.md` §7 (multitenencia, SSO/MFA, residencia,
-  PHI/PII, integraciones).
-- **P-02** Inventario productivo autorizado (hoy solo inspección de código).
+Cerrados el **2026-09-12** por decisión del usuario:
+
+- **P-01 Aceptación funcional**: revisada, validada y aprobada. Incluye la
+  validación del lenguaje ubicuo derivado en F1.1.
+- **P-02 Inventario productivo**: revisado, validado y aprobado.
+
+Siguen abiertos:
+
 - **P-03** CI/hosting: protección de ramas, secretos por mecanismo seguro.
-- **P-05** Responsables, tenencia, presupuesto, SLO/RPO/RTO y capacidad.
+- **P-05** Responsables, tenencia, presupuesto, SLO/RPO/RTO y capacidad; y las
+  5 decisiones de `docs/fase-1/mapa-contextos.md` §7 (multitenencia, SSO/MFA,
+  residencia, PHI/PII, integraciones) en lo que no cubra P-01.
 - **Push/PR** de las cuatro ramas si quieres respaldo remoto y CI.
 - Revisar Auth/Data API **remota** por dashboard antes de exponer clientes.
+
+## Pendiente de registro
+
+Los artefactos de P-01 y P-02 (acta de aceptación, exportación del inventario
+productivo) no están en el repositorio: el registro aquí es la aprobación, no su
+contenido. Si existen como documentos, conviene incorporarlos o referenciarlos
+para que F5/F6 trabajen sobre cifras reales en vez de sobre la inferencia del
+código.
 
 ## Correcciones aplicadas en este doble chequeo
 

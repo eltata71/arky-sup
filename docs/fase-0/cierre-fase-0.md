@@ -1,4 +1,4 @@
-# Fase 0 — Cierre: línea base verificada, con cinco pendientes externos
+# Fase 0 — Cierre: línea base verificada, con tres pendientes externos
 
 Base: `8731fcdd9af7a5ee57eaaf3049b162ef722e55d7`.
 Fecha de cierre técnico: 2026-09-11. Rama de trabajo: `main`; entregables
@@ -9,12 +9,12 @@ Doble chequeo de cierre: 2026-09-12 (ver `docs/fase-3/doble-chequeo-fases-0-3.md
 
 | Tarea | Estado | Evidencia |
 | --- | --- | --- |
-| F0.1 inventario funcional | Hecha (código); pendiente aceptación con la oficina | `inventario-funcional-datos.md` |
+| F0.1 inventario funcional | Hecha; **aceptación con la oficina aprobada (2026-09-12)** | `inventario-funcional-datos.md` |
 | F0.2 entorno reproducible | Hecha; `npm ci` con y sin scripts exit 0 | `entorno-y-entrega.md`, `evidencias/entorno.json`, `npm-ci*.log` |
 | F0.3 quality + reglas + E2E | Hecha | `quality.log` (exit 0), `f03-rules*.log`, `pruebas-integracion.md` |
 | F0.4 arquitectura | Hecha | `auditoria-arquitectura.md` |
 | F0.4 seguridad | Hecha (diagnóstico local) | `auditoria-seguridad.md`, `f04-*` |
-| F0.5 inventario datos | Hecha (código); pendiente inventario productivo autorizado | `inventario-funcional-datos.md` |
+| F0.5 inventario datos | Hecha; **inventario productivo revisado y aprobado (2026-09-12)** | `inventario-funcional-datos.md` |
 | F0.6 backlog | Hecho (20 ítems D-01…D-20) | `backlog-deuda.md` |
 
 ## 2. Resultados verificados
@@ -30,17 +30,20 @@ Doble chequeo de cierre: 2026-09-12 (ver `docs/fase-3/doble-chequeo-fases-0-3.md
 - Sin secretos operativos confirmados en el árbol versionado (15 candidatos =
   fixtures/placeholders, sin valores impresos).
 
-## 3. Pendientes que exigen a la organización (no bloquean F1 documental)
+## 3. Pendientes que exigen a la organización
 
-1. **P-01 Aceptación funcional** (F0.1): taller con la oficina para fijar
-   recorridos críticos y satisfacción por capacidad.
-2. **P-02 Inventario productivo** (F0.5): acceso autorizado a colecciones,
-   volúmenes, archivos, identidades y offline real.
-3. **P-03 CI/hosting**: lectura de ejecuciones, protección de ramas y
+Cerrados el 2026-09-12 por decisión del usuario:
+
+- **P-01 Aceptación funcional** (F0.1): **revisada, validada y aprobada**.
+- **P-02 Inventario productivo** (F0.5): **revisado, validado y aprobado**.
+
+Siguen abiertos:
+
+1. **P-03 CI/hosting**: lectura de ejecuciones, protección de ramas y
    configuración de secretos por mecanismos seguros.
-4. **P-04 E2E webkit**: corre en CI; en este sandbox falta `sudo`
+2. **P-04 E2E webkit**: corre en CI; en este sandbox falta `sudo`
    (`pruebas-integracion.md` §3).
-5. **P-05 Decisiones F1**: responsables, tenencia, SSO/MFA, residencia y
+3. **P-05 Decisiones F1**: responsables, tenencia, SSO/MFA, residencia y
    presupuesto (plan §7).
 
 ## 4. Cambios en el árbol (solo documentación + evidencias)

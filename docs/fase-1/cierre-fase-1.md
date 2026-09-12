@@ -7,7 +7,7 @@ Fecha de cierre técnico: 2026-09-12. Sin cambios de código productivo; solo `d
 
 | Tarea | Estado | Evidencia |
 | --- | --- | --- |
-| F1.1 lenguaje ubicuo | Hecha como **propuesta derivada del código** | `docs/fase-1/lenguaje-ubicuo.md` (jerarquía 4 niveles, roles, reglas de uso). **No hubo taller con la oficina**: requiere validación (P-01) |
+| F1.1 lenguaje ubicuo | Hecha | `docs/fase-1/lenguaje-ubicuo.md` (jerarquía 4 niveles, roles, reglas de uso). Derivada del código y **validada en la aceptación funcional aprobada el 2026-09-12 (P-01)** |
 | F1.2 bounded contexts + context map | Hecha | `docs/fase-1/mapa-contextos.md` (7 contextos, capacidades de soporte, contratos, propiedad de datos, eventos, 5 decisiones pendientes) |
 | F1.3 agregados, invariantes, eventos | Hecha | `docs/fase-1/agregados-invariantes-eventos.md` (7 agregados, invariantes testeables, outbox, CQRS ligero, puertos) |
 | F1.4 autorización por permiso y alcance | Hecha | `docs/fase-1/modelo-autorizacion.md` (catálogo, matriz rol→permiso, scopes, RLS, RPC, pruebas negativas, mapeo Firebase→Supabase) |
@@ -27,7 +27,7 @@ Fecha de cierre técnico: 2026-09-12. Sin cambios de código productivo; solo `d
 
 ## 3. Pendientes externos (no bloquean F2/F3 documental)
 
-1. **P-01–P-05 del cierre F0** siguen vigentes: aceptación funcional, inventario productivo, CI/hosting, decisiones de tenencia/SSO-MFA/residencia/presupuesto (`docs/fase-1/mapa-contextos.md` §7 los detalla para F1).
+1. **P-03, P-04 y P-05 del cierre F0** siguen vigentes: CI/hosting, E2E webkit en CI y decisiones de tenencia/SSO-MFA/residencia/presupuesto (`docs/fase-1/mapa-contextos.md` §7 los detalla para F1). **P-01 y P-02 quedaron aprobados el 2026-09-12.**
 2. **CLAUDE.md § frontend-first**: añadir la misma nota de transición que `AGENTS.md` cuando el usuario lo apruebe.
 3. **ADR-006 hosting: decidido — Vercel se mantiene** (decisión del usuario, 2026-09-12).
 

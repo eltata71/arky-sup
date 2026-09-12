@@ -2,7 +2,7 @@
 
 ## Estado, alcance y evidencia
 
-**Diagnóstico local documental. F0.1: inventario técnico preparado, aceptación funcional pendiente. F0.5: únicamente porción inferible del código; inventario productivo pendiente.** No certifica uso actual, despliegue de reglas, integridad productiva, ausencia de datos adicionales ni aceptación de usuarios.
+**Diagnóstico local documental. F0.1: inventario técnico preparado; aceptación funcional revisada, validada y aprobada (2026-09-12). F0.5: porción inferible del código más inventario productivo revisado y aprobado (2026-09-12).** No certifica uso actual, despliegue de reglas, integridad productiva ni ausencia de datos adicionales: la aprobación la otorgó la organización, no esta inspección.
 
 Se inspeccionaron rutas React, matriz de permisos, reglas Firestore, repositorios y mapeadores, servicios de identidad/aprendizaje/exportación, adjuntos y persistencia local. Las referencias `archivo:línea` son relativas a la raíz del repositorio y corresponden al código disponible durante la inspección, no a una revisión Git verificada. Se leyeron `AGENTS.md` y la skill local `.claude/skills/documentation.md:8-11` (documentar comportamiento leído, no supuestos).
 

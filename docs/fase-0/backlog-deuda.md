@@ -21,7 +21,7 @@ P2: mejora planificada. Esfuerzo en tamaños relativos (S/M/L/XL).
 | D-04 | Reglas con ramas sensibles sin prueba negativa (create `delivered`, delete/recreate superadmin, BOLA colaborativa) | `auditoria-seguridad.md` SEC-03/04/05 | Reproducir con emulador y cerrar reglas + tests antes de migrar permisos (F4) |
 | D-05 | Proxy autoriza identidad sin membresía; lista de modelos evadible; bypass opt-in sin aviso | `auditoria-seguridad.md` SEC-01/02 | Controles servidor + pruebas negativas antes de exponer IA a la organización |
 | D-06 | `geminiService.ts` 5413 líneas fuera de `services/ai`, con 16/23 `any` | `auditoria-arquitectura.md` ARQ-01/03 | Extraer por capacidades hacia el kernel canónico, sin cambio de comportamiento |
-| D-07 | Aceptación funcional con la oficina pendiente; inventario productivo pendiente | `inventario-funcional-datos.md`; plan F0.1/F0.5 | Taller de recorridos críticos + acceso autorizado a datos antes de F1/F5 |
+| D-07 | ~~Aceptación funcional con la oficina pendiente; inventario productivo pendiente~~ **RESUELTO 2026-09-12**: aceptación funcional e inventario productivo revisados, validados y aprobados | `inventario-funcional-datos.md`; plan F0.1/F0.5 | Cerrado; sin acción pendiente |
 
 ## P1 — Riesgo alto, primeros cortes
 
