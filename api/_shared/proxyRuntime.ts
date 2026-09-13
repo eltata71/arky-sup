@@ -12,7 +12,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { TRACE_ID_HEADER, resolveTraceId } from '../../lib/traceId';
+import { TRACE_ID_HEADER, resolveTraceId } from '../../lib/traceId.js';
 
 export type JsonRecord = Record<string, unknown>;
 

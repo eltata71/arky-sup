@@ -13,7 +13,7 @@ import {
   getExpectedProjectId,
   readBearerToken,
   verifyIdToken,
-} from './verifyIdToken';
+} from './verifyIdToken.js';
 
 export interface ProxyAuthOutcome {
   allowed: boolean;
