@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Course, SmartNote, UserProgress, LessonCache, LessonVersionStore, StudentContext, QuizResult, Certificate, DiagnosticResult } from '../types/lms';
 import { useAuth } from './AuthContext';
 import { can } from '../lib/authz';
-import { trainingService } from '../services/learning';
+import { pilotLearningService as learning } from '../services/learning';
 import { useTrainingSync } from '../hooks/useTrainingSync';
 import { XP_REWARDS, updateStreak, generateVerificationCode } from '../lib/lmsProgress';
 import { applyVersionWrite, seedVersionsFromCache, versionKey } from '../lib/lmsVersions';
@@ -102,10 +102,9 @@ interface LMSContextType {
 }
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
-
 export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, profile, isLoading: authLoading } = useAuth();
-  const { syncError, trackWrite, reportSyncIssue } = useTrainingSync();
+  const { syncError, trackWrite, reportSyncIssue } = useTrainingSync(user?.email);
 
   const [courses, setCourses] = useState<Course[]>(defaultCourses);
   const [smartNotes, setSmartNotes] = useState<SmartNote[]>([]);
@@ -165,10 +164,10 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         
         // Load everything in parallel
         const [fetchedCourses, fetchedNotes, fetchedProgress, fetchedContext] = await Promise.all([
-          trainingService.getCourses(uid || 'guest', readsWholeCatalog),
-          uid ? trainingService.getSmartNotes(uid) : Promise.resolve([]),
-          uid ? trainingService.getProgress(uid) : Promise.resolve(null),
-          uid ? trainingService.getContext(uid) : Promise.resolve(null)
+          learning.getCourses(uid || 'guest', readsWholeCatalog),
+          uid ? learning.getSmartNotes(uid) : Promise.resolve([]),
+          uid ? learning.getProgress(uid) : Promise.resolve(null),
+          uid ? learning.getContext(uid) : Promise.resolve(null)
         ]);
         
         // Merge fetched courses with default courses and local cache
@@ -264,17 +263,17 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Actions
   const addCourse = useCallback((course: Course) => {
     setCourses(prev => [...prev, course]);
-    trackWrite(trainingService.saveCourse(user?.uid || 'guest', course));
+    trackWrite(learning.saveCourse(user?.uid || 'guest', course));
   }, [user, trackWrite]);
 
   const deleteCourse = useCallback((courseId: string) => {
     setCourses(prev => prev.filter(c => c.id !== courseId));
-    trackWrite(trainingService.deleteCourse(user?.uid || 'guest', courseId));
+    trackWrite(learning.deleteCourse(user?.uid || 'guest', courseId));
   }, [user, trackWrite]);
 
   const updateCourse = useCallback((courseId: string, updates: Partial<Course>) => {
     setCourses(prev => prev.map(c => c.id === courseId ? { ...c, ...updates } : c));
-    trackWrite(trainingService.updateCourse(user?.uid || 'guest', courseId, updates));
+    trackWrite(learning.updateCourse(user?.uid || 'guest', courseId, updates));
   }, [user, trackWrite]);
 
   const touchCourse = useCallback((courseId: string) => {
@@ -283,19 +282,19 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ...prev,
         courseLastAccessed: { ...(prev.courseLastAccessed || {}), [courseId]: Date.now() }
       };
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
 
   const addSmartNote = useCallback((note: SmartNote) => {
     setSmartNotes(prev => [...prev, note]);
-    trackWrite(trainingService.saveSmartNote(user?.uid || 'guest', note));
+    trackWrite(learning.saveSmartNote(user?.uid || 'guest', note));
   }, [user, trackWrite]);
 
   const deleteSmartNote = useCallback((id: string) => {
     setSmartNotes(prev => prev.filter(n => n.id !== id));
-    trackWrite(trainingService.deleteSmartNote(user?.uid || 'guest', id));
+    trackWrite(learning.deleteSmartNote(user?.uid || 'guest', id));
   }, [user, trackWrite]);
 
   const toggleLessonRead = useCallback((lessonId: string) => {
@@ -307,7 +306,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
       // Award XP + advance the streak only when newly completing a lesson.
       if (!isRead) newProgress = applyActivity(newProgress, XP_REWARDS.lessonRead);
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
@@ -324,7 +323,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         quizResults: { ...(prev.quizResults || {}), [result.lessonId]: keep },
       };
       if (firstPass) newProgress = applyActivity(newProgress, XP_REWARDS.quizPassed);
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
@@ -365,7 +364,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         badges: Array.from(new Set([...(prev.badges || []), `course:${course.id}`])),
       };
       newProgress = applyActivity(newProgress, XP_REWARDS.courseCompleted);
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
     return certificate;
@@ -380,7 +379,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
       // Award diagnostic XP once per role.
       if (!previous) newProgress = applyActivity(newProgress, XP_REWARDS.diagnosticCompleted);
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
@@ -392,7 +391,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ...prev,
         favoriteLessons: isFav ? prev.favoriteLessons.filter(id => id !== lessonId) : [...prev.favoriteLessons, lessonId]
       };
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
@@ -404,7 +403,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ...prev,
         favoriteCourses: isFav ? prev.favoriteCourses.filter(id => id !== courseId) : [...prev.favoriteCourses, courseId]
       };
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
@@ -416,7 +415,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ...prev,
         inProgressCourses: isProg ? prev.inProgressCourses.filter(id => id !== courseId) : [...prev.inProgressCourses, courseId]
       };
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
@@ -453,7 +452,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         inProgressLessons: prev.inProgressLessons.filter(id => !lessonIds.includes(id)),
         favoriteLessons: prev.favoriteLessons.filter(id => !lessonIds.includes(id)),
       };
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
@@ -465,14 +464,14 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ...prev,
         inProgressLessons: isProg ? prev.inProgressLessons.filter(id => id !== lessonId) : [...prev.inProgressLessons, lessonId]
       };
-      trackWrite(trainingService.saveProgress(user?.uid || 'guest', newProgress));
+      trackWrite(learning.saveProgress(user?.uid || 'guest', newProgress));
       return newProgress;
     });
   }, [user, trackWrite]);
 
   const updateStudentContext = useCallback((context: StudentContext) => {
     setStudentContext(context);
-    trackWrite(trainingService.saveContext(user?.uid || 'guest', context));
+    trackWrite(learning.saveContext(user?.uid || 'guest', context));
   }, [user, trackWrite]);
 
   // Memoised for the same reason as the other providers: every member is

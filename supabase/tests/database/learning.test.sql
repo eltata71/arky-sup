@@ -80,7 +80,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"65000000-0000-4000-8000-000000000003","role":"authenticated","session_id":"75000000-0000-4000-8000-000000000003"}';
 select throws_ok($$select api.load_progress()$$,
   'P0002', 'El progreso no existe', 'Otro usuario no lee el progreso ajeno');
-select is((select jsonb_array_length(api.list_notes())), 0::bigint, 'Otro usuario no lee notas ajenas');
+select is((select jsonb_array_length(api.list_notes()))::bigint, 0::bigint, 'Otro usuario no lee notas ajenas');
 select throws_ok($$select api.delete_note('note_001')$$,
   'P0002', 'La nota no existe o es ajena', 'Otro usuario no borra la nota ajena');
 reset role;

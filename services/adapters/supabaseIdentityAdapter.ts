@@ -22,7 +22,11 @@ import { IdentityError, type AuthSession, type IdentityPort } from '../ports';
 
 /** Forma mínima de una sesión del SDK. Estructural a propósito. */
 export interface SupabaseSessionLike {
-  user?: { id?: string } | null;
+  user?: {
+    id?: string;
+    email?: string | null;
+    user_metadata?: { full_name?: unknown; name?: unknown } | null;
+  } | null;
   access_token?: string;
   expires_at?: number | null;
   refresh_token?: string;
@@ -40,6 +44,7 @@ export interface SupabaseAuthClientLike {
     signInWithPassword(credentials: { email: string; password: string }): Promise<SupabaseAuthResult>;
     signOut(): Promise<{ error?: unknown }>;
     resetPasswordForEmail(email: string): Promise<{ error?: unknown }>;
+    updateUser(attributes: { password: string }): Promise<{ error?: unknown }>;
     onAuthStateChange(
       callback: (event: string, session: SupabaseSessionLike | null) => void,
     ): { data?: { subscription?: { unsubscribe?: () => void } } };

@@ -37,4 +37,11 @@ export {
   type AuthUser,
 } from './authService';
 export { userService, type UserProfile } from './userService';
+export { readSupabaseProfile, type SupabaseProfileClient } from './supabaseProfileService';
+export { isSupabasePilotEmail, parseSupabasePilotEmails } from './pilotRouting';
+export {
+  completeSupabasePasswordSetup,
+  isSupabasePasswordSetupCallback,
+  type SupabasePasswordClient,
+} from './supabasePasswordSetup';
 export { provisionUser, resendInvitation } from './userProvisioningService';
