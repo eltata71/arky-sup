@@ -235,22 +235,17 @@ const filterAndMapGeminiModels = (items: GeminiModelApiItem[]): GeminiModelOptio
 };
 
 /**
- * Resolve the API key that should hit the Gemini SDK, honouring the user's
- * `apiKeySource` preference (global env key vs. personal localStorage key).
- * Exported so the `AIProvider` layer resolves keys through one seam.
+ * Resolve the API key that may hit the Gemini SDK from the browser.
+ *
+ * Operator credentials are server-only and calls using them go through the
+ * same-origin proxy. A direct browser call is allowed only for deliberate
+ * BYOK, never from a `VITE_*` environment value.
  */
 export const resolveEffectiveApiKey = (settings?: Settings): string => {
   const apiKeySource = settings?.aiConfig?.apiKeySource || 'global';
   const userKey = typeof localStorage !== 'undefined' ? localStorage.getItem('user_gemini_key') : null;
-  const globalKey = (import.meta.env.VITE_GEMINI_API_KEY ?? '').trim();
 
-  if (apiKeySource === 'user') {
-    if (userKey && userKey.trim().length > 0) return userKey.trim();
-    if (globalKey.length > 0) return globalKey;
-  } else {
-    if (globalKey.length > 0) return globalKey;
-    if (userKey && userKey.trim().length > 0) return userKey.trim();
-  }
+  if (apiKeySource === 'user' && userKey && userKey.trim().length > 0) return userKey.trim();
 
   return '';
 };

@@ -50,3 +50,5 @@ blob-report/
 firestore-debug.log
 firebase-debug.log
 ui-debug.log
+.vercel
+.env.local

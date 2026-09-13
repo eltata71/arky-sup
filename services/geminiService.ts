@@ -871,30 +871,12 @@ class GeminiService {
     private getEffectiveApiKey(settings?: Settings): string {
         const apiKeySource = settings?.aiConfig?.apiKeySource || 'global';
         const userKey = typeof localStorage !== 'undefined' ? localStorage.getItem('user_gemini_key') : null;
-        const globalKey = (import.meta.env.VITE_GEMINI_API_KEY ?? '').trim();
 
-        if (apiKeySource === 'user') {
-            // User explicitly chose to use their personal key
-            if (userKey && userKey.trim().length > 0) {
-                return userKey.trim();
-            }
-            // Fallback to global if user key is empty
-            if (globalKey.length > 0) {
-                console.warn('GeminiService: User key source selected but no user key found. Falling back to global key.');
-                return globalKey;
-            }
-        } else {
-            // 'global' source: prefer global key, fallback to user key
-            if (globalKey.length > 0) {
-                return globalKey;
-            }
-            if (userKey && userKey.trim().length > 0) {
-                console.warn('GeminiService: Global key not found. Falling back to user key.');
-                return userKey.trim();
-            }
+        if (apiKeySource === 'user' && userKey && userKey.trim().length > 0) {
+            return userKey.trim();
         }
 
-        throw new Error("No se encontró una API Key válida. Por favor ve a Configuración > IA y selecciona una fuente de API Key o ingresa tu llave personal.");
+        throw new Error("No se encontró una API Key personal válida. Para una llamada directa, ve a Configuración > IA y agrega tu llave personal.");
     }
 
     /**

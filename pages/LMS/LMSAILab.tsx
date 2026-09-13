@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Course } from '../../types/lms';
-import { SparklesIcon, BeakerIcon, CpuIcon, AlertTriangleIcon, KeyIcon, CheckCircle2Icon, Loader2Icon } from 'lucide-react';
+import { SparklesIcon, BeakerIcon, CpuIcon, AlertTriangleIcon, CheckCircle2Icon, Loader2Icon } from 'lucide-react';
 import { asCourseCategory, asCourseLevel, learningService } from '../../services/ai';
 import { useAppContext } from '../../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,20 +37,6 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
 
     const isGenerating = phase !== 'idle' && phase !== 'done';
 
-    const checkApiKeyAvailability = useCallback((): boolean => {
-        try {
-            const apiKeySource = settings?.aiConfig?.apiKeySource || 'global';
-            const userKey = typeof localStorage !== 'undefined' ? localStorage.getItem('user_gemini_key') : null;
-            const globalKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY || '').toString().trim();
-
-            if (apiKeySource === 'user') {
-                return !!(userKey && userKey.trim().length > 0) || !!(globalKey.length > 0);
-            }
-            return !!(globalKey.length > 0) || !!(userKey && userKey.trim().length > 0);
-        } catch {
-            return false;
-        }
-    }, [settings?.aiConfig?.apiKeySource]);
 
     const handleGenerate = useCallback(async (topicOverride?: string) => {
         const topicToUse = (topicOverride ?? topic).trim();
@@ -64,12 +50,6 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
 
         setValidationHint(null);
         setErrorMessage(null);
-
-        // Pre-validate API key
-        if (!checkApiKeyAvailability()) {
-            setErrorMessage('No se encontró una API Key de Gemini configurada. Ve a Ajustes > Configuración IA para configurarla, o ingresa tu llave personal en la sección correspondiente.');
-            return;
-        }
 
         setPhase('validating');
 
@@ -153,7 +133,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                 setPhase('idle');
             }
         }
-    }, [topic, courseContext, settings, onCourseGenerated, checkApiKeyAvailability]);
+    }, [topic, courseContext, settings, onCourseGenerated]);
 
     const handleSurpriseMe = useCallback(() => {
         const topics = [
@@ -191,7 +171,6 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
         done: 'Curso creado'
     };
 
-    const hasApiKey = checkApiKeyAvailability();
 
     return (
         <div className="max-w-4xl mx-auto animate-fade-in space-y-8">
@@ -206,16 +185,6 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                     </div>
                 </div>
 
-                {/* API Key Warning */}
-                {!hasApiKey && (
-                    <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-3">
-                        <KeyIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">API Key no configurada</p>
-                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Para generar cursos con IA necesitas configurar tu API Key de Gemini en Ajustes &gt; Configuración IA.</p>
-                        </div>
-                    </div>
-                )}
 
                 <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 -mt-10 -mr-10 opacity-10 pointer-events-none">
