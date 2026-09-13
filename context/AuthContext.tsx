@@ -1,11 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 // No `firebase/auth` import: this context translates auth state into
 // application state, and `services/identity/authService` is the only place that talks
 // to the SDK. That is the same split every other SDK in the app already had.
 import {
   currentUser as readCurrentUser,
   isAuthAvailable,
-  observeAuthState,
   readRoleClaim,
   reauthenticateAndUpdatePassword,
   sendPasswordReset as sendPasswordResetEmail,
@@ -21,6 +20,19 @@ import {
 import { isDeveloperLoginAllowed } from '../lib/security';
 import { DEFAULT_PROVISIONED_ROLE, resolveEffectiveRole, type AuthRole } from '../lib/authz';
 import { observabilityService } from '../services/observability';
+import {
+  loadSupabaseAuthClient,
+  loadSupabaseDataClient,
+  loadSupabaseIdentityPort,
+} from '../services/adapters';
+import {
+  completeSupabasePasswordSetup as persistSupabasePassword,
+  readSupabaseProfile,
+  type SupabaseProfileClient,
+  isSupabasePilotEmail,
+  parseSupabasePilotEmails,
+} from '../services/identity';
+import { supabaseSessionUser, useAuthSessionBootstrap } from './auth/useAuthSessionBootstrap';
 
 type UserProfile = PersistedUserProfile;
 
@@ -49,6 +61,8 @@ interface AuthContextType {
    * your colleagues has one.
    */
   sendPasswordReset: (email: string) => Promise<void>;
+  /** Set the password from an authenticated Supabase invitation/recovery callback. */
+  completeSupabasePasswordSetup: (newPassword: string) => Promise<void>;
   /** Change the signed-in user's password, re-authenticating first. */
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   /** Edit the signed-in user's own display name. Never their role. */
@@ -57,12 +71,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const IDENTITY_ENV = import.meta.env as Record<string, string | undefined>;
+const SUPABASE_PILOT_EMAILS = parseSupabasePilotEmails(IDENTITY_ENV.VITE_SUPABASE_PILOT_EMAILS);
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isDeveloperLogin = React.useRef(false);
+  const identityBackend = React.useRef<'firebase' | 'supabase'>('firebase');
 
   /**
    * Load the profile that governs this session.
@@ -80,8 +98,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchUserProfile = async (uid: string, currentUser?: User) => {
     if (isDeveloperLogin.current) return;
     try {
-      const claimRole = currentUser ? await readRoleClaim(currentUser) : undefined;
-      const existing = await userService.getUserProfile(uid);
+      const existing = identityBackend.current === 'supabase'
+        ? await readSupabaseProfile(
+          (await loadSupabaseDataClient(IDENTITY_ENV)) as unknown as SupabaseProfileClient,
+          uid,
+          currentUser?.email ?? null,
+        )
+        : await userService.getUserProfile(uid);
+      const claimRole = identityBackend.current === 'supabase' || !currentUser
+        ? undefined
+        : await readRoleClaim(currentUser);
 
       if (!existing) {
         // Not provisioned. Signing out here is the whole principle: an identity
@@ -99,11 +125,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setError(
           'Tu identidad es válida pero no tiene una cuenta en Arky. Un administrador debe crearla antes de que puedas entrar.',
         );
-        await signOutCurrentUser();
+        if (identityBackend.current === 'supabase') {
+          await (await loadSupabaseIdentityPort(IDENTITY_ENV)).signOut();
+        } else {
+          await signOutCurrentUser();
+        }
         return;
       }
 
-      const resolved = resolveEffectiveRole(claimRole, existing.role);
+      const resolved = identityBackend.current === 'supabase'
+        ? existing.role
+        : resolveEffectiveRole(claimRole, existing.role);
 
       if (!resolved) {
         observabilityService.recordWarning({
@@ -126,7 +158,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       observabilityService.reportError(err, {
         source: 'app',
         title: 'No se pudo cargar el perfil de usuario',
-        message: 'La sesión queda sin permisos hasta que el perfil pueda leerse. Verifica conectividad y permisos de Firestore.',
+        message: 'La sesión queda sin permisos hasta que el perfil pueda leerse. Verifica conectividad y permisos del backend activo.',
         metadata: { uid },
         recoverable: true,
         userVisible: true,
@@ -135,28 +167,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  useEffect(() => {
-    if (!isAuthAvailable()) {
-      setError('La configuración de Firebase está incompleta. La autenticación y persistencia remota están deshabilitadas.');
-      setUser(null);
-      setProfile(null);
-      setIsLoading(false);
-      return undefined;
-    }
-    const unsubscribe = observeAuthState(async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        await fetchUserProfile(currentUser.uid, currentUser);
-        setIsLoading(false);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setIsLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+  useAuthSessionBootstrap({
+    env: IDENTITY_ENV,
+    pilotEmails: SUPABASE_PILOT_EMAILS,
+    identityBackend,
+    fetchProfile: fetchUserProfile,
+    setUser,
+    setProfile,
+    setError,
+    setIsLoading,
+  });
 
   const handleSignInAsDeveloper = useCallback(async () => {
     if (!isDeveloperLoginAllowed()) {
@@ -247,6 +267,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const handleSignInWithGoogle = useCallback(async () => {
+    if (identityBackend.current === 'supabase') {
+      throw new Error('El piloto Supabase usa correo y contraseña; Google permanece en Firebase.');
+    }
     try {
       setIsLoading(true);
       setError(null);
@@ -268,7 +291,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setIsLoading(true);
       setError(null);
-      await signInWithEmail(email, password);
+      const useSupabase = isSupabasePilotEmail(email, SUPABASE_PILOT_EMAILS);
+      identityBackend.current = useSupabase ? 'supabase' : 'firebase';
+      if (useSupabase) {
+        await (await loadSupabaseIdentityPort(IDENTITY_ENV)).signInWithPassword(email, password);
+        const { data, error: sessionError } = await (await loadSupabaseAuthClient(IDENTITY_ENV)).auth.getSession();
+        if (sessionError) throw sessionError;
+        const selectedUser = supabaseSessionUser(data?.session ?? null);
+        if (!selectedUser || !isSupabasePilotEmail(selectedUser.email, SUPABASE_PILOT_EMAILS)) {
+          throw new Error('La sesión Supabase no pertenece a una identidad piloto autorizada.');
+        }
+        setUser(selectedUser);
+        await fetchUserProfile(selectedUser.uid, selectedUser);
+      } else {
+        await signInWithEmail(email, password);
+      }
     } catch (err: unknown) {
       const authError = err as { message?: string };
       setError(authError.message ?? 'Login failed');
@@ -282,7 +319,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setIsLoading(true);
       setError(null);
-      await signOutCurrentUser();
+      if (identityBackend.current === 'supabase') {
+        await (await loadSupabaseIdentityPort(IDENTITY_ENV)).signOut();
+        setUser(null);
+      } else {
+        await signOutCurrentUser();
+      }
       setProfile(null);
     } catch (err: unknown) {
       const authError = err as { message?: string };
@@ -314,7 +356,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!address) throw new Error('Escribe tu correo para enviarte el enlace.');
     try {
       setError(null);
-      if (isAuthAvailable()) await sendPasswordResetEmail(address);
+      if (isSupabasePilotEmail(address, SUPABASE_PILOT_EMAILS)) {
+        await (await loadSupabaseIdentityPort(IDENTITY_ENV)).requestPasswordReset(address);
+      } else if (isAuthAvailable()) {
+        await sendPasswordResetEmail(address);
+      }
     } catch (err) {
       // Logged, never surfaced: the caller shows the same confirmation either
       // way, so a failure here must not become an existence oracle.
@@ -327,6 +373,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         userVisible: false,
       });
     }
+  }, []);
+
+  const completeSupabasePasswordSetup = useCallback(async (newPassword: string) => {
+    if (newPassword.length < 12) {
+      throw new Error('La contraseña debe tener al menos 12 caracteres.');
+    }
+    const callbackSession = await persistSupabasePassword(
+      await loadSupabaseAuthClient(IDENTITY_ENV),
+      window.location.hash,
+      newPassword,
+    );
+    const callbackUser = supabaseSessionUser(callbackSession);
+    if (!callbackUser || !isSupabasePilotEmail(callbackUser.email, SUPABASE_PILOT_EMAILS)) {
+      throw new Error('El enlace para definir la contraseña expiró o no pertenece a la cohorte piloto. Solicita uno nuevo.');
+    }
+    identityBackend.current = 'supabase';
+    setUser(callbackUser);
+    await fetchUserProfile(callbackUser.uid, callbackUser);
   }, []);
 
   /**
@@ -384,6 +448,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     login,
     logout,
     sendPasswordReset,
+    completeSupabasePasswordSetup,
     changePassword,
     updateOwnDisplayName,
   }), [
@@ -396,6 +461,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     login,
     logout,
     sendPasswordReset,
+    completeSupabasePasswordSetup,
     changePassword,
     updateOwnDisplayName,
   ]);

@@ -101,6 +101,12 @@ export {
 export { buildArchitectureGraphReportText } from './ArchitectureGraphReport';
 
 export {
+  createSupabaseKnowledgeGraphRepository,
+  type SupabaseKnowledgeGraphClientLike,
+  type SupabaseKnowledgeGraphRepository,
+} from './SupabaseKnowledgeGraphRepository';
+
+export {
   trackGraphEvent,
   reportGraphFailure,
   type ArchitectureGraphEvent,

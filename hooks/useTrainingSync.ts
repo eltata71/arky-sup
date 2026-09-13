@@ -15,9 +15,9 @@
  * and the honest answer to that is to move a capability out, not to raise the
  * ceiling.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { configurePilotLearningBackend, type TrainingWriteResult } from '../services/learning';
 import { isWriteConfirmed } from '../services/persistence';
-import type { TrainingWriteResult } from '../services/learning';
 
 const GENERIC_FAILURE = 'No se pudo sincronizar con la base de datos.';
 
@@ -37,8 +37,12 @@ export interface TrainingSync {
   reportSyncIssue: (message: string | null) => void;
 }
 
-export const useTrainingSync = (): TrainingSync => {
+export const useTrainingSync = (email?: string | null): TrainingSync => {
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    configurePilotLearningBackend(email);
+  }, [email]);
 
   const trackWrite = useCallback((write: Promise<TrainingWriteResult>) => {
     write

@@ -37,8 +37,10 @@ import { PublicationApprovalPanel } from './PublicationApprovalPanel';
 import { PublicationManifestView } from './PublicationManifestView';
 import { PublicationExportPanel } from './PublicationExportPanel';
 import { PublicationPreflightModal } from './PublicationPreflightModal';
-import { compileArtifactPresentation } from '../../services/artifacts/artifactPresentationCompiler';
-import { isPresentationExportEnabled } from '../../services/artifacts/artifactPresentationFlags';
+import {
+  compileArtifactPresentation,
+  isPresentationExportEnabled,
+} from '../../services/artifacts';
 
 interface PublicationCenterProps {
   isOpen: boolean;

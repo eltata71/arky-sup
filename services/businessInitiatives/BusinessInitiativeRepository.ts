@@ -26,6 +26,8 @@ import {
 } from '../persistence';
 import type { PersistenceResult } from '../persistence';
 import { newPrefixedId } from '../../lib/ids';
+import { createSupabaseBusinessInitiativeRepository } from './SupabaseBusinessInitiativeRepository';
+import { loadSupabaseDataClient, resolveBackend } from '../adapters';
 import { isInitiativeCode, nextInitiativeCode } from '../../lib/eaTerminology';
 import {
   BUSINESS_INITIATIVE_SCHEMA_VERSION,
@@ -315,7 +317,9 @@ export const buildInitiative = (
  * sobrevive en el espejo local y reaparece la próxima vez que Firestore no
  * conteste.
  */
-const mirror = new MirroredList<BusinessInitiative>((userId) => `businessInitiatives_${userId}`);
+const firebaseMirror = new MirroredList<BusinessInitiative>((userId) => `businessInitiatives_${userId}`);
+/** Separado del espejo Firebase: no permite degradar una lectura Supabase a otra fuente remota. */
+const supabaseMirror = new MirroredList<BusinessInitiative>((userId) => `supabase_businessInitiatives_${userId}`);
 
 const fetchInitiatives = async (userId: string): Promise<BusinessInitiative[]> => {
   try {
@@ -323,24 +327,24 @@ const fetchInitiatives = async (userId: string): Promise<BusinessInitiative[]> =
       collection(requireDb(db), BUSINESS_INITIATIVES_COLLECTION),
       where('userId', '==', userId),
     ));
-    return mirror.remember(
+    return firebaseMirror.remember(
       userId,
       snapshot.docs.map((snap) => ({ ...snap.data(), id: snap.id }) as BusinessInitiative),
     );
   } catch {
-    return mirror.fallback(userId);
+    return firebaseMirror.fallback(userId);
   }
 };
 
-export const listInitiatives = async (userId: string): Promise<BusinessInitiative[]> => {
-  const stored = mirror.cached(userId) ?? await fetchInitiatives(userId);
+export const firebaseListInitiatives = async (userId: string): Promise<BusinessInitiative[]> => {
+  const stored = firebaseMirror.cached(userId) ?? await fetchInitiatives(userId);
   return stored
     .map((item) => normalizeInitiative(item, userId))
     .filter((item): item is BusinessInitiative => item !== null)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 };
 
-export const saveInitiative = async (
+export const firebaseSaveInitiative = async (
   initiative: BusinessInitiative,
 ): Promise<PersistenceResult<void>> => {
   const next: BusinessInitiative = { ...initiative, updatedAt: new Date().toISOString() };
@@ -350,11 +354,11 @@ export const saveInitiative = async (
       await setDoc(doc(requireDb(db), BUSINESS_INITIATIVES_COLLECTION, next.id), sanitizeForFirestore(next));
     },
   );
-  mirror.upsert(next.userId, next, result);
+  firebaseMirror.upsert(next.userId, next, result);
   return result as PersistenceResult<void>;
 };
 
-export const deleteInitiative = async (
+export const firebaseDeleteInitiative = async (
   userId: string,
   initiativeId: string,
 ): Promise<PersistenceResult<void>> => {
@@ -364,9 +368,66 @@ export const deleteInitiative = async (
       await deleteDoc(doc(requireDb(db), BUSINESS_INITIATIVES_COLLECTION, initiativeId));
     },
   );
-  mirror.remove(userId, initiativeId);
+  if (result.success) firebaseMirror.remove(userId, initiativeId);
   return result as PersistenceResult<void>;
 };
 
+const runtimeEnv = (): Record<string, string | undefined> => import.meta.env as Record<string, string | undefined>;
+let supabaseRepository: ReturnType<typeof createSupabaseBusinessInitiativeRepository> | null = null;
+
+const getSupabaseRepository = async () => {
+  if (!supabaseRepository) {
+    const client = await loadSupabaseDataClient(runtimeEnv());
+    supabaseRepository = createSupabaseBusinessInitiativeRepository(
+      client as unknown as Parameters<typeof createSupabaseBusinessInitiativeRepository>[0],
+    );
+  }
+  return supabaseRepository;
+};
+
+/**
+ * Fuente única por corte. Al activar `VITE_BACKEND_BUSINESSINITIATIVES=supabase`,
+ * ni lectura ni escritura vuelven a Firebase; sólo sobrevive el espejo local
+ * específico de Supabase, que nunca se informa como confirmación remota.
+ */
+export const listInitiatives = async (userId: string): Promise<BusinessInitiative[]> => {
+  if (resolveBackend(runtimeEnv(), 'businessInitiatives').backend !== 'supabase') {
+    return firebaseListInitiatives(userId);
+  }
+  try {
+    const initiatives = await (await getSupabaseRepository()).list(userId);
+    return supabaseMirror.remember(userId, initiatives);
+  } catch {
+    return supabaseMirror.fallback(userId);
+  }
+};
+
+export const saveInitiative = async (
+  initiative: BusinessInitiative,
+): Promise<PersistenceResult<BusinessInitiative | void>> => {
+  const next: BusinessInitiative = { ...initiative, updatedAt: new Date().toISOString() };
+  if (resolveBackend(runtimeEnv(), 'businessInitiatives').backend !== 'supabase') {
+    return firebaseSaveInitiative(next);
+  }
+  const result = await (await getSupabaseRepository()).save(next, next.userId);
+  supabaseMirror.upsert(next.userId, next, result);
+  return result;
+};
+
+export const deleteInitiative = async (
+  userId: string,
+  initiativeId: string,
+): Promise<PersistenceResult<void>> => {
+  if (resolveBackend(runtimeEnv(), 'businessInitiatives').backend !== 'supabase') {
+    return firebaseDeleteInitiative(userId, initiativeId);
+  }
+  const result = await (await getSupabaseRepository()).remove(initiativeId, userId);
+  if (result.success) supabaseMirror.remove(userId, initiativeId);
+  return result;
+};
+
 /** Olvida lo cacheado. Lo usa el cierre de sesión. */
-export const clearInitiativeCache = (): void => mirror.clear();
+export const clearInitiativeCache = (): void => {
+  firebaseMirror.clear();
+  supabaseMirror.clear();
+};

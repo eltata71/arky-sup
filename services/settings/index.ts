@@ -11,3 +11,10 @@
  * `firestore.rules`.
  */
 export { settingsRepository, type SettingsRepository } from './SettingsRepository';
+export {
+  createSupabaseSettingsRepository,
+  sanitizeSettingsForRemote,
+  type RemoteSettingsRecord,
+  type SupabaseSettingsClientLike,
+  type SupabaseSettingsRepository,
+} from './SupabaseSettingsRepository';

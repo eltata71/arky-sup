@@ -16,6 +16,14 @@ coverage/
 dist-ssr
 *.local
 
+# Bytecode de las herramientas de migración Python.
+__pycache__/
+*.py[cod]
+
+# Exportaciones de origen, mapas de identidad y cargas ETL contienen PII.
+# Se mantienen locales, con permisos de propietario, y nunca se versionan.
+.migration-private/
+
 # Playwright / E2E — artifactos de ejecución local (nunca versionar)
 test-results/
 playwright-report/

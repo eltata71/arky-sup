@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+# Backups belong outside the repository, including test/manual mistakes.
+*.dump
+manifest.json
+manifest.sha256
+blobs/

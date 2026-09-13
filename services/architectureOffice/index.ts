@@ -34,6 +34,7 @@ export * from './OfficeRunnerAdapters';
 
 // Persistence
 export * from './OfficeEngagementRepository';
+export * from './SupabaseOfficeEngagementRepository';
 
 // Governance
 export * from './officeArtifactValidators';

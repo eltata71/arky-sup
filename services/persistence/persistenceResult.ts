@@ -11,7 +11,7 @@ export type PersistenceStatus =
   | 'conflict'
   | 'validation-error';
 
-export type PersistenceTarget = 'firestore' | 'local-draft' | 'memory';
+export type PersistenceTarget = 'firestore' | 'supabase' | 'local-draft' | 'memory';
 
 export interface PersistenceResult<T = unknown> {
   status: PersistenceStatus;

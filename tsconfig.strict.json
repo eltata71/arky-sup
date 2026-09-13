@@ -85,6 +85,9 @@
     // Ola 5; es el mismo motivo por el que `chatCompactor` lleva fuera desde
     // la Ola 4.
     "services/persistence/**/*.ts",
+    // F3.1-F3.2. Puertos y adaptadores: nacen en strict (sin SDK, funciones puras).
+    "services/ports/**/*.ts",
+    "services/adapters/**/*.ts",
     "services/architectureProjects/projectCache.ts",
     "services/architectureProjects/projectDocumentMapper.ts",
     "services/architectureProjects/artifactDocumentMapper.ts",

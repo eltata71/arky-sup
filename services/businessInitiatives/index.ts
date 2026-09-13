@@ -27,6 +27,11 @@ export {
   newMilestoneId,
 } from './BusinessInitiativeRepository';
 export type { CreateInitiativeInput } from './BusinessInitiativeRepository';
+export {
+  createSupabaseBusinessInitiativeRepository,
+  type SupabaseBusinessInitiativeRepository,
+  type SupabaseBusinessInitiativesClientLike,
+} from './SupabaseBusinessInitiativeRepository';
 
 /**
  * La puerta del agregado. `buildInitiative` sigue exportado porque el

@@ -15,4 +15,15 @@
  * la migración por estrangulamiento y está en `services/ai/generation/learning`,
  * detrás de `learningService`. Este módulo persiste; aquél genera.
  */
+export {
+  createSupabaseLearningRepository,
+  sanitizeLearningForRemote,
+  type SupabaseLearningClientLike,
+  type SupabaseLearningRepository,
+} from './SupabaseLearningRepository';
+export {
+  pilotLearningService,
+  configurePilotLearningBackend,
+  shouldUseSupabaseLearningBackend,
+} from './pilotLearningService';
 export { trainingService, type TrainingWriteResult } from './trainingService';

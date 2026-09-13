@@ -141,9 +141,9 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
     upsert(initiative);
 
     const result = await saveInitiative(initiative);
-    if (!result.success && result.status !== 'offline') {
-      commit(initiativesRef.current.filter((item) => item.id !== initiative.id));
-      return { ok: false, reason: result.message ?? 'No se pudo guardar la iniciativa.' };
+    if (!result.success) {
+      if (result.status !== 'offline') commit(initiativesRef.current.filter((item) => item.id !== initiative.id));
+      return { ok: false, reason: result.message ?? 'La iniciativa quedó sin confirmar.' };
     }
     return { ok: true, initiative };
   }, [userId, upsert, commit]);
@@ -167,9 +167,9 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
     upsert(next);
 
     const result = await saveInitiative(next);
-    if (!result.success && result.status !== 'offline') {
-      upsert(current); // roll back to what the user last saw
-      return { ok: false, reason: result.message ?? 'No se pudieron guardar los cambios.' };
+    if (!result.success) {
+      if (result.status !== 'offline') upsert(current); // El fallo remoto nunca pasa por éxito.
+      return { ok: false, reason: result.message ?? 'Los cambios quedaron sin confirmar.' };
     }
     return { ok: true, initiative: next };
   }, [upsert]);
@@ -182,9 +182,9 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
 
     commit(initiativesRef.current.filter((item) => item.id !== initiativeId));
     const result = await deleteInitiativeRemote(userId, initiativeId);
-    if (!result.success && result.status !== 'offline') {
+    if (!result.success) {
       upsert(current);
-      return { ok: false, reason: result.message ?? 'No se pudo eliminar la iniciativa.' };
+      return { ok: false, reason: result.message ?? 'El borrado quedó sin confirmar.' };
     }
     return { ok: true };
   }, [userId, commit, upsert]);

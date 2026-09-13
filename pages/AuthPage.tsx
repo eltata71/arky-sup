@@ -14,6 +14,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { isSupabasePasswordSetupCallback } from '../services/identity';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Shield, Sparkles, CheckCircle2, Network, ArrowLeft } from 'lucide-react';
 
@@ -22,19 +23,23 @@ interface AuthError {
   message?: string;
 }
 
-/** Sign in, or ask for a recovery link. There is no third mode. */
-type AuthMode = 'login' | 'recover';
+/** Sign in, recover access, or establish a password from a one-time Supabase callback. */
+type AuthMode = 'login' | 'recover' | 'setup-password';
 
 export const AuthPage: React.FC = () => {
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>(() => (
+    isSupabasePasswordSetupCallback(window.location.hash) ? 'setup-password' : 'login'
+  ));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     login,
     sendPasswordReset,
+    completeSupabasePasswordSetup,
     signInAsDeveloper,
     signInWithGoogle,
     user,
@@ -45,10 +50,10 @@ export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && mode !== 'setup-password') {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, mode, navigate]);
 
   if (isLoading) {
     return (
@@ -97,6 +102,16 @@ export const AuthPage: React.FC = () => {
         // that says "no encontramos esa cuenta" tells a stranger who works here.
         setNotice('Si esa dirección tiene una cuenta en Arky, le enviamos un enlace para restablecer la contraseña. Revisa también la carpeta de correo no deseado.');
         setIsSubmitting(false);
+        return;
+      }
+
+      if (mode === 'setup-password') {
+        if (password !== passwordConfirmation) {
+          throw new Error('La confirmación de la contraseña no coincide.');
+        }
+        await completeSupabasePasswordSetup(password);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        navigate('/');
         return;
       }
 
@@ -155,12 +170,16 @@ export const AuthPage: React.FC = () => {
                 <Network className="h-6 w-6" />
               </div>
               <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                {mode === 'login' ? 'Bienvenido de nuevo' : 'Recupera tu acceso'}
+                {mode === 'login'
+                  ? 'Bienvenido de nuevo'
+                  : mode === 'recover' ? 'Recupera tu acceso' : 'Define tu contraseña'}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {mode === 'login'
                   ? 'Accede y continúa construyendo arquitectura de clase mundial.'
-                  : 'Te enviamos un enlace al correo con el que fue creada tu cuenta.'}
+                  : mode === 'recover'
+                    ? 'Te enviamos un enlace al correo con el que fue creada tu cuenta.'
+                    : 'Elige una contraseña personal para terminar de activar tu acceso al piloto.'}
               </p>
             </div>
 
@@ -183,6 +202,7 @@ export const AuthPage: React.FC = () => {
               )}
 
               <div className="rounded-md shadow-sm space-y-4">
+                {mode !== 'setup-password' && (
                 <div>
                   <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo electrónico</label>
                   <div className="relative">
@@ -200,10 +220,13 @@ export const AuthPage: React.FC = () => {
                     />
                   </div>
                 </div>
+                )}
 
-                {mode === 'login' && (
+                {mode !== 'recover' && (
                 <div>
-                  <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña</label>
+                  <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {mode === 'setup-password' ? 'Nueva contraseña' : 'Contraseña'}
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" />
@@ -212,12 +235,14 @@ export const AuthPage: React.FC = () => {
                       id="auth-password"
                       type="password"
                       required
+                      minLength={mode === 'setup-password' ? 12 : undefined}
                       className="appearance-none rounded-lg relative block w-full px-3 py-2.5 pl-10 border border-gray-300 dark:border-gray-700 placeholder-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="••••••••"
+                      placeholder="••••••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
+                  {mode === 'login' && (
                   <button
                     type="button"
                     onClick={() => { setMode('recover'); setError(''); setNotice(''); }}
@@ -225,6 +250,29 @@ export const AuthPage: React.FC = () => {
                   >
                     ¿Olvidaste tu contraseña?
                   </button>
+                  )}
+                </div>
+                )}
+
+                {mode === 'setup-password' && (
+                <div>
+                  <label htmlFor="auth-password-confirmation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirma la contraseña</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="auth-password-confirmation"
+                      type="password"
+                      required
+                      minLength={12}
+                      className="appearance-none rounded-lg relative block w-full px-3 py-2.5 pl-10 border border-gray-300 dark:border-gray-700 placeholder-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="••••••••••••"
+                      value={passwordConfirmation}
+                      onChange={(e) => setPasswordConfirmation(e.target.value)}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Usa al menos 12 caracteres.</p>
                 </div>
                 )}
               </div>
@@ -236,10 +284,12 @@ export const AuthPage: React.FC = () => {
               >
                 {isSubmitting
                   ? 'Enviando…'
-                  : mode === 'login' ? 'Iniciar sesión' : 'Enviarme el enlace'}
+                  : mode === 'login' ? 'Iniciar sesión' : mode === 'recover' ? 'Enviarme el enlace' : 'Guardar contraseña y activar acceso'}
               </button>
             </form>
 
+            {mode !== 'setup-password' && (
+            <>
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
@@ -286,6 +336,8 @@ export const AuthPage: React.FC = () => {
                 solicítalo a quien administra la herramienta en tu organización.
               </p>
             </div>
+            </>
+            )}
           </div>
         </section>
       </div>
