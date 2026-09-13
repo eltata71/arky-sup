@@ -379,15 +379,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (newPassword.length < 12) {
       throw new Error('La contraseña debe tener al menos 12 caracteres.');
     }
-    const client = await loadSupabaseAuthClient(IDENTITY_ENV);
-    const { data, error: sessionError } = await client.auth.getSession();
-    if (sessionError) throw sessionError;
-    const callbackUser = supabaseSessionUser(data?.session ?? null);
+    const callbackSession = await persistSupabasePassword(
+      await loadSupabaseAuthClient(IDENTITY_ENV),
+      window.location.hash,
+      newPassword,
+    );
+    const callbackUser = supabaseSessionUser(callbackSession);
     if (!callbackUser || !isSupabasePilotEmail(callbackUser.email, SUPABASE_PILOT_EMAILS)) {
       throw new Error('El enlace para definir la contraseña expiró o no pertenece a la cohorte piloto. Solicita uno nuevo.');
     }
     identityBackend.current = 'supabase';
-    await persistSupabasePassword(client, newPassword);
     setUser(callbackUser);
     await fetchUserProfile(callbackUser.uid, callbackUser);
   }, []);

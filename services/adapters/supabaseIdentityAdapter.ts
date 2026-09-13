@@ -41,6 +41,7 @@ export interface SupabaseAuthResult {
 export interface SupabaseAuthClientLike {
   auth: {
     getSession(): Promise<SupabaseAuthResult>;
+    setSession(tokens: { access_token: string; refresh_token: string }): Promise<SupabaseAuthResult>;
     signInWithPassword(credentials: { email: string; password: string }): Promise<SupabaseAuthResult>;
     signOut(): Promise<{ error?: unknown }>;
     resetPasswordForEmail(email: string): Promise<{ error?: unknown }>;

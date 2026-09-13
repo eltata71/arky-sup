@@ -43,6 +43,7 @@ function fakeClient(overrides: FakeOverrides = {}): SupabaseAuthClientLike & {
   const client = {
     auth: {
       getSession: async () => ({ data: { session: overrides.session ?? null }, error: overrides.getSessionError }),
+      setSession: async () => ({ data: { session: overrides.session ?? null }, error: overrides.getSessionError }),
       signInWithPassword: async () => ({
         data: { session: overrides.session ?? null },
         error: overrides.signInError,

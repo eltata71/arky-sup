@@ -1,6 +1,6 @@
 import type { Course, SmartNote, StudentContext, UserProgress } from '../../types/lms';
 import { loadSupabaseDataClient, resolveBackend } from '../adapters';
-import { isSupabasePilotEmail } from '../identity';
+import { isSupabasePilotEmail, parseSupabasePilotEmails } from '../identity';
 import { createSupabaseLearningRepository, type SupabaseLearningRepository } from './SupabaseLearningRepository';
 import { trainingService, type TrainingWriteResult } from './trainingService';
 
@@ -8,9 +8,14 @@ const env = (): Record<string, string | undefined> => import.meta.env as Record<
 let useSupabase = false;
 let repository: Promise<SupabaseLearningRepository> | null = null;
 
+export const shouldUseSupabaseLearningBackend = (
+  email: string | null | undefined,
+  backendEnv: Record<string, string | undefined>,
+): boolean => resolveBackend(backendEnv, 'learning').backend === 'supabase'
+  && isSupabasePilotEmail(email, parseSupabasePilotEmails(backendEnv.VITE_SUPABASE_PILOT_EMAILS));
+
 export const configurePilotLearningBackend = (email: string | null | undefined): void => {
-  useSupabase = resolveBackend(env(), 'learning').backend === 'supabase'
-    && isSupabasePilotEmail(email, (env().VITE_SUPABASE_PILOT_EMAILS ?? '').split(','));
+  useSupabase = shouldUseSupabaseLearningBackend(email, env());
   if (!useSupabase) repository = null;
 };
 

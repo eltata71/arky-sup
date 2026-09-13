@@ -21,5 +21,9 @@ export {
   type SupabaseLearningClientLike,
   type SupabaseLearningRepository,
 } from './SupabaseLearningRepository';
-export { pilotLearningService, configurePilotLearningBackend } from './pilotLearningService';
+export {
+  pilotLearningService,
+  configurePilotLearningBackend,
+  shouldUseSupabaseLearningBackend,
+} from './pilotLearningService';
 export { trainingService, type TrainingWriteResult } from './trainingService';
