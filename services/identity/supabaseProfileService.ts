@@ -1,4 +1,4 @@
-import type { AuthRole } from '../../lib/authz';
+import { parseAuthRole } from '../../lib/authz';
 import type { UserProfile } from './userService';
 
 export interface SupabaseProfileRow {
@@ -18,15 +18,6 @@ export interface SupabaseProfileClient {
   };
 }
 
-const ROLES: ReadonlySet<AuthRole> = new Set([
-  'viewer',
-  'architect',
-  'reviewer',
-  'trainer',
-  'admin',
-  'superadmin',
-]);
-
 /**
  * Lee exclusivamente el perfil activo de la identidad de Supabase ya
  * autenticada. Una fila ausente, desactivada o incongruente no representa una
@@ -44,12 +35,12 @@ export async function readSupabaseProfile(
     .maybeSingle();
 
   if (error) throw new Error(error.message ?? 'No se pudo leer el perfil Supabase.');
+  const role = parseAuthRole(data?.role);
   if (
     !data
     || data.id !== userId
     || data.status !== 'active'
-    || typeof data.role !== 'string'
-    || !ROLES.has(data.role as AuthRole)
+    || role === null
   ) {
     return null;
   }
@@ -60,6 +51,6 @@ export async function readSupabaseProfile(
     displayName: typeof data.display_name === 'string' && data.display_name.trim() !== ''
       ? data.display_name
       : null,
-    role: data.role as AuthRole,
+    role,
   };
 }
