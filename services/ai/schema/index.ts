@@ -12,5 +12,5 @@ export {
   toGeminiSchema,
   toJsonSchema,
   toResponseFormat,
-} from './AISchema';
-export type { AIJsonSchema, AISchemaType } from './AISchema';
+} from './AISchema.js';
+export type { AIJsonSchema, AISchemaType } from './AISchema.js';

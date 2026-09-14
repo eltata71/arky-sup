@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
-import { authenticateProxyCaller } from './_shared/authenticateProxyCaller';
-import { toGeminiSchema, toResponseFormat } from '../services/ai/schema';
+import { authenticateProxyCaller } from './_shared/authenticateProxyCaller.js';
+import { toGeminiSchema, toResponseFormat } from '../services/ai/schema/index.js';
 import type { IncomingMessage } from 'node:http';
 import {
   consumeRateLimit,
@@ -14,7 +14,7 @@ import {
   resetRateLimitBuckets,
   sendJson,
   type ResponseWithJson,
-} from './_shared/proxyRuntime';
+} from './_shared/proxyRuntime.js';
 
 /**
  * Provider-agnostic serverless AI proxy.
