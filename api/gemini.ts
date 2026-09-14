@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { authenticateProxyCaller } from './_shared/authenticateProxyCaller';
+import { authenticateProxyCaller } from './_shared/authenticateProxyCaller.js';
 import type { IncomingMessage } from 'node:http';
 import {
   consumeRateLimit,
@@ -12,7 +12,7 @@ import {
   resetRateLimitBuckets,
   sendJson,
   type ResponseWithJson,
-} from './_shared/proxyRuntime';
+} from './_shared/proxyRuntime.js';
 
 /**
  * Gemini-only serverless proxy (legacy endpoint, wired via
