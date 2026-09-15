@@ -1,0 +1,1481 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-15T19:21:19.380Z",
+  "sourceFiles": [
+    "App.tsx",
+    "api/_shared/authenticateProxyCaller.ts",
+    "api/_shared/proxyRuntime.ts",
+    "api/_shared/verifyIdToken.ts",
+    "api/ai.ts",
+    "api/gemini.ts",
+    "components/AddArtifactModal.tsx",
+    "components/AppRail.tsx",
+    "components/ArchitectureKnowledgeGraphPanel.tsx",
+    "components/ArtifactCanvas.tsx",
+    "components/ArtifactHistoryModal.tsx",
+    "components/ArtifactOriginBadge.tsx",
+    "components/ArtifactReadinessModal.tsx",
+    "components/ArtifactSelectionStep.tsx",
+    "components/ArtifactSortControl.tsx",
+    "components/AssistantPanel.tsx",
+    "components/BoardView.tsx",
+    "components/Breadcrumbs.tsx",
+    "components/ChatInterface.tsx",
+    "components/ChatModal.tsx",
+    "components/CommandPalette.tsx",
+    "components/ConfirmDialog.tsx",
+    "components/ConsistencyCheckModal.tsx",
+    "components/ContextGraphPanel.tsx",
+    "components/CopilotSidebar.tsx",
+    "components/CustomArtifactBriefWizard.tsx",
+    "components/CustomArtifactRequestModal.tsx",
+    "components/CustomEdge.tsx",
+    "components/CustomNode.tsx",
+    "components/DataIntegrityCheckModal.tsx",
+    "components/ErrorBoundary.tsx",
+    "components/ExcalidrawViewer.tsx",
+    "components/ExecutiveOnePager.tsx",
+    "components/GlobalObservabilityCenter.tsx",
+    "components/GuidedCreationModal.tsx",
+    "components/Icons.tsx",
+    "components/InteractiveGraph.tsx",
+    "components/KeyboardShortcutsModal.tsx",
+    "components/LatestArtifactCard.tsx",
+    "components/LucidchartViewer.tsx",
+    "components/MarkdownToolbar.tsx",
+    "components/MemoryCenterModal.tsx",
+    "components/MobileBottomNav.tsx",
+    "components/Modal.tsx",
+    "components/NodeIcons.tsx",
+    "components/PersistenceStatusBanner.tsx",
+    "components/PresentationMode.tsx",
+    "components/ProjectCreationStatus.tsx",
+    "components/ProjectHub.tsx",
+    "components/ProjectTimeline.tsx",
+    "components/ReactFlowCanvas.tsx",
+    "components/ReviewArchitectureModal.tsx",
+    "components/RuntimeErrorOverlay.tsx",
+    "components/SkeletonLoader.tsx",
+    "components/VersionConflictModal.tsx",
+    "components/VersionHistoryPanel.tsx",
+    "components/account/AccountPanel.tsx",
+    "components/architectureOffice/ArbDecisionPanel.tsx",
+    "components/architectureOffice/AssistantDock.tsx",
+    "components/architectureOffice/AssistantLauncher.tsx",
+    "components/architectureOffice/EngagementCharterReview.tsx",
+    "components/architectureOffice/EngagementIntakeWizard.tsx",
+    "components/architectureOffice/EngagementTaskBoard.tsx",
+    "components/architectureOffice/OfficeAgentPicker.tsx",
+    "components/architectureOffice/OfficeCapabilitiesPanel.tsx",
+    "components/architectureOffice/OfficeTimeline.tsx",
+    "components/architectureOffice/PersonaAvatar.tsx",
+    "components/architectureOffice/TeamCoordinationPanel.tsx",
+    "components/architectureOffice/agentProfile/AgentProfileAvatar.tsx",
+    "components/architectureOffice/agentProfile/AgentProfileCard.tsx",
+    "components/architectureOffice/agentProfile/AgentProfileEditor.tsx",
+    "components/architectureOffice/agentProfile/AgentProfileSheet.tsx",
+    "components/architectureOffice/agentProfile/AgentTeamMap.tsx",
+    "components/architectureOffice/agentProfile/index.ts",
+    "components/architectureOffice/dashboard/DecisionQueue.tsx",
+    "components/architectureOffice/dashboard/OfficeKpiRow.tsx",
+    "components/architectureOffice/dashboard/PortfolioExplorer.tsx",
+    "components/architectureOffice/dashboard/PortfolioPulse.tsx",
+    "components/architectureOffice/dashboard/SpecialistLoadPanel.tsx",
+    "components/architectureOffice/dashboard/index.ts",
+    "components/architectureOffice/index.ts",
+    "components/architectureOffice/officeChartTokens.ts",
+    "components/architectureOffice/officeUiIcons.tsx",
+    "components/architectureOffice/officeUiLabels.ts",
+    "components/artifactCanvasObservability.ts",
+    "components/artifacts/ArtifactInspectorPanel.tsx",
+    "components/artifacts/ArtifactPresentationView.tsx",
+    "components/artifacts/ArtifactStatusBadge.tsx",
+    "components/artifacts/CommentThread.tsx",
+    "components/artifacts/DocumentOutline.tsx",
+    "components/artifacts/ReviewPanel.tsx",
+    "components/artifacts/ReviewStatusBadge.tsx",
+    "components/artifacts/ReviewSyncBadge.tsx",
+    "components/artifacts/ViewerCrashFallback.tsx",
+    "components/artifacts/diagnostic/ObservabilityBanner.tsx",
+    "components/artifacts/diagram/DiagramErrorPanel.tsx",
+    "components/artifacts/diagram/DiagramSkeleton.tsx",
+    "components/artifacts/diagram/DiagramView.tsx",
+    "components/artifacts/diagram/diagramFlow.ts",
+    "components/artifacts/diagram/mermaidTheme.ts",
+    "components/artifacts/document/DocumentPaper.tsx",
+    "components/artifacts/document/DocumentView.tsx",
+    "components/artifacts/document/DocumentViewToolbar.tsx",
+    "components/artifacts/document/documentPresentation.ts",
+    "components/artifacts/excalidraw/ExcalidrawArtifactView.tsx",
+    "components/artifacts/export/ArtifactExportModal.tsx",
+    "components/artifacts/fable/FableArtifactView.tsx",
+    "components/artifacts/fable/FableDiagramCanvas.tsx",
+    "components/artifacts/fable/fableTheme.ts",
+    "components/artifacts/index.ts",
+    "components/artifacts/lucidchart/LucidchartArtifactView.tsx",
+    "components/artifacts/markdown/MarkdownView.tsx",
+    "components/artifacts/presentation/SlideViewer.tsx",
+    "components/artifacts/quality/ArtifactQualityBadge.tsx",
+    "components/artifacts/quality/ArtifactQualityPanel.tsx",
+    "components/artifacts/quality/DiagramQualityBadge.tsx",
+    "components/artifacts/quality/DiagramQualityPanel.tsx",
+    "components/artifacts/suggestions/ArtifactSuggestionsPanel.tsx",
+    "components/artifacts/toolbar/ArtifactBottomToolbar.tsx",
+    "components/artifacts/toolbar/ArtifactTopToolbar.tsx",
+    "components/artifacts/trace/GenerationTracePanel.tsx",
+    "components/artifacts/wizard/CollapsibleSection.tsx",
+    "components/artifacts/wizard/RecommendationCard.tsx",
+    "components/artifacts/wizard/SourceSelectionCard.tsx",
+    "components/artifacts/wizard/WizardStepProgress.tsx",
+    "components/artifacts/wizard/index.ts",
+    "components/assistant/AgentActionCard.tsx",
+    "components/assistant/MemoryDraftEditor.tsx",
+    "components/attentions/AttentionCard.tsx",
+    "components/attentions/AttentionContributionPanel.tsx",
+    "components/attentions/AttentionDetailsPanel.tsx",
+    "components/attentions/AttentionInitiativeGate.tsx",
+    "components/attentions/AttentionKpiRow.tsx",
+    "components/attentions/AttentionTrackingPanel.tsx",
+    "components/attentions/LinkInitiativeModal.tsx",
+    "components/attentions/attentionUiLabels.ts",
+    "components/attentions/index.ts",
+    "components/businessInitiatives/InitiativeCard.tsx",
+    "components/businessInitiatives/InitiativeDeliveryPanel.tsx",
+    "components/businessInitiatives/InitiativeDetailPanels.tsx",
+    "components/businessInitiatives/InitiativeDocumentsPanel.tsx",
+    "components/businessInitiatives/InitiativeDraftReview.tsx",
+    "components/businessInitiatives/InitiativeIntakeWizard.tsx",
+    "components/businessInitiatives/InitiativeKpiRow.tsx",
+    "components/businessInitiatives/InitiativeMotivationPanel.tsx",
+    "components/businessInitiatives/InitiativePicker.tsx",
+    "components/businessInitiatives/InitiativePulse.tsx",
+    "components/businessInitiatives/index.ts",
+    "components/businessInitiatives/initiativeUiLabels.ts",
+    "components/businessInitiatives/panelPrimitives.tsx",
+    "components/capture/CaptureAssist.tsx",
+    "components/capture/CaptureSuggestionCard.tsx",
+    "components/capture/FieldAssistButton.tsx",
+    "components/capture/FormAssistBar.tsx",
+    "components/capture/index.ts",
+    "components/copilot/ArtifactSelectorCard.tsx",
+    "components/copilot/ProjectCopilotChatModal.tsx",
+    "components/dashboard/AttentionCenter.tsx",
+    "components/dashboard/PortfolioHealthHero.tsx",
+    "components/dashboard/index.ts",
+    "components/diagram/CanvasErrorBoundaries.tsx",
+    "components/diagram/DiagramInspectorSection.tsx",
+    "components/memory/ChatHistoryPanel.tsx",
+    "components/navigation/AppRailFooter.tsx",
+    "components/navigation/BrokenLinksPanel.tsx",
+    "components/navigation/HierarchyBreadcrumb.tsx",
+    "components/navigation/PortfolioCanvas.tsx",
+    "components/navigation/PortfolioSearchBox.tsx",
+    "components/navigation/ProjectContextBar.tsx",
+    "components/navigation/RailRevealedText.tsx",
+    "components/navigation/appRailItems.tsx",
+    "components/navigation/index.ts",
+    "components/platformGuide/PlatformGuideDock.tsx",
+    "components/platformGuide/index.ts",
+    "components/publication/PublicationAccessibilityPanel.tsx",
+    "components/publication/PublicationApprovalPanel.tsx",
+    "components/publication/PublicationCenter.tsx",
+    "components/publication/PublicationExportPanel.tsx",
+    "components/publication/PublicationManifestView.tsx",
+    "components/publication/PublicationPackagePanel.tsx",
+    "components/publication/PublicationPreflightModal.tsx",
+    "components/publication/PublicationReadinessPanel.tsx",
+    "components/publication/index.ts",
+    "components/publication/publicationUi.ts",
+    "components/reactFlowCanvas/DiagramLegend.tsx",
+    "components/reactFlowCanvas/canvasGroupZones.tsx",
+    "components/reactFlowCanvas/canvasImageExport.ts",
+    "components/reactFlowCanvas/canvasLayout.ts",
+    "components/reactFlowCanvas/canvasNarrative.ts",
+    "components/reactFlowCanvas/index.ts",
+    "components/routing/lazyWithRetry.ts",
+    "components/ui/AIArchitectIdentity.tsx",
+    "components/ui/Alert.tsx",
+    "components/ui/Badge.tsx",
+    "components/ui/Button.tsx",
+    "components/ui/Card.tsx",
+    "components/ui/CommandPaletteTrigger.tsx",
+    "components/ui/Drawer.tsx",
+    "components/ui/Dropdown.tsx",
+    "components/ui/EmptyState.tsx",
+    "components/ui/Input.tsx",
+    "components/ui/Kbd.tsx",
+    "components/ui/PageSkeleton.tsx",
+    "components/ui/ResizeHandle.tsx",
+    "components/ui/SafeRichText.tsx",
+    "components/ui/SectionHeader.tsx",
+    "components/ui/SegmentedControl.tsx",
+    "components/ui/Skeleton.tsx",
+    "components/ui/Spinner.tsx",
+    "components/ui/StatusDot.tsx",
+    "components/ui/Tabs.tsx",
+    "components/ui/Tooltip.tsx",
+    "components/ui/charts/ChartEmptyState.tsx",
+    "components/ui/charts/DonutChart.tsx",
+    "components/ui/charts/FlowBars.tsx",
+    "components/ui/charts/RadialGauge.tsx",
+    "components/ui/charts/Sparkline.tsx",
+    "components/ui/charts/StackedBar.tsx",
+    "components/ui/charts/StatTile.tsx",
+    "components/ui/charts/StatusBars.tsx",
+    "components/ui/charts/TrendArea.tsx",
+    "components/ui/charts/chartTypes.ts",
+    "components/ui/charts/index.ts",
+    "components/ui/cn.ts",
+    "components/ui/index.ts",
+    "context/AppContext.tsx",
+    "context/AuthContext.tsx",
+    "context/CommandPaletteContext.tsx",
+    "context/InitiativeContext.tsx",
+    "context/LMSContext.tsx",
+    "context/ObservabilityContext.tsx",
+    "context/OfficeContext.tsx",
+    "context/ToastContext.tsx",
+    "context/app/appContextTypes.ts",
+    "context/app/initialSettings.ts",
+    "context/app/useAppBootstrap.ts",
+    "context/app/useArchitectureGraphSync.ts",
+    "context/app/useArtifactsState.ts",
+    "context/app/usePersistenceReporter.ts",
+    "context/app/useProjectHistory.ts",
+    "context/app/useProjectsState.ts",
+    "context/app/useSettingsState.ts",
+    "context/auth/useAuthSessionBootstrap.ts",
+    "firebase.json",
+    "firebase.ts",
+    "hooks/artifacts/index.ts",
+    "hooks/artifacts/useArtifactAssessment.ts",
+    "hooks/artifacts/useArtifactEditing.ts",
+    "hooks/artifacts/useArtifactExport.ts",
+    "hooks/artifacts/useArtifactExportActions.ts",
+    "hooks/artifacts/useArtifactFullscreen.ts",
+    "hooks/artifacts/useArtifactSpeech.ts",
+    "hooks/artifacts/useArtifactSuggestions.ts",
+    "hooks/artifacts/useArtifactViewMode.ts",
+    "hooks/artifacts/useCanvasStorytellingCommands.ts",
+    "hooks/artifacts/useDiagramRendering.ts",
+    "hooks/artifacts/useDocumentPresentation.ts",
+    "hooks/artifacts/useDocumentRendering.ts",
+    "hooks/artifacts/useExcalidrawRendering.ts",
+    "hooks/artifacts/useGenerationDiagnostic.ts",
+    "hooks/artifacts/useSuggestionActionRunner.ts",
+    "hooks/useAgentActions.ts",
+    "hooks/useAgentMemoryStore.ts",
+    "hooks/useAgentProfiles.ts",
+    "hooks/useAriaAnnouncer.tsx",
+    "hooks/useAttentionInitiatives.ts",
+    "hooks/useCaptureAssistant.ts",
+    "hooks/useCreateAttention.ts",
+    "hooks/useFocusTrap.ts",
+    "hooks/useInitiativeDelivery.ts",
+    "hooks/useKeyboardModality.ts",
+    "hooks/useLMS.ts",
+    "hooks/useLevelCapture.ts",
+    "hooks/usePlatformGuide.ts",
+    "hooks/usePortfolioCommandCenter.ts",
+    "hooks/useProjectArtifacts.ts",
+    "hooks/useRailExpansion.ts",
+    "hooks/useReducedMotion.ts",
+    "hooks/useResizablePanel.ts",
+    "hooks/useTheme.ts",
+    "hooks/useTrainingSync.ts",
+    "index.tsx",
+    "lib/a11y.ts",
+    "lib/ai/index.ts",
+    "lib/ai/modelCatalog.ts",
+    "lib/artifactPersistenceGuards.ts",
+    "lib/artifacts/artifactClassification.ts",
+    "lib/artifacts/artifactGovernance.ts",
+    "lib/artifacts/artifactKind.ts",
+    "lib/artifacts/artifactPipelineContracts.ts",
+    "lib/artifacts/artifactPresentationModel.ts",
+    "lib/artifacts/artifactSuggestions.ts",
+    "lib/artifacts/contracts.ts",
+    "lib/artifacts/documentIR.ts",
+    "lib/artifacts/exportContracts.ts",
+    "lib/artifacts/index.ts",
+    "lib/authz/index.ts",
+    "lib/authz/permissions.ts",
+    "lib/capture/captureContracts.ts",
+    "lib/capture/captureFields.ts",
+    "lib/capture/index.ts",
+    "lib/chartSvg.ts",
+    "lib/codeHighlight.ts",
+    "lib/colorContrast.ts",
+    "lib/designTokens.ts",
+    "lib/diagram/DiagramIRTypes.ts",
+    "lib/diagram/index.ts",
+    "lib/diagram/semanticPatch.ts",
+    "lib/diagram/storyPlan.ts",
+    "lib/diagramBpmn.ts",
+    "lib/diagramC4Levels.ts",
+    "lib/diagramCategoryLabels.ts",
+    "lib/diagramTechBadges.ts",
+    "lib/diagramThemes.ts",
+    "lib/diagramTokens.ts",
+    "lib/eaTerminology.ts",
+    "lib/elkLayoutEngine.ts",
+    "lib/errorMessage.ts",
+    "lib/firebaseEmulatorPolicy.ts",
+    "lib/firestoreData.ts",
+    "lib/i18n/index.ts",
+    "lib/i18n/translate.ts",
+    "lib/i18n/translations.ts",
+    "lib/ids.ts",
+    "lib/layoutEngine.ts",
+    "lib/layoutSelector.ts",
+    "lib/lmsProgress.ts",
+    "lib/lmsVersions.ts",
+    "lib/markdownTables.ts",
+    "lib/platformGuide/index.ts",
+    "lib/platformGuide/platformGuideContracts.ts",
+    "lib/platformGuide/platformGuideTopics.ts",
+    "lib/printDocument.ts",
+    "lib/richText/index.ts",
+    "lib/richText/renderMarkdown.ts",
+    "lib/richText/sanitizeHtml.ts",
+    "lib/runtimeConfig.ts",
+    "lib/secretShapes.ts",
+    "lib/security.ts",
+    "lib/semanticLayoutPolicy.ts",
+    "lib/semanticRoleResolver.ts",
+    "lib/speechRecognition.ts",
+    "lib/textDiff.ts",
+    "lib/traceId.ts",
+    "lib/untrustedContent.ts",
+    "modules.json",
+    "package.json",
+    "pages/AgentsPage.tsx",
+    "pages/AuthPage.tsx",
+    "pages/DashboardPage.tsx",
+    "pages/EngagementRoom.tsx",
+    "pages/InitiativeRoom.tsx",
+    "pages/InitiativesPage.tsx",
+    "pages/LMS/CertificateView.tsx",
+    "pages/LMS/CourseView.tsx",
+    "pages/LMS/EditCourseModal.tsx",
+    "pages/LMS/EvaluationResultCard.tsx",
+    "pages/LMS/LMSAILab.tsx",
+    "pages/LMS/LMSAnalytics.tsx",
+    "pages/LMS/LMSCatalog.tsx",
+    "pages/LMS/LMSConsulting.tsx",
+    "pages/LMS/LMSDashboard.tsx",
+    "pages/LMS/LMSDiagnostic.tsx",
+    "pages/LMS/LMSSmartNotes.tsx",
+    "pages/LMS/LessonLab.tsx",
+    "pages/LMS/LessonMermaid.tsx",
+    "pages/LMS/LessonModal.tsx",
+    "pages/LMS/StudentContextModal.tsx",
+    "pages/OfficePage.tsx",
+    "pages/ProjectsPage.tsx",
+    "pages/SDDProcessView.tsx",
+    "pages/SettingsPage.tsx",
+    "pages/TrainingCenterPage.tsx",
+    "pages/UserManagementPage.tsx",
+    "pages/Workspace.tsx",
+    "scripts/buildWithPlaceholders.mjs",
+    "scripts/checkBundleBudget.mjs",
+    "scripts/checkBundleSecrets.mjs",
+    "scripts/checkModuleBoundaries.mjs",
+    "scripts/checkModuleSize.mjs",
+    "scripts/checkOrphanScripts.mjs",
+    "scripts/countAnyTokens.mjs",
+    "scripts/seedE2E.mjs",
+    "scripts/supabase/authz-remote-probe.sql",
+    "scripts/supabase/knowledge-graph-remote-probe.sql",
+    "scripts/supabase/learning-remote-probe.sql",
+    "scripts/supabase/office-engagements-remote-probe.sql",
+    "scripts/supabase/platform-reference-parameters-remote-probe.sql",
+    "scripts/supabase/projects-artifacts-remote-probe.sql",
+    "scripts/supabase/sql-contract-bootstrap.sql",
+    "scripts/supabase/storage-private-objects-remote-probe.sql",
+    "services/adapters/backendSelection.ts",
+    "services/adapters/firebaseIdentityAdapter.ts",
+    "services/adapters/identityBackend.ts",
+    "services/adapters/index.ts",
+    "services/adapters/supabaseAuthClient.ts",
+    "services/adapters/supabaseDataBackend.ts",
+    "services/adapters/supabaseIdentityAdapter.ts",
+    "services/agent/AgentActionRepository.ts",
+    "services/agent/agentConfirmationGate.ts",
+    "services/agent/agentContextComposer.ts",
+    "services/agent/agentExecutor.ts",
+    "services/agent/agentLessonRecorder.ts",
+    "services/agent/agentLogger.ts",
+    "services/agent/agentPlanner.ts",
+    "services/agent/agentRecord.ts",
+    "services/agent/agentTypes.ts",
+    "services/agent/artifactReferenceResolver.ts",
+    "services/agent/index.ts",
+    "services/agent/intentClassifier.ts",
+    "services/agent/intentClassifierLLM.ts",
+    "services/agent/memoryExtractor.ts",
+    "services/agent/proactiveDetector.ts",
+    "services/agent/templateMatcher.ts",
+    "services/ai/aiProxyClient.ts",
+    "services/ai/aiProxyEnforcement.ts",
+    "services/ai/aiProxyPolicy.ts",
+    "services/ai/artifactSuggestionService.ts",
+    "services/ai/artifactSuggestionTypes.ts",
+    "services/ai/byokConsent.ts",
+    "services/ai/callControl/aiCallControlService.ts",
+    "services/ai/callControl/contextBudget.ts",
+    "services/ai/capabilities/activeCapabilities.ts",
+    "services/ai/capabilities/index.ts",
+    "services/ai/capabilities/negotiate.ts",
+    "services/ai/catalog/ProviderModelCatalog.ts",
+    "services/ai/catalog/catalogs.ts",
+    "services/ai/catalog/index.ts",
+    "services/ai/core/AICapabilities.ts",
+    "services/ai/core/AIContent.ts",
+    "services/ai/core/AIError.ts",
+    "services/ai/core/AIModel.ts",
+    "services/ai/core/AIPolicy.ts",
+    "services/ai/core/AIProvider.ts",
+    "services/ai/core/AIRequest.ts",
+    "services/ai/core/AIRequestExecutor.ts",
+    "services/ai/core/AIResponse.ts",
+    "services/ai/core/AIStream.ts",
+    "services/ai/core/AITool.ts",
+    "services/ai/core/AITrace.ts",
+    "services/ai/core/index.ts",
+    "services/ai/core/modelFallbackLoop.ts",
+    "services/ai/core/requestGuards.ts",
+    "services/ai/errors/AIErrorClassifier.ts",
+    "services/ai/errors/aiServiceError.ts",
+    "services/ai/errors/index.ts",
+    "services/ai/errors/retryDecisions.ts",
+    "services/ai/generation/aiGateway.ts",
+    "services/ai/generation/artifactGenerationService.ts",
+    "services/ai/generation/assistantService.ts",
+    "services/ai/generation/capture/captureAssistantService.ts",
+    "services/ai/generation/diagramEdit/diagramEditService.ts",
+    "services/ai/generation/diagramGenerationService.ts",
+    "services/ai/generation/documentGenerationService.ts",
+    "services/ai/generation/guidedProjectCreationService.ts",
+    "services/ai/generation/index.ts",
+    "services/ai/generation/initiativeAssistantService.ts",
+    "services/ai/generation/learning/courseAuthoring.ts",
+    "services/ai/generation/learning/diagramChallenge.ts",
+    "services/ai/generation/learning/index.ts",
+    "services/ai/generation/learning/learningTypes.ts",
+    "services/ai/generation/learning/lessonDelivery.ts",
+    "services/ai/generation/learningService.ts",
+    "services/ai/generation/legacyGeminiBridge.ts",
+    "services/ai/generation/platformGuide/platformGuideService.ts",
+    "services/ai/generation/providerModelDirectory.ts",
+    "services/ai/generation/recommendationService.ts",
+    "services/ai/guardrails/guardrailTypes.ts",
+    "services/ai/guardrails/index.ts",
+    "services/ai/guardrails/inputGuardrails.ts",
+    "services/ai/guardrails/outputGuardrails.ts",
+    "services/ai/guardrails/promptInjection.ts",
+    "services/ai/index.ts",
+    "services/ai/modelRouting/AIModelRouter.ts",
+    "services/ai/modelRouting/index.ts",
+    "services/ai/parseAiJson.ts",
+    "services/ai/prompts/diagramPrompts.ts",
+    "services/ai/prompts/diagramStorySchema.ts",
+    "services/ai/providers/AIProviderFactory.ts",
+    "services/ai/providers/anthropic/AnthropicProvider.ts",
+    "services/ai/providers/anthropic/anthropicApiKey.ts",
+    "services/ai/providers/anthropic/anthropicModels.ts",
+    "services/ai/providers/anthropic/index.ts",
+    "services/ai/providers/gemini/GeminiProvider.ts",
+    "services/ai/providers/gemini/geminiClient.ts",
+    "services/ai/providers/gemini/index.ts",
+    "services/ai/providers/index.ts",
+    "services/ai/providers/openrouter/OpenRouterProvider.ts",
+    "services/ai/providers/openrouter/index.ts",
+    "services/ai/providers/openrouter/openRouterApiKey.ts",
+    "services/ai/providers/openrouter/openRouterErrorClassifier.ts",
+    "services/ai/providers/openrouter/openRouterModels.ts",
+    "services/ai/providers/openrouter/sse.ts",
+    "services/ai/proxyAuthHeaders.ts",
+    "services/ai/retry/AIRetryPolicy.ts",
+    "services/ai/retry/AITimeoutPolicy.ts",
+    "services/ai/retry/index.ts",
+    "services/ai/routing/index.ts",
+    "services/ai/routing/providerHealth.ts",
+    "services/ai/routing/routePlanner.ts",
+    "services/ai/routing/routeRequest.ts",
+    "services/ai/routing/routeTypes.ts",
+    "services/ai/schema/AISchema.ts",
+    "services/ai/schema/index.ts",
+    "services/ai/structuredOutput/index.ts",
+    "services/ai/tools/AITool.ts",
+    "services/ai/tools/artifactTools.ts",
+    "services/ai/tools/index.ts",
+    "services/ai/tracing/AITraceBuilder.ts",
+    "services/ai/tracing/index.ts",
+    "services/architectureKnowledgeGraph/ArchitectureConsistencyService.ts",
+    "services/architectureKnowledgeGraph/ArchitectureEntityExtractor.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphDeduplication.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphFreshness.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphGenerationContext.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphMigrations.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphNormalization.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphObservability.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphPersistenceAdapter.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphPromptContextBuilder.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphQualityBridge.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphReport.ts",
+    "services/architectureKnowledgeGraph/ArchitectureGraphRuntimeValidation.ts",
+    "services/architectureKnowledgeGraph/ArchitectureImpactAnalysisService.ts",
+    "services/architectureKnowledgeGraph/ArchitectureKnowledgeGraphService.ts",
+    "services/architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes.ts",
+    "services/architectureKnowledgeGraph/ArchitectureRelationExtractor.ts",
+    "services/architectureKnowledgeGraph/ArchitectureTraceabilityService.ts",
+    "services/architectureKnowledgeGraph/SupabaseKnowledgeGraphRepository.ts",
+    "services/architectureKnowledgeGraph/index.ts",
+    "services/architectureOffice/OfficeAgentProfileRepository.ts",
+    "services/architectureOffice/OfficeAgentRouter.ts",
+    "services/architectureOffice/OfficeArbService.ts",
+    "services/architectureOffice/OfficeEngagementPlanner.ts",
+    "services/architectureOffice/OfficeEngagementRepository.ts",
+    "services/architectureOffice/OfficeEngagementRunner.ts",
+    "services/architectureOffice/OfficeRunnerAdapters.ts",
+    "services/architectureOffice/OfficeTypes.ts",
+    "services/architectureOffice/SupabaseOfficeEngagementRepository.ts",
+    "services/architectureOffice/agentDefinition.ts",
+    "services/architectureOffice/agentHandoff.ts",
+    "services/architectureOffice/agentRegistry.ts",
+    "services/architectureOffice/application/agentConfiguration.ts",
+    "services/architectureOffice/application/assistantConsultation.ts",
+    "services/architectureOffice/application/captureAssistance.ts",
+    "services/architectureOffice/application/platformGuidance.ts",
+    "services/architectureOffice/application/portfolioCommandCenter.ts",
+    "services/architectureOffice/index.ts",
+    "services/architectureOffice/officeAgentPersonas.ts",
+    "services/architectureOffice/officeAgentProfile.ts",
+    "services/architectureOffice/officeArchitectureKnowledge.ts",
+    "services/architectureOffice/officeArtifactValidators.ts",
+    "services/architectureOffice/officeConsolidationReview.ts",
+    "services/architectureOffice/officeCoordination.ts",
+    "services/architectureOffice/officeCoordinationInvoker.ts",
+    "services/architectureOffice/officeEngagementFactory.ts",
+    "services/architectureOffice/officeEngagementTransitions.ts",
+    "services/architectureOffice/officeOrchestration.ts",
+    "services/architectureOffice/officePortfolio.ts",
+    "services/architectureOffice/officePublicationBridge.ts",
+    "services/architectureOffice/officeQualityGates.ts",
+    "services/architectureOffice/officeRunTrace.ts",
+    "services/architectureOffice/officeShared.ts",
+    "services/architectureOffice/officeTelemetry.ts",
+    "services/architectureOffice/yamlStructure.ts",
+    "services/architectureProjects/ArchitectureProjectRepository.ts",
+    "services/architectureProjects/ArchitectureProjectTypes.ts",
+    "services/architectureProjects/architectureProjectFactory.ts",
+    "services/architectureProjects/artifactDocumentMapper.ts",
+    "services/architectureProjects/attentionTracking.ts",
+    "services/architectureProjects/index.ts",
+    "services/architectureProjects/projectCache.ts",
+    "services/architectureProjects/projectDocumentMapper.ts",
+    "services/architectureProjects/projectReads.ts",
+    "services/architectureProjects/projectRuntimeValidation.ts",
+    "services/architectureProjects/projectWrites.ts",
+    "services/artifactCompiler/ArtifactCompilationTrace.ts",
+    "services/artifactCompiler/ArtifactCompiler.ts",
+    "services/artifactCompiler/ArtifactCompilerTypes.ts",
+    "services/artifactCompiler/ArtifactContract.ts",
+    "services/artifactCompiler/ArtifactContractRegistry.ts",
+    "services/artifactCompiler/artifactSignature.ts",
+    "services/artifactCompiler/index.ts",
+    "services/artifactCompiler/profiles/contractDefinitions.ts",
+    "services/artifactCompiler/profiles/index.ts",
+    "services/artifactCompiler/recompile.ts",
+    "services/artifactCompiler/repair/documentRepair.ts",
+    "services/artifactCompiler/repair/index.ts",
+    "services/artifactCompiler/scoring/index.ts",
+    "services/artifactCompiler/scoring/unifiedScore.ts",
+    "services/artifactCompiler/validators/contractValidator.ts",
+    "services/artifactCompiler/validators/index.ts",
+    "services/artifactCompiler/validators/sectionValidator.ts",
+    "services/artifacts/ArtifactRepository.ts",
+    "services/artifacts/ArtifactTypes.ts",
+    "services/artifacts/application/artifactAssessment.ts",
+    "services/artifacts/architectureGraphAlignment.ts",
+    "services/artifacts/artifactBriefExtractionService.ts",
+    "services/artifacts/artifactBriefService.ts",
+    "services/artifacts/artifactContextSelectionService.ts",
+    "services/artifacts/artifactExportProfileService.ts",
+    "services/artifacts/artifactFactory.ts",
+    "services/artifacts/artifactFallbackDetection.ts",
+    "services/artifacts/artifactGenerationContract.ts",
+    "services/artifacts/artifactGenerationFallbacks.ts",
+    "services/artifacts/artifactGenerationFlags.ts",
+    "services/artifacts/artifactGenerationPipeline.ts",
+    "services/artifacts/artifactGenerationRun.ts",
+    "services/artifacts/artifactGenerationTrace.ts",
+    "services/artifacts/artifactPersistence.ts",
+    "services/artifacts/artifactPresentationCompiler.ts",
+    "services/artifacts/artifactPresentationFlags.ts",
+    "services/artifacts/artifactPresentationQualityService.ts",
+    "services/artifacts/artifactRecommendationService.ts",
+    "services/artifacts/artifactRefinementOrchestrator.ts",
+    "services/artifacts/deterministicArtifactFallbacks.ts",
+    "services/artifacts/deterministicHybridFallbacks.ts",
+    "services/artifacts/deterministicMermaidLabels.ts",
+    "services/artifacts/diagnostics.ts",
+    "services/artifacts/diagramPresentationCompiler.ts",
+    "services/artifacts/exportFacade.ts",
+    "services/artifacts/hybridPresentationCompiler.ts",
+    "services/artifacts/index.ts",
+    "services/artifacts/markdownPresentationCompiler.ts",
+    "services/artifacts/tablePresentationCompiler.ts",
+    "services/artifacts/viewController.ts",
+    "services/businessInitiatives/BusinessInitiativeRepository.ts",
+    "services/businessInitiatives/BusinessInitiativeTypes.ts",
+    "services/businessInitiatives/SupabaseBusinessInitiativeRepository.ts",
+    "services/businessInitiatives/businessInitiativeFactory.ts",
+    "services/businessInitiatives/index.ts",
+    "services/businessInitiatives/initiativeDelivery.ts",
+    "services/businessInitiatives/initiativeMetrics.ts",
+    "services/chat/ChatHistoryRepository.ts",
+    "services/chat/ChatTypes.ts",
+    "services/chat/chatCompactor.ts",
+    "services/chat/chatHistory.ts",
+    "services/chat/chatHistoryCap.ts",
+    "services/chat/compactionDigest.ts",
+    "services/chat/index.ts",
+    "services/contextGraph/contextCitationBuilder.ts",
+    "services/contextGraph/contextConflictDetector.ts",
+    "services/contextGraph/contextDeduplicator.ts",
+    "services/contextGraph/contextFreshnessEvaluator.ts",
+    "services/contextGraph/contextGraphBuilder.ts",
+    "services/contextGraph/contextGraphIntegration.ts",
+    "services/contextGraph/contextGraphSerializer.ts",
+    "services/contextGraph/contextGraphTypes.ts",
+    "services/contextGraph/contextPackBuilder.ts",
+    "services/contextGraph/contextRelevanceRanker.ts",
+    "services/contextGraph/contextSignalExtractor.ts",
+    "services/contextGraph/index.ts",
+    "services/diagram/accessibleSummary.ts",
+    "services/diagram/audienceProjector.ts",
+    "services/diagram/autoRepair.ts",
+    "services/diagram/bpmnValidation.ts",
+    "services/diagram/c4Validation.ts",
+    "services/diagram/diagramDiagnosticSummary.ts",
+    "services/diagram/diagramExportFrame.ts",
+    "services/diagram/diagramReadabilityMetrics.ts",
+    "services/diagram/diagramSignalExtractor.ts",
+    "services/diagram/diagramTelemetry.ts",
+    "services/diagram/diagramTypeInference.ts",
+    "services/diagram/diagramTypeQualityGates.ts",
+    "services/diagram/diagramVisualLints.ts",
+    "services/diagram/edgeHandleAssignment.ts",
+    "services/diagram/edgeLabelSlots.ts",
+    "services/diagram/edgeRoutingPolicy.ts",
+    "services/diagram/exportBoundingBoxCrop.ts",
+    "services/diagram/focusPrimaryFit.ts",
+    "services/diagram/groupSemantics.ts",
+    "services/diagram/groupZoneSeparation.ts",
+    "services/diagram/guardrails.ts",
+    "services/diagram/healthcareCompliance.ts",
+    "services/diagram/index.ts",
+    "services/diagram/inferSemanticGroups.ts",
+    "services/diagram/infiniteCanvasService.ts",
+    "services/diagram/irMigration.ts",
+    "services/diagram/irToExcalidraw.ts",
+    "services/diagram/irToMermaid.ts",
+    "services/diagram/irToReactFlow.ts",
+    "services/diagram/labelPolicy.ts",
+    "services/diagram/layoutDirective.ts",
+    "services/diagram/layoutQualityService.ts",
+    "services/diagram/layoutRetryPlanner.ts",
+    "services/diagram/mermaidToIR.ts",
+    "services/diagram/quality/canvasToIR.ts",
+    "services/diagram/quality/diagramLintRules.ts",
+    "services/diagram/quality/diagramQualityService.ts",
+    "services/diagram/quality/diagramQualityTypes.ts",
+    "services/diagram/quality/diagramScoring.ts",
+    "services/diagram/quality/issueAdapters.ts",
+    "services/diagram/qualityGate.ts",
+    "services/diagram/qualityRepair.ts",
+    "services/diagram/resolveRenderableDiagram.ts",
+    "services/diagram/runtimeVisualSignals.ts",
+    "services/diagram/semanticPatchEngine.ts",
+    "services/diagram/smartFit.ts",
+    "services/diagram/smartViewportFit.ts",
+    "services/diagram/storyDerivation.ts",
+    "services/diagram/storyPlanner.ts",
+    "services/diagram/suggestionActionExecutors.ts",
+    "services/diagram/suggestionActions.ts",
+    "services/diagram/visualGateGuard.ts",
+    "services/diagram/visualHierarchyPolicy.ts",
+    "services/diagram/visualQualityGate.ts",
+    "services/export/adapters/csvExporter.ts",
+    "services/export/adapters/diagramExporter.ts",
+    "services/export/adapters/docxExporter.ts",
+    "services/export/adapters/htmlExporter.ts",
+    "services/export/adapters/jsonExporter.ts",
+    "services/export/adapters/markdownExporter.ts",
+    "services/export/adapters/pdfExporter.ts",
+    "services/export/adapters/pptxExporter.ts",
+    "services/export/adapters/shared.ts",
+    "services/export/adapters/txtExporter.ts",
+    "services/export/adapters/xlsxExporter.ts",
+    "services/export/artifactExportPayload.ts",
+    "services/export/artifactExportValidation.ts",
+    "services/export/downloadService.ts",
+    "services/export/exportRegistry.ts",
+    "services/export/exportService.ts",
+    "services/export/exportTrace.ts",
+    "services/export/exportTypes.ts",
+    "services/export/exportValidation.ts",
+    "services/export/fileNameSanitizer.ts",
+    "services/export/index.ts",
+    "services/export/publicationExportRenderer.ts",
+    "services/export/utils/mermaidRaster.ts",
+    "services/export/utils/text.ts",
+    "services/export/utils/zip.ts",
+    "services/geminiService.ts",
+    "services/identity/authService.ts",
+    "services/identity/index.ts",
+    "services/identity/pilotRouting.ts",
+    "services/identity/supabasePasswordSetup.ts",
+    "services/identity/supabaseProfileService.ts",
+    "services/identity/userProvisioningService.ts",
+    "services/identity/userService.ts",
+    "services/learning/SupabaseLearningRepository.ts",
+    "services/learning/index.ts",
+    "services/learning/pilotLearningService.ts",
+    "services/learning/trainingService.ts",
+    "services/lucid/index.ts",
+    "services/lucid/lucidService.ts",
+    "services/memory/index.ts",
+    "services/memory/memoryEntries.ts",
+    "services/memory/memoryScopes.ts",
+    "services/observability/browserFailureClassification.ts",
+    "services/observability/index.ts",
+    "services/observability/observabilityService.ts",
+    "services/persistence/collectionPaths.ts",
+    "services/persistence/index.ts",
+    "services/persistence/localDraftStore.ts",
+    "services/persistence/mirroredList.ts",
+    "services/persistence/persistenceResult.ts",
+    "services/portfolioGraph/PortfolioGraphTypes.ts",
+    "services/portfolioGraph/index.ts",
+    "services/portfolioGraph/portfolioResolver.ts",
+    "services/portfolioGraph/portfolioSearch.ts",
+    "services/ports/index.ts",
+    "services/ports/memory.ts",
+    "services/ports/ports.ts",
+    "services/presentation/PresentationTypes.ts",
+    "services/presentation/index.ts",
+    "services/presentation/presentationPrompt.ts",
+    "services/presentation/presentationSchema.ts",
+    "services/publicationPipeline/PublicationAccessibilityService.ts",
+    "services/publicationPipeline/PublicationApprovalService.ts",
+    "services/publicationPipeline/PublicationAuditTrailService.ts",
+    "services/publicationPipeline/PublicationBrandingService.ts",
+    "services/publicationPipeline/PublicationExportOrchestrator.ts",
+    "services/publicationPipeline/PublicationManifestService.ts",
+    "services/publicationPipeline/PublicationObservability.ts",
+    "services/publicationPipeline/PublicationPackageService.ts",
+    "services/publicationPipeline/PublicationPersistenceAdapter.ts",
+    "services/publicationPipeline/PublicationPipelineService.ts",
+    "services/publicationPipeline/PublicationPipelineTypes.ts",
+    "services/publicationPipeline/PublicationPreflightService.ts",
+    "services/publicationPipeline/PublicationQualityBridge.ts",
+    "services/publicationPipeline/PublicationReadinessService.ts",
+    "services/publicationPipeline/PublicationRuntimeValidation.ts",
+    "services/publicationPipeline/PublicationTemplateRegistry.ts",
+    "services/publicationPipeline/PublicationVersionService.ts",
+    "services/publicationPipeline/index.ts",
+    "services/quality/artifactQualityGateService.ts",
+    "services/quality/artifactQualityModel.ts",
+    "services/quality/artifactQualityService.ts",
+    "services/quality/diagramQualityBridge.ts",
+    "services/quality/documentAcceptability.ts",
+    "services/quality/documentAutoRepair.ts",
+    "services/quality/documentQualityService.ts",
+    "services/quality/index.ts",
+    "services/quality/qualityGate.ts",
+    "services/quality/qualityProfiles.ts",
+    "services/quality/qualityReportRenderer.ts",
+    "services/review/ReviewTypes.ts",
+    "services/review/artifactReviewService.ts",
+    "services/review/firestoreArtifactReviewRepository.ts",
+    "services/review/hybridArtifactReviewRepository.ts",
+    "services/review/index.ts",
+    "services/review/localArtifactReviewRepository.ts",
+    "services/review/reviewTransitions.ts",
+    "services/review/types.ts",
+    "services/settings/SettingsRepository.ts",
+    "services/settings/SupabaseSettingsRepository.ts",
+    "services/settings/index.ts",
+    "supabase/database.types.ts",
+    "supabase/migrations/20260912001855_platform_foundation.sql",
+    "supabase/migrations/20260912044359_identity_authorization.sql",
+    "supabase/migrations/20260912052000_authorization_surface.sql",
+    "supabase/migrations/20260912060500_session_guard.sql",
+    "supabase/migrations/20260912060510_user_settings_pilot.sql",
+    "supabase/migrations/20260912060520_business_initiatives.sql",
+    "supabase/migrations/20260912060530_projects_artifacts.sql",
+    "supabase/migrations/20260912154634_projects_artifacts_integrity.sql",
+    "supabase/migrations/20260912161044_projects_artifacts_domain_contract.sql",
+    "supabase/migrations/20260912170000_office_engagements.sql",
+    "supabase/migrations/20260912181347_office_engagements_guards.sql",
+    "supabase/migrations/20260912183000_knowledge_graph.sql",
+    "supabase/migrations/20260912190000_learning.sql",
+    "supabase/migrations/20260912200000_learning_progress_secret_validation.sql",
+    "supabase/migrations/20260912210000_office_engagements_lint.sql",
+    "supabase/migrations/20260913223956_platform_reference_parameters.sql",
+    "supabase/migrations/20260913230744_platform_reference_secret_guard_else.sql",
+    "supabase/migrations/20260913232706_platform_reference_pii_and_initial_revision_guard.sql",
+    "supabase/migrations/20260915012714_storage_private_objects.sql",
+    "supabase/migrations/20260915013614_storage_policy_error_guards.sql",
+    "supabase/migrations/20260915023944_storage_authorization_hardening.sql",
+    "supabase/migrations/20260915024652_storage_privilege_hardening.sql",
+    "supabase/migrations/20260915024929_storage_anon_guard.sql",
+    "supabase/migrations/20260915150556_storage_integrity_and_probe_hardening.sql",
+    "supabase/migrations/20260915151825_storage_backend_schema_grant.sql",
+    "supabase/migrations/20260915155724_storage_readiness_and_acl_hardening.sql",
+    "supabase/migrations/20260915163356_storage_bucket_mime_and_mutation_hardening.sql",
+    "supabase/migrations/20260915180409_storage_ready_claim_fail_closed.sql",
+    "supabase/migrations/20260915191743_storage_owner_session_visibility.sql",
+    "supabase/migrations/20260915192003_storage_session_guard_grant.sql",
+    "supabase/seed.sql",
+    "types.ts",
+    "utils/artifactExploration.ts",
+    "utils/datetime.ts",
+    "utils/diagram/extractMermaid.ts",
+    "utils/markdownOutline.ts",
+    "vercel.json"
+  ],
+  "categories": [
+    {
+      "id": "firebase-bucket-configured",
+      "label": "Bucket Firebase configurado",
+      "status": "observed",
+      "fileCount": 1,
+      "matchCount": 1,
+      "evidence": [
+        {
+          "file": "firebase.ts",
+          "line": 11
+        }
+      ]
+    },
+    {
+      "id": "firebase-storage-sdk",
+      "label": "Firebase Storage usado por el SDK",
+      "status": "not-observed",
+      "fileCount": 0,
+      "matchCount": 0,
+      "evidence": []
+    },
+    {
+      "id": "supabase-storage-sdk",
+      "label": "Supabase Storage usado por el SDK",
+      "status": "not-observed",
+      "fileCount": 0,
+      "matchCount": 0,
+      "evidence": []
+    },
+    {
+      "id": "supabase-storage-schema",
+      "label": "Esquema/políticas de Supabase Storage",
+      "status": "observed",
+      "fileCount": 9,
+      "matchCount": 61,
+      "evidence": [
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 17
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 29
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 46
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 47
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 49
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 62
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 63
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 99
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 176
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 206
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 253
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 256
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 262
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 265
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 283
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 311
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 330
+        },
+        {
+          "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
+          "line": 343
+        },
+        {
+          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
+          "line": 8
+        },
+        {
+          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
+          "line": 45
+        },
+        {
+          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
+          "line": 228
+        },
+        {
+          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
+          "line": 266
+        },
+        {
+          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
+          "line": 295
+        },
+        {
+          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
+          "line": 297
+        },
+        {
+          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
+          "line": 299
+        }
+      ]
+    },
+    {
+      "id": "persistent-url",
+      "label": "URL persistida en un documento de dominio",
+      "status": "observed",
+      "fileCount": 2,
+      "matchCount": 3,
+      "evidence": [
+        {
+          "file": "services/businessInitiatives/BusinessInitiativeTypes.ts",
+          "line": 130
+        },
+        {
+          "file": "services/lucid/lucidService.ts",
+          "line": 52
+        },
+        {
+          "file": "services/lucid/lucidService.ts",
+          "line": 191
+        }
+      ]
+    },
+    {
+      "id": "inline-content",
+      "label": "Contenido de documento persistido inline",
+      "status": "observed",
+      "fileCount": 49,
+      "matchCount": 120,
+      "evidence": [
+        {
+          "file": "api/ai.ts",
+          "line": 54
+        },
+        {
+          "file": "api/ai.ts",
+          "line": 157
+        },
+        {
+          "file": "api/ai.ts",
+          "line": 268
+        },
+        {
+          "file": "api/ai.ts",
+          "line": 326
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 67
+        },
+        {
+          "file": "components/ChatInterface.tsx",
+          "line": 64
+        },
+        {
+          "file": "components/artifacts/DocumentOutline.tsx",
+          "line": 8
+        },
+        {
+          "file": "components/artifacts/presentation/SlideViewer.tsx",
+          "line": 10
+        },
+        {
+          "file": "components/copilot/ProjectCopilotChatModal.tsx",
+          "line": 479
+        },
+        {
+          "file": "context/LMSContext.tsx",
+          "line": 93
+        },
+        {
+          "file": "context/LMSContext.tsx",
+          "line": 423
+        },
+        {
+          "file": "hooks/artifacts/useDiagramRendering.ts",
+          "line": 40
+        },
+        {
+          "file": "lib/artifacts/artifactClassification.ts",
+          "line": 43
+        },
+        {
+          "file": "lib/artifacts/artifactClassification.ts",
+          "line": 51
+        },
+        {
+          "file": "lib/artifacts/artifactPipelineContracts.ts",
+          "line": 49
+        },
+        {
+          "file": "lib/artifacts/artifactPresentationModel.ts",
+          "line": 25
+        },
+        {
+          "file": "lib/artifacts/artifactPresentationModel.ts",
+          "line": 73
+        },
+        {
+          "file": "lib/artifacts/artifactSuggestions.ts",
+          "line": 163
+        },
+        {
+          "file": "lib/artifacts/contracts.ts",
+          "line": 63
+        },
+        {
+          "file": "lib/lmsVersions.ts",
+          "line": 17
+        },
+        {
+          "file": "lib/markdownTables.ts",
+          "line": 60
+        },
+        {
+          "file": "lib/markdownTables.ts",
+          "line": 87
+        },
+        {
+          "file": "lib/untrustedContent.ts",
+          "line": 42
+        },
+        {
+          "file": "pages/LMS/LessonMermaid.tsx",
+          "line": 13
+        },
+        {
+          "file": "pages/LMS/LessonModal.tsx",
+          "line": 41
+        }
+      ]
+    },
+    {
+      "id": "embedded-artifact-content",
+      "label": "Incrustación dentro de contenido de artefacto",
+      "status": "observed",
+      "fileCount": 55,
+      "matchCount": 205,
+      "evidence": [
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 66
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 68
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 304
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 308
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 392
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 392
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 393
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 393
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 395
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 397
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 399
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 460
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 562
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 815
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 825
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 914
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 957
+        },
+        {
+          "file": "components/artifacts/ArtifactInspectorPanel.tsx",
+          "line": 241
+        },
+        {
+          "file": "components/artifacts/ArtifactInspectorPanel.tsx",
+          "line": 474
+        },
+        {
+          "file": "components/artifacts/diagram/DiagramView.tsx",
+          "line": 133
+        },
+        {
+          "file": "components/artifacts/markdown/MarkdownView.tsx",
+          "line": 97
+        },
+        {
+          "file": "hooks/artifacts/useArtifactEditing.ts",
+          "line": 22
+        },
+        {
+          "file": "hooks/artifacts/useArtifactEditing.ts",
+          "line": 25
+        },
+        {
+          "file": "hooks/artifacts/useArtifactEditing.ts",
+          "line": 26
+        },
+        {
+          "file": "hooks/artifacts/useArtifactEditing.ts",
+          "line": 29
+        }
+      ]
+    },
+    {
+      "id": "browser-transient-blob",
+      "label": "Blob/URL generado solo para descarga del navegador",
+      "status": "observed",
+      "fileCount": 19,
+      "matchCount": 26,
+      "evidence": [
+        {
+          "file": "components/ExcalidrawViewer.tsx",
+          "line": 251
+        },
+        {
+          "file": "components/ExcalidrawViewer.tsx",
+          "line": 252
+        },
+        {
+          "file": "hooks/artifacts/useExcalidrawRendering.ts",
+          "line": 109
+        },
+        {
+          "file": "hooks/artifacts/useExcalidrawRendering.ts",
+          "line": 110
+        },
+        {
+          "file": "lib/artifactPersistenceGuards.ts",
+          "line": 102
+        },
+        {
+          "file": "pages/LMS/CourseView.tsx",
+          "line": 51
+        },
+        {
+          "file": "pages/LMS/CourseView.tsx",
+          "line": 52
+        },
+        {
+          "file": "pages/LMS/LessonModal.tsx",
+          "line": 440
+        },
+        {
+          "file": "pages/LMS/LessonModal.tsx",
+          "line": 441
+        },
+        {
+          "file": "pages/SDDProcessView.tsx",
+          "line": 265
+        },
+        {
+          "file": "pages/SDDProcessView.tsx",
+          "line": 266
+        },
+        {
+          "file": "services/export/adapters/csvExporter.ts",
+          "line": 16
+        },
+        {
+          "file": "services/export/adapters/diagramExporter.ts",
+          "line": 12
+        },
+        {
+          "file": "services/export/adapters/diagramExporter.ts",
+          "line": 24
+        },
+        {
+          "file": "services/export/adapters/docxExporter.ts",
+          "line": 72
+        },
+        {
+          "file": "services/export/adapters/htmlExporter.ts",
+          "line": 12
+        },
+        {
+          "file": "services/export/adapters/jsonExporter.ts",
+          "line": 33
+        },
+        {
+          "file": "services/export/adapters/markdownExporter.ts",
+          "line": 15
+        },
+        {
+          "file": "services/export/adapters/pdfExporter.ts",
+          "line": 1110
+        },
+        {
+          "file": "services/export/adapters/pptxExporter.ts",
+          "line": 407
+        },
+        {
+          "file": "services/export/adapters/txtExporter.ts",
+          "line": 9
+        },
+        {
+          "file": "services/export/adapters/xlsxExporter.ts",
+          "line": 33
+        },
+        {
+          "file": "services/export/artifactExportPayload.ts",
+          "line": 53
+        },
+        {
+          "file": "services/export/downloadService.ts",
+          "line": 16
+        },
+        {
+          "file": "services/lucid/lucidService.ts",
+          "line": 142
+        }
+      ]
+    },
+    {
+      "id": "external-document-provider",
+      "label": "Proveedor externo de documentos mencionado",
+      "status": "observed",
+      "fileCount": 27,
+      "matchCount": 89,
+      "evidence": [
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 33
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 111
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 955
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 956
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 970
+        },
+        {
+          "file": "components/ArtifactCanvas.tsx",
+          "line": 970
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 33
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 41
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 58
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 58
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 79
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 79
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 111
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 129
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 161
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 207
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 264
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 264
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 269
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 269
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 307
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 316
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 374
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 399
+        },
+        {
+          "file": "components/LucidchartViewer.tsx",
+          "line": 408
+        }
+      ]
+    },
+    {
+      "id": "file-storage-port",
+      "label": "Puerto abstracto de almacenamiento de archivos",
+      "status": "observed",
+      "fileCount": 3,
+      "matchCount": 6,
+      "evidence": [
+        {
+          "file": "services/ports/index.ts",
+          "line": 11
+        },
+        {
+          "file": "services/ports/index.ts",
+          "line": 18
+        },
+        {
+          "file": "services/ports/memory.ts",
+          "line": 8
+        },
+        {
+          "file": "services/ports/memory.ts",
+          "line": 32
+        },
+        {
+          "file": "services/ports/memory.ts",
+          "line": 32
+        },
+        {
+          "file": "services/ports/ports.ts",
+          "line": 118
+        }
+      ]
+    }
+  ]
+}
