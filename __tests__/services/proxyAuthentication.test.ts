@@ -86,6 +86,9 @@ beforeEach(() => {
   process.env.FIREBASE_PROJECT_ID = 'arky-test';
   delete process.env.AI_PROXY_ALLOW_UNAUTHENTICATED;
   delete process.env.AI_PROXY_ALLOWED_MODELS;
+  // The Firebase gate below must not see a Supabase deployment, real or stubbed.
+  delete process.env.VITE_SUPABASE_URL;
+  delete process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 });
 
 afterEach(() => {

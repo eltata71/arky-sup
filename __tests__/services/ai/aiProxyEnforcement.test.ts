@@ -93,6 +93,11 @@ describe('hasConsentedByok', () => {
     expect(hasConsentedByok(settingsWith({ apiKeySource: 'user', provider: 'openrouter' }))).toBe(true);
   });
 
+  it('recognizes a stored Anthropic key as BYOK for Anthropic requests', () => {
+    localStorage.setItem('user_anthropic_key', 'an-anthropic-key');
+    expect(hasConsentedByok(settingsWith({ apiKeySource: 'user', provider: 'anthropic' }))).toBe(true);
+  });
+
   it('is false for undefined settings', () => {
     expect(hasConsentedByok(undefined)).toBe(false);
   });

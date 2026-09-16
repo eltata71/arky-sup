@@ -286,6 +286,11 @@ class Database:
         if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_-]*', unquote(p.path[1:])) or not p.username:
             raise OperationError('simple database name and user required')
         self.env = {k: v for k, v in os.environ.items() if k in ('PATH', 'HOME', 'LANG', 'LC_ALL', 'SYSTEMROOT')}
+        # Relocatable PostgreSQL builds (no sudo) select shared libraries via
+        # the operator's own LD_LIBRARY_PATH; passing it through grants the
+        # subprocess nothing the operator does not already have.
+        if os.environ.get('LD_LIBRARY_PATH'):
+            self.env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
         self.env.update(PGHOST=p.hostname, PGPORT=str(p.port or 5432), PGUSER=unquote(p.username),
                         PGDATABASE=unquote(p.path[1:]), PGPASSWORD=unquote(p.password or ''),
                         PGCONNECT_TIMEOUT='10', PGAPPNAME='arky_recovery',
@@ -309,9 +314,25 @@ class Database:
     def restore(self, path):
         # Managed Storage metadata must be recreated by Storage API, never SQL replay.
         # All other schemas are destructive: exclusively a disposable local database.
-        self.run(['pg_restore', '--no-password', '--dbname', self.env['PGDATABASE'],
-                  '--clean', '--if-exists', '--exit-on-error', '--single-transaction',
-                  '--no-owner', '--exclude-schema=storage', str(path)])
+        # --clean still emits DROP SCHEMA storage even with --exclude-schema, which
+        # would destroy the operator's buckets shell; filter the TOC instead so
+        # excluded entries (drops included) never run. The schema travels as an
+        # exact whitespace-delimited token, so same-named helpers elsewhere
+        # (e.g. private.storage_path_is_owned) are unaffected.
+        toc = self.run(['pg_restore', '--list', str(path)])
+        keep = [line for line in toc.splitlines()
+                if ' storage ' not in f' {line} ']
+        if len(keep) < 2:
+            raise OperationError('database operation failed')
+        with tempfile.NamedTemporaryFile('w', suffix='.lst', delete=False) as handle:
+            handle.write('\n'.join(keep) + '\n')
+            use_list = handle.name
+        try:
+            self.run(['pg_restore', '--no-password', '--dbname', self.env['PGDATABASE'],
+                      '--clean', '--if-exists', '--exit-on-error', '--single-transaction',
+                      '--no-owner', '--use-list', use_list, str(path)])
+        finally:
+            Path(use_list).unlink(missing_ok=True)
 
     def inventory(self):
         names = json.loads(self.run(['psql', '-X', '-A', '-t', '--no-password', '-v', 'ON_ERROR_STOP=1'],

@@ -17,11 +17,13 @@
  */
 
 import type { Settings } from '../../types';
-import { proxyProviderFor } from './catalog';
+import { resolveProviderId } from './catalog';
+import type { AIProviderId } from './core/AIModel';
 
-const USER_KEY_STORAGE: Record<'gemini' | 'openrouter', string> = {
+const USER_KEY_STORAGE: Partial<Record<AIProviderId, string>> = {
   gemini: 'user_gemini_key',
   openrouter: 'user_openrouter_key',
+  anthropic: 'user_anthropic_key',
 };
 
 function readStoredKey(storageKey: string): string {
@@ -41,9 +43,10 @@ function readStoredKey(storageKey: string): string {
 export function hasConsentedByok(settings?: Settings): boolean {
   if (settings?.aiConfig?.apiKeySource !== 'user') return false;
 
-  const provider = proxyProviderFor(settings);
-  // A provider the catalog cannot place has no key slot to consent about.
-  if (!provider) return false;
+  const provider = resolveProviderId(settings);
+  const storageKey = USER_KEY_STORAGE[provider];
+  // A provider without a browser key slot cannot be consented as BYOK.
+  if (!storageKey) return false;
 
-  return readStoredKey(USER_KEY_STORAGE[provider]).length > 0;
+  return readStoredKey(storageKey).length > 0;
 }

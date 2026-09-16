@@ -3,8 +3,9 @@
 **Fecha:** 2026-09-14
 **Rama de trabajo:** `feat/f5-reference-parameters` → fusionada a `main` (PR #16, squash `276281d`)
 **Proyecto remoto:** ArkyDB-US (`us-east-1`)
-**Estado:** F5-datos **cerrada**. F5-operativa **verificada** (smoke 401 JSON en ambos endpoints).
-Pendiente solo inferencia autenticada extremo a extremo (requiere sesión de usuario).
+**Estado:** F5-datos **cerrada**. F5-operativa **cerrada con salvedad**
+(ver "Cierre con salvedad" al final): smoke sin auth verificado; inferencia
+autenticada E2E diferida a Fase 6 tras evidencia de `429` en prueba de usuario.
 
 ## Por qué costó cerrar (causas reales, no del código de negocio)
 
@@ -74,7 +75,29 @@ Pendiente solo inferencia autenticada extremo a extremo (requiere sesión de usu
 
 ## Criterios de salida a Fase 6
 
-Fase 6 no inicia sin: (a) inferencia autenticada OK por el usuario,
+Criterios originales del acta: (a) inferencia autenticada OK por el usuario,
 (b) decisión HIBP (plan o riesgo aceptado), (c) mapa UID aprobado o exclusión
 formal firmada, (d) CI de infra recuperado o evidencia local equivalente
 acordada.
+
+## Cierre con salvedad (2026-09-14, sesión con usuario)
+
+**Decisión del usuario:** cerrar F5 con salvedad y desplazar la verificación
+pendiente a Fase 6 para no bloquear desarrollo.
+
+**Evidencia que motiva la salvedad:** prueba de usuario en producción
+(`https://arkypro-1-0.vercel.app`, sesión piloto OK, datos OK) — el
+Laboratorio IA del LMS falla con "El proxy de IA está limitando las
+solicitudes". Logs del cliente: `ai.proxy.enforcement` / `rate-limited` en
+`/training`, 2 intentos (22:14 y 22:15 UTC). El proxy contestó `429` y, como
+producción es `fail-closed`, se bloqueó la llamada directa. No se capturó el
+cuerpo de `POST /api/ai` (`requestId`, `error`, `source`, `provider`), así que
+está sin distinguir: `429` local del proxy (`proxy_rate_limited`, 60/min por
+defecto) frente a `429` del proveedor (`provider_rate_limited`, cuota
+Gemini/OpenRouter). Dos intentos separados 25 s no deberían pegar el límite
+local: apunta a cuota del proveedor, sin afirmar.
+
+**Salvedad registrada:** F5 se cierra sin el criterio (a). Los cuatro criterios
+(a)–(d) pasan a backlog de Fase 6 / F7 según encaje (ver
+`docs/fase-6/plan-fase-6.md`). La inferencia autenticada con texto devuelto
+sigue siendo el gate antes de cualquier corte productivo (F8).

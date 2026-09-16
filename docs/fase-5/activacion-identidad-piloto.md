@@ -4,6 +4,7 @@
 
 - Una identidad administradora piloto, aprovisionada en Supabase Auth y con un perfil `api.user_profiles` activo de rol `superadmin`.
 - El correo de la cohorte se declara explícitamente en `VITE_SUPABASE_PILOT_EMAILS`; quien no esté en esa lista conserva el flujo Firebase.
+- El proxy serverless aplica además el allowlist en servidor mediante `SUPABASE_PILOT_EMAILS` (con fallback compatible a `VITE_SUPABASE_PILOT_EMAILS`); sin allowlist servidor, rechaza el token Supabase.
 - No existe registro público: `auth.enable_signup` y `auth.email.enable_signup` están deshabilitados.
 
 ## Flujo de primer acceso

@@ -1,8 +1,8 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public, pg_catalog;
-grant usage on schema extensions to anon, authenticated;
-grant execute on all functions in schema extensions to anon, authenticated;
+grant usage on schema extensions to anon, authenticated, service_role;
+grant execute on all functions in schema extensions to anon, authenticated, service_role;
 select no_plan();
 
 select has_table('api', 'file_objects', 'La metadata de archivos existe');
@@ -154,12 +154,13 @@ set local request.jwt.claims = '{"sub":"91000000-0000-4000-8000-000000000001","r
 select throws_ok($$delete from storage.objects where id = '93000000-0000-4000-8000-000000000001'$$,
   '42501', 'Direct deletion from storage tables is not allowed. Use the Storage API instead.',
   'El cliente no elimina un objeto no registrado');
-select (api.register_file_object(
+select lives_ok($$select api.register_file_object(
   'artifact-files',
   '91000000-0000-4000-8000-000000000001/artifact/project-1/artifact-1/v1/93000000-0000-4000-8000-000000000001.bin',
   '93000000-0000-4000-8000-000000000001',
   'artifact', 'project-1', 'artifact-1', 1,
-  'application/octet-stream', 10, repeat('a', 64), 'supabase')).id;
+  'application/octet-stream', 10, repeat('a', 64), 'supabase')$$,
+  'El propietario registra la metadata de su objeto');
 reset role;
 update api.user_profiles set role = 'admin'
 where id = '91000000-0000-4000-8000-000000000002';

@@ -41,6 +41,19 @@ export async function buildProxyAuthHeaders(
   // guessing which server call it was.
   if (traceId) headers[TRACE_ID_HEADER] = traceId;
   try {
+    const env = import.meta.env as Record<string, string | undefined>;
+    if (env.VITE_SUPABASE_PILOT_EMAILS?.trim()) {
+      const { isSupabasePilotEmail, parseSupabasePilotEmails } = await import('../identity');
+      const { loadSupabaseAuthClient } = await import('../adapters');
+      const { data, error } = await (await loadSupabaseAuthClient(env)).auth.getSession();
+      if (error) return headers;
+      const session = data?.session;
+      if (isSupabasePilotEmail(session?.user?.email, parseSupabasePilotEmails(env.VITE_SUPABASE_PILOT_EMAILS))) {
+        if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+        // Never substitute another identity when a pilot session lacks a token.
+        return headers;
+      }
+    }
     const token = await auth?.currentUser?.getIdToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
   } catch {
