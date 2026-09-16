@@ -33,6 +33,10 @@ insert into auth.sessions (id, user_id, not_after) values
   ('76000000-0000-4000-8000-000000000002', '66000000-0000-4000-8000-000000000002', null)
 on conflict (id) do nothing;
 
+-- El proyecto remoto puede conservar el singleton de una ejecución de producto.
+-- Se elimina solo dentro de esta transacción y el rollback lo restaura al final.
+delete from api.platform_reference_parameters;
+
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"66000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"76000000-0000-4000-8000-000000000001"}';
 select throws_ok($$select api.save_platform_reference_parameters('{"globalContext":["Estándar rechazado"]}', 1)$$,

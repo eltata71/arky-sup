@@ -147,8 +147,19 @@ reset role;
 /* ------------------------------------------------------- sesión (F4.6) */
 select ok(not has_function_privilege('authenticated', 'private.assert_session_active()', 'EXECUTE'),
   'La guarda de sesión no es un RPC');
-select ok(not has_function_privilege('authenticated', 'private.is_session_active()', 'EXECUTE'),
-  'El cliente no consulta el estado de sesión directamente');
+-- F6 (`20260915192003_storage_session_guard_grant`) otorga EXECUTE sobre
+-- `is_session_active()` a `authenticated` porque las políticas RLS owner-only
+-- la invocan directamente como ese rol. El helper solo responde sobre la
+-- propia sesión (fail-closed), sin exponer sesiones ajenas.
+select ok(has_function_privilege('authenticated', 'private.is_session_active()', 'EXECUTE'),
+  'El cliente ejecuta el helper de sesión que usan sus políticas RLS');
+select ok(not has_function_privilege('anon', 'private.is_session_active()', 'EXECUTE'),
+  'Anónimo no consulta el estado de sesión');
+-- Nota: la llamada directa `select private.is_session_active()` como
+-- `authenticated` sigue rechazada (`permission denied for schema private`,
+-- sin USAGE en `private` por diseño); el grant EXECUTE solo habilita la
+-- invocación desde las políticas RLS. El comportamiento fail-closed del
+-- helper se prueba por la vía RPC (sesión revocada/sin id/ajena/expirada).
 
 -- Revocar una sesión en Supabase Auth es BORRAR la fila.
 delete from auth.sessions where id = '50000000-0000-4000-8000-000000000002';

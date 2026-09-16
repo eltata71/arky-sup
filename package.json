@@ -24,6 +24,7 @@
     "check:any-budget": "node scripts/countAnyTokens.mjs",
     "check:no-orphan-scripts": "node scripts/checkOrphanScripts.mjs",
     "check:bundle-budget": "node scripts/checkBundleBudget.mjs dist",
+    "storage:inventory": "node scripts/storage/storageInventory.mjs",
     "check:module-size": "node scripts/checkModuleSize.mjs",
     "check:module-boundaries": "node scripts/checkModuleBoundaries.mjs",
     "quality:static": "npm run typecheck && npm run typecheck:strict && npm run lint && npm run check:any-budget && npm run check:no-orphan-scripts && npm run check:module-size && npm run check:module-boundaries",

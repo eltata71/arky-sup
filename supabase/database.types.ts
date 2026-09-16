@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   api: {
     Tables: {
       architecture_knowledge_graphs: {
@@ -120,6 +125,69 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      file_objects: {
+        Row: {
+          aggregate_id: string
+          bucket_id: string
+          context: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          entity_id: string
+          id: string
+          mime_type: string
+          object_id: string
+          object_path: string
+          owner_id: string
+          sha256: string
+          size_bytes: number
+          source_provider: string
+          state: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          aggregate_id: string
+          bucket_id: string
+          context: string
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          entity_id: string
+          id?: string
+          mime_type: string
+          object_id: string
+          object_path: string
+          owner_id: string
+          sha256: string
+          size_bytes: number
+          source_provider?: string
+          state?: string
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          aggregate_id?: string
+          bucket_id?: string
+          context?: string
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          entity_id?: string
+          id?: string
+          mime_type?: string
+          object_id?: string
+          object_path?: string
+          owner_id?: string
+          sha256?: string
+          size_bytes?: number
+          source_provider?: string
+          state?: string
+          updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -434,11 +502,85 @@ export type Database = {
       load_knowledge_graph: { Args: { p_project_id: string }; Returns: Json }
       load_progress: { Args: never; Returns: Json }
       load_project_aggregate: { Args: { p_id: string }; Returns: Json }
+      mark_file_object_deleted: {
+        Args: { p_file_id: string }
+        Returns: undefined
+      }
+      mark_file_object_ready: {
+        Args: { p_file_id: string }
+        Returns: {
+          aggregate_id: string
+          bucket_id: string
+          context: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          entity_id: string
+          id: string
+          mime_type: string
+          object_id: string
+          object_path: string
+          owner_id: string
+          sha256: string
+          size_bytes: number
+          source_provider: string
+          state: string
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "file_objects"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       provision_user_profile: {
         Args: { target: string; target_name?: string; target_role: string }
         Returns: undefined
       }
       record_arb_decision: { Args: { p_decision: Json }; Returns: undefined }
+      register_file_object: {
+        Args: {
+          p_aggregate_id: string
+          p_bucket_id: string
+          p_context: string
+          p_entity_id: string
+          p_mime_type: string
+          p_object_id: string
+          p_object_path: string
+          p_sha256: string
+          p_size_bytes: number
+          p_source_provider?: string
+          p_version: number
+        }
+        Returns: {
+          aggregate_id: string
+          bucket_id: string
+          context: string
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          entity_id: string
+          id: string
+          mime_type: string
+          object_id: string
+          object_path: string
+          owner_id: string
+          sha256: string
+          size_bytes: number
+          source_provider: string
+          state: string
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "file_objects"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       save_business_initiative: {
         Args: { p_expected_revision: number; p_initiative: Json }
         Returns: {
