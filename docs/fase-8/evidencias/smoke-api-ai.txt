@@ -1,0 +1,1 @@
+POST https://arkypro-1-0.vercel.app/api/ai -> {"requestId":"aiproxy-mu4e8guq-lbakdjw7","error":"unauthenticated","source":"proxy","reason":"missing_bearer_token"}
