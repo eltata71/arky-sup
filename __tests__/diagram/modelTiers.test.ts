@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { MODEL_TIERS, resolveTierModel, DEFAULT_TEXT_MODEL } from '../../lib/ai/modelCatalog';
 
 describe('MODEL_TIERS', () => {
-    it('quick tier maps to flash-lite for cost-efficient mechanical hops', () => {
-        expect(MODEL_TIERS.quick).toBe('gemini-2.5-flash-lite');
+    it('quick tier maps to stable Flash for available mechanical hops', () => {
+        expect(MODEL_TIERS.quick).toBe('gemini-2.5-flash');
     });
 
     it('default tier matches the canonical default text model', () => {
@@ -16,11 +16,11 @@ describe('MODEL_TIERS', () => {
 });
 
 describe('resolveTierModel', () => {
-    it('quick tier ignores the user model and locks to flash-lite', () => {
-        // Mechanical tasks must NOT pay flagship prices even if the user
+    it('quick tier ignores the user model and locks to stable Flash', () => {
+        // Mechanical tasks must remain available even when the user
         // selected a heavier model in Settings.
-        expect(resolveTierModel('quick', 'gemini-2.5-pro')).toBe('gemini-2.5-flash-lite');
-        expect(resolveTierModel('quick')).toBe('gemini-2.5-flash-lite');
+        expect(resolveTierModel('quick', 'gemini-2.5-pro')).toBe('gemini-2.5-flash');
+        expect(resolveTierModel('quick')).toBe('gemini-2.5-flash');
     });
 
     it('default tier honours the user-selected model when present', () => {

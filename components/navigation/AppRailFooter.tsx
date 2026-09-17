@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import { Keyboard, LifeBuoy, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Keyboard, LifeBuoy, PanelLeftClose, PanelLeftOpen, LogOut } from 'lucide-react';
 import { MagnifyingGlassIcon, MoonIcon, SunIcon } from '../Icons';
 import { cn } from '../ui/cn';
 import { RailRevealedText } from './RailRevealedText';
@@ -41,6 +41,8 @@ export interface AppRailFooterProps {
   onOpenGuide?: () => void;
   pinned: boolean;
   onTogglePinned: () => void;
+  /** Función de cierre de sesión. La aporta `AppRail` vía `useAuth`. */
+  onSignOut?: () => void;
 }
 
 export const AppRailFooter: React.FC<AppRailFooterProps> = ({
@@ -54,6 +56,7 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
   onOpenGuide,
   pinned,
   onTogglePinned,
+  onSignOut,
 }) => (
   <div className={cn('flex shrink-0 flex-col gap-0.5 border-t border-gray-200 pt-2 dark:border-gray-800', expanded ? 'px-3' : 'px-1')}>
       {/* La ayuda lleva etiqueta visible en los dos estados, como los
@@ -128,6 +131,20 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
                   : <PanelLeftOpen className="h-5 w-5 shrink-0" />}
               <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">
                   {pinned ? 'Soltar menú' : 'Fijar menú'}
+              </RailRevealedText>
+          </button>
+      ))}
+
+      {onSignOut && withTooltip('Cerrar sesión', (
+          <button
+              type="button"
+              onClick={onSignOut}
+              aria-label="Cerrar sesión"
+              className={cn(UTILITY_BUTTON, utilityLayout(expanded))}
+          >
+              <LogOut className="h-5 w-5 shrink-0" />
+              <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">
+                  Cerrar sesión
               </RailRevealedText>
           </button>
       ))}

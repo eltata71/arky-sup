@@ -261,6 +261,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                 onOpenGuide={onOpenGuide}
                 pinned={pinned}
                 onTogglePinned={() => setPinned(!pinned)}
+                onSignOut={logout}
             />
         </motion.aside>
     );
