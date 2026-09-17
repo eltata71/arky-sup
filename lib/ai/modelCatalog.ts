@@ -135,12 +135,6 @@ const FALLBACK_MODELS: GeminiModelOption[] = [
     source: 'fallback',
   },
   {
-    id: 'gemini-2.5-flash-lite',
-    name: 'Gemini 2.5 Flash-Lite',
-    description: 'Opción de menor costo para alto volumen.',
-    source: 'fallback',
-  },
-  {
     id: 'gemini-3.1-flash',
     name: 'Gemini 3.1 Flash',
     description: 'Mayor capacidad manteniendo baja latencia para tareas multimodales.',
