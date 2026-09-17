@@ -7,24 +7,22 @@ export const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash';
 export const IMAGE_MODEL = 'gemini-2.5-flash-image';
 export const TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 
-// Ordered fallback chain for text generation in case a model is unavailable for a given key/region.
+// Ordered fallback chain for text generation. Keep the chain on stable model
+// ids that are available to the production Gemini API key; preview/lite ids can
+// exist in Google's public catalog but still be unavailable to a given key.
 export const MODEL_FALLBACK_CHAIN: readonly string[] = [
   DEFAULT_TEXT_MODEL,
   'gemini-2.5-pro',
-  'gemini-2.5-flash-lite',
-  'gemini-3.1-flash',
-  'gemini-3.1-pro',
-  'gemini-3.1-flash-lite',
 ];
 
 /**
  * Cost-aware model tiers used by diagram services to avoid paying flagship
  * prices for trivially-structured tasks.
  *
- *  - `quick`   → mechanical conversions, schema mapping, small fixes (Mermaid
- *               → ReactFlow JSON, syntax repair). Routed to flash-lite for
- *               ~75% cost reduction with no quality regression on bounded
- *               tasks.
+ *  - `quick`   → stable Flash for mechanical conversions, schema mapping, small
+ *               fixes and syntax repair. The previous Flash-Lite floor returned
+ *               404 for the production API key, so cost optimization cannot
+ *               override availability.
  *  - `default` → standard generation that benefits from light reasoning
  *               (creating an artifact from a brief, projecting an audience).
  *  - `deep`    → reserved for explicit deep-reasoning paths (multi-artifact
@@ -32,7 +30,7 @@ export const MODEL_FALLBACK_CHAIN: readonly string[] = [
  *               model unless overridden.
  */
 export const MODEL_TIERS = {
-  quick:   'gemini-2.5-flash-lite',
+  quick:   DEFAULT_TEXT_MODEL,
   default: 'gemini-2.5-flash',
   deep:    'gemini-2.5-pro',
 } as const;
@@ -76,8 +74,8 @@ export interface ResolvedModel {
  *
  * Precedence:
  *   1. settings.aiConfig.model (user/global preference) — when valid AND tier
- *      doesn't force a floor (the `quick` tier intentionally floors to
- *      flash-lite to keep mechanical hops cheap).
+ *      doesn't force a floor (the `quick` tier intentionally uses the stable
+ *      Flash model so mechanical work remains available).
  *   2. tier default (when user has no preference).
  *   3. DEFAULT_TEXT_MODEL (hard fallback) — when settings is missing entirely.
  */
@@ -94,8 +92,8 @@ export function resolveEffectiveModel(tier: ModelTier, settings?: Settings): Res
     return { id: tierModel, source: 'global', tier };
   }
 
-  // The `quick` tier is a deterministic floor: low-cost mechanical hops should
-  // always run on flash-lite regardless of user preference. We still record
+  // The `quick` tier is a deterministic floor: low-cost mechanical hops use
+  // the stable Flash model regardless of user preference. We still record
   // the original request so the trace can explain the override.
   if (tier === 'quick') {
     return { id: tierModel, source: 'tier-floor', tier, requested };

@@ -43,7 +43,7 @@ describe('resolveEffectiveModel', () => {
         expect(result.source).toBe('user');
     });
 
-    it('forces flash-lite for the quick tier even when the user picked pro, with source=tier-floor', () => {
+    it('forces stable Flash for the quick tier even when the user picked pro, with source=tier-floor', () => {
         const result = resolveEffectiveModel('quick', baseSettings({ model: 'gemini-2.5-pro' }));
         expect(result.id).toBe(MODEL_TIERS.quick);
         expect(result.source).toBe('tier-floor');

@@ -41,7 +41,7 @@ describe('AIModelRouter', () => {
     expect(route.tier).toBe('deep');
   });
 
-  it('floors the quick tier to flash-lite even when the user picked something else', () => {
+  it('floors the quick tier to stable Flash even when the user picked something else', () => {
     const route = router.route({ mode: 'fast', settings: baseSettings('gemini-2.5-pro') });
     expect(route.id).toBe(MODEL_TIERS.quick);
     expect(route.source).toBe('tier-floor');
