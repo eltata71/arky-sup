@@ -21,6 +21,8 @@
  * identidad está activo. Un 200 aquí sería el fallo grave opuesto.
  */
 
+import { looksLikeProtectionWall } from './protectionWall.mjs';
+
 const target = process.argv[2];
 
 if (!target) {
@@ -50,10 +52,16 @@ const bypass = (process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? '').trim();
 const headers = bypass ? { 'x-vercel-protection-bypass': bypass } : {};
 let protectionBlocked = false;
 
-const looksLikeProtectionWall = (response, body) =>
-  (response.status === 401 || response.status === 403)
-  && (response.headers.has('set-cookie')
-    || /_vercel_sso_nonce|Authentication Required|vercel\.com\/sso-api/i.test(body));
+const noteProtection = () => {
+  if (protectionBlocked) return;
+  protectionBlocked = true;
+  console.warn(
+    `[deploy-smoke] OMITIDO — ${base} está detrás de Vercel Authentication y no hay `
+    + 'VERCEL_AUTOMATION_BYPASS_SECRET. El despliegue se publicó; el smoke no pudo '
+    + 'comprobarlo. Remedio: Project Settings → Deployment Protection → Protection '
+    + 'Bypass for Automation, y añadir el valor como secreto del repositorio.',
+  );
+};
 
 const record = (check, detail) => {
   failures.push(`${check}: ${detail}`);
@@ -63,18 +71,14 @@ const record = (check, detail) => {
 async function checkSpa() {
   const response = await fetch(base, { redirect: 'follow', headers });
   const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
+  // El cuerpo se lee siempre: el muro contesta 200 con HTML, así que mirarlo
+  // sólo cuando la respuesta no es `ok` es exactamente cómo se coló antes.
+  const body = await response.text().catch(() => '');
+  if (looksLikeProtectionWall({ body, finalUrl: response.url, requestedUrl: base })) {
+    noteProtection();
+    return;
+  }
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    if (looksLikeProtectionWall(response, body)) {
-      protectionBlocked = true;
-      console.warn(
-        `[deploy-smoke] OMITIDO — ${base} está detrás de Vercel Authentication y no hay `
-        + 'VERCEL_AUTOMATION_BYPASS_SECRET. El despliegue se publicó; el smoke no pudo '
-        + 'comprobarlo. Remedio: Project Settings → Deployment Protection → Protection '
-        + 'Bypass for Automation, y añadir el valor como secreto del repositorio.',
-      );
-      return;
-    }
     record('spa', `esperaba 2xx en ${base}, recibió ${response.status}`);
     return;
   }
@@ -95,6 +99,14 @@ async function checkProxyContract(path) {
     body: JSON.stringify({ prompt: 'deploy smoke' }),
   });
   const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
+  const raw = await response.text().catch(() => '');
+
+  // El muro también intercepta las funciones, y ahí contesta 401 con su propio
+  // JSON. Sin esta rama, ese 401 se lee como un envoltorio de proxy mal formado.
+  if (looksLikeProtectionWall({ body: raw, finalUrl: response.url, requestedUrl: url })) {
+    noteProtection();
+    return;
+  }
 
   // El síntoma que este paso existe para detectar: el fallback del SPA
   // devolviendo su HTML por una ruta de función.
@@ -103,13 +115,13 @@ async function checkProxyContract(path) {
     return;
   }
   if (response.status !== 401) {
-    const body = await response.text().catch(() => '');
-    record(path, `esperaba 401 sin credenciales, recibió ${response.status} ${body.slice(0, 160)}`);
+    record(path, `esperaba 401 sin credenciales, recibió ${response.status} ${raw.slice(0, 160)}`);
     return;
   }
-  const body = await response.json().catch(() => null);
+  let body = null;
+  try { body = JSON.parse(raw); } catch { body = null; }
   if (!body || body.error !== 'unauthenticated') {
-    record(path, `401 sin el envoltorio esperado del proxy: ${JSON.stringify(body)?.slice(0, 160)}`);
+    record(path, `401 sin el envoltorio esperado del proxy: ${raw.slice(0, 160)}`);
     return;
   }
   console.log(`[deploy-smoke] OK ${path} — 401 unauthenticated (requestId ${body.requestId ?? 'n/d'})`);
