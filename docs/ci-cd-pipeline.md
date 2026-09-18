@@ -1,7 +1,8 @@
 # Pipeline de integración y despliegue continuo
 
 **Fecha:** 2026-09-18. **Repositorio:** `eltata71/arky-sup` (privado).
-**Hosting:** Vercel, proyecto `arkypro-1-0` (ADR-006).
+**Hosting:** Vercel, proyecto `arky-sup` (ADR-006).
+**Revisado:** 2026-09-18, tras separar el despliegue en un proyecto propio.
 
 Este documento describe el pipeline tal como queda tras la auditoría F0–F8, qué
 lo bloquea hoy, y el procedimiento exacto para desbloquearlo. Lo que aquí se
@@ -34,24 +35,36 @@ marcado como tal y con dueño.
   └─────────────────────────────────────────────────────────────┘
        │
        ▼
-  https://arkypro-1-0.vercel.app
+  https://arky-sup.vercel.app
 ```
 
 ### Por qué el despliegue vive en GitHub Actions y no en la integración Git de Vercel
 
 La integración Git de Vercel despliega **al recibir el push**, sin leer el
 resultado de ningún gate. Eso no es una preferencia de estilo: es la causa
-directa del hallazgo más serio de esta auditoría. El proyecto de Vercel está
-enlazado al repositorio **`arkypro-1.0`**, no a `arky-sup`, así que ningún merge
-a `main` de este repositorio ha desplegado nunca nada. Lo que hay en producción
-se subió con `vercel --force` desde una estación de trabajo, y los commits que
-sirve —`275bb88`, `9346076`, `b9fc7dd`, `3df94a4`— **no existen en el
-repositorio**: `git cat-file` no los encuentra y `git ls-remote` tampoco.
+directa del hallazgo más serio de esta auditoría, y el problema ha tenido dos
+formas seguidas.
 
-Un artefacto que no se puede reconstruir desde `main` no es un despliegue. El
-trabajo `deploy` de `ci.yml` cierra las dos mitades del problema: despliega solo
-desde `main`, y solo después de que `quality`, `coverage` y `rules` hayan pasado
-sobre ese mismo commit.
+**La primera fue no desplegar.** El proyecto `arkypro-1-0` estaba enlazado al
+repositorio `arkypro-1.0`, no a éste, así que ningún merge a `main` de este
+repositorio desplegó nunca nada. Lo que servía producción se había subido con
+`vercel --force` desde una estación de trabajo, y los commits que servía
+—`275bb88`, `9346076`, `b9fc7dd`, `3df94a4`— **no existen en el repositorio**.
+
+**La segunda fue desplegar sin mirar.** El 2026-09-18 se creó `arky-sup`
+(`prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`) enlazado a este repositorio. Producción
+pasó a servir `85c5bed`, que sí está en `main` —eso cierra la mitad grave del
+hallazgo—, pero lo publicó la integración Git. Sin gate delante: el primer
+despliegue **falló en el build, en producción, sobre un commit ya fusionado**,
+porque el gate de configuración rechazó una clave de proveedor con prefijo
+`VITE_`. Ese fallo pertenecía a una PR, no a producción.
+
+Un artefacto que no se puede reconstruir desde `main` no es un despliegue, y uno
+que nadie ha comprobado tampoco. El trabajo `deploy` de `ci.yml` cierra las dos
+mitades: despliega solo desde `main`, y solo después de que `quality`,
+`coverage` y `rules` hayan pasado sobre ese mismo commit. Para que sea el
+**único** que publica, `vercel.json` apaga el disparador automático en `main`
+—ver *Un solo camino publica producción*, más abajo—.
 
 ### Qué comprueba cada paso del despliegue
 
@@ -77,6 +90,7 @@ API de GitHub, no inferida:
 | Trabajos de la ejecución #39 (`main`, `83485c4`) | 7 trabajos, `duration_ms: 0` **cada uno**, `run_duration_ms: 3 000` |
 | Logs de esos trabajos | HTTP 404 — no existen |
 | Alcance | Las 4 familias de workflow, en `main`, en PR de rama y en PR de Dependabot |
+| **Re-verificado 2026-09-18 21:20 UTC** | Sigue igual. Ejecuciones #41–#43 de ese mismo día: 3–5 s, `conclusion: failure`, sin logs. No hay ninguna ejecución posterior, así que un cambio de facturación hecho después **no queda demostrado hasta la siguiente ejecución** |
 
 Un trabajo que termina en dos segundos, sin logs y con cero milisegundos de
 cómputo **nunca fue asignado a un runner**. No llegó a hacer `checkout`. Ningún
@@ -145,7 +159,12 @@ secret*:
 |---|---|---|
 | `VERCEL_TOKEN` | Vercel → *Account Settings* → *Tokens* → *Create* | — (no se transcribe aquí) |
 | `VERCEL_ORG_ID` | Vercel → *Team Settings* → *General*, o `.vercel/project.json` tras `vercel link` | `team_HGSWQHORpMV8wQUQf3mAdWEl` |
-| `VERCEL_PROJECT_ID` | Vercel → *Project Settings* → *General* | `prj_9etNKwZkFORmbRAbaAFwNpQxJfcP` |
+| `VERCEL_PROJECT_ID` | Vercel → *Project Settings* → *General* | `prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk` |
+
+**Cuidado: `prj_9etNKwZkFORmbRAbaAFwNpQxJfcP` es el proyecto viejo `arkypro-1-0`.** Fue
+el valor correcto hasta el 2026-09-18 y aparece en actas anteriores. Un
+`VERCEL_PROJECT_ID` con ese valor no falla: publica el código nuevo sobre el
+proyecto equivocado, que es el modo de fallo más caro de los dos.
 
 Y uno opcional:
 
@@ -156,32 +175,54 @@ Y uno opcional:
 Es opcional porque su ausencia no es un fallo de la aplicación: el smoke lo dice
 en voz alta y no tumba un despliegue ya publicado.
 
-**El proyecto tiene *Vercel Authentication* activada** (`ssoProtection:
-all_except_custom_domains`) y **no tiene dominio propio** (`domains: []`). La
-consecuencia práctica es que hoy `https://arkypro-1-0.vercel.app` solo la abre
-quien pertenece al equipo de Vercel: un usuario piloto que no sea miembro recibe
-el muro de inicio de sesión de Vercel, no la pantalla de acceso de Arky. Si la
-UAT de F7.6 va a ejecutarla alguien de fuera del equipo, hay que resolver esto
-antes — añadiendo un dominio propio, o ajustando la protección — y es una
-decisión del titular, no del repositorio.
+**La protección de `arky-sup` está sin verificar y hay que mirarla antes de la
+UAT.** El proyecto viejo tenía *Vercel Authentication* activada
+(`ssoProtection: all_except_custom_domains`) y ningún dominio propio, de modo
+que su URL solo la abría quien perteneciera al equipo de Vercel: un piloto
+externo recibía el muro de inicio de sesión de Vercel, no la pantalla de acceso
+de Arky. El proyecto nuevo se creó aparte y **no se ha comprobado cuál de los
+dos comportamientos hereda** — la comprobación honesta es abrir
+`https://arky-sup.vercel.app` en una ventana privada, sin sesión de Vercel.
+
+Si aparece el muro, hay dos salidas y ambas son del titular, no del
+repositorio: añadir un dominio propio (Vercel → *Settings* → *Domains*), que es
+la buena porque mantiene la protección donde sirve, o bajar `ssoProtection`.
+Para que el smoke de `ci.yml` vea la aplicación y no el muro está
+`VERCEL_AUTOMATION_BYPASS_SECRET`, descrito arriba.
 
 El trabajo `deploy` **falla con un error explícito** si falta alguno de los tres
 obligatorios, y nombra cuál. Es deliberado: un trabajo de despliegue en verde que no ha desplegado
 nada informa de un despliegue que no ocurrió, que es peor que un rojo con
 instrucciones.
 
-### Evitar el despliegue doble
+### Un solo camino publica producción
 
-Si en algún momento se enlaza el proyecto de Vercel a `arky-sup` desde el
-dashboard, hay que elegir **una** ruta de despliegue:
+El proyecto está enlazado a este repositorio, así que los dos caminos —la
+integración Git y el trabajo `deploy`— apuntan al mismo alias de producción.
+Decidido: **publica `ci.yml`**, y la integración Git queda para las *previews*
+de PR, que es su mitad útil.
 
-- **Recomendada:** dejar el enlace Git solo para *previews* de PR y desactivar
-  el despliegue automático de producción (Vercel → *Project Settings* → *Git* →
-  *Ignored Build Step*, o *Production Branch* apuntando a una rama que no se
-  usa). Producción la publica `ci.yml`.
-- **Alternativa:** desplegar con la integración Git y eliminar el trabajo
-  `deploy`. Se pierde la garantía de que producción pasó los gates, que es
-  justo el problema que esta auditoría encontró.
+Lo hace `vercel.json`:
+
+```json
+{ "git": { "deploymentEnabled": { "main": false } } }
+```
+
+Tres cosas que esa línea decide y conviene no deshacer sin querer:
+
+- **Solo `main`.** Las ramas que no se nombran siguen desplegando, así que cada
+  PR mantiene su preview.
+- **No es `deploymentEnabled: false`.** Esa forma apaga también las previews.
+  `__tests__/config/ciPipeline.test.ts` afirma las dos cosas por separado.
+- **Vive en el repositorio, no en el panel.** Un interruptor del dashboard no se
+  revisa en una PR, no viaja con el repositorio y nadie se entera el día que
+  alguien lo vuelve a encender. `$schema` en la cabecera del fichero hace que un
+  editor avise si la clave se escribe mal — una clave inventada en `vercel.json`
+  se acepta y no hace nada, que es la peor combinación posible.
+
+La alternativa descartada era desplegar con la integración Git y eliminar el
+trabajo `deploy`. Funciona sin depender de los minutos de Actions, a cambio de
+dejar producción sin gates: exactamente el problema que esta auditoría encontró.
 
 ---
 

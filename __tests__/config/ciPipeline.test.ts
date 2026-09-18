@@ -129,3 +129,43 @@ describe('continuous deployment gates on the quality suite', () => {
     expect(deploy).toContain('scripts/deploy/productionSmoke.mjs');
   });
 });
+
+/**
+ * Un solo camino publica producción.
+ *
+ * El proyecto de Vercel `arky-sup` está enlazado a este repositorio, así que su
+ * integración Git despliega **al recibir el push**, sin leer el resultado de
+ * ningún gate. Eso convive mal con el trabajo `deploy` de `ci.yml`: dos caminos
+ * sobre el mismo alias de producción, uno de ellos sin comprobar nada.
+ *
+ * No es hipotético. El primer despliegue del proyecto nuevo falló *en el build*,
+ * en producción, sobre un commit ya fusionado a `main` —el gate de configuración
+ * rechazando una clave de proveedor con prefijo `VITE_`—. Con los gates delante,
+ * ese fallo se habría visto en la PR y nunca habría tocado producción.
+ *
+ * `git.deploymentEnabled` apaga el disparador automático **solo en `main`**: las
+ * ramas que no se nombran siguen desplegando, así que las previews de PR —que
+ * son el motivo por el que la integración Git vale la pena— no se pierden.
+ *
+ * Vive en `vercel.json` y no en el panel de Vercel a propósito: un interruptor
+ * del dashboard no se revisa, no viaja con el repositorio y nadie se entera el
+ * día que alguien lo vuelve a encender.
+ */
+describe('production has exactly one publisher', () => {
+  const vercelConfig = JSON.parse(
+    readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8'),
+  ) as { git?: { deploymentEnabled?: boolean | Record<string, boolean> } };
+
+  it('disables the Vercel Git integration on main, so only the gated job publishes', () => {
+    const enabled = vercelConfig.git?.deploymentEnabled;
+    expect(enabled, 'vercel.json debe declarar git.deploymentEnabled').toBeDefined();
+    expect(typeof enabled, 'debe ser el mapa por rama, no un booleano global').toBe('object');
+    expect((enabled as Record<string, boolean>).main).toBe(false);
+  });
+
+  it('keeps preview deployments for every other branch', () => {
+    // `deploymentEnabled: false` a secas apagaría también las previews de PR, que
+    // es la mitad útil de la integración: revisar un cambio sobre algo servido.
+    expect(vercelConfig.git?.deploymentEnabled).not.toBe(false);
+  });
+});
