@@ -175,20 +175,34 @@ Y uno opcional:
 Es opcional porque su ausencia no es un fallo de la aplicación: el smoke lo dice
 en voz alta y no tumba un despliegue ya publicado.
 
-**La protección de `arky-sup` está sin verificar y hay que mirarla antes de la
-UAT.** El proyecto viejo tenía *Vercel Authentication* activada
-(`ssoProtection: all_except_custom_domains`) y ningún dominio propio, de modo
-que su URL solo la abría quien perteneciera al equipo de Vercel: un piloto
-externo recibía el muro de inicio de sesión de Vercel, no la pantalla de acceso
-de Arky. El proyecto nuevo se creó aparte y **no se ha comprobado cuál de los
-dos comportamientos hereda** — la comprobación honesta es abrir
-`https://arky-sup.vercel.app` en una ventana privada, sin sesión de Vercel.
+**`arky-sup` tiene *Vercel Authentication* activada, y lo demostró el propio
+despliegue.** La ejecución #46 del 2026-09-18 publicó correctamente y el smoke
+recibió, en lugar de la aplicación, el muro de inicio de sesión de Vercel:
+`{"error":{"code":"401","message":"Protected deployment"}}` en `/api/ai`, y una
+página con `_vercel_sso_nonce` en la raíz. La consecuencia práctica es que hoy
+`https://arky-sup.vercel.app` sólo la abre quien pertenece al equipo de Vercel:
+un piloto externo recibe ese muro, no la pantalla de acceso de Arky.
 
-Si aparece el muro, hay dos salidas y ambas son del titular, no del
-repositorio: añadir un dominio propio (Vercel → *Settings* → *Domains*), que es
-la buena porque mantiene la protección donde sirve, o bajar `ssoProtection`.
-Para que el smoke de `ci.yml` vea la aplicación y no el muro está
-`VERCEL_AUTOMATION_BYPASS_SECRET`, descrito arriba.
+Dos cosas distintas que resolver, y conviene no confundirlas:
+
+- **Para que el smoke pueda comprobar el despliegue**, añadir el secreto
+  `VERCEL_AUTOMATION_BYPASS_SECRET` (Vercel → *Project Settings* → *Deployment
+  Protection* → *Protection Bypass for Automation*). Sin él el smoke no falla
+  —dice «SIN VERIFICAR» y sale con 0—, pero tampoco comprueba nada.
+- **Para que la UAT la pueda ejecutar alguien de fuera**, añadir un dominio
+  propio (Vercel → *Settings* → *Domains*), que mantiene la protección donde
+  sirve, o bajar `ssoProtection`. Es decisión del titular, no del repositorio.
+
+El muro contesta **200 con HTML** en la página y **401 con JSON** en una
+función. Esa asimetría rompía la detección del smoke, que exigía un 401 o un
+403: saludaba el muro de la página como si fuera la aplicación y después
+acusaba al proxy de devolver un envoltorio mal formado, dejando un despliegue
+correcto en rojo y señalando al componente equivocado.
+`scripts/deploy/protectionWall.mjs` lo decide ahora por las marcas del cuerpo y
+no por el estado, y `__tests__/scripts/deployProtectionWall.test.ts` lo fija con
+los cuerpos reales de aquella ejecución — incluidos los dos casos negativos, que
+son la mitad importante: una detección demasiado laxa archivaría un fallo real
+del proxy como «protegido» y pasaría en verde sobre un despliegue roto.
 
 El trabajo `deploy` **falla con un error explícito** si falta alguno de los tres
 obligatorios, y nombra cuál. Es deliberado: un trabajo de despliegue en verde que no ha desplegado
