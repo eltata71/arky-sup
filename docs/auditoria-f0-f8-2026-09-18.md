@@ -263,10 +263,11 @@ que sigue sin cambiar es el **proveedor activo**: `resolveBackend` devuelve
 | D-10 `js-yaml` high + vitest moderate | ✅ cerrado — `npm audit` **0 vulnerabilidades** |
 | D-11 gate de configuración desactivado en despliegue | ✅ cerrado — `__tests__/config/vercelRuntimeGate.test.ts` lo fija |
 | D-12 cuota del proxy en memoria | ⏳ vigente — sigue siendo por proceso; aceptable en PoC, no con usuarios reales |
-| D-13 perfil propio con campos fuera de rol | ⏳ **parcial** — cerrado en Supabase (RPC auditada para rol y estado); en Firestore, que es el proveedor activo, `firestore.rules` protege `role` pero no acota el resto de campos del propio documento |
+| D-13 perfil propio con campos fuera de rol | **🔧 cerrado en este cambio** — `ownerEditsOnlyOwnName()` en `firestore.rules` aplica lista blanca sobre `affectedKeys()`: el dueño solo puede cambiar `displayName`. 4 pruebas negativas nuevas contra el emulador real (uid, email, campo no declarado, y un cambio de nombre usado como vehículo de un cambio de rol). `test:rules` 59 → **64/64** |
 | D-14 strict progresivo | ⏳ vigente y avanzando |
 | **D-15 SBOM que escribe `{}`** | **🔧 cerrado en este cambio.** El paso subía un `{}` como artefacto llamado «sbom», indistinguible de un inventario que declara cero dependencias. Ahora falla explícito si el SBOM no tiene `bomFormat` o no tiene componentes |
-| D-16 BYOK en localStorage + CSP informativa | ⏳ vigente — CSP sigue en `Report-Only` |
+| D-16 BYOK en localStorage + CSP informativa | ⏳ vigente — pasar la CSP a *enforcement* sin haber leído reportes reales rompería producción a ciegas |
+| **D-18 resolver permisivo `legacy-peer-deps`** | **🔧 cerrado en este cambio.** Retirado de `.npmrc` tras comprobarlo: `npm ci` y `npm install --package-lock-only` con resolutor estricto terminan en exit 0, y el lockfile re-resuelto **no cambia la versión de ningún paquete** — solo tres entradas pasan de `dev` a `devOptional`. La razón por la que existía la bandera ya no se cumple |
 | D-17…D-20 | ⏳ P2, sin cambios |
 
 ---
@@ -313,6 +314,30 @@ lectura de un evento.
 
 ### 4.2 El pipeline
 
+**Segunda pasada (doble chequeo).** Cuatro cosas más, todas ellas defectos de
+CI/CD reales y no cosmética:
+
+- **Un despliegue ya no se cancela a mitad.** `ci.yml` declara
+  `cancel-in-progress: true` a nivel de workflow, que es lo correcto para unos
+  gates —nadie quiere esperar a que terminen de juzgar un commit que ya no es la
+  cabeza— y **exactamente lo contrario para un despliegue**: interrumpir
+  `vercel deploy` deja el estado publicado a merced del momento en que llegó la
+  señal, y el trabajo que lo sustituye parte de la premisa falsa de que el
+  anterior no ocurrió. El trabajo `deploy` lleva ahora grupo propio
+  (`deploy-production`) con `cancel-in-progress: false`: dos merges seguidos
+  publican dos veces, en orden.
+- **`environment: production`**, con la URL publicada. Registra en la pestaña
+  *Environments* qué commit está en producción y cuándo, y es donde la
+  organización puede exigir revisores o una ventana de espera sin tocar el
+  workflow.
+- **`workflow_dispatch`**, para volver a publicar tras cambiar una variable en
+  Vercel sin inventar un commit vacío.
+- **`persist-credentials: false`** en los ocho `actions/checkout` de los tres
+  workflows. Ningún trabajo empuja nada, así que dejar el token escrito en
+  `.git/config` para los pasos siguientes era superficie sin contrapartida.
+
+Y lo de la primera pasada:
+
 - **`npm run quality` vuelve a exit 0** (H-4): dos pruebas nuevas cubren las
   ramas defensivas de `byokConsent.ts`.
 - `mirror-source.yml` retirado (D-02).
@@ -340,7 +365,40 @@ lectura de un evento.
   `VITE_SUPABASE_*` y los tres secretos del despliegue. Ninguno estaba escrito,
   en un fichero que `CLAUDE.md` describe como «la lista autoritativa».
 
-### 4.3 F1.7 y F8.6
+### 4.3 Deuda de seguridad cerrada en la segunda pasada
+
+**D-13 — el propio perfil ya no admite cualquier campo.** `firestore.rules`
+comprobaba `request.resource.data.role == resource.data.role` en la
+actualización del propio documento: cierra la escalada de privilegio, que es lo
+importante, y deja `uid`, `email` y cualquier campo inventado al alcance de su
+propio sujeto. `uid` es la clave con la que el resto del modelo identifica a la
+persona, y `email` es lo que un administrador lee en el directorio antes de
+cambiarle el rol a alguien: un documento donde esos dos no coinciden con la
+identidad real no rompe ninguna regla, rompe la lectura de quien decide.
+
+`ownerEditsOnlyOwnName()` aplica lista blanca sobre
+`diff(resource.data).affectedKeys()` y admite **solo `displayName`**, que es
+exactamente lo único que el producto escribe desde el cliente
+(`updateOwnDisplayName` manda `{ displayName }`). No restringe ninguna operación
+existente. Cuatro pruebas negativas nuevas contra el emulador real, incluida la
+que nombra el modo de fallo: **un cambio de nombre usado como vehículo de un
+cambio de rol**. `npm run test:rules` pasa de 59 a **64/64**.
+
+**D-18 — el resolutor permisivo, retirado con evidencia.** `.npmrc` fijaba
+`legacy-peer-deps=true` desde que el grafo de React 18 + ESLint 9 + Firebase
+producía ERESOLVE por rangos `peerOptional` que llegaban tarde. Un resolutor
+permisivo no distingue «esto no era un conflicto de verdad» de «esto sí lo era»,
+así que el día que aparezca uno real se instala igual y el fallo llega en
+ejecución. Comprobado antes de retirarlo, no después:
+
+| Comprobación | Resultado |
+|---|---|
+| `npm ci --legacy-peer-deps=false` | exit 0, 617 paquetes |
+| `npm install --package-lock-only --legacy-peer-deps=false` | exit 0 |
+| Diferencia del lockfile re-resuelto | **ninguna versión de ningún paquete cambia**; tres entradas pasan de `dev` a `devOptional` |
+| `npm ci` en el repositorio, ya sin la bandera | exit 0 |
+
+### 4.4 F1.7 y F8.6
 
 `CLAUDE.md` retira la restricción «frontend-only con Firebase» y la sustituye
 por la arquitectura aprobada en F1, con sus límites explícitos.

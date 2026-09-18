@@ -99,6 +99,30 @@ es la excepción que la decisión **5B** aceptó **para el PoC** y que no equiva
 a una aprobación productiva. **Y la lección de H-4 es que esa evidencia tiene
 que ser `npm run quality` completo**, no `quality:static` + `test:ci`.
 
+## 4.bis Deuda cerrada en el doble chequeo
+
+Dos deudas del backlog de F0 que no dependían de nadie y seguían abiertas:
+
+- **D-13 (P1).** `firestore.rules` protegía `role` en la actualización del
+  propio perfil y dejaba `uid`, `email` y cualquier campo inventado al alcance
+  del propio sujeto. `ownerEditsOnlyOwnName()` aplica ahora lista blanca sobre
+  `affectedKeys()` y admite solo `displayName` —lo único que el producto
+  escribe—, con cuatro pruebas negativas nuevas contra el emulador real. La
+  suite de reglas pasa de 59 a **64/64**.
+- **D-18 (P2).** `legacy-peer-deps=true` retirado de `.npmrc` tras comprobar que
+  `npm ci` y `npm install --package-lock-only` con resolutor estricto terminan
+  en exit 0 y que el lockfile re-resuelto no cambia la versión de ningún
+  paquete.
+
+Y cuatro mejoras de entrega continua, todas ellas defectos reales:
+
+| Cambio | Qué evitaba |
+|---|---|
+| `concurrency: deploy-production` con `cancel-in-progress: false` | Que un push cancele un `vercel deploy` a mitad y el trabajo siguiente parta de que el anterior no ocurrió |
+| `environment: production` con URL | Que no haya registro de qué commit está publicado ni dónde exigir revisores |
+| `workflow_dispatch` | Que volver a publicar tras cambiar una variable exija un commit vacío |
+| `persist-credentials: false` en los ocho `checkout` | Token escrito en `.git/config` para pasos que no empujan nada |
+
 ## 5. Verificación ejecutada para este cierre
 
 | Comprobación | Resultado |
@@ -107,7 +131,7 @@ que ser `npm run quality` completo**, no `quality:static` + `test:ci`.
 | `npm run quality:static` | exit 0 |
 | `npm run quality` (cadena completa, con cobertura) | exit 1 antes de la corrección de H-4; **exit 0** después |
 | `npm run test:ci` | exit 0 — 455 ficheros pasados + 1 omitido; 4 347 pruebas pasadas + 59 omitidas |
-| `npm run test:rules` (emulador Firestore real, JDK 21) | **59/59** |
+| `npm run test:rules` (emulador Firestore real, JDK 21) | **64/64** (59 + 5 de D-13) |
 | `npm run build:placeholders` + `check:bundle-secrets` + `check:bundle-budget` | exit 0 — eager 438.8 / 450.0 KB gz |
 | `npm audit --audit-level=high` | 0 vulnerabilidades |
 | Supabase remoto `list_migrations` | 30/30, sin drift frente a `supabase/migrations/` |

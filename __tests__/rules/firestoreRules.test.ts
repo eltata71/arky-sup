@@ -193,6 +193,46 @@ describeRules('firestore.rules', () => {
       await assertFails(updateDoc(doc(as('arch1'), 'users/arch1'), { role: 'reviewer' }));
     });
 
+    /* ---------------------------------------------------------------- D-13 */
+
+    it('refuses the owner rewriting their own uid', async () => {
+      // `uid` es la clave con la que el resto del modelo identifica a la
+      // persona. Reescribirla no escala privilegio, pero deja un documento que
+      // dice ser de otro.
+      await assertFails(updateDoc(doc(as('arch1'), 'users/arch1'), { uid: 'admin1' }));
+    });
+
+    it('refuses the owner rewriting their own email', async () => {
+      // Es lo que un administrador lee en el directorio antes de cambiarle el
+      // rol a alguien. Que el sujeto pueda editarlo rompe esa lectura.
+      await assertFails(
+        updateDoc(doc(as('arch1'), 'users/arch1'), { email: 'admin1@arky.test' }),
+      );
+    });
+
+    it('refuses the owner adding a field nobody declared', async () => {
+      await assertFails(
+        updateDoc(doc(as('arch1'), 'users/arch1'), { entitlements: ['everything'] }),
+      );
+    });
+
+    it('refuses a display-name change smuggling a role change with it', async () => {
+      // El modo de fallo que la lista blanca existe para cerrar: la escritura
+      // legítima usada como vehículo de la que no lo es.
+      await assertFails(
+        updateDoc(doc(as('arch1'), 'users/arch1'), {
+          displayName: 'Ana Torres',
+          role: 'superadmin',
+        }),
+      );
+    });
+
+    it('still lets the owner change only their display name', async () => {
+      await assertSucceeds(
+        updateDoc(doc(as('arch1'), 'users/arch1'), { displayName: 'Ana T.' }),
+      );
+    });
+
     it('refuses an administrator editing their own row', async () => {
       // An administrator who can edit their own row can grant themselves
       // anything, and `users:grant-privileged` stops meaning anything.

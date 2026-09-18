@@ -507,7 +507,7 @@ Each one that moves into a module lowers the number.
 ## Development Commands
 
 ```bash
-npm install            # Install dependencies (.npmrc pins legacy-peer-deps=true)
+npm install            # Install dependencies (resolutor estricto de peers; `.npmrc` ya no lo desactiva — D-18)
 
 npm run dev            # Vite dev server → http://localhost:3000 (host 0.0.0.0)
 npm run build          # Production build → dist/

@@ -39,6 +39,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Ningún trabajo de este workflow empuja nada. Persistir el token en
+          # .git/config para los pasos siguientes es superficie sin contrapartida.
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -103,6 +107,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Ningún trabajo de este workflow empuja nada. Persistir el token en
+          # .git/config para los pasos siguientes es superficie sin contrapartida.
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

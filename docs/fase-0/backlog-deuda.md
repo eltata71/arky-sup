@@ -42,7 +42,7 @@ P2: mejora planificada. Esfuerzo en tamaños relativos (S/M/L/XL).
 | ID | Deuda / brecha | Evidencia |
 | --- | --- | --- |
 | D-17 | Pantallas/servicios grandes bajo techo individual (ReactFlowCanvas 1938, ArtifactCanvas 1067, ProjectHub 1061, agentExecutor 1000, ProjectsPage 923, mermaidToIR 850, pdfExporter 1118) | `auditoria-arquitectura.md` ARQ-06 |
-| D-18 | Resolver permisivo `legacy-peer-deps=true` | `entorno-y-entrega.md` ENV-03 |
+| D-18 | ~~Resolver permisivo `legacy-peer-deps=true`~~ **CERRADO 2026-09-18**: retirado de `.npmrc`. `npm ci` y `npm install --package-lock-only` con resolutor estricto terminan en exit 0 y el lockfile resultante no cambia ninguna versión de ningún paquete | `entorno-y-entrega.md` ENV-03 |
 | D-19 | Ciclos UI `components/context/hooks` aceptados | `auditoria-arquitectura.md` ARQ-08 |
 | D-20 | Propietarios transaccionales por agregado sin declarar | `auditoria-arquitectura.md` ARQ-07; F1 del plan |
 
@@ -68,24 +68,31 @@ pendiente (aceptación) y F1 (diseño), conforme al plan.
 
 ## Revisión 2026-09-18 (auditoría F0–F8)
 
-Cerrados en esta revisión: **D-01, D-02, D-10, D-11, D-15** (ver arriba, con la
+Cerrados en esta revisión: **D-01, D-02, D-10, D-11, D-13, D-15, D-18** (ver arriba, con la
 evidencia de cada uno). Cerrados en fases anteriores y confirmados aquí, aunque
 sus filas conserven el texto original del diagnóstico: **D-03** (puertos y
 adaptadores, F3.1/F3.2), **D-04** (`npm run test:rules` contra el emulador real,
-59/59) y **D-05** (`verifySupabaseToken.ts` + `authenticateProxyCaller.ts`, F7). **D-13** queda cerrado **solo en el lado Supabase**: allí el
-cliente únicamente edita su nombre, y rol y estado van por RPC auditada. En
-Firestore —que es el proveedor activo— `firestore.rules` protege `role` en la
-actualización del propio perfil, pero **no hay lista blanca del resto de campos**:
-el dueño puede seguir escribiendo campos descriptivos arbitrarios en su
-documento. D-13 sigue por tanto **vigente** hasta que el contexto de identidad
-haga su corte vertical o la regla gane la lista blanca.
+59/59) y **D-05** (`verifySupabaseToken.ts` + `authenticateProxyCaller.ts`, F7). **D-13 queda cerrado en los dos proveedores.** En Supabase ya lo estaba: el
+cliente solo edita su nombre, y rol y estado van por RPC auditada. En Firestore
+—el proveedor activo— la regla protegía `role` y dejaba `uid`, `email` y
+cualquier campo inventado al alcance del propio sujeto; ahora
+`ownerEditsOnlyOwnName()` aplica lista blanca sobre `affectedKeys()` y solo
+admite `displayName`, que es exactamente lo único que el producto escribe
+(`updateOwnDisplayName`). Cuatro pruebas negativas nuevas contra el emulador
+real: uid reescrito, email reescrito, campo no declarado, y un cambio de nombre
+usado como vehículo de un cambio de rol. `npm run test:rules`: **64/64**.
 
-Siguen vigentes y presupuestados: **D-06** (`geminiService`), **D-08** (deep
-imports bajo presupuesto decreciente), **D-09** (ciclo `services (raíz) ↔
-services/ai`, cuya reubicación empeora el censo), **D-12** (cuota del proxy en
-memoria — aceptable en PoC, no con usuarios reales), **D-14** (strict
-progresivo), **D-16** (BYOK en `localStorage` y CSP en `Report-Only`) y
-**D-17…D-20** (P2).
+Siguen vigentes, y cada uno con la razón por la que no se cierra aquí:
+
+| ID | Por qué sigue abierto |
+|---|---|
+| D-06 `geminiService` | Refactor por verticales del patrón estrangulador; 16 de los 23 `any` presupuestados. Moverlo de sitio empeora el censo de ciclos, y eso ya se intentó y se revirtió (Ola 5) |
+| D-08 deep imports UI→internals | Presupuesto decreciente; baja cuando una pantalla mueve su orquestación a un servicio de aplicación, no por edición masiva |
+| D-09 ciclo `services (raíz) ↔ services/ai` | Es el mismo hecho que D-06 visto desde el grafo |
+| D-12 cuota del proxy en memoria | Necesita un almacén compartido (Redis/KV) y un presupuesto: decisión de operación, no de código |
+| D-14 strict progresivo | Avanza módulo a módulo; la lista de `tsconfig.strict.json` solo crece |
+| D-16 BYOK en `localStorage` + CSP `Report-Only` | Pasar la CSP a *enforcement* sin haber leído reportes reales rompería producción a ciegas. Requiere recolectar informes primero, y para eso hace falta un endpoint que alguien debe aprovisionar |
+| D-17, D-19, D-20 | P2: ficheros grandes bajo techo, ciclos de UI aceptados, propietarios transaccionales por declarar |
 
 **Deuda nueva registrada por esta auditoría**, en `docs/auditoria-f0-f8-2026-09-18.md`:
 

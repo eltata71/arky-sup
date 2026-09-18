@@ -78,9 +78,28 @@ describe('continuous deployment gates on the quality suite', () => {
     expect(ci).toMatch(/^ {2}deploy:$/m);
   });
 
-  it('runs the deploy only for a push to main', () => {
+  it('runs the deploy only on main, and only from a push or a manual re-run', () => {
     const deploy = ci.slice(ci.indexOf('\n  deploy:'));
-    expect(deploy).toContain("if: github.event_name == 'push' && github.ref == 'refs/heads/main'");
+    expect(deploy).toContain("github.ref == 'refs/heads/main'");
+    expect(deploy).toContain("github.event_name == 'push'");
+    expect(deploy).toContain("github.event_name == 'workflow_dispatch'");
+    // Una pull request nunca publica: el disparador se enumera, no se niega.
+    expect(deploy).not.toContain("github.event_name == 'pull_request'");
+  });
+
+  it('never cancels a deploy that is already running', () => {
+    // El `concurrency` del workflow cancela ejecuciones superadas, que es lo
+    // correcto para unos gates y exactamente lo contrario para un despliegue:
+    // interrumpir `vercel deploy` a mitad deja el estado publicado a merced del
+    // momento en que llegó la señal. El trabajo lleva grupo propio, en serie.
+    const deploy = ci.slice(ci.indexOf('\n  deploy:'));
+    const block = /concurrency:\s*\n\s*group:\s*deploy-production\s*\n\s*cancel-in-progress:\s*false/;
+    expect(deploy).toMatch(block);
+  });
+
+  it('records the deployment in a GitHub environment', () => {
+    const deploy = ci.slice(ci.indexOf('\n  deploy:'));
+    expect(deploy).toMatch(/environment:\s*\n\s*name:\s*production/);
   });
 
   it('makes the deploy depend on the static gates, the merged coverage and the rules', () => {

@@ -124,6 +124,16 @@ push porque de él cuelga `deploy`. El sharding de la suite **no** se toca: es
 una decisión registrada en `CLAUDE.md` y su motivo (tiempo de espera de quien
 revisa) sigue siendo válido.
 
+**El límite de este recorte, dicho en voz alta.** Con *squash merge* el commit
+que aparece en `main` es nuevo: tiene el mismo árbol que la PR pero otro SHA. De
+modo que E2E y CodeQL quedan validados sobre el contenido que se publica, no
+sobre el identificador exacto. Es el compromiso estándar, y es aceptable aquí
+porque el gate pesado —`quality`, la suite completa con sus umbrales y las
+reglas de Firestore— **sí** vuelve a correr sobre el commit de `main`, y es de
+él de quien cuelga `deploy`. Si en algún momento los minutos dejan de ser el
+factor limitante, la corrección es devolver `e2e.yml` al disparador `push` y
+añadirlo a `needs` del trabajo `deploy`, en ese orden.
+
 ---
 
 ## 3. Secretos que requiere el despliegue
@@ -235,7 +245,26 @@ Firebase (JDK 21) y navegadores de Playwright con dependencias de sistema;
 
 ---
 
-## 6. Referencias
+## 6. Reversión
+
+Un despliegue malo no se arregla con un commit de vuelta: eso publica otra vez,
+con los mismos minutos de gates por delante. Se revierte el despliegue y después
+se arregla el código.
+
+1. **Inmediato** — *Instant Rollback* en el panel del proyecto, o
+   `vercel rollback <url-del-despliegue-anterior> --token=…`. Devuelve el alias
+   de producción al artefacto anterior sin reconstruir nada.
+2. **Confirmar** — el resumen de cada ejecución del trabajo `deploy` (pestaña
+   *Summary*) registra el commit y la URL publicada, así que la URL a la que
+   volver está en la ejecución anterior, no hay que reconstruirla.
+3. **Después** — arreglar en una rama, con su PR y sus gates. Un `git revert`
+   directo sobre `main` vuelve a disparar el despliegue, que es correcto una vez
+   que producción ya está a salvo y no antes.
+
+Lo que hace posible el punto 1 es que cada despliegue sea inmutable y esté
+atado a un commit del repositorio — que es justamente lo que H-1 había roto.
+
+## 7. Referencias
 
 - `.github/workflows/ci.yml` — gates + despliegue.
 - `scripts/deploy/productionSmoke.mjs` — smoke del despliegue.
