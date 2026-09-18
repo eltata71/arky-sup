@@ -69,6 +69,25 @@ export interface AiProxyFailure {
   /** Short, already-truncated server detail. Never contains the prompt. */
   detail?: string;
   /**
+   * El código del envoltorio de error del proxy (`error` en la respuesta de
+   * `api/ai.ts`): `proxy_rate_limited`, `provider_rate_limited`,
+   * `missing_provider_api_key`, `provider_unavailable`…
+   *
+   * Existe porque el estado HTTP no basta. Un 429 del límite local del proxy
+   * (60 peticiones por minuto y sesión, en memoria) y un 429 de la cuota del
+   * proveedor son el mismo número y dos incidentes distintos: uno se pasa
+   * esperando unos segundos, el otro no se pasa esperando. Durante la Fase 5
+   * un usuario piloto recibió «El proxy de IA está limitando las solicitudes»
+   * dos veces separadas 25 segundos —imposible para un límite de 60/min— y el
+   * diagnóstico quedó abierto tres fases porque ni el mensaje ni el evento de
+   * observabilidad guardaban de dónde venía el 429.
+   */
+  serverCode?: string;
+  /** El campo `source` del mismo envoltorio: `proxy`, `auth` o el proveedor. */
+  serverSource?: string;
+  /** El proveedor que el proxy declara haber usado, cuando lo declara. */
+  provider?: string;
+  /**
    * Correlates the failure with the proxy's own log line. Present whenever the
    * call reached `aiProxyClient`, which is every path except a policy refusal
    * raised before one was minted.
@@ -108,8 +127,36 @@ export const proxyFailure = (
   status: extra.status,
   retryAfterMs: extra.retryAfterMs,
   detail: extra.detail,
+  serverCode: extra.serverCode,
+  serverSource: extra.serverSource,
+  provider: extra.provider,
   traceId: extra.traceId,
 });
+
+/**
+ * Códigos del envoltorio del proxy que significan «la cuota del proveedor está
+ * agotada», frente al límite que el propio proxy aplica.
+ *
+ * `api/ai.ts` emite `proxy_rate_limited` para el suyo y `provider_rate_limited`
+ * cuando quien devolvió 429 fue el backend. La distinción es la que decide qué
+ * puede hacer el usuario a continuación, así que se nombra aquí una vez.
+ */
+const PROVIDER_QUOTA_CODES = new Set(['provider_rate_limited']);
+const PROXY_QUOTA_CODES = new Set(['proxy_rate_limited']);
+
+export type RateLimitOrigin = 'proxy' | 'provider' | 'unknown';
+
+/**
+ * De dónde vino el 429. `unknown` es una respuesta legítima y se informa como
+ * tal: adivinar un origen con la misma seguridad con la que se informa uno
+ * medido es cómo un diagnóstico se cierra con la causa equivocada.
+ */
+export function rateLimitOrigin(failure: AiProxyFailure): RateLimitOrigin {
+  if (failure.reason !== 'rate-limited') return 'unknown';
+  if (failure.serverCode && PROVIDER_QUOTA_CODES.has(failure.serverCode)) return 'provider';
+  if (failure.serverCode && PROXY_QUOTA_CODES.has(failure.serverCode)) return 'proxy';
+  return 'unknown';
+}
 
 /**
  * Reasons where the same call, sent again, could plausibly succeed. A 401 is
@@ -215,7 +262,21 @@ export function describeProxyFailure(failure: AiProxyFailure): string {
     case 'unauthenticated':
       return 'El proxy de IA rechazó la sesión. Vuelva a iniciar sesión e inténtelo de nuevo.';
     case 'rate-limited':
-      return 'El proxy de IA está limitando las solicitudes. Espere unos segundos y reintente.';
+      // Tres mensajes, porque hay tres situaciones y la acción del usuario es
+      // distinta en cada una. El texto único anterior mandaba a esperar unos
+      // segundos también cuando la cuota del proveedor estaba agotada, que es
+      // precisamente el caso en que esperar unos segundos no sirve de nada.
+      switch (rateLimitOrigin(failure)) {
+        case 'proxy':
+          return 'El proxy de IA está limitando las solicitudes de esta sesión. '
+            + 'Espere unos segundos y reintente.';
+        case 'provider':
+          return 'El proveedor de IA agotó su cuota detrás del proxy. '
+            + 'Reintente más tarde o use su propia clave desde Ajustes → IA.';
+        default:
+          return 'La solicitud de IA fue limitada (429) y el origen no quedó identificado. '
+            + 'Espere unos segundos y reintente; el detalle queda en el centro de observabilidad.';
+      }
     case 'network':
       return 'No se pudo contactar al proxy de IA. Revise su conexión e inténtelo de nuevo.';
     case 'malformed':

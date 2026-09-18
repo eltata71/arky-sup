@@ -1,8 +1,11 @@
 name: E2E (Playwright)
 
+# Solo en pull request. Un merge a `main` vuelve a ejecutar exactamente el
+# mismo commit que la PR acaba de verificar, y esta suite es la más cara del
+# repositorio (build + dos navegadores + emuladores): duplicarla no aporta
+# señal y consume el presupuesto de minutos que mantiene vivo el resto del
+# pipeline. El gate previo al despliegue es `ci.yml`, que sí corre en push.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -42,6 +45,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Ningún trabajo de este workflow empuja nada. Persistir el token en
+          # .git/config para los pasos siguientes es superficie sin contrapartida.
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -22,6 +22,43 @@ The app is **frontend-first**: there is no custom domain backend. Persistence go
 
 The single exception to "frontend-only" is `api/` — two **stateless** Vercel serverless functions that exist purely to keep provider API keys off the client. They hold no domain logic and the app degrades to a direct provider call when they are unset or fail. Do not add domain endpoints there.
 
+### Transición a Supabase — aprobada en Fase 1 (F1.7)
+
+**La regla «frontend-only con Firebase» ya no es absoluta, y este apartado es el
+que la sustituye.** `docs/plan-transformacion-supabase-ddd.md` es el mandato, y
+`docs/fase-1/adrs.md` (ADR-001…ADR-008) la arquitectura aprobada: Supabase Auth
+para identidad, PostgreSQL con RLS para datos y permisos, Storage privado para
+archivos, y **backend confiable mínimo** (RPC `SECURITY DEFINER` y, donde haga
+falta clave de servicio, Edge Functions) para las operaciones que el navegador
+no puede autorizar. El hosting sigue siendo Vercel (ADR-006).
+
+Cuatro cosas que esto cambia y cuatro que no:
+
+| Cambia | Sigue igual |
+|---|---|
+| Firebase deja de ser la única persistencia posible; cada contexto elige por adaptador | Ningún componente, página, contexto o hook habla con un SDK: se entra por el repositorio del contexto |
+| `services/ports/` declara los contratos (`IdentityPort`, `RepositoryPort`, `FileStoragePort`, `ClockPort`) y el dominio depende solo de ellos | El dominio se prueba sin React, sin Firebase y sin Supabase |
+| `services/adapters/` es donde viven los SDK de ambos proveedores, y `resolveBackend(env, contexto)` decide cuál sirve a cada corte vertical | `api/` sigue siendo apátrida y sin lógica de dominio |
+| La autorización sensible se hace cumplir en el servidor —RLS y RPC— además de en `lib/authz` | `lib/authz` sigue decidiendo qué *se muestra*; nunca qué *se permite* |
+
+**El corte es por contexto, no por fecha.** Un contexto migra cuando su corte
+vertical está hecho (esquema, RLS, adaptador, pruebas de contrato y
+reconciliación); hasta entonces sigue en Firebase y `firestore.rules` sigue
+siendo su frontera. Para eso existe `VITE_BACKEND_<CONTEXTO>`: es el interruptor
+por corte, con Firebase como valor seguro por defecto y un valor desconocido
+cayendo también a Firebase — un error de escritura en una variable de entorno no
+puede cambiar en silencio dónde se guardan los datos. Por eso *Data Layer* sigue
+describiendo las rutas de Firestore: son las que gobiernan hoy.
+
+**Lo que no autoriza:** microservicios, un backend de dominio propio, endpoints
+de dominio en `api/`, ni exponer `service_role` al cliente. El estado actual del
+producto es una **prueba de concepto** (decisión de usuario, 2026-09-12): un
+único proyecto Supabase `ArkyDB-US` (`us-east-1`), sin datos productivos y sin
+multi-ambiente.
+
+`AGENTS.md` regla 1 dice lo mismo para Codex/Koder; mantenga los dos en el mismo
+cambio.
+
 **UI language is Spanish** (`<html lang="es">`). Source code, identifiers and most comments are English; user-facing copy is Spanish. The `en`/`es` dictionary lives in `lib/i18n/`; `AppContext` binds it to `settings.language` and exposes it as `t()`. Both languages carry the same 168 keys, and `__tests__/lib/i18n/translations.test.ts` fails the build if one gains a key the other lacks — a missing key renders as the key itself, in the middle of a toast.
 
 ---
@@ -470,7 +507,7 @@ Each one that moves into a module lowers the number.
 ## Development Commands
 
 ```bash
-npm install            # Install dependencies (.npmrc pins legacy-peer-deps=true)
+npm install            # Install dependencies (resolutor estricto de peers; `.npmrc` ya no lo desactiva — D-18)
 
 npm run dev            # Vite dev server → http://localhost:3000 (host 0.0.0.0)
 npm run build          # Production build → dist/
@@ -1843,7 +1880,9 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 
 ## What NOT to Do
 
-- Do not add a custom domain backend or REST API. `api/` is limited to stateless key-hiding proxies.
+- Do not add a custom domain backend or REST API. `api/` is limited to stateless key-hiding proxies. La transición aprobada en F1 mueve la autoridad de las reglas sensibles a PostgreSQL (RLS + RPC `SECURITY DEFINER`) y, cuando hace falta clave de servicio, a una Edge Function — no a endpoints de dominio en `api/`.
+- Do not talk to Supabase from a page, component, context or hook either. El SDK de Supabase vive en `services/adapters/` y en los repositorios `Supabase*Repository` de cada contexto, igual que el de Firebase; `resolveBackend` decide cuál atiende un corte.
+- Do not deploy from a workstation. Un artefacto que no se puede reconstruir desde `main` no es un despliegue: producción sirvió durante días un commit que no existía en el repositorio. El despliegue cuelga del trabajo `deploy` de `ci.yml`, detrás de los gates — ver `docs/ci-cd-pipeline.md`.
 - Do not call Firestore **or Firebase Auth** directly from a page, component, context or hook — always go through your context's repository and `services/identity` (lint-enforced).
 - Do not import `@google/genai` outside `services/ai/providers/gemini/` (lint-enforced). Describe output shape with `AIJsonSchema` from `services/ai/schema`; each provider translates it at its own boundary.
 - Do not import `services/geminiService` outside `services/ai/` (lint-enforced). Use a domain façade, or `aiGateway` when you compose your own prompt.

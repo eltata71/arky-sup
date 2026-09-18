@@ -6,9 +6,10 @@ name: Security
 #
 # Runs on PRs so a finding arrives with the change that caused it, and weekly
 # so an advisory published against code nobody is touching still surfaces.
+# PR y semanal, no en push. El push a `main` analiza el mismo árbol que la PR
+# acabó de analizar; el barrido semanal es el que cubre el caso que la PR no
+# puede ver, que es un aviso publicado contra código que nadie está tocando.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   schedule:
@@ -38,6 +39,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Ningún trabajo de este workflow empuja nada. Persistir el token en
+          # .git/config para los pasos siguientes es superficie sin contrapartida.
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -102,6 +107,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Ningún trabajo de este workflow empuja nada. Persistir el token en
+          # .git/config para los pasos siguientes es superficie sin contrapartida.
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -122,9 +131,17 @@ jobs:
       # An SBOM per run, so "which version of what did that release ship?" is
       # answerable after the fact rather than reconstructed from a lockfile
       # diff.
+      # D-15. Escribía `{}` cuando `npm sbom` fallaba, y subía ese `{}` como
+      # artefacto llamado «sbom»: un inventario vacío indistinguible de uno que
+      # declara que el build no tiene dependencias. La pregunta que un SBOM
+      # existe para responder —«¿qué versión de qué se publicó?»— quedaba
+      # contestada con una mentira sintácticamente válida. Ahora falla el paso.
       - name: Generate SBOM
         if: always()
-        run: npm sbom --sbom-format cyclonedx > sbom.cyclonedx.json || echo '{}' > sbom.cyclonedx.json
+        run: |
+          set -o pipefail
+          npm sbom --sbom-format cyclonedx > sbom.cyclonedx.json
+          node -e "const s=require('./sbom.cyclonedx.json'); const n=(s.components||[]).length; if(!s.bomFormat||n===0){console.error('::error::SBOM vacío o sin bomFormat ('+n+' componentes).');process.exit(1)} console.log('SBOM con '+n+' componentes.')"
 
       - name: Upload SBOM
         if: always()

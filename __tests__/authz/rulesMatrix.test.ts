@@ -151,10 +151,27 @@ describe('the structural invariants of the rewrite', () => {
   });
 
   it('refuses a self-edit of one\'s own role', () => {
-    // Two halves: the owner branch pins `role` to its current value, and the
-    // administrator branch excludes their own row.
-    expect(RULES).toContain('isOwner(uid) && request.resource.data.role == resource.data.role');
+    // Two halves: the owner branch may not touch `role`, and the administrator
+    // branch excludes their own row.
+    expect(RULES).toContain('isOwner(uid) && ownerEditsOnlyOwnName()');
+    expect(RULES).toContain('request.resource.data.role == resource.data.role');
     expect(RULES).toMatch(/canUpdateUsers\(\)\s*\n\s*&& request\.auth\.uid != uid/);
+  });
+
+  it('lets the owner change only their display name (D-13)', () => {
+    // Pinning `role` alone closes the privilege escalation and leaves `uid`,
+    // `email` and any invented field writable by their own subject. `uid` is
+    // the key the rest of the model identifies the person by, and `email` is
+    // what an administrator reads in the directory before changing somebody's
+    // role: a document where those two disagree with the real identity breaks
+    // no rule, it breaks the reading of whoever decides.
+    //
+    // Behaviour is proven against the emulator in `__tests__/rules/`; this is
+    // the drift guard, because a whitelist that quietly grows is the failure
+    // mode of a whitelist.
+    expect(RULES).toContain(
+      "request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])",
+    );
   });
 
   it('gates the ARB on arb:decide rather than on administration', () => {

@@ -28,6 +28,7 @@ import {
   parseRetryAfterMs,
   proxyFailure,
   proxySuccess,
+  rateLimitOrigin,
   type AiProxyFailureReason,
 } from '../../../services/ai/aiProxyPolicy';
 
@@ -170,5 +171,51 @@ describe('AiProxyEnforcementError', () => {
     // A shared message would leave the user unable to tell "log back in" from
     // "this deployment is misconfigured".
     expect(new Set(messages).size).toBe(ALL_REASONS.length);
+  });
+});
+
+describe('rateLimitOrigin', () => {
+  it('names the proxy when the envelope says proxy_rate_limited', () => {
+    expect(rateLimitOrigin(proxyFailure('rate-limited', { serverCode: 'proxy_rate_limited' })))
+      .toBe('proxy');
+  });
+
+  it('names the provider when the envelope says provider_rate_limited', () => {
+    expect(rateLimitOrigin(proxyFailure('rate-limited', { serverCode: 'provider_rate_limited' })))
+      .toBe('provider');
+  });
+
+  it('answers unknown rather than guessing when the code is absent', () => {
+    expect(rateLimitOrigin(proxyFailure('rate-limited', {}))).toBe('unknown');
+  });
+
+  it('is unknown for anything that is not a rate limit', () => {
+    expect(rateLimitOrigin(proxyFailure('network', { serverCode: 'proxy_rate_limited' })))
+      .toBe('unknown');
+  });
+});
+
+describe('describeProxyFailure distinguishes the two 429s', () => {
+  it('tells the user to wait when the proxy throttled the session', () => {
+    const message = describeProxyFailure(
+      proxyFailure('rate-limited', { serverCode: 'proxy_rate_limited' }),
+    );
+    expect(message).toContain('esta sesión');
+    expect(message).toContain('Espere unos segundos');
+  });
+
+  it('tells the user the provider quota ran out, and offers the way through', () => {
+    const message = describeProxyFailure(
+      proxyFailure('rate-limited', { serverCode: 'provider_rate_limited' }),
+    );
+    expect(message).toContain('cuota');
+    expect(message).toContain('Ajustes');
+    // Esperar «unos segundos» era el consejo equivocado exactamente aquí.
+    expect(message).not.toContain('Espere unos segundos');
+  });
+
+  it('says the origin was not identified rather than implying one', () => {
+    const message = describeProxyFailure(proxyFailure('rate-limited', {}));
+    expect(message).toContain('no quedó identificado');
   });
 });

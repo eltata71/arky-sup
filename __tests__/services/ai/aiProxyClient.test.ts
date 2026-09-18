@@ -25,6 +25,7 @@ import {
   getAiProxyUrl,
   isAiProxyConfigured,
   streamAiProxy,
+  streamAiProxyDetailed,
 } from '../../../services/ai/aiProxyClient';
 
 const setProxyUrl = (value: string | undefined) => {
@@ -264,3 +265,101 @@ describe('callAiProxy', () => {
       expect(await streamAiProxy(baseRequest)).toBeNull();
     });
   });
+
+/**
+ * Atribución del 429 — la brecha que mantuvo abierto el diagnóstico desde F5.
+ *
+ * El incidente real: un usuario piloto recibió «El proxy de IA está limitando
+ * las solicitudes» dos veces separadas 25 segundos. El límite local del proxy
+ * es de 60 por minuto, así que dos llamadas no podían haberlo tocado — pero
+ * nada en el cliente, en el mensaje ni en el evento de observabilidad decía de
+ * dónde venía el 429, y el acta de F5 tuvo que cerrarse con salvedad, la de F7
+ * lo trasladó y el plan de F8 lo dejó como gate bloqueante.
+ */
+describe('429 attribution', () => {
+  it('records the proxy envelope on the buffered path', async () => {
+    setProxyUrl('/api/ai');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          requestId: 'aiproxy-abc',
+          error: 'provider_rate_limited',
+          source: 'gemini',
+          provider: 'gemini',
+        }),
+        { status: 429, headers: { 'content-type': 'application/json', 'retry-after': '30' } },
+      ),
+    );
+
+    const outcome = await callAiProxyDetailed(baseRequest);
+
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.reason).toBe('rate-limited');
+    expect(outcome.serverCode).toBe('provider_rate_limited');
+    expect(outcome.serverSource).toBe('gemini');
+    expect(outcome.provider).toBe('gemini');
+    expect(outcome.retryAfterMs).toBe(30_000);
+    // El id del proxy manda sobre el acuñado en el cliente: es el que quedó en
+    // la línea de log del servidor.
+    expect(outcome.traceId).toBe('aiproxy-abc');
+  });
+
+  it('records the proxy envelope on the streaming path too', async () => {
+    // Este era el agujero concreto. El Laboratorio de IA del LMS —donde se
+    // observó el incidente— emite en streaming, y esa rama se quedaba con el
+    // estado HTTP y descartaba el cuerpo.
+    setProxyUrl('/api/ai');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ requestId: 'aiproxy-stream', error: 'proxy_rate_limited', source: 'proxy' }),
+        { status: 429, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+
+    const outcome = await streamAiProxyDetailed(baseRequest);
+
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.reason).toBe('rate-limited');
+    expect(outcome.serverCode).toBe('proxy_rate_limited');
+    expect(outcome.serverSource).toBe('proxy');
+    expect(outcome.traceId).toBe('aiproxy-stream');
+  });
+
+  it('treats a keyless proxy as configuration on the streaming path as well', async () => {
+    setProxyUrl('/api/ai');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ requestId: 'r', error: 'missing_provider_api_key', source: 'proxy' }),
+        { status: 500, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+
+    const outcome = await streamAiProxyDetailed(baseRequest);
+
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.reason).toBe('not-configured');
+    expect(outcome.retryable).toBe(false);
+  });
+
+  it('keeps a non-JSON body as detail instead of inventing fields', async () => {
+    setProxyUrl('/api/ai');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('upstream connect error', {
+        status: 502,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    );
+
+    const outcome = await callAiProxyDetailed(baseRequest);
+
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.reason).toBe('provider-error');
+    expect(outcome.detail).toContain('upstream connect error');
+    expect(outcome.serverCode).toBeUndefined();
+    expect(outcome.serverSource).toBeUndefined();
+  });
+});

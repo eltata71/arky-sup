@@ -47,6 +47,32 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    /*
+     * Qué puede tocar alguien de su propia ficha de usuario: el nombre, y nada
+     * más (D-13).
+     *
+     * La regla anterior era `request.resource.data.role == resource.data.role`,
+     * que cierra la escalada de privilegio —lo importante— y deja abierto todo
+     * lo demás: `uid`, `email` y cualquier campo inventado. `uid` es la clave
+     * con la que el resto del modelo identifica a la persona, y `email` es lo
+     * que un administrador lee en el directorio para saber a quién está
+     * cambiando de rol. Un documento donde esos dos no coinciden con la
+     * identidad real no rompe ninguna regla: rompe la lectura de quien decide.
+     *
+     * `UserProfile` tiene exactamente cuatro campos —`uid`, `email`,
+     * `displayName`, `role`— y la única escritura del propio usuario es
+     * `updateOwnDisplayName`, que escribe `{ displayName }` y nada más. La
+     * lista blanca no restringe ninguna operación que el producto haga hoy.
+     *
+     * `affectedKeys().hasOnly([...])` ya implica que `role` no cambia; la
+     * igualdad explícita se conserva porque es la invariante que no puede
+     * perderse en silencio el día que alguien añada un campo a la lista.
+     */
+    function ownerEditsOnlyOwnName() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
+        && request.resource.data.role == resource.data.role;
+    }
+
     // The role stored on the caller's own profile document.
     function storedRole() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid))
@@ -383,14 +409,17 @@ service cloud.firestore {
 
       // Two disjoint kinds of update.
       //
-      //  1. The owner maintains their own profile — and may not touch `role`.
-      //     Without that clause every account could promote itself, which is
-      //     the same hole as before wearing a different verb.
+      //  1. The owner maintains their own profile — and the only field that is
+      //     theirs to maintain is `displayName` (`ownerEditsOnlyOwnName`).
+      //     Guarding `role` alone closes the privilege escalation and leaves
+      //     `uid` and `email` writable by their subject, which quietly breaks
+      //     the directory an administrator reads before changing somebody's
+      //     role.
       //  2. An administrator changes somebody else's role. Never their own:
       //     an administrator who can edit their own row can grant themselves
       //     anything, and `users:grant-privileged` stops meaning anything.
       allow update: if
-        (isOwner(uid) && request.resource.data.role == resource.data.role)
+        (isOwner(uid) && ownerEditsOnlyOwnName())
         || (canUpdateUsers()
           && request.auth.uid != uid
           && isKnownRole(writtenRole())
