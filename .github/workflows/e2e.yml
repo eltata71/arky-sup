@@ -1,8 +1,11 @@
 name: E2E (Playwright)
 
+# Solo en pull request. Un merge a `main` vuelve a ejecutar exactamente el
+# mismo commit que la PR acaba de verificar, y esta suite es la más cara del
+# repositorio (build + dos navegadores + emuladores): duplicarla no aporta
+# señal y consume el presupuesto de minutos que mantiene vivo el resto del
+# pipeline. El gate previo al despliegue es `ci.yml`, que sí corre en push.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 

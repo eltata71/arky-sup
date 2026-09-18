@@ -154,3 +154,87 @@ describe('assertDirectCallAllowed — enforcement on', () => {
       .toThrow(AiProxyEnforcementError);
   });
 });
+
+describe('the recorded refusal carries the 429 attribution', () => {
+  it('records serverCode, serverSource, provider and the resolved origin', () => {
+    setStrict('true');
+    expect(() =>
+      assertDirectCallAllowed(
+        settingsWith({ apiKeySource: 'global' }),
+        proxyFailure('rate-limited', {
+          status: 429,
+          serverCode: 'provider_rate_limited',
+          serverSource: 'gemini',
+          provider: 'gemini',
+          detail: '{"error":"provider_rate_limited"}',
+          traceId: 'aiproxy-xyz',
+        }),
+      ),
+    ).toThrow(AiProxyEnforcementError);
+
+    expect(reportError).toHaveBeenCalledTimes(1);
+    const [, context] = reportError.mock.calls[0] as [unknown, { metadata: Record<string, unknown> }];
+    expect(context.metadata.serverCode).toBe('provider_rate_limited');
+    expect(context.metadata.serverSource).toBe('gemini');
+    expect(context.metadata.provider).toBe('gemini');
+    expect(context.metadata.rateLimitOrigin).toBe('provider');
+    expect(context.metadata.traceId).toBe('aiproxy-xyz');
+  });
+
+  it('reports the origin as unknown rather than omitting the field', () => {
+    setStrict('true');
+    expect(() =>
+      assertDirectCallAllowed(
+        settingsWith({ apiKeySource: 'global' }),
+        proxyFailure('rate-limited', { status: 429 }),
+      ),
+    ).toThrow(AiProxyEnforcementError);
+
+    const [, context] = reportError.mock.calls[0] as [unknown, { metadata: Record<string, unknown> }];
+    expect(context.metadata.rateLimitOrigin).toBe('unknown');
+  });
+});
+
+/**
+ * Las tres ramas defensivas de `byokConsent`, que quedaron sin cubrir cuando
+ * F7 añadió el hueco de clave de Anthropic.
+ *
+ * No son casos de laboratorio. Las tres terminan en `false`, es decir en «no
+ * hay consentimiento», que bajo `VITE_AI_STRICT_PROXY` significa **no llamar al
+ * proveedor con la clave del operador**. Una de ellas invirtiéndose por un
+ * refactor sería la fuga que este módulo existe para impedir, y hasta ahora
+ * nadie la afirmaba.
+ */
+describe('byokConsent fails closed on the paths nobody exercises', () => {
+  // Queda una cuarta rama sin cubrir a propósito: `if (!storageKey) return
+  // false`, para un proveedor sin hueco de clave de usuario. Hoy es
+  // **inalcanzable**, porque `Settings['aiConfig']['provider']` solo admite
+  // `gemini | openrouter | anthropic` y los tres tienen hueco. Se conserva como
+  // guarda: el día que ese tipo crezca, el valor por defecto correcto es «no
+  // hay consentimiento», y descubrirlo entonces sería descubrirlo tarde.
+
+  it('treats a throwing localStorage as "no key stored"', () => {
+    // Safari en modo privado lanza al acceder. Propagar la excepción
+    // convertiría un navegador en modo privado en un error de la aplicación;
+    // devolver `true` la convertiría en una fuga.
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('The operation is insecure.', 'SecurityError');
+    });
+    try {
+      expect(hasConsentedByok(settingsWith({ apiKeySource: 'user' }))).toBe(false);
+    } finally {
+      getItem.mockRestore();
+    }
+  });
+
+  it('treats an absent localStorage as "no key stored"', () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    // @ts-expect-error — se retira a propósito para reproducir un entorno sin DOM.
+    delete globalThis.localStorage;
+    try {
+      expect(hasConsentedByok(settingsWith({ apiKeySource: 'user' }))).toBe(false);
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original);
+    }
+  });
+});

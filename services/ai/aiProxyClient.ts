@@ -112,6 +112,88 @@ function classifyEndpointMiss(response: Response): boolean {
   return headerOf(response, 'content-type').toLowerCase().includes('html');
 }
 
+/**
+ * El envoltorio de error que `api/ai.ts` devuelve, leído una sola vez y usado
+ * por los dos caminos.
+ *
+ * Antes lo leía únicamente la llamada con respuesta completa; la llamada por
+ * streaming se quedaba con el estado HTTP. Eso hacía que un 429 del Laboratorio
+ * de IA —que emite en streaming— llegara sin `error`, sin `source` y sin
+ * `requestId`, es decir sin nada con lo que atribuirlo, y que el caso
+ * «el proxy está desplegado pero el servidor no tiene clave» se reportara ahí
+ * como fallo de proveedor reintentable en vez de como configuración.
+ *
+ * Nunca devuelve el prompt: el envoltorio del proxy no lo incluye, y el texto
+ * crudo se recorta a 200 caracteres antes de viajar a ninguna parte.
+ */
+interface ProxyErrorEnvelope {
+  detail: string;
+  serverCode?: string;
+  serverSource?: string;
+  provider?: string;
+  requestId?: string;
+}
+
+const asText = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.length > 0 ? value : undefined;
+
+async function readProxyErrorEnvelope(response: Response): Promise<ProxyErrorEnvelope> {
+  const raw = await response.text().catch(() => '');
+  const detail = raw.slice(0, 200);
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return {
+      detail,
+      serverCode: asText(parsed.error),
+      serverSource: asText(parsed.source),
+      provider: asText(parsed.provider),
+      requestId: asText(parsed.requestId),
+    };
+  } catch {
+    // Un cuerpo que no es JSON sigue siendo información — se conserva como
+    // `detail` y los campos estructurados quedan ausentes, que es lo honesto.
+    return { detail };
+  }
+}
+
+/**
+ * La regla que ambos caminos comparten: un proxy desplegado sin clave de
+ * proveedor es configuración, no una caída. Responde 500, y «reintente en unos
+ * momentos» mandaría al operador a esperar algo que no cambia hasta que se
+ * defina `GEMINI_API_KEY` en el servidor.
+ */
+function failureFromEnvelope(
+  response: Response,
+  envelope: ProxyErrorEnvelope,
+  endpoint: string,
+  traceId: string,
+) {
+  if (envelope.serverCode === 'missing_provider_api_key' || envelope.detail.includes('missing_provider_api_key')) {
+    return proxyFailure('not-configured', {
+      status: response.status,
+      retryable: false,
+      detail: `El proxy (${endpoint}) responde, pero el servidor no tiene clave de proveedor.`,
+      serverCode: envelope.serverCode ?? 'missing_provider_api_key',
+      serverSource: envelope.serverSource,
+      provider: envelope.provider,
+      traceId: envelope.requestId ?? traceId,
+    });
+  }
+
+  return proxyFailure(classifyProxyStatus(response.status), {
+    status: response.status,
+    retryAfterMs: parseRetryAfterMs(response.headers?.get?.('retry-after')),
+    detail: envelope.detail,
+    serverCode: envelope.serverCode,
+    serverSource: envelope.serverSource,
+    provider: envelope.provider,
+    // El `requestId` del proxy es el id con el que quedó su línea de log. Si
+    // viene, manda: correlacionar con el id acuñado en el cliente obliga a
+    // cruzar dos identificadores a mano.
+    traceId: envelope.requestId ?? traceId,
+  });
+}
+
 /** Stable per-tab identity so the proxy rate-limits per session, not per IP. */
 function getSessionId(): string {
   const generated = `ai-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -188,25 +270,7 @@ export async function callAiProxyDetailed(request: AiProxyRequest): Promise<AiPr
     }
 
     if (!response.ok) {
-      const detail = await response.text().catch(() => '');
-      // A proxy that is deployed but holds no provider key is a configuration
-      // gap, not a provider outage: it answers 500, and «reintente en unos
-      // momentos» would send the operator to wait for something that will not
-      // change until `GEMINI_API_KEY` is set on the server.
-      if (detail.includes('missing_provider_api_key')) {
-        return proxyFailure('not-configured', {
-          status: response.status,
-          retryable: false,
-          detail: `El proxy (${endpoint}) responde, pero el servidor no tiene clave de proveedor.`,
-          traceId,
-        });
-      }
-      return proxyFailure(classifyProxyStatus(response.status), {
-        status: response.status,
-        retryAfterMs: parseRetryAfterMs(response.headers?.get?.('retry-after')),
-        detail: detail.slice(0, 200),
-        traceId,
-      });
+      return failureFromEnvelope(response, await readProxyErrorEnvelope(response), endpoint, traceId);
     }
 
     const data = (await response.json().catch(() => null)) as { text?: unknown } | null;
@@ -286,11 +350,7 @@ export async function streamAiProxyDetailed(
     }
 
     if (!response.ok) {
-      return proxyFailure(classifyProxyStatus(response.status), {
-        status: response.status,
-        retryAfterMs: parseRetryAfterMs(response.headers?.get?.('retry-after')),
-        traceId,
-      });
+      return failureFromEnvelope(response, await readProxyErrorEnvelope(response), endpoint, traceId);
     }
     if (!response.body) {
       return proxyFailure('malformed', { status: response.status, retryable: true, traceId });

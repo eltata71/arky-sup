@@ -20,6 +20,7 @@ import {
   decideFallback,
   isStrictProxyEnforced,
   proxyFailure,
+  rateLimitOrigin,
   type AiProxyFailure,
   type AiProxyFailureReason,
 } from './aiProxyPolicy';
@@ -56,6 +57,17 @@ export function assertDirectCallAllowed(
       retryable: failure.retryable,
       traceId: failure.traceId,
       strictProxy: isStrictProxyEnforced(),
+      // Lo que faltaba para poder cerrar un diagnóstico sin repetir el
+      // incidente: el código y el origen que el proxy declaró. El evento
+      // anterior guardaba `reason: 'rate-limited'` y nada más, así que un 429
+      // del límite local y otro de la cuota del proveedor quedaban registrados
+      // como el mismo hecho. `rateLimitOrigin` devuelve `unknown` cuando no se
+      // pudo determinar, en vez de elegir el más probable.
+      serverCode: failure.serverCode,
+      serverSource: failure.serverSource,
+      provider: failure.provider,
+      rateLimitOrigin: rateLimitOrigin(failure),
+      detail: failure.detail,
     },
   });
   throw error;

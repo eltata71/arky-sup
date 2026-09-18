@@ -255,3 +255,106 @@ jobs:
       # slow the gate that runs on every push.
       - name: Firestore rules against the emulator
         run: npm run test:rules
+
+  # ── Despliegue continuo ────────────────────────────────────────────────────
+  #
+  # El despliegue vive aquí, detrás de los tres trabajos que juzgan el cambio,
+  # y no en la integración Git de Vercel. La diferencia no es de comodidad: la
+  # integración de Vercel despliega al recibir el push, sin leer el resultado
+  # de ningún gate, y eso fue exactamente lo que ocurrió en este proyecto —
+  # producción sirvió durante días un commit que no existía en el repositorio,
+  # subido con `vercel --force` desde una estación de trabajo. Un artefacto que
+  # no se puede reconstruir desde `main` no es un despliegue, es una copia.
+  #
+  # `needs` es el contrato: nada llega a producción sin typecheck, lint, los
+  # cuatro presupuestos, el build, la suite completa con sus umbrales de
+  # cobertura y las reglas de Firestore contra el emulador.
+  deploy:
+    name: Deploy to Vercel (production)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [quality, coverage, rules]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      # Falla explícito y con la instrucción dentro del error. La alternativa
+      # —marcar el trabajo en verde cuando no hay credenciales— produce un
+      # pipeline que informa "desplegado" sin haber desplegado nada, que es
+      # peor que un rojo accionable.
+      - name: Verify deploy credentials are present
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          missing=""
+          [ -z "$VERCEL_TOKEN" ] && missing="$missing VERCEL_TOKEN"
+          [ -z "$VERCEL_ORG_ID" ] && missing="$missing VERCEL_ORG_ID"
+          [ -z "$VERCEL_PROJECT_ID" ] && missing="$missing VERCEL_PROJECT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Faltan secretos de despliegue:$missing."
+            echo "::error::Configúrelos en Settings → Secrets and variables → Actions."
+            echo "::error::Procedimiento completo en docs/ci-cd-pipeline.md §3."
+            exit 1
+          fi
+          echo "Credenciales de despliegue presentes."
+
+      # `vercel pull` trae la configuración del proyecto (framework, comando de
+      # build y las variables `VITE_*` de producción) para que el artefacto se
+      # construya con los mismos valores que el dashboard declara. Construir
+      # aquí y subir el resultado, en vez de dejar que Vercel construya, es lo
+      # que hace que el binario desplegado sea el que estos gates validaron.
+      - name: Pull Vercel production environment
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes vercel@latest pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+
+      - name: Build production artefact
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes vercel@latest build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+
+      # El artefacto publicado se vuelve a escanear: `vercel build` usa las
+      # variables reales del proyecto, no los placeholders del job `quality`,
+      # así que es la primera vez en el pipeline que una clave de proveedor
+      # mal configurada como `VITE_*` podría haber entrado en el bundle.
+      # Sin `npm ci`: el escáner solo usa módulos nativos de Node, y reinstalar
+      # aquí borraría el `node_modules` que `vercel build` acaba de preparar.
+      - name: No provider credentials in the deployed bundle
+        run: node scripts/checkBundleSecrets.mjs .vercel/output/static
+
+      - name: Deploy prebuilt artefact to production
+        id: deploy
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          # La CLI imprime progreso además de la URL; la URL es la última línea.
+          url=$(npx --yes vercel@latest deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}" | tail -n 1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Desplegado: $url"
+
+      # Verificación mínima de que lo desplegado responde: la SPA sirve HTML y
+      # la función del proxy contesta su envoltorio de error autenticado. Un
+      # 200 con el HTML del SPA en `/api/ai` es el fallo de rewrite que ya
+      # ocurrió una vez (F5, `vercel.json`), y este paso lo detecta.
+      # `VERCEL_AUTOMATION_BYPASS_SECRET` es opcional y el smoke lo dice cuando
+      # falta: el proyecto tiene Vercel Authentication activada, así que sin él
+      # la comprobación recibe el muro de inicio de sesión en vez de la
+      # aplicación. Sin el secreto el paso avisa y no falla — un rojo aquí no
+      # revertiría un despliegue ya publicado ni describiría un fallo de la app.
+      - name: Production smoke (SPA + proxy contract)
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: node scripts/deploy/productionSmoke.mjs "${{ steps.deploy.outputs.url }}"
