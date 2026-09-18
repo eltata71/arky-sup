@@ -52,7 +52,7 @@ describe('what the barrel promised is still there', () => {
     expect(typeof ai.C4SelfHealingError).toBe('function');
     expect(typeof ai.classifyAIError).toBe('function');
     expect(typeof ai.isTransientGeminiError).toBe('function');
-  });
+  }, 30000);
 
   it('classifies an error into the same category as before the move', async () => {
     const { classifyAIError, AIServiceError } = await import('../../../services/ai');

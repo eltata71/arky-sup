@@ -73,7 +73,7 @@ export interface AppRailProps {
 }
 
 export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }) => {
-    const { user, profile } = useAuth();
+    const { user, profile, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const { setOpen: setPaletteOpen } = useCommandPalette();
