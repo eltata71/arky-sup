@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
@@ -149,7 +149,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
@@ -195,7 +195,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
@@ -241,7 +241,7 @@ jobs:
     # check that would have caught it was optional.
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
@@ -322,7 +322,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
