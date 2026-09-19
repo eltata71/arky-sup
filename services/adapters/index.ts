@@ -5,10 +5,13 @@
  * aquí. Un adaptador nuevo se añade a la lista de `eslint.config.js` en
  * revisión, nunca por conveniencia.
  *
- * El SDK de Supabase se carga de forma **dinámica**, en `supabaseAuthClient.ts`
- * y en `supabaseDataBackend.ts`: no entra en la carga inicial de la aplicación.
- * Tras F9 no queda un segundo proveedor, así que `resolveBackend` conserva
- * `memory` sólo para pruebas.
+ * El SDK de Supabase se importa en un único fichero, `supabaseClient.ts`, y de
+ * forma **dinámica**: no entra en la carga inicial de la aplicación. Que sea
+ * uno no es orden sino corrección — dos clientes con `persistSession` sobre la
+ * misma clave de almacenamiento se pelean por el refresh token y cierran la
+ * sesión de quien acaba de abrirla. Identidad, datos y archivos son tres vistas
+ * de esa misma instancia. Tras F9 no queda un segundo proveedor, así que
+ * `resolveBackend` conserva `memory` sólo para pruebas.
  */
 export type { BackendKind, BackendResolution } from './backendSelection';
 export { DEFAULT_BACKEND, isBackendHonored, resolveBackend } from './backendSelection';
@@ -42,3 +45,9 @@ export {
   type SupabaseSessionLike,
 } from './supabaseIdentityAdapter';
 export { loadSupabaseAuthClient, loadSupabaseIdentityPort, resetSupabaseAuthClientCache } from './supabaseAuthClient';
+export {
+  isSupabaseConfigured,
+  loadSupabaseClient,
+  resetSupabaseClientCache,
+  type SupabaseClientLike,
+} from './supabaseClient';

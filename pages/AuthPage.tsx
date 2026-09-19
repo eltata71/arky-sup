@@ -38,6 +38,7 @@ export const AuthPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     login,
+    loginWithGoogle,
     sendPasswordReset,
     completeSupabasePasswordSetup,
     signInAsDeveloper,
@@ -73,6 +74,25 @@ export const AuthPage: React.FC = () => {
     }
   };
 
+  /**
+   * Entrar con Google.
+   *
+   * No navega al terminar, y ésa es la diferencia con los otros dos botones:
+   * esto manda el navegador a Google, y quien vuelve es el observador de sesión
+   * del contexto. Un `navigate('/')` aquí correría contra una redirección que
+   * ya está en marcha y dejaría la pantalla en blanco a mitad de camino.
+   */
+  const handleGoogleSignIn = async () => {
+    try {
+      setError('');
+      setNotice('');
+      await loginWithGoogle();
+    } catch (err: unknown) {
+      const authError = err as AuthError;
+      setError(authError.message || 'No se pudo iniciar el acceso con Google.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -103,11 +123,7 @@ export const AuthPage: React.FC = () => {
       navigate('/');
     } catch (err: unknown) {
       const authError = err as AuthError;
-      if (authError.code === 'auth/operation-not-allowed') {
-        setError("Configuración pendiente: habilita 'Email/Password' en Firebase Console > Authentication > Sign-in method.");
-      } else {
-        setError(authError.message || 'No fue posible autenticar la cuenta');
-      }
+      setError(authError.message || 'No fue posible autenticar la cuenta');
     } finally {
       setIsSubmitting(false);
     }
@@ -273,11 +289,46 @@ export const AuthPage: React.FC = () => {
             </form>
 
             {/*
-              El acceso con Google se retiró en F9 junto con Firebase. Supabase
-              Auth es el proveedor único (ADR-004) y entra con correo y
-              contraseña; habilitar OAuth sería configurarlo en Supabase y
-              añadirlo aquí, y nadie lo ha pedido.
+              Google entra por Supabase Auth, no al lado: las dos rutas terminan
+              en el mismo `auth.users` y sobre el mismo perfil, así que sigue
+              habiendo un único sitio donde una cuenta existe o no existe. Sólo
+              en `login`: durante la recuperación o el alta de contraseña hay un
+              flujo a medias, y ofrecer aquí una segunda puerta lo abandona.
             */}
+            {mode === 'login' && (
+              <>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">o continúa con</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
+                >
+                  {/* El logotipo va `aria-hidden`: el botón ya se llama «Continuar con Google». */}
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3.01h3.88c2.27-2.09 3.58-5.17 3.58-8.82Z" />
+                    <path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.94-2.91l-3.88-3.01c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.73-4.95H1.26v3.11A12 12 0 0 0 12 24Z" />
+                    <path fill="#FBBC05" d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56V6.61H1.26a12 12 0 0 0 0 10.78l4.01-3.11Z" />
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.26 6.61l4.01 3.11C6.22 6.86 8.87 4.75 12 4.75Z" />
+                  </svg>
+                  Continuar con Google
+                </button>
+
+                <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                  Puedes usar una cuenta personal de Google o la de tu organización.
+                  Entrar con Google no crea una cuenta en Arky: un administrador debe darte de alta antes.
+                </p>
+              </>
+            )}
+
             {mode !== 'setup-password' && isDeveloperBypassAvailable && (
             <>
             <div className="relative my-6">

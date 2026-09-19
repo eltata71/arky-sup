@@ -241,19 +241,26 @@ Medido sobre la rama, localmente, con los comandos que CI ejecuta:
 
 ## 9. Lo que queda abierto, con dueño
 
-Nada de esto es trabajo de código pendiente. Son acciones de cuenta o de
-organización, y se listan porque un acta que las omitiera estaría afirmando algo
-que no comprobó.
+**Revisado el 2026-09-19 contra el estado real, y la revisión corrigió el acta.**
+La versión anterior de esta sección listaba como abiertos cuatro puntos que ya
+estaban atendidos: se escribieron desde la auditoría del 2026-09-13 y nadie los
+volvió a medir. Un acta que no se vuelve a medir es una lista de tareas de otra
+semana, y ésta llegó a afirmar que no había CI **mientras el CI estaba pasando
+en verde sobre esta misma rama**.
 
-| # | Abierto | Dueño | Bloquea |
+Lo que se comprobó, y con qué:
+
+| # | Punto | Estado | Evidencia |
 |---|---|---|---|
-| 1 | Provisionar `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` en Vercel, y `VERCEL_TOKEN`/`ORG_ID`/`PROJECT_ID` como secretos de repositorio | titular de la cuenta | Que un merge despliegue |
-| 2 | Desbloquear GitHub Actions (H-2 de la auditoría: los trabajos terminan en 0 ms sin logs desde el 2026-09-13) | titular de la cuenta | Todo el CI |
-| 3 | Protección de rama sobre `main` | titular de la cuenta | Que el pipeline sea un contrato y no una costumbre |
-| 4 | Acceso a producción para la UAT: dominio propio o ajustar la protección de despliegue de Vercel | titular de la cuenta | Que la UAT la ejecute alguien de fuera del equipo de Vercel |
-| 5 | UAT humana y una inferencia autenticada real contra el despliegue | organización | Cerrar F7.6 y F8.4 |
-| 6 | Activar *Leaked password protection* (HIBP) en Supabase Auth | operación | Es el único WARN de los advisors |
-| 7 | SLO/RPO/RTO y respaldo remoto programado | operación y negocio | Uso con datos reales |
+| 1 | Variables en Vercel y secretos de despliegue | **Cerrado** | El despliegue de producción de `82be918` está `READY`. El build es *fail-closed* sobre `VITE_SUPABASE_*`: que compile es la prueba de que están puestas |
+| 2 | GitHub Actions desbloqueado | **Cerrado** | Los cuatro workflows corren con duraciones reales. El CI de la PR #32 pasó: gates estáticos, los cuatro shards y la cobertura fusionada |
+| 3 | Protección de rama sobre `main` | **Cerrado** | La PR #32 está `blocked` con checks requeridos y una aprobación pendiente. Es exactamente lo que la protección debe hacer |
+| 4 | Acceso para la UAT | **Cerrado** | Cada PR publica su preview; la de #32 está `READY` y enlazada en el hilo |
+| 5 | UAT humana e inferencia autenticada real | **Abierto** | Requiere que una persona entre y recorra. No se puede cerrar desde aquí |
+| 6 | *Leaked password protection* (HIBP) | **Abierto** | Sigue siendo el único `WARN` de `get_advisors`, medido hoy |
+| 7 | SLO/RPO/RTO y respaldo remoto programado | **Abierto** | Decisión de negocio, no de código |
+
+Quedan **tres**, no siete, y ninguno es código.
 
 **El punto 5 merece una frase.** No se puede cerrar desde aquí y no se va a
 declarar cerrado: requiere que una persona inicie sesión en el despliegue y
@@ -261,7 +268,41 @@ ejecute los recorridos. Lo que sí cambió es que ahora hay algo que ejercitar �
 antes de esta fase, una sesión humana contra producción habría encontrado la
 aplicación hablando con Firebase.
 
+**Y hay un punto nuevo, que es de configuración y no de código.** El acceso con
+Google está implementado y probado, pero el proveedor sólo funciona cuando
+alguien pega el client id y el secreto de un proyecto de Google Cloud en
+*Authentication → Providers* y añade la URL del despliegue a *Redirect URLs*.
+Hasta entonces el botón existe y devuelve el error del proveedor, que es lo que
+la pantalla muestra. Los pasos están en `docs/primer-administrador.md`.
+
 ---
+
+## 9 bis. Lo que la primera revisión de esta PR encontró
+
+Se anota porque es la lección más cara de la fase, y no la habría encontrado
+ninguna prueba unitaria: **las 4 285 pasaban en verde mientras el producto era
+inutilizable**.
+
+Identidad y datos construían cada uno su `createClient`, los dos con
+`persistSession: true` y, al no declarar `storageKey`, sobre la misma clave de
+almacenamiento. Los dos con `autoRefreshToken`, así que los dos renovaban el
+mismo refresh token; el segundo recibía `refresh_token_already_used`, el SDK
+borraba la sesión y emitía `SIGNED_OUT`. El resultado visible era **iniciar
+sesión correctamente y volver a la pantalla de inicio de sesión**, sin ningún
+error.
+
+Dos cosas que conviene quedarse:
+
+- **Lo encontró la suite E2E**, que es la única que ejerce el producto entero
+  contra un backend real. Los tres recorridos autenticados fallaron con
+  `expect(page).toHaveURL(/\/$/)` recibiendo `/auth`. Un gate que corre el
+  artefacto contra una base de datos de verdad no es una comodidad.
+- **El comentario decía lo contrario de lo que el código hacía.** El docblock
+  del segundo cliente afirmaba que compartir el almacenamiento hacía que
+  compartieran la sesión. La regresión ahora la cubre una prueba que cuenta las
+  llamadas a `createClient` —no los imports—, porque un comentario no falla.
+
+
 
 ## 10. Veredicto
 

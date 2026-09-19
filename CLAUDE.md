@@ -37,7 +37,7 @@ Cuatro cosas que esto cambió y cuatro que no:
 |---|---|
 | **No queda ningún SDK de Firebase**: ni dependencia, ni `firestore.rules`, ni emulador, ni variables `VITE_FIREBASE_*` | Ningún componente, página, contexto o hook habla con un SDK: se entra por el repositorio del contexto |
 | `services/ports/` declara los contratos (`IdentityPort`, `RepositoryPort`, `FileStoragePort`, `ClockPort`) y el dominio depende solo de ellos — **sobrevivieron al cambio de proveedor sin un solo cambio**, que es la prueba de que valían la pena | El dominio se prueba sin React y sin base de datos |
-| `services/adapters/` es donde vive el SDK, en **dos ficheros**, y lo carga dinámicamente | `api/` sigue siendo apátrida y sin lógica de dominio |
+| `services/adapters/` es donde vive el SDK, en **un fichero y un cliente**, cargado dinámicamente | `api/` sigue siendo apátrida y sin lógica de dominio |
 | La autorización sensible se hace cumplir en el servidor —RLS y RPC— además de en `lib/authz` | `lib/authz` sigue decidiendo qué *se muestra*; nunca qué *se permite* |
 
 **El interruptor por contexto sobrevive, la elección no.** `VITE_BACKEND` y
@@ -804,19 +804,32 @@ slightly different copy of.
 seven contexts in 1 379 lines and was deleted in Ola 2: each context now owns
 its adapter. Talk to your context's repository.
 
-**El SDK se importa en exactamente dos ficheros**, y ESLint lo exige:
-`services/adapters/supabaseAuthClient.ts` y
-`services/adapters/supabaseDataBackend.ts`. Antes la lista tenía un fichero por
-contexto, porque cada repositorio hablaba con la base directamente; con todo el acceso por
-RPC, el SDK sólo hace falta para *crear el cliente*. Un tercer fichero que lo
-importe está rehaciendo la puerta que ya existe — y un camino ad-hoc al SDK es
-como el Centro de Formación acabó degradando a `localStorage` con un
-`console.warn` sin decírselo a nadie.
+**El SDK se importa en exactamente un fichero**, `services/adapters/supabaseClient.ts`,
+y ESLint lo exige. Antes la lista tenía un fichero por contexto, porque cada
+repositorio hablaba con la base directamente; con todo el acceso por RPC, el SDK
+sólo hace falta para *crear el cliente*.
 
-**Y se carga en diferido.** Los dos ficheros hacen `await import(...)`, lo que
-mantiene 59 KB gz fuera de la carga inicial: el SDK sólo se descarga cuando algo
-va a hablar con la base de datos, que nunca es antes de pintar la pantalla de
-inicio de sesión.
+**Y el cliente es uno, lo cual no es orden sino corrección.** Hubo dos —uno de
+identidad y uno de datos—, cada uno con `persistSession: true` y, al no declarar
+`storageKey`, sobre la misma clave de almacenamiento. El SDK avisa de esto por
+consola («Multiple GoTrueClient instances … under the same storage key») y el
+modo de fallo es el que no se ve venir: los dos traen `autoRefreshToken`, así
+que los dos renuevan el **mismo** refresh token; el segundo recibe
+`refresh_token_already_used`, el SDK borra la sesión guardada y emite
+`SIGNED_OUT`, `useAuthSessionBootstrap` lo traduce a `setUser(null)` y
+`ProtectedRoute` manda a `/auth`. Visto por una persona: **iniciar sesión bien y
+volver a la pantalla de inicio de sesión**, sin un solo error en pantalla. Tumbó
+los tres recorridos autenticados de la suite E2E.
+
+Identidad, datos y archivos son tres vistas de esa única instancia, y
+`__tests__/authz/noSdkInUiLayers.test.ts` cuenta las construcciones —no los
+imports— porque reexportar el SDK y llamar a `createClient` en otro sitio
+traería el defecto entero sin mover una línea de import.
+
+**Y se carga en diferido.** El fichero hace `await import(...)`, lo que mantiene
+59 KB gz fuera de la carga inicial: el SDK sólo se descarga cuando algo va a
+hablar con la base de datos, que nunca es antes de pintar la pantalla de inicio
+de sesión.
 
 ### Degradation and persistence status
 
@@ -1163,11 +1176,33 @@ rather than passed around. Revisit it if a second resolver ever appears.
 
 ## Authentication & Roles
 
-Supabase Auth, proveedor único (ADR-004). Sign-in: correo y contraseña. El
-acceso con Google se retiró con Firebase en F9 y no se ha repuesto: habilitarlo
-es configurar el proveedor OAuth en Supabase y añadir una llamada en
-`services/identity/authService.ts`, y un proveedor de identidad que nadie usa es
-superficie de ataque sin contrapartida.
+Supabase Auth, proveedor único (ADR-004). Dos métodos de entrada: **correo con
+contraseña** y **Google**.
+
+Dos métodos no son dos proveedores de identidad, y la distinción es la que
+sostiene todo lo demás: Google viaja *por* Supabase, así que las dos rutas
+terminan en el mismo `auth.users`, con el mismo `uid`, sobre el mismo perfil de
+`api.user_profiles`. Sigue habiendo un solo sitio donde una cuenta existe o no
+existe, y una sola matriz de permisos.
+
+`signInWithGoogle` (`services/identity/authService.ts`) manda `prompt=select_account`
+siempre. Sin eso Google reutiliza en silencio la sesión que el navegador ya
+tenga, que es exactamente lo contrario de lo que necesita quien tiene una cuenta
+personal y otra de la organización. El retorno cae en `/auth` y lo recoge
+`detectSessionInUrl`; **no hay ruta de callback propia** porque no hace falta:
+el observador de sesión es el mismo que restaura una sesión al abrir la
+aplicación, y una segunda copia de esa decisión es una que se queda vieja.
+
+**Entrar con Google no crea una cuenta.** Quien complete el flujo sin perfil en
+`api.user_profiles` es devuelto a `/auth` con la explicación de siempre. Que la
+puerta sea más cómoda no la abre a más gente.
+
+Habilitarlo en un despliegue son dos cosas fuera del repositorio, y ninguna es
+código: el proveedor Google en *Authentication → Providers* (con el client id y
+el secreto de un proyecto de Google Cloud) y la URL del despliegue en
+*Authentication → URL Configuration → Redirect URLs*. Sin lo primero el botón
+devuelve un error del proveedor, que es lo que la pantalla muestra; sin lo
+segundo el retorno cae en el sitio equivocado.
 
 **Nobody creates their own account.** There is no registration form: `/auth` is
 sign-in and password recovery, and an identity that authenticates without a
@@ -1993,7 +2028,8 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 ## What NOT to Do
 
 - Do not add a custom domain backend or REST API. `api/` is limited to stateless key-hiding proxies. La transición aprobada en F1 mueve la autoridad de las reglas sensibles a PostgreSQL (RLS + RPC `SECURITY DEFINER`) y, cuando hace falta clave de servicio, a una Edge Function — no a endpoints de dominio en `api/`.
-- Do not talk to Supabase from a page, component, context or hook either. El SDK vive en **dos** ficheros de `services/adapters/` y se carga en diferido; el dominio entra por `callRpc` o por el repositorio de su contexto. Un tercer fichero que importe `@supabase/supabase-js` está rehaciendo la puerta que ya existe.
+- Do not talk to Supabase from a page, component, context or hook either. El SDK vive en **un** fichero de `services/adapters/` y se carga en diferido; el dominio entra por `callRpc` o por el repositorio de su contexto. Un segundo fichero que importe `@supabase/supabase-js` está rehaciendo la puerta que ya existe.
+- **Do not construct a second Supabase client.** Uno solo, en `services/adapters/supabaseClient.ts`. Dos con `persistSession` sobre la misma clave de almacenamiento se pelean por el refresh token y cierran la sesión de quien acaba de abrirla, sin ningún error a la vista; `noSdkInUiLayers.test.ts` cuenta las llamadas a `createClient`.
 - Do not bring Firebase back, in any form. No hay dependencia, ni reglas, ni emulador, ni variables; `noSdkInUiLayers.test.ts` conserva sus módulos en la lista de prohibidos exactamente para eso.
 - Do not persist a signed URL. Los cubos son privados y una URL firmada caduca: guardar una es guardar un enlace roto, o —si no caducara— una puerta pública a un objeto privado escrita en la base de datos. Se guarda la **ruta** y se firma al abrir.
 - Do not publish production by any path but `ci.yml`. `vercel.json` apaga el

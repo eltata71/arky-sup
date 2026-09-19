@@ -27,6 +27,10 @@ const authClient = {
   updateUser: vi.fn(async () => ({})),
   getSession: vi.fn(async (): Promise<Envelope> => envelope({ data: { session: null }, error: null })),
   onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+  signInWithOAuth: vi.fn(async (_credentials: {
+    provider: string;
+    options?: { redirectTo?: string; queryParams?: Record<string, string> };
+  }): Promise<{ error?: unknown }> => ({})),
 };
 
 vi.mock('../../services/adapters', () => ({
@@ -80,6 +84,12 @@ describe('when the backend is not configured', () => {
   it('sendPasswordReset fails with a typed error rather than a null dereference', async () => {
     const { AuthUnavailableError, sendPasswordReset } = await loadModule();
     await expect(sendPasswordReset('a@b.c')).rejects.toBeInstanceOf(AuthUnavailableError);
+  });
+
+  it('signInWithGoogle fails with a typed error rather than a null dereference', async () => {
+    const { AuthUnavailableError, signInWithGoogle } = await loadModule();
+    await expect(signInWithGoogle()).rejects.toBeInstanceOf(AuthUnavailableError);
+    expect(authClient.signInWithOAuth).not.toHaveBeenCalled();
   });
 
   it('signOut is safe: there is nothing to end', async () => {
@@ -195,5 +205,56 @@ describe('toAuthUser', () => {
     const { toAuthUser } = await loadModule();
     expect(toAuthUser(null)).toBeNull();
     expect(toAuthUser({ user: { id: '' } })).toBeNull();
+  });
+});
+
+describe('signInWithGoogle', () => {
+  beforeEach(() => {
+    setEnv(CONFIGURED);
+    vi.stubGlobal('window', { location: { origin: 'https://arky.test' } });
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('always asks Google which account to use', async () => {
+    // Sin `prompt=select_account` Google reutiliza en silencio la sesión que el
+    // navegador ya tenga. Quien trabaja con una cuenta personal y otra de la
+    // organización no podría elegir, ni cambiar, sin cerrar sesión en Google —
+    // y entraría a Arky con la que no quería sin llegar a verlo.
+    const { signInWithGoogle } = await loadModule();
+    await signInWithGoogle();
+    expect(authClient.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://arky.test/auth',
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+  });
+
+  it('returns to the sign-in screen by default, and honours an explicit target', async () => {
+    // El retorno cae en `/auth` a propósito: `detectSessionInUrl` consume el
+    // fragmento y el observador de sesión decide a dónde va la persona, que es
+    // el mismo camino que al restaurar una sesión. Una ruta de callback propia
+    // sería una segunda copia de esa decisión.
+    const { signInWithGoogle } = await loadModule();
+    await signInWithGoogle('https://arky.test/invitacion');
+    expect(authClient.signInWithOAuth).toHaveBeenCalledWith(expect.objectContaining({
+      options: expect.objectContaining({ redirectTo: 'https://arky.test/invitacion' }),
+    }));
+  });
+
+  it('surfaces a provider rejection instead of leaving the screen waiting', async () => {
+    // El caso real: el proveedor Google no habilitado en el proyecto. Sin este
+    // throw la pantalla se queda esperando una redirección que no va a ocurrir.
+    authClient.signInWithOAuth.mockResolvedValueOnce({ error: new Error('provider is not enabled') });
+    const { signInWithGoogle } = await loadModule();
+    await expect(signInWithGoogle()).rejects.toThrow(/provider is not enabled/);
+  });
+
+  it('never resolves with a user: nobody has signed in yet', async () => {
+    // Devolver una identidad aquí invitaría a la pantalla a navegar, y todavía
+    // no ha entrado nadie: lo único que ocurrió es que el navegador se va.
+    const { signInWithGoogle } = await loadModule();
+    await expect(signInWithGoogle()).resolves.toBeUndefined();
   });
 });

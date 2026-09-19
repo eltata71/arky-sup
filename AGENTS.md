@@ -163,8 +163,10 @@ Reglas que no se negocian al trabajar aquí:
    cliente. `CLAUDE.md` § «El backend es Supabase» lleva la misma regla con la
    tabla de lo que cambió y lo que no; mantén los dos en el mismo cambio.
 2. No invocar la base de datos ni un modelo directamente desde componentes o
-   páginas; usar siempre `services/`. El SDK se importa en **dos** ficheros de
-   `services/adapters/`, y se carga en diferido.
+   páginas; usar siempre `services/`. El SDK se importa en **un** fichero de
+   `services/adapters/`, se carga en diferido, y construye **un solo** cliente:
+   dos con `persistSession` sobre la misma clave de almacenamiento se pelean por
+   el refresh token y cierran la sesión de quien acaba de abrirla.
 3. La autorización se pregunta como permiso (`can(profile, 'x:y')` desde
    `lib/authz`), nunca comparando cadenas de rol. PostgreSQL implementa la
    misma matriz —sembrada como datos en `private.role_permissions`— y
@@ -196,7 +198,7 @@ Reglas que no se negocian al trabajar aquí:
 8. **Un `Project` sólo se construye con `createArchitectureProject`**, que
    rechaza una atención sin iniciativa y devuelve un rechazo tipado. Desde la
    UI, `useCreateAttention()`. Cada contexto persiste por su repositorio sobre
-   `services/persistence`; el SDK está restringido por lint a dos ficheros.
+   `services/persistence`; el SDK está restringido por lint a un fichero.
 9. **Los módulos están declarados en `modules.json` y hay un gate que los
    defiende.** No introduzcas un ciclo entre módulos, una importación que suba
    por las capas (`lib`/`utils` no importan de `services`) ni una que entre a un

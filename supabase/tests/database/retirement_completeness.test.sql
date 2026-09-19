@@ -52,9 +52,17 @@ insert into auth.sessions (id, user_id, not_after) values
   ('91000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000001', null),
   ('91000000-0000-4000-8000-000000000002', '90000000-0000-4000-8000-000000000002', null)
 on conflict (id) do nothing;
-insert into api.business_initiatives (id, owner_id, title, need, data)
-values ('init-f9', '90000000-0000-4000-8000-000000000001', 'Iniciativa F9', 'Retirar Firebase',
-  jsonb_build_object('id', 'init-f9', 'userId', '90000000-0000-4000-8000-000000000001'))
+-- Las cinco columnas de clasificación son NOT NULL y no tienen valor por
+-- defecto: una iniciativa sin estado ni prioridad no es una iniciativa a medio
+-- escribir, es una que el portafolio no sabe dónde poner. La sonda remota ya
+-- las traía; este fichero no, y abortaba aquí dejando sin correr todo lo que
+-- viene debajo.
+insert into api.business_initiatives
+  (id, owner_id, code, title, need, status, priority, horizon, risk_level, data)
+values ('init-f9', '90000000-0000-4000-8000-000000000001', 'NEG-2026-901',
+  'Iniciativa F9', 'Retirar Firebase', 'draft', 'medium', 'next', 'medium',
+  jsonb_build_object('id', 'init-f9', 'userId', '90000000-0000-4000-8000-000000000001',
+    'code', 'NEG-2026-901'))
 on conflict (id) do nothing;
 insert into api.architecture_projects (id, owner_id, name, initiative_ids, data)
 values ('proj-f9', '90000000-0000-4000-8000-000000000001', 'Proyecto F9', array['init-f9'],

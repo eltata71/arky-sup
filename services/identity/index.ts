@@ -31,6 +31,7 @@ export {
   rememberAuthUser,
   sendPasswordReset,
   signInWithEmail,
+  signInWithGoogle,
   signOutCurrentUser,
   toAuthUser,
   type AuthUser,

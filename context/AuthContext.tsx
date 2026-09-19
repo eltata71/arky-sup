@@ -9,6 +9,7 @@ import {
   rememberAuthUser,
   sendPasswordReset as sendPasswordResetEmail,
   signInWithEmail,
+  signInWithGoogle as startGoogleSignIn,
   signOutCurrentUser,
   userService,
   completeSupabasePasswordSetup as persistSupabasePassword,
@@ -32,6 +33,15 @@ interface AuthContextType {
   isDeveloperBypassAvailable: boolean;
   signInAsDeveloper: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  /**
+   * Entrar con Google.
+   *
+   * No resuelve con una sesión: manda el navegador a Google. Quien recoge la
+   * vuelta es el mismo observador que restaura la sesión al abrir la
+   * aplicación, así que la pantalla no tiene nada que hacer después de llamar
+   * —y en particular no debe navegar, porque aún no ha entrado nadie.
+   */
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 
   // ---- the account a person governs themselves ----------------------------
@@ -197,6 +207,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  /**
+   * Arranca el flujo de Google.
+   *
+   * `isLoading` se queda en `true` a propósito: lo que sigue es una navegación
+   * fuera de la aplicación, y devolver el formulario a su estado normal
+   * durante ese instante sólo invita a pulsar el botón otra vez. Si el flujo
+   * falla antes de salir, se restaura aquí, que es el único caso en que esta
+   * pantalla vuelve a tener el control.
+   */
+  const loginWithGoogle = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await startGoogleSignIn();
+    } catch (err: unknown) {
+      setIsLoading(false);
+      const authError = err as { message?: string };
+      const message = authError.message ?? 'No se pudo iniciar el acceso con Google.';
+      setError(message);
+      observabilityService.recordWarning({
+        source: 'app',
+        title: 'Acceso con Google no disponible',
+        message: 'Supabase rechazó el inicio del flujo OAuth. Revisa que el proveedor Google esté habilitado y que la URL de retorno esté en Redirect URLs.',
+        metadata: { reason: message },
+        recoverable: true,
+        userVisible: true,
+      });
+      throw err;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -317,6 +358,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isDeveloperBypassAvailable: isDeveloperLoginAllowed(),
     signInAsDeveloper: handleSignInAsDeveloper,
     login,
+    loginWithGoogle,
     logout,
     sendPasswordReset,
     completeSupabasePasswordSetup,
@@ -329,6 +371,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     error,
     handleSignInAsDeveloper,
     login,
+    loginWithGoogle,
     logout,
     sendPasswordReset,
     completeSupabasePasswordSetup,

@@ -101,6 +101,43 @@ que no existe, y el síntoma —«el enlace no funciona»— no dice dónde mira
 
 ---
 
+## Paso 5 · (Opcional) Deja entrar con Google
+
+Arky trae el botón **«Continuar con Google»** en la pantalla de entrada. Funciona
+en cuanto habilites el proveedor; hasta entonces el botón está, y al pulsarlo
+muestra el error que devuelve Supabase.
+
+Sirve igual para una cuenta personal de Google y para una de organización
+(Workspace): Arky pide siempre el selector de cuenta, así que quien tenga las dos
+elige con cuál entra, y puede cambiar sin cerrar sesión en Google.
+
+Son dos consolas, una vez:
+
+**En Google Cloud** (https://console.cloud.google.com) →
+*APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth*,
+tipo **Aplicación web**. En *URIs de redireccionamiento autorizados* pega
+exactamente:
+
+```
+https://<TU-REF>.supabase.co/auth/v1/callback
+```
+
+`<TU-REF>` es la referencia del proyecto, la misma que aparece en la URL de tu
+panel de Supabase. Copia el **Client ID** y el **Client Secret**.
+
+**En Supabase** → *Authentication → Providers → Google*: actívalo, pega las dos
+cosas y guarda. Después, en *Authentication → URL Configuration → Redirect URLs*,
+asegúrate de que está la dirección de tu despliegue: Google devuelve a Arky, y si
+esa URL no está en la lista el retorno cae en el sitio equivocado.
+
+> **Entrar con Google no crea una cuenta en Arky.** Quien entre con Google sin
+> que tú le hayas dado de alta autentica bien y sale de vuelta, con el mensaje de
+> que un administrador tiene que crear su cuenta. La regla del Paso 2 sigue
+> siendo la única forma de que alguien exista: esto sólo cambia cómo se llama a
+> la puerta, no quién tiene llave.
+
+---
+
 ## Lo que **no** hay que hacer nunca
 
 - **No pongas la clave `service_role` en una variable `VITE_*`.** Esas viajan

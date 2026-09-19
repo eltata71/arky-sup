@@ -67,19 +67,39 @@ describe('no model SDK in the UI layers', () => {
 });
 
 describe('the adapters exist and are where the boundary points', () => {
-  it('the SDK is created in exactly two files, both under services/adapters', () => {
+  it('the SDK is imported in exactly one file under services/adapters', () => {
     // Antes esta lista tenía un fichero por contexto, porque cada repositorio
     // hablaba con Firestore. Con todo el acceso por RPC, el SDK sólo hace falta
-    // para *crear el cliente*: dos ficheros, y cualquier tercero es alguien
-    // rehaciendo la puerta que ya existe.
-    const allowed = [
-      'services/adapters/supabaseAuthClient.ts',
-      'services/adapters/supabaseDataBackend.ts',
-    ];
+    // para *crear el cliente*, y ése tiene que ser uno: cualquier otro fichero
+    // que lo importe está rehaciendo la puerta que ya existe.
+    const allowed = ['services/adapters/supabaseClient.ts'];
     const offenders = sourceFiles({ roots: ['services', 'lib', 'api'] })
       .filter((file) => /['"]@supabase\/supabase-js['"]/.test(readCode(file)))
       .filter((file) => !allowed.includes(file));
     expect(offenders).toEqual([]);
+  });
+
+  it('constructs exactly one Supabase client in the whole application', () => {
+    /**
+     * La regresión que esta prueba nombra ocurrió de verdad y no dejó ningún
+     * error a la vista.
+     *
+     * Identidad y datos construían cada uno su `createClient` con
+     * `persistSession: true` y, al no declarar `storageKey`, sobre **la misma
+     * clave de almacenamiento**. Los dos traen `autoRefreshToken`, así que los
+     * dos renovaban el mismo refresh token; el segundo recibía
+     * `refresh_token_already_used`, el SDK borraba la sesión guardada y emitía
+     * `SIGNED_OUT`, y el resultado visible era iniciar sesión correctamente y
+     * aparecer de vuelta en `/auth`. Tumbó los tres recorridos autenticados de
+     * la suite E2E y habría tumbado a cualquier persona usando el producto.
+     *
+     * Se cuenta la construcción, no el import: reexportar el SDK y llamar a
+     * `createClient` desde otro sitio dejaría el import donde está y traería el
+     * defecto de vuelta entero.
+     */
+    const constructors = sourceFiles({ roots: ['services', 'lib', 'context', 'hooks', 'components', 'pages'] })
+      .filter((file) => /\bcreateClient\s*\(/.test(readCode(file)));
+    expect(constructors).toEqual(['services/adapters/supabaseClient.ts']);
   });
 
   it('authService talks to the adapter so the context does not have to', () => {

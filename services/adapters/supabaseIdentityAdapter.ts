@@ -43,6 +43,15 @@ export interface SupabaseAuthClientLike {
     getSession(): Promise<SupabaseAuthResult>;
     setSession(tokens: { access_token: string; refresh_token: string }): Promise<SupabaseAuthResult>;
     signInWithPassword(credentials: { email: string; password: string }): Promise<SupabaseAuthResult>;
+    /**
+     * Arranca un flujo OAuth. No devuelve sesión: el navegador se va al
+     * proveedor y vuelve con la sesión en el fragmento de la URL, que
+     * `detectSessionInUrl` consume y `onAuthStateChange` anuncia.
+     */
+    signInWithOAuth(credentials: {
+      provider: string;
+      options?: { redirectTo?: string; queryParams?: Record<string, string>; scopes?: string };
+    }): Promise<{ error?: unknown }>;
     signOut(): Promise<{ error?: unknown }>;
     resetPasswordForEmail(email: string): Promise<{ error?: unknown }>;
     updateUser(attributes: { password: string }): Promise<{ error?: unknown }>;

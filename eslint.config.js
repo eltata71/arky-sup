@@ -216,20 +216,21 @@ export default [
      * its own answer to "what happens when the write does not land", and one of
      * them answered `console.warn`.
      *
-     * **F9 made the list shorter rather than longer.** With Firestore retired,
-     * every context talks to `api.*` through RPC, and the SDK itself is only
-     * needed to *create the client*. So the allowance is two files in
-     * `services/adapters/` plus the serverless functions — not one file per
-     * context. A repository that imports `@supabase/supabase-js` today is doing
-     * something the gateway already does.
+     * **F9 made the list shorter rather than longer, and F9.1 made it one.**
+     * With Firestore retired, every context talks to `api.*` through RPC, so
+     * the SDK is only needed to *create the client* — and that client must be a
+     * single instance, because two of them with `persistSession` on one storage
+     * key fight over the refresh token and sign the user out mid-session. So
+     * the allowance is exactly one file, `services/adapters/supabaseClient.ts`,
+     * plus the serverless functions. A second file that imports
+     * `@supabase/supabase-js` is not a style problem: it is that bug again.
      */
     files: ['**/*.{ts,tsx}'],
     ignores: [
       '__tests__/**',
       'api/**',
       'supabase/functions/**',
-      'services/adapters/supabaseAuthClient.ts',
-      'services/adapters/supabaseDataBackend.ts',
+      'services/adapters/supabaseClient.ts',
     ],
     rules: {
       'no-restricted-imports': ['error', {

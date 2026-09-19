@@ -14,11 +14,12 @@
  *
  * ## Lo que cambió al retirar Firebase, y lo que se perdió a propósito
  *
- * - **El proveedor es único** (ADR-004): Supabase Auth, correo y contraseña.
- *   El acceso con Google desapareció con Firebase. Habilitarlo de nuevo es
- *   configurar el proveedor OAuth de Supabase y añadir una llamada aquí; no se
- *   ha hecho porque nadie lo pidió y un proveedor de identidad que nadie usa es
- *   una superficie de ataque sin contrapartida.
+ * - **El proveedor es único** (ADR-004): Supabase Auth. Sirve dos métodos de
+ *   entrada —correo con contraseña y Google— y eso no son dos proveedores de
+ *   identidad: las dos rutas terminan en el mismo `auth.users`, con el mismo
+ *   `uid`, y sobre el mismo perfil de `api.user_profiles`. Google viaja por
+ *   Supabase precisamente para que siga habiendo un solo sitio donde una cuenta
+ *   existe o no existe.
  * - **El bypass de desarrollo ya no toca el backend.** Era una sesión anónima
  *   real de Firebase; ahora es una identidad en memoria y nada más, que es todo
  *   lo que necesitaba: su rol `superadmin` siempre vivió sólo en estado de
@@ -157,6 +158,39 @@ export async function signInWithEmail(email: string, password: string): Promise<
   if (!user) throw new IdentityError('invalid-credentials', 'La sesión no se pudo establecer.');
   lastKnownUser = user;
   return user;
+}
+
+/**
+ * Entrar con Google, a través de Supabase Auth.
+ *
+ * No devuelve nada y no puede: el navegador se va a Google y vuelve a
+ * `redirectTo` con la sesión en el fragmento de la URL. Quien la recoge es el
+ * SDK (`detectSessionInUrl`), y quien se entera es `observeAuthState` — el
+ * mismo camino por el que se restaura una sesión al abrir la aplicación. Por
+ * eso no hace falta una ruta de callback propia, y por eso una `Promise<void>`
+ * que resuelve no significa que alguien haya entrado.
+ *
+ * `prompt=select_account` es deliberado. Sin él, Google reutiliza en silencio
+ * la sesión que el navegador ya tenga, que es justo lo contrario de lo que
+ * necesita quien tiene una cuenta personal y otra de trabajo: el selector le
+ * deja elegir con cuál entra, y le deja cambiar sin cerrar sesión en Google.
+ *
+ * **Autenticar sigue sin ser tener cuenta.** Alguien con una cuenta de Google
+ * que nadie ha dado de alta completa este flujo, llega sin perfil en
+ * `api.user_profiles` y `AuthContext` le cierra la sesión con la explicación de
+ * siempre. Que la puerta sea más cómoda no la abre a más gente: el alta la
+ * sigue haciendo un administrador.
+ */
+export async function signInWithGoogle(redirectTo?: string): Promise<void> {
+  const client = await requireClient('signInWithGoogle');
+  const { error } = await client.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: redirectTo ?? `${window.location.origin}/auth`,
+      queryParams: { prompt: 'select_account' },
+    },
+  });
+  if (error) throw error;
 }
 
 /** Sign out. Safe to call when auth is unavailable: there is nothing to end. */
