@@ -103,6 +103,17 @@ jobs:
         run: |
           supabase status -o env > /tmp/supabase.env
           set -a; . /tmp/supabase.env; set +a
+          # Una clave vacía aquí no rompe nada de forma visible: sobreescribe el
+          # valor de relleno del bloque `env` con la cadena vacía, el build sale
+          # verde, y la aplicación arranca creyendo que no hay backend. El
+          # síntoma llega cinco pasos después, como un recorrido autenticado que
+          # se queda en `/auth` sin decir por qué.
+          for required in ANON_KEY SERVICE_ROLE_KEY; do
+            if [[ -z "${!required:-}" ]]; then
+              echo "::error::supabase status -o env no devolvió $required. El stack local no expuso sus claves; sin ellas el artefacto se compila contra un backend inexistente."
+              exit 1
+            fi
+          done
           {
             echo "VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY"
             echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
