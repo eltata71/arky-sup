@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test';
  * heavier scenarios (load a saved diagram, open a quality panel, pinch
  * zoom on iPad, export a PNG, see-all vs focus-primary) belong in
  * follow-up specs once we have stable test fixtures wired through
- * Firestore stubbing or a local seed mode.
+ * the local Supabase stack's seed.
  *
  * Run:
  *   npx playwright install chromium webkit
@@ -54,9 +54,9 @@ test.describe('App smoke', () => {
     });
 
     await page.goto('/');
-    // Allow the React tree to mount and the auth context to resolve. The
-    // emulators keep a Firestore channel open, so `networkidle` never fires —
-    // waiting for the app shell to render is the actual readiness signal.
+    // Allow the React tree to mount and the auth context to resolve.
+    // `networkidle` is not a reliable signal against the local stack — waiting
+    // for the app shell to render is the actual readiness signal.
     await expect(page.locator('#root')).not.toBeEmpty({ timeout: 15_000 });
 
     // 1) Uncaught exceptions are always fatal — they mean app code threw.
