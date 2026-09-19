@@ -173,15 +173,22 @@ jobs:
           VITEST_SKIP_THRESHOLDS: '1'
         run: npm run test:shard -- --shard=${{ matrix.shard }}/4
 
-      # `.vitest-reports/` is a dotted directory, and upload-artifact skips
-      # hidden files unless told otherwise — without the flag this uploads an
-      # empty artifact and the merge job fails with no obvious cause.
+      # `.vitest/blob/` es un directorio oculto y upload-artifact salta los
+      # ocultos salvo que se le diga, así que la bandera es obligatoria.
+      #
+      # La ruta la fija Vitest y **cambió en su mayor 5**: antes era
+      # `.vitest-reports/`. El síntoma de acertar la ruta vieja es cruel: el
+      # paso no falla —sólo avisa— así que los cuatro shards salen en verde
+      # subiendo artefactos vacíos, y quien rompe es el trabajo de cobertura,
+      # tres jobs más allá, con un ENOENT sobre un directorio que nadie nombró.
+      # `if-no-files-found: error` convierte ese silencio en un rojo donde toca.
       - name: Upload blob report
         uses: actions/upload-artifact@v7
         with:
           name: vitest-blob-${{ matrix.shard }}
-          path: .vitest-reports/*
+          path: .vitest/blob/*
           include-hidden-files: true
+          if-no-files-found: error
           retention-days: 1
 
   # The suite is only whole once the shards are put back together, so this is
@@ -213,7 +220,7 @@ jobs:
       - name: Download every shard's blob report
         uses: actions/download-artifact@v8
         with:
-          path: .vitest-reports
+          path: .vitest/blob
           pattern: vitest-blob-*
           merge-multiple: true
 

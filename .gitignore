@@ -12,6 +12,9 @@ dist
 coverage/
 # Blob reports written by `vitest --reporter=blob`, the input to
 # `vitest --merge-reports`. Written per shard in CI, never committed.
+# La ruta la fija Vitest: `.vitest/blob/` desde su mayor 5, `.vitest-reports/`
+# antes. Se ignoran las dos para que un checkout viejo tampoco ensucie el árbol.
+.vitest/
 .vitest-reports/
 dist-ssr
 *.local
