@@ -251,6 +251,25 @@ Reglas que no se negocian al trabajar aquí:
    dueño (`useProjectsState`). El diccionario `en`/`es` está en `lib/i18n/` y
    ambos idiomas llevan las mismas claves. Detalle en CLAUDE.md →
    *`AppContext` is one context composed of seven hooks*.
+17. **Producción la publica un solo camino, y es `ci.yml`.** El proyecto de
+   Vercel está enlazado al repositorio, así que su integración Git desplegaría
+   al recibir el push sin leer ningún gate. `vercel.json` lo apaga con
+   `git.deploymentEnabled: { main: false }` — sólo `main`, para que cada PR
+   conserve su preview. Las dos mitades están afirmadas por separado en
+   `__tests__/config/ciPipeline.test.ts`. Vive en el repositorio y no en el
+   panel a propósito: un interruptor del dashboard no se revisa en una PR. No
+   despliegues desde una estación de trabajo ni vuelvas a encender el
+   disparador automático. Detalle en `docs/ci-cd-pipeline.md`.
+18. **Seis dependencias no pueden subir, y las seis pasan la suite entera.**
+   `vite` 8 (cambia a Rolldown: la carga inicial pasa de 439 a 1 059 KB gz),
+   `@excalidraw/excalidraw` 0.18 (pierde la carga diferida: 1 938 KB gz),
+   `firebase` 12.19 (+57,8 KB gz, se come el margen), `typescript` 7
+   (`typescript-eslint` no lo soporta todavía), `mermaid` 12 (`chevrotain` →
+   `lodash-es` con 5 advisories altos) y `react-dom` 19 (la PR deja `react` en
+   18). Antes de intentar cualquiera de ellas, lee CLAUDE.md →
+   *Dependencias que no pueden subir*. Y **no fusiones una rama de Dependabot
+   tal cual**: las de la cola nacieron de un `main` anterior y reintroducen
+   `mirror-source.yml`; aplica la subida sobre `main` actual.
 14. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
@@ -303,7 +322,7 @@ Esta sección es un contrato adicional y **no reemplaza** las reglas de arriba.
 | QA de la app / verificar que funciona | `webapp-testing` / `dogfood` |
 | Seguridad (OWASP / vulnerabilidades) | revisión de seguridad + `npm audit` |
 | Documentación | `doc-coauthoring` / actualizar `docs/` |
-| Despliegue a producción | `github-pr-workflow` → trigger CI → Vercel |
+| Despliegue a producción | PR contra `main` → los gates de `ci.yml` → su trabajo `deploy`. **Nunca** `vercel --prod` a mano |
 
 ### Reglas operativas del mantenimiento (Hermes)
 1. **Nunca** romper el quality gate: `make ci-check` debe quedar verde antes de un PR.

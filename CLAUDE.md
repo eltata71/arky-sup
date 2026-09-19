@@ -2,7 +2,7 @@
 
 This document is the definitive reference for AI assistants working on this codebase. Read it fully before making any changes.
 
-Last audited against the repository: **2026-09-05** (branch `claude/intelligent-assistant-initiatives-vi56mg`, after assisted capture — one agent beside every field of the six creation and maintenance forms — the agents' configurable cards, and the orchestration's declared limits plus its bounded evaluator-optimizer). The four modular-monolith waves before it remain the structural baseline: declared modules with a boundary gate, the `architectureProjects` aggregate and its invariant, `types.ts` split by context, and `AppContext` reduced to composition over `context/app/`.
+Last audited against the repository: **2026-09-19** (después de la ola de entrega continua y dependencias: el repositorio abierto para desbloquear Actions, un solo camino publicando producción, y la cola de Dependabot resuelta paquete a paquete — ver *Vercel Deployment* y *Dependencias que no pueden subir*). La ola anterior sigue vigente: captura asistida —un agente al lado de cada campo de los seis formularios—, las fichas configurables de los agentes, y los límites declarados de la orquestación con su evaluador-optimizador acotado. Las cuatro olas de monolito modular anteriores siguen siendo la base estructural: módulos declarados con su gate de fronteras, el agregado `architectureProjects` y su invariante, `types.ts` partido por contexto, y `AppContext` reducido a composición sobre `context/app/`.
 
 ---
 
@@ -154,16 +154,16 @@ is what people quote in a steering meeting. Rules:
 | Build Tool | Vite 6 (manual vendor chunking) |
 | Styling | Tailwind CSS 3.4 compiled at **build time** via PostCSS |
 | Icons | `components/Icons.tsx` (Heroicons set) + Lucide React |
-| Diagrams | Mermaid 10, ReactFlow 11, Dagre, ELK.js, Excalidraw |
+| Diagrams | Mermaid 11, ReactFlow 11, Dagre, ELK.js, Excalidraw |
 | Animation | Motion (Framer Motion successor) |
 | Database | Firebase Firestore (+ `firestore.rules`) |
 | Auth | Firebase Authentication |
 | AI | Provider-agnostic layer over Google GenAI (`@google/genai`) and OpenRouter |
-| Unit/component tests | Vitest 4 + Testing Library + jsdom |
+| Unit/component tests | Vitest 5 + Testing Library + jsdom |
 | E2E tests | Playwright (desktop Chromium + iPad Safari) |
-| Lint | ESLint 9 flat config + typescript-eslint |
+| Lint | ESLint 10 flat config + typescript-eslint |
 | Hosting | Vercel (SPA rewrite + `api/` functions) |
-| Node | 20 (`.nvmrc`) |
+| Node | 24 (`.nvmrc`, y `engines` en `package.json`) |
 
 ---
 
@@ -185,7 +185,7 @@ arkypro-1.0/
 ├── vitest.setup.dom.ts     # `dom` project setup: jest-dom matchers + auto `cleanup()`
 ├── vitest.setup.node.ts    # `node` project setup: jest-dom only if a DOM is present
 ├── playwright.config.ts    # E2E projects: desktop-chromium + ipad-safari
-├── eslint.config.js        # ESLint 9 flat config (tiered error/warn/off)
+├── eslint.config.js        # ESLint 10 flat config (tiered error/warn/off)
 ├── tailwind.config.cjs     # Tailwind theme (primary/gray palettes, fonts, shadows)
 ├── postcss.config.cjs      # tailwindcss + autoprefixer
 ├── tsconfig.json           # ES2022, bundler resolution, `@/*` alias, strictness gates
@@ -514,7 +514,7 @@ npm run build          # Production build → dist/
 npm run preview        # Serve the production build
 
 npm run typecheck      # tsc --noEmit
-npm run lint           # ESLint 9 flat config
+npm run lint           # ESLint 10 flat config
 npm run lint:fix       # ESLint --fix
 npm test               # Vitest watch mode
 npm run test:ci        # Vitest single run
@@ -533,7 +533,7 @@ npm run test:rules     # firestore.rules against the emulator (needs Java)
 
 `Makefile` and `run.sh` wrap the same targets (`./run.sh quality`, `./run.sh ci-check`, `./run.sh health`, `./run.sh status`). `run.sh` exists because `make` is usually absent on Windows/git-bash. `make health` runs `.hermes/bin/health.sh`.
 
-### Quality gate — current state (verified 2026-09-07, after the guardrail wave: what may not leave, what may not come back, and the fence around everything the app did not write)
+### Quality gate — current state (medido 2026-09-19 sobre `a44bab9`, tras la ola de entrega continua y dependencias)
 
 | Check | Result |
 |---|---|
@@ -541,41 +541,86 @@ npm run test:rules     # firestore.rules against the emulator (needs Java)
 | `npm run check:module-boundaries` | **4 cycles recorded, 0 of them between domain contexts**; **0 upward pairs**; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
 | `npm run check:module-size` | clean, y `services/geminiService.ts` baja en las dos tablas: 5 499 → 5 413 líneas y 276 306 → 272 294 bytes. Bajó **mientras** absorbía el enrutado: las dos declaraciones de herramienta en dialecto de Google y la traducción a `AIRequest` salieron del monolito |
 | `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
-| `npm run check:any-budget` | 23 `any` types, budget 23 (was 38) |
+| `npm run check:any-budget` | 23 `any` types, budget 23 (eran 38) |
 | `npm run lint` | **clean — 0 errors, 0 warnings.** Keep it that way: a warning is a finding nobody will read once there are ten of them |
-| `npm run test:ci` | 428 test files (427 + 1 skipped), 4 186 tests, all passing — 41 nuevos en esta ola: las reglas de guardrail una a una, los tres seams donde corren, la prueba de que un bloqueo deja el contador de llamadas del proveedor **en cero**, la valla del handoff, y la comparación entre las formas de clave de `lib/secretShapes.ts` y las de `scripts/checkBundleSecrets.mjs` para que no diverjan |
-| `npm run test:coverage` | 64,43 % statements / 55,88 branches / 56,46 functions / 66,25 lines — por encima de todos los suelos de `vite.config.ts`, y de los cuatro valores anteriores |
-| `npm run check:bundle-budget` | **eager 431,6 KB gz de 450; entrada 193,2 de 205** — eran 586,9 y 348,6 antes de sacar la capa de IA del arranque. Sube 1,2 KB gz respecto a la medición anterior: son las hojas del guardrail (`lib/secretShapes.ts`, `lib/untrustedContent.ts`), que llegan al arranque porque `OfficeContext` está en el árbol de proveedores. Es el precio explícito de vallar el handoff, y por eso son hojas y no viven en `lib/security.ts`, que arrastra DOMPurify |
+| `npm run test:ci` | **456 ficheros (455 + 1 omitido), 4 359 pruebas pasadas y 64 omitidas**, bajo **Vitest 5**. Incluye 7 nuevas: la detección del muro de *Vercel Authentication* con los cuerpos reales del despliegue #46, y sus dos casos negativos —un 401 legítimo del proxy y el HTML del SPA capturando `/api/*` deben seguir contándose como fallo |
+| `npm run test:coverage` | 65,20 % statements / 56,53 branches / 57,64 functions / 67,03 lines — por encima de todos los suelos de `vite.config.ts`, y de los cuatro valores anteriores |
+| `npm run check:bundle-budget` | **eager 439,1 KB gz de 450; entrada 200,3** — sube 7,5 desde los 431,6 de la ola anterior, repartidos entre las subidas de dependencia y las hojas del guardrail. El margen es de **10,9 KB gz**, y conviene leerlo como lo que es: dos de las subidas que Dependabot propone como «minor» se lo comen entero (ver *Dependencias que no pueden subir*) |
 | `npm run check:bundle-secrets` | clean — y ahora conoce `sk-ant-`, que faltaba mientras Anthropic ya era un proveedor embarcado: una clave suya en el bundle se reportaba como «OpenAI-style» o, con sufijo corto, no se reportaba |
 
 ### CI
 
-Three GitHub Actions workflows run on push/PR to `main`, all with
-`permissions: contents: read` and `cancel-in-progress` concurrency:
+Cuatro workflows de GitHub Actions, todos con `permissions: contents: read` y
+concurrencia con `cancel-in-progress`:
 
-- **`.github/workflows/ci.yml`** — four jobs that run in parallel:
-  - `quality` — typecheck, strict typecheck, ESLint, the three budgets, build,
-    and the two bundle checks (with placeholder `VITE_*` values).
-  - `tests` — the Vitest suite in **four shards**, each writing a blob report
-    with coverage. `VITEST_SKIP_THRESHOLDS=1` is set here on purpose: a shard
-    runs a quarter of the files and would fail a whole-suite floor every time.
-  - `coverage` — merges the four blobs with `vitest --merge-reports --coverage`
-    and enforces the floors over one denominator. **This is where the suite is
-    judged**, not in the shards.
-  - `rules` — `firestore.rules` against the real emulator (needs JDK 21).
-- **`.github/workflows/e2e.yml`** — Playwright smoke on desktop Chromium + iPad
-  Safari, with a browser cache keyed by Playwright version; uploads
-  report/traces on failure.
-- **`.github/workflows/security.yml`** — CodeQL (`security-extended`, findings
-  enforced) and `npm audit --audit-level=high`, plus an SBOM per run.
+- **`.github/workflows/ci.yml`** — push y PR contra `main`. Cinco trabajos:
+  - `quality` — typecheck, strict typecheck, ESLint, los cuatro presupuestos,
+    build y los dos chequeos de bundle (con valores `VITE_*` de relleno).
+  - `tests` — la suite en **cuatro shards**, cada uno escribiendo su blob report
+    con cobertura. `VITEST_SKIP_THRESHOLDS=1` está puesto a propósito: un shard
+    corre un cuarto de los ficheros y fallaría un suelo de suite entera siempre.
+  - `coverage` — reúne los cuatro blobs con `vitest --merge-reports --coverage`
+    y aplica los suelos sobre un denominador. **Aquí se juzga la suite**, no en
+    los shards.
+  - `rules` — `firestore.rules` contra el emulador real (necesita JDK 21).
+  - `deploy` — **cuelga de los tres anteriores** (`needs: [quality, coverage,
+    rules]`), sólo desde `main`, en su propio grupo de concurrencia y **sin**
+    `cancel-in-progress`: interrumpir un `vercel deploy` deja lo publicado a
+    merced del momento en que llegó la señal.
+- **`.github/workflows/e2e.yml`** — Playwright (Chromium escritorio + Safari
+  iPad). **Sólo en PR**: en push a `main` analizaría el mismo árbol que la PR
+  acaba de analizar.
+- **`.github/workflows/security.yml`** — CodeQL y `npm audit --audit-level=high`.
+  Sólo en PR y en cron semanal, por lo mismo.
+- **`.github/workflows/supabase.yml`** — contratos pgTAP contra el stack local;
+  se dispara sólo si cambian `supabase/**`, `scripts/supabase/**` o
+  `package.json`.
 
-The single test step used to be 8 m 49 s of an 11 m 13 s job — 79 % of it. Two
-things caused it and both are fixed: jsdom was built for all 371 test files
-when ~270 never touch a DOM (see *Testing Conventions*), and the remainder ran
-on one 2-vCPU runner. Do not merge the shards back into one job to "simplify"
-it, and do not move the thresholds into the shards.
+El paso único de pruebas llegó a ser 8 m 49 s de un trabajo de 11 m 13 s — el
+79 %. Dos causas, ambas corregidas: jsdom se construía para los 371 ficheros
+cuando ~270 no tocan un DOM (ver *Testing Conventions*), y el resto corría en un
+runner de 2 vCPU. No devuelvas los shards a un solo trabajo «para simplificar»,
+y no muevas los umbrales a los shards.
 
-Node version comes from `.nvmrc` (20) in all three.
+**La ruta de los blob reports la fija Vitest y cambió en su mayor 5**: de
+`.vitest-reports/` a `.vitest/blob/`. El modo de fallo merece recordarse porque
+no apunta a donde duele: `upload-artifact` con la ruta equivocada **no falla**,
+avisa «No files were found» y sale en verde, así que los cuatro shards pasan
+subiendo artefactos vacíos y quien rompe es `coverage`, tres trabajos más allá,
+con un `ENOENT`. Por eso la subida lleva `if-no-files-found: error` además de
+`include-hidden-files: true`.
+
+La versión de Node sale de `.nvmrc` (24) en los cuatro.
+
+### Dependencias que no pueden subir, y por qué
+
+Medido el 2026-09-19 resolviendo la cola de Dependabot paquete a paquete. Esto
+existe para que nadie vuelva a intentarlo a ciegas: **las seis pasan la suite
+entera**, y ninguna se detecta leyendo el changelog.
+
+| Paquete | Qué pasa | Quién lo detecta |
+|---|---|---|
+| `vite` 8 | Cambia el bundler a **Rolldown**. La carga inicial pasa de 439,1 a **1 058,8 KB gz** y el artefacto cambia de forma: la entrada cae a 16,8 KB y aparecen veinte chunks pequeños en el arranque, más Excalidraw entero | `check:bundle-budget` |
+| `@excalidraw/excalidraw` 0.18 | **Pierde la carga diferida.** Su chunk de 1 390 KB gz se muda al arranque: 439,1 → **1 937,8 KB gz** | `check:bundle-budget` |
+| `firebase` 12.19 | `vendor-firebase` engorda de 110,6 a 168,4 KB gz. Esos 57,8 se comen solos el margen de 10,9 | `check:bundle-budget` |
+| `typescript` 7 | `typescript-eslint@8.70` —la última publicada— declara `peer typescript@">=4.8.4 <6.1.0"`. No hay versión que lo soporte | el resolutor estricto de npm |
+| `mermaid` 12 | Depende de `chevrotain` 11 → `lodash-es` vulnerable. **5 advisories de severidad alta**, entre ellos inyección de código vía `_.template` | `npm audit --audit-level=high` |
+| `react-dom` 19 | La PR sube `react-dom` dejando `react` en 18. Rota de partida | typecheck |
+
+**Lo que estos seis casos enseñan sobre los gates.** Los cinco primeros pasan
+las 4 359 pruebas sin una sola en rojo. Un presupuesto de bundle y un `npm
+audit` no son burocracia alrededor de la suite: miden cosas que **ninguna
+prueba unitaria puede ver** —cuánto se descarga antes de pintar, y qué cadena
+de dependencias arrastra un CVE—. Por eso son trabajos obligatorios aparte, y
+por eso subir un número es una decisión de revisión y no un arreglo de build.
+
+**Una rama de Dependabot no se fusiona tal cual.** Las once que había nacieron
+de un `main` anterior a la auditoría y, comparadas con el actual, reintroducen
+`.github/workflows/mirror-source.yml` —el workflow que copiaba otro repositorio
+sobre el árbol y hacía `push` directo a `main`—, además de revertir `engines`,
+`storage:inventory` y `@supabase/supabase-js`. `ciPipeline.test.ts` las pararía
+en CI, que es su trabajo; el camino limpio es **aplicar las subidas sobre `main`
+actual** y dejar que Dependabot cierre sus PR solo.
 
 ---
 
@@ -602,7 +647,40 @@ User-supplied keys live in `localStorage`: `user_gemini_key`, `user_openrouter_k
 
 ### Vercel Deployment
 
-`vercel.json` sets `framework: vite`, `buildCommand: npm run build`, `outputDirectory: dist` and a catch-all SPA rewrite. After deploying, add the Vercel domain to **Firebase Console → Authentication → Settings → Authorized Domains** so Google OAuth works. Deploy `firestore.rules` alongside — the app assumes them. See `docs/security-hardening.md` for the required Custom Claims setup (`request.auth.token.role`).
+`vercel.json` fija `framework: vite`, `buildCommand: npm run build`,
+`outputDirectory: dist` y un rewrite SPA que **excluye `/api/`** — capturarlo es
+el fallo de F5, y `__tests__/config/vercelApiRoutes.test.ts` lo sostiene. Tras
+desplegar, añade el dominio a **Firebase Console → Authentication → Settings →
+Authorized Domains** para que funcione Google OAuth, y despliega
+`firestore.rules` al lado. Ver `docs/security-hardening.md` para los Custom
+Claims (`request.auth.token.role`).
+
+**Producción la publica un solo camino, y es GitHub Actions.** El proyecto
+`arky-sup` (`prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`) está enlazado a este
+repositorio, así que su integración Git desplegaría al recibir el push, sin
+leer el resultado de ningún gate. `vercel.json` lo apaga:
+
+```json
+{ "git": { "deploymentEnabled": { "main": false } } }
+```
+
+Tres cosas que esa línea decide:
+
+- **Sólo `main`.** Las ramas que no se nombran siguen desplegando, así que cada
+  PR conserva su preview — la mitad útil de la integración Git.
+- **No es `deploymentEnabled: false`.** Esa forma apagaría también las previews.
+  `__tests__/config/ciPipeline.test.ts` afirma las dos cosas por separado.
+- **Vive en el repositorio, no en el panel.** Un interruptor del dashboard no se
+  revisa en una PR, no viaja con el repositorio y nadie se entera el día que
+  alguien lo vuelve a encender. El `$schema` de la cabecera es la otra mitad:
+  una clave mal escrita en `vercel.json` se acepta en silencio y no hace nada.
+
+No es hipotético. El primer despliegue del proyecto nuevo falló **en el build,
+en producción, sobre un commit ya fusionado**, porque el gate de
+`lib/runtimeConfig.ts` rechazó una clave de proveedor con prefijo `VITE_`. Ese
+fallo pertenecía a una PR.
+
+Detalle, secretos y runbook de reversión en `docs/ci-cd-pipeline.md`.
 
 ### Deploying the Firestore rules
 
@@ -1882,6 +1960,16 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 
 - Do not add a custom domain backend or REST API. `api/` is limited to stateless key-hiding proxies. La transición aprobada en F1 mueve la autoridad de las reglas sensibles a PostgreSQL (RLS + RPC `SECURITY DEFINER`) y, cuando hace falta clave de servicio, a una Edge Function — no a endpoints de dominio en `api/`.
 - Do not talk to Supabase from a page, component, context or hook either. El SDK de Supabase vive en `services/adapters/` y en los repositorios `Supabase*Repository` de cada contexto, igual que el de Firebase; `resolveBackend` decide cuál atiende un corte.
+- Do not publish production by any path but `ci.yml`. `vercel.json` apaga el
+  despliegue automático de la integración Git en `main`, y las dos mitades de
+  esa decisión —`main` apagada, previews vivas— están afirmadas por separado en
+  `__tests__/config/ciPipeline.test.ts`.
+- Do not bump `vite`, `@excalidraw/excalidraw`, `firebase`, `typescript`,
+  `mermaid` o `react-dom` sin leer antes *Dependencias que no pueden subir*.
+  Las seis pasan la suite entera y rompen otra cosa; el changelog no lo dice.
+- Do not merge a Dependabot branch as-is. Las de la cola nacieron de un `main`
+  anterior y reintroducen `mirror-source.yml`. Aplica la subida sobre `main`
+  actual y deja que Dependabot cierre su PR solo.
 - Do not deploy from a workstation. Un artefacto que no se puede reconstruir desde `main` no es un despliegue: producción sirvió durante días un commit que no existía en el repositorio. El despliegue cuelga del trabajo `deploy` de `ci.yml`, detrás de los gates — ver `docs/ci-cd-pipeline.md`.
 - Do not call Firestore **or Firebase Auth** directly from a page, component, context or hook — always go through your context's repository and `services/identity` (lint-enforced).
 - Do not import `@google/genai` outside `services/ai/providers/gemini/` (lint-enforced). Describe output shape with `AIJsonSchema` from `services/ai/schema`; each provider translates it at its own boundary.
