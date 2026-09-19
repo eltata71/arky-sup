@@ -34,14 +34,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -149,14 +149,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -177,7 +177,7 @@ jobs:
       # hidden files unless told otherwise — without the flag this uploads an
       # empty artifact and the merge job fails with no obvious cause.
       - name: Upload blob report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vitest-blob-${{ matrix.shard }}
           path: .vitest-reports/*
@@ -195,14 +195,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -211,7 +211,7 @@ jobs:
         run: npm ci
 
       - name: Download every shard's blob report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: .vitest-reports
           pattern: vitest-blob-*
@@ -224,7 +224,7 @@ jobs:
 
       - name: Upload coverage report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage
@@ -241,14 +241,14 @@ jobs:
     # check that would have caught it was optional.
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -265,7 +265,7 @@ jobs:
         run: npm ci
 
       - name: Cache Firebase emulator
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/firebase/emulators
           key: firebase-emulators-${{ runner.os }}
@@ -322,14 +322,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Ningún trabajo de este workflow empuja nada. Persistir el token en
           # .git/config para los pasos siguientes es superficie sin contrapartida.
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
