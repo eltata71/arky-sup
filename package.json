@@ -48,14 +48,14 @@
     "html-to-image": "1.11.13",
     "lucide-react": "^0.575.0",
     "marked": "^12.0.1",
-    "mermaid": "^10.9.0",
+    "mermaid": "^11.17.2",
     "motion": "^12.34.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.18.4",
     "react-zoom-pan-pinch": "3.6.0",
     "reactflow": "11.11.4",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
