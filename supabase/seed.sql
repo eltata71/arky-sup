@@ -29,6 +29,13 @@ commit;
 -- contrato de lo que el producto puede llamar **en un despliegue**. Un ayudante
 -- de pruebas declarado ahí sería una función que el código cree tener y que el
 -- proyecto remoto no tiene; el gate de tipos lo detectó, que es su trabajo.
+-- `platform_foundation` revoca USAGE sobre los tres esquemas a todos los roles,
+-- `service_role` incluido: nadie entra en `public` salvo que se le conceda. Que
+-- la función viva aquí no basta, entonces, y la concesión tiene que ser
+-- explícita. Es local y sólo local —un seed no se despliega—, así que no toca la
+-- postura deny-by-default de ningún proyecto real.
+grant usage on schema public to service_role;
+
 create or replace function public.seed_e2e_profile(p_uid uuid, p_display_name text)
 returns void
 language plpgsql security definer set search_path = '' as $$

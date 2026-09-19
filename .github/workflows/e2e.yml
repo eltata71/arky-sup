@@ -27,18 +27,23 @@ jobs:
 
     # Vite inlines `VITE_*` at build time AND the production runtime-config
     # gate runs when `vite preview` loads the config, so every step that
-    # builds or serves the artefact needs the same placeholder values. They
-    # live at job level so the build step and the Playwright step cannot
-    # drift apart again.
+    # builds or serves the artefact needs the same values. Los que son
+    # constantes viven aquí, a nivel de job, para que el paso de build y el de
+    # Playwright no puedan volver a divergir.
+    #
+    # **La clave publicable NO está aquí, y es deliberado.** Estuvo, con un valor
+    # de relleno, mientras el paso «Export local Supabase credentials» escribía
+    # la real en `$GITHUB_ENV`. Dos definiciones de la misma variable y una regla
+    # de precedencia de por medio: cuál gana no se lee en este fichero, y una
+    # variable cuya procedencia hay que deducir es la que produce un fallo que no
+    # se parece a su causa —o el artefacto habla con un backend inexistente, o lo
+    # hace con una clave que no existe, y las dos cosas se ven igual cinco pasos
+    # más allá—. Ahora hay una sola fuente: la que el stack local publica.
     env:
       VITE_AI_PROXY_URL: /api/ai
       VITE_AI_STRICT_PROXY: 'true'
-      # El stack local de Supabase publica siempre la misma URL y las mismas
-      # claves de demostración: son públicas por diseño y no abren nada que no
-      # esté dentro del contenedor. La clave de servicio se lee en tiempo de
-      # ejecución de `supabase status`, nunca se escribe aquí.
+      # La URL del stack local sí es constante: siempre es ésta.
       VITE_SUPABASE_URL: http://127.0.0.1:54321
-      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ANON_KEY_PLACEHOLDER
 
     steps:
       - name: Checkout
