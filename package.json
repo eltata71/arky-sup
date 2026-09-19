@@ -55,7 +55,7 @@
     "react-router-dom": "^7.18.4",
     "react-zoom-pan-pinch": "3.6.0",
     "reactflow": "11.11.4",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
