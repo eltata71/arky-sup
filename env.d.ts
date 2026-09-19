@@ -25,11 +25,15 @@ interface ImportMetaEnv {
    */
   readonly VITE_BACKEND?: string;
   readonly [backendOverride: `VITE_BACKEND_${string}`]: string | undefined;
-  /** Proyecto Supabase del PoC. Nunca la clave `service_role`. */
+  /**
+   * El proyecto Supabase: autenticación, base de datos y almacenamiento.
+   *
+   * Obligatorias en producción — el gate de `lib/runtimeConfig` falla el build
+   * sin ellas. Nunca la clave `service_role`: un prefijo `VITE_` la publicaría
+   * dentro del bundle.
+   */
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
-  /** Lista separada por comas de correos habilitados en el piloto Supabase. */
-  readonly VITE_SUPABASE_PILOT_EMAILS?: string;
   readonly VITE_ARTIFACT_REFINEMENT_ENABLED?: string;
   readonly VITE_ARTIFACT_REFINEMENT_AI_ENABLED?: string;
   readonly VITE_ARTIFACT_REFINEMENT_MAX_PASSES?: string;

@@ -117,9 +117,9 @@ Reglas que no se negocian al trabajar aquí:
 3. Productor y revisor de un entregable son **siempre** personas distintas.
 4. La evidencia determinista (validadores + compilador) manda sobre el veredicto
    del modelo: un validador bloqueante es `changes-requested`.
-5. El ejecutor no importa React ni Firestore; todo entra por puertos inyectados.
+5. El ejecutor no importa React ni ningún SDK; todo entra por puertos inyectados.
 6. Un encargo llega a `delivered` solo vía `decideEngagement`, y esa transición
-   exige el permiso `arb:decide` en cliente **y** en `firestore.rules` — no
+   exige el permiso `arb:decide` en cliente **y** en la RPC — no
    propiedad del proyecto: el que aprueba no es el autor.
 7. **La ficha de un agente configura, no gobierna.** `officeAgentProfile.ts`
    deja cambiar nombre, avatar, habilidades, conocimiento, memoria, modelo y
@@ -152,14 +152,25 @@ Reglas que no se negocian al trabajar aquí:
 
 ## Reglas de operación (Codex/Koder y Claude)
 
-1. Mantener arquitectura frontend-only (React + Firebase + Gemini), salvo requerimiento explícito de backend.
-   **Transición F1 aprobada (docs/fase-1/):** el diseño de dominio autoriza migrar a Supabase (Auth + PostgreSQL + Storage) con backend confiable mínimo (Edge Functions / RPC) para operaciones sensibles, y adaptadores intercambiables Firebase/Supabase por contexto (F3.2). El código nuevo de migración va contra los puertos de `docs/fase-1/mapa-contextos.md` y `docs/fase-1/agregados-invariantes-eventos.md`; la regla frontend-only sigue vigente para el resto hasta cada corte vertical (F5). **Cerrada en F1.7 (2026-09-18):** `CLAUDE.md` § «Transición a Supabase» lleva ya la misma regla, con la tabla de lo que cambia y lo que no. Estado verificado: puertos y adaptadores en `services/ports`/`services/adapters` (F3), identidad y matriz de permisos en PostgreSQL con RLS y RPC auditadas (F4), 30 migraciones aplicadas al proyecto remoto y Storage privado con políticas owner-only (F6). Ningún contexto de negocio ha cambiado todavía su proveedor activo: Firebase sigue sirviendo a la aplicación y `resolveBackend` devuelve `firebase` por defecto.
-2. No invocar Firestore/Gemini directamente desde componentes o páginas; usar siempre `services/`.
+1. **El backend es Supabase, y Firebase ya no existe (F9, 2026-09-19).**
+   Identidad (Supabase Auth), datos (PostgreSQL con RLS y RPC `SECURITY
+   DEFINER`) y archivos (Storage privado) viven allí; la única pieza de servidor
+   propia es la Edge Function `provision-user`, para lo único que exige clave de
+   servicio. No quedan dependencia, reglas, emulador ni variables de Firebase, y
+   `noSdkInUiLayers.test.ts` conserva sus módulos entre los prohibidos como
+   sonda de regresión. Lo que **sigue prohibido**: microservicios, un backend de
+   dominio propio, endpoints de dominio en `api/` y exponer `service_role` al
+   cliente. `CLAUDE.md` § «El backend es Supabase» lleva la misma regla con la
+   tabla de lo que cambió y lo que no; mantén los dos en el mismo cambio.
+2. No invocar la base de datos ni un modelo directamente desde componentes o
+   páginas; usar siempre `services/`. El SDK se importa en **dos** ficheros de
+   `services/adapters/`, y se carga en diferido.
 3. La autorización se pregunta como permiso (`can(profile, 'x:y')` desde
-   `lib/authz`), nunca comparando cadenas de rol. `firestore.rules` implementa
-   la misma matriz y `__tests__/authz/rulesMatrix.test.ts` compara ambas celda
-   por celda. Nadie crea su propia cuenta: el alta es
-   `services/identity` y la ejecuta un administrador.
+   `lib/authz`), nunca comparando cadenas de rol. PostgreSQL implementa la
+   misma matriz —sembrada como datos en `private.role_permissions`— y
+   `__tests__/authz/sqlMatrixParity.test.ts` compara ambas celda por celda.
+   Nadie crea su propia cuenta: el alta es `services/identity` y la ejecuta un
+   administrador.
 4. Escribir código nuevo como si `strict: true` estuviera activo y sin `any`.
    (`tsconfig.json` habilita la strictness de forma incremental; el `strict`
    completo sigue bloqueado por el split de `services/geminiService.ts`.
@@ -168,11 +179,12 @@ Reglas que no se negocian al trabajar aquí:
    módulo recuerda que `tsc` comprueba todo lo alcanzable: entran las reglas, no
    sus repositorios. Ver CLAUDE.md.)
 5. Aplicar cambios mínimos, trazables y testeables.
-6. Las reglas de Firestore se despliegan aparte del hosting (Vercel):
-   `npm run deploy:rules`. `firebase.json` declara **solo** el archivo de
-   reglas — no hay bloque `hosting`, y `firestore.indexes.json` está ausente
-   a propósito para que un despliegue de reglas nunca reconcilie (ni borre)
-   índices. Detalle en CLAUDE.md → *Deploying the Firestore rules*.
+6. El esquema se despliega aparte del hosting (Vercel): migraciones
+   versionadas en `supabase/migrations/`, aplicadas con `supabase db push`
+   **antes** que el código que las usa. Si un día todas las RPC devuelven 404,
+   mira primero los esquemas expuestos de la Data API: `api` tiene que estar en
+   `db-schemas`, y cambiar «Exposed schemas» desde el panel puede sacarlo.
+   Detalle en CLAUDE.md → *Desplegar el esquema*.
 7. **Las pruebas viven en dos proyectos de Vitest y la extensión decide cuál.**
    Un test que renderiza es `.test.tsx` y corre en jsdom con Testing Library;
    uno que no renderiza es `.test.ts` y corre en Node sin setup. Si un
@@ -184,7 +196,7 @@ Reglas que no se negocian al trabajar aquí:
 8. **Un `Project` sólo se construye con `createArchitectureProject`**, que
    rechaza una atención sin iniciativa y devuelve un rechazo tipado. Desde la
    UI, `useCreateAttention()`. Cada contexto persiste por su repositorio sobre
-   `services/persistence`; el SDK de Firestore está restringido por lint.
+   `services/persistence`; el SDK está restringido por lint a dos ficheros.
 9. **Los módulos están declarados en `modules.json` y hay un gate que los
    defiende.** No introduzcas un ciclo entre módulos, una importación que suba
    por las capas (`lib`/`utils` no importan de `services`) ni una que entre a un
@@ -260,10 +272,10 @@ Reglas que no se negocian al trabajar aquí:
    panel a propósito: un interruptor del dashboard no se revisa en una PR. No
    despliegues desde una estación de trabajo ni vuelvas a encender el
    disparador automático. Detalle en `docs/ci-cd-pipeline.md`.
-18. **Seis dependencias no pueden subir, y las seis pasan la suite entera.**
-   `vite` 8 (cambia a Rolldown: la carga inicial pasa de 439 a 1 059 KB gz),
+18. **Cinco dependencias no pueden subir, y las cinco pasan la suite entera.**
+   `vite` 8 (cambia a Rolldown: la carga inicial se multiplica),
    `@excalidraw/excalidraw` 0.18 (pierde la carga diferida: 1 938 KB gz),
-   `firebase` 12.19 (+57,8 KB gz, se come el margen), `typescript` 7
+   `typescript` 7
    (`typescript-eslint` no lo soporta todavía), `mermaid` 12 (`chevrotain` →
    `lodash-es` con 5 advisories altos) y `react-dom` 19 (la PR deja `react` en
    18). Antes de intentar cualquiera de ellas, lee CLAUDE.md →
@@ -274,8 +286,8 @@ Reglas que no se negocian al trabajar aquí:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
      ESLint debe quedar en 0 errores y 0 avisos),
-   - si se tocó `firestore.rules`, correr además `npm run test:rules` contra el
-     emulador: leer esas reglas es exactamente lo que no detectó D-4,
+   - si se tocó una migración, correr además `bash scripts/supabase/local.sh test`
+     contra una base real: leer el SQL es exactamente lo que no detectó D-4,
    - documentar comandos ejecutados,
    - registrar riesgos o deuda técnica detectada.
 
@@ -326,8 +338,8 @@ Esta sección es un contrato adicional y **no reemplaza** las reglas de arriba.
 
 ### Reglas operativas del mantenimiento (Hermes)
 1. **Nunca** romper el quality gate: `make ci-check` debe quedar verde antes de un PR.
-2. Seguir la arquitectura frontend-only (React + Firebase + Gemini); usar `services/`
-   para todo acceso a Firestore/Gemini (ver CLAUDE.md).
+2. Seguir la arquitectura aprobada (React + Supabase + capa de IA propia); usar
+   `services/` para todo acceso a datos y a modelos (ver CLAUDE.md).
 3. Código nuevo sin `any` y a nivel `strict` (strictness incremental en `tsconfig.json`).
 4. Cambios mínimos, trazables, testeables; registrar deuda técnica en `docs/technical-debt-audit.md`.
 5. Documentar comandos ejecutados y riesgos detectados en cada tarea cerrada.
