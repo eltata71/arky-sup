@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   api: {
     Tables: {
       agent_actions: {
@@ -68,7 +63,7 @@ export type Database = {
           owner_id?: string
           updated_at?: string
         }
-      Relationships: []
+        Relationships: []
       }
       architecture_knowledge_graphs: {
         Row: {
@@ -510,7 +505,7 @@ export type Database = {
           revision?: number
           updated_at?: string
         }
-      Relationships: []
+        Relationships: []
       }
       project_artifacts: {
         Row: {
@@ -898,7 +893,19 @@ export type Database = {
       save_note: { Args: { p_note: Json }; Returns: undefined }
       save_platform_reference_parameters: {
         Args: { p_data: Json; p_expected_revision: number }
-        Returns: Json
+        Returns: {
+          created_at: string
+          data: Json
+          key: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "platform_reference_parameters"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       save_progress: { Args: { p_progress: Json }; Returns: undefined }
       save_project_aggregate: {

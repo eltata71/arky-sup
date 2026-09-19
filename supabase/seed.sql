@@ -23,7 +23,13 @@ commit;
 -- ADR-003 y no se toca—. Vive en el seed y no en una migración **a propósito**:
 -- un seed no se despliega nunca, así que esta puerta no puede existir en un
 -- proyecto remoto ni por descuido.
-create or replace function api.seed_e2e_profile(p_uid uuid, p_display_name text)
+--
+-- Y vive en `public`, no en `api`, por una razón concreta: los tipos generados
+-- se sacan con `--schema api`, así que `supabase/database.types.ts` es el
+-- contrato de lo que el producto puede llamar **en un despliegue**. Un ayudante
+-- de pruebas declarado ahí sería una función que el código cree tener y que el
+-- proyecto remoto no tiene; el gate de tipos lo detectó, que es su trabajo.
+create or replace function public.seed_e2e_profile(p_uid uuid, p_display_name text)
 returns void
 language plpgsql security definer set search_path = '' as $$
 begin
@@ -33,6 +39,6 @@ begin
     set role = 'superadmin', status = 'active', display_name = excluded.display_name;
 end;
 $$;
-revoke all on function api.seed_e2e_profile(uuid, text) from public, anon, authenticated;
-grant execute on function api.seed_e2e_profile(uuid, text) to service_role;
+revoke all on function public.seed_e2e_profile(uuid, text) from public, anon, authenticated;
+grant execute on function public.seed_e2e_profile(uuid, text) to service_role;
 notify pgrst, 'reload schema';

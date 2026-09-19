@@ -84,16 +84,20 @@ async function ensureAuthUser() {
  * Escribe el perfil directamente sobre la tabla.
  *
  * `api.user_profiles` no concede privilegios a `service_role` —es la postura
- * deny-by-default de ADR-003—, así que la escritura va por la Data API con el
- * rol `postgres`, que el stack local expone en la misma clave de servicio. En
- * un proyecto remoto esto no funcionaría, y es exactamente la protección que se
- * quiere: el bootstrap del primer administrador es una operación manual y
- * auditada, no un script.
+ * deny-by-default de ADR-003—, así que la escritura va por una función del seed,
+ * que sólo existe en el stack local. Está en `public` y no en `api` porque los
+ * tipos generados se sacan con `--schema api`: un ayudante de pruebas declarado
+ * ahí sería una función que el código cree tener y que el proyecto remoto no
+ * tiene. En un proyecto remoto esto no funciona, y es exactamente la protección
+ * que se quiere: el bootstrap del primer administrador es una operación manual
+ * y auditada, no un script.
  */
 async function ensureProfile(uid) {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/seed_e2e_profile`, {
     method: 'POST',
-    headers: { ...adminHeaders(), 'Accept-Profile': 'api', 'Content-Profile': 'api' },
+    // Sin cabecera de perfil: la función vive en `public`, que es el esquema por
+    // defecto de la Data API.
+    headers: adminHeaders(),
     body: JSON.stringify({ p_uid: uid, p_display_name: 'Arquitecto E2E' }),
   });
   if (!response.ok) {
