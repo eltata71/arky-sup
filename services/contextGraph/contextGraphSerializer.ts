@@ -68,8 +68,10 @@ export class ContextGraphSerializer {
     let parsed: unknown;
     try {
       parsed = JSON.parse(json);
-    } catch (_error) {
-      throw new Error('ContextGraphSerializer: invalid JSON.');
+    } catch (error) {
+      // El SyntaxError original dice en qué posición se rompió el JSON, que es
+      // lo único accionable cuando un grafo almacenado llega corrupto.
+      throw new Error('ContextGraphSerializer: invalid JSON.', { cause: error });
     }
     this.validate(parsed);
     return parsed;

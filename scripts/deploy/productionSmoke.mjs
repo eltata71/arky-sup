@@ -119,7 +119,7 @@ async function checkProxyContract(path) {
     return;
   }
   let body = null;
-  try { body = JSON.parse(raw); } catch { body = null; }
+  try { body = JSON.parse(raw); } catch { /* un cuerpo no-JSON se trata como ausente */ }
   if (!body || body.error !== 'unauthenticated') {
     record(path, `401 sin el envoltorio esperado del proxy: ${raw.slice(0, 160)}`);
     return;
