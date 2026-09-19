@@ -25,6 +25,7 @@ import {
   BUSINESS_INITIATIVE_SCHEMA_VERSION,
   type BusinessInitiative,
   type InitiativeDocument,
+  type InitiativeDocumentFile,
   type InitiativeDocumentKind,
   type InitiativeHorizon,
   type InitiativeKpi,
@@ -141,6 +142,26 @@ const normalizeStakeholder = (value: unknown): InitiativeStakeholder | null => {
   };
 };
 
+/**
+ * El archivo de un documento, cuando se subió a Storage.
+ *
+ * Se exige la identidad completa —cubo, ruta, id del objeto y checksum— o nada.
+ * Una referencia a medias es peor que ninguna: la fila diría que hay un archivo
+ * y la descarga fallaría sin poder decir cuál falta.
+ */
+const normalizeDocumentFile = (value: unknown): InitiativeDocumentFile | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+  const raw = value as Record<string, unknown>;
+  const bucket = asTrimmed(raw.bucket);
+  const path = asTrimmed(raw.path);
+  const objectId = asTrimmed(raw.objectId);
+  const sha256 = asTrimmed(raw.sha256);
+  const mimeType = asTrimmed(raw.mimeType);
+  const sizeBytes = typeof raw.sizeBytes === 'number' && Number.isFinite(raw.sizeBytes) ? raw.sizeBytes : null;
+  if (!bucket || !path || !objectId || !sha256 || !mimeType || sizeBytes === null) return undefined;
+  return { bucket, path, objectId, mimeType, sizeBytes, sha256 };
+};
+
 const normalizeDocument = (value: unknown, now: string): InitiativeDocument | null => {
   if (!value || typeof value !== 'object') return null;
   const raw = value as Record<string, unknown>;
@@ -148,15 +169,17 @@ const normalizeDocument = (value: unknown, now: string): InitiativeDocument | nu
   if (!name) return null;
   const url = asTrimmed(raw.url);
   const content = asString(raw.content);
-  // A document with neither a link nor content is an empty row: it would
+  const file = normalizeDocumentFile(raw.file);
+  // A document with no link, no content and no file is an empty row: it would
   // occupy the list and open onto nothing.
-  if (!url && !content.trim()) return null;
+  if (!url && !content.trim() && !file) return null;
   return {
     id: asString(raw.id) || newDocumentId(),
     name,
     kind: oneOf(raw.kind, DOCUMENT_KINDS, 'other'),
     url: url || undefined,
     content: content.trim() ? content : undefined,
+    file,
     notes: asTrimmed(raw.notes) || undefined,
     addedAt: asIsoDate(raw.addedAt, now),
     addedBy: asTrimmed(raw.addedBy, 'Desconocido'),

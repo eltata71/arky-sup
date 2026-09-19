@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-15T19:21:19.380Z",
+  "generatedAt": "2026-09-19T14:37:14.929Z",
   "sourceFiles": [
     "App.tsx",
     "api/_shared/authenticateProxyCaller.ts",
     "api/_shared/proxyRuntime.ts",
-    "api/_shared/verifyIdToken.ts",
+    "api/_shared/verifySupabaseToken.ts",
     "api/ai.ts",
     "api/gemini.ts",
     "components/AddArtifactModal.tsx",
@@ -245,8 +245,6 @@
     "context/app/useProjectsState.ts",
     "context/app/useSettingsState.ts",
     "context/auth/useAuthSessionBootstrap.ts",
-    "firebase.json",
-    "firebase.ts",
     "hooks/artifacts/index.ts",
     "hooks/artifacts/useArtifactAssessment.ts",
     "hooks/artifacts/useArtifactEditing.ts",
@@ -287,7 +285,6 @@
     "lib/a11y.ts",
     "lib/ai/index.ts",
     "lib/ai/modelCatalog.ts",
-    "lib/artifactPersistenceGuards.ts",
     "lib/artifacts/artifactClassification.ts",
     "lib/artifacts/artifactGovernance.ts",
     "lib/artifacts/artifactKind.ts",
@@ -320,12 +317,11 @@
     "lib/eaTerminology.ts",
     "lib/elkLayoutEngine.ts",
     "lib/errorMessage.ts",
-    "lib/firebaseEmulatorPolicy.ts",
-    "lib/firestoreData.ts",
     "lib/i18n/index.ts",
     "lib/i18n/translate.ts",
     "lib/i18n/translations.ts",
     "lib/ids.ts",
+    "lib/jsonSafe.ts",
     "lib/layoutEngine.ts",
     "lib/layoutSelector.ts",
     "lib/lmsProgress.ts",
@@ -384,6 +380,8 @@
     "scripts/checkModuleSize.mjs",
     "scripts/checkOrphanScripts.mjs",
     "scripts/countAnyTokens.mjs",
+    "scripts/deploy/productionSmoke.mjs",
+    "scripts/deploy/protectionWall.mjs",
     "scripts/seedE2E.mjs",
     "scripts/supabase/authz-remote-probe.sql",
     "scripts/supabase/knowledge-graph-remote-probe.sql",
@@ -391,14 +389,15 @@
     "scripts/supabase/office-engagements-remote-probe.sql",
     "scripts/supabase/platform-reference-parameters-remote-probe.sql",
     "scripts/supabase/projects-artifacts-remote-probe.sql",
+    "scripts/supabase/retirement-completeness-remote-probe.sql",
     "scripts/supabase/sql-contract-bootstrap.sql",
     "scripts/supabase/storage-private-objects-remote-probe.sql",
     "services/adapters/backendSelection.ts",
-    "services/adapters/firebaseIdentityAdapter.ts",
     "services/adapters/identityBackend.ts",
     "services/adapters/index.ts",
     "services/adapters/supabaseAuthClient.ts",
     "services/adapters/supabaseDataBackend.ts",
+    "services/adapters/supabaseFileStorage.ts",
     "services/adapters/supabaseIdentityAdapter.ts",
     "services/agent/AgentActionRepository.ts",
     "services/agent/agentConfirmationGate.ts",
@@ -569,8 +568,8 @@
     "services/architectureOffice/yamlStructure.ts",
     "services/architectureProjects/ArchitectureProjectRepository.ts",
     "services/architectureProjects/ArchitectureProjectTypes.ts",
+    "services/architectureProjects/SupabaseProjectRepository.ts",
     "services/architectureProjects/architectureProjectFactory.ts",
-    "services/architectureProjects/artifactDocumentMapper.ts",
     "services/architectureProjects/attentionTracking.ts",
     "services/architectureProjects/index.ts",
     "services/architectureProjects/projectCache.ts",
@@ -736,14 +735,11 @@
     "services/geminiService.ts",
     "services/identity/authService.ts",
     "services/identity/index.ts",
-    "services/identity/pilotRouting.ts",
     "services/identity/supabasePasswordSetup.ts",
-    "services/identity/supabaseProfileService.ts",
     "services/identity/userProvisioningService.ts",
     "services/identity/userService.ts",
     "services/learning/SupabaseLearningRepository.ts",
     "services/learning/index.ts",
-    "services/learning/pilotLearningService.ts",
     "services/learning/trainingService.ts",
     "services/lucid/index.ts",
     "services/lucid/lucidService.ts",
@@ -758,6 +754,7 @@
     "services/persistence/localDraftStore.ts",
     "services/persistence/mirroredList.ts",
     "services/persistence/persistenceResult.ts",
+    "services/persistence/supabaseErrors.ts",
     "services/portfolioGraph/PortfolioGraphTypes.ts",
     "services/portfolioGraph/index.ts",
     "services/portfolioGraph/portfolioResolver.ts",
@@ -800,16 +797,17 @@
     "services/quality/qualityReportRenderer.ts",
     "services/review/ReviewTypes.ts",
     "services/review/artifactReviewService.ts",
-    "services/review/firestoreArtifactReviewRepository.ts",
     "services/review/hybridArtifactReviewRepository.ts",
     "services/review/index.ts",
     "services/review/localArtifactReviewRepository.ts",
+    "services/review/remoteArtifactReviewRepository.ts",
     "services/review/reviewTransitions.ts",
     "services/review/types.ts",
     "services/settings/SettingsRepository.ts",
     "services/settings/SupabaseSettingsRepository.ts",
     "services/settings/index.ts",
     "supabase/database.types.ts",
+    "supabase/functions/provision-user/index.ts",
     "supabase/migrations/20260912001855_platform_foundation.sql",
     "supabase/migrations/20260912044359_identity_authorization.sql",
     "supabase/migrations/20260912052000_authorization_surface.sql",
@@ -840,6 +838,9 @@
     "supabase/migrations/20260915180409_storage_ready_claim_fail_closed.sql",
     "supabase/migrations/20260915191743_storage_owner_session_visibility.sql",
     "supabase/migrations/20260915192003_storage_session_guard_grant.sql",
+    "supabase/migrations/20260919043543_retirement_completeness.sql",
+    "supabase/migrations/20260919045700_data_api_exposed_schemas.sql",
+    "supabase/migrations/20260919050046_project_aggregate_deletion.sql",
     "supabase/seed.sql",
     "types.ts",
     "utils/artifactExploration.ts",
@@ -850,21 +851,8 @@
   ],
   "categories": [
     {
-      "id": "firebase-bucket-configured",
-      "label": "Bucket Firebase configurado",
-      "status": "observed",
-      "fileCount": 1,
-      "matchCount": 1,
-      "evidence": [
-        {
-          "file": "firebase.ts",
-          "line": 11
-        }
-      ]
-    },
-    {
-      "id": "firebase-storage-sdk",
-      "label": "Firebase Storage usado por el SDK",
+      "id": "firebase-storage-residual",
+      "label": "Residuo de Firebase Storage",
       "status": "not-observed",
       "fileCount": 0,
       "matchCount": 0,
@@ -873,18 +861,55 @@
     {
       "id": "supabase-storage-sdk",
       "label": "Supabase Storage usado por el SDK",
-      "status": "not-observed",
-      "fileCount": 0,
-      "matchCount": 0,
-      "evidence": []
+      "status": "observed",
+      "fileCount": 1,
+      "matchCount": 3,
+      "evidence": [
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 63
+        },
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 125
+        },
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 202
+        }
+      ]
     },
     {
       "id": "supabase-storage-schema",
       "label": "Esquema/políticas de Supabase Storage",
       "status": "observed",
-      "fileCount": 9,
-      "matchCount": 61,
+      "fileCount": 10,
+      "matchCount": 67,
       "evidence": [
+        {
+          "file": "scripts/supabase/sql-contract-bootstrap.sql",
+          "line": 33
+        },
+        {
+          "file": "scripts/supabase/sql-contract-bootstrap.sql",
+          "line": 37
+        },
+        {
+          "file": "scripts/supabase/sql-contract-bootstrap.sql",
+          "line": 44
+        },
+        {
+          "file": "scripts/supabase/sql-contract-bootstrap.sql",
+          "line": 46
+        },
+        {
+          "file": "scripts/supabase/sql-contract-bootstrap.sql",
+          "line": 55
+        },
+        {
+          "file": "scripts/supabase/sql-contract-bootstrap.sql",
+          "line": 56
+        },
         {
           "file": "scripts/supabase/storage-private-objects-remote-probe.sql",
           "line": 17
@@ -960,30 +985,6 @@
         {
           "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
           "line": 8
-        },
-        {
-          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
-          "line": 45
-        },
-        {
-          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
-          "line": 228
-        },
-        {
-          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
-          "line": 266
-        },
-        {
-          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
-          "line": 295
-        },
-        {
-          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
-          "line": 297
-        },
-        {
-          "file": "supabase/migrations/20260915012714_storage_private_objects.sql",
-          "line": 299
         }
       ]
     },
@@ -991,9 +992,17 @@
       "id": "persistent-url",
       "label": "URL persistida en un documento de dominio",
       "status": "observed",
-      "fileCount": 2,
-      "matchCount": 3,
+      "fileCount": 4,
+      "matchCount": 5,
       "evidence": [
+        {
+          "file": "api/_shared/verifySupabaseToken.ts",
+          "line": 36
+        },
+        {
+          "file": "services/adapters/supabaseDataBackend.ts",
+          "line": 40
+        },
         {
           "file": "services/businessInitiatives/BusinessInitiativeTypes.ts",
           "line": 130
@@ -1231,7 +1240,7 @@
       "label": "Blob/URL generado solo para descarga del navegador",
       "status": "observed",
       "fileCount": 19,
-      "matchCount": 26,
+      "matchCount": 27,
       "evidence": [
         {
           "file": "components/ExcalidrawViewer.tsx",
@@ -1248,10 +1257,6 @@
         {
           "file": "hooks/artifacts/useExcalidrawRendering.ts",
           "line": 110
-        },
-        {
-          "file": "lib/artifactPersistenceGuards.ts",
-          "line": 102
         },
         {
           "file": "pages/LMS/CourseView.tsx",
@@ -1276,6 +1281,14 @@
         {
           "file": "pages/SDDProcessView.tsx",
           "line": 266
+        },
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 129
+        },
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 152
         },
         {
           "file": "services/export/adapters/csvExporter.ts",
@@ -1328,10 +1341,6 @@
         {
           "file": "services/export/downloadService.ts",
           "line": 16
-        },
-        {
-          "file": "services/lucid/lucidService.ts",
-          "line": 142
         }
       ]
     },
@@ -1448,9 +1457,21 @@
       "id": "file-storage-port",
       "label": "Puerto abstracto de almacenamiento de archivos",
       "status": "observed",
-      "fileCount": 3,
-      "matchCount": 6,
+      "fileCount": 4,
+      "matchCount": 9,
       "evidence": [
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 2
+        },
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 34
+        },
+        {
+          "file": "services/adapters/supabaseFileStorage.ts",
+          "line": 107
+        },
         {
           "file": "services/ports/index.ts",
           "line": 11
@@ -1473,7 +1494,7 @@
         },
         {
           "file": "services/ports/ports.ts",
-          "line": 118
+          "line": 116
         }
       ]
     }

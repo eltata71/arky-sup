@@ -9,9 +9,9 @@
  * `lib/capture` existe para impedir.
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Badge, Button, Input } from '../ui';
-import { Plus } from 'lucide-react';
+import { Paperclip, Plus } from 'lucide-react';
 import { EmptyRow, RemoveButton, SectionCard, selectClass } from './panelPrimitives';
 import { DOCUMENT_KIND_LABELS, formatDate, INITIATIVE_SECTION_ICONS } from './initiativeUiLabels';
 // Por el barril y no por la ruta profunda: este fichero es nuevo, y el
@@ -20,47 +20,78 @@ import { DOCUMENT_KIND_LABELS, formatDate, INITIATIVE_SECTION_ICONS } from './in
 import {
   newDocumentId,
   type InitiativeDocument,
+  type InitiativeDocumentFile,
   type InitiativeDocumentKind,
 } from '../../services/businessInitiatives';
+import { useDocumentFile } from '../../hooks/useDocumentFile';
 import type { PanelProps } from './InitiativeDetailPanels';
+
+const formatSize = (bytes: number): string => (bytes >= 1_048_576
+  ? `${(bytes / 1_048_576).toFixed(1)} MB`
+  : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
 
-export const DocumentsPanel: React.FC<PanelProps & { addedBy: string }> = ({
-  initiative, onPatch, busy, addedBy,
+export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: string | null }> = ({
+  initiative, onPatch, busy, addedBy, ownerId,
 }) => {
   const [name, setName] = useState('');
   const [kind, setKind] = useState<InitiativeDocumentKind>('business-case');
   const [url, setUrl] = useState('');
   const [content, setContent] = useState('');
   const [showPaste, setShowPaste] = useState(false);
+  const [attached, setAttached] = useState<InitiativeDocumentFile | null>(null);
+  const [attachedName, setAttachedName] = useState('');
+  const fileInput = useRef<HTMLInputElement>(null);
+  const files = useDocumentFile(ownerId);
+
+  const documentId = useRef(newDocumentId());
+
+  const attach = useCallback(async (file: File) => {
+    // El id se acuña **antes** de subir porque forma parte de la ruta: es lo
+    // que ata el binario a la fila que lo va a referenciar, y la política del
+    // cubo comprueba esa correspondencia.
+    const stored = await files.upload(file, {
+      aggregateId: initiative.id,
+      entityId: documentId.current,
+      version: 1,
+    });
+    if (!stored) return;
+    setAttached(stored);
+    setAttachedName(file.name);
+    if (!name.trim()) setName(file.name);
+  }, [files, initiative.id, name]);
 
   const addDocument = useCallback(() => {
     const trimmedName = name.trim();
     const trimmedUrl = url.trim();
     const trimmedContent = content.trim();
-    if (!trimmedName || (!trimmedUrl && !trimmedContent)) return;
+    if (!trimmedName || (!trimmedUrl && !trimmedContent && !attached)) return;
     const document: InitiativeDocument = {
-      id: newDocumentId(),
+      id: documentId.current,
       name: trimmedName,
       kind,
       url: trimmedUrl || undefined,
       content: trimmedContent || undefined,
+      file: attached ?? undefined,
       addedAt: new Date().toISOString(),
       addedBy,
     };
     onPatch({ documents: [...initiative.documents, document] });
     setName(''); setUrl(''); setContent(''); setShowPaste(false);
-  }, [name, kind, url, content, addedBy, initiative.documents, onPatch]);
+    setAttached(null); setAttachedName('');
+    if (fileInput.current) fileInput.current.value = '';
+    documentId.current = newDocumentId();
+  }, [name, kind, url, content, attached, addedBy, initiative.documents, onPatch]);
 
   return (
     <SectionCard
       id="documentos"
       icon={INITIATIVE_SECTION_ICONS.documents}
       title="Documentos de soporte"
-      hint="Enlaza el documento donde ya vive, o pega su contenido si no existe en otro sitio."
+      hint="Enlaza el documento donde ya vive, adjunta el archivo, o pega su contenido si no existe en otro sitio."
       count={initiative.documents.length}
     >
       {initiative.documents.length === 0 ? (
@@ -80,12 +111,21 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string }> = ({
                   >
                     {document.name}
                   </a>
+                ) : document.file ? (
+                  <button
+                    type="button"
+                    onClick={() => { void files.open(document.file!); }}
+                    className="block max-w-full truncate text-left text-sm font-medium text-primary-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-400"
+                  >
+                    {document.name}
+                  </button>
                 ) : (
                   <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">{document.name}</p>
                 )}
                 <p className="text-2xs text-gray-500 dark:text-gray-400">
                   {formatDate(document.addedAt)} · {document.addedBy}
-                  {!document.url && document.content && ' · contenido pegado'}
+                  {document.file && ` · archivo adjunto (${formatSize(document.file.sizeBytes)})`}
+                  {!document.url && !document.file && document.content && ' · contenido pegado'}
                 </p>
                 {!document.url && document.content && (
                   <details className="mt-1">
@@ -140,15 +180,44 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string }> = ({
             className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs leading-relaxed text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
         )}
+        <input
+          ref={fileInput}
+          type="file"
+          aria-label="Adjuntar archivo"
+          className="sr-only"
+          onChange={(event) => {
+            const chosen = event.target.files?.[0];
+            if (chosen) void attach(chosen);
+          }}
+        />
+        {attached && (
+          <p className="text-2xs text-gray-600 dark:text-gray-300">
+            Adjunto: <span className="font-medium">{attachedName}</span> ({formatSize(attached.sizeBytes)})
+          </p>
+        )}
+        {files.error && (
+          <p role="alert" className="text-2xs text-red-600 dark:text-red-400">{files.error}</p>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button variant="ghost" size="xs" onClick={() => setShowPaste((open) => !open)}>
-            {showPaste ? 'Ocultar el contenido pegado' : 'Pegar contenido en vez de enlazar'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="ghost" size="xs" onClick={() => setShowPaste((open) => !open)}>
+              {showPaste ? 'Ocultar el contenido pegado' : 'Pegar contenido en vez de enlazar'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => fileInput.current?.click()}
+              disabled={busy || files.busy || !ownerId}
+            >
+              <Paperclip className="mr-1 h-3.5 w-3.5" aria-hidden />
+              {files.busy ? 'Subiendo…' : attached ? 'Cambiar archivo' : 'Adjuntar archivo'}
+            </Button>
+          </div>
           <Button
             variant="secondary"
             size="sm"
             onClick={addDocument}
-            disabled={busy || !name.trim() || (!url.trim() && !content.trim())}
+            disabled={busy || files.busy || !name.trim() || (!url.trim() && !content.trim() && !attached)}
           >
             <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
             Añadir documento
