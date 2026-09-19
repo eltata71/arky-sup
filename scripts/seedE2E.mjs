@@ -106,11 +106,34 @@ async function ensureProfile(uid) {
   }
 }
 
+/**
+ * Siembra la iniciativa, el proyecto y el encargo que los recorridos profundos
+ * esperan encontrar.
+ *
+ * Se perdieron al portar este script de Firestore a Supabase: se portó la
+ * cuenta y no los datos, y los dos recorridos de la Oficina quedaron buscando
+ * un `e2e-project` y un `e2e-engagement-arb` que ya no creaba nadie. El
+ * síntoma no era «faltan datos» sino «no aparece el desplegable de proyecto»,
+ * que se parece a un fallo de la interfaz.
+ */
+async function ensureFixtures(uid) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/seed_e2e_fixtures`, {
+    method: 'POST',
+    headers: adminHeaders(),
+    body: JSON.stringify({ p_uid: uid }),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`No se pudieron sembrar los fixtures: ${response.status} ${detail}`);
+  }
+}
+
 async function main() {
   assertLocal();
   const uid = await ensureAuthUser();
   await ensureProfile(uid);
-  process.stdout.write(`E2E seed listo: ${EMAIL} (${uid})\n`);
+  await ensureFixtures(uid);
+  process.stdout.write(`E2E seed listo: ${EMAIL} (${uid}) + iniciativa, proyecto y encargo ARB\n`);
 }
 
 main().catch((error) => {
