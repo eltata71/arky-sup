@@ -35,7 +35,7 @@ function manualChunks(id: string): string | undefined {
   if (!id.includes('node_modules')) return undefined;
   const pkg = packageNameOf(id);
 
-  if (pkg === 'firebase' || pkg.startsWith('@firebase')) return 'vendor-firebase';
+  if (pkg === '@supabase' || pkg.startsWith('@supabase')) return 'vendor-supabase';
   if (pkg === 'reactflow' || pkg.startsWith('@reactflow')) return 'vendor-reactflow';
   if (pkg === 'dagre' || pkg.startsWith('@dagrejs')) return 'vendor-dagre';
   if (
@@ -187,7 +187,7 @@ export default defineConfig(({ mode }) => {
         test: {
           name: 'dom',
           environment: 'jsdom',
-          setupFiles: ['./vitest.setup.dom.ts'],
+          setupFiles: ['./vitest.setup.env.ts', './vitest.setup.dom.ts'],
           include: ['**/*.test.tsx'],
           exclude: SHARED_EXCLUDE,
           testTimeout: 20000,
@@ -198,7 +198,7 @@ export default defineConfig(({ mode }) => {
         test: {
           name: 'node',
           environment: 'node',
-          setupFiles: ['./vitest.setup.node.ts'],
+          setupFiles: ['./vitest.setup.env.ts', './vitest.setup.node.ts'],
           include: ['**/*.test.ts'],
           exclude: SHARED_EXCLUDE,
           testTimeout: 20000,

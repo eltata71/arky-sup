@@ -7,7 +7,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  FirestoreArtifactReviewRepository,
+  RemoteArtifactReviewRepository,
   HybridArtifactReviewRepository,
   LocalArtifactReviewRepository,
 } from '../../../services/review';
@@ -30,7 +30,7 @@ describe('HybridArtifactReviewRepository', () => {
     gateway = new FakeReviewGateway();
     hybrid = new HybridArtifactReviewRepository(
       local,
-      new FirestoreArtifactReviewRepository(gateway),
+      new RemoteArtifactReviewRepository(gateway),
     );
   });
 

@@ -9,25 +9,35 @@ const secureProductionEnv = (overrides: Partial<RuntimeEnvironment> = {}): Runti
   MODE: 'production',
   PROD: true,
   VITE_AI_PROXY_URL: '/api/ai',
-  VITE_FIREBASE_API_KEY: 'firebase-public-key',
-  VITE_FIREBASE_PROJECT_ID: 'arky-production',
-  VITE_FIREBASE_APP_ID: '1:123:web:abc',
+  VITE_SUPABASE_URL: 'https://arky-production.supabase.co',
+  VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_public-by-design',
   ...overrides,
 });
 
 describe('production runtime configuration', () => {
-  it('accepts a fail-closed proxy with public Firebase client configuration', () => {
+  it('accepts a fail-closed proxy with the public Supabase client configuration', () => {
     expect(validateProductionRuntimeConfig(secureProductionEnv())).toEqual([]);
     expect(() => assertProductionRuntimeConfig(secureProductionEnv())).not.toThrow();
   });
 
-  it('rejects missing Firebase boundaries', () => {
+  it('rejects a production build with no backend boundary', () => {
     const issues = validateProductionRuntimeConfig({ MODE: 'production' });
     expect(issues.map(({ code }) => code)).toEqual([
-      'missing-firebase-config',
-      'missing-firebase-config',
-      'missing-firebase-config',
+      'missing-backend-config',
+      'missing-backend-config',
     ]);
+    expect(issues.map(({ variable }) => variable)).toEqual([
+      'VITE_SUPABASE_URL',
+      'VITE_SUPABASE_PUBLISHABLE_KEY',
+    ]);
+  });
+
+  it('never demands the service key: a VITE_* variable travels in the bundle', () => {
+    // No es una comprobación redundante. La tentación al migrar es pedir «las
+    // claves de Supabase» en bloque, y la de servicio publicada como `VITE_*`
+    // sería una puerta de administración servida a cada visitante.
+    const issues = validateProductionRuntimeConfig({ MODE: 'production' });
+    expect(issues.some(({ variable }) => /SERVICE_ROLE|SECRET/i.test(variable))).toBe(false);
   });
 
   it('accepts an unset proxy URL: the build defaults to the /api/ai it deploys', () => {
@@ -75,9 +85,9 @@ describe('production runtime configuration', () => {
   });
 
   it('can be disabled per deployment with the explicit opt-out flag', () => {
-    // The escape hatch must skip every check — including missing Firebase and
-    // a browser-visible operator key — because its only purpose is to let a
-    // deployment provision its variables outside this repository.
+    // The escape hatch must skip every check — including the missing backend
+    // boundary and a browser-visible operator key — because its only purpose is
+    // to let a deployment provision its variables outside this repository.
     const unsafe = { MODE: 'production', PROD: true } as RuntimeEnvironment;
     expect(validateProductionRuntimeConfig(unsafe).length).toBeGreaterThan(0);
     expect(() => assertProductionRuntimeConfig({

@@ -149,7 +149,12 @@ const computeStatistics = (
 
 const computeQuality = (
   entities: ArchitectureEntity[],
-  relations: ArchitectureRelation[],
+  // Se recibe y no se lee: el recuento de relaciones ya viene dentro de
+  // `statistics`, y leerlo dos veces sería tener dos respuestas a la misma
+  // pregunta. Se conserva en la firma porque el orden de los argumentos es el
+  // que usa el único llamante, y quitarlo aquí es un cambio que no mejora nada
+  // y que se puede aplicar mal.
+  _relations: ArchitectureRelation[],
   statistics: ArchitectureGraphStatistics,
   totalArtifacts: number,
   consistencyIssueCount: number,

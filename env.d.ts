@@ -11,23 +11,13 @@ interface ImportMetaEnv {
    */
   readonly VITE_AI_STRICT_PROXY?: string;
   readonly VITE_OPENROUTER_API_KEY?: string;
-  readonly VITE_FIREBASE_API_KEY: string;
-  readonly VITE_FIREBASE_AUTH_DOMAIN: string;
-  readonly VITE_FIREBASE_PROJECT_ID: string;
-  readonly VITE_FIREBASE_STORAGE_BUCKET: string;
-  readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
-  readonly VITE_FIREBASE_APP_ID: string;
-  readonly VITE_FIREBASE_MEASUREMENT_ID: string;
-  /** CI/local integration only; guarded to loopback + demo-arky-e2e. */
-  readonly VITE_FIREBASE_USE_EMULATORS?: string;
   /**
-   * Selección de backend por contexto (transición Supabase, F3.2).
+   * Selección de backend por contexto.
    *
    * `VITE_BACKEND` fija el valor global y `VITE_BACKEND_<CONTEXTO>` lo anula
-   * para un corte vertical concreto (`VITE_BACKEND_SETTINGS`,
-   * `VITE_BACKEND_BUSINESSINITIATIVES`, `VITE_BACKEND_LEARNING`…). Un valor
-   * desconocido cae a `firebase`, que es el proveedor que hoy atiende: un
-   * error de escritura no debe cambiar dónde se guardan los datos.
+   * para un corte vertical concreto. Tras F9 hay un solo proveedor —Supabase—
+   * y un valor desconocido cae a él: un error de escritura en una variable no
+   * debe cambiar dónde se guardan los datos.
    *
    * Los overrides por contexto son dinámicos por diseño, así que se declaran
    * con una firma de índice en vez de enumerarlos: el contexto lo decide el

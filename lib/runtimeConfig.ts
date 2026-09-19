@@ -21,9 +21,8 @@ export interface RuntimeEnvironment {
   readonly VITE_DISABLE_RUNTIME_CONFIG_GATE?: string;
   readonly VITE_AI_PROXY_URL?: string;
   readonly VITE_AI_STRICT_PROXY?: string;
-  readonly VITE_FIREBASE_API_KEY?: string;
-  readonly VITE_FIREBASE_PROJECT_ID?: string;
-  readonly VITE_FIREBASE_APP_ID?: string;
+  readonly VITE_SUPABASE_URL?: string;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
   readonly VITE_GEMINI_API_KEY?: string;
   readonly VITE_OPENROUTER_API_KEY?: string;
   readonly VITE_ANTHROPIC_API_KEY?: string;
@@ -33,7 +32,7 @@ export interface RuntimeEnvironment {
 export type ProductionConfigIssueCode =
   | 'invalid-ai-proxy'
   | 'proxy-not-strict'
-  | 'missing-firebase-config'
+  | 'missing-backend-config'
   | 'client-provider-secret';
 
 export interface ProductionConfigIssue {
@@ -49,10 +48,19 @@ const CLIENT_SECRET_VARIABLES = [
   'VITE_LUCID_API_KEY',
 ] as const;
 
-const REQUIRED_FIREBASE_VARIABLES = [
-  'VITE_FIREBASE_API_KEY',
-  'VITE_FIREBASE_PROJECT_ID',
-  'VITE_FIREBASE_APP_ID',
+/**
+ * Sin estas dos no hay autenticación ni base de datos, y la aplicación arranca
+ * hasta la pantalla de inicio de sesión para no poder hacer nada. Que el build
+ * falle aquí es preferible a descubrirlo en producción: es exactamente el fallo
+ * que la primera publicación del proyecto nuevo tuvo, y le costó una sesión.
+ *
+ * La clave de servicio **no** está en esta lista y no puede estarlo: una
+ * variable `VITE_*` viaja dentro del bundle. Las operaciones que la necesitan
+ * viven en `supabase/functions/`.
+ */
+const REQUIRED_BACKEND_VARIABLES = [
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_PUBLISHABLE_KEY',
 ] as const;
 
 const valueOf = (env: RuntimeEnvironment, key: keyof RuntimeEnvironment): string => {
@@ -105,10 +113,10 @@ export function validateProductionRuntimeConfig(env: RuntimeEnvironment): Produc
     });
   }
 
-  for (const variable of REQUIRED_FIREBASE_VARIABLES) {
+  for (const variable of REQUIRED_BACKEND_VARIABLES) {
     if (!valueOf(env, variable)) {
       issues.push({
-        code: 'missing-firebase-config',
+        code: 'missing-backend-config',
         variable,
         message: `${variable} is required for production authentication and persistence.`,
       });

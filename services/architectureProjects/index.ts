@@ -58,16 +58,13 @@ export {
 /**
  * Lo que `services/artifacts` necesita de este agregado.
  *
- * Un artefacto vive dentro del Proyecto —en su subcolección, en su
- * `artifactCount`, en su índice— así que escribirlo toca este documento. Estas
- * cinco entradas son esa costura, y son deliberadamente estrechas: la caché de
- * proyectos se invalida con `forgetProject` y no exponiendo el `Map`.
+ * Un artefacto vive dentro del Proyecto —en su tabla hija, en su
+ * `artifactCount`, en su índice— así que escribirlo es escribir el agregado.
+ * `persistProjectAggregate` es esa costura, y es deliberadamente estrecha: la
+ * caché de proyectos se invalida con `forgetProject` y no exponiendo el `Map`.
  */
-export {
-  appendToArtifactIndex,
-  removeFromArtifactIndex,
-  toArtifactIndexDocument,
-} from './projectDocumentMapper';
-export { reportArtifactPruning, toArtifactDocument } from './artifactDocumentMapper';
+export { toArtifactSummary, type ProjectDocument } from './projectDocumentMapper';
 export { clearProjectCache, forgetProject } from './projectCache';
 export { getProject } from './projectReads';
+export { persistProjectAggregate } from './projectWrites';
+export { forgetProjectRevisions, knownProjectRevision } from './SupabaseProjectRepository';

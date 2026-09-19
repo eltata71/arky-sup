@@ -9,7 +9,7 @@
  *    `ReviewSyncState` surfaced to the UI. A remote failure never throws into
  *    the UI path — the review keeps working from localStorage.
  *  - Remote snapshots are merged into the local view (remote wins on ties).
- *  - `migrateLocalToRemote` pushes pre-existing local records to Firestore
+ *  - `migrateLocalToRemote` pushes pre-existing local records to the database
  *    idempotently (dedup by id) once a user is authenticated.
  */
 
@@ -21,7 +21,7 @@ import type {
 import { observabilityService } from '../observability';
 import { createOperationId } from '../persistence';
 import { LocalArtifactReviewRepository } from './localArtifactReviewRepository';
-import { FirestoreArtifactReviewRepository } from './firestoreArtifactReviewRepository';
+import { RemoteArtifactReviewRepository } from './remoteArtifactReviewRepository';
 import {
   type AddCommentInput,
   type DeleteCommentInput,
@@ -82,7 +82,7 @@ export class HybridArtifactReviewRepository implements SyncAwareReviewRepository
 
   constructor(
     private readonly local: LocalArtifactReviewRepository,
-    private readonly remote?: FirestoreArtifactReviewRepository,
+    private readonly remote?: RemoteArtifactReviewRepository,
   ) {
     // Forward local mutations into the global change signal.
     this.local.subscribe(() => this.notifyGlobal());
@@ -269,7 +269,7 @@ export class HybridArtifactReviewRepository implements SyncAwareReviewRepository
         source: 'operation',
         status: 'succeeded',
         title: 'Revisión sincronizada',
-        message: `${operationName} se sincronizó con Firestore.`,
+        message: `${operationName} se sincronizó con la base de datos.`,
         operationId,
         recoverable: true,
         userVisible: false,
@@ -392,7 +392,7 @@ export class HybridArtifactReviewRepository implements SyncAwareReviewRepository
   /* ---- migration ---- */
 
   /**
-   * Push pre-existing local records to Firestore. Idempotent: records already
+   * Push pre-existing local records to the database. Idempotent: records already
    * flagged `synced` are skipped, and writes use the record id so a re-run
    * never duplicates.
    */
@@ -406,7 +406,7 @@ export class HybridArtifactReviewRepository implements SyncAwareReviewRepository
       errors: [],
     };
     if (!this.remote || !this.remote.isWritable()) {
-      report.errors.push('Firestore no disponible o usuario no autenticado.');
+      report.errors.push('La base de datos no está disponible o no hay usuario autenticado.');
       return report;
     }
     const operationId = createOperationId('review-migration');
@@ -447,7 +447,7 @@ export class HybridArtifactReviewRepository implements SyncAwareReviewRepository
       severity: report.failed > 0 ? 'warning' : 'success',
       source: 'operation',
       status: report.failed > 0 ? 'observed' : 'succeeded',
-      title: 'Migración de revisión local → Firestore',
+      title: 'Migración de revisión local → base de datos',
       message:
         `Migrados ${report.migratedComments} comentarios y ${report.migratedDecisions} decisiones; ` +
         `${report.skippedDuplicates} ya sincronizados, ${report.failed} con error.`,

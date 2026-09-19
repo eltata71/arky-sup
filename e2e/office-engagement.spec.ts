@@ -5,7 +5,7 @@ import { signInE2E } from './support/auth';
  * E2E — Oficina de Arquitectura Empresarial.
  *
  * Este archivo separa la protección de rutas del flujo autenticado. Ambos
- * bloques corren siempre en CI contra un tenant efímero de Firebase Emulator.
+ * bloques corren siempre en CI contra el stack local de Supabase, efímero por construcción.
  *
  *  1. **Sin autenticación** (corre siempre): las rutas de la Oficina están
  *     protegidas y su chunk carga sin excepciones.
@@ -17,7 +17,7 @@ import { signInE2E } from './support/auth';
  */
 
 const ENV_NOISE =
-  /Failed to load resource|net::|ERR_|MIME type|Refused to apply|Refused to execute|404|DNS|resolve|firebase|No se pudieron cargar settings|lectura de settings falló|googleapis|gstatic|fonts\.|cdn\.|jsdelivr|cloudflare|heroicons|reactflow/i;
+  /Failed to load resource|net::|ERR_|MIME type|Refused to apply|Refused to execute|404|DNS|resolve|supabase|No se pudieron cargar settings|lectura de settings falló|googleapis|gstatic|fonts\.|cdn\.|jsdelivr|cloudflare|heroicons|reactflow/i;
 
 test.describe('Oficina de Arquitectura — acceso', () => {
   // `networkidle` nunca llega con los emuladores: el SDK de Firestore mantiene

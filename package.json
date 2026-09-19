@@ -17,7 +17,6 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest",
     "test:ci": "vitest run",
-    "test:rules": "npx --yes firebase-tools emulators:exec --only firestore --project demo-arky \"npx vitest run __tests__/rules\"",
     "test:coverage": "vitest run --coverage",
     "test:shard": "vitest run --coverage --reporter=blob",
     "test:merge-reports": "vitest --merge-reports --coverage",
@@ -34,8 +33,7 @@
     "quality:static": "npm run typecheck && npm run typecheck:strict && npm run lint && npm run check:any-budget && npm run check:no-orphan-scripts && npm run check:module-size && npm run check:module-boundaries",
     "quality:fast": "npm run quality:static && npm run test:ci",
     "build:placeholders": "node scripts/buildWithPlaceholders.mjs",
-    "quality": "npm run quality:static && npm run test:coverage && npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget",
-    "deploy:rules": "firebase deploy --only firestore:rules"
+    "quality": "npm run quality:static && npm run test:coverage && npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.17.6",
@@ -44,7 +42,6 @@
     "dagre": "0.8.5",
     "dompurify": "^3.4.15",
     "elkjs": "^0.12.0",
-    "firebase": "^12.9.0",
     "html-to-image": "1.11.13",
     "lucide-react": "^0.575.0",
     "marked": "^12.0.1",
@@ -59,7 +56,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@firebase/rules-unit-testing": "^5.0.2",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/dom": "^10.4.2",

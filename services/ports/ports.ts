@@ -1,22 +1,20 @@
 /**
  * `services/ports` — los contratos que el dominio necesita del mundo exterior.
  *
- * F3.1. Ningún fichero de este módulo importa React, Firebase, Supabase ni
- * ningún SDK: son interfaces TypeScript puras más errores tipados. Eso es lo
- * que permite probar el dominio sin montar un árbol de React ni arrancar un
- * emulador, que es la salida declarada de F3.
+ * Ningún fichero de este módulo importa React, Supabase ni ningún SDK: son
+ * interfaces TypeScript puras más errores tipados. Eso es lo que permite probar
+ * el dominio sin montar un árbol de React ni arrancar una base de datos, que es
+ * la salida declarada de F3.
  *
  * Cada puerto tiene su adaptador:
- *  - identidad → `services/adapters/firebaseIdentityAdapter.ts` (Firebase hoy,
- *    Supabase en F4 detrás del mismo puerto).
+ *  - identidad → `services/adapters/supabaseIdentityAdapter.ts`.
  *  - reloj → `SystemClock` aquí mismo (no necesita adaptador).
- *  - archivos → repositorios de contexto en F6 (Storage hoy es Firebase,
- *    destino Supabase Storage).
+ *  - archivos → `services/adapters/supabaseFileStorage.ts`.
  *  - repositorio → un adaptador por contexto sobre `services/persistence`.
  *
- * La selección Firebase/Supabase por contexto vive en
- * `services/adapters/backendSelection.ts`, no aquí: un puerto describe *qué*
- * necesita el dominio, nunca *cuál* backend lo sirve.
+ * Que estas interfaces sobrevivieran al cambio de proveedor sin un solo cambio
+ * es la prueba de que valían la pena: F9 sustituyó Firebase por Supabase debajo
+ * y el dominio no se enteró.
  */
 
 /** Lo mínimo que el dominio necesita saber de quién llama. */

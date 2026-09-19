@@ -8,22 +8,14 @@
  *  - never throws — callers get a `PersistenceResult`-shaped outcome;
  *  - normalizes on read, so a hand-edited or legacy document cannot crash the
  *    runner (the same defensive posture as `services/runtimeValidation.ts`);
- *  - degrades to the local mirror this repository keeps when Firestore is
+ *  - degrades to the local mirror this repository keeps when the database is
  *    unavailable, exactly like artifacts and agent actions do.
  */
 
-import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
-import { sanitizeForFirestore } from '../../lib/firestoreData';
-import {
-  ARB_DECISIONS_COLLECTION,
-  ENGAGEMENTS_COLLECTION,
-  MirroredList,
-  PROJECTS_COLLECTION,
-  executeRemoteWrite,
-  requireDb,
-} from '../persistence';
+import { MirroredList, createFailureResult } from '../persistence';
 import type { PersistenceResult } from '../persistence';
+import { createSupabaseOfficeEngagementRepository } from './SupabaseOfficeEngagementRepository';
+import { loadSupabaseDataClient } from '../adapters';
 import { newPrefixedId } from '../../lib/ids';
 import { normalizeBusinessProjectIds } from './officeShared';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from './officeAgentPersonas';
@@ -284,14 +276,31 @@ export interface OfficeEngagementRepository {
 }
 
 /**
- * Los encargos viven en su propia subcolección y no dentro del documento del
- * proyecto: el runner escribe en cada transición de tarea, y reescribir el
- * proyecto entero —artefactos incluidos— en cada una sería lento y una
- * ocasión de perder actualizaciones.
+ * Los encargos viven en su propia tabla y no dentro de la fila del proyecto: el
+ * runner escribe en cada transición de tarea, y reescribir el agregado entero
+ * —artefactos incluidos— en cada una sería lento y una ocasión de perder
+ * actualizaciones.
  */
 const mirror = new MirroredList<OfficeEngagement>((projectId) => `engagements_${projectId}`);
 
-class FirestoreOfficeEngagementRepository implements OfficeEngagementRepository {
+let remote: ReturnType<typeof createSupabaseOfficeEngagementRepository> | null = null;
+const getRemote = async () => {
+  if (!remote) {
+    const client = await loadSupabaseDataClient();
+    remote = createSupabaseOfficeEngagementRepository(
+      client as unknown as Parameters<typeof createSupabaseOfficeEngagementRepository>[0],
+    );
+  }
+  return remote;
+};
+
+/** Solo para pruebas: olvida el repositorio remoto memorizado. */
+export const resetOfficeEngagementRepositoryCache = (): void => {
+  remote = null;
+  mirror.clear();
+};
+
+class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementRepository {
   async list(projectId: string): Promise<OfficeEngagement[]> {
     const raw = mirror.cached(projectId) ?? await this.fetch(projectId);
     return raw
@@ -302,11 +311,7 @@ class FirestoreOfficeEngagementRepository implements OfficeEngagementRepository 
 
   private async fetch(projectId: string): Promise<OfficeEngagement[]> {
     try {
-      const snapshot = await getDocs(collection(requireDb(db), PROJECTS_COLLECTION, projectId, ENGAGEMENTS_COLLECTION));
-      return mirror.remember(
-        projectId,
-        snapshot.docs.map((snap) => ({ ...snap.data(), id: snap.id }) as OfficeEngagement),
-      );
+      return mirror.remember(projectId, await (await getRemote()).list(projectId));
     } catch {
       return mirror.fallback(projectId);
     }
@@ -320,55 +325,47 @@ class FirestoreOfficeEngagementRepository implements OfficeEngagementRepository 
       schemaVersion: OFFICE_ENGAGEMENT_SCHEMA_VERSION,
       updatedAt: new Date().toISOString(),
     };
-    const result = await executeRemoteWrite(
-      { operationName: 'saveEngagement', projectId: normalized.projectId },
-      async () => {
-        const ref = doc(requireDb(db), PROJECTS_COLLECTION, normalized.projectId, ENGAGEMENTS_COLLECTION, normalized.id);
-        await setDoc(ref, sanitizeForFirestore(normalized));
-      },
-    );
+    let result: PersistenceResult<void>;
+    try {
+      result = await (await getRemote()).save(normalized);
+    } catch (error) {
+      result = createFailureResult('saveEngagement', error);
+    }
     mirror.upsert(normalized.projectId, normalized, result);
-    return result as PersistenceResult<void>;
+    return result;
   }
 
   async remove(projectId: string, engagementId: string): Promise<PersistenceResult<void>> {
-    const result = await executeRemoteWrite({ operationName: 'deleteEngagement', projectId }, async () => {
-      await deleteDoc(doc(requireDb(db), PROJECTS_COLLECTION, projectId, ENGAGEMENTS_COLLECTION, engagementId));
-    });
+    let result: PersistenceResult<void>;
+    try {
+      result = await (await getRemote()).remove(projectId, engagementId);
+    } catch (error) {
+      result = createFailureResult('deleteEngagement', error);
+    }
     mirror.remove(projectId, engagementId);
-    return result as PersistenceResult<void>;
+    return result;
   }
 
   /**
-   * Una decisión del ARB se añade a su propia subcolección inmutable.
-   * `firestore.rules` hace esos documentos sólo-creación, así que éste es el
-   * registro a prueba de manipulación de quién firmó un encargo y con qué
-   * evidencia — el documento del encargo lleva un espejo para leer rápido.
+   * Una decisión del ARB se añade a su propia tabla inmutable.
+   * `api.record_arb_decision` sólo crea —no hay `update` ni `delete` que
+   * conceder—, así que éste es el registro a prueba de manipulación de quién
+   * firmó un encargo y con qué evidencia; el documento del encargo lleva un
+   * espejo para leer rápido.
    */
   async recordArbDecision(
     engagement: OfficeEngagement,
     decision: OfficeArbDecision,
   ): Promise<PersistenceResult<void>> {
-    const result = await executeRemoteWrite(
-      { operationName: 'recordArbDecision', projectId: engagement.projectId },
-      async () => {
-        const ref = doc(
-          requireDb(db),
-          PROJECTS_COLLECTION,
-          engagement.projectId,
-          ENGAGEMENTS_COLLECTION,
-          decision.engagementId,
-          ARB_DECISIONS_COLLECTION,
-          decision.id,
-        );
-        await setDoc(ref, sanitizeForFirestore(decision));
-      },
-    );
-    return result as PersistenceResult<void>;
+    try {
+      return await (await getRemote()).recordArbDecision(engagement, decision);
+    } catch (error) {
+      return createFailureResult('recordArbDecision', error);
+    }
   }
 }
 
 export const createOfficeEngagementRepository = (): OfficeEngagementRepository =>
-  new FirestoreOfficeEngagementRepository();
+  new SupabaseBackedOfficeEngagementRepository();
 
 export const officeEngagementRepository: OfficeEngagementRepository = createOfficeEngagementRepository();

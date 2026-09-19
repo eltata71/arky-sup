@@ -1,161 +1,115 @@
 #!/usr/bin/env node
+/**
+ * Siembra la cuenta y los datos que necesitan los recorridos E2E autenticados.
+ *
+ * Corre **solo** contra el stack local de Supabase (`supabase start`), cuyas
+ * claves son públicas y fijas por diseño. Se niega a ejecutarse contra
+ * cualquier otra URL: sembrar una cuenta con contraseña conocida en un proyecto
+ * remoto sería crear una puerta trasera, y el error más fácil de cometer aquí
+ * es apuntar por descuido a producción.
+ *
+ * El reparto es el mismo que en el producto: la identidad la crea la API de
+ * administración con la clave de servicio —lo único que no se puede hacer sin
+ * ella— y el perfil, con su rol, lo escribe una RPC. Aquí no hay un
+ * administrador previo que la llame, así que el perfil se inserta con la clave
+ * de servicio también; es el mismo caso que el primer administrador de una
+ * instalación, y por eso `docs/primer-administrador.md` lo describe igual.
+ */
 
-import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, setDoc } from 'firebase/firestore';
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321').replace(/\/+$/, '');
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+const EMAIL = process.env.E2E_EMAIL ?? 'architect@arky.e2e';
+const PASSWORD = process.env.E2E_PASSWORD ?? 'Arky-E2E-Only-2026!';
 
-const PROJECT_ID = 'demo-arky-e2e';
-const EMAIL = 'architect@arky.e2e';
-const PASSWORD = 'Arky-E2E-Only-2026!';
-const AUTH_URL = 'http://127.0.0.1:9099';
+const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
-async function authRequest(operation, body) {
-  const response = await fetch(`${AUTH_URL}/identitytoolkit.googleapis.com/v1/accounts:${operation}?key=fake-api-key`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const payload = await response.json();
-  return { response, payload };
-}
-
-async function ensureAuthUser() {
-  const created = await authRequest('signUp', {
-    email: EMAIL,
-    password: PASSWORD,
-    returnSecureToken: true,
-  });
-  if (created.response.ok && typeof created.payload.localId === 'string') {
-    return created.payload.localId;
-  }
-
-  if (created.payload?.error?.message !== 'EMAIL_EXISTS') {
-    throw new Error(`Unable to seed Auth emulator: ${created.payload?.error?.message ?? created.response.status}`);
-  }
-
-  const signedIn = await authRequest('signInWithPassword', {
-    email: EMAIL,
-    password: PASSWORD,
-    returnSecureToken: true,
-  });
-  if (!signedIn.response.ok || typeof signedIn.payload.localId !== 'string') {
-    throw new Error(`Unable to reuse Auth emulator user: ${signedIn.payload?.error?.message ?? signedIn.response.status}`);
-  }
-  return signedIn.payload.localId;
-}
-
-async function seedFirestore(uid) {
-  const testEnvironment = await initializeTestEnvironment({
-    projectId: PROJECT_ID,
-    firestore: { host: '127.0.0.1', port: 8080 },
-  });
-  const now = '2026-09-03T12:00:00.000Z';
-
+function assertLocal() {
+  let host;
   try {
-    await testEnvironment.withSecurityRulesDisabled(async (context) => {
-      const firestore = context.firestore();
-      await setDoc(doc(firestore, 'users', uid), {
-        uid,
-        email: EMAIL,
-        displayName: 'Arquitecto E2E',
-        role: 'superadmin',
-      });
-      await setDoc(doc(firestore, 'businessInitiatives', 'e2e-initiative'), {
-        id: 'e2e-initiative',
-        schemaVersion: 1,
-        code: 'NEG-2026-001',
-        title: 'Modernización E2E',
-        need: 'Verificar de extremo a extremo los journeys críticos de Arky.',
-        driver: 'Puerta de calidad autenticada',
-        objectives: ['Validar identidad, persistencia y gobierno'],
-        expectedOutcomes: [],
-        affectedCapabilities: [],
-        businessUnits: [],
-        status: 'approved',
-        priority: 'high',
-        horizon: 'now',
-        riskLevel: 'medium',
-        risks: [],
-        regulatoryDrivers: [],
-        kpis: [],
-        milestones: [],
-        stakeholders: [],
-        documents: [],
-        dependsOnCodes: [],
-        notes: [],
-        provenance: 'manual',
-        userId: uid,
-        createdAt: now,
-        updatedAt: now,
-      });
-      await setDoc(doc(firestore, 'projects', 'e2e-project'), {
-        id: 'e2e-project',
-        name: 'Proyecto E2E gobernado',
-        description: 'Fixture aislado para validar los journeys autenticados.',
-        projectContext: ['Ejecución contra emuladores locales, sin datos productivos.'],
-        initiativeIds: ['e2e-initiative'],
-        linkedBusinessProjects: ['NEG-2026-001'],
-        artifacts: [],
-        artifactCount: 0,
-        artifactStorage: 'subcollection-v1',
-        aggregateStorage: 'split-v1',
-        userId: uid,
-        createdAt: now,
-        updatedAt: now,
-      });
-      // El ARB se siembra como estado de dominio completo, no como un mock de
-      // UI. Así el journey usa las mismas reglas, repositorio y subcolección
-      // inmutable que una aprobación real.
-      await setDoc(doc(firestore, 'projects', 'e2e-project', 'engagements', 'e2e-engagement-arb'), {
-        id: 'e2e-engagement-arb',
-        projectId: 'e2e-project',
-        schemaVersion: 1,
-        title: 'Decisión ARB E2E',
-        brief: 'Fixture determinista para validar la decisión del comité de arquitectura.',
-        initiativeIds: ['e2e-initiative'],
-        businessProjectIds: ['NEG-2026-001'],
-        status: 'awaiting-arb',
-        priority: 'high',
-        charter: {
-          kind: 'modernization',
-          objectives: ['Validar el registro de una decisión ARB.'],
-          scope: ['Aprobación del encargo de prueba.'],
-          outOfScope: [],
-          constraints: [],
-          regulatoryDrivers: [],
-          deliverables: [],
-          participantIds: [],
-          coordinatorId: 'lucia',
-          consolidatorId: 'alejandro',
-          provenance: 'deterministic',
-          proposedAt: now,
-          approvedAt: now,
-          approvedBy: { id: uid, name: 'Arquitecto E2E', role: 'superadmin' },
-        },
-        tasks: [],
-        gateAssessment: {
-          overallStatus: 'conditional',
-          evaluatedAt: now,
-          gates: [{
-            id: 'security-review',
-            status: 'conditional',
-            evidenceArtifactIds: [],
-            blockers: [],
-            conditions: ['Completar evidencia de seguridad antes del siguiente ciclo.'],
-          }],
-        },
-        arbDecisions: [],
-        budget: { maxAiCalls: 12, consumedAiCalls: 0 },
-        auditTrail: [],
-        createdBy: { id: uid, name: 'Arquitecto E2E', role: 'superadmin' },
-        createdAt: now,
-        updatedAt: now,
-      });
-    });
-  } finally {
-    await testEnvironment.cleanup();
+    host = new URL(SUPABASE_URL).hostname;
+  } catch {
+    throw new Error(`SUPABASE_URL no es una URL válida: ${SUPABASE_URL}`);
+  }
+  if (!LOCAL_HOSTS.has(host)) {
+    throw new Error(
+      `Este seed crea una cuenta con contraseña conocida y solo puede correr contra el stack local. Recibió: ${host}`,
+    );
+  }
+  if (!SERVICE_KEY) {
+    throw new Error('Falta SUPABASE_SERVICE_ROLE_KEY (la imprime `supabase status`).');
   }
 }
 
-const uid = await ensureAuthUser();
-await seedFirestore(uid);
-console.info('[e2e:seed] isolated authenticated fixture ready');
+const adminHeaders = () => ({
+  apikey: SERVICE_KEY,
+  Authorization: `Bearer ${SERVICE_KEY}`,
+  'Content-Type': 'application/json',
+});
+
+/** Crea la identidad, o devuelve la existente. Idempotente por diseño. */
+async function ensureAuthUser() {
+  const created = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: adminHeaders(),
+    body: JSON.stringify({
+      email: EMAIL,
+      password: PASSWORD,
+      email_confirm: true,
+      user_metadata: { full_name: 'Arquitecto E2E' },
+    }),
+  });
+  if (created.ok) {
+    const payload = await created.json();
+    if (typeof payload?.id === 'string') return payload.id;
+  }
+
+  // Ya existía: se busca por correo en el listado de administración.
+  const listed = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=200`, { headers: adminHeaders() });
+  if (!listed.ok) throw new Error(`No se pudo listar usuarios: ${listed.status}`);
+  const body = await listed.json();
+  const match = (body?.users ?? []).find((user) => user?.email === EMAIL);
+  if (typeof match?.id !== 'string') {
+    throw new Error(`No se pudo crear ni encontrar la cuenta ${EMAIL}.`);
+  }
+  // Se reafirma la contraseña: una siembra anterior pudo usar otra.
+  await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${match.id}`, {
+    method: 'PUT',
+    headers: adminHeaders(),
+    body: JSON.stringify({ password: PASSWORD, email_confirm: true }),
+  });
+  return match.id;
+}
+
+/**
+ * Escribe el perfil directamente sobre la tabla.
+ *
+ * `api.user_profiles` no concede privilegios a `service_role` —es la postura
+ * deny-by-default de ADR-003—, así que la escritura va por la Data API con el
+ * rol `postgres`, que el stack local expone en la misma clave de servicio. En
+ * un proyecto remoto esto no funcionaría, y es exactamente la protección que se
+ * quiere: el bootstrap del primer administrador es una operación manual y
+ * auditada, no un script.
+ */
+async function ensureProfile(uid) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/seed_e2e_profile`, {
+    method: 'POST',
+    headers: { ...adminHeaders(), 'Accept-Profile': 'api', 'Content-Profile': 'api' },
+    body: JSON.stringify({ p_uid: uid, p_display_name: 'Arquitecto E2E' }),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`No se pudo sembrar el perfil: ${response.status} ${detail}`);
+  }
+}
+
+async function main() {
+  assertLocal();
+  const uid = await ensureAuthUser();
+  await ensureProfile(uid);
+  process.stdout.write(`E2E seed listo: ${EMAIL} (${uid})\n`);
+}
+
+main().catch((error) => {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  process.exitCode = 1;
+});

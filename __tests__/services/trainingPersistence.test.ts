@@ -4,13 +4,17 @@
  * Renders nothing, but the code under test writes to `localStorage` when the
  * remote write does not land — which is the whole point of these cases.
  *
- * What this locks in: a Training Center write that Firestore rejects must not
+ * What this locks in: a Training Center write the database rejects must not
  * look like a success. Every method here used to `catch` the rejection, write
  * to `localStorage` and resolve as if nothing had happened, so a trainer whose
  * course was refused by the security rules saw it saved and had it only in
  * their own browser. The regression is silent by construction — the app keeps
  * working, it just stops telling the truth — so it needs a test rather than
  * review.
+ *
+ * El proveedor cambió en F9 y el hecho afirmado no: lo que antes era un
+ * `permission-denied` de Firestore es ahora un `42501` de PostgreSQL, que es lo
+ * que levantan las guardas de rol y de sesión de cada RPC.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Course, SmartNote, StudentContext, UserProgress } from '../../types/lms';
@@ -21,12 +25,6 @@ const { observabilityRecordWarning, observabilityReportError, observabilityTrack
   observabilityTrackEvent: vi.fn(() => ({ id: 'event-1', at: new Date().toISOString() })),
 }));
 
-vi.mock('../../firebase', () => ({
-  db: {},
-  auth: {},
-  isFirebaseAvailable: true,
-}));
-
 vi.mock('../../services/observability', () => ({
   observabilityService: {
     recordWarning: observabilityRecordWarning,
@@ -35,20 +33,15 @@ vi.mock('../../services/observability', () => ({
   },
 }));
 
-const setDoc = vi.fn(async () => undefined);
-const updateDoc = vi.fn(async () => undefined);
-const deleteDoc = vi.fn(async () => undefined);
+/**
+ * La única puerta: la RPC. Se dobla el cliente y no el repositorio remoto, de
+ * modo que la traducción de `{ data, error }` a `PersistenceResult` —que es
+ * donde vivía el defecto original— siga estando bajo prueba.
+ */
+const rpc = vi.fn(async (_name: string, _args?: unknown) => ({ data: null as unknown, error: null as unknown }));
 
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn((_db: unknown, ...path: string[]) => ({ path: path.join('/') })),
-  doc: vi.fn((_db: unknown, ...path: string[]) => ({ path: path.join('/') })),
-  getDoc: vi.fn(async () => ({ exists: () => false, data: () => undefined })),
-  getDocs: vi.fn(async () => ({ docs: [] })),
-  setDoc: (...args: unknown[]) => setDoc(...(args as [])),
-  updateDoc: (...args: unknown[]) => updateDoc(...(args as [])),
-  deleteDoc: (...args: unknown[]) => deleteDoc(...(args as [])),
-  query: vi.fn((ref: unknown) => ref),
-  where: vi.fn(),
+vi.mock('../../services/adapters', () => ({
+  loadSupabaseDataClient: vi.fn(async () => ({ rpc: (name: string, args?: Record<string, unknown>) => rpc(name, args) })),
 }));
 
 const { trainingService } = await import('../../services/learning/trainingService');
@@ -76,32 +69,42 @@ const note: SmartNote = {
 const progress = { readLessons: [], favoriteLessons: [] } as unknown as UserProgress;
 const studentContext = { role: 'Arquitecto de Soluciones' } as unknown as StudentContext;
 
-/** A Firestore rejection of the shape the rules produce. */
-const permissionDenied = () => {
-  const error = new Error('Missing or insufficient permissions.') as Error & { code: string };
-  error.code = 'permission-denied';
-  return error;
-};
+/** El rechazo que produce una guarda de permiso o de sesión en una RPC. */
+const permissionDenied = () => ({
+  data: null,
+  error: { code: '42501', message: 'Permiso insuficiente: training:author' },
+});
 
-beforeEach(() => {
+/** Lo que devuelve una RPC que guardó: la fila con su revisión. */
+const savedRow = (data: unknown = {}) => ({
+  data: { data, revision: 1, owner_id: 'user-1' },
+  error: null,
+});
+
+/** Un backend que acepta todo, con la forma que cada RPC devuelve de verdad. */
+const acceptEverything = async (name: string) => (
+  name === 'list_courses' ? { data: [savedRow(course).data], error: null } : savedRow(course)
+);
+
+beforeEach(async () => {
   localStorage.clear();
   vi.clearAllMocks();
-  setDoc.mockResolvedValue(undefined);
-  updateDoc.mockResolvedValue(undefined);
-  deleteDoc.mockResolvedValue(undefined);
+  rpc.mockImplementation(acceptEverything);
+  const { resetTrainingServiceCache } = await import('../../services/learning/trainingService');
+  resetTrainingServiceCache();
 });
 
 describe('Training Center writes report what actually happened', () => {
-  it('confirms a write that Firestore accepted', async () => {
+  it('confirms a write the database accepted', async () => {
     const result = await trainingService.saveCourse('user-1', course);
 
     expect(result.success).toBe(true);
     expect(result.status).toBe('success');
-    expect(result.target).toBe('firestore');
+    expect(result.target).toBe('supabase');
   });
 
-  it('does not report success when Firestore refuses the course', async () => {
-    setDoc.mockRejectedValueOnce(permissionDenied());
+  it('does not report success when the database refuses the course', async () => {
+    rpc.mockResolvedValueOnce(permissionDenied());
 
     const result = await trainingService.saveCourse('user-1', course);
 
@@ -113,27 +116,26 @@ describe('Training Center writes report what actually happened', () => {
     expect(JSON.parse(localStorage.getItem('courses') ?? '[]')).toHaveLength(1);
   });
 
-  it('reports the failure through observability instead of a console warning', async () => {
-    setDoc.mockRejectedValueOnce(permissionDenied());
+  it('carries the provider code so the caller can tell retry from call-an-admin', async () => {
+    rpc.mockResolvedValueOnce(permissionDenied());
 
-    await trainingService.saveCourse('user-1', course);
+    const result = await trainingService.saveCourse('user-1', course);
 
-    expect(observabilityReportError).toHaveBeenCalledTimes(1);
-    expect(observabilityReportError.mock.calls[0][1]).toMatchObject({
-      operationName: 'saveCourse',
-      userVisible: true,
-    });
+    expect(result.status).toBe('permission-denied');
+    expect(result.errorCode).toBe('42501');
   });
 
   it.each([
-    ['updateCourse', () => trainingService.updateCourse('user-1', 'course-1', { title: 'Otro' }), () => updateDoc],
-    ['deleteCourse', () => trainingService.deleteCourse('user-1', 'course-1'), () => deleteDoc],
-    ['saveSmartNote', () => trainingService.saveSmartNote('user-1', note), () => setDoc],
-    ['deleteSmartNote', () => trainingService.deleteSmartNote('user-1', 'note-1'), () => deleteDoc],
-    ['saveProgress', () => trainingService.saveProgress('user-1', progress), () => setDoc],
-    ['saveContext', () => trainingService.saveContext('user-1', studentContext), () => setDoc],
-  ])('%s degrades to a local draft rather than a silent success', async (_name, call, spyOf) => {
-    spyOf().mockRejectedValueOnce(permissionDenied());
+    ['updateCourse', () => trainingService.updateCourse('user-1', 'course-1', { title: 'Otro' })],
+    ['deleteCourse', () => trainingService.deleteCourse('user-1', 'course-1')],
+    ['saveSmartNote', () => trainingService.saveSmartNote('user-1', note)],
+    ['deleteSmartNote', () => trainingService.deleteSmartNote('user-1', 'note-1')],
+    ['saveProgress', () => trainingService.saveProgress('user-1', progress)],
+    ['saveContext', () => trainingService.saveContext('user-1', studentContext)],
+  ])('%s degrades to a local draft rather than a silent success', async (_name, call) => {
+    rpc.mockImplementation(async (name: string) => (
+      name === 'list_courses' ? { data: [savedRow(course).data], error: null } : permissionDenied()
+    ));
 
     const result = await call();
 
@@ -153,6 +155,6 @@ describe('Training Center writes report what actually happened', () => {
       trainingService.saveContext('user-1', studentContext),
     ]);
 
-    expect(results.every(result => result.success && result.target === 'firestore')).toBe(true);
+    expect(results.every(result => result.success && result.target === 'supabase')).toBe(true);
   });
 });

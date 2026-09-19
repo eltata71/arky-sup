@@ -18,6 +18,7 @@
  *     only question worth asking about one.
  */
 export * from './persistenceResult';
+export * from './supabaseErrors';
 export * from './localDraftStore';
 export * from './collectionPaths';
 export * from './mirroredList';

@@ -23,19 +23,21 @@ import { observabilityService } from '../observability';
 // The leaf, not the compactor: this module is reachable from the boot path and
 // `chatCompactor` imports the AI layer. See `compactionDigest.ts`.
 import { deterministicCompactionDigest } from './compactionDigest';
-import { estimateBytes } from '../../lib/artifactPersistenceGuards';
+import { estimateBytes } from '../../lib/jsonSafe';
 
 const CHAT_HISTORY_BUDGET_BYTES = 400_000;
 /** Recent turns always kept verbatim, so compaction never eats live context. */
 const CHAT_HISTORY_KEEP_RECENT = 30;
 
 /**
- * Keep the chat-history document under Firestore's limit.
+ * Keep the chat-history row under a declared budget.
  *
- * `saveChatHistory` rewrites the whole `messages[]` array into one document on
- * every save, with no cap — a long-running project conversation walks straight
- * into the 1 MiB wall and then simply stops saving. Artifacts got a size guard
- * during the persistence hardening; this document never did.
+ * `saveChatHistory` rewrites the whole `messages[]` array on every save. The
+ * original reason for a cap was Firestore's 1 MiB per document; PostgreSQL has
+ * no such wall, and the cap stays anyway because the *product* reason outlived
+ * the provider: an unbounded history is one nobody can reread, one that costs a
+ * full round trip on every autosave, and one that would be sent to a model as
+ * context.
  *
  * The oldest turns collapse into a compaction marker, which the UI already
  * knows how to render (`ChatMessageMeta.kind === 'compaction'`). The digest is

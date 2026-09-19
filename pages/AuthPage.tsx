@@ -41,7 +41,6 @@ export const AuthPage: React.FC = () => {
     sendPasswordReset,
     completeSupabasePasswordSetup,
     signInAsDeveloper,
-    signInWithGoogle,
     user,
     isLoading,
     error: contextError,
@@ -71,21 +70,6 @@ export const AuthPage: React.FC = () => {
     } catch (err: unknown) {
       const authError = err as AuthError;
       setError(authError.message || 'No se pudo iniciar en modo desarrollo');
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setError('');
-      await signInWithGoogle();
-      navigate('/');
-    } catch (err: unknown) {
-      const authError = err as AuthError;
-      if (authError.code === 'auth/unauthorized-domain') {
-        setError(`Dominio no autorizado: agrega "${window.location.hostname}" en Firebase Console > Authentication > Settings > Authorized Domains.`);
-      } else {
-        setError(authError.message || 'Falló la autenticación con Google');
-      }
     }
   };
 
@@ -288,7 +272,13 @@ export const AuthPage: React.FC = () => {
               </button>
             </form>
 
-            {mode !== 'setup-password' && (
+            {/*
+              El acceso con Google se retiró en F9 junto con Firebase. Supabase
+              Auth es el proveedor único (ADR-004) y entra con correo y
+              contraseña; habilitar OAuth sería configurarlo en Supabase y
+              añadirlo aquí, y nadie lo ha pedido.
+            */}
+            {mode !== 'setup-password' && isDeveloperBypassAvailable && (
             <>
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
@@ -300,22 +290,12 @@ export const AuthPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {isDeveloperBypassAvailable && (
-                <button
-                  onClick={handleDeveloperSignIn}
-                  className="w-full flex items-center justify-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                >
-                  <Shield className="h-5 w-5 mr-2" />
-                  Entrar como Administrador (Modo Desarrollo)
-                </button>
-              )}
-
               <button
-                onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+                onClick={handleDeveloperSignIn}
+                className="w-full flex items-center justify-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="h-5 w-5 mr-2" referrerPolicy="no-referrer" />
-                Continuar con Google
+                <Shield className="h-5 w-5 mr-2" />
+                Entrar como Administrador (Modo Desarrollo)
               </button>
             </div>
 

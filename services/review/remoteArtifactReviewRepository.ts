@@ -1,41 +1,36 @@
 /**
- * FirestoreArtifactReviewRepository — remote review persistence.
+ * RemoteArtifactReviewRepository — la revisión que queda guardada en el servidor.
  *
- * Firestore layout:
- *   projects/{projectId}/artifacts/{artifactId}/comments/{commentId}
- *   projects/{projectId}/artifacts/{artifactId}/reviewDecisions/{decisionId}
+ * Dos tablas, y la diferencia entre ellas es el motivo por el que existe una
+ * oficina de arquitectura:
  *
- * All Firestore access is funnelled through an injectable `ReviewFirestore
- * Gateway` so the repository is unit-testable with an in-memory fake and the
- * production wiring stays in one place.
+ *   api.artifact_comments          — un hilo se edita, se resuelve y se borra
+ *   api.artifact_review_decisions  — una decisión se crea y nunca se toca
  *
- * Writes require an authenticated user; the gateway refuses otherwise. The
- * `author` is always taken from the caller's authenticated profile — the
- * Firestore security rules (see `firestore.rules`) are the real enforcement.
+ * `api.record_artifact_review_decision` hace `on conflict do nothing`: repetir
+ * el id no falla y **no reescribe**. Es la mitad de servidor de lo que en
+ * Firestore era `allow update: if false`, y sin ella el rastro de quién aprobó
+ * qué sería una opinión con fecha.
+ *
+ * Todo el acceso pasa por un `ReviewRemoteGateway` inyectable, de modo que el
+ * repositorio se prueba con un doble en memoria y el cableado de producción
+ * vive en un solo sitio.
+ *
+ * **Las suscripciones no son tiempo real, y se dice en voz alta.** Firestore
+ * traía `onSnapshot`; aquí las tablas están cerradas por defecto y Realtime no
+ * las publica. `subscribe*` hace una lectura y entrega una vez. Un panel que
+ * cree estar suscrito y no lo esté es peor que uno que sabe que no lo está: el
+ * repositorio híbrido sigue emitiendo los cambios locales, que es lo que la
+ * persona que escribe necesita ver de inmediato.
  */
 
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  onSnapshot,
-  setDoc,
-} from 'firebase/firestore';
 import type {
   ArtifactComment,
   ArtifactCommentReply,
   ArtifactReviewDecision,
   ArtifactReviewStatus,
 } from '../../types';
-import { auth, db as firestore, isFirebaseAvailable } from '../../firebase';
-// `db` es `Firestore | null`: sin configuración de Firebase la aplicación
-// arranca igual y funciona contra `localStorage`. Este repositorio lo asumía no
-// nulo, como todos los demás antes de la Ola 2, y el `strict` lo dijo al entrar
-// en su cierre transitivo. Sin la guarda, `doc(null, …)` lanza un `TypeError`
-// que el `catch` de turno convierte en un fallo genérico y esconde la causa.
-import { requireDb } from '../persistence';
-import { sanitizeForFirestore } from '../../lib/firestoreData';
+import { callRpc, isSupabaseDataBackendConfigured } from '../adapters';
 import {
   newCommentId,
   newDecisionId,
@@ -51,82 +46,50 @@ import type {
   Unsubscribe,
 } from './types';
 
-const COMMENTS_SUBCOLLECTION = 'comments';
-const DECISIONS_SUBCOLLECTION = 'reviewDecisions';
-
-/** Narrow seam over Firestore so the repository can be faked in tests. */
-export interface ReviewFirestoreGateway {
+/** Narrow seam over the database so the repository can be faked in tests. */
+export interface ReviewRemoteGateway {
   isAvailable(): boolean;
   currentUserId(): string | null;
   fetchComments(projectId: string, artifactId: string): Promise<ArtifactComment[]>;
-  watchComments(
-    projectId: string,
-    artifactId: string,
-    onData: (comments: ArtifactComment[]) => void,
-    onError: (error: unknown) => void,
-  ): Unsubscribe;
   upsertComment(projectId: string, artifactId: string, comment: ArtifactComment): Promise<void>;
   removeComment(projectId: string, artifactId: string, commentId: string): Promise<void>;
   fetchDecisions(projectId: string, artifactId: string): Promise<ArtifactReviewDecision[]>;
-  watchDecisions(
-    projectId: string,
-    artifactId: string,
-    onData: (decisions: ArtifactReviewDecision[]) => void,
-    onError: (error: unknown) => void,
-  ): Unsubscribe;
   upsertDecision(projectId: string, artifactId: string, decision: ArtifactReviewDecision): Promise<void>;
 }
 
-/** Production gateway backed by the real Firestore SDK. */
-export function createFirestoreReviewGateway(): ReviewFirestoreGateway {
-  const commentsRef = (projectId: string, artifactId: string) =>
-    collection(requireDb(firestore), 'projects', projectId, 'artifacts', artifactId, COMMENTS_SUBCOLLECTION);
-  const decisionsRef = (projectId: string, artifactId: string) =>
-    collection(requireDb(firestore), 'projects', projectId, 'artifacts', artifactId, DECISIONS_SUBCOLLECTION);
+const asList = <T>(rows: unknown, source: 'remote'): T[] =>
+  (Array.isArray(rows) ? rows : []).map((row) => ({ ...(row as T), source }));
 
+/** Production gateway backed by the real RPC surface. */
+export function createRemoteReviewGateway(
+  currentUserId: () => string | null,
+  env: Record<string, string | undefined> = import.meta.env as Record<string, string | undefined>,
+): ReviewRemoteGateway {
   return {
-    isAvailable: () => isFirebaseAvailable && firestore != null,
-    currentUserId: () => auth?.currentUser?.uid ?? null,
+    isAvailable: () => isSupabaseDataBackendConfigured(env),
+    currentUserId,
 
     async fetchComments(projectId, artifactId) {
-      const snap = await getDocs(commentsRef(projectId, artifactId));
-      return snap.docs.map((d) => ({ ...(d.data() as ArtifactComment), source: 'remote' }));
-    },
-    watchComments(projectId, artifactId, onData, onError) {
-      return onSnapshot(
-        commentsRef(projectId, artifactId),
-        (snap) => onData(snap.docs.map((d) => ({ ...(d.data() as ArtifactComment), source: 'remote' }))),
-        onError,
+      return asList<ArtifactComment>(
+        await callRpc('list_artifact_comments', { p_project_id: projectId, p_artifact_id: artifactId }),
+        'remote',
       );
     },
-    async upsertComment(projectId, artifactId, comment) {
-      await setDoc(
-        doc(requireDb(firestore), 'projects', projectId, 'artifacts', artifactId, COMMENTS_SUBCOLLECTION, comment.id),
-        sanitizeForFirestore({ ...comment, source: 'synced' }),
-      );
+    async upsertComment(_projectId, _artifactId, comment) {
+      await callRpc('save_artifact_comment', { p_comment: { ...comment, source: 'synced' } });
     },
-    async removeComment(projectId, artifactId, commentId) {
-      await deleteDoc(
-        doc(requireDb(firestore), 'projects', projectId, 'artifacts', artifactId, COMMENTS_SUBCOLLECTION, commentId),
-      );
+    async removeComment(_projectId, _artifactId, commentId) {
+      await callRpc('delete_artifact_comment', { p_comment_id: commentId });
     },
 
     async fetchDecisions(projectId, artifactId) {
-      const snap = await getDocs(decisionsRef(projectId, artifactId));
-      return snap.docs.map((d) => ({ ...(d.data() as ArtifactReviewDecision), source: 'remote' }));
-    },
-    watchDecisions(projectId, artifactId, onData, onError) {
-      return onSnapshot(
-        decisionsRef(projectId, artifactId),
-        (snap) => onData(snap.docs.map((d) => ({ ...(d.data() as ArtifactReviewDecision), source: 'remote' }))),
-        onError,
+      return asList<ArtifactReviewDecision>(
+        await callRpc('list_artifact_review_decisions', { p_project_id: projectId, p_artifact_id: artifactId }),
+        'remote',
       );
     },
-    async upsertDecision(projectId, artifactId, decision) {
-      await setDoc(
-        doc(requireDb(firestore), 'projects', projectId, 'artifacts', artifactId, DECISIONS_SUBCOLLECTION, decision.id),
-        sanitizeForFirestore({ ...decision, source: 'synced' }),
-      );
+    async upsertDecision(_projectId, _artifactId, decision) {
+      await callRpc('record_artifact_review_decision', { p_decision: { ...decision, source: 'synced' } });
     },
   };
 }
@@ -137,19 +100,19 @@ const sortByCreatedAt = (a: ArtifactComment, b: ArtifactComment): number =>
 const sortByDecidedAt = (a: ArtifactReviewDecision, b: ArtifactReviewDecision): number =>
   a.decidedAt < b.decidedAt ? -1 : a.decidedAt > b.decidedAt ? 1 : 0;
 
-export class FirestoreArtifactReviewRepository implements ArtifactReviewRepository {
-  readonly kind = 'firestore' as const;
+export class RemoteArtifactReviewRepository implements ArtifactReviewRepository {
+  readonly kind = 'remote' as const;
 
-  constructor(private readonly gateway: ReviewFirestoreGateway) {}
+  constructor(private readonly gateway: ReviewRemoteGateway) {}
 
-  /** Available only when Firebase is configured and a user is signed in. */
+  /** Available only when the backend is configured and a user is signed in. */
   isWritable(): boolean {
     return this.gateway.isAvailable() && this.gateway.currentUserId() != null;
   }
 
   private assertWritable(): void {
     if (!this.gateway.isAvailable()) {
-      throw new Error('Firestore no está disponible.');
+      throw new Error('La base de datos no está disponible.');
     }
     if (this.gateway.currentUserId() == null) {
       throw new Error('Se requiere un usuario autenticado para escribir reseñas.');
@@ -157,23 +120,27 @@ export class FirestoreArtifactReviewRepository implements ArtifactReviewReposito
   }
 
   async listComments(projectId: string, artifactId: string): Promise<ArtifactComment[]> {
-    if (!this.gateway.isAvailable()) throw new Error('Firestore no está disponible.');
+    if (!this.gateway.isAvailable()) throw new Error('La base de datos no está disponible.');
     const comments = await this.gateway.fetchComments(projectId, artifactId);
     return comments.slice().sort(sortByCreatedAt);
   }
 
+  /**
+   * Una entrega, no una suscripción. Ver la nota de cabecera: las tablas de
+   * revisión no están publicadas por Realtime, y fingir un flujo continuo
+   * dejaría un panel convencido de estar al día.
+   */
   subscribeComments(
     projectId: string,
     artifactId: string,
     callback: (comments: ArtifactComment[]) => void,
   ): Unsubscribe {
     if (!this.gateway.isAvailable()) return () => undefined;
-    return this.gateway.watchComments(
-      projectId,
-      artifactId,
-      (comments) => callback(comments.slice().sort(sortByCreatedAt)),
-      () => undefined,
-    );
+    let cancelled = false;
+    void this.listComments(projectId, artifactId)
+      .then((comments) => { if (!cancelled) callback(comments); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
   }
 
   async addComment(input: AddCommentInput): Promise<ArtifactComment> {
@@ -254,7 +221,7 @@ export class FirestoreArtifactReviewRepository implements ArtifactReviewReposito
   }
 
   async listDecisions(projectId: string, artifactId: string): Promise<ArtifactReviewDecision[]> {
-    if (!this.gateway.isAvailable()) throw new Error('Firestore no está disponible.');
+    if (!this.gateway.isAvailable()) throw new Error('La base de datos no está disponible.');
     const decisions = await this.gateway.fetchDecisions(projectId, artifactId);
     return decisions.slice().sort(sortByDecidedAt);
   }
@@ -265,12 +232,11 @@ export class FirestoreArtifactReviewRepository implements ArtifactReviewReposito
     callback: (decisions: ArtifactReviewDecision[]) => void,
   ): Unsubscribe {
     if (!this.gateway.isAvailable()) return () => undefined;
-    return this.gateway.watchDecisions(
-      projectId,
-      artifactId,
-      (decisions) => callback(decisions.slice().sort(sortByDecidedAt)),
-      () => undefined,
-    );
+    let cancelled = false;
+    void this.listDecisions(projectId, artifactId)
+      .then((decisions) => { if (!cancelled) callback(decisions); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
   }
 
   async recordDecision(input: RecordDecisionInput): Promise<ArtifactReviewDecision> {

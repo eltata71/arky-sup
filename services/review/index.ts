@@ -1,7 +1,7 @@
 /**
  * Artifact review persistence — public barrel + default wiring.
  *
- * Provides the repository contracts and the local / Firestore / hybrid
+ * Provides the repository contracts and the local / remote / hybrid
  * implementations, plus `createDefaultReviewRepository` which assembles the
  * hybrid repository used by `artifactReviewService`.
  */
@@ -16,31 +16,33 @@ export {
   newDecisionId,
 } from './localArtifactReviewRepository';
 export {
-  FirestoreArtifactReviewRepository,
-  createFirestoreReviewGateway,
-  type ReviewFirestoreGateway,
-} from './firestoreArtifactReviewRepository';
+  RemoteArtifactReviewRepository,
+  createRemoteReviewGateway,
+  type ReviewRemoteGateway,
+} from './remoteArtifactReviewRepository';
 export { HybridArtifactReviewRepository } from './hybridArtifactReviewRepository';
 
-import { isFirebaseAvailable } from '../../firebase';
 import { LocalArtifactReviewRepository } from './localArtifactReviewRepository';
 import {
-  FirestoreArtifactReviewRepository,
-  createFirestoreReviewGateway,
-} from './firestoreArtifactReviewRepository';
+  RemoteArtifactReviewRepository,
+  createRemoteReviewGateway,
+} from './remoteArtifactReviewRepository';
 import { HybridArtifactReviewRepository } from './hybridArtifactReviewRepository';
+import { isSupabaseDataBackendConfigured } from '../adapters';
+import { currentUserId } from '../identity';
 
 /**
- * Build the hybrid repository the app uses by default. The Firestore tier is
- * only attached when Firebase initialised successfully; otherwise the hybrid
- * runs in pure local mode without ever touching the network.
+ * Build the hybrid repository the app uses by default. The remote tier is only
+ * attached when the backend is configured; otherwise the hybrid runs in pure
+ * local mode without ever touching the network.
  */
 export function createDefaultReviewRepository(): HybridArtifactReviewRepository {
   const local = new LocalArtifactReviewRepository();
-  if (!isFirebaseAvailable) {
+  const env = import.meta.env as Record<string, string | undefined>;
+  if (!isSupabaseDataBackendConfigured(env)) {
     return new HybridArtifactReviewRepository(local);
   }
-  const remote = new FirestoreArtifactReviewRepository(createFirestoreReviewGateway());
+  const remote = new RemoteArtifactReviewRepository(createRemoteReviewGateway(currentUserId, env));
   return new HybridArtifactReviewRepository(local, remote);
 }
 export * from './reviewTransitions';

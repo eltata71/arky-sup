@@ -26,13 +26,13 @@ import type { PersistenceResult } from '../../../services/persistence';
 interface Row { id: string; name: string }
 
 const confirmed: PersistenceResult<unknown> = {
-  status: 'success', success: true, operationId: 'op-1', target: 'firestore',
+  status: 'success', success: true, operationId: 'op-1', target: 'supabase',
 };
 const offline: PersistenceResult<unknown> = {
   status: 'offline', success: false, operationId: 'op-2', target: 'local-draft',
 };
 const denied: PersistenceResult<unknown> = {
-  status: 'permission-denied', success: false, operationId: 'op-3', target: 'firestore',
+  status: 'permission-denied', success: false, operationId: 'op-3', target: 'supabase',
 };
 
 const makeList = () => new MirroredList<Row>((scope) => `rows_${scope}`);

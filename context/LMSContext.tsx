@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Course, SmartNote, UserProgress, LessonCache, LessonVersionStore, StudentContext, QuizResult, Certificate, DiagnosticResult } from '../types/lms';
 import { useAuth } from './AuthContext';
 import { can } from '../lib/authz';
-import { pilotLearningService as learning } from '../services/learning';
+import { trainingService as learning } from '../services/learning';
 import { useTrainingSync } from '../hooks/useTrainingSync';
 import { XP_REWARDS, updateStreak, generateVerificationCode } from '../lib/lmsProgress';
 import { applyVersionWrite, seedVersionsFromCache, versionKey } from '../lib/lmsVersions';
@@ -104,7 +104,7 @@ interface LMSContextType {
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
 export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, profile, isLoading: authLoading } = useAuth();
-  const { syncError, trackWrite, reportSyncIssue } = useTrainingSync(user?.email);
+  const { syncError, trackWrite, reportSyncIssue } = useTrainingSync();
 
   const [courses, setCourses] = useState<Course[]>(defaultCourses);
   const [smartNotes, setSmartNotes] = useState<SmartNote[]>([]);

@@ -39,12 +39,13 @@ export const AccountPanel: React.FC = () => {
   const role = parseAuthRole(profile?.role);
 
   /**
-   * A Google identity has no password in Arky to change — it has one at Google.
-   * Showing the form anyway would produce a failure the person cannot act on.
+   * Con Supabase Auth como proveedor único (ADR-004) toda cuenta entra con
+   * correo y contraseña, así que el formulario aplica siempre que haya sesión.
+   * Antes esto miraba `providerData` para esconder el formulario a una
+   * identidad de Google, que no tenía contraseña que cambiar en Arky; ese caso
+   * desapareció con Firebase.
    */
-  const hasPasswordCredential = (user?.providerData ?? []).some(
-    (entry) => entry?.providerId === 'password',
-  );
+  const hasPasswordCredential = Boolean(user?.email);
 
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

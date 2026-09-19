@@ -11,7 +11,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Project, Settings } from '../../types';
-import { assertFirebaseAvailable } from '../../services/persistence';
+import { assertBackendConfigured } from '../../services/persistence';
 import { settingsRepository } from '../../services/settings';
 import { resolveTextModel } from '../../lib/ai/modelCatalog';
 import { can } from '../../lib/authz';
@@ -37,10 +37,10 @@ export const useAppBootstrap = ({ setProjects, setSettings, loadProjects, report
     if (authLoading) return;
 
     const fetchData = async () => {
-      const availability = assertFirebaseAvailable();
+      const availability = assertBackendConfigured();
       if (!availability.success) {
         setPersistenceStatus('degraded');
-        setPersistenceMessage(availability.message ?? 'Firebase no está configurado; la persistencia remota está deshabilitada.');
+        setPersistenceMessage(availability.message ?? 'Supabase no está configurado; la persistencia remota está deshabilitada.');
       }
       try {
         const [loadedProjects, loadedSettings] = await Promise.all([

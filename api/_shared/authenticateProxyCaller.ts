@@ -6,22 +6,18 @@
  * claim to check, a different escape hatch — cannot be applied to one endpoint
  * and forgotten on the other.
  *
- * Two token kinds are accepted, routed by their unverified `iss` (a hint, not
- * a proof — each verifier validates fully): Firebase ID tokens (RS256 against
- * Google's JWKS) and Supabase pilot session tokens (server-side getUser).
- * Supabase access is additionally restricted server-side by the pilot email
- * allowlist; the browser-visible allowlist is only a routing convenience.
+ * Desde F9 hay un solo emisor aceptado: Supabase Auth. El verificador de tokens
+ * de Firebase se retiró con el proveedor, y con él la ruta por `iss` que elegía
+ * entre dos. Lo que queda comprueba el emisor de todos modos: un token de otro
+ * sitio se rechaza con un motivo propio en vez de fallar más adentro con uno
+ * genérico.
  */
 
 import type { IncomingMessage } from 'node:http';
 import {
   allowsUnauthenticated,
-  getExpectedProjectId,
-  readBearerToken,
-  verifyIdToken,
-} from './verifyIdToken.js';
-import {
   getSupabaseAuthConfig,
+  readBearerToken,
   readTokenIssuer,
   supabaseIssuerFor,
   verifySupabaseToken,
@@ -29,7 +25,7 @@ import {
 
 export interface ProxyAuthOutcome {
   allowed: boolean;
-  /** The verified caller uid (`<firebase-uid>` or `supabase:<auth-id>`). */
+  /** The verified caller uid (`supabase:<auth-id>`). */
   uid?: string;
   /** Stable reason code when the call is rejected. */
   reason?: string;
@@ -47,22 +43,18 @@ export async function authenticateProxyCaller(
 ): Promise<ProxyAuthOutcome> {
   if (allowsUnauthenticated()) return { allowed: true };
   const supabase = getSupabaseAuthConfig();
-  if (!getExpectedProjectId() && !supabase) {
+  if (!supabase) {
     return { allowed: false, reason: 'proxy_missing_project_id' };
   }
 
   const token = readBearerToken(req);
   if (!token) return { allowed: false, reason: 'missing_bearer_token' };
 
-  if (supabase && readTokenIssuer(token) === supabaseIssuerFor(supabase)) {
-    const verified = await verifySupabaseToken(token, supabase);
-    if (!verified.ok || !verified.caller) {
-      return { allowed: false, reason: verified.reason ?? 'verification_failed' };
-    }
-    return { allowed: true, uid: verified.caller.uid };
+  if (readTokenIssuer(token) !== supabaseIssuerFor(supabase)) {
+    return { allowed: false, reason: 'unexpected_issuer' };
   }
 
-  const verified = await verifyIdToken(token);
+  const verified = await verifySupabaseToken(token, supabase);
   if (!verified.ok || !verified.caller) {
     return { allowed: false, reason: verified.reason ?? 'verification_failed' };
   }

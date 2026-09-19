@@ -54,8 +54,23 @@ import { join, basename } from 'node:path';
  * even if unrelated reductions would otherwise leave enough numeric slack.
  */
 export const BUDGETS = {
-  /** Everything `index.html` loads before first paint, gzipped. */
-  eagerPayloadGzipKb: 450,
+  /**
+   * Everything `index.html` loads before first paint, gzipped.
+   *
+   * **F9 bajó esto de 450 a 340, y el margen se ganó retirando Firebase.**
+   * Medido: 439,1 → 323,2 KB gz. El chunk `vendor-firebase` pesaba 110,6 y
+   * era **eager**, porque `firebase.ts` se inicializaba en el arranque para
+   * que `isFirebaseAvailable` respondiera en la primera línea de cualquier
+   * repositorio. El SDK de Supabase que lo sustituye pesa 59,3 gz y no está
+   * aquí: se importa dinámicamente en `services/adapters`, así que sólo se
+   * descarga cuando algo va a hablar con la base de datos — que nunca es antes
+   * de pintar la pantalla de inicio de sesión.
+   *
+   * El presupuesto baja con la mejora en vez de quedarse holgado, que es la
+   * regla de todos los presupuestos de este repositorio: un número que ya no
+   * mide nada no impide la siguiente regresión.
+   */
+  eagerPayloadGzipKb: 340,
   /** The entry chunk alone, gzipped. */
   entryChunkGzipKb: 205,
   /**

@@ -1,31 +1,24 @@
 /**
  * El registro de lo que hizo el agente, y de qué versión de artefacto dejó.
  *
- * Ya no delega. Su persistencia vivía en `services/firestoreService.ts` con
- * la de otros cinco contextos; ahora este módulo dice cómo se guardan sus
- * propios datos.
- *
  * Es **el mejor esfuerzo, a propósito**: un fallo al escribir no se propaga,
  * porque la versión del artefacto es la fuente de verdad para deshacer, no
  * este registro. El espejo local es lo que alimenta el panel de historial
- * cuando Firestore no contesta.
+ * cuando la base de datos no contesta.
  *
- * `agent_actions` es la única colección del producto con un `orderBy`, y es de
- * un solo campo — por eso `firestore.indexes.json` no existe y no debe crearse
- * hasta que haya un índice compuesto de verdad.
+ * El orden lo pone `api.list_agent_actions`, que ordena por `created_at`
+ * descendente sobre un índice declarado en la migración. En Firestore esto era
+ * la única colección con `orderBy` y obligaba a razonar sobre índices
+ * compuestos; en PostgreSQL el índice se declara donde se declara la tabla.
  */
 
-import { collection, doc, getDocs, limit as firestoreLimit, orderBy, query, setDoc } from 'firebase/firestore';
-import { db as firestore } from '../../firebase';
-import { sanitizeForFirestore } from '../../lib/firestoreData';
 import {
-  AGENT_ACTIONS_COLLECTION,
   MirroredList,
-  PROJECTS_COLLECTION,
+  createFailureResult,
   executeRemoteWrite,
-  requireDb,
 } from '../persistence';
 import type { PersistenceResult } from '../persistence';
+import { callRpc } from '../adapters';
 import type { AgentActionRecord } from './agentTypes';
 
 /** Lo que cabe en el panel de historial y en el espejo local. */
@@ -46,12 +39,13 @@ const mirror = new MirroredList<MirroredAction>((projectId) => `agent_actions_${
 
 export const agentActionRepository: AgentActionRepository = {
   async append(projectId, record) {
-    const result = await executeRemoteWrite({ operationName: 'logAgentAction', projectId }, async () => {
-      await setDoc(
-        doc(requireDb(firestore), PROJECTS_COLLECTION, projectId, AGENT_ACTIONS_COLLECTION, record.traceId),
-        sanitizeForFirestore(record),
-      );
-    });
+    let result: PersistenceResult<unknown>;
+    try {
+      result = await executeRemoteWrite({ operationName: 'logAgentAction', projectId }, () =>
+        callRpc<void>('append_agent_action', { p_project_id: projectId, p_action: record }));
+    } catch (error) {
+      result = createFailureResult('logAgentAction', error);
+    }
     mirror.upsert(projectId, withId(record), result, MAX_RETAINED);
     return result;
   },
@@ -61,12 +55,9 @@ export const agentActionRepository: AgentActionRepository = {
     let records = mirror.cached(projectId);
     if (!records) {
       try {
-        const snapshot = await getDocs(query(
-          collection(requireDb(firestore), PROJECTS_COLLECTION, projectId, AGENT_ACTIONS_COLLECTION),
-          orderBy('createdAt', 'desc'),
-          firestoreLimit(cap),
-        ));
-        records = mirror.remember(projectId, snapshot.docs.map((d) => withId(d.data() as AgentActionRecord)));
+        const rows = await callRpc<unknown>('list_agent_actions', { p_project_id: projectId, p_limit: cap });
+        const list = Array.isArray(rows) ? (rows as AgentActionRecord[]) : [];
+        records = mirror.remember(projectId, list.map(withId));
       } catch {
         records = mirror.fallback(projectId);
       }

@@ -2,8 +2,12 @@
  * `services/learning` — el Centro de Formación como contexto propio.
  *
  * `trainingService` estaba suelto en la raíz de `services/` y es el único
- * camino a las colecciones del LMS: `courses`, `users/{uid}/lms_progress`,
- * `lms_context` y `lms_notes`. Nunca se cruzan entre sí.
+ * camino a las tablas del LMS: `api.lms_courses`, `api.lms_progress`,
+ * `api.lms_context` y `api.lms_notes`. Nunca se cruzan entre sí.
+ *
+ * El desvío por lista de correos del piloto (`pilotLearningService`) desapareció
+ * en F9 con el segundo proveedor: cuando sólo hay un backend, una capa que
+ * elige entre dos es una capa que no decide nada.
  *
  * Es el contexto que da nombre a la regla del SDK. Antes de que existiera
  * `services/persistence`, este servicio degradaba a `localStorage` con un
@@ -21,9 +25,4 @@ export {
   type SupabaseLearningClientLike,
   type SupabaseLearningRepository,
 } from './SupabaseLearningRepository';
-export {
-  pilotLearningService,
-  configurePilotLearningBackend,
-  shouldUseSupabaseLearningBackend,
-} from './pilotLearningService';
-export { trainingService, type TrainingWriteResult } from './trainingService';
+export { resetTrainingServiceCache, trainingService, type TrainingWriteResult } from './trainingService';
