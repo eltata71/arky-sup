@@ -416,7 +416,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ? 'La contraseña actual no es correcta.'
         : 'No se pudo cambiar la contraseña. Vuelve a iniciar sesión e inténtalo de nuevo.';
       setError(message);
-      throw new Error(message);
+      throw new Error(message, { cause: err });
     }
   }, []);
 
