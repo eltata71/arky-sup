@@ -59,7 +59,28 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ## Fase 2 — Consistencia y gobernanza
 
 ### F2-01 · `DecideEngagement` como caso de uso, y su equivalente SQL transaccional
-- **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Resuelve** H01, H02
+- **Prioridad** P0 · **Tamaño** L · **Estado** `completada (SQL-no-ejecutado)` · **Resuelve** H01, H02 (parcial)
+- **Evidencia.** `api.decide_engagement(text, jsonb, bigint, jsonb)` en
+  `supabase/migrations/20260920160000_decide_engagement_atomic.sql`: bloquea la
+  fila, comprueba permiso `arb:decide`, estado previo **leído de la fila** (no
+  del documento que llega), correspondencia veredicto↔estado nuevo, firma de la
+  sesión y revisión vigente; inserta la decisión con `on conflict do nothing`
+  —idempotente, así que un reintento no firma dos veces— y transiciona, todo en
+  una transacción. El espejo `arbDecisions` lo **reconstruye el servidor** desde
+  el registro: uno que el cliente pueda escribir es uno que puede decir algo
+  distinto del rastro inmutable, y la pantalla lee el espejo.
+  `decideEngagementOperation` pasa de dos escrituras a una. 16 afirmaciones
+  pgTAP con sus cinco casos negativos; 7 pruebas de aplicación y 3 de contexto.
+- **Reparto de responsabilidad, deliberado.** El cliente manda el documento ya
+  transicionado y el servidor **comprueba**. Recalcular en SQL qué veredicto
+  lleva a qué estado crearía dos definiciones de la misma regla, que es el
+  defecto D-4 otra vez.
+- **Orden de despliegue, obligatorio.** La migración va **antes** que el código
+  que llama la RPC nueva — la regla aditiva que el repositorio ya tiene escrita.
+- **Pendiente.** Ejecutar los contratos pgTAP (sin Docker aquí; corren en
+  `supabase.yml`). Y retirar `api.record_arb_decision`, que ya no llama ningún
+  código de este repositorio pero sí los clientes desplegados: es una migración
+  posterior, no ésta.
 - **Alcance.** `services/architectureOffice/application/decideEngagement.ts` (nuevo),
   `context/OfficeContext.tsx`, `services/architectureOffice/OfficeEngagementRepository.ts`,
   `SupabaseOfficeEngagementRepository.ts`, migración nueva `api.decide_engagement`.
@@ -74,10 +95,15 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Riesgo/reversión.** La RPC nueva convive con las dos antiguas hasta F2-09; revertir es dejar de llamarla.
 
 ### F2-02 · Guardas de servidor: transición, estado previo, evidencia
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F2-01 · **Resuelve** H02
-- **Cambios.** Tabla de transiciones legales en SQL; `decide_engagement` exige
-  `awaiting-arb`; la decisión guarda la `revision` del encargo evaluado.
-- **Aceptación.** Una transición ilegal por PostgREST devuelve `22023`; la fila de decisión lleva la revisión evaluada.
+- **Prioridad** P0 · **Tamaño** M · **Estado** `parcial (SQL-no-ejecutado)` · **Resuelve** H02
+- **Hecho.** En la ruta de decisión: estado previo leído de la fila y limitado a
+  `awaiting-arb`/`blocked`; el estado nuevo tiene que ser el que el veredicto
+  exige; `office_arb_decisions.decided_revision` guarda la revisión que el comité
+  tenía delante, que es lo mínimo para poder decir después «esto se aprobó
+  viendo aquello».
+- **Pendiente.** La tabla completa de transiciones legales para
+  `save_engagement`: hoy sigue aceptando cualquier salto entre los ocho enums
+  (E-03 del catálogo de invariantes).
 
 ### F2-03 · Separación autor/aprobador — decisión de modelo
 - **Prioridad** P0 · **Tamaño** L · **Estado** `bloqueada` · **Resuelve** H02

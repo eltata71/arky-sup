@@ -117,9 +117,25 @@ describe('SupabaseOfficeEngagementRepository', () => {
   it('reporta permiso insuficiente 42501 como permission-denied', async () => {
     const client = fakeClient({ error: { code: '42501', message: 'Permiso insuficiente: arb:decide' } });
     const repository = createSupabaseOfficeEngagementRepository(client);
-    const result = await repository.recordArbDecision(engagement(), decision());
+    const result = await repository.decide(engagement(), decision());
     expect(result.success).toBe(false);
     expect(result.status).toBe('permission-denied');
+  });
+
+  it('firma y transiciona con una sola llamada, llevando la revisión del snapshot', async () => {
+    const client = fakeClient({ data: { data: { ...engagement(), status: 'delivered' }, revision: 6 } });
+    const repository = createSupabaseOfficeEngagementRepository(client);
+
+    const result = await repository.decide({ ...engagement(), revision: 5 }, decision());
+
+    expect(client.calls).toHaveLength(1);
+    expect(client.calls[0].name).toBe('decide_engagement');
+    expect(client.calls[0].args.p_expected_revision).toBe(5);
+    expect(client.calls[0].args.p_decision).toEqual(decision());
+    // El testigo tampoco viaja aquí dentro del documento.
+    expect(client.calls[0].args.p_engagement).not.toHaveProperty('revision');
+    expect(result.success).toBe(true);
+    expect(result.data?.revision).toBe(6);
   });
 
   it('borra por proyecto textual con la revisión que le pasa quien borra', async () => {

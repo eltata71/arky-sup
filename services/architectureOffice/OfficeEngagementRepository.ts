@@ -289,7 +289,14 @@ export interface OfficeEngagementRepository {
    */
   save(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
   remove(projectId: string, engagementId: string, expectedRevision?: number): Promise<PersistenceResult<void>>;
-  recordArbDecision(engagement: OfficeEngagement, decision: OfficeArbDecision): Promise<PersistenceResult<void>>;
+  /**
+   * La decisión del comité y la transición del encargo, en una transacción.
+   *
+   * Eran dos escrituras y ninguna ordenación las arreglaba del todo: sólo una
+   * transacción elimina el estado intermedio, y una transacción entre dos
+   * tablas no se escribe desde el navegador. La hace `api.decide_engagement`.
+   */
+  decide(engagement: OfficeEngagement, decision: OfficeArbDecision): Promise<PersistenceResult<OfficeEngagement>>;
 }
 
 /**
@@ -372,21 +379,31 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
   }
 
   /**
-   * Una decisión del ARB se añade a su propia tabla inmutable.
-   * `api.record_arb_decision` sólo crea —no hay `update` ni `delete` que
-   * conceder—, así que éste es el registro a prueba de manipulación de quién
-   * firmó un encargo y con qué evidencia; el documento del encargo lleva un
-   * espejo para leer rápido.
+   * Una decisión del ARB y la transición que la aplica, en una transacción.
+   *
+   * `api.decide_engagement` escribe el registro inmutable —sólo-creación, así
+   * que un reintento no firma dos veces— y mueve el encargo dentro de la misma
+   * transacción. El espejo `arbDecisions` que el documento lleva para leer
+   * rápido lo **reconstruye el servidor** desde ese registro: un espejo que el
+   * cliente pueda escribir es un espejo que puede decir algo distinto del
+   * rastro inmutable, y la pantalla lee el espejo.
    */
-  async recordArbDecision(
+  async decide(
     engagement: OfficeEngagement,
     decision: OfficeArbDecision,
-  ): Promise<PersistenceResult<void>> {
+  ): Promise<PersistenceResult<OfficeEngagement>> {
+    let result: PersistenceResult<OfficeEngagement>;
     try {
-      return await (await getRemote()).recordArbDecision(engagement, decision);
+      result = await (await getRemote()).decide(engagement, decision);
     } catch (error) {
-      return createFailureResult('recordArbDecision', error);
+      result = createFailureResult('decideEngagement', error);
     }
+    // El espejo local sólo recibe lo confirmado. Guardar una decisión que el
+    // servidor no aceptó la serviría de vuelta como buena durante los próximos
+    // cinco minutos, que es más o menos lo que tarda alguien en cerrar la
+    // pestaña creyendo que el comité ya firmó.
+    if (result.success && result.data) mirror.upsert(result.data.projectId, result.data, result);
+    return result;
   }
 }
 

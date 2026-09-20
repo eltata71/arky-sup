@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // que queda bajo prueba es la traducción de un `PersistenceResult` a lo que la
 // pantalla ve, que es donde vivía el defecto.
 const savedEngagements: unknown[] = [];
+const decidedEngagements: unknown[] = [];
 
 type Outcome = { status: string; success: boolean; operationId: string; target: string; message?: string };
 
@@ -36,7 +37,10 @@ vi.mock('../../services/architectureOffice/OfficeEngagementRepository', async ()
         return nextOutcome.save ?? ok(engagement);
       }),
       remove: vi.fn(async () => nextOutcome.remove ?? ok()),
-      recordArbDecision: vi.fn(async () => nextOutcome.arb ?? ok()),
+      decide: vi.fn(async (engagement: unknown) => {
+        decidedEngagements.push(engagement);
+        return nextOutcome.arb ?? ok(engagement);
+      }),
     },
   };
 });
@@ -93,6 +97,8 @@ describe('OfficeContext', () => {
 
   beforeEach(() => {
     savedEngagements.length = 0;
+    savedEngagements.length = 0;
+    decidedEngagements.length = 0;
     nextOutcome.save = null;
     nextOutcome.arb = null;
     nextOutcome.remove = null;
@@ -238,6 +244,8 @@ describe('una escritura no confirmada no es un éxito', () => {
 
   beforeEach(() => {
     savedEngagements.length = 0;
+    savedEngagements.length = 0;
+    decidedEngagements.length = 0;
     nextOutcome.save = null;
     nextOutcome.arb = null;
     nextOutcome.remove = null;
@@ -384,6 +392,8 @@ describe('la decisión del ARB ya no puede quedarse a medias en el peor orden', 
 
   beforeEach(async () => {
     savedEngagements.length = 0;
+    savedEngagements.length = 0;
+    decidedEngagements.length = 0;
     nextOutcome.save = null;
     nextOutcome.arb = null;
     nextOutcome.remove = null;
@@ -396,15 +406,17 @@ describe('la decisión del ARB ya no puede quedarse a medias en el peor orden', 
     await act(async () => { await office.loadEngagements('proj-1'); });
   });
 
-  it('firma y transiciona cuando las dos escrituras se confirman', async () => {
+  it('firma y transiciona con una sola escritura', async () => {
     let result: Awaited<ReturnType<typeof office.decideEngagement>>;
     await act(async () => { result = await office.decideEngagement('eng-arb-1', 'approved', ''); });
     expect(result!.ok).toBe(true);
     expect(result!.engagement?.status).toBe('delivered');
-    expect(savedEngagements).toHaveLength(1);
+    expect(decidedEngagements).toHaveLength(1);
+    // La ruta antigua —dos escrituras, `save` incluida— ya no se recorre.
+    expect(savedEngagements).toHaveLength(0);
   });
 
-  it('no transiciona el encargo si el registro inmutable rechaza la firma', async () => {
+  it('deja el encargo donde estaba cuando la transacción no ocurre', async () => {
     nextOutcome.arb = {
       status: 'permission-denied', success: false, operationId: 'op', target: 'supabase',
       message: 'Permiso insuficiente: arb:decide',
@@ -414,28 +426,14 @@ describe('la decisión del ARB ya no puede quedarse a medias en el peor orden', 
 
     expect(result!.ok).toBe(false);
     expect(result!.persistence).toBe('permission-denied');
-    // Lo que importa: no se escribió el encargo. Antes se escribía primero, y
-    // con él el espejo `arbDecisions` que la pantalla lee.
-    expect(savedEngagements).toHaveLength(0);
-    expect(office.engagements[0].status).toBe('awaiting-arb');
+    // Nada a medias que deshacer: la transacción no ocurrió. Lo que se deshace
+    // es el optimismo de la pantalla.
+    await waitFor(() => expect(office.engagements[0].status).toBe('awaiting-arb'));
     expect(office.engagements[0].arbDecisions).toEqual([]);
   });
 
-  it('dice que la decisión quedó registrada cuando lo que falla es la transición', async () => {
-    nextOutcome.save = {
-      status: 'conflict', success: false, operationId: 'op', target: 'supabase',
-      message: 'Conflicto de encargo',
-    };
-    let result: Awaited<ReturnType<typeof office.decideEngagement>>;
-    await act(async () => { result = await office.decideEngagement('eng-arb-1', 'approved', ''); });
-
-    expect(result!.ok).toBe(false);
-    expect(result!.reason).toMatch(/quedó registrada/i);
-    expect(result!.reason).toMatch(/no se duplica/i);
-  });
-
-  it('usa la revisión del snapshot al escribir la transición', async () => {
+  it('usa la revisión del snapshot al firmar', async () => {
     await act(async () => { await office.decideEngagement('eng-arb-1', 'approved', ''); });
-    expect((savedEngagements[0] as { revision?: number }).revision).toBe(5);
+    expect((decidedEngagements[0] as { revision?: number }).revision).toBe(5);
   });
 });

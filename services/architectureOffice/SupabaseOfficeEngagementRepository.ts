@@ -7,7 +7,11 @@ export interface SupabaseOfficeClientLike {
   rpc(name: 'load_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'save_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'delete_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
-  rpc(name: 'record_arb_decision', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
+  // `record_arb_decision` ya no se llama desde aquí: la escribía la mitad de
+  // una operación que ahora es una sola transacción. La RPC sigue existiendo en
+  // el servidor mientras haya clientes desplegados que la usen; su retirada es
+  // una migración posterior, no este fichero.
+  rpc(name: 'decide_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
 }
 
 interface RemoteEngagementRecord {
@@ -32,10 +36,22 @@ export interface SupabaseOfficeEngagementRepository {
     engagementId: string,
     expectedRevision: number,
   ): Promise<PersistenceResult<void>>;
-  recordArbDecision(
+  /**
+   * Firma la decisión y transiciona el encargo **en una transacción**.
+   *
+   * Sustituye a la pareja `recordArbDecision` + `save`, que no podía ser
+   * atómica desde el navegador — son dos RPC — y dejaba dos estados
+   * intermedios posibles. El peor no perdía el dato: lo inventaba, porque el
+   * documento del encargo lleva un espejo `arbDecisions` que la primera
+   * escritura ya guardaba. Ver ADR-102.
+   *
+   * Devuelve el encargo tal y como quedó, con su revisión nueva y con el
+   * espejo que **el servidor** reconstruyó desde el registro inmutable.
+   */
+  decide(
     engagement: OfficeEngagement,
     decision: OfficeArbDecision,
-  ): Promise<PersistenceResult<void>>;
+  ): Promise<PersistenceResult<OfficeEngagement>>;
 }
 
 const asRemoteRecord = (value: unknown, projectId: string): RemoteEngagementRecord | null => {
@@ -154,11 +170,31 @@ export function createSupabaseOfficeEngagementRepository(
       return { status: 'success', success: true, operationId, target: 'supabase' };
     },
 
-    async recordArbDecision(engagement, decision) {
-      const operationId = createOperationId('recordArbDecision');
-      const { error } = await client.rpc('record_arb_decision', { p_decision: decision });
-      if (error) return failed<void>(operationId, error, 'No se pudo confirmar la decisión del ARB en Supabase.');
-      return { status: 'success', success: true, operationId, target: 'supabase' };
+    async decide(engagement, decision) {
+      const operationId = createOperationId('decideEngagement');
+      const { data, error } = await client.rpc('decide_engagement', {
+        p_project_id: engagement.projectId,
+        p_engagement: asDocument(engagement),
+        p_expected_revision: engagement.revision ?? 0,
+        p_decision: decision,
+      });
+      if (error) {
+        return failed<OfficeEngagement>(operationId, error, 'No se pudo confirmar la decisión del ARB en Supabase.');
+      }
+      const record = asRemoteRecord(data, engagement.projectId);
+      if (!record) {
+        return {
+          status: 'failed', success: false, operationId, target: 'supabase',
+          message: 'Supabase confirmó una respuesta de decisión inválida.',
+        };
+      }
+      return {
+        status: 'success',
+        success: true,
+        operationId,
+        target: 'supabase',
+        data: { ...record.engagement, revision: record.revision },
+      };
     },
   };
 }

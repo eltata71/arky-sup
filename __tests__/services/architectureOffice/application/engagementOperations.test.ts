@@ -36,7 +36,7 @@ const fail = <T>(status: PersistenceStatus): PersistenceResult<T> => ({
 const writes = (over: Partial<EngagementWritePort> = {}): EngagementWritePort => ({
   save: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
   remove: vi.fn(async () => ok<void>(undefined)),
-  recordArbDecision: vi.fn(async () => ok<void>(undefined)),
+  decide: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
   ...over,
 });
 
@@ -146,56 +146,72 @@ describe('el borrado optimista se deshace si el borrado falla', () => {
   });
 });
 
-describe('la decisión del ARB no se queda a medias en el peor orden', () => {
+describe('la decisión del ARB es una sola escritura', () => {
   const awaitingArb = () => engagement({
     status: 'awaiting-arb',
     charter: { ...engagement().charter, approvedAt: '2026-09-20T01:00:00.000Z', approvedBy: admin },
     revision: 5,
   });
 
-  it('escribe el registro inmutable antes de transicionar el encargo', async () => {
-    const order: string[] = [];
-    const port = writes({
-      recordArbDecision: vi.fn(async () => { order.push('arb'); return ok<void>(undefined); }),
-      save: vi.fn(async (e: OfficeEngagement) => { order.push('save'); return ok(e); }),
-    });
-
+  it('firma y transiciona en una llamada, sobre el snapshot que se está viendo', async () => {
+    // Eran dos escrituras sin transacción entre ellas. Poner el registro
+    // primero mejoraba el estado intermedio pero no lo eliminaba: sólo una
+    // transacción lo elimina, y una transacción entre dos tablas no se escribe
+    // desde el navegador.
+    const port = writes();
     const result = await decideEngagementOperation({ writes: port }, awaitingArb(), {
       verdict: 'approved', rationale: '', actor: admin,
     });
 
     expect(result.ok).toBe(true);
-    expect(order).toEqual(['arb', 'save']);
+    expect(port.decide).toHaveBeenCalledTimes(1);
+    expect(port.save).not.toHaveBeenCalled();
+    const [sent, decision] = (port.decide as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(sent.status).toBe('delivered');
+    expect(sent.revision).toBe(5);
+    expect(decision.verdict).toBe('approved');
+    expect(decision.previousStatus).toBe('awaiting-arb');
   });
 
-  it('no transiciona el encargo si el registro inmutable rechaza la firma', async () => {
-    // Era al revés, y ése es el peor de los dos estados intermedios posibles:
-    // la primera escritura ya había guardado el espejo `arbDecisions` dentro
-    // del documento, así que la pantalla mostraba una decisión firmada que el
-    // registro a prueba de manipulación no tenía. No pierde el dato: lo inventa.
-    const port = writes({
-      recordArbDecision: vi.fn(async () => fail<void>('permission-denied')),
-    });
+  it('deja el encargo como estaba cuando la transacción no ocurre', async () => {
+    // No hay nada a medias que deshacer — ésa es la diferencia con antes. Lo
+    // único que se deshace es el optimismo de la pantalla.
+    const onDraft = vi.fn();
+    const port = writes({ decide: vi.fn(async () => fail<OfficeEngagement>('permission-denied')) });
+    const before = awaitingArb();
 
-    const result = await decideEngagementOperation({ writes: port }, awaitingArb(), {
+    const result = await decideEngagementOperation({ writes: port, onDraft }, before, {
       verdict: 'approved', rationale: '', actor: admin,
     });
 
     expect(result.ok).toBe(false);
     expect(result.persistence).toBe('permission-denied');
-    expect(port.save).not.toHaveBeenCalled();
-    expect(result.engagement?.status).toBe('awaiting-arb');
-    expect(result.engagement?.arbDecisions).toEqual([]);
+    expect(result.reason).toMatch(/rol/);
+    // Mostró el optimista y volvió al anterior.
+    expect(onDraft.mock.calls.map(([e]) => e.status)).toEqual(['delivered', 'awaiting-arb']);
   });
 
-  it('dice que la decisión quedó registrada cuando lo que falla es la transición', async () => {
-    const port = writes({ save: vi.fn(async () => fail<OfficeEngagement>('conflict')) });
+  it('manda recargar cuando el encargo cambió mientras se decidía', async () => {
+    const port = writes({ decide: vi.fn(async () => fail<OfficeEngagement>('conflict')) });
     const result = await decideEngagementOperation({ writes: port }, awaitingArb(), {
       verdict: 'approved', rationale: '', actor: admin,
     });
-    expect(result.ok).toBe(false);
-    expect(result.reason).toMatch(/quedó registrada/i);
-    expect(result.reason).toMatch(/no se duplica/i);
+    expect(result.reason).toMatch(/versión vigente/i);
+  });
+
+  it('se queda con el encargo que devolvió el servidor, con su espejo reconstruido', async () => {
+    // El espejo `arbDecisions` lo rehace el servidor desde el registro
+    // inmutable: uno que el cliente pueda escribir es uno que puede decir algo
+    // distinto del rastro, y la pantalla lee el espejo.
+    const serverSide = { ...awaitingArb(), status: 'delivered' as const, revision: 6 };
+    const port = writes({ decide: vi.fn(async () => ok(serverSide)) });
+
+    const result = await decideEngagementOperation({ writes: port }, awaitingArb(), {
+      verdict: 'approved', rationale: '', actor: admin,
+    });
+
+    expect(result.engagement).toBe(serverSide);
+    expect(result.engagement?.revision).toBe(6);
   });
 
   it('no llega a escribir nada cuando las reglas rechazan la decisión', async () => {
@@ -204,8 +220,7 @@ describe('la decisión del ARB no se queda a medias en el peor orden', () => {
       verdict: 'approved', rationale: '', actor: admin,
     });
     expect(result.ok).toBe(false);
-    expect(port.recordArbDecision).not.toHaveBeenCalled();
-    expect(port.save).not.toHaveBeenCalled();
+    expect(port.decide).not.toHaveBeenCalled();
   });
 
   it('no deja firmar a quien no es del comité', async () => {
@@ -214,7 +229,16 @@ describe('la decisión del ARB no se queda a medias en el peor orden', () => {
       verdict: 'approved', rationale: '', actor: architect,
     });
     expect(result.ok).toBe(false);
-    expect(port.recordArbDecision).not.toHaveBeenCalled();
+    expect(port.decide).not.toHaveBeenCalled();
+  });
+
+  it('exige motivo escrito para pedir cambios o rechazar', async () => {
+    const port = writes();
+    const result = await decideEngagementOperation({ writes: port }, awaitingArb(), {
+      verdict: 'rejected', rationale: '   ', actor: admin,
+    });
+    expect(result.ok).toBe(false);
+    expect(port.decide).not.toHaveBeenCalled();
   });
 });
 

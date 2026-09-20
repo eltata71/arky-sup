@@ -60,10 +60,17 @@ export interface EngagementWritePort {
     engagementId: string,
     expectedRevision: number,
   ): Promise<PersistenceResult<void>>;
-  recordArbDecision(
+  /**
+   * Firma la decisión del comité y transiciona el encargo, atómicamente.
+   *
+   * Eran dos escrituras y el orden importaba. Ninguna ordenación las arreglaba
+   * del todo —sólo una transacción elimina el estado intermedio— y una
+   * transacción entre dos tablas no se escribe desde el navegador. Ver ADR-102.
+   */
+  decide(
     engagement: OfficeEngagement,
     decision: OfficeArbDecision,
-  ): Promise<PersistenceResult<void>>;
+  ): Promise<PersistenceResult<OfficeEngagement>>;
 }
 
 /** Pedirle al modelo un charter mejor. Devuelve el texto crudo; puede fallar. */
@@ -225,26 +232,28 @@ export const evaluateGatesOperation = async (
 /**
  * La decisión del comité.
  *
- * Dos escrituras para una sola decisión, y el orden importa mientras sigan
- * siendo dos.
+ * Una sola escritura, y ésa es toda la historia.
  *
- * El registro inmutable va **primero**. Era al revés, y el comentario que
- * acompañaba al código llamaba «best-effort» a la segunda escritura y sostenía
- * que un rechazo sólo significaba que la decisión «nunca fue autoritativa, que
- * es el resultado correcto». No lo era: la primera escritura ya había guardado
- * el espejo `arbDecisions` dentro del documento del encargo, así que la
- * pantalla mostraba una decisión firmada que el registro a prueba de
- * manipulación —el único que una auditoría acepta— no tenía. De los dos estados
- * intermedios posibles, ése es el peor: no pierde el dato, lo inventa.
+ * Eran dos —el registro inmutable y la transición del encargo— sin transacción
+ * entre ellas, así que los dos estados intermedios eran posibles. El peor no
+ * perdía el dato: lo inventaba. El documento del encargo lleva un espejo
+ * `arbDecisions` para leer rápido, y la escritura que guardaba el encargo lo
+ * guardaba con él — de modo que si la otra fallaba, la pantalla mostraba una
+ * decisión firmada que el registro a prueba de manipulación, el único que una
+ * auditoría acepta, no tenía.
  *
- * Con este orden el estado intermedio que queda es el honesto: la decisión
- * consta en el registro y el encargo no ha transicionado, que es un encargo
- * pendiente de aplicar una decisión existente. Se puede reintentar sin firmar
- * dos veces, porque el registro es sólo-creación.
+ * Poner el registro primero mejoraba el estado intermedio —queda el honesto: la
+ * decisión consta y el encargo no ha transicionado— pero no lo eliminaba. Lo
+ * elimina `api.decide_engagement`, que hace las dos cosas en una transacción,
+ * comprueba en el servidor lo que el navegador no puede garantizar (estado
+ * previo, correspondencia entre veredicto y estado nuevo, revisión vigente,
+ * firma de la sesión) y **reconstruye el espejo desde el registro** en vez de
+ * copiarlo de lo que llegó.
  *
- * Sigue sin ser atómico, y no puede serlo desde el navegador: son dos RPC. La
- * transacción es `api.decide_engagement` — ADR-102, tarea F2-01. Esto es lo
- * correcto **hasta** que exista.
+ * Lo que sigue viviendo aquí es la regla de negocio: qué veredicto lleva a qué
+ * estado, qué dice la entrada de auditoría, y cuándo una aprobación no procede.
+ * Duplicarla en SQL crearía dos definiciones de la misma regla, que es el
+ * defecto D-4 otra vez.
  */
 export const decideEngagementOperation = async (
   deps: EngagementOperationDeps,
@@ -252,31 +261,29 @@ export const decideEngagementOperation = async (
   input: { verdict: OfficeArbVerdict; rationale: string; actor: OfficeActor },
 ): Promise<OfficeOperationResult> => {
   const result = decideEngagementRule(engagement, input);
-  if (!result.ok) return { ok: false, reason: result.reason };
-
-  if (result.decision) {
-    const recorded = await deps.writes.recordArbDecision(result.engagement, result.decision);
-    if (!recorded.success) {
-      return {
-        ok: false,
-        engagement,
-        persistence: recorded.status,
-        reason: recorded.status === 'permission-denied'
-          ? 'Tu rol no permite firmar decisiones del comité.'
-          : 'No se pudo registrar la decisión del ARB. El encargo no ha cambiado de estado.',
-      };
-    }
+  if (!result.ok || !result.decision) {
+    return { ok: false, reason: result.reason ?? 'La decisión no produjo un veredicto.' };
   }
 
-  const persisted = await persist(deps, result.engagement);
-  if (!persisted.success) {
+  deps.onDraft?.(result.engagement);
+  const decided = await deps.writes.decide(result.engagement, result.decision);
+  if (!decided.success) {
+    // No hay nada a medias que deshacer: la transacción no ocurrió. Lo único
+    // que hay que deshacer es el optimismo de la pantalla.
+    deps.onDraft?.(engagement);
     return {
-      ...describePersistenceFailure(persisted, result.engagement),
-      reason: 'La decisión quedó registrada, pero el encargo no pudo transicionar. '
-        + 'Vuelve a intentarlo: el registro del comité no se duplica.',
+      ...describePersistenceFailure(decided, engagement),
+      reason: decided.status === 'permission-denied'
+        ? 'Tu rol no permite firmar decisiones del comité.'
+        : decided.status === 'conflict'
+          ? 'El encargo cambió mientras decidías. Recarga y vuelve a firmar sobre la versión vigente.'
+          : describePersistenceFailure(decided, engagement).reason,
     };
   }
-  return { ok: true, engagement: persisted.data ?? result.engagement, persistence: persisted.status };
+
+  const confirmedEngagement = decided.data ?? result.engagement;
+  deps.onDraft?.(confirmedEngagement);
+  return { ok: true, engagement: confirmedEngagement, persistence: decided.status };
 };
 
 /**
