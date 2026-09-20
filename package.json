@@ -36,7 +36,7 @@
     "quality": "npm run quality:static && npm run test:coverage && npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.17.6",
+    "@excalidraw/excalidraw": "^0.18.1",
     "@google/genai": "^1.27.0",
     "@supabase/supabase-js": "^2.116.0",
     "dagre": "0.8.5",
