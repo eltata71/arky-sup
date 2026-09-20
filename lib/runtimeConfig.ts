@@ -33,6 +33,7 @@ export type ProductionConfigIssueCode =
   | 'invalid-ai-proxy'
   | 'proxy-not-strict'
   | 'missing-backend-config'
+  | 'invalid-backend-url'
   | 'client-provider-secret';
 
 export interface ProductionConfigIssue {
@@ -71,6 +72,33 @@ const valueOf = (env: RuntimeEnvironment, key: keyof RuntimeEnvironment): string
 const isRecognisedPlaceholder = (value: string): boolean => (
   value === 'ci-placeholder' || value.startsWith('test-')
 );
+
+/**
+ * La misma regla que `createClient` aplica dentro del SDK: la URL tiene que
+ * parsear y hablar http o https.
+ *
+ * Se escribe aquí porque hasta F9.2 `VITE_SUPABASE_URL` sólo se comprobaba
+ * *presente*, y una variable presente puede estar mal escrita. Un valor sin
+ * esquema pasó el gate, pasó el build, pasó el despliegue y falló donde más
+ * caro sale: dentro de `createClient`, al pulsar «Iniciar sesión», con un
+ * mensaje que nombra un argumento del SDK (`supabaseUrl`) en vez de la
+ * variable que un operador puede corregir. Nada entre el panel de Vercel y ese
+ * formulario miraba el valor.
+ *
+ * Ni más estricta ni más laxa que el SDK, a propósito. Exigir `https` dejaría
+ * fuera el stack local que usa la suite E2E (`http://127.0.0.1:54321`), y un
+ * gate que rechaza una configuración que funciona es un gate que alguien apaga
+ * —llevándose por delante el resto de las comprobaciones, que es exactamente
+ * cómo `VITE_DISABLE_RUNTIME_CONFIG_GATE` llegó a usarse una vez.
+ */
+export const isValidSupabaseUrl = (value: string): boolean => {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === 'https:' || protocol === 'http:';
+  } catch {
+    return false;
+  }
+};
 
 const isValidProxyUrl = (value: string): boolean => {
   if (value.startsWith('/')) return value.startsWith('/api/');
@@ -121,6 +149,18 @@ export function validateProductionRuntimeConfig(env: RuntimeEnvironment): Produc
         message: `${variable} is required for production authentication and persistence.`,
       });
     }
+  }
+
+  // Una variable presente y mal escrita no es una variable configurada. El
+  // mensaje nombra la forma esperada y nunca el valor: este gate corre en el
+  // log de un build, que es público en un repositorio abierto.
+  const supabaseUrl = valueOf(env, 'VITE_SUPABASE_URL');
+  if (supabaseUrl && !isValidSupabaseUrl(supabaseUrl)) {
+    issues.push({
+      code: 'invalid-backend-url',
+      variable: 'VITE_SUPABASE_URL',
+      message: 'VITE_SUPABASE_URL must include the scheme, e.g. https://<project-ref>.supabase.co.',
+    });
   }
 
   for (const variable of CLIENT_SECRET_VARIABLES) {

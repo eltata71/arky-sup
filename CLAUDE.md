@@ -674,6 +674,20 @@ en producción, sobre un commit ya fusionado**, porque el gate de
 `lib/runtimeConfig.ts` rechazó una clave de proveedor con prefijo `VITE_`. Ese
 fallo pertenecía a una PR.
 
+**Y el mismo gate falló por el otro lado, que es el modo más caro.** Una
+`VITE_SUPABASE_URL` escrita a mano en el panel de Vercel sin el esquema
+(`btbhkmckrazoayaoorys.supabase.co`) pasó el gate —que sólo la comprobaba
+*presente*—, pasó el build, pasó el despliegue, y reventó dentro de
+`createClient` al pulsar «Iniciar sesión»: `Invalid supabaseUrl`, una frase que
+nombra un argumento del SDK y no la casilla que hay que corregir. Quien lo vio
+leyó «contraseña inválida», porque ninguna credencial llegó a comprobarse —el
+cliente nunca se construyó, así que el enlace de recuperación tampoco se
+envió. **Una variable presente y mal escrita no es una variable configurada**:
+`isValidSupabaseUrl` aplica ahora la regla del SDK —ni más estricta ni más
+laxa, para que `http://127.0.0.1:54321` del E2E siga valiendo— en el gate y en
+el adaptador, y el mensaje nombra la variable sin repetir nunca el valor: el
+log de un build es público.
+
 Detalle, secretos y runbook de reversión en `docs/ci-cd-pipeline.md`.
 
 ### Desplegar el esquema
