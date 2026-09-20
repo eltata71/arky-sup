@@ -46,7 +46,7 @@
     "lucide-react": "^0.575.0",
     "marked": "^12.0.1",
     "mermaid": "^11.17.2",
-    "motion": "^12.34.3",
+    "motion": "^13.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.18.4",
