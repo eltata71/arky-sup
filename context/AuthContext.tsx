@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo, React
 // the same split every other SDK in the app already had.
 import {
   currentUser as readCurrentUser,
-  isAuthAvailable,
+  isRecoveryChannelFailure,
   reauthenticateAndUpdatePassword,
   rememberAuthUser,
   sendPasswordReset as sendPasswordResetEmail,
@@ -267,10 +267,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!address) throw new Error('Escribe tu correo para enviarte el enlace.');
     try {
       setError(null);
-      if (isAuthAvailable()) await sendPasswordResetEmail(address);
+      await sendPasswordResetEmail(address);
     } catch (err) {
-      // Logged, never surfaced: the caller shows the same confirmation either
-      // way, so a failure here must not become an existence oracle.
+      // Un fallo del canal vale para todas las direcciones, así que contarlo no
+      // convierte este formulario en un oráculo — y callarlo deja a la persona
+      // esperando un correo que nadie envió. Ver `isRecoveryChannelFailure`.
+      if (isRecoveryChannelFailure(err)) {
+        throw new Error(
+          'No se pudo enviar el correo: el acceso con correo y contraseña está deshabilitado '
+          + 'en la configuración del proyecto. Avisa a un administrador.',
+          { cause: err },
+        );
+      }
+      // Todo lo demás: registrado, nunca mostrado. El llamante enseña la misma
+      // confirmación exista o no la cuenta.
       observabilityService.recordWarning({
         source: 'app',
         title: 'Envío de recuperación de contraseña no completado',

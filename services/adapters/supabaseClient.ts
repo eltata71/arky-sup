@@ -43,6 +43,7 @@
  * es texto que cualquiera descarga. Lo que necesita esa clave vive en
  * `supabase/functions/`.
  */
+import { isValidSupabaseUrl } from '../../lib/runtimeConfig';
 import { BackendUnavailableError } from '../ports';
 
 /**
@@ -100,6 +101,19 @@ export async function loadSupabaseClient(
   const { url, key } = readConfig(env);
   if (url === '' || key === '') {
     throw new BackendUnavailableError('supabase', `${purpose}: configuración ausente`);
+  }
+  // Presente pero mal escrita. Sin esto el SDK lanza «Invalid supabaseUrl»
+  // desde dentro de `createClient`, y esa frase nombra un argumento que no
+  // existe en este repositorio: quien la lee no tiene forma de llegar desde
+  // ella hasta la casilla del panel que hay que corregir. El gate de build
+  // debería haberlo parado mucho antes —`isValidSupabaseUrl` es el mismo
+  // predicado— y ésta es la red por si se despliega con el gate apagado.
+  if (!isValidSupabaseUrl(url)) {
+    throw new BackendUnavailableError(
+      'supabase',
+      `${purpose}: VITE_SUPABASE_URL no es una URL válida; debe incluir el esquema, `
+      + 'por ejemplo https://<referencia-del-proyecto>.supabase.co',
+    );
   }
 
   pending = (async () => {

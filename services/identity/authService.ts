@@ -31,6 +31,7 @@
 
 import { loadSupabaseAuthClient, type SupabaseAuthClientLike } from '../adapters';
 import { IdentityError } from '../ports';
+import { authReturnUrl } from '../../lib/authReturnUrl';
 
 /**
  * The authenticated identity.
@@ -186,7 +187,7 @@ export async function signInWithGoogle(redirectTo?: string): Promise<void> {
   const { error } = await client.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: redirectTo ?? `${window.location.origin}/auth`,
+      redirectTo: redirectTo ?? authReturnUrl(),
       queryParams: { prompt: 'select_account' },
     },
   });
@@ -202,6 +203,28 @@ export async function signOutCurrentUser(): Promise<void> {
 }
 
 /**
+ * ¿El envío falló por una razón que vale para **todas** las direcciones?
+ *
+ * La confirmación genérica del formulario de recuperación existe para que nadie
+ * pueda preguntarle al producto quién tiene cuenta aquí. Esa protección sólo
+ * cubre los fallos que *dependen de la dirección*; aplicarla a los demás
+ * convierte una avería del despliegue en un mensaje verde, y eso ya pasó: con
+ * el proveedor de correo apagado en el panel, la pantalla dijo «te enviamos un
+ * enlace» tres veces seguidas mientras el servidor devolvía 400 a cada intento.
+ * El fallo quedó anotado en observabilidad, que nadie estaba mirando.
+ *
+ * Los dos casos de aquí son propiedades del despliegue y no de quien pregunta:
+ * la configuración ausente se detecta **antes** de tocar la red, y un método de
+ * entrada deshabilitado responde igual para una dirección que existe y para una
+ * inventada. Contarlos no revela nada. Todo lo demás sigue en silencio.
+ */
+export function isRecoveryChannelFailure(error: unknown): boolean {
+  if (error instanceof AuthUnavailableError) return true;
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /logins are disabled|signups are disabled|email provider is disabled/i.test(message);
+}
+
+/**
  * Send a password-reset email.
  *
  * The caller resolves this the same way whether or not the address has an
@@ -210,7 +233,12 @@ export async function signOutCurrentUser(): Promise<void> {
  */
 export async function sendPasswordReset(email: string): Promise<void> {
   const client = await requireClient('sendPasswordReset');
-  const { error } = await client.auth.resetPasswordForEmail(email);
+  // `redirectTo` no es opcional en la práctica: sin él el enlace del correo lo
+  // construye la Site URL del proyecto, que puede apuntar a otro despliegue.
+  // Ver `lib/authReturnUrl.ts` — ahí está el incidente que lo motivó.
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: authReturnUrl(),
+  });
   if (error) throw error;
 }
 

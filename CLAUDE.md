@@ -674,6 +674,20 @@ en producción, sobre un commit ya fusionado**, porque el gate de
 `lib/runtimeConfig.ts` rechazó una clave de proveedor con prefijo `VITE_`. Ese
 fallo pertenecía a una PR.
 
+**Y el mismo gate falló por el otro lado, que es el modo más caro.** Una
+`VITE_SUPABASE_URL` escrita a mano en el panel de Vercel sin el esquema
+(`btbhkmckrazoayaoorys.supabase.co`) pasó el gate —que sólo la comprobaba
+*presente*—, pasó el build, pasó el despliegue, y reventó dentro de
+`createClient` al pulsar «Iniciar sesión»: `Invalid supabaseUrl`, una frase que
+nombra un argumento del SDK y no la casilla que hay que corregir. Quien lo vio
+leyó «contraseña inválida», porque ninguna credencial llegó a comprobarse —el
+cliente nunca se construyó, así que el enlace de recuperación tampoco se
+envió. **Una variable presente y mal escrita no es una variable configurada**:
+`isValidSupabaseUrl` aplica ahora la regla del SDK —ni más estricta ni más
+laxa, para que `http://127.0.0.1:54321` del E2E siga valiendo— en el gate y en
+el adaptador, y el mensaje nombra la variable sin repetir nunca el valor: el
+log de un build es público.
+
 Detalle, secretos y runbook de reversión en `docs/ci-cd-pipeline.md`.
 
 ### Desplegar el esquema
@@ -1192,6 +1206,18 @@ personal y otra de la organización. El retorno cae en `/auth` y lo recoge
 `detectSessionInUrl`; **no hay ruta de callback propia** porque no hace falta:
 el observador de sesión es el mismo que restaura una sesión al abrir la
 aplicación, y una segunda copia de esa decisión es una que se queda vieja.
+
+**El retorno lo decide el origen, no el proyecto.** `lib/authReturnUrl.ts` es la
+única definición de a dónde vuelve alguien tras pasar por un proveedor, y las
+tres puertas la usan: Google, la invitación de `provision-user` y la
+recuperación de contraseña. La tercera no la usaba, y el modo de fallo es el que
+no se ve venir: sin `redirectTo`, Supabase construye el enlace del correo con la
+*Site URL* del proyecto. Con un despliegue anterior todavía vivo sobre la misma
+base de datos, quien pidió recuperar su contraseña desde la aplicación nueva
+recibió un correo que lo devolvió a la **vieja** — la sesión se abrió, pero esa
+versión no tenía pantalla de «nueva contraseña», ni «Seguridad», ni «Cerrar
+sesión», así que el síntoma se leyó como tres funciones que faltaban. Un enlace
+de retorno mal dirigido no falla: te atiende otra aplicación.
 
 **Entrar con Google no crea una cuenta.** Quien complete el flujo sin perfil en
 `api.user_profiles` es devuelto a `/auth` con la explicación de siempre. Que la

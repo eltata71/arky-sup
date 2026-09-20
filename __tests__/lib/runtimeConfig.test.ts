@@ -32,6 +32,50 @@ describe('production runtime configuration', () => {
     ]);
   });
 
+  // Una variable presente y mal escrita no es una variable configurada, y ésta
+  // es la que se escribe a mano en el panel de Vercel. Antes de F9.2 el gate
+  // sólo la comprobaba presente: el valor sin esquema pasó el build entero y
+  // falló dentro de `createClient`, al pulsar «Iniciar sesión».
+  it.each([
+    ['sin esquema', 'btbhkmckrazoayaoorys.supabase.co'],
+    ['sólo la referencia del proyecto', 'btbhkmckrazoayaoorys'],
+    ['entrecomillada', '"https://btbhkmckrazoayaoorys.supabase.co"'],
+    ['con la asignación pegada', 'VITE_SUPABASE_URL=https://x.supabase.co'],
+  ])('rejects a Supabase URL that is present but %s', (_case, value) => {
+    const issues = validateProductionRuntimeConfig(secureProductionEnv({
+      VITE_SUPABASE_URL: value,
+    }));
+    expect(issues).toContainEqual(expect.objectContaining({
+      code: 'invalid-backend-url',
+      variable: 'VITE_SUPABASE_URL',
+    }));
+  });
+
+  it('never repeats the offending value: a build log is public', () => {
+    const issues = validateProductionRuntimeConfig(secureProductionEnv({
+      VITE_SUPABASE_URL: 'sospechoso-y-mal-escrito',
+    }));
+    expect(issues.every(({ message }) => !message.includes('sospechoso'))).toBe(true);
+  });
+
+  it('accepts the local stack the E2E suite builds against', () => {
+    // Exigir `https` habría roto `e2e.yml`, que construye contra
+    // `http://127.0.0.1:54321`. El gate aplica la regla del SDK, ni más
+    // estricta ni más laxa: un gate que rechaza algo que funciona es uno que
+    // alguien apaga, y apagarlo se lleva también la comprobación de claves.
+    expect(validateProductionRuntimeConfig(secureProductionEnv({
+      VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
+    }))).toEqual([]);
+  });
+
+  it('reports a missing URL as missing, not as malformed', () => {
+    const codes = validateProductionRuntimeConfig(secureProductionEnv({
+      VITE_SUPABASE_URL: '',
+    })).map(({ code }) => code);
+    expect(codes).toContain('missing-backend-config');
+    expect(codes).not.toContain('invalid-backend-url');
+  });
+
   it('never demands the service key: a VITE_* variable travels in the bundle', () => {
     // No es una comprobación redundante. La tentación al migrar es pedir «las
     // claves de Supabase» en bloque, y la de servicio publicada como `VITE_*`
