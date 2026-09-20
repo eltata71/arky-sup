@@ -86,9 +86,15 @@ select throws_ok($$select api.decide_engagement('proj_arb_001', $j${
   '22023', 'Un veredicto de cambio o rechazo exige motivo',
   'El comité no rechaza sin motivo escrito');
 
+reset role;
+-- La lectura directa va **fuera** del bloque `authenticated`, y no es un detalle
+-- de estilo: los privilegios de tabla están revocados para ese rol por diseño,
+-- así que una comprobación escrita dentro no falla como aserción — aborta la
+-- transacción con `permission denied` y se lleva por delante el resto del
+-- fichero. Que estas tres líneas hubiera que moverlas es la postura
+-- deny-by-default funcionando sobre su propia suite.
 select is((select count(*)::int from api.office_arb_decisions where engagement_id = 'eng_arb_001'), 0,
   'Ninguna guarda dejó una decisión a medias');
-reset role;
 
 -- Un arquitecto no decide, aunque pueda escribir el proyecto.
 set local role authenticated;

@@ -19,20 +19,31 @@ select is(
   1,
   'api.delete_engagement tiene exactamente una firma');
 
+-- Por número de argumentos, no por el texto de la firma:
+-- `pg_get_function_identity_arguments` incluye los **nombres** de los
+-- parámetros (`p_project_id text, …`), así que compararlo contra `text, text,
+-- bigint` falla por una razón que no tiene nada que ver con lo que se quiere
+-- afirmar, y renombrar un parámetro rompería la prueba sin romper la guarda.
 select is(
-  (select pg_get_function_identity_arguments(p.oid) from pg_proc p
+  (select p.pronargs::int from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'api' and p.proname = 'delete_engagement'),
-  'text, text, bigint',
-  'La firma que queda es la que compara revisión');
+  3,
+  'La firma que queda es la de tres argumentos, la que compara revisión');
 
 select ok(
   not exists (
     select 1 from pg_proc p
       join pg_namespace n on n.oid = p.pronamespace
-     where n.nspname = 'api' and p.proname = 'delete_engagement'
-       and pg_get_function_identity_arguments(p.oid) = 'text, text'),
+     where n.nspname = 'api' and p.proname = 'delete_engagement' and p.pronargs = 2),
   'La sobrecarga de dos argumentos, que borraba sin comparar revisión, no es invocable');
+
+select is(
+  (select pg_get_function_identity_arguments(p.oid) from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'api' and p.proname = 'delete_engagement'),
+  'p_project_id text, p_engagement_id text, p_expected_revision bigint',
+  'Y el tercer argumento es la revisión esperada, no cualquier bigint');
 
 select ok(has_function_privilege('authenticated', 'api.delete_engagement(text,text,bigint)', 'EXECUTE'),
   'El cliente conserva la RPC de borrado con revisión');
@@ -86,11 +97,19 @@ select is((select (api.save_project_aggregate($json${
 
 -- El caso negativo que da nombre al hallazgo.
 select throws_ok($$select api.delete_business_initiative('init_ref_cited', 1)$$,
-  '23503', null,
+  '23503', null::text,
   'Una iniciativa citada por un proyecto no se borra');
 
+reset role;
+-- Fuera del bloque `authenticated`: los privilegios de tabla están revocados
+-- para ese rol por diseño, así que una lectura directa escrita dentro no falla
+-- como aserción — aborta la transacción con `permission denied` y se lleva por
+-- delante todo lo que viene después, que aquí era justo lo que da nombre al
+-- hallazgo.
 select is((select count(*)::int from api.business_initiatives where id = 'init_ref_cited'), 1,
   'El borrado rechazado no dejó la iniciativa a medias');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"64000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"74000000-0000-4000-8000-000000000001"}';
 
 select is((select (api.save_project_aggregate($json${
   "id":"proj_ref_001", "name":"Atención que cita", "description":"", "projectContext":[],
@@ -104,13 +123,16 @@ select is((select (api.save_project_aggregate($json${
 -- convierte el borrado en imposible, sólo en informado.
 select lives_ok($$select api.delete_business_initiative('init_ref_free', 1)$$,
   'Una iniciativa que nadie cita se borra');
+reset role;
 select is((select count(*)::int from api.business_initiatives where id = 'init_ref_free'), 0,
   'El borrado legítimo sí ocurre');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"64000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"74000000-0000-4000-8000-000000000001"}';
 
 -- La revisión sigue mandando, y se comprueba **después** de las citas: un
 -- borrado con revisión obsoleta sobre una iniciativa libre sigue siendo conflicto.
 select throws_ok($$select api.delete_business_initiative('init_ref_cited', 99)$$,
-  '23503', null,
+  '23503', null::text,
   'La comprobación de citas precede a la de revisión: lo que impide el borrado es la referencia');
 
 reset role;
