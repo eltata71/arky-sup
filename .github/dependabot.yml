@@ -38,6 +38,46 @@ updates:
           - "eslint"
           - "@eslint/*"
         update-types: [major, minor, patch]
+    # Lo que no puede subir, dicho aquí en vez de cerrarse cada semana.
+    #
+    # Cerrar una PR de Dependabot sólo descarta **esa versión**: la siguiente
+    # vuelve a abrir la misma, y la cola se convierte en ruido que alguien
+    # acaba fusionando por costumbre. Cada entrada de abajo cierra un caso
+    # medido, no una sospecha, y las cinco pasan la suite entera en verde —
+    # lo que las para es un presupuesto de bundle o un `npm audit`, que miden
+    # lo que ninguna prueba unitaria ve.
+    #
+    # El detalle de cada una está en CLAUDE.md → *Dependencias que no pueden
+    # subir*. **Quitar una entrada de aquí es cómo se revisa la decisión**: el
+    # día que Rolldown tenga su troceado resuelto, o que exista un
+    # `typescript-eslint` para TS 7, se borra la línea y Dependabot vuelve a
+    # proponerlo. Esto silencia una propuesta; no congela la dependencia.
+    ignore:
+      # Pierde la carga diferida: 439,1 → 1 937,8 KB gz de carga inicial.
+      # En un paquete 0.x el salto de minor ya es el que rompe.
+      - dependency-name: "@excalidraw/excalidraw"
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      # chevrotain 11 → lodash-es vulnerable: 5 advisories de severidad alta.
+      - dependency-name: "mermaid"
+        update-types: [version-update:semver-major]
+      # React 19 es un cambio propio, con su propia medición. Los cuatro van
+      # juntos: `@types/react` 19 a solas rompe el typecheck igual que
+      # `react-dom` 19 sin `react`.
+      - dependency-name: "react"
+        update-types: [version-update:semver-major]
+      - dependency-name: "react-dom"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/react"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/react-dom"
+        update-types: [version-update:semver-major]
+      # `typescript-eslint` declara peer `typescript@">=4.8.4 <6.1.0"`.
+      # No es una decisión nuestra: no hay versión que lo soporte.
+      - dependency-name: "typescript"
+        update-types: [version-update:semver-major]
+      # Vite 8 cambia el bundler a Rolldown: 439,1 → 1 058,8 KB gz.
+      - dependency-name: "vite"
+        update-types: [version-update:semver-major]
     labels: ["dependencies"]
 
   - package-ecosystem: github-actions
