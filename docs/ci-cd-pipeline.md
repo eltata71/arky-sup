@@ -243,7 +243,7 @@ Recomendación al desbloquear Actions: revisarlas **por grupos y en este orden**
 refrescarlas todas a la vez. `npm audit --audit-level=high` reporta hoy **0
 vulnerabilidades**, así que ninguna de esas PR es urgente por seguridad.
 
-## 4. Protección de rama — **activa**, y con dos cosas que arreglar
+## 4. Protección de rama — activa, y lo que costó averiguar qué bloqueaba
 
 Medido el 19 sep 2026 sobre el ruleset `23685996` (`Settings` → `Rules` →
 `ruleset`, activo desde el 18 sep, alcance `refs/heads/main`):
@@ -288,33 +288,41 @@ el trabajo `deploy` no lo declara en `needs`, y `__tests__/config/ciPipeline.tes
 lo afirma. Si algún día quiere exigirse, primero hay que quitarle las rutas para
 que corra en todas las PR, aceptando sus ~3 minutos.
 
-### 4.2 «Require extra approval for unattributed changes» y los commits del agente
+### 4.2 «Require extra approval for unattributed changes» — la hipótesis que se midió y no se cumplió
 
-`required_approving_review_count` es **0**, así que la aprobación que GitHub pide
-no viene de ahí: la pide esta otra casilla. Un commit está *sin atribuir* cuando
-su autor no corresponde a ninguna cuenta de GitHub, y los commits del agente se
-firman `Claude <noreply@anthropic.com>`, que no es ninguna. La regla entonces
-exige una revisión aprobatoria.
+Se conserva la deducción entera porque era razonable y era **falsa**, y el modo
+de equivocarse es instructivo.
 
-El bucle se cierra solo: **el autor de una PR no puede aprobarla**, y en un
-repositorio de un solo colaborador el autor es la única persona que hay. Con la
-casilla puesta y sin un segundo revisor, la PR no es fusionable por nadie.
+`required_approving_review_count` es **0**, así que la aprobación que GitHub
+mostraba como pendiente no venía de ahí; la única otra regla capaz de pedirla es
+esta casilla. Un commit está *sin atribuir* cuando su autor no corresponde a
+ninguna cuenta de GitHub, y los commits del agente se firman
+`Claude <noreply@anthropic.com>`, que no es ninguna. Como además **el autor de
+una PR no puede aprobarla**, en un repositorio de un solo colaborador la
+conclusión parecía cerrada: nadie podía dar esa aprobación.
 
-Dos salidas, y la elección es del titular porque cambia la postura de seguridad:
+**Lo que ocurrió al arreglarlo.** El titular quitó `Firestore rules (emulator)`
+de los checks obligatorios y la PR #32 pasó de `blocked` a `mergeable_state:
+clean` — con la casilla **todavía activa**. De modo que el único bloqueo real
+era el check que no podía reportar nunca; la casilla no estaba firmando nada
+sobre estos commits.
 
-1. **Desmarcar la casilla** (*Rules* → `ruleset` → *Pull request* → *Require
-   extra approval for unattributed changes*). Es coherente con un repositorio
-   cuyo trabajo lo escribe un agente por encargo del propio titular, y deja
-   intactos los cinco checks obligatorios, que son los que miden el código.
-2. **Añadir un segundo colaborador** con permiso de escritura que apruebe. Es la
-   salida que conserva la regla con su intención original — que alguien mire lo
-   que no se puede atribuir— y la que conviene el día que el repositorio deje de
-   tener un solo dueño.
+Dos cosas que conviene quedarse:
 
-Hay una tercera, y se anota para descartarla: reescribir los commits para que
-figuren a nombre del titular haría pasar la regla sin que nadie revise nada.
-Eso no es satisfacer el control, es renombrarlo, y no debe hacerlo el agente por
-iniciativa propia.
+- **`blocked` no dice qué bloquea.** Es un estado agregado, y con dos candidatos
+  plausibles a la vez la única forma de saber cuál manda es quitar uno y volver
+  a medir. Deducir cuál era, desde dos reglas que encajaban igual de bien, fue
+  razonar en lugar de comprobar.
+- **La casilla se queda puesta.** No cuesta nada mientras no bloquee, y el día
+  que este repositorio tenga un segundo colaborador hace exactamente lo que
+  promete. Desmarcarla ahora sería quitar un control por un problema que resultó
+  no ser suyo.
+
+Si algún día sí bloquea, las salidas son añadir un segundo colaborador que
+apruebe, o desmarcarla. Hay una tercera que se anota para descartarla:
+reescribir los commits para que figuren a nombre del titular haría pasar la
+regla sin que nadie revise nada. Eso no es satisfacer el control, es
+renombrarlo, y no debe hacerlo el agente por iniciativa propia.
 
 ---
 
