@@ -5,9 +5,6 @@ import { extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DEFAULT_SOURCE_PATHS = Object.freeze([
-  'firebase.ts',
-  'firebase.json',
-  'firestore.rules',
   'types.ts',
   'vercel.json',
   'package.json',
@@ -36,16 +33,13 @@ const isInventoryImplementation = (path) => path === INVENTORY_IMPLEMENTATION_PA
 
 const CATEGORY_DEFINITIONS = Object.freeze([
   {
-    id: 'firebase-bucket-configured',
-    label: 'Bucket Firebase configurado',
+    // Se conserva **después** de retirar Firebase, y a propósito: es la sonda
+    // que detectaría una reintroducción. Un inventario que sólo busca lo que
+    // ya sabe que hay no encuentra nunca lo que no debería estar.
+    id: 'firebase-storage-residual',
+    label: 'Residuo de Firebase Storage',
     statusWhenMatched: 'observed',
-    pattern: /\bstorageBucket\s*:/g,
-  },
-  {
-    id: 'firebase-storage-sdk',
-    label: 'Firebase Storage usado por el SDK',
-    statusWhenMatched: 'observed',
-    pattern: /(?:from\s+['"]firebase\/storage['"]|\b(?:getStorage|uploadBytes|uploadString|uploadBytesResumable|getDownloadURL|deleteObject)\s*\()/g,
+    pattern: /(?:from\s+['"]firebase\/storage['"]|\bstorageBucket\s*:|\b(?:getStorage|uploadBytes|uploadString|uploadBytesResumable|getDownloadURL|deleteObject)\s*\()/g,
   },
   {
     id: 'supabase-storage-sdk',
@@ -144,7 +138,7 @@ const emptyCategory = (definition) => ({
 
 /**
  * Build a PII-safe, source-only inventory. It does not read Firestore,
- * Firebase Storage, Supabase Storage, environment files, or browser data.
+ * Supabase Storage, environment files, or browser data.
  */
 export const buildInventory = async ({
   root = process.cwd(),
@@ -192,7 +186,7 @@ export const renderMarkdown = (inventory) => {
     `**Generado:** ${inventory.generatedAt}\n` +
     `**Alcance:** ${inventory.sourceFiles.length} archivos de código/configuración versionados; no incluye contenido de usuarios, secretos ni variables de entorno.\n\n` +
     `## Resultado\n\n` +
-    `Este informe es un inventario estático y PII-safe. «not-observed» significa que no se encontró el patrón en las fuentes escaneadas; no prueba que un proveedor remoto esté vacío. La consulta de Supabase Storage se documenta por separado con su salida CLI. La consulta de Firebase Storage, si se requiere, debe ejecutarse fuera de este inventario.\n\n` +
+    `Este informe es un inventario estático y PII-safe. «not-observed» significa que no se encontró el patrón en las fuentes escaneadas; no prueba que un proveedor remoto esté vacío. La consulta de Supabase Storage se documenta por separado con su salida CLI. Firebase se retiró en F9: su categoría se conserva como sonda de regresión, y «not-observed» ahí es el resultado esperado.\n\n` +
     `| Categoría | Descripción | Estado | Archivos | Coincidencias | Evidencia |\n` +
     `|---|---|---:|---:|---:|---|\n` +
     rows + '\n\n' +

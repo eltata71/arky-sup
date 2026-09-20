@@ -1,15 +1,15 @@
 /**
- * In-memory fake of `ReviewFirestoreGateway` for repository tests.
+ * In-memory fake of `ReviewRemoteGateway` for repository tests.
  * Not a spec file — vitest only collects `*.test.ts`.
  */
 
 import type { ArtifactComment, ArtifactReviewDecision } from '../../../services/review';
-import type { ReviewFirestoreGateway } from '../../../services/review';
+import type { ReviewRemoteGateway } from '../../../services/review';
 
 type CommentCb = (comments: ArtifactComment[]) => void;
 type DecisionCb = (decisions: ArtifactReviewDecision[]) => void;
 
-export class FakeReviewGateway implements ReviewFirestoreGateway {
+export class FakeReviewGateway implements ReviewRemoteGateway {
   available = true;
   userId: string | null = 'user-1';
   /** When true the next write rejects (simulates a transient Firestore error). */

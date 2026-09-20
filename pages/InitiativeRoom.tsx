@@ -375,7 +375,7 @@ const InitiativeRoom: React.FC = () => {
           <div className="space-y-5">
             <RiskPanel initiative={initiative} onPatch={patch} busy={busy} assist={capture.binding} />
             <StakeholderPanel initiative={initiative} onPatch={patch} busy={busy} assist={capture.binding} />
-            <DocumentsPanel initiative={initiative} onPatch={patch} busy={busy} addedBy={addedBy} />
+            <DocumentsPanel initiative={initiative} onPatch={patch} busy={busy} addedBy={addedBy} ownerId={user?.uid} />
 
             <InitiativeDeliveryPanel
               id="proyectos"

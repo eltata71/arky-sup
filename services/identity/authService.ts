@@ -1,126 +1,204 @@
 /**
- * authService — the Firebase Auth boundary.
+ * authService — la frontera con Supabase Auth.
  *
- * Every other SDK in this app is wrapped by a service: Firestore by
- * `firestoreService`, the model providers by `services/ai`. Auth was the
- * exception — `context/AuthContext.tsx` imported fifteen symbols from
- * `firebase/auth` directly and made the calls itself. That is a React context
- * holding an SDK, which means the sign-in rules can only be exercised through
- * a component tree, and it is the one violation of the rule left anywhere in
- * `components/`, `pages/`, `context/` or `hooks/`.
+ * Todo SDK de esta aplicación está envuelto por un servicio, y Auth fue la
+ * excepción durante mucho tiempo: `context/AuthContext.tsx` importaba quince
+ * símbolos del SDK y hacía las llamadas él mismo. Eso es un contexto de React
+ * sosteniendo un SDK, lo que significa que las reglas de inicio de sesión sólo
+ * se pueden ejercitar montando un árbol de componentes.
  *
- * The split is the ordinary one: this module talks to Firebase, the context
- * translates what it returns into application state. Nothing here decides
- * *policy* — who may do what is `lib/authz`, and it is enforced for real by
- * `firestore.rules`.
+ * El reparto es el de siempre: este módulo habla con el proveedor, el contexto
+ * traduce lo que devuelve a estado de aplicación. Aquí no se decide *política*
+ * —quién puede hacer qué es `lib/authz`, y lo hace cumplir de verdad PostgreSQL
+ * con sus políticas y sus RPC.
  *
- * `isAuthAvailable()` exists because `auth` is null whenever the `VITE_FIREBASE_*`
- * variables are unset, which is a supported degraded mode rather than a fault.
- * Centralising that check is why the calls below can be written without an
- * `if (auth)` at every site — the omission that made one of them a latent
- * crash.
+ * ## Lo que cambió al retirar Firebase, y lo que se perdió a propósito
+ *
+ * - **El proveedor es único** (ADR-004): Supabase Auth. Sirve dos métodos de
+ *   entrada —correo con contraseña y Google— y eso no son dos proveedores de
+ *   identidad: las dos rutas terminan en el mismo `auth.users`, con el mismo
+ *   `uid`, y sobre el mismo perfil de `api.user_profiles`. Google viaja por
+ *   Supabase precisamente para que siga habiendo un solo sitio donde una cuenta
+ *   existe o no existe.
+ * - **El bypass de desarrollo ya no toca el backend.** Era una sesión anónima
+ *   real de Firebase; ahora es una identidad en memoria y nada más, que es todo
+ *   lo que necesitaba: su rol `superadmin` siempre vivió sólo en estado de
+ *   React, y crear una cuenta de verdad para sostenerlo era el peor de los dos
+ *   mundos.
+ * - **El cliente se carga en diferido.** `loadSupabaseAuthClient` importa el SDK
+ *   dinámicamente, así que Auth no entra en la carga inicial de la SPA.
  */
 
-import {
-  EmailAuthProvider,
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  getIdTokenResult,
-  onAuthStateChanged,
-  reauthenticateWithCredential,
-  sendPasswordResetEmail,
-  signInAnonymously,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updatePassword,
-  updateProfile,
-  type User,
-} from 'firebase/auth';
-import { auth, isFirebaseAvailable } from '../../firebase';
+import { loadSupabaseAuthClient, type SupabaseAuthClientLike } from '../adapters';
+import { IdentityError } from '../ports';
 
 /**
  * The authenticated identity.
  *
- * Re-exported so callers can name the type without importing the SDK, which
- * would defeat the point of the boundary while looking harmless.
+ * Deliberadamente estrecha: la interfaz sólo depende de `uid`, `email` y
+ * `displayName`. Declararla aquí —en vez de reexportar el tipo del SDK— es lo
+ * que permitió cambiar de proveedor sin tocar ninguna pantalla.
  */
-export type AuthUser = User;
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+}
 
-/** Raised when a call is made while Firebase Auth is not configured. */
+/** Raised when a call is made while authentication is not configured. */
 export class AuthUnavailableError extends Error {
   readonly code = 'auth/unavailable' as const;
   constructor(operation: string) {
-    super(`La autenticación no está disponible (${operation}): falta la configuración de Firebase.`);
+    super(`La autenticación no está disponible (${operation}): falta la configuración de Supabase.`);
     this.name = 'AuthUnavailableError';
   }
 }
 
+const env = (): Record<string, string | undefined> => import.meta.env as Record<string, string | undefined>;
+
 export function isAuthAvailable(): boolean {
-  return Boolean(isFirebaseAvailable && auth);
+  const e = env();
+  return (e.VITE_SUPABASE_URL ?? '').trim() !== '' && (e.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim() !== '';
 }
 
-/** The SDK handle, or a typed failure. Never returns null to a caller. */
-function requireAuth(operation: string) {
-  if (!auth || !isFirebaseAvailable) throw new AuthUnavailableError(operation);
-  return auth;
-}
+const requireClient = async (operation: string): Promise<SupabaseAuthClientLike> => {
+  if (!isAuthAvailable()) throw new AuthUnavailableError(operation);
+  return loadSupabaseAuthClient(env());
+};
 
-/** The signed-in identity right now, without waiting for a state change. */
+/**
+ * La identidad de una sesión del SDK, o `null` si no es utilizable.
+ *
+ * `full_name` sale de `user_metadata`, que el propio usuario puede editar, así
+ * que sirve para *saludar* y nunca para autorizar: el rol se lee del perfil en
+ * PostgreSQL, que es lo único que las políticas consultan.
+ */
+export const toAuthUser = (session: { user?: { id?: string; email?: string | null; user_metadata?: { full_name?: unknown; name?: unknown } | null } | null } | null | undefined): AuthUser | null => {
+  const raw = session?.user;
+  if (typeof raw?.id !== 'string' || raw.id === '') return null;
+  const metadata = raw.user_metadata;
+  const displayName = typeof metadata?.full_name === 'string'
+    ? metadata.full_name
+    : typeof metadata?.name === 'string' ? metadata.name : null;
+  return {
+    uid: raw.id,
+    email: typeof raw.email === 'string' ? raw.email : null,
+    displayName,
+  };
+};
+
+/**
+ * La identidad en sesión ahora mismo, sin esperar a un cambio de estado.
+ *
+ * Es síncrona porque hay llamantes que no pueden esperar —`createDefaultReviewRepository`
+ * decide si adjuntar el nivel remoto—, así que se mantiene un espejo del último
+ * usuario observado. Nadie autoriza con esto: la respuesta de verdad la da el
+ * servidor al recibir el token.
+ */
+let lastKnownUser: AuthUser | null = null;
+
 export function currentUser(): AuthUser | null {
-  return auth?.currentUser ?? null;
+  return lastKnownUser;
+}
+
+/** El uid actual, o `null`. Atajo para los llamantes que sólo quieren eso. */
+export function currentUserId(): string | null {
+  return lastKnownUser?.uid ?? null;
+}
+
+/** Solo para pruebas y para el cierre de sesión. */
+export function rememberAuthUser(user: AuthUser | null): void {
+  lastKnownUser = user;
 }
 
 /**
  * Subscribe to sign-in state.
  *
- * Returns a no-op unsubscribe when auth is unavailable, so a caller's cleanup
- * path stays uniform instead of branching on configuration.
+ * Emite `null` y devuelve una baja inocua cuando Auth no está configurado, para
+ * que el camino de limpieza del llamante sea uniforme en vez de ramificar sobre
+ * la configuración.
  */
 export function observeAuthState(listener: (user: AuthUser | null) => void): () => void {
-  if (!auth || !isFirebaseAvailable) {
+  if (!isAuthAvailable()) {
+    lastKnownUser = null;
     listener(null);
     return () => undefined;
   }
-  return onAuthStateChanged(auth, listener);
+  let unsubscribe = (): void => undefined;
+  let cancelled = false;
+  void (async () => {
+    try {
+      const client = await loadSupabaseAuthClient(env());
+      const emit = (session: unknown): void => {
+        const user = toAuthUser(session as Parameters<typeof toAuthUser>[0]);
+        lastKnownUser = user;
+        if (!cancelled) listener(user);
+      };
+      const subscription = client.auth.onAuthStateChange((_event, session) => emit(session));
+      const handle = subscription?.data?.subscription;
+      unsubscribe = () => handle?.unsubscribe?.();
+      const { data } = await client.auth.getSession();
+      emit(data?.session ?? null);
+    } catch {
+      lastKnownUser = null;
+      if (!cancelled) listener(null);
+    }
+  })();
+  return () => {
+    cancelled = true;
+    unsubscribe();
+  };
+}
+
+export async function signInWithEmail(email: string, password: string): Promise<AuthUser> {
+  const client = await requireClient('signInWithEmail');
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  const user = toAuthUser(data?.session ?? null);
+  if (!user) throw new IdentityError('invalid-credentials', 'La sesión no se pudo establecer.');
+  lastKnownUser = user;
+  return user;
 }
 
 /**
- * The `role` custom claim, forcing a token refresh.
+ * Entrar con Google, a través de Supabase Auth.
  *
- * Refreshing matters: an administrator who has just been granted a role should
- * not have to sign out and back in, and a revoked one should not keep it for
- * up to an hour.
- */
-export async function readRoleClaim(user: AuthUser): Promise<unknown> {
-  const token = await getIdTokenResult(user, true);
-  return token?.claims?.role;
-}
-
-export async function signInWithEmail(email: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(requireAuth('signInWithEmail'), email, password);
-}
-
-export async function signInWithGooglePopup(): Promise<void> {
-  await signInWithPopup(requireAuth('signInWithGoogle'), new GoogleAuthProvider());
-}
-
-/**
- * Anonymous sign-in, used only by the developer bypass.
+ * No devuelve nada y no puede: el navegador se va a Google y vuelve a
+ * `redirectTo` con la sesión en el fragmento de la URL. Quien la recoge es el
+ * SDK (`detectSessionInUrl`), y quien se entera es `observeAuthState` — el
+ * mismo camino por el que se restaura una sesión al abrir la aplicación. Por
+ * eso no hace falta una ruta de callback propia, y por eso una `Promise<void>`
+ * que resuelve no significa que alguien haya entrado.
  *
- * `isDeveloperLoginAllowed` hard-disables that bypass in production builds;
- * this function is the transport, not the gate, and must not be called from
- * anywhere else.
+ * `prompt=select_account` es deliberado. Sin él, Google reutiliza en silencio
+ * la sesión que el navegador ya tenga, que es justo lo contrario de lo que
+ * necesita quien tiene una cuenta personal y otra de trabajo: el selector le
+ * deja elegir con cuál entra, y le deja cambiar sin cerrar sesión en Google.
+ *
+ * **Autenticar sigue sin ser tener cuenta.** Alguien con una cuenta de Google
+ * que nadie ha dado de alta completa este flujo, llega sin perfil en
+ * `api.user_profiles` y `AuthContext` le cierra la sesión con la explicación de
+ * siempre. Que la puerta sea más cómoda no la abre a más gente: el alta la
+ * sigue haciendo un administrador.
  */
-export async function signInAnonymouslyForDevBypass(): Promise<AuthUser> {
-  const credential = await signInAnonymously(requireAuth('signInAsDeveloper'));
-  return credential.user;
+export async function signInWithGoogle(redirectTo?: string): Promise<void> {
+  const client = await requireClient('signInWithGoogle');
+  const { error } = await client.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: redirectTo ?? `${window.location.origin}/auth`,
+      queryParams: { prompt: 'select_account' },
+    },
+  });
+  if (error) throw error;
 }
 
 /** Sign out. Safe to call when auth is unavailable: there is nothing to end. */
 export async function signOutCurrentUser(): Promise<void> {
-  if (!auth || !isFirebaseAvailable) return;
-  await signOut(auth);
+  lastKnownUser = null;
+  if (!isAuthAvailable()) return;
+  const client = await loadSupabaseAuthClient(env());
+  await client.auth.signOut();
 }
 
 /**
@@ -128,18 +206,21 @@ export async function signOutCurrentUser(): Promise<void> {
  *
  * The caller resolves this the same way whether or not the address has an
  * account — that policy lives in the context, because it is about what the
- * product reveals, not about how Firebase behaves.
+ * product reveals, not about how the provider behaves.
  */
 export async function sendPasswordReset(email: string): Promise<void> {
-  await sendPasswordResetEmail(requireAuth('sendPasswordReset'), email);
+  const client = await requireClient('sendPasswordReset');
+  const { error } = await client.auth.resetPasswordForEmail(email);
+  if (error) throw error;
 }
 
 /**
  * Re-authenticate and change the password.
  *
- * Both steps together, because they are not separable: `updatePassword` on a
- * long-open session is exactly the case re-authentication exists to prevent,
- * and exposing them apart invites a call site that does only the second.
+ * Los dos pasos juntos porque no son separables: cambiar la contraseña de una
+ * sesión abierta hace rato es exactamente el caso que la reautenticación existe
+ * para impedir, y exponerlos por separado invita a un llamante que sólo haga el
+ * segundo.
  */
 export async function reauthenticateAndUpdatePassword(
   user: AuthUser,
@@ -147,20 +228,23 @@ export async function reauthenticateAndUpdatePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  const credential = EmailAuthProvider.credential(email, currentPassword);
-  await reauthenticateWithCredential(user, credential);
-  await updatePassword(user, newPassword);
+  const client = await requireClient('changePassword');
+  const { error: reauthError } = await client.auth.signInWithPassword({ email, password: currentPassword });
+  if (reauthError) throw reauthError;
+  const { error } = await client.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+  void user;
 }
 
-/** Update the signed-in user's display name. Never their role. */
-export async function updateDisplayName(user: AuthUser, displayName: string): Promise<void> {
-  await updateProfile(user, { displayName });
+/** El token de acceso vigente, para las llamadas que salen del SDK. */
+export async function currentAccessToken(): Promise<string | null> {
+  if (!isAuthAvailable()) return null;
+  try {
+    const client = await loadSupabaseAuthClient(env());
+    const { data } = await client.auth.getSession();
+    const token = (data?.session as { access_token?: unknown } | null | undefined)?.access_token;
+    return typeof token === 'string' && token !== '' ? token : null;
+  } catch {
+    return null;
+  }
 }
-
-/**
- * Re-exported for `userProvisioningService`, which creates accounts on a named
- * secondary app so `createUserWithEmailAndPassword` cannot replace the
- * administrator's own session. It passes its own `Auth` instance, so this is a
- * pass-through rather than a call against the primary one.
- */
-export { createUserWithEmailAndPassword };

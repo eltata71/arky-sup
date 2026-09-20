@@ -3,7 +3,7 @@
  *
  * There are sixteen write call sites in `LMSContext` and every one of them
  * used to be fire-and-forget, because `trainingService` resolved successfully
- * whether the data reached Firestore or only `localStorage`. Now each write
+ * whether the data reached the database or only `localStorage`. Now each write
  * returns a `PersistenceResult`, and this is the single funnel that turns a
  * non-confirmed one into something a person can see. Routing them all through
  * here is what keeps the count at one: a seventeenth call site cannot forget to
@@ -15,8 +15,8 @@
  * and the honest answer to that is to move a capability out, not to raise the
  * ceiling.
  */
-import { useCallback, useEffect, useState } from 'react';
-import { configurePilotLearningBackend, type TrainingWriteResult } from '../services/learning';
+import { useCallback, useState } from 'react';
+import { type TrainingWriteResult } from '../services/learning';
 import { isWriteConfirmed } from '../services/persistence';
 
 const GENERIC_FAILURE = 'No se pudo sincronizar con la base de datos.';
@@ -37,12 +37,8 @@ export interface TrainingSync {
   reportSyncIssue: (message: string | null) => void;
 }
 
-export const useTrainingSync = (email?: string | null): TrainingSync => {
+export const useTrainingSync = (): TrainingSync => {
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  useEffect(() => {
-    configurePilotLearningBackend(email);
-  }, [email]);
 
   const trackWrite = useCallback((write: Promise<TrainingWriteResult>) => {
     write

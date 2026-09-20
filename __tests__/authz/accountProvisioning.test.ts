@@ -59,34 +59,45 @@ describe('nobody can create their own account', () => {
     expect(source).not.toMatch(/no encontramos|no existe esa cuenta|correo no registrado/i);
   });
 
-  it('creates auth accounts only from the provisioning service', () => {
-    // The one call site in the app. `api/` and tests are out of scope; this is
-    // about the client surface a visitor can reach.
+  it('creates auth accounts only through the provisioning service', () => {
+    // La superficie que un visitante puede alcanzar. Crear una identidad
+    // necesita la clave de servicio, así que el navegador no puede hacerlo
+    // aunque quisiera; lo que esta prueba impide es que alguien vuelva a poner
+    // esa clave a su alcance.
     const surface = [
       'context/AuthContext.tsx',
       'pages/AuthPage.tsx',
       'pages/UserManagementPage.tsx',
       'services/identity/userService.ts',
+      'services/identity/userProvisioningService.ts',
     ];
     for (const file of surface) {
-      expect(readCode(file), `${file} crea cuentas de autenticación`).not.toContain(
-        'createUserWithEmailAndPassword',
-      );
+      const code = readCode(file);
+      expect(code, `${file} crea cuentas de autenticación`).not.toContain('auth.admin');
+      expect(code, `${file} usa la clave de servicio`).not.toMatch(/SERVICE_ROLE/);
     }
-    expect(read('services/identity/userProvisioningService.ts')).toContain(
-      'createUserWithEmailAndPassword',
-    );
+    // El único sitio que la usa, y corre en el servidor.
+    expect(read('supabase/functions/provision-user/index.ts')).toContain('inviteUserByEmail');
   });
 
   it('never lets an administrator choose someone elses first password', () => {
+    // No hay contraseña que elegir: `inviteUserByEmail` crea la cuenta sin
+    // credencial y manda un enlace. El secreto de un solo uso que la versión
+    // anterior generaba desapareció con el API que lo exigía, que es una forma
+    // mejor de cumplir la misma regla.
     const service = readCode('services/identity/userProvisioningService.ts');
-    // The secret is generated, used once, and never returned to the caller.
-    expect(service).toContain('crypto.getRandomValues');
-    expect(service).toContain('sendPasswordResetEmail');
-    expect(service).not.toMatch(/password\s*[:,]\s*secret/);
+    expect(service).not.toMatch(/password/i);
 
     const page = readCode('pages/UserManagementPage.tsx');
     expect(page).not.toMatch(/type="password"/);
+  });
+
+  it('checks the caller permission on the server, not only in the screen', () => {
+    // La Edge Function es la única que puede crear identidades, así que una
+    // que aceptara cualquier llamada sería un registro abierto con otro nombre.
+    const fn = read('supabase/functions/provision-user/index.ts');
+    expect(fn).toContain("rpc('current_permissions')");
+    expect(fn).toContain("includes('users:create')");
   });
 
   it('does not bootstrap a superadmin from whoever registers first', () => {
@@ -101,56 +112,38 @@ describe('nobody can create their own account', () => {
 /* ------------------------------------------------------- the one path */
 
 const mocks = vi.hoisted(() => ({
-  createUser: vi.fn(),
-  updateProfile: vi.fn(),
-  sendReset: vi.fn(),
-  signOut: vi.fn(),
-  deleteApp: vi.fn(),
-  createUserProfile: vi.fn(),
-}));
-
-vi.mock('firebase/app', () => ({
-  initializeApp: vi.fn(() => ({ name: 'arky-user-provisioning' })),
-  getApp: vi.fn(() => ({ name: 'arky-user-provisioning' })),
-  getApps: vi.fn(() => []),
-  deleteApp: mocks.deleteApp,
-}));
-
-vi.mock('firebase/auth', () => ({
-  getAuth: vi.fn(() => ({ name: 'secondary' })),
-  createUserWithEmailAndPassword: mocks.createUser,
-  updateProfile: mocks.updateProfile,
-  sendPasswordResetEmail: mocks.sendReset,
-  signOut: mocks.signOut,
-}));
-
-vi.mock('../../firebase', () => ({
-  firebaseConfig: { apiKey: 'test' },
-  isFirebaseAvailable: true,
-  db: {},
-  auth: {},
+  provisionProfile: vi.fn(),
+  currentAccessToken: vi.fn(),
+  fetch: vi.fn(),
 }));
 
 vi.mock('../../services/identity/userService', () => ({
-  userService: { createUserProfile: mocks.createUserProfile },
+  userService: { provisionProfile: mocks.provisionProfile },
+}));
+
+vi.mock('../../services/identity/authService', () => ({
+  currentAccessToken: mocks.currentAccessToken,
+  isAuthAvailable: () => true,
 }));
 
 vi.mock('../../services/observability', () => ({
   observabilityService: { recordWarning: vi.fn(), reportError: vi.fn() },
 }));
 
+const invited = (body: Record<string, unknown>, status = 200) =>
+  ({ status, ok: status < 400, json: async () => body });
+
 describe('provisionUser', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createUser.mockResolvedValue({ user: { uid: 'uid-1' } });
-    mocks.updateProfile.mockResolvedValue(undefined);
-    mocks.sendReset.mockResolvedValue(undefined);
-    mocks.createUserProfile.mockResolvedValue(undefined);
-    mocks.signOut.mockResolvedValue(undefined);
-    mocks.deleteApp.mockResolvedValue(undefined);
+    vi.stubGlobal('fetch', mocks.fetch);
+    vi.stubGlobal('window', { location: { origin: 'https://arky.test' } });
+    mocks.currentAccessToken.mockResolvedValue('admin-token');
+    mocks.provisionProfile.mockResolvedValue(undefined);
+    mocks.fetch.mockResolvedValue(invited({ ok: true, uid: 'uid-1', email: 'ana@empresa.com' }));
   });
 
-  it('creates the account, writes the profile and sends the invitation', async () => {
+  it('invites the identity and writes the profile with the administrator session', async () => {
     const { provisionUser } = await import('../../services/identity/userProvisioningService');
     const result = await provisionUser({
       email: '  Ana@Empresa.com ',
@@ -159,54 +152,37 @@ describe('provisionUser', () => {
     });
 
     expect(result.ok).toBe(true);
+    const [, init] = mocks.fetch.mock.calls[0] as [string, RequestInit];
     // Normalised on the way in so the directory has one spelling per person.
-    expect(mocks.createUser).toHaveBeenCalledWith(expect.anything(), 'ana@empresa.com', expect.any(String));
-    expect(mocks.createUserProfile).toHaveBeenCalledWith({
-      uid: 'uid-1',
-      email: 'ana@empresa.com',
-      displayName: 'Ana Torres',
-      role: 'architect',
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      action: 'invite', email: 'ana@empresa.com', displayName: 'Ana Torres',
     });
-    expect(mocks.sendReset).toHaveBeenCalledWith(expect.anything(), 'ana@empresa.com');
-  });
-
-  it('generates a secret nobody chose and nobody sees', async () => {
-    const { provisionUser } = await import('../../services/identity/userProvisioningService');
-    await provisionUser({ email: 'a@b.com', displayName: 'Ana Torres' });
-
-    const secret = mocks.createUser.mock.calls[0][2] as string;
-    expect(secret.length).toBeGreaterThan(24);
-    // It is not returned, not logged as a value, and not derived from the input.
-    expect(secret).not.toContain('a@b.com');
-
-    mocks.createUser.mockClear();
-    await provisionUser({ email: 'a@b.com', displayName: 'Ana Torres' });
-    expect(mocks.createUser.mock.calls[0][2]).not.toBe(secret);
+    // El token del administrador viaja: la función comprueba su permiso.
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer admin-token');
+    // El rol lo escribe la RPC, con la sesión del administrador y su auditoría.
+    expect(mocks.provisionProfile).toHaveBeenCalledWith('uid-1', 'architect', 'Ana Torres');
   });
 
   it('defaults to the least capable role', async () => {
     const { provisionUser } = await import('../../services/identity/userProvisioningService');
     await provisionUser({ email: 'a@b.com', displayName: 'Ana Torres' });
-    expect(mocks.createUserProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ role: 'viewer' }),
-    );
+    expect(mocks.provisionProfile).toHaveBeenCalledWith('uid-1', 'viewer', 'Ana Torres');
   });
 
-  it('always leaves the secondary session signed out, even when it fails', async () => {
-    mocks.createUserProfile.mockRejectedValue(new Error('permission-denied'));
+  it('does not write a profile when the invitation failed', async () => {
+    mocks.fetch.mockResolvedValue(invited({ error: 'invite_failed' }, 400));
     const { provisionUser } = await import('../../services/identity/userProvisioningService');
 
     const result = await provisionUser({ email: 'a@b.com', displayName: 'Ana Torres' });
 
     expect(result.ok).toBe(false);
-    // A lingering session on the secondary app is a second identity nobody is
-    // watching — and it belongs to the account that just failed to be governed.
-    expect(mocks.signOut).toHaveBeenCalled();
-    expect(mocks.deleteApp).toHaveBeenCalled();
+    // Un perfil con rol para una identidad que no existe es una fila que
+    // concede permisos a nadie, y que el siguiente invitado heredaría.
+    expect(mocks.provisionProfile).not.toHaveBeenCalled();
   });
 
   it('explains a duplicate address instead of reporting a generic failure', async () => {
-    mocks.createUser.mockRejectedValue(new Error('auth/email-already-in-use'));
+    mocks.fetch.mockResolvedValue(invited({ error: 'email_already_in_use' }, 409));
     const { provisionUser } = await import('../../services/identity/userProvisioningService');
 
     const result = await provisionUser({ email: 'a@b.com', displayName: 'Ana Torres' });
@@ -215,11 +191,20 @@ describe('provisionUser', () => {
     expect(result.message).toMatch(/Ya existe una cuenta/);
   });
 
-  it('refuses malformed input before touching Firebase', async () => {
+  it('says the session expired rather than failing opaquely', async () => {
+    mocks.currentAccessToken.mockResolvedValue(null);
+    const { provisionUser } = await import('../../services/identity/userProvisioningService');
+
+    const result = await provisionUser({ email: 'a@b.com', displayName: 'Ana Torres' });
+    expect(result.reason).toBe('unauthenticated');
+    expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+
+  it('refuses malformed input before touching the backend', async () => {
     const { provisionUser } = await import('../../services/identity/userProvisioningService');
 
     expect((await provisionUser({ email: 'sin-arroba', displayName: 'Ana' })).reason).toBe('invalid_email');
     expect((await provisionUser({ email: 'a@b.com', displayName: 'A' })).reason).toBe('invalid_name');
-    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(mocks.fetch).not.toHaveBeenCalled();
   });
 });

@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test';
  * heavier scenarios (load a saved diagram, open a quality panel, pinch
  * zoom on iPad, export a PNG, see-all vs focus-primary) belong in
  * follow-up specs once we have stable test fixtures wired through
- * Firestore stubbing or a local seed mode.
+ * the local Supabase stack's seed.
  *
  * Run:
  *   npx playwright install chromium webkit
@@ -20,14 +20,14 @@ import { expect, test } from '@playwright/test';
  *
  * The smoke test's job is to catch unhandled JS exceptions introduced by
  * app code — not to fail because the CI sandbox can't reach a CDN, a font
- * host, or a Firebase placeholder host. These patterns are filtered from
+ * host, or a placeholder backend host. These patterns are filtered from
  * the console-error list so real regressions still surface:
  *   - External resource load failures (CDN, fonts, stylesheets, scripts)
  *   - Network / DNS errors (placeholders like ci.example.com)
  *   - 404 / MIME-refusal / cross-origin blocks from third-party hosts
  */
 const ENV_NOISE =
-  /Failed to load resource|net::|ERR_|MIME type|Refused to apply|Refused to execute|404|DNS|resolve|firebase|No se pudieron cargar settings|lectura de settings falló|googleapis|gstatic|fonts\.|cdn\.|jsdelivr|cloudflare|heroicons|reactflow/i;
+  /Failed to load resource|net::|ERR_|MIME type|Refused to apply|Refused to execute|404|DNS|resolve|supabase|No se pudieron cargar settings|lectura de settings falló|googleapis|gstatic|fonts\.|cdn\.|jsdelivr|cloudflare|heroicons|reactflow/i;
 
 test.describe('App smoke', () => {
   test('home page renders the root mount and the document title', async ({ page }) => {
@@ -54,9 +54,9 @@ test.describe('App smoke', () => {
     });
 
     await page.goto('/');
-    // Allow the React tree to mount and the auth context to resolve. The
-    // emulators keep a Firestore channel open, so `networkidle` never fires —
-    // waiting for the app shell to render is the actual readiness signal.
+    // Allow the React tree to mount and the auth context to resolve.
+    // `networkidle` is not a reliable signal against the local stack — waiting
+    // for the app shell to render is the actual readiness signal.
     await expect(page.locator('#root')).not.toBeEmpty({ timeout: 15_000 });
 
     // 1) Uncaught exceptions are always fatal — they mean app code threw.

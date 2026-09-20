@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { FirestoreArtifactReviewRepository } from '../../../services/review';
+import { RemoteArtifactReviewRepository } from '../../../services/review';
 import type { ArtifactCommentAuthor } from '../../../services/review';
 import { FakeReviewGateway } from './fakeGateway';
 
 const author: ArtifactCommentAuthor = { id: 'user-1', name: 'Ada' };
 const base = { projectId: 'p1', artifactId: 'a1', anchor: { kind: 'artifact' as const }, author };
 
-describe('FirestoreArtifactReviewRepository', () => {
+describe('RemoteArtifactReviewRepository', () => {
   let gateway: FakeReviewGateway;
-  let repo: FirestoreArtifactReviewRepository;
+  let repo: RemoteArtifactReviewRepository;
 
   beforeEach(() => {
     gateway = new FakeReviewGateway();
-    repo = new FirestoreArtifactReviewRepository(gateway);
+    repo = new RemoteArtifactReviewRepository(gateway);
   });
 
   it('adds and lists comments remotely', async () => {
@@ -49,12 +49,33 @@ describe('FirestoreArtifactReviewRepository', () => {
     expect(await repo.latestStatus('p1', 'a1')).toBe('approved');
   });
 
-  it('streams updates through subscribeComments', async () => {
+  it('delivers once through subscribeComments, and says so by not delivering again', async () => {
+    // Firestore traía `onSnapshot`; las tablas de revisión no están publicadas
+    // por Realtime, así que la suscripción entrega el estado actual y se queda
+    // quieta. La prueba fija ese contrato en vez de esconderlo: un panel que
+    // creyera estar al día sería peor que uno que sabe que no lo está — y el
+    // repositorio híbrido sigue emitiendo los cambios locales, que es lo que
+    // quien escribe necesita ver de inmediato.
+    await repo.addComment({ ...base, body: 'ya existente' });
     const seen: number[] = [];
     const unsubscribe = repo.subscribeComments('p1', 'a1', (comments) => seen.push(comments.length));
-    await repo.addComment({ ...base, body: 'streamed' });
-    expect(seen[seen.length - 1]).toBe(1);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(seen).toEqual([1]);
+
+    await repo.addComment({ ...base, body: 'posterior' });
+    await Promise.resolve();
+    expect(seen).toEqual([1]);
     unsubscribe();
+  });
+
+  it('stops delivering once unsubscribed', async () => {
+    const seen: number[] = [];
+    const unsubscribe = repo.subscribeComments('p1', 'a1', (comments) => seen.push(comments.length));
+    unsubscribe();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(seen).toEqual([]);
   });
 
   it('refuses writes when no user is authenticated', async () => {
@@ -63,7 +84,7 @@ describe('FirestoreArtifactReviewRepository', () => {
     await expect(repo.addComment({ ...base, body: 'no auth' })).rejects.toThrow(/autenticado/);
   });
 
-  it('refuses reads when Firestore is unavailable', async () => {
+  it('refuses reads when the database is unavailable', async () => {
     gateway.available = false;
     await expect(repo.listComments('p1', 'a1')).rejects.toThrow(/disponible/);
   });

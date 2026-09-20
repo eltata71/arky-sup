@@ -133,6 +133,28 @@ export interface InitiativeDocument {
   notes?: string;
   addedAt: string;
   addedBy: string;
+  /**
+   * Un archivo subido a Storage, cuando el documento no existe en otro sitio.
+   *
+   * Se guarda la **ruta**, nunca una URL: los dos cubos son privados y lo único
+   * que abre un objeto es una URL firmada, que caduca. Una URL persistida sería
+   * un enlace roto en cuanto expire, o —si no expirara— un objeto privado con
+   * una puerta pública guardada en la base de datos.
+   *
+   * `objectId` y `sha256` son la identidad del binario: con ellos se puede
+   * comprobar que lo que se descarga es lo que se subió, y es lo que permite
+   * reconciliar el registro con el almacenamiento sin adivinar.
+   */
+  file?: InitiativeDocumentFile;
+}
+
+export interface InitiativeDocumentFile {
+  bucket: string;
+  path: string;
+  objectId: string;
+  mimeType: string;
+  sizeBytes: number;
+  sha256: string;
 }
 
 export interface InitiativeMilestone {

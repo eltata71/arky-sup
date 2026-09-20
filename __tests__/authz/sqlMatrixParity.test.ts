@@ -1,12 +1,12 @@
 /**
  * Paridad de la matriz de permisos: SQL ↔ TypeScript.
  *
- * F4.3 exige que la autorización tenga una sola definición. `firestore.rules`
- * y `lib/authz/permissions.ts` ya se comparan celda por celda
- * (`rulesMatrix.test.ts`); al migrar la matriz a PostgreSQL aparece un tercer
- * sitio donde la política vive escrita, y sin esta prueba la deriva entre
- * ambos sería silenciosa: la interfaz mostraría un permiso que el servidor no
- * concede, o al contrario, que es el caso peligroso.
+ * F4.3 exige que la autorización tenga una sola definición. Hasta F9 la
+ * política vivía escrita en tres sitios —`firestore.rules`, la migración de
+ * autorización y `lib/authz/permissions.ts`— y había dos pruebas de paridad.
+ * Retirar Firestore dejó un solo par, SQL y TypeScript, que es esta. Sin ella
+ * la deriva sería silenciosa: la interfaz mostraría un permiso que el servidor
+ * no concede, o —el caso peligroso— al revés.
  *
  * Lee la migración como texto y la compara con `ROLE_PERMISSIONS`. No necesita
  * base de datos: es una comprobación de contenido, complementaria —no

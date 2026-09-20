@@ -55,7 +55,7 @@ const confirmed = (): PersistenceResult<void> => ({
   status: 'success',
   success: true,
   operationId: 'op-ok',
-  target: 'firestore',
+  target: 'supabase',
 });
 
 const refused = (): PersistenceResult<void> => ({

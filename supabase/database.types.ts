@@ -7,13 +7,64 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   api: {
     Tables: {
+      agent_actions: {
+        Row: {
+          created_at: string
+          data: Json
+          owner_id: string
+          project_id: string
+          trace_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          owner_id: string
+          project_id: string
+          trace_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          owner_id?: string
+          project_id?: string
+          trace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_actions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "architecture_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_profiles: {
+        Row: {
+          agent_id: string
+          created_at: string
+          data: Json
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          data: Json
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          data?: Json
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       architecture_knowledge_graphs: {
         Row: {
           created_at: string
@@ -79,6 +130,82 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      artifact_comments: {
+        Row: {
+          artifact_id: string
+          author_id: string
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          artifact_id: string
+          author_id: string
+          created_at?: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          artifact_id?: string
+          author_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          owner_id?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artifact_comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "architecture_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artifact_review_decisions: {
+        Row: {
+          artifact_id: string
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+        }
+        Insert: {
+          artifact_id: string
+          created_at?: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+        }
+        Update: {
+          artifact_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          owner_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artifact_review_decisions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "architecture_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_initiatives: {
         Row: {
@@ -356,6 +483,30 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_reference_parameters: {
+        Row: {
+          created_at: string
+          data: Json
+          key: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          key: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          key?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       project_artifacts: {
         Row: {
           created_at: string
@@ -389,6 +540,38 @@ export type Database = {
             foreignKeyName: "project_artifacts_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "architecture_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_chat_history: {
+        Row: {
+          created_at: string
+          messages: Json
+          owner_id: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          messages?: Json
+          owner_id: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          messages?: Json
+          owner_id?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_chat_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
             referencedRelation: "architecture_projects"
             referencedColumns: ["id"]
           },
@@ -450,7 +633,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      append_agent_action: {
+        Args: { p_action: Json; p_project_id: string }
+        Returns: undefined
+      }
       current_permissions: { Args: never; Returns: string[] }
+      delete_agent_profile: { Args: { p_agent_id: string }; Returns: undefined }
+      delete_artifact_comment: {
+        Args: { p_comment_id: string }
+        Returns: undefined
+      }
       delete_business_initiative: {
         Args: { p_expected_revision: number; p_id: string }
         Returns: undefined
@@ -470,7 +662,24 @@ export type Database = {
             Returns: undefined
           }
       delete_note: { Args: { p_note_id: string }; Returns: undefined }
+      delete_project_aggregate: {
+        Args: { p_expected_revision: number; p_id: string }
+        Returns: Json
+      }
       delete_user_profile: { Args: { target: string }; Returns: undefined }
+      list_agent_actions: {
+        Args: { p_limit?: number; p_project_id: string }
+        Returns: Json
+      }
+      list_agent_profiles: { Args: never; Returns: Json }
+      list_artifact_comments: {
+        Args: { p_artifact_id: string; p_project_id: string }
+        Returns: Json
+      }
+      list_artifact_review_decisions: {
+        Args: { p_artifact_id: string; p_project_id: string }
+        Returns: Json
+      }
       list_business_initiatives: {
         Args: never
         Returns: {
@@ -497,9 +706,14 @@ export type Database = {
       }
       list_courses: { Args: { p_include_all?: boolean }; Returns: Json }
       list_notes: { Args: never; Returns: Json }
+      list_project_aggregates: { Args: never; Returns: Json }
+      list_user_profiles: { Args: never; Returns: Json }
+      load_chat_history: { Args: { p_project_id: string }; Returns: Json }
       load_context: { Args: never; Returns: Json }
       load_engagements: { Args: { p_project_id: string }; Returns: Json }
       load_knowledge_graph: { Args: { p_project_id: string }; Returns: Json }
+      load_own_profile: { Args: never; Returns: Json }
+      load_platform_reference_parameters: { Args: never; Returns: Json }
       load_progress: { Args: never; Returns: Json }
       load_project_aggregate: { Args: { p_id: string }; Returns: Json }
       mark_file_object_deleted: {
@@ -540,6 +754,10 @@ export type Database = {
         Returns: undefined
       }
       record_arb_decision: { Args: { p_decision: Json }; Returns: undefined }
+      record_artifact_review_decision: {
+        Args: { p_decision: Json }
+        Returns: undefined
+      }
       register_file_object: {
         Args: {
           p_aggregate_id: string
@@ -581,6 +799,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_agent_profile: { Args: { p_profile: Json }; Returns: undefined }
+      save_artifact_comment: { Args: { p_comment: Json }; Returns: undefined }
       save_business_initiative: {
         Args: { p_expected_revision: number; p_initiative: Json }
         Returns: {
@@ -604,6 +824,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      save_chat_history: {
+        Args: { p_messages: Json; p_project_id: string }
+        Returns: undefined
       }
       save_context: { Args: { p_context: Json }; Returns: undefined }
       save_course: {
@@ -667,6 +891,22 @@ export type Database = {
         }
       }
       save_note: { Args: { p_note: Json }; Returns: undefined }
+      save_platform_reference_parameters: {
+        Args: { p_data: Json; p_expected_revision: number }
+        Returns: {
+          created_at: string
+          data: Json
+          key: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "platform_reference_parameters"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       save_progress: { Args: { p_progress: Json }; Returns: undefined }
       save_project_aggregate: {
         Args: {
@@ -715,6 +955,10 @@ export type Database = {
       }
       set_user_status: {
         Args: { new_status: string; target: string }
+        Returns: undefined
+      }
+      update_own_display_name: {
+        Args: { p_display_name: string }
         Returns: undefined
       }
     }

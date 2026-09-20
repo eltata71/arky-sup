@@ -2,8 +2,8 @@
  * `npm run build` with the placeholder `VITE_*` values the build needs, and
  * with them confined to the build.
  *
- * The build is fail-closed on runtime config: without `VITE_FIREBASE_API_KEY`
- * and friends it refuses to compile. So anyone running the local gate has to
+ * The build is fail-closed on runtime config: without `VITE_SUPABASE_URL` and
+ * its publishable key it refuses to compile. So anyone running the local gate has to
  * export those, and `npm run quality` chains the tests and the build in one
  * shell — which means the exports reach the tests too. `VITE_AI_STRICT_PROXY`
  * then switches on proxy enforcement inside the suite and twenty specs about
@@ -23,13 +23,8 @@ import { spawn } from 'node:child_process';
 const PLACEHOLDERS = {
     VITE_AI_PROXY_URL: '/api/ai',
     VITE_AI_STRICT_PROXY: 'true',
-    VITE_FIREBASE_API_KEY: 'ci-placeholder',
-    VITE_FIREBASE_AUTH_DOMAIN: 'ci.example.com',
-    VITE_FIREBASE_PROJECT_ID: 'ci-project',
-    VITE_FIREBASE_STORAGE_BUCKET: 'ci.example.com',
-    VITE_FIREBASE_MESSAGING_SENDER_ID: '0',
-    VITE_FIREBASE_APP_ID: '1:0:web:ci',
-    VITE_FIREBASE_MEASUREMENT_ID: 'G-CI',
+    VITE_SUPABASE_URL: 'https://ci-placeholder.supabase.co',
+    VITE_SUPABASE_PUBLISHABLE_KEY: 'ci-placeholder',
 };
 
 const env = { ...process.env };

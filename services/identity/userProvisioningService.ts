@@ -1,47 +1,36 @@
 /**
- * Provisioning an account — the operation the product did not have.
+ * Provisioning an account — the operation the browser cannot do alone.
  *
- * Until now the only way an account came into existence was for the person to
- * register themselves. Administration could change a role and delete a user,
- * but not create one, which is why self-registration had to stay.
+ * Crear una identidad exige la clave de servicio, y esa clave no puede estar en
+ * el bundle. El reparto es el que ADR-001 aprobó como «backend confiable
+ * mínimo», y tiene exactamente dos pasos:
  *
- * ## Why a second Firebase app
+ *  1. La Edge Function `provision-user` invita a la persona. Verifica el token
+ *     del administrador y le pregunta a la base de datos si tiene
+ *     `users:create` antes de hacer nada; es lo único para lo que existe.
+ *  2. El navegador, **con la sesión del administrador**, llama a
+ *     `api.provision_user_profile` con el uid devuelto. Ahí viven el permiso,
+ *     la regla de que sólo un superadmin concede roles privilegiados y la
+ *     entrada de auditoría con el actor real.
  *
- * `createUserWithEmailAndPassword` signs the *new* user in on the auth instance
- * it is given. Called on the main instance it would silently replace the
- * administrator's session with the account they just created — which is exactly
- * why this feature is usually skipped in frontend-first apps and pushed to a
- * server.
+ * Que el paso 2 no ocurra dentro de la función es la decisión importante: una
+ * regla de autorización escrita dos veces es una que se queda vieja en una de
+ * las dos copias, y la copia que se queda vieja siempre es la que concede de
+ * más.
  *
- * A second, named Firebase app has its own auth instance and its own session.
- * The new account is created there, that instance is signed out immediately,
- * and the administrator's session on the primary instance is never touched.
- * This is Firebase's documented pattern for the case.
+ * ## Por qué el administrador nunca elige la contraseña
  *
- * ## Why the administrator never chooses the password
- *
- * The account is created with a single-use random secret that is discarded
- * without ever being displayed, and the person receives a reset email to set
- * their own. An administrator who types a colleague's first password knows a
- * credential that is not theirs, and "temporary" passwords are famously
- * permanent. The random value exists only because the API requires one.
+ * No hay contraseña que elegir. `inviteUserByEmail` crea la cuenta sin
+ * credencial y manda un enlace para que la persona fije la suya. Un
+ * administrador que teclea la primera contraseña de un colega conoce una
+ * credencial que no es suya, y las contraseñas «temporales» son célebremente
+ * permanentes.
  */
 
-import { deleteApp, getApp, getApps, initializeApp } from 'firebase/app';
-import {
-  createUserWithEmailAndPassword,
-  getAuth,
-  sendPasswordResetEmail,
-  signOut,
-  updateProfile,
-} from 'firebase/auth';
-import { firebaseConfig, isFirebaseAvailable } from '../../firebase';
 import { DEFAULT_PROVISIONED_ROLE, type AuthRole } from '../../lib/authz';
 import { observabilityService } from '../observability';
+import { currentAccessToken, isAuthAvailable } from './authService';
 import { userService, type UserProfile } from './userService';
-
-/** Name of the isolated app used only for provisioning. */
-const PROVISIONING_APP = 'arky-user-provisioning';
 
 export interface ProvisionUserInput {
   email: string;
@@ -58,107 +47,108 @@ export interface ProvisionUserResult {
   message?: string;
 }
 
-/**
- * A password nobody will ever use, and nobody sees.
- *
- * `createUserWithEmailAndPassword` demands one; the person sets their own via
- * the reset email. Generated from the platform CSPRNG so it is not guessable in
- * the window before that email is opened.
- */
-function singleUseSecret(): string {
-  const bytes = new Uint8Array(24);
-  crypto.getRandomValues(bytes);
-  const body = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-  // Mixed case, digit and symbol so it satisfies any password policy the
-  // project has configured, whatever it happens to be.
-  return `Aq1!${body}`;
+const REASONS: Record<string, string> = {
+  email_already_in_use: 'Ya existe una cuenta con ese correo. Búscala en el directorio en lugar de crearla otra vez.',
+  invalid_email: 'El correo no tiene un formato válido.',
+  invalid_name: 'El nombre debe tener al menos 2 caracteres.',
+  forbidden: 'Tu cuenta no tiene permiso para crear usuarios.',
+  unauthenticated: 'La sesión expiró. Vuelve a entrar e inténtalo otra vez.',
+  not_configured: 'El backend no tiene configurada la clave de servicio para crear cuentas.',
+  invite_failed: 'No se pudo enviar la invitación. Revisa la consola de observabilidad.',
+};
+
+const explain = (reason: string): { reason: string; message: string } => ({
+  reason,
+  message: REASONS[reason] ?? 'No se pudo crear la cuenta. Revisa la consola de observabilidad.',
+});
+
+const functionsUrl = (name: string): string => {
+  const base = ((import.meta.env as Record<string, string | undefined>).VITE_SUPABASE_URL ?? '').trim();
+  return `${base.replace(/\/$/, '')}/functions/v1/${name}`;
+};
+
+interface InviteResponse {
+  ok?: boolean;
+  uid?: string;
+  error?: string;
+  detail?: string;
 }
 
-/** Translate a Firebase auth error code into something an operator can act on. */
-function explain(code: string): { reason: string; message: string } {
-  if (code.includes('email-already-in-use')) {
-    return {
-      reason: 'email_already_in_use',
-      message: 'Ya existe una cuenta con ese correo. Búscala en el directorio en lugar de crearla otra vez.',
-    };
-  }
-  if (code.includes('invalid-email')) {
-    return { reason: 'invalid_email', message: 'El correo no tiene un formato válido.' };
-  }
-  if (code.includes('operation-not-allowed')) {
-    return {
-      reason: 'password_provider_disabled',
-      message: 'Habilita el proveedor Correo/Contraseña en Firebase Console para poder crear cuentas.',
-    };
-  }
-  return { reason: 'provisioning_failed', message: 'No se pudo crear la cuenta. Revisa la consola de observabilidad.' };
-}
+const callProvisionFunction = async (body: Record<string, unknown>): Promise<InviteResponse & { status: number }> => {
+  const token = await currentAccessToken();
+  if (!token) return { status: 401, error: 'unauthenticated' };
+  const response = await fetch(functionsUrl('provision-user'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: ((import.meta.env as Record<string, string | undefined>).VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim(),
+    },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({})) as InviteResponse;
+  return { ...payload, status: response.status };
+};
 
 /**
  * Create an account and hand it to its owner.
  *
- * The caller is responsible for checking `users:create` before calling — this
- * module does not know who is asking. The real enforcement is in
- * `firestore.rules`, which refuses the profile write from a non-administrator
- * regardless of what the UI allowed.
+ * El llamante comprueba `users:create` antes de llamar — este módulo no sabe
+ * quién pregunta. La aplicación real de la regla está en la Edge Function y en
+ * la RPC, que rechazan a un no administrador independientemente de lo que la
+ * interfaz permitiera.
  */
 export async function provisionUser(input: ProvisionUserInput): Promise<ProvisionUserResult> {
   const email = input.email.trim().toLowerCase();
   const displayName = input.displayName.trim();
   const role = input.role ?? DEFAULT_PROVISIONED_ROLE;
 
-  if (!isFirebaseAvailable) {
+  if (!isAuthAvailable()) {
     return {
       ok: false,
-      reason: 'firebase_unavailable',
-      message: 'Sin conexión con Firebase no se pueden crear cuentas. Las altas nunca se guardan solo en este navegador.',
+      reason: 'backend_unavailable',
+      message: 'Sin conexión con Supabase no se pueden crear cuentas. Las altas nunca se guardan solo en este navegador.',
     };
   }
-  if (!email.includes('@')) {
-    return { ok: false, reason: 'invalid_email', message: 'El correo no tiene un formato válido.' };
-  }
-  if (displayName.length < 2) {
-    return { ok: false, reason: 'invalid_name', message: 'El nombre debe tener al menos 2 caracteres.' };
-  }
-
-  // A named secondary app keeps the new sign-in off the administrator's session.
-  const existing = getApps().find((app) => app.name === PROVISIONING_APP);
-  const app = existing ?? initializeApp(firebaseConfig, PROVISIONING_APP);
-  const secondaryAuth = getAuth(app);
+  if (!email.includes('@')) return { ok: false, ...explain('invalid_email') };
+  if (displayName.length < 2) return { ok: false, ...explain('invalid_name') };
 
   try {
-    const credential = await createUserWithEmailAndPassword(secondaryAuth, email, singleUseSecret());
-    await updateProfile(credential.user, { displayName });
-
-    const profile: UserProfile = {
-      uid: credential.user.uid,
+    const invited = await callProvisionFunction({
+      action: 'invite',
       email,
       displayName,
-      role,
-    };
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    if (!invited.ok || typeof invited.uid !== 'string') {
+      const explained = explain(invited.error ?? 'invite_failed');
+      observabilityService.recordWarning({
+        source: 'user-action',
+        title: 'No se pudo crear la cuenta',
+        message: explained.message,
+        metadata: { email, role, reason: explained.reason, status: String(invited.status), detail: invited.detail ?? '' },
+        recoverable: true,
+        userVisible: false,
+      });
+      return { ok: false, ...explained };
+    }
 
-    // The profile is written from the *administrator's* session, which is the
-    // one the rules will check for `users:create`. Writing it from the
-    // secondary session would let the brand-new account author its own role.
-    await userService.createUserProfile(profile);
-
-    // Hand the account to its owner. Sent from the secondary instance so the
-    // administrator's session is untouched even by this last step.
-    await sendPasswordResetEmail(secondaryAuth, email);
+    // Segundo paso, con la sesión del administrador: aquí se comprueban el
+    // permiso y la regla de roles privilegiados, y aquí queda la auditoría.
+    await userService.provisionProfile(invited.uid, role, displayName);
 
     observabilityService.recordWarning({
       source: 'user-action',
       title: 'Cuenta creada por un administrador',
       message: `Se creó la cuenta ${email} con rol ${role} y se envió la invitación para fijar contraseña.`,
-      metadata: { uid: profile.uid, email, role },
+      metadata: { uid: invited.uid, email, role },
       recoverable: true,
       userVisible: false,
     });
 
-    return { ok: true, profile };
+    return { ok: true, profile: { uid: invited.uid, email, displayName, role, status: 'active' } };
   } catch (error) {
-    const code = error instanceof Error ? error.message : String(error);
-    const explained = explain(code);
+    const explained = explain('invite_failed');
     observabilityService.reportError(error, {
       source: 'user-action',
       title: 'No se pudo crear la cuenta',
@@ -168,37 +158,16 @@ export async function provisionUser(input: ProvisionUserInput): Promise<Provisio
       userVisible: false,
     });
     return { ok: false, ...explained };
-  } finally {
-    // Always leave the secondary instance signed out, even on failure: a
-    // lingering session there is a second identity nobody is watching.
-    try {
-      await signOut(secondaryAuth);
-    } catch {
-      /* nothing useful to do; the app is torn down next */
-    }
-    try {
-      await deleteApp(getApp(PROVISIONING_APP));
-    } catch {
-      /* already gone */
-    }
   }
 }
 
 /** Re-send the "set your password" invitation for an existing account. */
 export async function resendInvitation(email: string): Promise<boolean> {
-  if (!isFirebaseAvailable) return false;
-  const existing = getApps().find((app) => app.name === PROVISIONING_APP);
-  const app = existing ?? initializeApp(firebaseConfig, PROVISIONING_APP);
+  if (!isAuthAvailable()) return false;
   try {
-    await sendPasswordResetEmail(getAuth(app), email.trim().toLowerCase());
-    return true;
+    const result = await callProvisionFunction({ action: 'resend', email: email.trim().toLowerCase(), redirectTo: `${window.location.origin}/auth` });
+    return result.ok === true;
   } catch {
     return false;
-  } finally {
-    try {
-      await deleteApp(getApp(PROVISIONING_APP));
-    } catch {
-      /* already gone */
-    }
   }
 }

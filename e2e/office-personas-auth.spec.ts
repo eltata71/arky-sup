@@ -4,9 +4,9 @@ import { signInE2E } from './support/auth';
 /**
  * E2E autenticado — Personas de la Oficina de Arquitectura.
  *
- * CI runs isolated Firebase Auth + Firestore emulators and seeds a granted
- * superadmin account. The spec signs in through the real UI; it never depends
- * on production secrets or on the development bypass.
+ * CI levanta el stack local de Supabase y siembra una cuenta superadmin
+ * concedida. El recorrido inicia sesión por la interfaz real; nunca depende
+ * de secretos de producción ni del bypass de desarrollo.
  *
  * El selector de personas (OfficeAgentPicker) vive dentro del copiloto de
  * proyecto, no en la home; su contrato está cubierto por su unit test
@@ -16,7 +16,7 @@ import { signInE2E } from './support/auth';
  */
 
 test.describe('Personas de la Oficina (autenticado)', () => {
-  // WebKit (iPad Safari) en el emulador no resuelve la sesión de Auth de forma
+  // WebKit (iPad Safari) no resuelve la sesión de Auth contra el stack local de forma
   // fiable; la cobertura autenticada corre en desktop-chromium y el smoke sin
   // autenticación sigue cubriendo iPad.
   test.skip(({ browserName }) => browserName !== 'chromium', 'Journeys autenticados: sólo desktop-chromium.');

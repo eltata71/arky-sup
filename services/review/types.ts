@@ -107,7 +107,7 @@ export interface RecordDecisionInput {
 /* Repository contract                                                      */
 /* ----------------------------------------------------------------------- */
 
-export type ReviewRepositoryKind = 'local' | 'firestore' | 'hybrid';
+export type ReviewRepositoryKind = 'local' | 'remote' | 'hybrid';
 
 /**
  * The canonical async repository contract. Every persistence backend

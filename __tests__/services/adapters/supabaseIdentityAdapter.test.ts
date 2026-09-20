@@ -192,8 +192,23 @@ describe('carga del cliente y selección de backend', () => {
     await expect(loadSupabaseDataClient({})).rejects.toBeInstanceOf(BackendUnavailableError);
   });
 
-  it('el backend por defecto es Firebase y `memory` no sirve identidad', async () => {
-    await expect(loadIdentityPort({})).resolves.toBeDefined();
+  it('el backend por defecto es Supabase, y sin configuración falla en la primera llamada', async () => {
+    resetSupabaseAuthClientCache();
+    // Ya no hay un segundo proveedor al que caer: pedir identidad sin
+    // configuración tiene que fallar aquí y no al iniciar sesión, que es donde
+    // el error se leería como «la contraseña está mal».
+    await expect(loadIdentityPort({})).rejects.toBeInstanceOf(BackendUnavailableError);
+  });
+
+  it('`memory` no sirve identidad: existe para pruebas que inyectan su puerto', async () => {
     await expect(loadIdentityPort({ VITE_BACKEND: 'memory' })).rejects.toBeInstanceOf(BackendUnavailableError);
+  });
+
+  it('con configuración construye el puerto', async () => {
+    resetSupabaseAuthClientCache();
+    await expect(loadIdentityPort({
+      VITE_SUPABASE_URL: 'https://project.supabase.co',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+    })).resolves.toBeDefined();
   });
 });

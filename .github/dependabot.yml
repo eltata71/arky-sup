@@ -1,7 +1,7 @@
 # Automated dependency updates.
 #
 # Sixteen runtime dependencies sat on caret ranges with nothing watching them —
-# `firebase`, `@google/genai` and `mermaid` among them. A caret range is not an
+# `@supabase/supabase-js`, `@google/genai` and `mermaid` among them. A caret range is not an
 # update policy: it means a fresh `npm ci` on a clean checkout can resolve
 # differently from the lockfile nobody re-generated, and a published advisory
 # goes unnoticed until someone happens to run `npm audit`.

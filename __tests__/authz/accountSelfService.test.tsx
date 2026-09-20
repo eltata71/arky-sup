@@ -13,7 +13,7 @@ import { AccountPanel } from '../../components/account/AccountPanel';
 
 const auth = vi.hoisted(() => ({
   profile: { uid: 'u1', email: 'ana@empresa.com', displayName: 'Ana', role: 'architect' } as Record<string, unknown> | null,
-  user: { providerData: [{ providerId: 'password' }] } as Record<string, unknown> | null,
+  user: { uid: 'u1', email: 'ana@empresa.com', displayName: 'Ana' } as Record<string, unknown> | null,
   changePassword: vi.fn(),
   updateOwnDisplayName: vi.fn(),
 }));
@@ -25,7 +25,7 @@ vi.mock('../../context/AuthContext', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   auth.profile = { uid: 'u1', email: 'ana@empresa.com', displayName: 'Ana', role: 'architect' };
-  auth.user = { providerData: [{ providerId: 'password' }] };
+  auth.user = { uid: 'u1', email: 'ana@empresa.com', displayName: 'Ana' };
   auth.changePassword.mockResolvedValue(undefined);
   auth.updateOwnDisplayName.mockResolvedValue(undefined);
 });
@@ -70,7 +70,7 @@ describe('changing the password', () => {
     );
   });
 
-  it('refuses a mismatched confirmation without calling Firebase', async () => {
+  it('refuses a mismatched confirmation without calling the provider', async () => {
     render(<AccountPanel />);
     fill('anterior-123', 'siguiente-456', 'siguiente-457');
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));

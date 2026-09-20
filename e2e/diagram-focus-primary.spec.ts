@@ -14,7 +14,7 @@ import { expect, test } from '@playwright/test';
  *
  *   - **Seed mode**: a query-string flag (e.g. `?seed=focus-primary-large`)
  *     that hydrates a deterministic project + diagram into the AppContext
- *     without going through Firebase Auth. Today the home route always
+ *     without going through Supabase Auth. Today the home route always
  *     renders the auth wall.
  *   - **Stable selectors**: the toolbar dropdowns currently use generated
  *     ids; the focal mode button needs a stable `data-testid` so this

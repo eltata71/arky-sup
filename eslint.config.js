@@ -173,14 +173,14 @@ export default [
      * The UI layers do not talk to an SDK.
      *
      * `no-restricted-imports` above covers the model SDK and the legacy engine
-     * but never mentioned Firebase, so `AuthContext` importing fifteen symbols
-     * from `firebase/auth` broke no rule — it broke a convention, which is the
-     * kind of thing that survives review indefinitely. Firestore was already
-     * behind `firestoreService`; Auth is now behind `services/authService`,
-     * and this makes both mechanical.
+     * but never mentioned the backend one, so `AuthContext` importing fifteen
+     * symbols from `firebase/auth` broke no rule — it broke a convention, which
+     * is the kind of thing that survives review indefinitely. The provider
+     * changed in F9 and the rule moved with it: `@supabase/supabase-js` is the
+     * SDK now, and it is just as forbidden here.
      *
-     * Scoped to the presentation layers on purpose: `services/` is where the
-     * adapters live, and `firebase.ts` is the app bootstrap.
+     * Scoped to the presentation layers on purpose: `services/adapters` is
+     * where the adapter lives.
      */
     files: ['components/**/*.{ts,tsx}', 'pages/**/*.{ts,tsx}', 'context/**/*.{ts,tsx}', 'hooks/**/*.{ts,tsx}'],
     rules: {
@@ -192,9 +192,9 @@ export default [
         }],
         patterns: [
           {
-            group: ['firebase/auth', 'firebase/firestore', 'firebase/app'],
+            group: ['@supabase/supabase-js', '@supabase/*', 'firebase', 'firebase/*'],
             message:
-              'La UI no habla con un SDK. Usa `services/authService` para autenticación y `services/firestoreService` para datos: así las reglas de sesión se pueden probar sin montar un árbol de React.',
+              'La UI no habla con un SDK. Usa `services/identity` para autenticación y el repositorio de tu contexto para datos: así las reglas de sesión se pueden probar sin montar un árbol de React. Firebase se retiró en F9 y no vuelve.',
           },
           {
             group: ['**/services/geminiService', '**/geminiService'],
@@ -208,47 +208,29 @@ export default [
 
   {
     /**
-     * The Firestore SDK lives where persistence lives, and nowhere else.
+     * The backend SDK lives in one place, and nowhere else.
      *
-     * The same holds for `firebase/auth`, behind `services/authService`.
+     * `CLAUDE.md` used to say all persistence went through three services. It
+     * did not: the review repository was a fourth way in, and nothing would
+     * have stopped a fifth. The cost of a fifth is not style — each one invents
+     * its own answer to "what happens when the write does not land", and one of
+     * them answered `console.warn`.
      *
-     * `CLAUDE.md` said all Firestore access went through `firestoreService`,
-     * `trainingService` and `userService`. It did not: the review repository
-     * was a fourth way in, and nothing would have stopped a fifth. The cost of
-     * a fifth is not style — each one invents its own answer to "what happens
-     * when the write does not land", and one of them answered `console.warn`.
-     *
-     * So the list is here rather than in prose. A new context that needs to
-     * persist something writes a repository over `services/persistence`; if it
-     * genuinely needs the SDK, adding itself to this list is a review decision
-     * someone has to make on purpose.
+     * **F9 made the list shorter rather than longer, and F9.1 made it one.**
+     * With Firestore retired, every context talks to `api.*` through RPC, so
+     * the SDK is only needed to *create the client* — and that client must be a
+     * single instance, because two of them with `persistSession` on one storage
+     * key fight over the refresh token and sign the user out mid-session. So
+     * the allowance is exactly one file, `services/adapters/supabaseClient.ts`,
+     * plus the serverless functions. A second file that imports
+     * `@supabase/supabase-js` is not a style problem: it is that bug again.
      */
     files: ['**/*.{ts,tsx}'],
     ignores: [
       '__tests__/**',
       'api/**',
-      'firebase.ts',
-      'services/persistence/**',
-      'services/identity/**',
-      'services/learning/**',
-      // El adaptador de cada contexto. Antes de la Ola 2 esta lista decía
-      // `services/firestoreService.ts` y nada más, porque un único fichero de
-      // 1 379 líneas guardaba siete contextos. Al repartirlo, cada uno tiene el
-      // suyo — y la lista sigue siendo explícita a propósito: un patrón como
-      // `services/**/*Repository.ts` dejaría entrar al SDK en cualquier fichero
-      // nuevo que acertara con el nombre, que es justo lo que esta regla existe
-      // para no permitir.
-      'services/agent/AgentActionRepository.ts',
-      'services/architectureOffice/OfficeAgentProfileRepository.ts',
-      'services/architectureOffice/OfficeEngagementRepository.ts',
-      'services/architectureProjects/projectDocumentMapper.ts',
-      'services/architectureProjects/projectReads.ts',
-      'services/architectureProjects/projectWrites.ts',
-      'services/artifacts/artifactPersistence.ts',
-      'services/businessInitiatives/BusinessInitiativeRepository.ts',
-      'services/chat/ChatHistoryRepository.ts',
-      'services/review/firestoreArtifactReviewRepository.ts',
-      'services/settings/SettingsRepository.ts',
+      'supabase/functions/**',
+      'services/adapters/supabaseClient.ts',
     ],
     rules: {
       'no-restricted-imports': ['error', {
@@ -259,9 +241,9 @@ export default [
         }],
         patterns: [
           {
-            group: ['firebase/firestore', 'firebase/auth'],
+            group: ['@supabase/supabase-js', '@supabase/*', 'firebase', 'firebase/*'],
             message:
-              'El SDK vive en su adaptador: la persistencia entra por un repositorio de contexto sobre `services/persistence`, y la sesión por `services/identity`. Cuatro caminos distintos al SDK es como el Centro de Formación acabó degradando a localStorage con un console.warn sin decírselo a nadie.',
+              'El SDK vive en `services/adapters`: la persistencia entra por `callRpc` o por el repositorio de tu contexto, y la sesión por `services/identity`. Cuatro caminos distintos al SDK es como el Centro de Formación acabó degradando a localStorage con un console.warn sin decírselo a nadie.',
           },
           {
             group: ['**/services/geminiService', '**/geminiService'],

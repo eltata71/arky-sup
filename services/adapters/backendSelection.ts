@@ -1,27 +1,30 @@
 /**
- * Selección de backend por contexto (F3.2).
+ * Selección de backend por contexto.
  *
  * Función pura sobre variables de entorno, sin SDK ni red: se prueba sin
  * emulador y se decide sin desplegar.
  *
- *  - `VITE_BACKEND`: `firebase` (por defecto, el proveedor activo) o
- *    `supabase` cuando un corte F5 lo habilite. `memory` solo existe para
- *    pruebas y nunca sale de ellas.
- *  - `VITE_BACKEND_<CONTEXTO>`: override por contexto
- *    (`businessInitiatives`, `architectureProjects`, `architectureOffice`,
- *    `artifacts`, `publication`, `knowledge`, `learning`), para que cada
- *    corte vertical migre sin arrastrar al resto.
+ *  - `VITE_BACKEND`: `supabase` (el proveedor único desde F9). `memory` solo
+ *    existe para pruebas y nunca sale de ellas.
+ *  - `VITE_BACKEND_<CONTEXTO>`: override por contexto, que es lo que permitió a
+ *    F5 migrar un corte vertical cada vez sin arrastrar al resto.
  *
- * Un valor desconocido no lanza: cae al valor seguro (`firebase`) porque un
- * typo en una variable no puede cambiar el proveedor de datos en silencio.
- * `resolved` dice si la petición se honró tal cual, para que el arranque lo
- * registre en observabilidad en vez de adivinarlo.
+ * **F9 retiró Firebase, y con él el valor por defecto que apuntaba a otro
+ * sitio.** Lo que queda es la forma, no la elección: un valor desconocido no
+ * lanza, cae a `supabase`, porque un typo en una variable no puede cambiar el
+ * proveedor de datos en silencio — y ahora, además, no hay ningún otro sitio
+ * donde pudiera caer. `resolved` dice si la petición se honró tal cual, para
+ * que el arranque lo registre en observabilidad en vez de adivinarlo.
+ *
+ * El eje se conserva a propósito. Borrarlo obligaría a reinventarlo el día que
+ * un contexto tenga una razón real para vivir en otro sitio, y esa razón
+ * llegaría junto con la prisa.
  */
-export type BackendKind = 'firebase' | 'supabase' | 'memory';
+export type BackendKind = 'supabase' | 'memory';
 
-export const DEFAULT_BACKEND: BackendKind = 'firebase';
+export const DEFAULT_BACKEND: BackendKind = 'supabase';
 
-const KNOWN_BACKENDS: ReadonlySet<string> = new Set(['firebase', 'supabase', 'memory']);
+const KNOWN_BACKENDS: ReadonlySet<string> = new Set(['supabase', 'memory']);
 
 export interface BackendResolution {
   backend: BackendKind;
@@ -33,10 +36,7 @@ export interface BackendResolution {
 
 const normalize = (value: string | undefined): string => (value ?? '').trim().toLowerCase();
 
-const toBackend = (value: string): BackendKind => {
-  if (value === 'supabase' || value === 'memory') return value;
-  return 'firebase';
-};
+const toBackend = (value: string): BackendKind => (value === 'memory' ? 'memory' : 'supabase');
 
 export function resolveBackend(
   env: Record<string, string | undefined>,

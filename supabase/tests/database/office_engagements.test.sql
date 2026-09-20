@@ -56,6 +56,20 @@ select is((select (api.save_engagement('proj_legacy_001', $json$
   'El arquitecto guarda un encargo con proyecto textual ajeno a la tabla de proyectos');
 select is((select jsonb_array_length(api.load_engagements('proj_legacy_001'))), 1,
   'El listado hidrata el encargo propio');
+
+-- La forma de la fila, no sólo el recuento. El repositorio lee `{revision, data}`
+-- —igual que en la respuesta de `save_engagement`— y descarta cualquier fila sin
+-- `revision` entera. Cuando esta RPC devolvía el documento a secas, toda lectura
+-- de encargos moría con «fila inválida» y la sala se quedaba vacía; el recuento
+-- de arriba pasaba igual, porque contaba elementos y no su forma.
+select is((select api.load_engagements('proj_legacy_001') -> 0 ? 'revision'), true,
+  'Cada fila trae su revisión: es la concurrencia optimista del agregado');
+select is((select api.load_engagements('proj_legacy_001') -> 0 ? 'data'), true,
+  'El documento viaja bajo `data`, que es donde el repositorio lo busca');
+select is((select api.load_engagements('proj_legacy_001') -> 0 -> 'data' ->> 'id'), 'eng_legacy_001',
+  'El documento sigue siendo el encargo, no un envoltorio vacío');
+select is((select api.load_engagements('proj_legacy_001') -> 0 -> 'data' -> 'arbDecisions'), '[]'::jsonb,
+  'El espejo de decisiones se reemplaza por el registro inmutable, dentro de `data`');
 reset role;
 
 set local role authenticated;

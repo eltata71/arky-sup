@@ -1,7 +1,8 @@
 /**
  * proxyAuthHeaders — the one place the client proves who it is to the proxy.
  *
- * The proxy verifies a Firebase ID token before it spends a provider key. Two
+ * The proxy verifies a Supabase access token before it spends a provider key.
+ * Two
  * modules call the proxy — `aiProxyClient` and the guided-creation service —
  * and they used to build their headers separately. That is how one of them was
  * left sending the old bare-uid header after the server started requiring a
@@ -15,7 +16,6 @@
  * other side of the wire.
  */
 
-import { auth } from '../../firebase';
 import { TRACE_ID_HEADER } from '../../lib/traceId';
 
 /**
@@ -41,20 +41,11 @@ export async function buildProxyAuthHeaders(
   // guessing which server call it was.
   if (traceId) headers[TRACE_ID_HEADER] = traceId;
   try {
-    const env = import.meta.env as Record<string, string | undefined>;
-    if (env.VITE_SUPABASE_PILOT_EMAILS?.trim()) {
-      const { isSupabasePilotEmail, parseSupabasePilotEmails } = await import('../identity');
-      const { loadSupabaseAuthClient } = await import('../adapters');
-      const { data, error } = await (await loadSupabaseAuthClient(env)).auth.getSession();
-      if (error) return headers;
-      const session = data?.session;
-      if (isSupabasePilotEmail(session?.user?.email, parseSupabasePilotEmails(env.VITE_SUPABASE_PILOT_EMAILS))) {
-        if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
-        // Never substitute another identity when a pilot session lacks a token.
-        return headers;
-      }
-    }
-    const token = await auth?.currentUser?.getIdToken();
+    // Dynamic import so the auth client stays out of the eager chunk: this
+    // module is reached from the AI layer, which is itself lazy, and a static
+    // import here would hoist the SDK into their common ancestor.
+    const { currentAccessToken } = await import('../identity');
+    const token = await currentAccessToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
   } catch {
     // Leave the header off; the proxy rejects and the caller degrades.

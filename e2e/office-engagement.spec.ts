@@ -5,23 +5,23 @@ import { signInE2E } from './support/auth';
  * E2E — Oficina de Arquitectura Empresarial.
  *
  * Este archivo separa la protección de rutas del flujo autenticado. Ambos
- * bloques corren siempre en CI contra un tenant efímero de Firebase Emulator.
+ * bloques corren siempre en CI contra el stack local de Supabase, efímero por construcción.
  *
  *  1. **Sin autenticación** (corre siempre): las rutas de la Oficina están
  *     protegidas y su chunk carga sin excepciones.
  *
  *  2. **Con autenticación**: el flujo real recepción (Nuevo entregable) →
- *     charter con productor y revisor distintos, contra el tenant aislado de
- *     Auth/Firestore Emulator. Los selectores ejercen la UI que existe — el
+ *     charter con productor y revisor distintos, contra el stack local de
+ *     Supabase. Los selectores ejercen la UI que existe — el
  *     wizard real es EngagementIntakeWizard, con su título "Nuevo entregable".
  */
 
 const ENV_NOISE =
-  /Failed to load resource|net::|ERR_|MIME type|Refused to apply|Refused to execute|404|DNS|resolve|firebase|No se pudieron cargar settings|lectura de settings falló|googleapis|gstatic|fonts\.|cdn\.|jsdelivr|cloudflare|heroicons|reactflow/i;
+  /Failed to load resource|net::|ERR_|MIME type|Refused to apply|Refused to execute|404|DNS|resolve|supabase|No se pudieron cargar settings|lectura de settings falló|googleapis|gstatic|fonts\.|cdn\.|jsdelivr|cloudflare|heroicons|reactflow/i;
 
 test.describe('Oficina de Arquitectura — acceso', () => {
-  // `networkidle` nunca llega con los emuladores: el SDK de Firestore mantiene
-  // un canal abierto, así que la aserción de URL (con reintento) es la espera.
+  // `networkidle` no es una señal fiable aquí: el stack local mantiene
+  // peticiones en vuelo, así que la aserción de URL (con reintento) es la espera.
   test('las rutas de la Oficina exigen sesión', async ({ page }) => {
     await page.goto('/office');
     // `ProtectedRoute` manda a /auth cuando no hay usuario.
@@ -52,8 +52,8 @@ test.describe('Oficina de Arquitectura — acceso', () => {
 });
 
 test.describe('Oficina de Arquitectura — panel autenticado', () => {
-  // WebKit (iPad Safari) en el emulador no resuelve la sesión de Auth de forma
-  // fiable (persistencia IndexedDB del preview); la cobertura autenticada corre
+  // WebKit (iPad Safari) no resuelve la sesión de Auth de forma fiable contra el
+  // stack local (persistencia del preview); la cobertura autenticada corre
   // en desktop-chromium y el smoke sin autenticación sigue cubriendo iPad.
   test.skip(({ browserName }) => browserName !== 'chromium', 'Journeys autenticados: sólo desktop-chromium.');
 
@@ -67,7 +67,7 @@ test.describe('Oficina de Arquitectura — panel autenticado', () => {
 
     // El botón real abre EngagementIntakeWizard (título "Nuevo entregable").
     // Si el wizard lista el proyecto e iniciativa del seed, el ciclo
-    // login -> Firestore(rules) -> lectura del portafolio funciona de extremo
+    // login -> RLS/RPC -> lectura del portafolio funciona de extremo
     // a extremo; es la verificación real del tenant sembrado.
     await page.getByRole('button', { name: 'Nuevo entregable' }).click();
     const dialog = page.getByRole('dialog', { name: /Nuevo entregable/i });
@@ -107,7 +107,7 @@ test.describe('Oficina de Arquitectura — panel autenticado', () => {
     const committee = page.locator('#comite');
     const approve = committee.getByRole('button', { name: 'Aprobar entrega' });
 
-    // Un reintento de Playwright comparte el emulador de esta ejecución. Si el
+    // Un reintento de Playwright comparte el stack local de esta ejecución. Si el
     // primer intento alcanzó a persistir la firma pero falló una aserción
     // posterior, validar el resultado ya registrado es correcto; intentar
     // firmar otra vez violaría la máquina de estados del agregado.
@@ -117,7 +117,7 @@ test.describe('Oficina de Arquitectura — panel autenticado', () => {
     }
 
     // La sala se actualiza desde el agregado persistido, no sólo desde un toast:
-    // estado y rastro de decisión prueban el ciclo UI → reglas → Firestore → UI.
+    // estado y rastro de decisión prueban el ciclo UI → RLS/RPC → PostgreSQL → UI.
     await expect(page.getByText('Entregado', { exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(committee.getByText('Decisiones registradas')).toBeVisible();
     await expect(committee.getByText('Aprobado', { exact: true })).toBeVisible();

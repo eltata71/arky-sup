@@ -1,49 +1,33 @@
 /**
- * Carga del cliente de Supabase Auth (F4.1).
+ * El puerto de identidad, servido por Supabase Auth (F4.1).
  *
- * Es el ÚNICO fichero que importa `@supabase/supabase-js`, y lo hace de forma
- * dinámica: el SDK queda en un chunk perezoso en vez de viajar en el arranque.
- * La regla del repositorio es explícita al respecto —un barril desde código
- * perezoso, un archivo desde código del arranque— y el presupuesto eager lo
- * confirma: el cliente de Supabase no entra en la carga inicial de la SPA.
- *
- * La URL y la clave son las publicables (`sb_publishable_…`). La clave de
- * servicio no se usa aquí y no debe aparecer en `VITE_*`: llegaría al navegador
- * dentro del bundle.
+ * Este fichero ya no construye nada: `supabaseClient.ts` es el único sitio
+ * donde se llama a `createClient`, y aquí sólo se le pide esa instancia y se la
+ * envuelve en el `IdentityPort`. Construir un cliente propio era el defecto que
+ * mandaba a `/auth` a quien acababa de iniciar sesión — el porqué está escrito
+ * en `supabaseClient.ts`, junto al código que lo impide.
  */
-import { BackendUnavailableError, type IdentityPort } from '../ports';
+import { type IdentityPort } from '../ports';
+import { loadSupabaseClient, resetSupabaseClientCache } from './supabaseClient';
 import { createSupabaseIdentityAdapter, type SupabaseAuthClientLike } from './supabaseIdentityAdapter';
-
-let cached: SupabaseAuthClientLike | null = null;
 
 /** Reinicia el cliente memorizado. Solo para pruebas. */
 export function resetSupabaseAuthClientCache(): void {
-  cached = null;
+  resetSupabaseClientCache();
 }
 
 /**
- * Construye (una sola vez) el cliente de Auth.
+ * El cliente de Auth: la instancia compartida, vista por su superficie de
+ * identidad.
  *
- * Falla con `BackendUnavailableError` si falta configuración, en vez de crear un
- * cliente que responderá errores oscuros más adelante.
+ * Falla con `BackendUnavailableError` si falta configuración, en vez de
+ * devolver un cliente que responderá errores oscuros más adelante.
  */
 export async function loadSupabaseAuthClient(
   env: Record<string, string | undefined>,
 ): Promise<SupabaseAuthClientLike> {
-  if (cached) return cached;
-
-  const url = (env.VITE_SUPABASE_URL ?? '').trim();
-  const key = (env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
-  if (url === '' || key === '') {
-    throw new BackendUnavailableError('supabase', 'auth: configuración ausente');
-  }
-
-  const { createClient } = await import('@supabase/supabase-js');
-  const client = createClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true },
-  });
-  cached = client as unknown as SupabaseAuthClientLike;
-  return cached;
+  const client = await loadSupabaseClient(env, 'auth');
+  return client as unknown as SupabaseAuthClientLike;
 }
 
 /** Puerto de identidad servido por Supabase Auth. */

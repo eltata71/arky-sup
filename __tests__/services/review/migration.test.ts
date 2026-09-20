@@ -7,7 +7,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  FirestoreArtifactReviewRepository,
+  RemoteArtifactReviewRepository,
   HybridArtifactReviewRepository,
   LocalArtifactReviewRepository,
 } from '../../../services/review';
@@ -34,7 +34,7 @@ describe('HybridArtifactReviewRepository — local → remote migration', () => 
 
     const hybrid = new HybridArtifactReviewRepository(
       local,
-      new FirestoreArtifactReviewRepository(gateway),
+      new RemoteArtifactReviewRepository(gateway),
     );
     const report = await hybrid.migrateLocalToRemote();
 
@@ -51,7 +51,7 @@ describe('HybridArtifactReviewRepository — local → remote migration', () => 
     local.addCommentSync({ ...base, body: 'una vez' });
     const hybrid = new HybridArtifactReviewRepository(
       local,
-      new FirestoreArtifactReviewRepository(gateway),
+      new RemoteArtifactReviewRepository(gateway),
     );
 
     await hybrid.migrateLocalToRemote();
@@ -78,7 +78,7 @@ describe('HybridArtifactReviewRepository — local → remote migration', () => 
     gateway.failNextWrite = true;
     const hybrid = new HybridArtifactReviewRepository(
       local,
-      new FirestoreArtifactReviewRepository(gateway),
+      new RemoteArtifactReviewRepository(gateway),
     );
 
     const report = await hybrid.migrateLocalToRemote();

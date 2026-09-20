@@ -2,7 +2,7 @@
 
 This document is the definitive reference for AI assistants working on this codebase. Read it fully before making any changes.
 
-Last audited against the repository: **2026-09-19** (después de la ola de entrega continua y dependencias: el repositorio abierto para desbloquear Actions, un solo camino publicando producción, y la cola de Dependabot resuelta paquete a paquete — ver *Vercel Deployment* y *Dependencias que no pueden subir*). La ola anterior sigue vigente: captura asistida —un agente al lado de cada campo de los seis formularios—, las fichas configurables de los agentes, y los límites declarados de la orquestación con su evaluador-optimizador acotado. Las cuatro olas de monolito modular anteriores siguen siendo la base estructural: módulos declarados con su gate de fronteras, el agregado `architectureProjects` y su invariante, `types.ts` partido por contexto, y `AppContext` reducido a composición sobre `context/app/`.
+Last audited against the repository: **2026-09-19**, tras F9: Firebase retirado y toda la aplicación —identidad, datos y archivos— sobre Supabase. Las olas anteriores siguen vigentes en lo estructural y se describen abajo (la de entrega continua y dependencias: el repositorio abierto para desbloquear Actions, un solo camino publicando producción, y la cola de Dependabot resuelta paquete a paquete — ver *Vercel Deployment* y *Dependencias que no pueden subir*). La ola anterior sigue vigente: captura asistida —un agente al lado de cada campo de los seis formularios—, las fichas configurables de los agentes, y los límites declarados de la orquestación con su evaluador-optimizador acotado. Las cuatro olas de monolito modular anteriores siguen siendo la base estructural: módulos declarados con su gate de fronteras, el agregado `architectureProjects` y su invariante, `types.ts` partido por contexto, y `AppContext` reducido a composición sobre `context/app/`.
 
 ---
 
@@ -16,39 +16,37 @@ Last audited against the repository: **2026-09-19** (después de la ola de entre
 - An Architecture Knowledge Graph (consistency, traceability, impact analysis)
 - An "Oficina de Arquitectura" — 13 specialist AI agent personas that take an engagement from brief to governed delivery: charter, task DAG, cross-review, quality gates and an Architecture Review Board
 - A Learning Management System (LMS / Training Center)
-- Role-based user management backed by Firebase
+- Role-based user management backed by Supabase Auth + PostgreSQL
 
-The app is **frontend-first**: there is no custom domain backend. Persistence goes through Firebase Firestore + Auth, and AI inference goes through the provider layer in `services/ai/`.
+The app is **frontend-first**: there is no custom domain backend. Persistence goes through Supabase (PostgreSQL with RLS + `SECURITY DEFINER` RPC, Auth, and private Storage), and AI inference goes through the provider layer in `services/ai/`.
 
 The single exception to "frontend-only" is `api/` — two **stateless** Vercel serverless functions that exist purely to keep provider API keys off the client. They hold no domain logic and the app degrades to a direct provider call when they are unset or fail. Do not add domain endpoints there.
 
-### Transición a Supabase — aprobada en Fase 1 (F1.7)
+### El backend es Supabase, y Firebase ya no existe (F9)
 
-**La regla «frontend-only con Firebase» ya no es absoluta, y este apartado es el
-que la sustituye.** `docs/plan-transformacion-supabase-ddd.md` es el mandato, y
-`docs/fase-1/adrs.md` (ADR-001…ADR-008) la arquitectura aprobada: Supabase Auth
-para identidad, PostgreSQL con RLS para datos y permisos, Storage privado para
-archivos, y **backend confiable mínimo** (RPC `SECURITY DEFINER` y, donde haga
-falta clave de servicio, Edge Functions) para las operaciones que el navegador
-no puede autorizar. El hosting sigue siendo Vercel (ADR-006).
+`docs/plan-transformacion-supabase-ddd.md` es el mandato y `docs/fase-1/adrs.md`
+(ADR-001…ADR-008) la arquitectura aprobada. **F9 la terminó de ejecutar**:
+Supabase Auth para identidad, PostgreSQL con RLS y RPC `SECURITY DEFINER` para
+datos y permisos, Storage privado para archivos, y una sola Edge Function
+(`provision-user`) para lo único que el navegador no puede hacer. El hosting
+sigue siendo Vercel (ADR-006).
 
-Cuatro cosas que esto cambia y cuatro que no:
+Cuatro cosas que esto cambió y cuatro que no:
 
-| Cambia | Sigue igual |
+| Cambió | Sigue igual |
 |---|---|
-| Firebase deja de ser la única persistencia posible; cada contexto elige por adaptador | Ningún componente, página, contexto o hook habla con un SDK: se entra por el repositorio del contexto |
-| `services/ports/` declara los contratos (`IdentityPort`, `RepositoryPort`, `FileStoragePort`, `ClockPort`) y el dominio depende solo de ellos | El dominio se prueba sin React, sin Firebase y sin Supabase |
-| `services/adapters/` es donde viven los SDK de ambos proveedores, y `resolveBackend(env, contexto)` decide cuál sirve a cada corte vertical | `api/` sigue siendo apátrida y sin lógica de dominio |
+| **No queda ningún SDK de Firebase**: ni dependencia, ni `firestore.rules`, ni emulador, ni variables `VITE_FIREBASE_*` | Ningún componente, página, contexto o hook habla con un SDK: se entra por el repositorio del contexto |
+| `services/ports/` declara los contratos (`IdentityPort`, `RepositoryPort`, `FileStoragePort`, `ClockPort`) y el dominio depende solo de ellos — **sobrevivieron al cambio de proveedor sin un solo cambio**, que es la prueba de que valían la pena | El dominio se prueba sin React y sin base de datos |
+| `services/adapters/` es donde vive el SDK, en **un fichero y un cliente**, cargado dinámicamente | `api/` sigue siendo apátrida y sin lógica de dominio |
 | La autorización sensible se hace cumplir en el servidor —RLS y RPC— además de en `lib/authz` | `lib/authz` sigue decidiendo qué *se muestra*; nunca qué *se permite* |
 
-**El corte es por contexto, no por fecha.** Un contexto migra cuando su corte
-vertical está hecho (esquema, RLS, adaptador, pruebas de contrato y
-reconciliación); hasta entonces sigue en Firebase y `firestore.rules` sigue
-siendo su frontera. Para eso existe `VITE_BACKEND_<CONTEXTO>`: es el interruptor
-por corte, con Firebase como valor seguro por defecto y un valor desconocido
-cayendo también a Firebase — un error de escritura en una variable de entorno no
-puede cambiar en silencio dónde se guardan los datos. Por eso *Data Layer* sigue
-describiendo las rutas de Firestore: son las que gobiernan hoy.
+**El interruptor por contexto sobrevive, la elección no.** `VITE_BACKEND` y
+`VITE_BACKEND_<CONTEXTO>` siguen existiendo con `supabase` por defecto y
+`memory` sólo para pruebas. Un valor desconocido —incluido `firebase`— cae al
+seguro y se marca como *no honrado*, que es lo que el arranque registra en
+observabilidad. Se conserva el eje porque borrarlo obligaría a reinventarlo el
+día que un contexto tenga una razón real para vivir en otro sitio, y esa razón
+llegaría junto con la prisa.
 
 **Lo que no autoriza:** microservicios, un backend de dominio propio, endpoints
 de dominio en `api/`, ni exponer `service_role` al cliente. El estado actual del
@@ -156,8 +154,9 @@ is what people quote in a steering meeting. Rules:
 | Icons | `components/Icons.tsx` (Heroicons set) + Lucide React |
 | Diagrams | Mermaid 11, ReactFlow 11, Dagre, ELK.js, Excalidraw |
 | Animation | Motion (Framer Motion successor) |
-| Database | Firebase Firestore (+ `firestore.rules`) |
-| Auth | Firebase Authentication |
+| Database | Supabase PostgreSQL 17 (RLS deny-by-default + RPC `SECURITY DEFINER` en `supabase/migrations/`) |
+| Auth | Supabase Auth (correo y contraseña; proveedor único por ADR-004) |
+| Storage | Supabase Storage, dos cubos privados, con registro en `api.file_objects` |
 | AI | Provider-agnostic layer over Google GenAI (`@google/genai`) and OpenRouter |
 | Unit/component tests | Vitest 5 + Testing Library + jsdom |
 | E2E tests | Playwright (desktop Chromium + iPad Safari) |
@@ -174,13 +173,11 @@ arkypro-1.0/
 ├── index.html              # HTML shell (fonts, boot guards, no runtime CDNs)
 ├── index.tsx               # React entry: provider tree + boot recovery fallback
 ├── App.tsx                 # Router, AppRail/MobileBottomNav shell, global commands
-├── firebase.ts             # Firebase app + Firestore + Auth init (`isFirebaseAvailable`)
 ├── constants.ts            # Project/artifact templates, Kanban columns (~800 lines)
 ├── types.ts                # The shared kernel (339 lines) — Settings, MemoryEntry, templates.
 │                          # Every aggregate lives in its context and is re-exported here.
 ├── utils.ts                # Shared utility helpers
 ├── env.d.ts                # Ambient declarations for `import.meta.env`
-├── firestore.rules         # Firestore Security Rules (deploy with the app)
 ├── vite.config.ts          # Vite + Vitest config (port 3000, `@` alias, manualChunks)
 ├── vitest.setup.dom.ts     # `dom` project setup: jest-dom matchers + auto `cleanup()`
 ├── vitest.setup.node.ts    # `node` project setup: jest-dom only if a DOM is present
@@ -264,12 +261,12 @@ arkypro-1.0/
 │   ├── export/               # Export registry + adapters (md/html/pdf/docx/pptx/xlsx/csv/json/txt)
 │   ├── publicationPipeline/  # Preflight, packages, approvals, branding, manifest, audit
 │   ├── quality/              # Artifact/document quality models, gates, auto-repair, reports
-│   ├── review/               # Artifact review repositories (local / firestore / hybrid)
+│   ├── review/               # Artifact review repositories (local / remote / hybrid)
 │   ├── chat/                 # Chat history compaction
 │   ├── memory/               # Structured agent-memory entries
 │   └── presentation/         # Presentation prompt + schema
 │
-├── lib/                     # Framework-agnostic helpers (no React, no Firebase)
+├── lib/                     # Framework-agnostic helpers (no React, no SDK)
 │   ├── ai/                  # Model catalogue: ids, cost tiers, fallback chain, resolution
 │   ├── secretShapes.ts / untrustedContent.ts  # ★ The published key shapes, and the fence
 │   │                        # around content the app did not write — leaves on purpose
@@ -283,7 +280,7 @@ arkypro-1.0/
 │   ├── capture/             # ★ Assisted capture: the field catalogue and its contract
 │   ├── platformGuide/       # ★ The platform guide: its contract, its search and its topics
 │   ├── lazyWithRetry.ts     # Chunk-load retry for lazy routes (iPad/Safari resilience)
-│   └── firestoreData.ts, colorContrast.ts, textDiff.ts, printDocument.ts, chartSvg.ts…
+│   └── jsonSafe.ts, colorContrast.ts, textDiff.ts, printDocument.ts, chartSvg.ts…
 │
 ├── utils/
 │   ├── diagram/extractMermaid.ts   # Shared Mermaid extraction + kind detection
@@ -377,7 +374,7 @@ through the `services/chat` barrel. That barrel exports `chatCompactor`, which
 value-imports `aiGateway` from the `services/ai` barrel, which re-exports
 `generation`, which reaches `services/geminiService` — so **the entire AI layer
 and the 5 400-line engine were downloaded before the login screen rendered**, to
-obtain one object that talks to Firestore.
+obtain one object that talks to the database.
 
 Two changes, and the second is the more interesting one. `projectWrites` now
 enters by file path. And `deterministicCompactionDigest` — a pure, AI-less
@@ -458,7 +455,7 @@ tried in Ola 5 and reverted — see *Known Issues* for why the relocation makes
 the cycle census worse rather than better.
 
 `runtimeValidation.ts` was the other holdout and it is gone: once
-`firestoreService` was split, its only two callers turned out to be
+the persistence monolith was split, its only two callers turned out to be
 `projectReads` and `projectDocumentMapper`, so it was never shared code — it was
 the Project aggregate's own read-validation, kept outside because the
 persistence monolith called it. It is `services/architectureProjects/projectRuntimeValidation.ts`.
@@ -528,7 +525,7 @@ npm run check:module-boundaries  # no new cycle, upward import, deep import or U
 
 npm run e2e            # Playwright (starts the dev server itself)
 npm run e2e:install    # Download chromium + webkit browsers
-npm run test:rules     # firestore.rules against the emulator (needs Java)
+bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, advisors y tipos (necesita Docker)
 ```
 
 `Makefile` and `run.sh` wrap the same targets (`./run.sh quality`, `./run.sh ci-check`, `./run.sh health`, `./run.sh status`). `run.sh` exists because `make` is usually absent on Windows/git-bash. `make health` runs `.hermes/bin/health.sh`.
@@ -562,9 +559,8 @@ concurrencia con `cancel-in-progress`:
   - `coverage` — reúne los cuatro blobs con `vitest --merge-reports --coverage`
     y aplica los suelos sobre un denominador. **Aquí se juzga la suite**, no en
     los shards.
-  - `rules` — `firestore.rules` contra el emulador real (necesita JDK 21).
-  - `deploy` — **cuelga de los tres anteriores** (`needs: [quality, coverage,
-    rules]`), sólo desde `main`, en su propio grupo de concurrencia y **sin**
+  - `deploy` — **cuelga de los dos anteriores** (`needs: [quality, coverage]`),
+    sólo desde `main`, en su propio grupo de concurrencia y **sin**
     `cancel-in-progress`: interrumpir un `vercel deploy` deja lo publicado a
     merced del momento en que llegó la señal.
 - **`.github/workflows/e2e.yml`** — Playwright (Chromium escritorio + Safari
@@ -602,7 +598,6 @@ entera**, y ninguna se detecta leyendo el changelog.
 |---|---|---|
 | `vite` 8 | Cambia el bundler a **Rolldown**. La carga inicial pasa de 439,1 a **1 058,8 KB gz** y el artefacto cambia de forma: la entrada cae a 16,8 KB y aparecen veinte chunks pequeños en el arranque, más Excalidraw entero | `check:bundle-budget` |
 | `@excalidraw/excalidraw` 0.18 | **Pierde la carga diferida.** Su chunk de 1 390 KB gz se muda al arranque: 439,1 → **1 937,8 KB gz** | `check:bundle-budget` |
-| `firebase` 12.19 | `vendor-firebase` engorda de 110,6 a 168,4 KB gz. Esos 57,8 se comen solos el margen de 10,9 | `check:bundle-budget` |
 | `typescript` 7 | `typescript-eslint@8.70` —la última publicada— declara `peer typescript@">=4.8.4 <6.1.0"`. No hay versión que lo soporte | el resolutor estricto de npm |
 | `mermaid` 12 | Depende de `chevrotain` 11 → `lodash-es` vulnerable. **5 advisories de severidad alta**, entre ellos inyección de código vía `_.template` | `npm audit --audit-level=high` |
 | `react-dom` 19 | La PR sube `react-dom` dejando `react` en 18. Rota de partida | typecheck |
@@ -634,7 +629,7 @@ All client variables use the `VITE_` prefix and are read via `import.meta.env`. 
 | `VITE_OPENROUTER_API_KEY` | Optional OpenRouter key |
 | `VITE_AI_PROXY_URL` | Provider-agnostic proxy endpoint, e.g. `/api/ai`. **Optional**: a production build with it unset uses the `/api/ai` this repo deploys beside the bundle (`DEFAULT_AI_PROXY_PATH`); set it only when the proxy lives elsewhere. Unset in `npm run dev` means no proxy |
 | `VITE_GEMINI_PROXY_URL` | Legacy Gemini-only proxy, e.g. `/api/gemini` |
-| `VITE_FIREBASE_*` | Standard public Firebase client config (7 vars) |
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` | **Obligatorias.** El proyecto Supabase: identidad, datos y archivos. La clave publicable es pública por diseño; la `service_role` nunca lleva prefijo `VITE_` |
 | `VITE_LUCID_API_KEY` | Global Lucidchart token (users can paste their own) |
 | `VITE_DIAGRAM_PIPELINE` | `canonical` (default) or `ai` fallback |
 | `VITE_ARTIFACT_REFINEMENT_ENABLED` / `_AI_ENABLED` / `_MAX_PASSES` | Semantic refinement kill switches |
@@ -650,10 +645,9 @@ User-supplied keys live in `localStorage`: `user_gemini_key`, `user_openrouter_k
 `vercel.json` fija `framework: vite`, `buildCommand: npm run build`,
 `outputDirectory: dist` y un rewrite SPA que **excluye `/api/`** — capturarlo es
 el fallo de F5, y `__tests__/config/vercelApiRoutes.test.ts` lo sostiene. Tras
-desplegar, añade el dominio a **Firebase Console → Authentication → Settings →
-Authorized Domains** para que funcione Google OAuth, y despliega
-`firestore.rules` al lado. Ver `docs/security-hardening.md` para los Custom
-Claims (`request.auth.token.role`).
+desplegar, añade la URL a **Supabase → Authentication → URL Configuration →
+Redirect URLs**, o los enlaces de invitación y de recuperación volverán al sitio
+equivocado. Ver `docs/security-hardening.md`.
 
 **Producción la publica un solo camino, y es GitHub Actions.** El proyecto
 `arky-sup` (`prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`) está enlazado a este
@@ -682,21 +676,34 @@ fallo pertenecía a una PR.
 
 Detalle, secretos y runbook de reversión en `docs/ci-cd-pipeline.md`.
 
-### Deploying the Firestore rules
+### Desplegar el esquema
 
-Hosting is Vercel's; Firebase is used only for Firestore and Auth. `firebase.json` therefore declares **only** the rules file — no `hosting` block:
+Hosting es de Vercel; Supabase sirve identidad, datos y archivos. El esquema son
+migraciones versionadas en `supabase/migrations/`, y se aplican **en orden**:
 
 ```bash
-npm i -g firebase-tools          # once
-firebase login                   # once
-npm run deploy:rules             # firebase deploy --only firestore:rules
+supabase link --project-ref <ref>     # una vez
+supabase db push                      # aplica las migraciones pendientes
+supabase functions deploy provision-user
 ```
 
-`.firebaserc` ships with a placeholder project id. Replace it once (or run `firebase use --add`); the id is not a secret — it is already in the client bundle as `VITE_FIREBASE_PROJECT_ID`.
+**Las migraciones son aditivas respecto a la aplicación en ejecución**:
+aplicarlas *antes* de desplegar el código que usa las rutas nuevas es el orden
+correcto, nunca al revés — exactamente la misma regla que tenían las reglas de
+Firestore.
 
-**`firestore.indexes.json` is deliberately absent.** Declaring an indexes file makes `firebase deploy --only firestore` reconcile the project's indexes against it, which *deletes* any composite index the file omits. The app needs none today (the only `orderBy` is single-field, on `agent_actions`), so leaving it undeclared means a rules deploy can never touch indexes. Add it only alongside the first composite index, exported with `firebase firestore:indexes`.
+**Un aviso operativo que cuesta una sesión encontrar.** Todo el producto entra
+por RPC del esquema `api`. Si PostgREST no lo tiene en `db-schemas`, cada
+llamada devuelve 404 y la aplicación se lee como si no hubiera datos. La
+migración `data_api_exposed_schemas` lo fija con `alter role authenticator set
+pgrst.db_schemas`, pero **cambiar «Exposed schemas» desde el panel reescribe la
+configuración del contenedor** y puede volver a dejarlo fuera. Si un día todas
+las RPC devuelven 404, ese es el primer sitio donde mirar.
 
-Rules are additive with respect to the running app: deploying them **before** the code that uses the new paths is the correct order, never the reverse.
+Verificación local completa —esquema reconstruido desde cero, contratos pgTAP,
+lint de SQL, advisors y comprobación de tipos generados— con
+`bash scripts/supabase/local.sh verify`. Necesita Docker; es lo mismo que corre
+`.github/workflows/supabase.yml`.
 
 ---
 
@@ -752,65 +759,81 @@ or a dedicated context.
 
 ## Data Layer
 
-### Firestore document paths
+### Dónde vive cada cosa, y cómo se entra
 
-Artifacts are a **subcollection of a project**, not a top-level collection:
+**Ninguna tabla se lee ni se escribe directamente.** Los privilegios están
+revocados sobre todas ellas; lo único que `authenticated` puede ejecutar son las
+RPC del esquema `api`, que comprueban permiso **y sesión viva** antes de tocar
+nada. Es la postura deny-by-default de ADR-003, y es lo que hace que un cliente
+manipulado no gane nada: no hay superficie que atacar.
 
-**Every path segment below is declared once, in
-`services/persistence/collectionPaths.ts`.** Before Ola 2 they were private
-constants of `firestoreService`, which worked while one file was the only thing
-that spoke to the database; the moment each context got a repository, the
-alternative was six modules spelling `"projects"` by hand.
+| Tabla | RPC de entrada | Contenido |
+|---|---|---|
+| `api.architecture_projects` + `api.project_artifacts` | `list_project_aggregates`, `load_project_aggregate`, `save_project_aggregate`, `delete_project_aggregate` | El agregado Proyecto/Atención: raíz, artefactos, contador e índice, en una transacción |
+| `api.project_chat_history` | `load_chat_history`, `save_chat_history` | Una fila por proyecto, reescrita entera |
+| `api.agent_actions` | `list_agent_actions`, `append_agent_action` | Registro append-only de lo que hizo el agente |
+| `api.artifact_comments` | `list_artifact_comments`, `save_artifact_comment`, `delete_artifact_comment` | Hilos de revisión |
+| `api.artifact_review_decisions` | `list_artifact_review_decisions`, `record_artifact_review_decision` | Rastro **inmutable**: `on conflict do nothing`, nunca se reescribe |
+| `api.office_engagements` + `api.office_arb_decisions` | `load_engagements`, `save_engagement`, `delete_engagement`, `record_arb_decision` | Encargos de Oficina y decisiones del ARB |
+| `api.business_initiatives` | `list_business_initiatives`, `save_business_initiative`, `delete_business_initiative` | Iniciativas: lo alto de la jerarquía |
+| `api.architecture_knowledge_graphs` | `load_knowledge_graph`, `save_knowledge_graph` | Grafo de conocimiento: **derivado**, en su tabla porque crece con los artefactos |
+| `api.user_settings` | `save_user_settings` | Preferencias por usuario |
+| `api.user_profiles` | `load_own_profile`, `list_user_profiles`, `provision_user_profile`, `set_user_role`, `set_user_status`, `delete_user_profile`, `update_own_display_name` | Perfil y rol. El correo se lee de `auth.users`, nunca se copia |
+| `api.agent_profiles` | `list_agent_profiles`, `save_agent_profile`, `delete_agent_profile` | La ficha configurada de cada agente, por usuario |
+| `api.lms_courses` / `_progress` / `_context` / `_notes` | `list_courses`, `save_course`, `delete_course`, `load_progress`, `save_progress`, `load_context`, `save_context`, `list_notes`, `save_note`, `delete_note` | Centro de Formación |
+| `api.file_objects` + dos cubos privados | `register_file_object`, `mark_file_object_ready`, `mark_file_object_deleted` | Archivos: la metadata y su binario, atados por el id que Storage asigna |
 
-| Path | Purpose |
-|---|---|
-| `projects/{projectId}` | Project metadata (owner via `userId`) |
-| `projects/{projectId}/artifacts/{artifactId}` | Artifacts (all versions) |
-| `projects/{projectId}/artifacts/{artifactId}/comments/{commentId}` | Review comment threads |
-| `projects/{projectId}/artifacts/{artifactId}/reviewDecisions/{id}` | Immutable review audit trail |
-| `projects/{projectId}/history/chat` | Chat history document |
-| `projects/{projectId}/agent_actions/{traceId}` | Agent action records (append-only) |
-| `projects/{projectId}/engagements/{engagementId}` | Architecture Office engagements (charter, task DAG, gates, audit trail) |
-| `projects/{projectId}/engagements/{id}/arbDecisions/{id}` | Immutable Architecture Review Board decisions (`allow update: if false`, admin-only create) |
-| `businessInitiatives/{initiativeId}` | Business initiatives — top of the hierarchy (owner via `userId`) |
-| `settings/user_{uid}` | Per-user settings (theme, language, AI config) |
-| `courses/{courseId}` | LMS courses |
-| `users/{uid}` | User profile + role |
-| `users/{uid}/lms_progress/main` | Per-user course/lesson progress |
-| `users/{uid}/lms_context/main` | Learning context preferences |
-| `users/{uid}/lms_notes/{noteId}` | Smart notes |
-| `users/{uid}/agentProfiles/{agentId}` | The agent's configured card (alias, avatar, skills, knowledge, memory, model tier) |
-
-`firestore.rules` mirrors this exactly (owner-or-admin reads, author-bound comment writes, `allow update: if false` on review decisions). **If you change a path or a document shape, update `firestore.rules` in the same change.**
+**Si cambias una forma, la migración va en el mismo cambio.** La diferencia con
+Firestore es que ahora la regla y el dato viven en el mismo fichero: una RPC que
+valida es la misma que escribe, y `private.authorization_audit` recibe la
+entrada en la misma transacción que el cambio de rol.
 
 ### Service layer rule
 
 Each context owns a repository — `architectureProjects`, `artifacts`, `chat`,
 `agent`, `architectureOffice`, `businessInitiatives` — and they sit on
 `services/persistence`, which owns `PersistenceResult`, the error
-classification and `writeLocalDraft` (the one correct way to degrade: keep the
-data, and say it is only local). It also owns the **collection paths** — the
-one place a Firestore path segment is written, mirroring `firestore.rules` —
-and `MirroredList`, the cache-plus-local-mirror pattern that five contexts had
-each written their own slightly different copy of.
+classification (`supabaseErrors.ts`: **una sola tabla** de códigos de PostgreSQL
+y PostgREST, que antes estaba escrita cinco veces con diferencias que no eran
+decisiones) and `writeLocalDraft` (the one correct way to degrade: keep the
+data, and say it is only local). It also owns `MirroredList`, the
+cache-plus-local-mirror pattern that five contexts had each written their own
+slightly different copy of.
 
-**There is no shared persistence module any more.** `firestoreService.ts` held
+**There is no shared persistence module any more.** The monolith held
 seven contexts in 1 379 lines and was deleted in Ola 2: each context now owns
-its adapter (`projectReads`/`projectWrites`, `artifactPersistence`,
-`ChatHistoryRepository`, `AgentActionRepository`, `SettingsRepository`, and the
-Office and initiative repositories). Talk to your context's repository.
+its adapter. Talk to your context's repository.
 
-**The Firestore and Auth SDKs are lint-restricted** to
-`services/persistence/**`, `services/identity/**`, `services/learning/**`,
-`firebase.ts`, and the named per-context adapter of each context that stores
-data. `eslint.config.js` lists them one by one on purpose: a pattern like
-`services/**/*Repository.ts` would let the SDK into any new file that guessed
-the name. A fifth ad-hoc path to the SDK is how the Training Center ended
-up degrading to `localStorage` with a `console.warn` and telling nobody.
+**El SDK se importa en exactamente un fichero**, `services/adapters/supabaseClient.ts`,
+y ESLint lo exige. Antes la lista tenía un fichero por contexto, porque cada
+repositorio hablaba con la base directamente; con todo el acceso por RPC, el SDK
+sólo hace falta para *crear el cliente*.
+
+**Y el cliente es uno, lo cual no es orden sino corrección.** Hubo dos —uno de
+identidad y uno de datos—, cada uno con `persistSession: true` y, al no declarar
+`storageKey`, sobre la misma clave de almacenamiento. El SDK avisa de esto por
+consola («Multiple GoTrueClient instances … under the same storage key») y el
+modo de fallo es el que no se ve venir: los dos traen `autoRefreshToken`, así
+que los dos renuevan el **mismo** refresh token; el segundo recibe
+`refresh_token_already_used`, el SDK borra la sesión guardada y emite
+`SIGNED_OUT`, `useAuthSessionBootstrap` lo traduce a `setUser(null)` y
+`ProtectedRoute` manda a `/auth`. Visto por una persona: **iniciar sesión bien y
+volver a la pantalla de inicio de sesión**, sin un solo error en pantalla. Tumbó
+los tres recorridos autenticados de la suite E2E.
+
+Identidad, datos y archivos son tres vistas de esa única instancia, y
+`__tests__/authz/noSdkInUiLayers.test.ts` cuenta las construcciones —no los
+imports— porque reexportar el SDK y llamar a `createClient` en otro sitio
+traería el defecto entero sin mover una línea de import.
+
+**Y se carga en diferido.** El fichero hace `await import(...)`, lo que mantiene
+59 KB gz fuera de la carga inicial: el SDK sólo se descarga cuando algo va a
+hablar con la base de datos, que nunca es antes de pintar la pantalla de inicio
+de sesión.
 
 ### Degradation and persistence status
 
-When Firestore is unavailable (`isFirebaseAvailable()` false, permission denied, offline) the service layer transparently falls back to LocalStorage. `services/persistence` normalises every write into a `PersistenceResult` (`success | failed | permission-denied | offline | conflict | validation-error`) and `AppContext` surfaces it as `persistenceStatus` / `persistenceMessage`, rendered by `components/PersistenceStatusBanner.tsx`. See `docs/persistence-hardening.md`.
+When the database is unavailable (no configuration, permission denied, offline) the service layer transparently falls back to LocalStorage. `services/persistence` normalises every write into a `PersistenceResult` (`success | failed | permission-denied | offline | conflict | validation-error`) and `AppContext` surfaces it as `persistenceStatus` / `persistenceMessage`, rendered by `components/PersistenceStatusBanner.tsx`. See `docs/persistence-hardening.md`.
 
 **The local mirror was write-only until Ola 2, and this is worth knowing.**
 `writeLocalDraft(key, …)` stored under `arky.offlineDraft.{key}` wrapped in
@@ -818,14 +841,14 @@ When Firestore is unavailable (`isFirebaseAvailable()` false, permission denied,
 never met: every `readLocal(...) ?? []` fallback in the product returned the
 empty list, so the degradation this layer exists to provide kept the user's
 work and was then unable to show it back. It came straight from the two private
-methods of `firestoreService` this module was extracted from, and the test
+methods of the persistence monolith this module was extracted from, and the test
 covering it wrote the raw key just like the reader did, so nothing caught it.
 `readLocal` now looks at the draft first and falls back to the bare key for
 values older builds wrote. `MirroredList` is the primitive that exercises the
 round trip, and `__tests__/services/persistence/mirroredList.test.ts` pins it.
 
 **`MirroredList` is how a context caches a list.** Five contexts had each
-written their own copy of "cache, then Firestore, then the local mirror", with
+written their own copy of "cache, then the database, then the local mirror", with
 differences that were not decisions. Two rules it encapsulates: a local draft is
 never reported as success, and the in-memory cache only ever holds *confirmed*
 writes — caching a failed one would serve it back as good for the next five
@@ -1055,7 +1078,7 @@ and `docs/diagram-story-and-patches.md`.
 | Artifact compiler | `services/artifactCompiler/` | Contract registry, section/contract validators, document repair, unified scoring, recompile | `docs/artifact-compiler.md` |
 | Quality | `services/quality/` | Artifact + document quality models, gates, auto-repair, report rendering | `docs/diagram-quality-gate.md` |
 | Presentation | `services/artifacts/*PresentationCompiler.ts` | Markdown/table/diagram/hybrid → presentation model | — |
-| Review | `services/review/` | Local / Firestore / hybrid review repositories, comments, decisions | — |
+| Review | `services/review/` | Local / remote / hybrid review repositories, comments, decisions | — |
 | Publication | `services/publicationPipeline/` | Preflight, packages, approvals, branding, manifest, accessibility, audit trail, versions | `docs/publication-pipeline.md`, `-packages`, `-governance`, `-accessibility` |
 | Export | `services/export/` | Registry + adapters: md, html, pdf, docx, pptx, xlsx, csv, json, txt, diagram raster, zip | `docs/export-hardening.md` |
 | Knowledge graph | `services/architectureKnowledgeGraph/` | Entity/relation extraction, normalization, dedup, freshness, consistency, impact, traceability | `docs/architecture-knowledge-graph.md`, `docs/consistency-engine.md`, `docs/traceability-engine.md` |
@@ -1153,15 +1176,46 @@ rather than passed around. Revisit it if a second resolver ever appears.
 
 ## Authentication & Roles
 
-Firebase Auth. Sign-in methods: Email/Password and Google OAuth.
+Supabase Auth, proveedor único (ADR-004). Dos métodos de entrada: **correo con
+contraseña** y **Google**.
+
+Dos métodos no son dos proveedores de identidad, y la distinción es la que
+sostiene todo lo demás: Google viaja *por* Supabase, así que las dos rutas
+terminan en el mismo `auth.users`, con el mismo `uid`, sobre el mismo perfil de
+`api.user_profiles`. Sigue habiendo un solo sitio donde una cuenta existe o no
+existe, y una sola matriz de permisos.
+
+`signInWithGoogle` (`services/identity/authService.ts`) manda `prompt=select_account`
+siempre. Sin eso Google reutiliza en silencio la sesión que el navegador ya
+tenga, que es exactamente lo contrario de lo que necesita quien tiene una cuenta
+personal y otra de la organización. El retorno cae en `/auth` y lo recoge
+`detectSessionInUrl`; **no hay ruta de callback propia** porque no hace falta:
+el observador de sesión es el mismo que restaura una sesión al abrir la
+aplicación, y una segunda copia de esa decisión es una que se queda vieja.
+
+**Entrar con Google no crea una cuenta.** Quien complete el flujo sin perfil en
+`api.user_profiles` es devuelto a `/auth` con la explicación de siempre. Que la
+puerta sea más cómoda no la abre a más gente.
+
+Habilitarlo en un despliegue son dos cosas fuera del repositorio, y ninguna es
+código: el proveedor Google en *Authentication → Providers* (con el client id y
+el secreto de un proyecto de Google Cloud) y la URL del despliegue en
+*Authentication → URL Configuration → Redirect URLs*. Sin lo primero el botón
+devuelve un error del proveedor, que es lo que la pantalla muestra; sin lo
+segundo el retorno cae en el sitio equivocado.
 
 **Nobody creates their own account.** There is no registration form: `/auth` is
 sign-in and password recovery, and an identity that authenticates without a
 provisioned `users/{uid}` profile is signed straight back out. Accounts are
 created by an administrator through `services/identity`, which
-uses a named secondary Firebase app so `createUserWithEmailAndPassword` cannot
-replace the administrator's session, and hands the account to its owner with a
-password-reset email. The administrator never chooses the first password.
+reparte la operación en dos: la Edge Function `provision-user` **invita** —es lo
+único que necesita la clave de servicio— y el navegador, con la sesión del
+administrador, llama a `api.provision_user_profile` para escribir el perfil y el
+rol. Esa segunda mitad es donde viven el permiso `users:create`, la regla de que
+sólo un superadmin concede roles privilegiados, y la entrada de auditoría con el
+actor real; duplicarlas dentro de la función habría dejado dos copias, y la que
+se queda vieja siempre es la que concede de más. No hay contraseña que elegir:
+la invitación lleva un enlace para que la persona fije la suya.
 
 ### The six roles
 
@@ -1185,26 +1239,30 @@ the first rule is bypassed by removing the people who hold it.
 
 ### One rule for resolving the role
 
-`resolveEffectiveRole` (`lib/authz`) states it once and `callerRole()` in
-`firestore.rules` mirrors it: **a custom claim decides when the deployment sets
-one; otherwise the user document does.** A claim that is present but unreadable
-resolves to *no role*, not to the document — falling back there would let the
-client quietly overrule a stale claim the rules still honour.
+**El rol sale de una fila, y la lee el mismo motor que aplica las políticas.**
+`private.current_role()` devuelve el rol del perfil **activo** del usuario del
+JWT, y `NULL` si no hay perfil o está deshabilitado: falla cerrado. La interfaz
+lee lo mismo por `api.load_own_profile`.
 
-This is the fix for the defect where the rules read a claim nothing ever set
-while the UI read the document, and 32 rule clauses were permanently false.
+Esto cierra el defecto D-4 por construcción, no por coincidencia. Allí había dos
+fuentes —las reglas leían un *custom claim* que nada ponía, la interfaz leía un
+documento— y 32 cláusulas quedaban permanentemente falsas porque nadie las
+comparaba. Ya no hay dos fuentes que comparar: la política y la pantalla leen la
+misma fila.
 
 ### The rules are the boundary, and they are tested
 
 `lib/authz` runs in a browser the caller controls; it decides what to *show*.
-`firestore.rules` decides what is *allowed*, and implements the same matrix —
-each function marked `// @permission x`, with
-`__tests__/authz/rulesMatrix.test.ts` comparing the two cell by cell.
+**PostgreSQL decide lo que se *permite*** —RLS, privilegios revocados y la guarda
+de permiso de cada RPC— e implementa la misma matriz, sembrada como datos en
+`private.role_permissions`. `__tests__/authz/sqlMatrixParity.test.ts` compara
+las dos celda por celda.
 
-`npm run test:rules` runs `__tests__/rules/` against the real Firestore
-emulator. It is skipped when no emulator is running, so `npm run test:ci` does
-not need Java — but **run it before changing `firestore.rules`**: reading those
-rules is exactly what failed to catch D-4.
+Las políticas se ejercitan de verdad con los contratos pgTAP
+(`supabase/tests/database/`), que corren contra una base real en
+`.github/workflows/supabase.yml`. Localmente:
+`bash scripts/supabase/local.sh test` (necesita Docker). **Ejecútalos antes de
+cambiar una RPC**: leer el SQL es exactamente lo que no detectó D-4.
 
 Do not add a role-string comparison anywhere;
 `__tests__/authz/noRoleStrings.test.ts` scans for them. Read
@@ -1287,13 +1345,13 @@ the only screen still linking to `/users` and `/settings`.
   **`tsc` checks the whole transitive closure**, so a module joins only if
   everything it can reach holds too — which is why the entries are the *rules*
   (`architectureProjectFactory`, `reviewTransitions`, `initiativeMetrics`) and,
-  until Ola 2, not their Firestore repositories: every repository delegated to
-  `services/firestoreService.ts`, which had 57 errors under `strict`. **One file
+  until Ola 2, not their persistence repositories: every repository delegated to
+  the persistence monolith, which had 57 errors under `strict`. **One file
   kept the seven storing contexts out.** Deleting it let `services/persistence`,
   `services/settings` and the project mappers in, and the two findings it
-  surfaced were real: `db` is `Firestore | null` and every repository read
-  assumed otherwise (now `requireDb`), and `Project['artifactIndex'][number]`
-  indexed an optional array. The chat and agent repositories are still out for
+  surfaced were real: the database handle was nullable and every repository read
+  assumed otherwise, and `Project['artifactIndex'][number]` indexed an optional
+  array. The chat and agent repositories are still out for
   the older reason, one step removed: they reach the `services/ai` barrel, and
   a barrel is the whole module. **And ambient declarations must be listed
   explicitly** — `env.d.ts` and `types/dagre.d.ts` are entries because otherwise
@@ -1367,7 +1425,11 @@ the only screen still linking to `/users` and `/settings`.
   Do not put the whole suite back on jsdom to make one file work: give that
   file the docblock.
 - Two placement patterns coexist: the mirror tree under **`__tests__/<subsystem>/`** (dominant — diagram, services, components, lib, quality, publicationPipeline, …) and colocated **`<module>/__tests__/`** (`services/agent`, `services/chat`, `utils`). Follow whichever the target module already uses; default to the mirror tree.
-- Mock external SDKs — `vi.mock('firebase/firestore')`, `vi.mock('@google/genai')`. **Never call real Firebase, Gemini, OpenRouter or Lucid from a test.**
+- Mock external SDKs. Lo que se dobla es la **puerta**, no cada repositorio:
+  `vi.mock('../../services/adapters')` devolviendo un `rpc` falso deja bajo
+  prueba la traducción de `{ data, error }` a `PersistenceResult`, que es donde
+  viven los defectos. **Never call a real Supabase project, Gemini, OpenRouter or
+  Lucid from a test.**
 - Playwright specs live in `e2e/` and are excluded from the Vitest run by
   `vite.config.ts`. They run against **`dist/` served by `vite preview`**, on
   desktop Chromium and iPad Safari viewports — so `npm run e2e` needs a build
@@ -1385,7 +1447,7 @@ the only screen still linking to `/users` and `/settings`.
 
 - `components/ReviewArchitectureModal.tsx` is still an **empty placeholder (0 lines)** — do not import or reference it. The working review UI is `components/artifacts/ReviewPanel.tsx`.
 - `services/geminiService.ts` (~5,500 lines) is still the largest single module, but it is no longer a public dependency: nothing outside `services/ai/` imports it, and it loads lazily. Splitting it is now ordinary internal maintenance rather than a cross-cutting change.
-- Firebase Auth is behind `services/identity`; `context/AuthContext.tsx` no longer imports the SDK, and `no-restricted-imports` plus `__tests__/authz/noSdkInUiLayers.test.ts` keep every SDK out of `components/`, `pages/`, `context/` and `hooks/`.
+- Supabase Auth is behind `services/identity`; `context/AuthContext.tsx` imports no SDK, and `no-restricted-imports` plus `__tests__/authz/noSdkInUiLayers.test.ts` keep every SDK out of `components/`, `pages/`, `context/` and `hooks/`. La prueba conserva Firebase en su lista de prohibidos como sonda de regresión: una que sólo busca el SDK actual no impide que vuelva el anterior.
 - `@google/genai` still appears in `services/geminiService.ts` as well as `providers/gemini/` and `api/`. The client factory *has* moved: it is `services/ai/providers/gemini/geminiClient.ts` now.
 
   **Moving the engine into `services/ai/` was tried in Ola 5 and reverted, and
@@ -1457,9 +1519,16 @@ be distinguishable from a count at a glance.
 
 Edit `tailwind.config.cjs` (`theme.extend`). Diagram-specific colours are tokens in `lib/diagramTokens.ts` / `lib/diagramThemes.ts`, not Tailwind classes — check `lib/colorContrast.ts` when changing them, because the accessibility gate asserts contrast ratios.
 
-### Adding a Firestore field or path
+### Adding a field or a table
 
-Update the service wrapper, the type in `types.ts`, **and `firestore.rules`**, in the same change. Then check `services/persistence` handling and any migration in `ArchitectureGraphMigrations.ts` / `irMigration.ts` if the shape is versioned.
+Escribe la migración en `supabase/migrations/` —tabla, RLS, privilegios
+revocados y la RPC que la atiende—, su contrato pgTAP con el caso negativo, el
+tipo en `types.ts` y el repositorio, **en el mismo cambio**. Después comprueba el
+manejo en `services/persistence` y cualquier migración de forma en
+`ArchitectureGraphMigrations.ts` / `irMigration.ts` si el dato está versionado.
+
+Una tabla nueva sin `revoke` es una tabla que la Data API expone: el gate que lo
+detecta es `supabase db advisors`, y corre en `supabase.yml`.
 
 ---
 
@@ -1619,7 +1688,7 @@ siempre, y 80 en escritorio», que es justo lo que nadie quiso escribir.
 ## El tema tiene un dueño, y `localStorage` es su espejo
 
 Había dos dueños y nunca coincidían. `useSettingsState` escribía la clase `dark`
-del `<html>` desde `settings.theme` —la preferencia del usuario, en Firestore— y
+del `<html>` desde `settings.theme` —la preferencia del usuario, en la base— y
 `useTheme` la escribía desde `localStorage['arky_theme']`, con su propio concepto
 de `'system'`. Con una cuenta recién creada —ajustes en `dark`, `localStorage`
 vacío— la aplicación se pintaba oscura, el botón del raíl ofrecía «Modo oscuro»,
@@ -1840,7 +1909,7 @@ Three properties worth keeping:
   *looks* and not what it *says* would be decoration.
 - **Per user, one document per agent.** `users/{uid}/agentProfiles/{agentId}`,
   through `OfficeAgentProfileRepository` over `services/persistence` — so a
-  customisation survives a Firestore outage in the local mirror instead of
+  customisation survives a database outage in the local mirror instead of
   vanishing. An array would let two open tabs overwrite each other's agent.
 
 ## The assistant answers as a team
@@ -1959,19 +2028,23 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 ## What NOT to Do
 
 - Do not add a custom domain backend or REST API. `api/` is limited to stateless key-hiding proxies. La transición aprobada en F1 mueve la autoridad de las reglas sensibles a PostgreSQL (RLS + RPC `SECURITY DEFINER`) y, cuando hace falta clave de servicio, a una Edge Function — no a endpoints de dominio en `api/`.
-- Do not talk to Supabase from a page, component, context or hook either. El SDK de Supabase vive en `services/adapters/` y en los repositorios `Supabase*Repository` de cada contexto, igual que el de Firebase; `resolveBackend` decide cuál atiende un corte.
+- Do not talk to Supabase from a page, component, context or hook either. El SDK vive en **un** fichero de `services/adapters/` y se carga en diferido; el dominio entra por `callRpc` o por el repositorio de su contexto. Un segundo fichero que importe `@supabase/supabase-js` está rehaciendo la puerta que ya existe.
+- **Do not construct a second Supabase client.** Uno solo, en `services/adapters/supabaseClient.ts`. Dos con `persistSession` sobre la misma clave de almacenamiento se pelean por el refresh token y cierran la sesión de quien acaba de abrirla, sin ningún error a la vista; `noSdkInUiLayers.test.ts` cuenta las llamadas a `createClient`.
+- Do not bring Firebase back, in any form. No hay dependencia, ni reglas, ni emulador, ni variables; `noSdkInUiLayers.test.ts` conserva sus módulos en la lista de prohibidos exactamente para eso.
+- Do not persist a signed URL. Los cubos son privados y una URL firmada caduca: guardar una es guardar un enlace roto, o —si no caducara— una puerta pública a un objeto privado escrita en la base de datos. Se guarda la **ruta** y se firma al abrir.
 - Do not publish production by any path but `ci.yml`. `vercel.json` apaga el
   despliegue automático de la integración Git en `main`, y las dos mitades de
   esa decisión —`main` apagada, previews vivas— están afirmadas por separado en
   `__tests__/config/ciPipeline.test.ts`.
-- Do not bump `vite`, `@excalidraw/excalidraw`, `firebase`, `typescript`,
-  `mermaid` o `react-dom` sin leer antes *Dependencias que no pueden subir*.
-  Las seis pasan la suite entera y rompen otra cosa; el changelog no lo dice.
+- Do not bump `vite`, `@excalidraw/excalidraw`, `typescript`, `mermaid` o
+  `react-dom` sin leer antes *Dependencias que no pueden subir*. Las cinco pasan
+  la suite entera y rompen otra cosa; el changelog no lo dice. (`firebase` salió
+  de esa lista al salir del proyecto.)
 - Do not merge a Dependabot branch as-is. Las de la cola nacieron de un `main`
   anterior y reintroducen `mirror-source.yml`. Aplica la subida sobre `main`
   actual y deja que Dependabot cierre su PR solo.
 - Do not deploy from a workstation. Un artefacto que no se puede reconstruir desde `main` no es un despliegue: producción sirvió durante días un commit que no existía en el repositorio. El despliegue cuelga del trabajo `deploy` de `ci.yml`, detrás de los gates — ver `docs/ci-cd-pipeline.md`.
-- Do not call Firestore **or Firebase Auth** directly from a page, component, context or hook — always go through your context's repository and `services/identity` (lint-enforced).
+- Do not call the database **or Auth** directly from a page, component, context or hook — always go through your context's repository and `services/identity` (lint-enforced).
 - Do not import `@google/genai` outside `services/ai/providers/gemini/` (lint-enforced). Describe output shape with `AIJsonSchema` from `services/ai/schema`; each provider translates it at its own boundary.
 - Do not import `services/geminiService` outside `services/ai/` (lint-enforced). Use a domain façade, or `aiGateway` when you compose your own prompt.
 - Do not name a concrete model outside a provider. Resolve tiers with `resolveModelForSettings`.
@@ -1984,7 +2057,7 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 - Do not use `any` in new code; do not add `// @ts-ignore` (ESLint blocks it — `@ts-expect-error` with a description is allowed).
 - Do not commit `.env.local` or any file containing API keys.
 - Do not let `npm run lint` report errors, or `npm run typecheck` / `npm run test:ci` fail.
-- Do not change a Firestore path or document shape without updating `firestore.rules`.
+- Do not change a table or a payload shape without its migration, its `revoke`, and its pgTAP contract with the negative case, in the same change.
 - Do not skip, disable, or delete a failing test to get the suite green.
 - Do not compose a prompt out of content the app did not write without fencing
   it (`wrapUntrustedContent`), and do not add a guardrail that blocks on a
@@ -2056,7 +2129,7 @@ Read the relevant doc before modifying a subsystem — they carry the rationale 
 | Doc | Topic |
 |---|---|
 | `docs/security-hardening.md` | Auth bypass removal, Custom Claims, required server-side config |
-| `docs/persistence-hardening.md` | Firestore/Auth degradation, artifact write safety |
+| `docs/persistence-hardening.md` | Degradación de persistencia y seguridad de escritura de artefactos |
 | `docs/ai-kernel.md` | The canonical AI kernel: modules, how to add a provider/model/tool, how to diagnose a run, and what it deliberately does not do yet |
 | `specs/02-architecture/ADR/ADR-002-canonical-ai-kernel.md` | Why the contract is shaped this way, and the trade-off accepted with it |
 | `specs/02-architecture/ADR/ADR-003-model-routing-strategy.md` | Eligibility vs ranking, and why the two fallback policies stay separate |
@@ -2079,7 +2152,7 @@ Read the relevant doc before modifying a subsystem — they carry the rationale 
 | `docs/arquitecto-agente.md` | The agent (planner/executor/memory) |
 | `docs/ui-ux-world-class-plan.md` | UI/UX upgrade plan |
 | `docs/technical-debt-audit.md` | Prioritised debt — **record new debt here** |
-| `docs/aws-migration-plan.md` | **Propuesta, sin ejecutar.** Plan por fases y tareas para migrar la infraestructura de Firebase/Vercel a AWS dentro de la capa gratuita: Cognito, DynamoDB en tabla única, Lambda + API Gateway, S3 + CloudFront, CI/CD por OIDC, y los cuatro riesgos estructurales medidos sobre este código |
+| `docs/aws-migration-plan.md` | **Propuesta, sin ejecutar, y hoy histórica**: se escribió contra la infraestructura Firebase/Vercel, que F9 sustituyó. Plan por fases para migrar a AWS dentro de la capa gratuita: Cognito, DynamoDB en tabla única, Lambda + API Gateway, S3 + CloudFront, CI/CD por OIDC, y los cuatro riesgos estructurales medidos sobre este código |
 | `docs/top-10-monolito-modular-ddd-2026-09-01.md` | Open review: modular-monolith boundaries, DDD, tech debt and CI/CD — measured dependency graph, cycle census and the root cause of the 8m49s test step |
 | `specs/00-index.md` | SDD artifacts: BRD, use cases, ADRs, domain model, NFR, BDD, traceability matrix |
 
@@ -2096,7 +2169,7 @@ This repository ships project-scoped agents and skills. Prefer them over ad-hoc 
 | Agent | Use it for |
 |---|---|
 | `code-reviewer` | Reviewing diffs for TS/React/security/service-layer violations |
-| `architect` | Evaluating architectural decisions across the React/Firebase/Vite stack |
+| `architect` | Evaluating architectural decisions across the React/Supabase/Vite stack |
 | `debugger` | Systematic diagnosis — traces UI → context → service → SDK |
 | `tech-lead` | Planning features, estimating effort, choosing implementation order |
 | `test-author` | Writing Vitest unit/component/integration tests with the standard mocks |
@@ -2110,7 +2183,7 @@ This repository ships project-scoped agents and skills. Prefer them over ad-hoc 
 | `/architecture` | Deep architectural analysis of the current codebase |
 | `/code-review` | Review the latest diff for correctness and safety |
 | `/debug` | Walk a bug through the UI → context → service call path |
-| `/deploy-checklist` | Pre-deploy validation for Vercel + Firebase |
+| `/deploy-checklist` | Pre-deploy validation for Vercel + Supabase |
 | `/documentation` | Generate/update JSDoc and component docs |
 | `/incident-response` | Structured response to a production incident |
 | `/standup` | Standup summary from recent git activity |

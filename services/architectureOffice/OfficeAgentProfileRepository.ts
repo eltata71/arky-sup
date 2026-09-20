@@ -13,20 +13,21 @@
  *
  * The contract is the one every repository in this codebase keeps: it never
  * throws, it returns a `PersistenceResult`, and it degrades to the local mirror
- * so a customisation survives a Firestore outage instead of vanishing.
+ * so a customisation survives a database outage instead of vanishing.
+ *
+ * `api.save_agent_profile` refuses `orchestrationRole`, `producesArtifactTypes`
+ * and `reviewsArtifactTypes`. That half of the card is governance, and the
+ * screen already withholds it — but a screen runs in a browser the caller
+ * controls, so the same refusal is written where it can be enforced.
  */
 
-import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
-import { sanitizeForFirestore } from '../../lib/firestoreData';
 import {
-  AGENT_PROFILES_COLLECTION,
   MirroredList,
-  USERS_COLLECTION,
+  createFailureResult,
   executeRemoteWrite,
-  requireDb,
 } from '../persistence';
 import type { PersistenceResult } from '../persistence';
+import { callRpc } from '../adapters';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from './officeAgentPersonas';
 import {
   OFFICE_AGENT_PROFILE_SCHEMA_VERSION,
@@ -42,7 +43,7 @@ interface StoredOverride extends OfficeAgentProfileOverride {
   id: OfficeAgentId;
 }
 
-const mirror = new MirroredList<StoredOverride>((userId) => `${AGENT_PROFILES_COLLECTION}_${userId}`);
+const mirror = new MirroredList<StoredOverride>((userId) => `agentProfiles_${userId}`);
 
 const withId = (override: OfficeAgentProfileOverride): StoredOverride => ({
   ...override,
@@ -119,12 +120,10 @@ export const officeAgentProfileRepository: OfficeAgentProfileRepository = {
     const cached = mirror.cached(userId);
     if (cached) return cached.map(stripId);
     try {
-      const snapshot = await getDocs(
-        collection(requireDb(db), USERS_COLLECTION, userId, AGENT_PROFILES_COLLECTION),
-      );
-      const overrides = snapshot.docs
+      const rows = await callRpc<unknown>('list_agent_profiles');
+      const overrides = (Array.isArray(rows) ? rows : [])
         .map((entry) => {
-          const override = normalizeAgentProfileOverride(entry.data(), userId);
+          const override = normalizeAgentProfileOverride(entry, userId);
           return override ? withId(override) : null;
         })
         .filter((entry): entry is StoredOverride => entry !== null);
@@ -138,27 +137,32 @@ export const officeAgentProfileRepository: OfficeAgentProfileRepository = {
   },
 
   async save(override) {
-    const result = await executeRemoteWrite<OfficeAgentProfileOverride>(
-      { operationName: 'saveAgentProfile', userId: override.userId },
-      async () => {
-        await setDoc(
-          doc(requireDb(db), USERS_COLLECTION, override.userId, AGENT_PROFILES_COLLECTION, override.agentId),
-          sanitizeForFirestore(override),
-        );
-        return override;
-      },
-    );
+    let result: PersistenceResult<OfficeAgentProfileOverride>;
+    try {
+      result = await executeRemoteWrite<OfficeAgentProfileOverride>(
+        { operationName: 'saveAgentProfile', userId: override.userId },
+        async () => {
+          await callRpc<void>('save_agent_profile', { p_profile: override });
+          return override;
+        },
+      );
+    } catch (error) {
+      result = createFailureResult('saveAgentProfile', error);
+    }
     mirror.upsert(override.userId, withId(override), result);
     return result;
   },
 
   async reset(userId, agentId) {
-    const result = await executeRemoteWrite<void>(
-      { operationName: 'resetAgentProfile', userId },
-      async () => {
-        await deleteDoc(doc(requireDb(db), USERS_COLLECTION, userId, AGENT_PROFILES_COLLECTION, agentId));
-      },
-    );
+    let result: PersistenceResult<void>;
+    try {
+      result = await executeRemoteWrite<void>(
+        { operationName: 'resetAgentProfile', userId },
+        () => callRpc<void>('delete_agent_profile', { p_agent_id: agentId }),
+      );
+    } catch (error) {
+      result = createFailureResult('resetAgentProfile', error);
+    }
     // Removed from the mirrors either way: a reset that only landed locally
     // must still show the defaults, and the next successful read re-syncs.
     mirror.remove(userId, agentId);

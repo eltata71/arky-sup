@@ -7,17 +7,18 @@
  * first rebuild.
  *
  * The adapter is the single choke point for graph (de)serialization:
- *  - writes go through `sanitizeForFirestore` (Firestore rejects `undefined`);
+ *  - writes go through `stripUndefined`, so an absent value reads back absent;
  *  - reads go through migration + runtime validation, so a corrupt or older
  *    persisted graph degrades gracefully instead of crashing a render.
  *
- * A future migration to a dedicated subcollection
- * (`projects/{id}/knowledgeGraph/*`) only needs to change this file — see
- * {@link getKnowledgeGraphSubcollectionPath}.
+ * El grafo vive en su propia tabla (`api.architecture_knowledge_graphs`) porque
+ * es dato derivado que se reconstruye con cada cambio de artefacto y crece con
+ * su número; dentro del proyecto haría que cada escritura de un campo de texto
+ * arrastrara el grafo entero por la red.
  */
 
 import type { Project } from '../../types';
-import { sanitizeForFirestore } from '../../lib/firestoreData';
+import { stripUndefined } from '../../lib/jsonSafe';
 import type { ArchitectureGraph } from './ArchitectureKnowledgeGraphTypes';
 import { migrateArchitectureGraph } from './ArchitectureGraphMigrations';
 import { reportGraphFailure } from './ArchitectureGraphObservability';
@@ -41,7 +42,7 @@ export const getKnowledgeGraphSubcollectionPath = (
  * rejects. Returns a plain, JSON-safe object.
  */
 export const serializeArchitectureGraph = (graph: ArchitectureGraph): ArchitectureGraph =>
-  sanitizeForFirestore(graph);
+  stripUndefined(graph);
 
 /**
  * Reads a persisted graph back into a validated, migrated `ArchitectureGraph`.

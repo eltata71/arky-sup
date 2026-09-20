@@ -101,18 +101,14 @@ jobs:
         env:
           VITE_AI_PROXY_URL: /api/ai
           VITE_AI_STRICT_PROXY: 'true'
-          VITE_FIREBASE_API_KEY: ci-placeholder
-          VITE_FIREBASE_AUTH_DOMAIN: ci.example.com
-          VITE_FIREBASE_PROJECT_ID: ci-project
-          VITE_FIREBASE_STORAGE_BUCKET: ci.example.com
-          VITE_FIREBASE_MESSAGING_SENDER_ID: '0'
-          VITE_FIREBASE_APP_ID: '1:0:web:ci'
-          VITE_FIREBASE_MEASUREMENT_ID: G-CI
+          VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
         run: npm run build
 
       # A provider key inlined into dist/ is served to every visitor, and the
       # build succeeds either way — so it is checked mechanically rather than
-      # trusted to review. Firebase's public client key is not flagged.
+      # trusted to review. La clave publicable de Supabase no se marca: es
+      # pública por diseño y la protegen RLS y las políticas.
       - name: No provider credentials in the bundle
         run: npm run check:bundle-secrets
 
@@ -237,53 +233,6 @@ jobs:
           path: coverage
           retention-days: 7
 
-  rules:
-    name: Firestore rules (emulator)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # `lib/authz` and `firestore.rules` implement the same permission matrix and
-    # are compared cell by cell — but only the emulator executes the rules. D-4
-    # was precisely a defect that reading the file could not reveal: `isAdmin()`
-    # looked correct and was permanently false. Until this ran in CI, the one
-    # check that would have caught it was optional.
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          # Ningún trabajo de este workflow empuja nada. Persistir el token en
-          # .git/config para los pasos siguientes es superficie sin contrapartida.
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-
-      # The Firestore emulator is a Java process, and firebase-tools refuses to
-      # start it on anything below JDK 21.
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Cache Firebase emulator
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/firebase/emulators
-          key: firebase-emulators-${{ runner.os }}
-
-      # Same command a contributor runs locally. `firebase-tools` is fetched
-      # on demand rather than added to devDependencies: it is a large package
-      # and only this job needs it, so making every `npm ci` pay for it would
-      # slow the gate that runs on every push.
-      - name: Firestore rules against the emulator
-        run: npm run test:rules
-
   # ── Despliegue continuo ────────────────────────────────────────────────────
   #
   # El despliegue vive aquí, detrás de los tres trabajos que juzgan el cambio,
@@ -295,13 +244,20 @@ jobs:
   # no se puede reconstruir desde `main` no es un despliegue, es una copia.
   #
   # `needs` es el contrato: nada llega a producción sin typecheck, lint, los
-  # cuatro presupuestos, el build, la suite completa con sus umbrales de
-  # cobertura y las reglas de Firestore contra el emulador.
+  # cuatro presupuestos, el build y la suite completa con sus umbrales de
+  # cobertura.
+  #
+  # El trabajo `rules` desapareció con Firestore. Su equivalente —las políticas
+  # y las RPC comprobadas contra una base real— vive en
+  # `.github/workflows/supabase.yml`, que levanta el stack local y corre los
+  # contratos pgTAP. No cuelga de `deploy` a propósito: sólo se dispara cuando
+  # cambia `supabase/**`, y encadenarlo aquí bloquearía cada despliegue
+  # esperando un trabajo que no se ejecutó.
   deploy:
     name: Deploy to Vercel (production)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [quality, coverage, rules]
+    needs: [quality, coverage]
     if: >-
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
       && github.ref == 'refs/heads/main'

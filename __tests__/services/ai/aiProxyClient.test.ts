@@ -9,13 +9,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('../../../firebase', () => ({
-  auth: {
-    currentUser: {
-      uid: 'user-42',
-      getIdToken: vi.fn(async () => 'id-token-for-user-42'),
-    },
-  },
+vi.mock('../../../services/identity', () => ({
+  currentAccessToken: vi.fn(async () => 'access-token-for-user-42'),
 }));
 
 import {
@@ -148,7 +143,7 @@ describe('callAiProxy', () => {
     // The identity travels as a verifiable ID token, not as a bare uid the
     // server would have to take on trust.
     const headers = init.headers as Record<string, string>;
-    expect(headers['Authorization']).toBe('Bearer id-token-for-user-42');
+    expect(headers['Authorization']).toBe('Bearer access-token-for-user-42');
     expect(headers['x-arky-user-id']).toBeUndefined();
     expect(headers['x-arky-session-id']).toEqual(expect.any(String));
   });

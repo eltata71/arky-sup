@@ -216,8 +216,20 @@ web3 = 30
 # secret = ""
 
 [auth.email]
-# Allow/disallow new user signups via email to your project.
-enable_signup = false
+# ⚠ El nombre de este campo miente, y la mentira cuesta el inicio de sesión
+# entero. `[auth.email] enable_signup` NO controla el alta: se traduce a
+# `GOTRUE_EXTERNAL_EMAIL_ENABLED`, o sea, si el proveedor de correo existe. En
+# `false`, `grant_type=password` responde 422 `email_provider_disabled` y
+# **nadie puede entrar**, ni siquiera una cuenta creada por un administrador.
+#
+# Estuvo en `false` y tumbó los tres recorridos autenticados del E2E. El
+# síntoma era «iniciar sesión y seguir en /auth», que se parece a un fallo de
+# credenciales, de perfil o de configuración del cliente — y no lo era.
+#
+# La regla de que nadie crea su propia cuenta la aplica `[auth] enable_signup`
+# (arriba, en `false`), que es el campo que de verdad gobierna el alta. Los dos
+# se leen juntos: proveedor encendido, registro cerrado.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true

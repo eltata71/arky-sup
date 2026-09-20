@@ -1,38 +1,27 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
-// No `firebase/auth` import: this context translates auth state into
-// application state, and `services/identity/authService` is the only place that talks
-// to the SDK. That is the same split every other SDK in the app already had.
+// No SDK import: this context translates auth state into application state, and
+// `services/identity` is the only place that talks to Supabase Auth. That is
+// the same split every other SDK in the app already had.
 import {
   currentUser as readCurrentUser,
   isAuthAvailable,
-  readRoleClaim,
   reauthenticateAndUpdatePassword,
+  rememberAuthUser,
   sendPasswordReset as sendPasswordResetEmail,
-  signInAnonymouslyForDevBypass,
   signInWithEmail,
-  signInWithGooglePopup,
+  signInWithGoogle as startGoogleSignIn,
   signOutCurrentUser,
-  updateDisplayName,
-  type AuthUser as User,
   userService,
+  completeSupabasePasswordSetup as persistSupabasePassword,
+  toAuthUser,
+  type AuthUser as User,
   type UserProfile as PersistedUserProfile,
 } from '../services/identity';
 import { isDeveloperLoginAllowed } from '../lib/security';
-import { DEFAULT_PROVISIONED_ROLE, resolveEffectiveRole, type AuthRole } from '../lib/authz';
+import { type AuthRole } from '../lib/authz';
 import { observabilityService } from '../services/observability';
-import {
-  loadSupabaseAuthClient,
-  loadSupabaseDataClient,
-  loadSupabaseIdentityPort,
-} from '../services/adapters';
-import {
-  completeSupabasePasswordSetup as persistSupabasePassword,
-  readSupabaseProfile,
-  type SupabaseProfileClient,
-  isSupabasePilotEmail,
-  parseSupabasePilotEmails,
-} from '../services/identity';
-import { supabaseSessionUser, useAuthSessionBootstrap } from './auth/useAuthSessionBootstrap';
+import { loadSupabaseAuthClient } from '../services/adapters';
+import { useAuthSessionBootstrap } from './auth/useAuthSessionBootstrap';
 
 type UserProfile = PersistedUserProfile;
 
@@ -43,12 +32,16 @@ interface AuthContextType {
   error: string | null;
   isDeveloperBypassAvailable: boolean;
   signInAsDeveloper: () => Promise<void>;
-  /**
-   * Google sign-in. Google is a way to *enter*, never a way to *exist*: an
-   * identity with no provisioned profile is signed straight back out.
-   */
-  signInWithGoogle: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  /**
+   * Entrar con Google.
+   *
+   * No resuelve con una sesión: manda el navegador a Google. Quien recoge la
+   * vuelta es el mismo observador que restaura la sesión al abrir la
+   * aplicación, así que la pantalla no tiene nada que hacer después de llamar
+   * —y en particular no debe navegar, porque aún no ha entrado nadie.
+   */
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 
   // ---- the account a person governs themselves ----------------------------
@@ -61,7 +54,7 @@ interface AuthContextType {
    * your colleagues has one.
    */
   sendPasswordReset: (email: string) => Promise<void>;
-  /** Set the password from an authenticated Supabase invitation/recovery callback. */
+  /** Set the password from an authenticated invitation/recovery callback. */
   completeSupabasePasswordSetup: (newPassword: string) => Promise<void>;
   /** Change the signed-in user's password, re-authenticating first. */
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -72,7 +65,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const IDENTITY_ENV = import.meta.env as Record<string, string | undefined>;
-const SUPABASE_PILOT_EMAILS = parseSupabasePilotEmails(IDENTITY_ENV.VITE_SUPABASE_PILOT_EMAILS);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -80,34 +72,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isDeveloperLogin = React.useRef(false);
-  const identityBackend = React.useRef<'firebase' | 'supabase'>('firebase');
 
   /**
    * Load the profile that governs this session.
    *
-   * The previous version *created* one for any authenticated identity that
-   * lacked it, which is how three different sign-in paths could each mint an
-   * account. An account is now granted, never taken: an identity with no
-   * provisioned profile is signed straight back out with an explanation.
+   * An earlier version *created* one for any authenticated identity that lacked
+   * it, which is how three different sign-in paths could each mint an account.
+   * An account is granted, never taken: an identity with no provisioned profile
+   * is signed straight back out with an explanation.
    *
-   * The role comes from `resolveEffectiveRole`, which is the one statement of
-   * that rule in the codebase and is mirrored by `callerRole()` in
-   * `firestore.rules`. Reimplementing the precedence here — even correctly —
-   * would recreate exactly the split that made the UI and the server disagree.
+   * The role is whatever `api.load_own_profile` returns, and that RPC fails
+   * closed — no profile, or a disabled one, comes back as nothing. There is no
+   * second opinion to reconcile any more: the custom claim that
+   * `resolveEffectiveRole` had to weigh against the stored role was Firebase's,
+   * and PostgreSQL reads the same row the policies read.
    */
   const fetchUserProfile = async (uid: string, currentUser?: User) => {
     if (isDeveloperLogin.current) return;
     try {
-      const existing = identityBackend.current === 'supabase'
-        ? await readSupabaseProfile(
-          (await loadSupabaseDataClient(IDENTITY_ENV)) as unknown as SupabaseProfileClient,
-          uid,
-          currentUser?.email ?? null,
-        )
-        : await userService.getUserProfile(uid);
-      const claimRole = identityBackend.current === 'supabase' || !currentUser
-        ? undefined
-        : await readRoleClaim(currentUser);
+      const existing = await userService.getOwnProfile();
 
       if (!existing) {
         // Not provisioned. Signing out here is the whole principle: an identity
@@ -125,40 +108,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setError(
           'Tu identidad es válida pero no tiene una cuenta en Arky. Un administrador debe crearla antes de que puedas entrar.',
         );
-        if (identityBackend.current === 'supabase') {
-          await (await loadSupabaseIdentityPort(IDENTITY_ENV)).signOut();
-        } else {
-          await signOutCurrentUser();
-        }
+        await signOutCurrentUser();
         return;
       }
 
-      const resolved = identityBackend.current === 'supabase'
-        ? existing.role
-        : resolveEffectiveRole(claimRole, existing.role);
-
-      if (!resolved) {
-        observabilityService.recordWarning({
-          source: 'app',
-          title: 'Perfil con rol ilegible',
-          message: `La sesión ${uid} no resuelve a ningún rol conocido. Opera sin permisos hasta que un administrador la corrija; las reglas de Firestore la rechazan igual.`,
-          metadata: { uid, storedRole: String(existing.role), claimRole: String(claimRole ?? '') },
-          recoverable: true,
-          userVisible: false,
-        });
-      }
-
-      // No default when it does not resolve. A profile whose role cannot be
-      // read is not a viewer by accident — and `can()` fails closed on it,
-      // which is the same answer the rules give.
-      setProfile({ ...existing, role: (resolved ?? '') as AuthRole });
+      setProfile({ ...existing, email: existing.email ?? currentUser?.email ?? null });
     } catch (err) {
       // Never fall back to a usable role on failure: a profile that could not
       // be read is not evidence of permission.
       observabilityService.reportError(err, {
         source: 'app',
         title: 'No se pudo cargar el perfil de usuario',
-        message: 'La sesión queda sin permisos hasta que el perfil pueda leerse. Verifica conectividad y permisos del backend activo.',
+        message: 'La sesión queda sin permisos hasta que el perfil pueda leerse. Verifica conectividad y permisos del backend.',
         metadata: { uid },
         recoverable: true,
         userVisible: true,
@@ -168,9 +129,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useAuthSessionBootstrap({
-    env: IDENTITY_ENV,
-    pilotEmails: SUPABASE_PILOT_EMAILS,
-    identityBackend,
     fetchProfile: fetchUserProfile,
     setUser,
     setProfile,
@@ -178,6 +136,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading,
   });
 
+  /**
+   * Developer bypass — entirely in memory.
+   *
+   * It used to open a real anonymous session against the provider and then
+   * write a non-privileged profile row, because the app needed `users/{uid}` to
+   * exist. Both halves are gone: the `superadmin` role always lived in React
+   * state only, and creating a real identity to prop it up was the worst of
+   * both worlds — a real account with a fake role. `isDeveloperLoginAllowed`
+   * hard-disables this in production builds.
+   */
   const handleSignInAsDeveloper = useCallback(async () => {
     if (!isDeveloperLoginAllowed()) {
       const message =
@@ -194,118 +162,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error(message);
     }
 
-    try {
-      setIsLoading(true);
-      setError(null);
-      isDeveloperLogin.current = true;
+    setIsLoading(true);
+    setError(null);
+    isDeveloperLogin.current = true;
 
-      const devUser = await signInAnonymouslyForDevBypass();
+    const devUser: User = {
+      uid: 'dev-local',
+      email: 'dev@arky.local',
+      displayName: 'Developer (ephemeral superadmin)',
+    };
+    rememberAuthUser(devUser);
+    setUser(devUser);
+    setProfile({
+      uid: devUser.uid,
+      email: devUser.email,
+      displayName: devUser.displayName,
+      role: 'superadmin',
+      status: 'active',
+    });
+    setIsLoading(false);
 
-      // Developer bypass: build an EPHEMERAL superadmin profile in memory only.
-      // We deliberately do NOT persist `superadmin` to Firestore — doing so
-      // would let any anonymous bystander reach a privileged role on prod data
-      // simply by hitting the endpoint with a leaked dev flag.
-      const devProfile: UserProfile = {
-        uid: devUser.uid,
-        email: 'dev@arky.local',
-        displayName: 'Developer (ephemeral superadmin)',
-        role: 'superadmin',
-      };
-
-      // Best-effort: store a NON-PRIVILEGED profile so other services that
-      // expect the user document to exist still work. The superadmin role stays
-      // in React state only — persisting it would make a leaked dev flag a real
-      // privilege on real data.
-      try {
-        await userService.createUserProfile({
-          uid: devUser.uid,
-          email: 'dev@arky.local',
-          displayName: 'Developer (local)',
-          role: DEFAULT_PROVISIONED_ROLE,
-        });
-      } catch (writeErr) {
-        // Non-fatal in dev; surface as a warning.
-        observabilityService.recordWarning({
-          source: 'app',
-          title: 'No se pudo crear el perfil de desarrollador en Firestore',
-          message: 'El bypass continuará en memoria, pero algunos flujos que leen `users/{uid}` pueden fallar.',
-          recoverable: true,
-          userVisible: false,
-          metadata: { error: writeErr instanceof Error ? writeErr.message : 'unknown' },
-        });
-      }
-
-      setUser(devUser);
-      setProfile(devProfile);
-
-      observabilityService.recordWarning({
-        source: 'app',
-        title: 'Developer bypass activo',
-        message: 'Sesión con rol superadmin EFÍMERO en memoria. No usar contra datos de producción.',
-        recoverable: true,
-        userVisible: false,
-      });
-    } catch (err: unknown) {
-      const authError = err as { message?: string };
-      observabilityService.reportError(err, {
-        source: 'app',
-        title: 'Developer bypass falló',
-        message: authError.message ?? 'Verifica que Anonymous Auth esté habilitado en Firebase Console.',
-        recoverable: true,
-        userVisible: true,
-      });
-      setError(authError.message ?? 'Developer access failed.');
-      isDeveloperLogin.current = false;
-      throw err;
-    } finally {
-      setIsLoading(false);
-      // Reset the flag a beat later so the auth-state listener does not race.
-      window.setTimeout(() => {
-        isDeveloperLogin.current = false;
-      }, 1000);
-    }
-  }, []);
-
-  const handleSignInWithGoogle = useCallback(async () => {
-    if (identityBackend.current === 'supabase') {
-      throw new Error('El piloto Supabase usa correo y contraseña; Google permanece en Firebase.');
-    }
-    try {
-      setIsLoading(true);
-      setError(null);
-      await signInWithGooglePopup();
-    } catch (err: unknown) {
-      const authError = err as { code?: string; message?: string };
-      if (authError.code === 'auth/unauthorized-domain') {
-        setError(`Domain Unauthorized: Please add "${window.location.hostname}" to your Authorized Domains in Firebase Console (Authentication > Settings).`);
-      } else {
-        setError(authError.message ?? 'Google authentication failed');
-      }
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+    observabilityService.recordWarning({
+      source: 'app',
+      title: 'Developer bypass activo',
+      message: 'Sesión con rol superadmin EFÍMERO en memoria. No escribe nada en el backend y no sirve contra datos reales.',
+      recoverable: true,
+      userVisible: false,
+    });
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     try {
       setIsLoading(true);
       setError(null);
-      const useSupabase = isSupabasePilotEmail(email, SUPABASE_PILOT_EMAILS);
-      identityBackend.current = useSupabase ? 'supabase' : 'firebase';
-      if (useSupabase) {
-        await (await loadSupabaseIdentityPort(IDENTITY_ENV)).signInWithPassword(email, password);
-        const { data, error: sessionError } = await (await loadSupabaseAuthClient(IDENTITY_ENV)).auth.getSession();
-        if (sessionError) throw sessionError;
-        const selectedUser = supabaseSessionUser(data?.session ?? null);
-        if (!selectedUser || !isSupabasePilotEmail(selectedUser.email, SUPABASE_PILOT_EMAILS)) {
-          throw new Error('La sesión Supabase no pertenece a una identidad piloto autorizada.');
-        }
-        setUser(selectedUser);
-        await fetchUserProfile(selectedUser.uid, selectedUser);
-      } else {
-        await signInWithEmail(email, password);
-      }
+      const signedIn = await signInWithEmail(email, password);
+      setUser(signedIn);
+      await fetchUserProfile(signedIn.uid, signedIn);
     } catch (err: unknown) {
       const authError = err as { message?: string };
       setError(authError.message ?? 'Login failed');
@@ -315,16 +207,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  /**
+   * Arranca el flujo de Google.
+   *
+   * `isLoading` se queda en `true` a propósito: lo que sigue es una navegación
+   * fuera de la aplicación, y devolver el formulario a su estado normal
+   * durante ese instante sólo invita a pulsar el botón otra vez. Si el flujo
+   * falla antes de salir, se restaura aquí, que es el único caso en que esta
+   * pantalla vuelve a tener el control.
+   */
+  const loginWithGoogle = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await startGoogleSignIn();
+    } catch (err: unknown) {
+      setIsLoading(false);
+      const authError = err as { message?: string };
+      const message = authError.message ?? 'No se pudo iniciar el acceso con Google.';
+      setError(message);
+      observabilityService.recordWarning({
+        source: 'app',
+        title: 'Acceso con Google no disponible',
+        message: 'Supabase rechazó el inicio del flujo OAuth. Revisa que el proveedor Google esté habilitado y que la URL de retorno esté en Redirect URLs.',
+        metadata: { reason: message },
+        recoverable: true,
+        userVisible: true,
+      });
+      throw err;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      if (identityBackend.current === 'supabase') {
-        await (await loadSupabaseIdentityPort(IDENTITY_ENV)).signOut();
-        setUser(null);
-      } else {
-        await signOutCurrentUser();
-      }
+      isDeveloperLogin.current = false;
+      await signOutCurrentUser();
+      setUser(null);
       setProfile(null);
     } catch (err: unknown) {
       const authError = err as { message?: string };
@@ -334,15 +254,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
     }
   }, []);
-
-  /**
-   * Memoised so the identity only changes when the auth state does.
-   *
-   * An inline object literal is a new value on every render, which makes every
-   * consumer re-render whenever this provider does — and this one sits near the
-   * root, above every route. The handlers above were made stable first: without
-   * that, this `useMemo` would recompute on every render anyway and buy nothing.
-   */
 
   /**
    * Send a password-reset email.
@@ -356,18 +267,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!address) throw new Error('Escribe tu correo para enviarte el enlace.');
     try {
       setError(null);
-      if (isSupabasePilotEmail(address, SUPABASE_PILOT_EMAILS)) {
-        await (await loadSupabaseIdentityPort(IDENTITY_ENV)).requestPasswordReset(address);
-      } else if (isAuthAvailable()) {
-        await sendPasswordResetEmail(address);
-      }
+      if (isAuthAvailable()) await sendPasswordResetEmail(address);
     } catch (err) {
       // Logged, never surfaced: the caller shows the same confirmation either
       // way, so a failure here must not become an existence oracle.
       observabilityService.recordWarning({
         source: 'app',
         title: 'Envío de recuperación de contraseña no completado',
-        message: 'Firebase rechazó el envío. El usuario ve la confirmación genérica de todos modos.',
+        message: 'El proveedor rechazó el envío. El usuario ve la confirmación genérica de todos modos.',
         metadata: { reason: err instanceof Error ? err.message : 'unknown' },
         recoverable: true,
         userVisible: false,
@@ -384,11 +291,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       window.location.hash,
       newPassword,
     );
-    const callbackUser = supabaseSessionUser(callbackSession);
-    if (!callbackUser || !isSupabasePilotEmail(callbackUser.email, SUPABASE_PILOT_EMAILS)) {
-      throw new Error('El enlace para definir la contraseña expiró o no pertenece a la cohorte piloto. Solicita uno nuevo.');
+    const callbackUser = toAuthUser(callbackSession);
+    if (!callbackUser) {
+      throw new Error('El enlace para definir la contraseña expiró. Solicita uno nuevo.');
     }
-    identityBackend.current = 'supabase';
+    rememberAuthUser(callbackUser);
     setUser(callbackUser);
     await fetchUserProfile(callbackUser.uid, callbackUser);
   }, []);
@@ -396,9 +303,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   /**
    * Change the signed-in user's password.
    *
-   * Re-authentication first: `updatePassword` on a session that has been open
-   * for a while is precisely the operation someone performs on an unattended
-   * laptop, and Firebase requires a recent login for it anyway.
+   * Re-authentication first: `updateUser({ password })` on a session that has
+   * been open for a while is precisely the operation someone performs on an
+   * unattended laptop.
    */
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     const current = readCurrentUser();
@@ -412,7 +319,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setError(null);
       await reauthenticateAndUpdatePassword(current, current.email, currentPassword, newPassword);
     } catch (err) {
-      const message = err instanceof Error && /wrong-password|invalid-credential/.test(err.message)
+      const message = err instanceof Error && /invalid login credentials|invalid_credentials|wrong-password/i.test(err.message)
         ? 'La contraseña actual no es correcta.'
         : 'No se pudo cambiar la contraseña. Vuelve a iniciar sesión e inténtalo de nuevo.';
       setError(message);
@@ -423,20 +330,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   /**
    * Edit the signed-in user's own display name — and nothing else.
    *
-   * The role is not editable here by omission and by rule: `firestore.rules`
-   * refuses a write that changes `role` on your own document, so this staying
-   * narrow is a convenience, not the control.
+   * `api.update_own_display_name` writes one column on one row, the caller's,
+   * so this staying narrow is a convenience and the RPC is the control.
    */
   const updateOwnDisplayName = useCallback(async (displayName: string) => {
     const current = readCurrentUser();
     const name = displayName.trim();
     if (!current) throw new Error('No hay una sesión activa.');
     if (name.length < 2) throw new Error('El nombre debe tener al menos 2 caracteres.');
-    await updateDisplayName(current, name);
     await userService.updateOwnDisplayName(current.uid, name);
     setProfile((previous) => (previous ? { ...previous, displayName: name } : previous));
   }, []);
 
+  /**
+   * Memoised so the identity only changes when the auth state does.
+   *
+   * An inline object literal is a new value on every render, which makes every
+   * consumer re-render whenever this provider does — and this one sits near the
+   * root, above every route. The handlers above were made stable first: without
+   * that, this `useMemo` would recompute on every render anyway and buy nothing.
+   */
   const value = useMemo<AuthContextType>(() => ({
     user,
     profile,
@@ -444,8 +357,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     error,
     isDeveloperBypassAvailable: isDeveloperLoginAllowed(),
     signInAsDeveloper: handleSignInAsDeveloper,
-    signInWithGoogle: handleSignInWithGoogle,
     login,
+    loginWithGoogle,
     logout,
     sendPasswordReset,
     completeSupabasePasswordSetup,
@@ -457,8 +370,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading,
     error,
     handleSignInAsDeveloper,
-    handleSignInWithGoogle,
     login,
+    loginWithGoogle,
     logout,
     sendPasswordReset,
     completeSupabasePasswordSetup,

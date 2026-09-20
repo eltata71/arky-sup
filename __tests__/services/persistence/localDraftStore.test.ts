@@ -80,16 +80,20 @@ describe('reading back what a previous session left', () => {
 
 describe('a failure classified without going through executeRemoteWrite', () => {
   it('carries the provider code, so the caller can tell retry from call-an-admin', () => {
-    const error = new Error('Missing or insufficient permissions.') as Error & { code: string };
-    error.code = 'permission-denied';
+    // `42501` es `insufficient_privilege` de PostgreSQL: lo levantan las
+    // guardas de rol y de sesión de cada RPC. Que el envoltorio lo distinga de
+    // un fallo genérico es lo que separa «reintenta» de «llama a un
+    // administrador».
+    const error = new Error('Permiso insuficiente: users:create') as Error & { code: string };
+    error.code = '42501';
 
     const result = createFailureResult('saveCourse', error);
 
     expect(result.success).toBe(false);
     expect(result.status).toBe('permission-denied');
-    expect(result.errorCode).toBe('permission-denied');
-    expect(result.target).toBe('firestore');
-    expect(result.message).toBe('Missing or insufficient permissions.');
+    expect(result.errorCode).toBe('42501');
+    expect(result.target).toBe('supabase');
+    expect(result.message).toBe('Permiso insuficiente: users:create');
   });
 
   it('survives something that is not an Error', () => {

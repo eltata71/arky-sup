@@ -1,88 +1,122 @@
-import {
-    collection,
-    doc,
-    getDocs,
-    getDoc,
-    setDoc,
-    updateDoc,
-    deleteDoc,
-    query,
-    limit,
-} from "firebase/firestore";
-import { db } from "../../firebase";
+/**
+ * El perfil de una persona y su rol, contra PostgreSQL.
+ *
+ * Cada operación es una RPC `security definer` que comprueba el permiso **y la
+ * sesión viva** antes de tocar nada, y deja su entrada en
+ * `private.authorization_audit`. Eso es lo que distingue este módulo del que
+ * sustituye: en Firestore la regla y la auditoría eran dos cosas separadas —la
+ * regla en `firestore.rules`, la auditoría en ninguna parte—, y aquí la
+ * operación que cambia un rol es la misma que lo registra.
+ *
+ * Tres reglas viven en SQL y no aquí, y conviene saber dónde mirar cuando una
+ * llamada falla con `42501`:
+ *
+ *   - nadie cambia su propio rol (`assert_role_is_not_self`),
+ *   - sólo `superadmin` concede `admin` o `superadmin`,
+ *   - una sesión revocada no cambia autorizaciones (`assert_session_active`).
+ */
 import type { AuthRole } from "../../lib/authz";
-import { PersistenceError, executeRemoteWrite, isWriteConfirmed, requireDb } from "../persistence";
+import { parseAuthRole } from "../../lib/authz";
+import { PersistenceError, createFailureResult, executeRemoteWrite, isWriteConfirmed } from "../persistence";
+import { callRpc } from "../adapters";
 
 export interface UserProfile {
     uid: string;
     email: string | null;
     displayName: string | null;
     role: AuthRole;
+    /** `disabled` sigue existiendo como fila; el producto simplemente no la deja entrar. */
+    status?: 'active' | 'disabled';
 }
 
-const USERS_COLLECTION = "users";
+const asProfile = (row: unknown): UserProfile | null => {
+    if (!row || typeof row !== 'object') return null;
+    const value = row as Record<string, unknown>;
+    const uid = typeof value.uid === 'string' ? value.uid : null;
+    const role = parseAuthRole(value.role);
+    if (!uid || role === null) return null;
+    return {
+        uid,
+        email: typeof value.email === 'string' ? value.email : null,
+        displayName: typeof value.displayName === 'string' && value.displayName.trim() !== ''
+            ? value.displayName
+            : null,
+        role,
+        status: value.status === 'disabled' ? 'disabled' : 'active',
+    };
+};
+
+const confirm = async (operationName: string, userId: string, run: () => Promise<unknown>): Promise<void> => {
+    let result;
+    try {
+        result = await executeRemoteWrite({ operationName, userId }, run);
+    } catch (error) {
+        result = createFailureResult(operationName, error);
+    }
+    if (!isWriteConfirmed(result)) throw new PersistenceError(result);
+};
 
 class UserService {
-    async getUserProfile(uid: string): Promise<UserProfile | null> {
-        const docRef = doc(requireDb(db), USERS_COLLECTION, uid);
-        const docSnap = await getDoc(docRef);
-        return docSnap.exists() ? docSnap.data() as UserProfile : null;
-    }
-
-    async createUserProfile(profile: UserProfile): Promise<void> {
-        const result = await executeRemoteWrite({ operationName: 'createUserProfile', userId: profile.uid }, async () => {
-            await setDoc(doc(requireDb(db), USERS_COLLECTION, profile.uid), profile);
-        });
-        if (!isWriteConfirmed(result)) throw new PersistenceError(result);
+    /**
+     * El perfil propio.
+     *
+     * `api.load_own_profile` devuelve `null` cuando no hay perfil o está
+     * deshabilitado — falla cerrado, igual que `private.current_role()`. Esa es
+     * la señal que `AuthContext` convierte en «tu identidad es válida pero no
+     * tiene una cuenta»: autenticar y existir no son lo mismo.
+     */
+    async getOwnProfile(): Promise<UserProfile | null> {
+        return asProfile(await callRpc<unknown>('load_own_profile'));
     }
 
     async updateUserRole(uid: string, role: UserProfile['role']): Promise<void> {
-        const result = await executeRemoteWrite({ operationName: 'updateUserRole', userId: uid }, async () => {
-            await updateDoc(doc(requireDb(db), USERS_COLLECTION, uid), { role });
-        });
-        if (!isWriteConfirmed(result)) throw new PersistenceError(result);
+        await confirm('updateUserRole', uid, () => callRpc('set_user_role', { target: uid, new_role: role }));
+    }
+
+    async setUserStatus(uid: string, status: 'active' | 'disabled'): Promise<void> {
+        await confirm('setUserStatus', uid, () => callRpc('set_user_status', { target: uid, new_status: status }));
     }
 
     async deleteUser(uid: string): Promise<void> {
-        const result = await executeRemoteWrite({ operationName: 'deleteUser', userId: uid }, async () => {
-            await deleteDoc(doc(requireDb(db), USERS_COLLECTION, uid));
-        });
-        if (!isWriteConfirmed(result)) throw new PersistenceError(result);
+        await confirm('deleteUser', uid, () => callRpc('delete_user_profile', { target: uid }));
     }
 
     async getAllUsers(): Promise<UserProfile[]> {
-        const querySnapshot = await getDocs(collection(requireDb(db), USERS_COLLECTION));
-        return querySnapshot.docs.map(userDoc => userDoc.data() as UserProfile);
+        const rows = await callRpc<unknown>('list_user_profiles');
+        return (Array.isArray(rows) ? rows : [])
+            .map(asProfile)
+            .filter((profile): profile is UserProfile => profile !== null);
+    }
+
+    /**
+     * Crea el perfil de una identidad que la Edge Function acaba de invitar.
+     *
+     * Se llama **con la sesión del administrador**, a propósito: así el permiso
+     * `users:create`, la regla de que sólo un superadmin concede roles
+     * privilegiados, y la entrada de auditoría con el actor real quedan todos
+     * en la RPC. Si lo escribiera la función con clave de servicio, esas tres
+     * reglas habría que duplicarlas allí.
+     */
+    async provisionProfile(uid: string, role: AuthRole, displayName: string | null): Promise<void> {
+        await confirm('provisionUserProfile', uid, () => callRpc('provision_user_profile', {
+            target: uid,
+            target_role: role,
+            target_name: displayName,
+        }));
     }
 
     /**
      * Update the signed-in user's own display name.
      *
-     * Deliberately narrower than `createUserProfile`: it writes one field, so
-     * it cannot become a way to edit a role through a shared code path. The
-     * rules refuse a self-write that touches `role` regardless, but a method
-     * that cannot express the write is easier to reason about than one that
-     * can and is forbidden.
+     * Deliberadamente más estrecha que `provisionProfile`: escribe un campo, así
+     * que no puede convertirse en una forma de editar un rol por un camino
+     * compartido. La RPC lo refuerza; que el método no sepa expresar la otra
+     * escritura es una comodidad, no el control.
      */
     async updateOwnDisplayName(uid: string, displayName: string): Promise<void> {
-        const result = await executeRemoteWrite({ operationName: 'updateOwnDisplayName', userId: uid }, async () => {
-            await updateDoc(doc(requireDb(db), USERS_COLLECTION, uid), { displayName });
-        });
-        if (!isWriteConfirmed(result)) throw new PersistenceError(result);
-    }
-
-    /**
-     * True when the users collection is empty.
-     *
-     * Kept for the seeding path only. It no longer grants anything: the
-     * "first user becomes superadmin" bootstrap was removed, because an
-     * account nobody granted is exactly what this model forbids.
-     */
-    async isFirstUser(): Promise<boolean> {
-        const usersRef = collection(requireDb(db), USERS_COLLECTION);
-        const q = query(usersRef, limit(1));
-        const snapshot = await getDocs(q);
-        return snapshot.empty;
+        await confirm('updateOwnDisplayName', uid, () => callRpc('update_own_display_name', {
+            p_display_name: displayName,
+        }));
     }
 }
 

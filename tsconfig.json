@@ -32,5 +32,9 @@
     "alwaysStrict": true,
     "useUnknownInCatchVariables": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  /* Deno runtime, not the app bundle: Edge Functions are typechecked by the
+     Supabase CLI against Deno's lib, and `tsc` here has neither `Deno` nor the
+     `jsr:` specifier. Leaving them in made a green typecheck impossible. */
+  "exclude": ["supabase/functions"]
 }

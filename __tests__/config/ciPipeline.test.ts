@@ -102,12 +102,22 @@ describe('continuous deployment gates on the quality suite', () => {
     expect(deploy).toMatch(/environment:\s*\n\s*name:\s*production/);
   });
 
-  it('makes the deploy depend on the static gates, the merged coverage and the rules', () => {
+  it('makes the deploy depend on the static gates and the merged coverage', () => {
+    // El trabajo `rules` desapareció con Firestore. Su equivalente vive en
+    // `supabase.yml`, que sólo se dispara cuando cambia `supabase/**`:
+    // encadenarlo aquí bloquearía cada despliegue esperando a un trabajo que
+    // no llegó a ejecutarse.
     const deploy = ci.slice(ci.indexOf('\n  deploy:'));
     const needs = /needs:\s*\[([^\]]+)\]/.exec(deploy);
     expect(needs, 'el job deploy debe declarar needs').not.toBeNull();
     const declared = needs![1].split(',').map((entry) => entry.trim()).sort();
-    expect(declared).toEqual(['coverage', 'quality', 'rules']);
+    expect(declared).toEqual(['coverage', 'quality']);
+  });
+
+  it('keeps the database contracts in their own workflow, path-triggered', () => {
+    const supabase = readFileSync('.github/workflows/supabase.yml', 'utf8');
+    expect(supabase).toContain('scripts/supabase/local.sh test');
+    expect(supabase).toMatch(/paths:[\s\S]*?supabase\/\*\*/);
   });
 
   it('fails loudly instead of reporting a deployment it did not make', () => {

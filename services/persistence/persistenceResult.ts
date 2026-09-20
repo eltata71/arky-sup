@@ -1,7 +1,30 @@
-import { FirebaseError } from 'firebase/app';
-import { isFirebaseAvailable } from '../../firebase';
+/**
+ * How this product writes, and what it says when a write does not land.
+ *
+ * `PersistenceResult` was already the shared envelope; what was missing was a
+ * module around it. The classification lived in `services/persistence.ts` and
+ * the *degradation* — keep the value locally, report it as pending — lived in
+ * two private methods of `firestoreService`, out of reach of every repository.
+ *
+ * **F9 removed the second backend.** Until this phase the envelope was shaped
+ * by Firebase: `FirebaseError`, `isFirebaseAvailable`, a `requireDb` that
+ * handed out a `Firestore`. Those are gone with the SDK, and what replaces them
+ * is the same shape over PostgreSQL: the classification is
+ * `classifySupabaseError` (`services/persistence/supabaseErrors.ts`) and the
+ * availability check asks whether this deployment has a Supabase URL and a
+ * publishable key.
+ *
+ * Two things deliberately did **not** change with the provider, because they
+ * are product decisions rather than SDK details:
+ *
+ *  - `writeLocalDraft` is still the one correct way to degrade, and it still
+ *    returns `success: false`. A local draft is not a saved document.
+ *  - Only `offline` earns a draft. A rejection by RLS retried is the same
+ *    rejection, and keeping a draft of something the caller may not write
+ *    promises a synchronisation that will never happen.
+ */
 import { observabilityService } from '../observability';
-import type { Firestore } from 'firebase/firestore';
+import { classifySupabaseError, supabaseErrorCode } from './supabaseErrors';
 
 export type PersistenceStatus =
   | 'success'
@@ -11,7 +34,7 @@ export type PersistenceStatus =
   | 'conflict'
   | 'validation-error';
 
-export type PersistenceTarget = 'firestore' | 'supabase' | 'local-draft' | 'memory';
+export type PersistenceTarget = 'supabase' | 'local-draft' | 'memory';
 
 export interface PersistenceResult<T = unknown> {
   status: PersistenceStatus;
@@ -43,11 +66,6 @@ export class PersistenceError extends Error {
   }
 }
 
-const FIREBASE_SECURITY_CODES = new Set(['permission-denied', 'unauthenticated']);
-const FIREBASE_CONFLICT_CODES = new Set(['aborted', 'already-exists']);
-const FIREBASE_VALIDATION_CODES = new Set(['invalid-argument', 'failed-precondition', 'out-of-range']);
-const FIREBASE_OFFLINE_CODES = new Set(['unavailable', 'deadline-exceeded', 'cancelled']);
-
 const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 export const createOperationId = (operationName: string): string => {
@@ -55,11 +73,7 @@ export const createOperationId = (operationName: string): string => {
   return `${safeName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 };
 
-export const getErrorCode = (error: unknown): string | undefined => {
-  if (!error || typeof error !== 'object') return undefined;
-  const maybeCode = (error as Partial<FirebaseError> & { code?: unknown }).code;
-  return typeof maybeCode === 'string' ? maybeCode : undefined;
-};
+export const getErrorCode = (error: unknown): string | undefined => supabaseErrorCode(error);
 
 /**
  * Lets specific persistence failures surface their own actionable Spanish
@@ -72,33 +86,38 @@ const getCustomUserMessage = (error: unknown): string | null => {
   return typeof value === 'string' && value.length > 0 ? value : null;
 };
 
-export const classifyPersistenceError = (error: unknown): PersistenceStatus => {
-  const code = getErrorCode(error);
-  if (code && FIREBASE_SECURITY_CODES.has(code)) return 'permission-denied';
-  if (code && FIREBASE_CONFLICT_CODES.has(code)) return 'conflict';
-  if (code && FIREBASE_VALIDATION_CODES.has(code)) return 'validation-error';
-  if (code && FIREBASE_OFFLINE_CODES.has(code)) return 'offline';
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'offline';
-  return 'failed';
-};
+export const classifyPersistenceError = (error: unknown): PersistenceStatus => classifySupabaseError(error);
 
-export const assertFirebaseAvailable = (): PersistenceResult<void> => {
-  if (isFirebaseAvailable) {
+/**
+ * ¿Tiene este despliegue un backend al que escribir?
+ *
+ * Sustituye a `assertFirebaseAvailable`, y responde la misma pregunta: sin
+ * configuración no hay persistencia remota, y decirlo antes de intentar la
+ * escritura es lo que distingue «no está configurado» de «la red falló». El
+ * entorno se lee por parámetro para que la función siga siendo pura y se pueda
+ * probar sin tocar `import.meta.env`.
+ */
+export const assertBackendConfigured = (
+  env: Record<string, string | undefined> = import.meta.env as Record<string, string | undefined>,
+): PersistenceResult<void> => {
+  const url = (env.VITE_SUPABASE_URL ?? '').trim();
+  const key = (env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
+  if (url !== '' && key !== '') {
     return {
       status: 'success',
       success: true,
-      operationId: createOperationId('assertFirebaseAvailable'),
-      target: 'firestore',
+      operationId: createOperationId('assertBackendConfigured'),
+      target: 'supabase',
     };
   }
 
   return {
     status: 'validation-error',
     success: false,
-    operationId: createOperationId('assertFirebaseAvailable'),
-    target: 'firestore',
-    errorCode: 'firebase/not-configured',
-    message: 'La configuración de Firebase está incompleta. La persistencia remota está deshabilitada.',
+    operationId: createOperationId('assertBackendConfigured'),
+    target: 'supabase',
+    errorCode: 'supabase/not-configured',
+    message: 'La configuración de Supabase está incompleta. La persistencia remota está deshabilitada.',
   };
 };
 
@@ -108,7 +127,7 @@ export async function executeRemoteWrite<T>(
 ): Promise<PersistenceResult<T>> {
   const operationId = createOperationId(context.operationName);
   const startedAt = now();
-  const target = context.target ?? 'firestore';
+  const target = context.target ?? 'supabase';
   const metadata = {
     operationId,
     userId: context.userId,
@@ -117,7 +136,7 @@ export async function executeRemoteWrite<T>(
     persistenceTarget: target,
   };
 
-  const availability = assertFirebaseAvailable();
+  const availability = assertBackendConfigured();
   if (!availability.success) {
     const durationMs = Math.round(now() - startedAt);
     const result: PersistenceResult<T> = {
@@ -130,7 +149,7 @@ export async function executeRemoteWrite<T>(
     };
     observabilityService.reportError(new PersistenceError(result), {
       source: 'operation',
-      title: 'Firebase no configurado',
+      title: 'Supabase no configurado',
       message: result.message,
       operationId,
       operationName: context.operationName,
@@ -150,7 +169,7 @@ export async function executeRemoteWrite<T>(
       severity: 'success',
       status: 'succeeded',
       title: 'Persistencia remota confirmada',
-      message: `${context.operationName} fue confirmado por Firestore.`,
+      message: `${context.operationName} fue confirmado por Supabase.`,
       operationId,
       operationName: context.operationName,
       recoverable: true,
@@ -189,7 +208,7 @@ export async function executeRemoteWrite<T>(
 
 export const buildTitle = (status: PersistenceStatus): string => {
   switch (status) {
-    case 'permission-denied': return 'Permiso denegado por reglas de Firestore';
+    case 'permission-denied': return 'Permiso denegado por las políticas de la base de datos';
     case 'offline': return 'Sin conexión: operación no confirmada';
     case 'conflict': return 'Conflicto de concurrencia detectado';
     case 'validation-error': return 'Persistencia bloqueada por validación/configuración';
@@ -202,9 +221,9 @@ export const buildTitle = (status: PersistenceStatus): string => {
 export const buildUserMessage = (status: PersistenceStatus, operationName: string): string => {
   switch (status) {
     case 'permission-denied':
-      return `No se pudo guardar en la base de datos: Firestore rechazó ${operationName} por permisos.`;
+      return `No se pudo guardar en la base de datos: Supabase rechazó ${operationName} por permisos o por una sesión no activa.`;
     case 'offline':
-      return `${operationName} no fue confirmado por Firestore porque no hay conexión. Queda como borrador local/offline pendiente.`;
+      return `${operationName} no fue confirmado por Supabase porque no hay conexión. Queda como borrador local/offline pendiente.`;
     case 'conflict':
       return `${operationName} detectó cambios remotos concurrentes. Recarga o fusiona los cambios antes de sobrescribir.`;
     case 'validation-error':
@@ -222,8 +241,7 @@ export const isWriteConfirmed = (result: PersistenceResult<unknown>): boolean =>
  *
  * For the paths that catch their own error — a local-draft fallback, a batch
  * that reports per item — so they produce the same envelope as everything else
- * instead of an ad-hoc object. It lived privately inside `firestoreService`,
- * which is why the repositories outside that file each shaped their own.
+ * instead of an ad-hoc object.
  */
 export const createFailureResult = <T = never>(
   operationName: string,
@@ -232,7 +250,7 @@ export const createFailureResult = <T = never>(
   status: classifyPersistenceError(error),
   success: false,
   operationId: createOperationId(operationName),
-  target: 'firestore',
+  target: 'supabase',
   error,
   errorCode: getErrorCode(error),
   message: error instanceof Error ? error.message : String(error),
@@ -243,35 +261,23 @@ export const createFailureResult = <T = never>(
  * Los códigos que significan «las reglas dijeron que no», y no «la red falló».
  *
  * Distinguirlos importa porque la respuesta es distinta: un fallo de red se
- * degrada a borrador local y se reintenta, y un rechazo de las reglas no —
+ * degrada a borrador local y se reintenta, y un rechazo del servidor no —
  * reintentarlo sólo produce el mismo rechazo, y guardar un borrador de algo que
  * el usuario no tiene permiso para escribir es prometerle una sincronización
  * que nunca va a ocurrir.
- *
- * Vivían dentro de `services/firestoreService.ts`, que es donde estaba el único
- * código que hablaba con Firestore. Al repartirlo por contextos pasan aquí, que
- * es donde el resto de la clasificación de errores ya vivía.
  */
-const SECURITY_ERROR_CODES: ReadonlySet<string> = new Set([
-  'permission-denied',
-  'unauthenticated',
-  'failed-precondition',
-]);
-
-export const isSecurityError = (error: unknown): boolean => {
-  const code = getErrorCode(error);
-  return typeof code === 'string' && SECURITY_ERROR_CODES.has(code);
-};
+export const isSecurityError = (error: unknown): boolean =>
+  classifySupabaseError(error) === 'permission-denied';
 
 export const isOfflineError = (error: unknown): boolean => classifyPersistenceError(error) === 'offline';
 
-/** Lo que se lanza cuando las reglas rechazan una operación con nombre. */
+/** Lo que se lanza cuando el servidor rechaza una operación con nombre. */
 export class PermissionDeniedError extends Error {
-  public readonly code = 'permission-denied' as const;
+  public readonly code = '42501' as const;
 
   constructor(operation: string, cause?: unknown) {
     const causeMsg = cause instanceof Error ? `: ${cause.message}` : '';
-    super(`Operación "${operation}" rechazada por reglas de seguridad${causeMsg}.`);
+    super(`Operación "${operation}" rechazada por las políticas de seguridad${causeMsg}.`);
     this.name = 'PermissionDeniedError';
   }
 }
@@ -285,33 +291,4 @@ export class PermissionDeniedError extends Error {
  */
 export const ensureConfirmed = (result: PersistenceResult<unknown>): void => {
   if (!isWriteConfirmed(result)) throw new PersistenceError(result);
-};
-
-/* ── El acceso a la base de datos ─────────────────────────────────────────── */
-/**
- * `db` no siempre existe, y el `strict` de la Ola 2 lo dijo en voz alta.
- *
- * `firebase.ts` exporta `Firestore | null`: cuando las variables `VITE_FIREBASE_*`
- * no están puestas, la aplicación arranca igual y funciona contra
- * `localStorage`. Todos los repositorios escribían `doc(db, …)` como si nunca
- * fuera nulo, y sólo se libraban porque `strictNullChecks` estaba apagado en
- * esos ficheros.
- *
- * En el camino de escritura no llegaba a doler: `executeRemoteWrite` llama a
- * `assertFirebaseAvailable` antes. En el de **lectura** sí — `doc(null, …)`
- * lanza un `TypeError` que el `catch` de turno convertía en «no se pudo leer»,
- * sin decir que la causa era una configuración ausente y no la red.
- *
- * Esta función devuelve el `Firestore` o lanza un error clasificable, que es lo
- * que `classifyPersistenceError` sabe convertir en el estado correcto.
- */
-export const requireDb = (database: Firestore | null): Firestore => {
-  if (!database) {
-    const error = new Error(
-      'Firestore no está configurado en este despliegue; no hay persistencia remota.',
-    ) as Error & { code: string };
-    error.code = 'unavailable';
-    throw error;
-  }
-  return database;
 };
