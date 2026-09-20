@@ -23,7 +23,10 @@ const authClient = {
   signInWithPassword: vi.fn(async (_credentials: { email: string; password: string }): Promise<Envelope> =>
     envelope({ data: { session: null }, error: null })),
   signOut: vi.fn(async () => ({})),
-  resetPasswordForEmail: vi.fn(async () => ({})),
+  resetPasswordForEmail: vi.fn(async (
+    _email: string,
+    _options?: { redirectTo?: string },
+  ): Promise<{ error?: unknown }> => ({})),
   updateUser: vi.fn(async () => ({})),
   getSession: vi.fn(async (): Promise<Envelope> => envelope({ data: { session: null }, error: null })),
   onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
@@ -256,5 +259,44 @@ describe('signInWithGoogle', () => {
     // no ha entrado nadie: lo único que ocurrió es que el navegador se va.
     const { signInWithGoogle } = await loadModule();
     await expect(signInWithGoogle()).resolves.toBeUndefined();
+  });
+});
+
+describe('el enlace de recuperación vuelve al despliegue desde el que se pidió', () => {
+  beforeEach(() => setEnv(CONFIGURED));
+
+  it('pasa redirectTo con el origen actual', async () => {
+    // Sin esto, el enlace del correo lo construye la Site URL del proyecto. Con
+    // dos despliegues vivos sobre la misma base —que es lo que había— eso
+    // devuelve a la persona a la aplicación equivocada: la sesión se abre, pero
+    // en una versión sin pantalla de nueva contraseña. Todo parece funcionar.
+    vi.stubGlobal('window', { location: { origin: 'https://arky-sup.vercel.app' } });
+    const { sendPasswordReset } = await loadModule();
+
+    await sendPasswordReset('ada@arky.test');
+
+    expect(authClient.resetPasswordForEmail).toHaveBeenCalledWith(
+      'ada@arky.test',
+      { redirectTo: 'https://arky-sup.vercel.app/auth' },
+    );
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('qué fallos de recuperación puede contar la interfaz', () => {
+  it('cuenta los que valen para cualquier dirección', async () => {
+    const { isRecoveryChannelFailure, AuthUnavailableError } = await loadModule();
+    expect(isRecoveryChannelFailure(new AuthUnavailableError('sendPasswordReset'))).toBe(true);
+    expect(isRecoveryChannelFailure(new Error('Email logins are disabled'))).toBe(true);
+    expect(isRecoveryChannelFailure(new Error('Email signups are disabled'))).toBe(true);
+  });
+
+  it('calla ante cualquier otro, que sí podría depender de la dirección', async () => {
+    // La confirmación genérica existe para que el formulario no pueda usarse
+    // para preguntar quién tiene cuenta aquí. Esa protección se conserva.
+    const { isRecoveryChannelFailure } = await loadModule();
+    expect(isRecoveryChannelFailure(new Error('User not found'))).toBe(false);
+    expect(isRecoveryChannelFailure(new Error('For security purposes, you can only request this after 47 seconds'))).toBe(false);
+    expect(isRecoveryChannelFailure(null)).toBe(false);
   });
 });

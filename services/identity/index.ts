@@ -26,6 +26,7 @@ export {
   currentUser,
   currentUserId,
   isAuthAvailable,
+  isRecoveryChannelFailure,
   observeAuthState,
   reauthenticateAndUpdatePassword,
   rememberAuthUser,

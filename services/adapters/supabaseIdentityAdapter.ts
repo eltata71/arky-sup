@@ -19,6 +19,7 @@
  *    no se puede comprobar.
  */
 import { IdentityError, type AuthSession, type IdentityPort } from '../ports';
+import { authReturnUrl } from '../../lib/authReturnUrl';
 
 /** Forma mínima de una sesión del SDK. Estructural a propósito. */
 export interface SupabaseSessionLike {
@@ -53,7 +54,10 @@ export interface SupabaseAuthClientLike {
       options?: { redirectTo?: string; queryParams?: Record<string, string>; scopes?: string };
     }): Promise<{ error?: unknown }>;
     signOut(): Promise<{ error?: unknown }>;
-    resetPasswordForEmail(email: string): Promise<{ error?: unknown }>;
+    resetPasswordForEmail(
+      email: string,
+      options?: { redirectTo?: string },
+    ): Promise<{ error?: unknown }>;
     updateUser(attributes: { password: string }): Promise<{ error?: unknown }>;
     onAuthStateChange(
       callback: (event: string, session: SupabaseSessionLike | null) => void,
@@ -169,7 +173,9 @@ export function createSupabaseIdentityAdapter(client: SupabaseAuthClientLike): I
     },
 
     requestPasswordReset: async (email: string): Promise<void> => {
-      const { error } = await client.auth.resetPasswordForEmail(email);
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: authReturnUrl(),
+      });
       if (error) throw classifySupabaseAuthError(error);
     },
   };

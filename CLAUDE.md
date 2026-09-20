@@ -1207,6 +1207,18 @@ personal y otra de la organización. El retorno cae en `/auth` y lo recoge
 el observador de sesión es el mismo que restaura una sesión al abrir la
 aplicación, y una segunda copia de esa decisión es una que se queda vieja.
 
+**El retorno lo decide el origen, no el proyecto.** `lib/authReturnUrl.ts` es la
+única definición de a dónde vuelve alguien tras pasar por un proveedor, y las
+tres puertas la usan: Google, la invitación de `provision-user` y la
+recuperación de contraseña. La tercera no la usaba, y el modo de fallo es el que
+no se ve venir: sin `redirectTo`, Supabase construye el enlace del correo con la
+*Site URL* del proyecto. Con un despliegue anterior todavía vivo sobre la misma
+base de datos, quien pidió recuperar su contraseña desde la aplicación nueva
+recibió un correo que lo devolvió a la **vieja** — la sesión se abrió, pero esa
+versión no tenía pantalla de «nueva contraseña», ni «Seguridad», ni «Cerrar
+sesión», así que el síntoma se leyó como tres funciones que faltaban. Un enlace
+de retorno mal dirigido no falla: te atiende otra aplicación.
+
 **Entrar con Google no crea una cuenta.** Quien complete el flujo sin perfil en
 `api.user_profiles` es devuelto a `/auth` con la explicación de siempre. Que la
 puerta sea más cómoda no la abre a más gente.
