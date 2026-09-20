@@ -112,11 +112,21 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   **9 a 7** imports profundos, y `OfficeContext.tsx` de 553 a 401 líneas. La
   carga inicial sube 1,3 KB gz (323,9 → 325,2 de 340).
 
-### F2-05 · `StartEngagement` como entrada pública única de ejecución
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H06
-- **Cambios.** `runEngagement` deja de ser la puerta; un caso de uso aplica
-  `canRunEngagement` y la exclusión de concurrencia antes de arrancar.
-- **Aceptación.** Llamar al runner sin charter aprobado es imposible desde la API pública del módulo; una prueba lo demuestra sin React.
+### F2-05 · La regla de gobierno vive en la puerta, no en el llamante
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H06
+- **Cambios.** En vez de añadir un `StartEngagement` por encima —que sería otra
+  puerta que alguien puede rodear— la regla baja a `runEngagement`, que es la
+  única puerta que existe. Devuelve `status: 'refused'` sin tocar ningún puerto.
+  La exclusión de concurrencia sigue entrando por `options.isRunning`: «ya se
+  está ejecutando» es un hecho de la sesión que ejecuta, no del agregado, y
+  entre sesiones la exclusión la da la revisión optimista.
+- **Aceptación.** Llamar al runner sin charter aprobado es imposible; cuatro
+  pruebas lo demuestran sin React.
+- **Evidencia, y es la mejor del lote.** Al mover la regla, **las dieciocho
+  pruebas del motor pasaron a fallar**: los fixtures construían charters sin
+  aprobar y el motor los ejecutaba sin que nada protestara, porque la regla la
+  aplicaba `OfficeContext` y no la puerta. Eso es exactamente el agujero, medido.
+  Los fixtures ahora aprueban el charter, con el comentario que dice por qué.
 
 ### F2-06 · Idempotencia y reanudación ante fallo de persistencia
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F2-04 · **Resuelve** H07

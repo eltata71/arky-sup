@@ -70,6 +70,9 @@ const engagementWith = (tasks: OfficeTask[]): OfficeEngagement => ({
     coordinatorId: 'lucia', consolidatorId: 'alejandro',
     provenance: 'deterministic',
     proposedAt: '2026-08-26T00:00:00.000Z',
+    // El runner ya no ejecuta sin aprobación: la regla vive en la puerta.
+    approvedAt: '2026-08-26T01:00:00.000Z',
+    approvedBy: { id: 'u-arb', name: 'Ana', role: 'admin' },
   },
   tasks,
   arbDecisions: [],

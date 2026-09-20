@@ -26,7 +26,7 @@ import {
   type OfficeTaskReview,
 } from './OfficeTypes';
 import { OFFICE_AGENT_PERSONAS } from './officeAgentPersonas';
-import { transitionEngagement } from './officeEngagementTransitions';
+import { canRunEngagement, transitionEngagement } from './officeEngagementTransitions';
 import { withAuditEntry } from './OfficeEngagementRepository';
 import { createRunCheckpoint } from './officeRunCheckpoint';
 import type { PersistenceResult, PersistenceStatus } from '../persistence';
@@ -104,12 +104,22 @@ export interface OfficeRunOptions {
   agentConcurrency?: ReadonlyMap<string, number>;
   /** Correlation id for this attempt. Minted when the caller supplies none. */
   runId?: string;
+  /**
+   * Si esta sesión ya está ejecutando este encargo.
+   *
+   * Lo aporta quien llama porque es un hecho suyo, no del agregado: dos
+   * pestañas son dos sesiones y ninguna ve el `AbortController` de la otra. La
+   * exclusión entre sesiones la da la revisión optimista del encargo, que es
+   * donde tiene que estar.
+   */
+  isRunning?: boolean;
   signal?: AbortSignal;
 }
 
 export interface OfficeRunResult {
   engagement: OfficeEngagement;
-  status: 'completed' | 'partial' | 'blocked' | 'cancelled' | 'budget-exhausted' | 'not-persisted';
+  status: 'completed' | 'partial' | 'blocked' | 'cancelled' | 'budget-exhausted'
+    | 'not-persisted' | 'refused';
   message: string;
   /**
    * El fallo de persistencia que detuvo la ejecución, si la detuvo uno.
@@ -151,16 +161,38 @@ const blockingFindings = (findings: readonly OfficeReviewFinding[]): OfficeRevie
   findings.filter((finding) => finding.severity === 'critical' || finding.severity === 'high');
 
 /**
- * Runs the engagement to a stopping point.
+ * Ejecuta el encargo hasta un punto de parada.
  *
- * Safe to call again on the same engagement: tasks already in a terminal state
- * are skipped, which is exactly what makes resume-after-reload work.
+ * Se puede volver a llamar sobre el mismo encargo: las tareas ya terminales se
+ * saltan, que es exactamente lo que hace posible reanudar tras una recarga.
+ *
+ * **La regla de gobierno se aplica aquí, no en quien llama.** «Nadie ejecuta un
+ * charter que no se ha aprobado» es la regla que da sentido a una Oficina de
+ * Arquitectura: ejecutar antes convierte la aprobación en un trámite posterior
+ * a los hechos. `canRunEngagement` existía y era pura desde hace tiempo — pero
+ * la llamaba `context/OfficeContext.tsx` y nadie más, así que la regla valía
+ * mientras todo el mundo entrara por la pantalla. Cualquier otro llamante
+ * —otro caso de uso, una prueba, un trabajo en segundo plano— arrancaba el
+ * runner sin pasar por ella.
+ *
+ * Una invariante que se aplica en el llamante no es una invariante: es una
+ * convención de un llamante, y el llamante es lo que más se copia.
+ *
+ * La exclusión de concurrencia sigue viniendo de fuera (`options.isRunning`)
+ * porque «ya se está ejecutando» es un hecho de la sesión que ejecuta —un
+ * `AbortController` vivo—, no del agregado. El dominio decide la regla; quien
+ * corre sabe si su propio runner está ocupado.
  */
 export const runEngagement = async (
   initial: OfficeEngagement,
   ports: OfficeRunnerPorts,
   options: OfficeRunOptions = {},
 ): Promise<OfficeRunResult> => {
+  const verdict = canRunEngagement(initial, options.isRunning ?? false);
+  if (verdict.outcome === 'refused') {
+    return { engagement: initial, status: 'refused', message: verdict.refusal.message };
+  }
+
   const maxConcurrency = Math.max(1, Math.min(6, options.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY));
   // One id per execution attempt. An engagement resumes rather than restarts,
   // so without it the second attempt appends to the same undifferentiated

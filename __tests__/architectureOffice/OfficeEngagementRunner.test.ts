@@ -49,6 +49,13 @@ const engagementWith = (tasks: OfficeTask[], maxAiCalls = DEFAULT_OFFICE_BUDGET.
     consolidatorId: 'alejandro',
     provenance: 'deterministic',
     proposedAt: '2026-08-26T00:00:00.000Z',
+    // Aprobado, porque el runner ya no ejecuta sin aprobación.
+    //
+    // Que hiciera falta tocar este fixture es la prueba del agujero: las
+    // dieciocho pruebas del motor corrían sobre charters sin aprobar y ninguna
+    // se enteraba, porque la regla la aplicaba `OfficeContext` y no la puerta.
+    approvedAt: '2026-08-26T01:00:00.000Z',
+    approvedBy: { id: 'u-arb', name: 'Ana', role: 'admin' },
   },
   tasks,
   arbDecisions: [],
@@ -530,5 +537,74 @@ describe('OfficeEngagementRunner', () => {
     expect(actions).toContain('task-completed');
     expect(actions).toContain('submitted-to-arb');
     expect(result.engagement.auditTrail.every((entry) => Boolean(entry.timestamp && entry.actor))).toBe(true);
+  });
+});
+
+describe('nadie ejecuta un charter sin aprobar, entre por donde entre', () => {
+  /*
+   * `canRunEngagement` era pura y estaba probada desde hace tiempo. La llamaba
+   * `context/OfficeContext.tsx` y nadie más, así que la regla valía mientras
+   * todo el mundo entrara por la pantalla — y este mismo fichero, dieciocho
+   * pruebas, entraba por otro sitio con charters sin aprobar sin que nada
+   * protestara.
+   *
+   * Una invariante que se aplica en el llamante no es una invariante: es una
+   * convención de un llamante, y el llamante es lo que más se copia.
+   */
+  const unapproved = (tasks: OfficeTask[]): OfficeEngagement => {
+    const base = engagementWith(tasks);
+    const { approvedAt: _at, approvedBy: _by, ...charter } = base.charter;
+    return { ...base, charter, status: 'awaiting-charter' };
+  };
+
+  it('se niega, sin tocar ningún puerto', async () => {
+    const ports = makePorts();
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    const result = await runEngagement(unapproved(tasks), ports);
+
+    expect(result.status).toBe('refused');
+    expect(result.message).toMatch(/aprobarse/i);
+    expect(ports.produceArtifact).not.toHaveBeenCalled();
+    // Ni siquiera escribe: un rechazo no cuesta nada, que es la diferencia
+    // entre una guarda en la puerta y una a mitad de pasillo.
+    expect(ports.persist).not.toHaveBeenCalled();
+  });
+
+  it('devuelve el encargo intacto, sin transicionarlo a in-progress', async () => {
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+    const before = unapproved(tasks);
+
+    const result = await runEngagement(before, makePorts());
+
+    expect(result.engagement).toBe(before);
+    expect(result.engagement.status).toBe('awaiting-charter');
+    expect(result.engagement.currentRunId).toBeUndefined();
+    expect(result.engagement.auditTrail).toEqual([]);
+  });
+
+  it('se niega cuando quien llama dice que ya está ejecutando', async () => {
+    // La exclusión sigue viniendo de fuera porque es un hecho de la sesión que
+    // ejecuta, no del agregado: dos pestañas son dos sesiones y ninguna ve el
+    // AbortController de la otra. Entre sesiones la exclusión la da la revisión
+    // optimista del encargo, que es donde tiene que estar.
+    const ports = makePorts();
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    const result = await runEngagement(engagementWith(tasks), ports, { isRunning: true });
+
+    expect(result.status).toBe('refused');
+    expect(result.message).toMatch(/ya se está ejecutando/i);
+    expect(ports.produceArtifact).not.toHaveBeenCalled();
+  });
+
+  it('ejecuta cuando el charter está aprobado y nadie más lo está corriendo', async () => {
+    const ports = makePorts();
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    const result = await runEngagement(engagementWith(tasks), ports, { isRunning: false });
+
+    expect(result.status).not.toBe('refused');
+    expect(ports.produceArtifact).toHaveBeenCalled();
   });
 });

@@ -273,8 +273,10 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const runEngagementNow = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
-    // La regla —nadie ejecuta un charter sin aprobar— es del dominio. Lo único
-    // que aporta esta pantalla es si su propio runner está ocupado.
+    // La regla —nadie ejecuta un charter sin aprobar— la aplica `runEngagement`,
+    // que es la única puerta. Esta comprobación se mantiene porque evita
+    // arrancar un `AbortController` y un estado de «ejecutando» para algo que
+    // se va a rechazar; ya no es donde vive la regla.
     const verdict = canRunEngagement(engagement, abortControllers.current.has(engagementId));
     if (verdict.outcome === 'refused') return { ok: false, reason: verdict.refusal.message };
 
@@ -311,6 +313,9 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         signal: controller.signal,
         agentConcurrency: agentConfiguration.concurrency,
       });
+      if (result.status === 'refused') {
+        return { ok: false, engagement: result.engagement, reason: result.message };
+      }
 
       // Las puertas se evalúan contra los artefactos que el run produjo de
       // verdad, así que esto va después y sobre el proyecto refrescado.
