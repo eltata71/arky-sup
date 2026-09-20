@@ -220,6 +220,25 @@ export interface BusinessInitiative {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  /**
+   * El testigo de concurrencia de la fila, **no** un campo de dominio: ninguna
+   * regla de iniciativa lo lee.
+   *
+   * Vive aquí por la misma razón que `OfficeEngagement.revision`, y el defecto
+   * que cierra era idéntico línea por línea: la revisión la guardaba un
+   * `Map<string, number>` dentro del cierre del repositorio, así que cualquier
+   * `list()` la refrescaba para todas las iniciativas. Una pantalla con un
+   * snapshot anterior guardaba con la revisión más nueva, y la guarda optimista
+   * del servidor —que existe justo para detener eso— la dejaba pasar: la
+   * actualización perdida no se detectaba, se confirmaba.
+   *
+   * Un campo funciona donde un `WeakMap` no, porque cada derivación del
+   * agregado es un spread y el campo viaja solo. Ausente significa 0, y 0
+   * significa «espero que la fila no exista»: el fallo va hacia el conflicto,
+   * nunca hacia la escritura. No se persiste dentro del documento — es una
+   * columna, y una copia dentro del JSON nacería obsoleta.
+   */
+  revision?: number;
 }
 
 // ---------------------------------------------------------------------------

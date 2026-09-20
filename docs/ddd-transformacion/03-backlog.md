@@ -218,8 +218,15 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   revisión 3, recargar la lista (que viene en 7), guardar el snapshot viejo.
   Antes salía con 7 y el servidor lo aceptaba; ahora sale con 3. **Comprobado
   que falla contra el código anterior.**
-- **Pendiente.** El mismo patrón en los repositorios de proyecto e iniciativa,
-  sin auditar todavía.
+- **Auditado: el defecto estaba en los tres contextos.** Iniciativas lo tenía
+  línea por línea igual y **queda corregido aquí** (`BusinessInitiative.revision`,
+  el mapa fuera, la revisión del snapshot en `InitiativeContext`, y lo confirmado
+  —no lo enviado— de vuelta al estado). Proyectos va a F4-07.
+- **Y una segunda copia que el arreglo destapó.** Los dos repositorios llevaban
+  su propia tabla de códigos de PostgreSQL en vez de
+  `services/persistence/supabaseErrors.ts`, y **ninguna conocía `23503`** — el
+  código de F2-08. Ambas se sustituyen por `supabaseFailure`, que además propaga
+  el mensaje del servidor: el que nombra los proyectos a desvincular.
 
 ### F2-11 · Pruebas de concurrencia y fallo parcial
 - **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F2-01, F2-10
@@ -281,6 +288,16 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 
 ### F4-05 · Sacar de React la coordinación de artefactos
 - **Prioridad** P0 · **Tamaño** XL · **Estado** `pendiente`
+
+### F4-07 · El mapa de revisiones de proyectos, y su fuga al contrato público
+- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H10 (resto), H04
+- **Problema.** `SupabaseProjectRepository` tiene el mismo `Map` global que
+  encargos e iniciativas tenían, y además lo **publica**: `knownProjectRevision`
+  y `forgetProjectRevisions` salen por el `index.ts` del contexto, así que la
+  caché de concurrencia es parte del contrato del módulo.
+- **Por qué va en la fase 4.** Corregirlo toca la ruta de escritura del agregado
+  Proyecto–Artefacto, que es lo que F4-02 decide. Hacerlo antes sería fijar el
+  testigo sobre una frontera que va a cambiar.
 
 ### F4-06 · Migración por cortes verticales con ruta de escritura única
 - **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F4-03

@@ -1,6 +1,6 @@
 import type { OfficeArbDecision, OfficeEngagement } from '../architectureOffice/OfficeTypes';
 import { normalizeEngagement } from '../architectureOffice/OfficeEngagementRepository';
-import { createOperationId, type PersistenceResult } from '../persistence';
+import { createOperationId, supabaseFailure, type PersistenceResult } from '../persistence';
 
 /** Superficie mínima de PostgREST para el agregado; sin SDK en el dominio. */
 export interface SupabaseOfficeClientLike {
@@ -62,32 +62,23 @@ const asRemoteRecord = (value: unknown, projectId: string): RemoteEngagementReco
   return engagement ? { engagement, revision: row.revision as number } : null;
 };
 
-const statusFor = (error: unknown): 'conflict' | 'permission-denied' | 'offline' | 'validation-error' | 'failed' => {
-  const code = error && typeof error === 'object' ? (error as { code?: unknown }).code : undefined;
-  const message = error instanceof Error ? error.message : '';
-  if (code === 'P0001' || code === '23505') return 'conflict';
-  if (code === '42501' || code === 'PGRST301') return 'permission-denied';
-  if (code === '22023' || code === '23514') return 'validation-error';
-  if (code === 'fetch' || code === 'ECONNABORTED' || /failed to fetch|networkerror/i.test(message)
-    || (typeof navigator !== 'undefined' && !navigator.onLine)) return 'offline';
-  return 'failed';
-};
-
+/**
+ * El fallo, clasificado por la **tabla compartida**.
+ *
+ * Este fichero llevaba su propia copia de `statusFor` y de `failed`, y era una
+ * de las copias que `services/persistence/supabaseErrors.ts` existe para haber
+ * retirado. No era orden: la copia local no conocía `23503`
+ * —`foreign_key_violation`, el código con el que el servidor rechaza borrar
+ * algo que otra fila cita— así que ese rechazo se clasificaba como `failed`
+ * genérico en vez de `validation-error`. Y tampoco propagaba el mensaje del
+ * servidor, que en ese caso es justo lo útil: nombra los registros que hay que
+ * desvincular primero.
+ */
 const failed = <T>(
   operationId: string,
   error: unknown,
   message: string,
-): PersistenceResult<T> => ({
-  status: statusFor(error),
-  success: false,
-  operationId,
-  target: 'supabase',
-  error,
-  errorCode: error && typeof error === 'object' && typeof (error as { code?: unknown }).code === 'string'
-    ? (error as { code: string }).code
-    : undefined,
-  message,
-});
+): PersistenceResult<T> => supabaseFailure<T>(operationId, error, message)
 
 /**
  * El documento que viaja a la RPC, sin el testigo de fila.

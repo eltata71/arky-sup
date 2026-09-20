@@ -211,8 +211,29 @@ lo hace con la revisión **más nueva**, y la guarda optimista del servidor —q
 existe precisamente para detener eso— la deja pasar. La actualización perdida no
 se detecta: se confirma.
 
-El mismo patrón hay que auditarlo en los repositorios de proyecto e iniciativa
-(tarea F1-06).
+**Auditado el 2026-09-20: está en los tres contextos, no en uno.**
+
+| Repositorio | Forma | Estado |
+|---|---|---|
+| `SupabaseOfficeEngagementRepository` | `const revisions = new Map<string, number>()` en el cierre | **corregido** |
+| `SupabaseBusinessInitiativeRepository` | idéntico, línea por línea | **corregido** |
+| `SupabaseProjectRepository` | `const revisions` a nivel de módulo, además **exportado** como `knownProjectRevision` | **pendiente — F4-07** |
+
+El de proyectos es el peor de los tres y por eso va aparte. El mapa no sólo
+decide la revisión: se publica por el `index.ts` del contexto
+(`export { forgetProjectRevisions, knownProjectRevision }`), de modo que la
+caché de concurrencia **es parte del contrato público del módulo** — que es el
+hallazgo H04 y éste a la vez. Corregirlo toca la ruta de escritura del agregado
+Proyecto–Artefacto, que es la fase 4, así que se hace con ella y no antes.
+
+**Y una segunda copia que el arreglo destapó.** Los repositorios de encargos e
+iniciativas llevaban cada uno su propia tabla de códigos de PostgreSQL —
+`statusFor` + `failed`— en vez de usar `services/persistence/supabaseErrors.ts`,
+que existe exactamente para no tener cinco. No era desorden: **ninguna de las
+dos copias conocía `23503`**, el código con el que el servidor rechaza ahora
+borrar una iniciativa que un proyecto cita (F2-08). Ese rechazo se habría
+clasificado como `failed` genérico, y el mensaje útil —el que nombra los
+proyectos a desvincular— se habría perdido por el camino.
 
 ## H11 · La actualización del grafo derivado depende del navegador y no tiene recuperación durable
 
