@@ -1,0 +1,90 @@
+# Censo de fronteras — línea base 2026-09-20 (fd590e7)
+
+```
+export const ALLOWED_CYCLES = [
+  'components <-> context',
+  'components <-> hooks',
+  'context <-> hooks',
+  'services (raíz) <-> services/ai',
+];
+
+export const LAYER_VIOLATION_BUDGET = {
+};
+
+export const DEEP_IMPORT_BUDGET = {
+  'api -> services/ai': 1,
+  'components -> services/agent': 2,
+  'components -> services/ai': 3,
+  'components -> services/architectureOffice': 44,
+  'components -> services/artifacts': 14,
+  'components -> services/businessInitiatives': 16,
+  'components -> services/chat': 1,
+  'components -> services/diagram': 20,
+  'components -> services/export': 1,
+  'components -> services/presentation': 1,
+  'components -> services/quality': 8,
+  'components -> services/review': 1,
+  'context -> services/agent': 1,
+  'context -> services/architectureOffice': 9,
+  'context -> services/architectureProjects': 2,
+  'context -> services/artifacts': 2,
+  'context -> services/chat': 1,
+  'hooks -> services/agent': 2,
+  'hooks -> services/ai': 2,
+  'hooks -> services/artifacts': 4,
+  'hooks -> services/diagram': 5,
+  'hooks -> services/export': 2,
+  'pages -> services/ai': 1,
+  'pages -> services/architectureOffice': 9,
+  'pages -> services/artifacts': 1,
+  'services (raíz) -> services/agent': 1,
+  'services (raíz) -> services/ai': 16,
+  'services (raíz) -> services/architectureOffice': 3,
+  'services (raíz) -> services/artifacts': 4,
+  'services (raíz) -> services/diagram': 6,
+  'services (raíz) -> services/presentation': 2,
+  'services (raíz) -> services/quality': 1,
+  'services/agent -> services/diagram': 1,
+  'services/agent -> services/memory': 3,
+  'services/agent -> services/quality': 1,
+  'services/ai -> services/businessInitiatives': 1,
+  'services/ai -> services/diagram': 1,
+  'services/architectureKnowledgeGraph -> services/architectureOffice': 1,
+  'services/architectureOffice -> services/ai': 2,
+  'services/architectureOffice -> services/diagram': 1,
+  'services/architectureOffice -> services/publicationPipeline': 1,
+  'services/architectureProjects -> services/architectureOffice': 2,
+  'services/architectureProjects -> services/chat': 1,
+  'services/architectureProjects -> services/memory': 2,
+  'services/architectureProjects -> services/publicationPipeline': 3,
+  'services/artifactCompiler -> services/quality': 3,
+  'services/artifacts -> services/ai': 1,
+  'services/artifacts -> services/diagram': 14,
+  'services/artifacts -> services/export': 3,
+  'services/artifacts -> services/quality': 5,
+  'services/export -> services/diagram': 1,
+  'services/export -> services/presentation': 1,
+  'services/export -> services/quality': 11,
+  'services/portfolioGraph -> services/architectureOffice': 3,
+  'services/portfolioGraph -> services/businessInitiatives': 2,
+  'services/publicationPipeline -> services/architectureKnowledgeGraph': 5,
+  'services/publicationPipeline -> services/artifactCompiler': 1,
+  'services/publicationPipeline -> services/export': 7,
+  'services/quality -> services/diagram': 1,
+};
+
+export const UI_SERVICE_FANOUT_BUDGET = {
+  'components/ArtifactCanvas.tsx': 5,
+  'components/artifacts/export/ArtifactExportModal.tsx': 4,
+  'components/copilot/ProjectCopilotChatModal.tsx': 4,
+  'pages/InitiativesPage.tsx': 4,
+  'components/architectureOffice/EngagementIntakeWizard.tsx': 3,
+  'components/architectureOffice/OfficeCapabilitiesPanel.tsx': 3,
+  'components/artifacts/ArtifactInspectorPanel.tsx': 3,
+  'components/AssistantPanel.tsx': 3,
+  'pages/ProjectsPage.tsx': 3,
+  'pages/Workspace.tsx': 3,
+};
+
+// 4 cycles, 0 upward pairs, 59 deep-import pairs, 10 screens over the fan-out default
+```

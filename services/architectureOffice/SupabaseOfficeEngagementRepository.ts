@@ -1,13 +1,17 @@
 import type { OfficeArbDecision, OfficeEngagement } from '../architectureOffice/OfficeTypes';
 import { normalizeEngagement } from '../architectureOffice/OfficeEngagementRepository';
-import { createOperationId, type PersistenceResult } from '../persistence';
+import { createOperationId, supabaseFailure, type PersistenceResult } from '../persistence';
 
 /** Superficie mínima de PostgREST para el agregado; sin SDK en el dominio. */
 export interface SupabaseOfficeClientLike {
   rpc(name: 'load_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'save_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'delete_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
-  rpc(name: 'record_arb_decision', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
+  // `record_arb_decision` ya no se llama desde aquí: la escribía la mitad de
+  // una operación que ahora es una sola transacción. La RPC sigue existiendo en
+  // el servidor mientras haya clientes desplegados que la usen; su retirada es
+  // una migración posterior, no este fichero.
+  rpc(name: 'decide_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
 }
 
 interface RemoteEngagementRecord {
@@ -17,15 +21,37 @@ interface RemoteEngagementRecord {
 
 export interface SupabaseOfficeEngagementRepository {
   list(projectId: string): Promise<OfficeEngagement[]>;
-  save(
-    engagement: OfficeEngagement,
-    expectedRevision?: number,
+  /**
+   * Devuelve el encargo **tal y como quedó guardado**, con su revisión nueva.
+   *
+   * Devolvía `void`, y eso obligaba a quien llamaba a quedarse con el objeto
+   * que había enviado — cuya revisión ya es la anterior. La siguiente escritura
+   * partía de un testigo caducado y el servidor la rechazaba, o —peor, y es lo
+   * que pasaba— el repositorio se lo había apuntado en un mapa global y la
+   * dejaba pasar.
+   */
+  save(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
+  remove(
+    projectId: string,
+    engagementId: string,
+    expectedRevision: number,
   ): Promise<PersistenceResult<void>>;
-  remove(projectId: string, engagementId: string): Promise<PersistenceResult<void>>;
-  recordArbDecision(
+  /**
+   * Firma la decisión y transiciona el encargo **en una transacción**.
+   *
+   * Sustituye a la pareja `recordArbDecision` + `save`, que no podía ser
+   * atómica desde el navegador — son dos RPC — y dejaba dos estados
+   * intermedios posibles. El peor no perdía el dato: lo inventaba, porque el
+   * documento del encargo lleva un espejo `arbDecisions` que la primera
+   * escritura ya guardaba. Ver ADR-102.
+   *
+   * Devuelve el encargo tal y como quedó, con su revisión nueva y con el
+   * espejo que **el servidor** reconstruyó desde el registro inmutable.
+   */
+  decide(
     engagement: OfficeEngagement,
     decision: OfficeArbDecision,
-  ): Promise<PersistenceResult<void>>;
+  ): Promise<PersistenceResult<OfficeEngagement>>;
 }
 
 const asRemoteRecord = (value: unknown, projectId: string): RemoteEngagementRecord | null => {
@@ -36,32 +62,36 @@ const asRemoteRecord = (value: unknown, projectId: string): RemoteEngagementReco
   return engagement ? { engagement, revision: row.revision as number } : null;
 };
 
-const statusFor = (error: unknown): 'conflict' | 'permission-denied' | 'offline' | 'validation-error' | 'failed' => {
-  const code = error && typeof error === 'object' ? (error as { code?: unknown }).code : undefined;
-  const message = error instanceof Error ? error.message : '';
-  if (code === 'P0001' || code === '23505') return 'conflict';
-  if (code === '42501' || code === 'PGRST301') return 'permission-denied';
-  if (code === '22023' || code === '23514') return 'validation-error';
-  if (code === 'fetch' || code === 'ECONNABORTED' || /failed to fetch|networkerror/i.test(message)
-    || (typeof navigator !== 'undefined' && !navigator.onLine)) return 'offline';
-  return 'failed';
-};
-
+/**
+ * El fallo, clasificado por la **tabla compartida**.
+ *
+ * Este fichero llevaba su propia copia de `statusFor` y de `failed`, y era una
+ * de las copias que `services/persistence/supabaseErrors.ts` existe para haber
+ * retirado. No era orden: la copia local no conocía `23503`
+ * —`foreign_key_violation`, el código con el que el servidor rechaza borrar
+ * algo que otra fila cita— así que ese rechazo se clasificaba como `failed`
+ * genérico en vez de `validation-error`. Y tampoco propagaba el mensaje del
+ * servidor, que en ese caso es justo lo útil: nombra los registros que hay que
+ * desvincular primero.
+ */
 const failed = <T>(
   operationId: string,
   error: unknown,
   message: string,
-): PersistenceResult<T> => ({
-  status: statusFor(error),
-  success: false,
-  operationId,
-  target: 'supabase',
-  error,
-  errorCode: error && typeof error === 'object' && typeof (error as { code?: unknown }).code === 'string'
-    ? (error as { code: string }).code
-    : undefined,
-  message,
-});
+): PersistenceResult<T> => supabaseFailure<T>(operationId, error, message)
+
+/**
+ * El documento que viaja a la RPC, sin el testigo de fila.
+ *
+ * `revision` es una columna, no un campo del documento. Copiarlo dentro del
+ * JSON sería una segunda verdad sobre el mismo hecho, y además una que nace
+ * obsoleta: la fila la incrementa el `insert … on conflict do update`, así que
+ * la copia de dentro quedaría siempre una por detrás.
+ */
+const asDocument = (engagement: OfficeEngagement): Omit<OfficeEngagement, 'revision'> => {
+  const { revision: _storedRevision, ...document } = engagement;
+  return document;
+};
 
 /**
  * Repositorio Supabase de Encargos de Oficina.
@@ -73,8 +103,6 @@ const failed = <T>(
 export function createSupabaseOfficeEngagementRepository(
   client: SupabaseOfficeClientLike,
 ): SupabaseOfficeEngagementRepository {
-  const revisions = new Map<string, number>();
-
   return {
     async list(projectId) {
       const { data, error } = await client.rpc('load_engagements', { p_project_id: projectId });
@@ -85,18 +113,27 @@ export function createSupabaseOfficeEngagementRepository(
         throw new Error('La respuesta remota de encargos contiene una fila inválida.');
       }
       const valid = records as RemoteEngagementRecord[];
-      for (const record of valid) revisions.set(record.engagement.id, record.revision);
-      return valid.map((record) => record.engagement);
+      // La revisión se pega al agregado que vuelve, no a un mapa por id. Ver la
+      // nota de `OfficeEngagement.revision`: un mapa compartido acaba diciendo
+      // la revisión de la última lectura, no la del snapshot que se edita.
+      return valid.map((record) => ({ ...record.engagement, revision: record.revision }));
     },
 
-    async save(engagement, expectedRevision = revisions.get(engagement.id) ?? 0) {
+    async save(engagement) {
       const operationId = createOperationId('saveEngagement');
+      // Ausente es 0, y 0 significa «espero que la fila no exista». Un encargo
+      // recién salido de la fábrica es exactamente eso; uno cuyo testigo se
+      // perdió por el camino se estrella contra un conflicto en vez de pisar
+      // una escritura ajena, que es la dirección correcta del fallo.
+      const expectedRevision = engagement.revision ?? 0;
       const { data, error } = await client.rpc('save_engagement', {
         p_project_id: engagement.projectId,
-        p_engagement: engagement,
+        p_engagement: asDocument(engagement),
         p_expected_revision: expectedRevision,
       });
-      if (error) return failed<void>(operationId, error, 'No se pudo confirmar el encargo en Supabase.');
+      if (error) {
+        return failed<OfficeEngagement>(operationId, error, 'No se pudo confirmar el encargo en Supabase.');
+      }
       const record = asRemoteRecord(data, engagement.projectId);
       if (!record) {
         return {
@@ -104,11 +141,16 @@ export function createSupabaseOfficeEngagementRepository(
           message: 'Supabase confirmó una respuesta de encargo inválida.',
         };
       }
-      revisions.set(record.engagement.id, record.revision);
-      return { status: 'success', success: true, operationId, target: 'supabase' };
+      return {
+        status: 'success',
+        success: true,
+        operationId,
+        target: 'supabase',
+        data: { ...record.engagement, revision: record.revision },
+      };
     },
 
-    async remove(projectId, engagementId, expectedRevision = revisions.get(engagementId) ?? 0) {
+    async remove(projectId, engagementId, expectedRevision) {
       const operationId = createOperationId('deleteEngagement');
       const { error } = await client.rpc('delete_engagement', {
         p_project_id: projectId,
@@ -116,15 +158,34 @@ export function createSupabaseOfficeEngagementRepository(
         p_expected_revision: expectedRevision,
       });
       if (error) return failed<void>(operationId, error, 'No se pudo confirmar el borrado del encargo en Supabase.');
-      revisions.delete(engagementId);
       return { status: 'success', success: true, operationId, target: 'supabase' };
     },
 
-    async recordArbDecision(engagement, decision) {
-      const operationId = createOperationId('recordArbDecision');
-      const { error } = await client.rpc('record_arb_decision', { p_decision: decision });
-      if (error) return failed<void>(operationId, error, 'No se pudo confirmar la decisión del ARB en Supabase.');
-      return { status: 'success', success: true, operationId, target: 'supabase' };
+    async decide(engagement, decision) {
+      const operationId = createOperationId('decideEngagement');
+      const { data, error } = await client.rpc('decide_engagement', {
+        p_project_id: engagement.projectId,
+        p_engagement: asDocument(engagement),
+        p_expected_revision: engagement.revision ?? 0,
+        p_decision: decision,
+      });
+      if (error) {
+        return failed<OfficeEngagement>(operationId, error, 'No se pudo confirmar la decisión del ARB en Supabase.');
+      }
+      const record = asRemoteRecord(data, engagement.projectId);
+      if (!record) {
+        return {
+          status: 'failed', success: false, operationId, target: 'supabase',
+          message: 'Supabase confirmó una respuesta de decisión inválida.',
+        };
+      }
+      return {
+        status: 'success',
+        success: true,
+        operationId,
+        target: 'supabase',
+        data: { ...record.engagement, revision: record.revision },
+      };
     },
   };
 }

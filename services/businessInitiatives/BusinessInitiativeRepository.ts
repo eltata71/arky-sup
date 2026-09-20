@@ -259,6 +259,15 @@ export const normalizeInitiative = (
     userId: asString(raw.userId, fallbackUserId),
     createdAt,
     updatedAt: asIsoDate(raw.updatedAt, createdAt),
+    // El testigo de fila sobrevive a la normalización porque el espejo local
+    // guarda el objeto entero y lo vuelve a leer por aquí. Nunca viene del
+    // documento remoto —el repositorio lo quita antes de enviarlo—, así que un
+    // `revision` presente sólo puede haberlo puesto esta aplicación. Perderlo
+    // haría que todo lo leído de la caché valiera 0 y chocara contra un
+    // conflicto en la siguiente escritura.
+    revision: typeof raw.revision === 'number' && Number.isInteger(raw.revision) && raw.revision > 0
+      ? raw.revision
+      : undefined,
   };
 };
 
@@ -381,17 +390,25 @@ export const saveInitiative = async (
   } catch (error) {
     result = createFailureResult('saveBusinessInitiative', error);
   }
-  mirror.upsert(next.userId, next, result);
+  // El espejo guarda lo confirmado cuando lo hay —con su revisión nueva— y lo
+  // enviado cuando no: en degradación el trabajo no se pierde, y `result` ya
+  // dice que sólo está en local. Guardar lo enviado tras una confirmación
+  // dejaría el testigo caducado y convertiría la siguiente escritura en un
+  // conflicto.
+  const stored = result.success && result.data ? result.data : next;
+  mirror.upsert(stored.userId, stored, result);
   return result;
 };
 
 export const deleteInitiative = async (
   userId: string,
   initiativeId: string,
+  expectedRevision = 0,
 ): Promise<PersistenceResult<void>> => {
   let result: PersistenceResult<void>;
   try {
-    result = await (await getRemote()).remove(initiativeId, userId);
+    // La revisión del snapshot que se está viendo, no la de la última lectura.
+    result = await (await getRemote()).remove(initiativeId, userId, expectedRevision);
   } catch (error) {
     result = createFailureResult('deleteBusinessInitiative', error);
   }

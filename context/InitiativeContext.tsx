@@ -145,7 +145,11 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
       if (result.status !== 'offline') commit(initiativesRef.current.filter((item) => item.id !== initiative.id));
       return { ok: false, reason: result.message ?? 'La iniciativa quedó sin confirmar.' };
     }
-    return { ok: true, initiative };
+    // Lo confirmado, no lo enviado: lo enviado lleva el testigo de revisión
+    // anterior y la siguiente escritura sería un conflicto garantizado.
+    const confirmed = result.data ?? initiative;
+    upsert(confirmed);
+    return { ok: true, initiative: confirmed };
   }, [userId, upsert, commit]);
 
   const updateInitiative = useCallback(async (
@@ -171,7 +175,9 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
       if (result.status !== 'offline') upsert(current); // El fallo remoto nunca pasa por éxito.
       return { ok: false, reason: result.message ?? 'Los cambios quedaron sin confirmar.' };
     }
-    return { ok: true, initiative: next };
+    const confirmed = result.data ?? next;
+    upsert(confirmed);
+    return { ok: true, initiative: confirmed };
   }, [upsert]);
 
   const deleteInitiative = useCallback(async (
@@ -181,7 +187,8 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
     if (!current) return { ok: false, reason: 'La iniciativa no existe.' };
 
     commit(initiativesRef.current.filter((item) => item.id !== initiativeId));
-    const result = await deleteInitiativeRemote(userId, initiativeId);
+    // La revisión del snapshot que se está viendo, no la de la última lectura.
+    const result = await deleteInitiativeRemote(userId, initiativeId, current.revision ?? 0);
     if (!result.success) {
       upsert(current);
       return { ok: false, reason: result.message ?? 'El borrado quedó sin confirmar.' };

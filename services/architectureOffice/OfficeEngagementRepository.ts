@@ -220,6 +220,15 @@ export const normalizeEngagement = (value: unknown, projectId: string): OfficeEn
     createdBy: normalizeActor(raw.createdBy),
     createdAt: asIsoDate(raw.createdAt, now),
     updatedAt: asIsoDate(raw.updatedAt, now),
+    // El testigo de fila sobrevive a la normalización porque el espejo local
+    // guarda el objeto entero y lo vuelve a leer por aquí. No viene nunca del
+    // documento remoto —el repositorio lo quita antes de enviarlo—, así que un
+    // `revision` presente aquí sólo puede haberlo puesto esta aplicación.
+    // Perderlo haría que todo lo leído de la caché valiera 0 y chocara contra
+    // un conflicto en la siguiente escritura.
+    revision: typeof raw.revision === 'number' && Number.isInteger(raw.revision) && raw.revision > 0
+      ? raw.revision
+      : undefined,
   };
 };
 
@@ -270,9 +279,24 @@ export const withAuditEntry = (
 
 export interface OfficeEngagementRepository {
   list(projectId: string): Promise<OfficeEngagement[]>;
-  save(engagement: OfficeEngagement): Promise<PersistenceResult<void>>;
-  remove(projectId: string, engagementId: string): Promise<PersistenceResult<void>>;
-  recordArbDecision(engagement: OfficeEngagement, decision: OfficeArbDecision): Promise<PersistenceResult<void>>;
+  /**
+   * Guarda y devuelve el encargo **tal y como quedó**, con su revisión nueva.
+   *
+   * Quien llama tiene que quedarse con lo devuelto, no con lo que envió: lo que
+   * envió lleva el testigo anterior, y una segunda escritura partiendo de ahí
+   * es un conflicto garantizado. En degradación local devuelve el encargo tal
+   * cual, sin revisión nueva, porque no la hay — y el estado dice `failed`.
+   */
+  save(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
+  remove(projectId: string, engagementId: string, expectedRevision?: number): Promise<PersistenceResult<void>>;
+  /**
+   * La decisión del comité y la transición del encargo, en una transacción.
+   *
+   * Eran dos escrituras y ninguna ordenación las arreglaba del todo: sólo una
+   * transacción elimina el estado intermedio, y una transacción entre dos
+   * tablas no se escribe desde el navegador. La hace `api.decide_engagement`.
+   */
+  decide(engagement: OfficeEngagement, decision: OfficeArbDecision): Promise<PersistenceResult<OfficeEngagement>>;
 }
 
 /**
@@ -317,7 +341,7 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
     }
   }
 
-  async save(engagement: OfficeEngagement): Promise<PersistenceResult<void>> {
+  async save(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>> {
     const normalized: OfficeEngagement = {
       ...engagement,
       initiativeIds: [...new Set(engagement.initiativeIds)],
@@ -325,20 +349,28 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
       schemaVersion: OFFICE_ENGAGEMENT_SCHEMA_VERSION,
       updatedAt: new Date().toISOString(),
     };
-    let result: PersistenceResult<void>;
+    let result: PersistenceResult<OfficeEngagement>;
     try {
       result = await (await getRemote()).save(normalized);
     } catch (error) {
       result = createFailureResult('saveEngagement', error);
     }
-    mirror.upsert(normalized.projectId, normalized, result);
-    return result;
+    // El espejo guarda lo confirmado cuando lo hay —con su revisión nueva— y lo
+    // enviado cuando no: en degradación el trabajo no se pierde, y `result` ya
+    // dice que sólo está en local.
+    const stored = result.success && result.data ? result.data : normalized;
+    mirror.upsert(stored.projectId, stored, result);
+    return result.success && result.data ? result : { ...result, data: stored };
   }
 
-  async remove(projectId: string, engagementId: string): Promise<PersistenceResult<void>> {
+  async remove(
+    projectId: string,
+    engagementId: string,
+    expectedRevision = 0,
+  ): Promise<PersistenceResult<void>> {
     let result: PersistenceResult<void>;
     try {
-      result = await (await getRemote()).remove(projectId, engagementId);
+      result = await (await getRemote()).remove(projectId, engagementId, expectedRevision);
     } catch (error) {
       result = createFailureResult('deleteEngagement', error);
     }
@@ -347,21 +379,31 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
   }
 
   /**
-   * Una decisión del ARB se añade a su propia tabla inmutable.
-   * `api.record_arb_decision` sólo crea —no hay `update` ni `delete` que
-   * conceder—, así que éste es el registro a prueba de manipulación de quién
-   * firmó un encargo y con qué evidencia; el documento del encargo lleva un
-   * espejo para leer rápido.
+   * Una decisión del ARB y la transición que la aplica, en una transacción.
+   *
+   * `api.decide_engagement` escribe el registro inmutable —sólo-creación, así
+   * que un reintento no firma dos veces— y mueve el encargo dentro de la misma
+   * transacción. El espejo `arbDecisions` que el documento lleva para leer
+   * rápido lo **reconstruye el servidor** desde ese registro: un espejo que el
+   * cliente pueda escribir es un espejo que puede decir algo distinto del
+   * rastro inmutable, y la pantalla lee el espejo.
    */
-  async recordArbDecision(
+  async decide(
     engagement: OfficeEngagement,
     decision: OfficeArbDecision,
-  ): Promise<PersistenceResult<void>> {
+  ): Promise<PersistenceResult<OfficeEngagement>> {
+    let result: PersistenceResult<OfficeEngagement>;
     try {
-      return await (await getRemote()).recordArbDecision(engagement, decision);
+      result = await (await getRemote()).decide(engagement, decision);
     } catch (error) {
-      return createFailureResult('recordArbDecision', error);
+      result = createFailureResult('decideEngagement', error);
     }
+    // El espejo local sólo recibe lo confirmado. Guardar una decisión que el
+    // servidor no aceptó la serviría de vuelta como buena durante los próximos
+    // cinco minutos, que es más o menos lo que tarda alguien en cerrar la
+    // pestaña creyendo que el comité ya firmó.
+    if (result.success && result.data) mirror.upsert(result.data.projectId, result.data, result);
+    return result;
   }
 }
 

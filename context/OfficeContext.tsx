@@ -22,56 +22,37 @@ import React, {
 } from 'react';
 import { useAppContext } from './AppContext';
 import { useAuth } from './AuthContext';
-import { evaluateOfficeQualityGates } from '../services/architectureOffice/officeQualityGates';
-import {
-  applyCharterRefinement,
-  buildCharterRefinementPrompt,
-  planCharterDeterministic,
-} from '../services/architectureOffice/OfficeEngagementPlanner';
 import {
   officeEngagementRepository,
 } from '../services/architectureOffice/OfficeEngagementRepository';
 import {
-  approveCharter as approveCharterRule,
-  attachGateAssessment,
-  canActAsArb,
-  decideEngagement as decideEngagementRule,
-} from '../services/architectureOffice/OfficeArbService';
+  approveCharterOperation,
+  createEngagementOperation,
+  decideEngagementOperation,
+  deleteEngagementOperation,
+  evaluateGatesOperation,
+  type CreateEngagementCommand,
+  type OfficeOperationResult,
+} from '../services/architectureOffice/application/engagementOperations';
+import { canActAsArb } from '../services/architectureOffice/OfficeArbService';
 import {
   type OfficeActor,
   type OfficeArbVerdict,
   type OfficeEngagement,
-  type OfficeEngagementPriority,
 } from '../services/architectureOffice/OfficeTypes';
-import { createOfficeEngagement } from '../services/architectureOffice/officeEngagementFactory';
 import { canRunEngagement } from '../services/architectureOffice/officeEngagementTransitions';
 import { trackEngagementCompleted } from '../services/architectureOffice/officeTelemetry';
 import type { OfficeAgentId } from '../services/architectureOffice/officeAgentPersonas';
 
-export interface CreateEngagementInput {
-  projectId: string;
-  title: string;
-  brief: string;
-  /**
-   * Ids of the business initiatives the deliverable serves — the canonical
-   * link. Defaults to whatever its project answers.
-   */
-  initiativeIds?: string[];
-  businessProjectIds?: string[];
-  /** How urgent the deliverable is. Defaults to 'medium' when not stated. */
-  priority?: OfficeEngagementPriority;
-  /** When the business needs it. */
-  dueAt?: string;
-  maxDeliverables?: number;
-  /** Skip the AI refinement pass (used by tests and offline mode). */
-  deterministicOnly?: boolean;
-}
-
-export interface OfficeOperationResult {
-  ok: boolean;
-  engagement?: OfficeEngagement;
-  reason?: string;
-}
+/**
+ * La intake, tal y como la escribe una pantalla.
+ *
+ * Es el comando de la capa de aplicación, reexportado con el nombre que los
+ * consumidores ya usan. El contexto no define su propia forma: la política y su
+ * vocabulario viven juntos, en `application/engagementOperations`.
+ */
+export type CreateEngagementInput = CreateEngagementCommand;
+export type { OfficeOperationResult };
 
 interface OfficeContextType {
   /** Engagements for the projects loaded so far, newest first. */
@@ -208,9 +189,32 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     ].sort(byRecency));
   }, [commit]);
 
-  const persistAndTrack = useCallback(async (engagement: OfficeEngagement) => {
+  /**
+   * Lo que la capa de aplicación necesita del navegador: cómo escribir, y qué
+   * enseñar mientras la escritura viaja.
+   *
+   * `persistAndTrack` hacía `await …repository.save(e)` y **descartaba** el
+   * `PersistenceResult` —que es justo el envoltorio que `services/persistence`
+   * existe para producir— así que las seis operaciones de este contexto
+   * respondían `ok: true` tanto si la escritura se confirmaba como si el
+   * servidor la rechazaba por conflicto de revisión o por permiso.
+   *
+   * El `upsert` optimista se conserva y es deliberado: el trabajo generado no
+   * se tira porque la base no esté. Lo que cambia es que ahora se sabe, y que
+   * cuando la escritura se confirma lo que queda en estado es **lo que devolvió
+   * el servidor**, con su revisión nueva.
+   */
+  const operationDeps = useMemo(() => ({
+    writes: officeEngagementRepository,
+    onDraft: upsert,
+  }), [upsert]);
+
+  /** El puerto de persistencia del runner, que es el mismo con otra forma. */
+  const persistCheckpoint = useCallback(async (engagement: OfficeEngagement) => {
     upsert(engagement);
-    await officeEngagementRepository.save(engagement);
+    const result = await officeEngagementRepository.save(engagement);
+    if (result.success && result.data) upsert(result.data);
+    return result;
   }, [upsert]);
 
   const loadEngagements = useCallback(async (projectId: string) => {
@@ -242,70 +246,37 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const project = projectsRef.current.find((candidate) => candidate.id === input.projectId);
     if (!project) return { ok: false, reason: 'El proyecto indicado no existe.' };
 
-    const scaffold = planCharterDeterministic({
-      title: input.title,
-      brief: input.brief,
-      maxDeliverables: input.maxDeliverables,
-    });
-
-    let charter = scaffold;
-    if (!input.deterministicOnly) {
-      try {
-        const { assistantService } = await loadAssistant();
-        const raw = await assistantService.chatWithProject(
-          project,
-          buildCharterRefinementPrompt({ title: input.title, brief: input.brief }, scaffold),
-          [],
-          settingsRef.current,
-          'lucia',
-        );
-        const refinement = applyCharterRefinement(scaffold, raw);
-        charter = refinement.charter;
-      } catch {
-        // The deterministic charter is a complete, runnable plan. An
-        // unavailable model degrades the plan's quality, never its existence.
-      }
-    }
-
-    const created = createOfficeEngagement({
-      projectId: input.projectId,
-      title: input.title,
-      brief: input.brief,
-      // El entregable hereda las iniciativas de su atención salvo que la intake
-      // las haya estrechado. Qué pasa si no queda ninguna lo decide la fábrica,
-      // no esta pantalla.
-      initiativeIds: input.initiativeIds ?? project.initiativeIds ?? [],
-      businessProjectIds: input.businessProjectIds ?? project.linkedBusinessProjects ?? [],
-      charter,
-      priority: input.priority,
-      dueAt: input.dueAt,
-      createdBy: actor,
-    });
-    if (created.outcome === 'rejected') {
-      return { ok: false, reason: created.rejection.message };
-    }
-    const audited = created.engagement;
-
-    await persistAndTrack(audited);
-    return { ok: true, engagement: audited };
-  }, [actor, persistAndTrack]);
+    return createEngagementOperation(
+      {
+        ...operationDeps,
+        // El puerto es la llamada al modelo, no el prompt: componerlo y decidir
+        // si el refinamiento vale es política de la Oficina. El import sigue
+        // siendo diferido porque `OfficeProvider` vive en el árbol de
+        // proveedores y uno estático metería el motor entero en el arranque.
+        refineCharter: async (prompt: string) => {
+          const { assistantService } = await loadAssistant();
+          return assistantService.chatWithProject(project, prompt, [], settingsRef.current, 'lucia');
+        },
+      },
+      project,
+      input,
+      actor,
+    );
+  }, [actor, operationDeps]);
 
   const approveCharter = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
-
-    const result = approveCharterRule(engagement, actor);
-    if (!result.ok) return { ok: false, reason: result.reason };
-
-    await persistAndTrack(result.engagement);
-    return { ok: true, engagement: result.engagement };
-  }, [readEngagement, actor, persistAndTrack]);
+    return approveCharterOperation(operationDeps, engagement, actor);
+  }, [readEngagement, actor, operationDeps]);
 
   const runEngagementNow = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
-    // La regla —nadie ejecuta un charter sin aprobar— es del dominio. Lo único
-    // que aporta esta pantalla es si su propio runner está ocupado.
+    // La regla —nadie ejecuta un charter sin aprobar— la aplica `runEngagement`,
+    // que es la única puerta. Esta comprobación se mantiene porque evita
+    // arrancar un `AbortController` y un estado de «ejecutando» para algo que
+    // se va a rechazar; ya no es donde vive la regla.
     const verdict = canRunEngagement(engagement, abortControllers.current.has(engagementId));
     if (verdict.outcome === 'refused') return { ok: false, reason: verdict.refusal.message };
 
@@ -334,7 +305,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             agentConfiguration.tiers[personaId],
           );
         },
-        persist: persistAndTrack,
+        persist: persistCheckpoint,
         onProgress: upsert,
       });
 
@@ -342,23 +313,33 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         signal: controller.signal,
         agentConcurrency: agentConfiguration.concurrency,
       });
+      if (result.status === 'refused') {
+        return { ok: false, engagement: result.engagement, reason: result.message };
+      }
 
-      // Gates are evaluated against the artifacts the run actually produced,
-      // so this has to happen after the run, on the refreshed project.
+      // Las puertas se evalúan contra los artefactos que el run produjo de
+      // verdad, así que esto va después y sobre el proyecto refrescado.
       const project = projectsRef.current.find((candidate) => candidate.id === engagement.projectId);
       let finished = result.engagement;
       if (project) {
-        finished = attachGateAssessment(finished, evaluateOfficeQualityGates(project));
-        await persistAndTrack(finished);
+        const gated = await evaluateGatesOperation(operationDeps, finished, project);
+        finished = gated.engagement ?? finished;
       }
 
       trackEngagementCompleted(finished);
-      return { ok: result.status !== 'cancelled', engagement: finished, reason: result.message };
+      // Un run que se detuvo porque no se pudo guardar no terminó: `ok: false`
+      // con su motivo, como cualquier otra escritura no confirmada.
+      return {
+        ok: result.status !== 'cancelled' && result.status !== 'not-persisted',
+        engagement: finished,
+        reason: result.message,
+        persistence: result.persistence,
+      };
     } finally {
       abortControllers.current.delete(engagementId);
       setRunningEngagementIds((previous) => previous.filter((id) => id !== engagementId));
     }
-  }, [readEngagement, createArtifact, createArtifactVersion, updateArtifact, persistAndTrack, upsert, user]);
+  }, [readEngagement, createArtifact, createArtifactVersion, updateArtifact, persistCheckpoint, operationDeps, upsert, user]);
 
   const cancelRun = useCallback((engagementId: string) => {
     abortControllers.current.get(engagementId)?.abort();
@@ -369,11 +350,8 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
     const project = projectsRef.current.find((candidate) => candidate.id === engagement.projectId);
     if (!project) return { ok: false, reason: 'El proyecto del encargo no está disponible.' };
-
-    const updated = attachGateAssessment(engagement, evaluateOfficeQualityGates(project));
-    await persistAndTrack(updated);
-    return { ok: true, engagement: updated };
-  }, [readEngagement, persistAndTrack]);
+    return evaluateGatesOperation(operationDeps, engagement, project);
+  }, [readEngagement, operationDeps]);
 
   const decideEngagement = useCallback(async (
     engagementId: string,
@@ -382,29 +360,16 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   ): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
-
-    const result = decideEngagementRule(engagement, { verdict, rationale, actor });
-    if (!result.ok) return { ok: false, reason: result.reason };
-
-    await persistAndTrack(result.engagement);
-    if (result.decision) {
-      // Best-effort: the immutable subcollection is the tamper-evident record,
-      // but the engagement mirror is already saved so a rules rejection here
-      // (non-admin) does not lose the UI state — it just means the decision
-      // was never authoritative, which is the correct outcome.
-      await officeEngagementRepository.recordArbDecision(result.engagement, result.decision);
-    }
-    return { ok: true, engagement: result.engagement };
-  }, [readEngagement, actor, persistAndTrack]);
+    return decideEngagementOperation(operationDeps, engagement, { verdict, rationale, actor });
+  }, [readEngagement, actor, operationDeps]);
 
   const deleteEngagement = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
     abortControllers.current.get(engagementId)?.abort();
     commit(engagementsRef.current.filter((item) => item.id !== engagementId));
-    await officeEngagementRepository.remove(engagement.projectId, engagementId);
-    return { ok: true };
-  }, [readEngagement, commit]);
+    return deleteEngagementOperation({ ...operationDeps, onRestore: upsert }, engagement);
+  }, [readEngagement, commit, upsert, operationDeps]);
 
   const value = useMemo<OfficeContextType>(() => ({
     engagements,

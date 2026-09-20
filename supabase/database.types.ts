@@ -409,6 +409,7 @@ export type Database = {
         Row: {
           created_at: string
           data: Json
+          decided_revision: number | null
           engagement_id: string
           id: string
           owner_id: string
@@ -417,6 +418,7 @@ export type Database = {
         Insert: {
           created_at?: string
           data: Json
+          decided_revision?: number | null
           engagement_id: string
           id: string
           owner_id: string
@@ -425,6 +427,7 @@ export type Database = {
         Update: {
           created_at?: string
           data?: Json
+          decided_revision?: number | null
           engagement_id?: string
           id?: string
           owner_id?: string
@@ -638,6 +641,29 @@ export type Database = {
         Returns: undefined
       }
       current_permissions: { Args: never; Returns: string[] }
+      decide_engagement: {
+        Args: {
+          p_decision: Json
+          p_engagement: Json
+          p_expected_revision: number
+          p_project_id: string
+        }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "office_engagements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       delete_agent_profile: { Args: { p_agent_id: string }; Returns: undefined }
       delete_artifact_comment: {
         Args: { p_comment_id: string }
@@ -648,19 +674,14 @@ export type Database = {
         Returns: undefined
       }
       delete_course: { Args: { p_course_id: string }; Returns: undefined }
-      delete_engagement:
-        | {
-            Args: { p_engagement_id: string; p_project_id: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_engagement_id: string
-              p_expected_revision: number
-              p_project_id: string
-            }
-            Returns: undefined
-          }
+      delete_engagement: {
+        Args: {
+          p_engagement_id: string
+          p_expected_revision: number
+          p_project_id: string
+        }
+        Returns: undefined
+      }
       delete_note: { Args: { p_note_id: string }; Returns: undefined }
       delete_project_aggregate: {
         Args: { p_expected_revision: number; p_id: string }

@@ -15,14 +15,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   ALLOWED_CYCLES,
+  ALLOWED_SCCS,
   DEEP_IMPORT_BUDGET,
   LAYER_VIOLATION_BUDGET,
   UI_SERVICE_FANOUT_BUDGET,
   UI_SERVICE_FANOUT_DEFAULT,
   analyse,
+  checkStronglyConnected,
   moduleOf,
   scan,
   sourceFiles,
+  stronglyConnectedComponents,
 } from '../../scripts/checkModuleBoundaries.mjs';
 
 describe('the gate measures something', () => {
@@ -153,5 +156,151 @@ describe('a screen is not the application layer', () => {
   it('leaves AppContext out of it — a context is allowed to compose', () => {
     const { fanout } = analyse();
     expect([...fanout.keys()].some((f) => f.startsWith('context/'))).toBe(false);
+  });
+});
+
+describe('the gate sees a cycle it cannot reach by pairs', () => {
+  // `ALLOWED_CYCLES` answers "do these two import each other?". That is a
+  // strictly weaker question than "can this module reach itself?", and the gate
+  // spent a whole wave green while nine domain contexts were mutually
+  // reachable. These cases are synthetic on purpose: the real graph cannot
+  // demonstrate that a three-module cycle is caught, because it would have to
+  // contain one.
+  const graph = (...edges: string[]) => new Map(edges.map((edge) => [edge, 1]));
+
+  it('finds a three-module cycle no pair reveals', () => {
+    const components = stronglyConnectedComponents(graph('a -> b', 'b -> c', 'c -> a'));
+    expect(components).toEqual([['a', 'b', 'c']]);
+  });
+
+  it('leaves a chain alone', () => {
+    expect(stronglyConnectedComponents(graph('a -> b', 'b -> c'))).toEqual([]);
+  });
+
+  it('leaves a diamond alone — two paths to the same module are not a cycle', () => {
+    expect(stronglyConnectedComponents(
+      graph('a -> b', 'a -> c', 'b -> d', 'c -> d'),
+    )).toEqual([]);
+  });
+
+  it('does not merge two components that share no module', () => {
+    const components = stronglyConnectedComponents(
+      graph('a -> b', 'b -> a', 'b -> c', 'c -> d', 'd -> c'),
+    );
+    expect(components).toEqual([['a', 'b'], ['c', 'd']]);
+  });
+
+  it('ignores a module that only points at itself', () => {
+    // `analyse()` never emits a self edge — `to.name === from.name` is skipped
+    // — but the detector is the thing being tested, not its caller.
+    expect(stronglyConnectedComponents(graph('a -> a'))).toEqual([]);
+  });
+
+  it('survives a chain longer than a recursive walk would like', () => {
+    // A recursive Tarjan blows the stack at a depth equal to the module count.
+    // The manifest has 34 today; the failure would arrive the day it has
+    // thousands, as a gate that crashes rather than one that reports.
+    const edges: string[] = [];
+    for (let i = 0; i < 20000; i += 1) edges.push(`n${i} -> n${i + 1}`);
+    edges.push('n20000 -> n0');
+    const components = stronglyConnectedComponents(graph(...edges));
+    expect(components).toHaveLength(1);
+    expect(components[0]).toHaveLength(20001);
+  });
+});
+
+describe('the strongly connected components are a budget that only falls', () => {
+  it('records exactly the components the repository has', () => {
+    const { sccs } = analyse();
+    expect(sccs.map((component: string[]) => [...component].sort()))
+      .toEqual(ALLOWED_SCCS.map((component: string[]) => [...component].sort()));
+  });
+
+  it('still carries the nine-module domain component — the target of phase 5', () => {
+    // Named rather than counted, so the day it shrinks the test says which
+    // module left. `services/ai -> services (raíz)` is the edge that closes it:
+    // 12 imports of `services/geminiService` from inside the layer built to
+    // hide it.
+    const { sccs } = analyse();
+    const domain = sccs.find((component: string[]) => component.includes('services/ai'));
+    expect(domain).toContain('services (raíz)');
+    expect(domain).toContain('services/architectureOffice');
+    expect(domain!.length).toBeLessThanOrEqual(9);
+  });
+
+  it('keeps the UI component at three — React ordinaria, no un defecto', () => {
+    const { sccs } = analyse();
+    const ui = sccs.find((component: string[]) => component.includes('components'));
+    expect(ui).toEqual(['components', 'context', 'hooks']);
+  });
+
+  it('does not record a component the graph no longer has', () => {
+    const { sccs } = analyse();
+    const measured = new Set(sccs.map((component: string[]) => component.join(' <-> ')));
+    for (const recorded of ALLOWED_SCCS) {
+      expect(
+        measured.has([...recorded].sort().join(' <-> ')),
+        `${recorded.join(' <-> ')} is recorded and already broken — remove it`,
+      ).toBe(true);
+    }
+  });
+});
+
+describe('the strongly connected budget refuses to be walked past', () => {
+  // The positive cases above prove the gate is green today. These prove it
+  // would go red — which is the only half that matters, and the half a
+  // green-only test suite never checks.
+  const run = (measured: string[][], budget: string[][]) => {
+    const failures: string[] = [];
+    const notes: string[] = [];
+    checkStronglyConnected(measured, failures, notes, budget);
+    return { failures, notes };
+  };
+
+  it('fails when a component appears where none was recorded', () => {
+    const { failures } = run([['services/export', 'services/quality']], []);
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('sin presupuesto');
+    expect(failures[0]).toContain('services/export <-> services/quality');
+  });
+
+  it('fails when a recorded component gains a module, and names the module', () => {
+    const { failures } = run(
+      [['a', 'b', 'c']],
+      [['a', 'b']],
+    );
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('creció con c');
+    expect(failures[0]).toContain('2 → 3');
+  });
+
+  it('fails when two recorded components merge into one', () => {
+    // Overlap matching is what makes this legible: comparing exact sets would
+    // report "a new component appeared" and say nothing about the cause.
+    const { failures } = run(
+      [['a', 'b', 'c', 'd']],
+      [['a', 'b'], ['c', 'd']],
+    );
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('creció con c, d');
+  });
+
+  it('passes and asks for the budget to be lowered when a component shrinks', () => {
+    const { failures, notes } = run([['a', 'b']], [['a', 'b', 'c']]);
+    expect(failures).toEqual([]);
+    expect(notes[0]).toContain('salieron c');
+    expect(notes[0]).toContain('ALLOWED_SCCS');
+  });
+
+  it('passes and asks for the entry to be removed when a component is broken', () => {
+    const { failures, notes } = run([], [['a', 'b']]);
+    expect(failures).toEqual([]);
+    expect(notes[0]).toContain('está roto');
+  });
+
+  it('accepts an unchanged component in silence', () => {
+    const { failures, notes } = run([['a', 'b']], [['a', 'b']]);
+    expect(failures).toEqual([]);
+    expect(notes).toEqual([]);
   });
 });
