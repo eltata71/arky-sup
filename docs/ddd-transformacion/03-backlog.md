@@ -106,7 +106,17 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F2-04 · **Resuelve** H07
 
 ### F2-07 · Retirar la sobrecarga `api.delete_engagement(text, text)`
-- **Prioridad** P0 · **Tamaño** S · **Estado** `pendiente` · **Resuelve** H09
+- **Prioridad** P0 · **Tamaño** S · **Estado** `completada (SQL-no-ejecutado)` · **Resuelve** H09
+- **Evidencia.** Migración `20260920120000_engagement_overload_and_initiative_references.sql`
+  (`revoke` + `drop function if exists`). Contrato pgTAP
+  `engagement_overload_and_initiative_references.test.sql`: la función tiene
+  **una** firma y es la de tres argumentos. Y una prueba estática nueva,
+  `__tests__/supabase/rpcOverloads.test.ts`, que **reprodujo el defecto en su
+  origen** antes del arreglo — señaló `20260912181347: crea
+  api.delete_engagement/3 y deja viva api.delete_engagement/2` — y vuelve a
+  fallar si se quita el `drop` (comprobado).
+- **Pendiente.** Los contratos pgTAP no se ejecutaron: sin Docker ni CLI de
+  Supabase en este entorno. Corren en `.github/workflows/supabase.yml`.
 - **Cambios.** Migración correctiva con `drop function`; contrato pgTAP que
   afirma que la firma de dos argumentos **no existe**; y una prueba de
   repositorio que afirma que el cliente pasa siempre tres argumentos.
@@ -115,16 +125,29 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   la invoca y siempre con `p_expected_revision`.
 
 ### F2-08 · Proteger el borrado de iniciativas referenciadas
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H08
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada (SQL-no-ejecutado)` · **Resuelve** H08
 - **Cambios.** `delete_business_initiative` rechaza si algún proyecto la cita
   (`errcode` propio, no `42501`); alternativa de archivado.
 - **Aceptación.** Borrar una iniciativa citada falla con un mensaje que nombra los
   proyectos; ningún proyecto queda imposible de guardar.
+- **Evidencia.** Misma migración. `delete_business_initiative` cuenta los
+  proyectos que la citan y falla con `23503` nombrando hasta cinco. La ventana de
+  carrera se cierra en los **dos** lados: `save_project_aggregate` toma
+  `for key share` sobre las iniciativas citadas y el borrado toma `for update`
+  antes de contar — el mecanismo de una clave foránea real, escrito a mano porque
+  el enlace vive en una columna de array. Seis afirmaciones pgTAP, incluidas las
+  tres negativas y la que comprueba que el proyecto **sigue siendo guardable**
+  después del borrado rechazado, que es lo que el defecto rompía.
 
 ### F2-09 · Auditoría de sobrecargas y RPC sin consumidor
-- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F2-07
-- **Cambios.** Contrato pgTAP que enumera las firmas concedidas a `authenticated`
-  y falla ante una que el repositorio no declara.
+- **Prioridad** P1 · **Tamaño** M · **Estado** `parcial` · **Depende de** F2-07
+- **Hecho.** `__tests__/supabase/rpcOverloads.test.ts` lee las migraciones en
+  orden, simula `create`/`drop` y afirma que **ninguna función tiene dos aridades
+  vivas**. Lee el texto y no el catálogo a propósito: el catálogo necesita Docker,
+  así que una prueba que lo consultara no correría en el bucle interno, que es
+  justo cuando alguien añade la sobrecarga.
+- **Pendiente.** Enumerar las firmas concedidas a `authenticated` contra las que
+  el repositorio declara consumir — eso sí necesita el catálogo, y va en pgTAP.
 
 ### F2-10 · La revisión viaja con el snapshot
 - **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H10
