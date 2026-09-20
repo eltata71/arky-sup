@@ -16,21 +16,40 @@
   la reanudación sea idempotente por tarea y que el `runId` distinga el intento
   detenido del siguiente. Después: F2-11 (pruebas de concurrencia), luego fase 3
   desde F3-02.
-- **Verificaciones pendientes, y ninguna está declarada validada:**
-  1. **Contratos pgTAP** — tres ficheros nuevos/tocados sin ejecutar. Este
-     entorno no tiene Docker ni la CLI de Supabase. Corren en
-     `.github/workflows/supabase.yml`.
-  2. **Playwright E2E** — no ejecutado en toda la sesión.
-  3. **Node 24** — todo lo medido va sobre Node 22.22.2. El repositorio declara
-     `engines.node: 24.x`.
+- **Verificaciones, ya ejecutadas en CI:**
+  1. **Contratos pgTAP — ejecutados y en verde** (`supabase.yml`, paso *Positive
+     and negative pgTAP contracts*), junto con el lint de SQL y los advisors de
+     seguridad. Fue su primera ejecución: aquí no hay Docker. **Las migraciones
+     salieron bien a la primera**; lo que falló fueron tres defectos de las
+     propias pruebas, corregidos en `fee10f7`.
+  2. **Playwright E2E — en verde**, sobre `main` y sobre la rama.
+  3. **CI (typecheck, lint, presupuestos, build, bundle, cobertura) — en verde**
+     sobre Node 24, que es lo que el repositorio declara y lo que este entorno
+     no tiene.
+- **Sigue sin verificar:** nada de lo entregado. La única medición hecha sobre
+  Node 22 en vez de 24 son las cifras locales de la línea base; CI las repitió
+  sobre 24 sin discrepancia.
 - **Bloqueos:** F2-03 espera decisión de negocio (ADR-101, D-1).
 
-### Riesgo abierto que conviene no perder de vista
+### El riesgo que había, y cómo se cerró
 
-`api.decide_engagement` es una RPC nueva que el cliente ya llama, y **no se ha
-ejecutado nunca**. La migración tiene que aplicarse antes de desplegar el
-código — es la regla aditiva que el repositorio ya tiene escrita— y el primer
-sitio donde se sabrá si el SQL es correcto es `supabase.yml`.
+`api.decide_engagement` era una RPC nueva que el cliente ya llamaba y que no se
+había ejecutado nunca. La regla aditiva del repositorio —la migración va antes
+que el código— se aplicó al pie de la letra:
+
+1. `supabase.yml` ejecutó los contratos contra una base real: **en verde**.
+2. Las dos migraciones se aplicaron a `ArkyDB-US` **antes** de fusionar, con
+   autorización explícita del usuario.
+3. Se verificó el resultado en la base: `delete_engagement` con una sola firma,
+   `decide_engagement` ejecutable por `authenticated`, `decided_revision`
+   presente, y **cero privilegios de tabla** para `anon`/`authenticated`.
+4. El historial de migraciones se realineó con los nombres de fichero del
+   repositorio (`20260920120000`, `20260920160000`), para que un `db push`
+   futuro no las vea como pendientes.
+
+Queda una deuda pequeña y nombrada: `api.record_arb_decision` ya no la llama
+ningún código de este repositorio, pero sí los clientes desplegados hasta que
+el despliegue nuevo los reemplace. Su retirada es una migración posterior.
 
 ---
 

@@ -2,7 +2,11 @@
 
 **Estados:** `pendiente` · `en curso` · `bloqueada` · `completada`.
 Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutada.
-`SQL-no-ejecutado` marca lo escrito pero no validable en este entorno.
+
+> El marcador `SQL-no-ejecutado` existió mientras los contratos pgTAP estaban
+> escritos y sin correr —este entorno no tiene Docker—. Ya no hace falta:
+> `supabase.yml` los ejecutó contra una base real y pasaron, y las dos
+> migraciones están aplicadas en `ArkyDB-US`.
 
 **Tamaños:** S (≤½ día) · M (1–2 días) · L (3–5 días) · XL (>1 semana).
 
@@ -59,7 +63,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ## Fase 2 — Consistencia y gobernanza
 
 ### F2-01 · `DecideEngagement` como caso de uso, y su equivalente SQL transaccional
-- **Prioridad** P0 · **Tamaño** L · **Estado** `completada (SQL-no-ejecutado)` · **Resuelve** H01, H02 (parcial)
+- **Prioridad** P0 · **Tamaño** L · **Estado** `completada` · **Resuelve** H01, H02 (parcial)
 - **Evidencia.** `api.decide_engagement(text, jsonb, bigint, jsonb)` en
   `supabase/migrations/20260920160000_decide_engagement_atomic.sql`: bloquea la
   fila, comprueba permiso `arb:decide`, estado previo **leído de la fila** (no
@@ -77,10 +81,11 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   defecto D-4 otra vez.
 - **Orden de despliegue, obligatorio.** La migración va **antes** que el código
   que llama la RPC nueva — la regla aditiva que el repositorio ya tiene escrita.
-- **Pendiente.** Ejecutar los contratos pgTAP (sin Docker aquí; corren en
-  `supabase.yml`). Y retirar `api.record_arb_decision`, que ya no llama ningún
-  código de este repositorio pero sí los clientes desplegados: es una migración
-  posterior, no ésta.
+- **Verificado.** Los contratos pgTAP **corrieron y pasaron**, y la migración se
+  aplicó a `ArkyDB-US` antes de fusionar, en el orden que el repositorio exige.
+- **Pendiente.** Retirar `api.record_arb_decision`, que ya no llama ningún código
+  de este repositorio pero sí los clientes desplegados hasta que el despliegue
+  nuevo los reemplace: es una migración posterior, no ésta.
 - **Alcance.** `services/architectureOffice/application/decideEngagement.ts` (nuevo),
   `context/OfficeContext.tsx`, `services/architectureOffice/OfficeEngagementRepository.ts`,
   `SupabaseOfficeEngagementRepository.ts`, migración nueva `api.decide_engagement`.
@@ -95,7 +100,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Riesgo/reversión.** La RPC nueva convive con las dos antiguas hasta F2-09; revertir es dejar de llamarla.
 
 ### F2-02 · Guardas de servidor: transición, estado previo, evidencia
-- **Prioridad** P0 · **Tamaño** M · **Estado** `parcial (SQL-no-ejecutado)` · **Resuelve** H02
+- **Prioridad** P0 · **Tamaño** M · **Estado** `parcial` · **Resuelve** H02
 - **Hecho.** En la ruta de decisión: estado previo leído de la fila y limitado a
   `awaiting-arb`/`blocked`; el estado nuevo tiene que ser el que el veredicto
   exige; `office_arb_decisions.decided_revision` guarda la revisión que el comité
@@ -158,7 +163,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F2-04 · **Resuelve** H07
 
 ### F2-07 · Retirar la sobrecarga `api.delete_engagement(text, text)`
-- **Prioridad** P0 · **Tamaño** S · **Estado** `completada (SQL-no-ejecutado)` · **Resuelve** H09
+- **Prioridad** P0 · **Tamaño** S · **Estado** `completada` · **Resuelve** H09
 - **Evidencia.** Migración `20260920120000_engagement_overload_and_initiative_references.sql`
   (`revoke` + `drop function if exists`). Contrato pgTAP
   `engagement_overload_and_initiative_references.test.sql`: la función tiene
@@ -167,8 +172,10 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   origen** antes del arreglo — señaló `20260912181347: crea
   api.delete_engagement/3 y deja viva api.delete_engagement/2` — y vuelve a
   fallar si se quita el `drop` (comprobado).
-- **Pendiente.** Los contratos pgTAP no se ejecutaron: sin Docker ni CLI de
-  Supabase en este entorno. Corren en `.github/workflows/supabase.yml`.
+- **Verificado.** Los contratos pgTAP **corrieron en `supabase.yml` y pasaron**,
+  y la migración se aplicó a `ArkyDB-US`. Comprobado en la base real: antes había
+  **dos** firmas de `delete_engagement`, ambas ejecutables por `authenticated`;
+  ahora hay una.
 - **Cambios.** Migración correctiva con `drop function`; contrato pgTAP que
   afirma que la firma de dos argumentos **no existe**; y una prueba de
   repositorio que afirma que el cliente pasa siempre tres argumentos.
@@ -177,7 +184,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   la invoca y siempre con `p_expected_revision`.
 
 ### F2-08 · Proteger el borrado de iniciativas referenciadas
-- **Prioridad** P0 · **Tamaño** M · **Estado** `completada (SQL-no-ejecutado)` · **Resuelve** H08
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H08
 - **Cambios.** `delete_business_initiative` rechaza si algún proyecto la cita
   (`errcode` propio, no `42501`); alternativa de archivado.
 - **Aceptación.** Borrar una iniciativa citada falla con un mensaje que nombra los

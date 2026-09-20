@@ -180,7 +180,20 @@ fallo de autorización.
 
 ## H09 · Sobrecarga antigua de `delete_engagement` sin revisión
 
-**Confirmado · evidencia estática.**
+**Confirmado · evidencia estática y, después, comprobado en el servidor real.**
+
+> **Comprobación contra `ArkyDB-US`, 2026-09-20** (lectura del catálogo, sin
+> escribir nada):
+>
+> ```
+> delete_engagement | 2 | p_project_id text, p_engagement_id text                             | authenticated: true
+> delete_engagement | 3 | p_project_id text, p_engagement_id text, p_expected_revision bigint | authenticated: true
+> ```
+>
+> Las **dos** firmas vivas en producción y ambas ejecutables por
+> `authenticated`. El hallazgo deja de ser una lectura del SQL: la guarda
+> optimista era opcional en la base real. Tras aplicar la migración queda una
+> sola firma, la de tres argumentos.
 `20260912170000_office_engagements.sql:142` crea
 `api.delete_engagement(text, text)` y la línea 218 la concede a `authenticated`.
 `20260912181347_office_engagements_guards.sql:90` crea
