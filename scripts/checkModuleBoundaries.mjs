@@ -46,6 +46,43 @@ export const ALLOWED_CYCLES = [
 ];
 
 /**
+ * Módulos mutuamente alcanzables, medidos 2026-09-20.
+ *
+ * `ALLOWED_CYCLES` responde «¿se importan estos dos entre sí?». Ésta responde
+ * la pregunta que de verdad decide si un módulo se puede leer solo: **¿se puede
+ * volver a él siguiendo imports?** Un ciclo `A → B → C → A` no aparece en el
+ * presupuesto de pares, y durante toda la ola anterior el gate estuvo verde
+ * declarando «0 ciclos entre contextos de dominio» mientras nueve contextos
+ * eran mutuamente alcanzables por 22 aristas.
+ *
+ * Cada entrada es un componente fuertemente conexo: la lista **exacta** de sus
+ * módulos. Reducirlo es el trabajo; que crezca, que aparezca uno nuevo, o que
+ * cambie de miembros, falla el build. Se registra la lista entera y no sólo el
+ * tamaño porque un componente que pierde un módulo y gana otro es un hecho
+ * nuevo, no el mismo con el mismo número.
+ *
+ * El componente de UI no es un defecto de modularidad: `components ↔ context ↔
+ * hooks` es la forma ordinaria de React. El de dominio sí lo es, y la arista
+ * que lo cierra es `services/ai -> services (raíz)` — los 12 imports de
+ * `services/geminiService` desde dentro de la capa que debería ocultarlo.
+ * Ver `docs/ddd-transformacion/adr/ADR-104-gate-transitivo.md`.
+ */
+export const ALLOWED_SCCS = [
+  ['components', 'context', 'hooks'],
+  [
+    'services (raíz)',
+    'services/agent',
+    'services/ai',
+    'services/architectureKnowledgeGraph',
+    'services/architectureOffice',
+    'services/architectureProjects',
+    'services/artifacts',
+    'services/chat',
+    'services/publicationPipeline',
+  ],
+];
+
+/**
  * Imports that point upward through the layers, measured 2026-09-01.
  *
  * The count is per `source -> target` pair. `lib` is documented in CLAUDE.md as
@@ -299,6 +336,86 @@ function entersThroughApi(target, mod) {
   return target === mod.path || target === api;
 }
 
+/**
+ * Componentes fuertemente conexos (Tarjan), iterativo.
+ *
+ * Iterativo y no recursivo a propósito: la recursión natural tiene profundidad
+ * igual al número de módulos, y el día que el manifiesto declare unos cientos
+ * un gate que revienta por pila es un gate que se desactiva.
+ *
+ * Devuelve sólo los componentes de más de un módulo, cada uno con sus miembros
+ * ordenados, y la lista entera ordenada — para que dos ejecuciones sobre el
+ * mismo árbol produzcan el mismo texto y `--report` sea copiable.
+ */
+export function stronglyConnectedComponents(edges) {
+  const adjacency = new Map();
+  const nodes = new Set();
+  for (const edge of edges.keys()) {
+    const [from, to] = edge.split(' -> ');
+    nodes.add(from);
+    nodes.add(to);
+    if (!adjacency.has(from)) adjacency.set(from, []);
+    adjacency.get(from).push(to);
+  }
+
+  const index = new Map();
+  const lowlink = new Map();
+  const onStack = new Set();
+  const stack = [];
+  const components = [];
+  let counter = 0;
+
+  for (const root of nodes) {
+    if (index.has(root)) continue;
+    // Cada marco lleva su propio cursor sobre los vecinos, que es lo que
+    // sustituye al retorno de la llamada recursiva.
+    const frames = [{ node: root, next: 0 }];
+    index.set(root, counter);
+    lowlink.set(root, counter);
+    counter += 1;
+    stack.push(root);
+    onStack.add(root);
+
+    while (frames.length > 0) {
+      const frame = frames[frames.length - 1];
+      const neighbours = adjacency.get(frame.node) ?? [];
+      if (frame.next < neighbours.length) {
+        const neighbour = neighbours[frame.next];
+        frame.next += 1;
+        if (!index.has(neighbour)) {
+          index.set(neighbour, counter);
+          lowlink.set(neighbour, counter);
+          counter += 1;
+          stack.push(neighbour);
+          onStack.add(neighbour);
+          frames.push({ node: neighbour, next: 0 });
+        } else if (onStack.has(neighbour)) {
+          lowlink.set(frame.node, Math.min(lowlink.get(frame.node), index.get(neighbour)));
+        }
+        continue;
+      }
+
+      frames.pop();
+      if (frames.length > 0) {
+        const parent = frames[frames.length - 1].node;
+        lowlink.set(parent, Math.min(lowlink.get(parent), lowlink.get(frame.node)));
+      }
+      if (lowlink.get(frame.node) === index.get(frame.node)) {
+        const component = [];
+        let popped;
+        do {
+          popped = stack.pop();
+          onStack.delete(popped);
+          component.push(popped);
+        } while (popped !== frame.node);
+        if (component.length > 1) components.push(component.sort());
+      }
+    }
+  }
+
+  return components.sort((a, b) => a[0].localeCompare(b[0]));
+}
+
 export function analyse() {
   const edges = new Map(); // "a -> b" → count
   const deepImports = new Map(); // "a -> b" → count
@@ -338,6 +455,8 @@ export function analyse() {
     if (has(b, a)) cycles.add([a, b].sort().join(' <-> '));
   }
 
+  const sccs = stronglyConnectedComponents(edges);
+
   const layerViolations = new Map();
   for (const [edge, count] of edges) {
     const [a, b] = edge.split(' -> ');
@@ -355,7 +474,7 @@ export function analyse() {
     }
   }
 
-  return { edges, cycles: [...cycles].sort(), deepImports, layerViolations, fanout, examples };
+  return { edges, cycles: [...cycles].sort(), sccs, deepImports, layerViolations, fanout, examples };
 }
 
 /* --------------------------------------------------------------- the gate */
@@ -378,8 +497,53 @@ function checkBudget(kind, actual, budget, failures, notes, unit = 'import') {
   }
 }
 
+/**
+ * Un componente fuertemente conexo sólo puede encoger.
+ *
+ * El emparejamiento es por **solapamiento**, no por igualdad: si dos
+ * componentes registrados se funden en uno, o uno registrado gana un módulo, lo
+ * que hay que decir no es «apareció un componente nuevo» sino qué módulos
+ * entraron. Comparar conjuntos exactos daría un mensaje que no nombra la causa.
+ */
+export function checkStronglyConnected(sccs, failures, notes, recordedBudget = ALLOWED_SCCS) {
+  const key = (members) => members.join(' <-> ');
+  const recorded = recordedBudget.map((members) => [...members].sort());
+  const matched = new Set();
+
+  for (const component of sccs) {
+    const members = new Set(component);
+    const budget = recorded.find((entry) => entry.some((name) => members.has(name)));
+    if (!budget) {
+      failures.push(
+        `scc: ${component.length} módulos mutuamente alcanzables sin presupuesto — ${key(component)}`,
+      );
+      continue;
+    }
+    matched.add(budget);
+    const added = component.filter((name) => !budget.includes(name));
+    if (added.length > 0) {
+      failures.push(
+        `scc: ${key(budget)} creció con ${added.join(', ')} `
+        + `(${budget.length} → ${component.length} módulos)`,
+      );
+    } else if (component.length < budget.length) {
+      const gone = budget.filter((name) => !members.has(name));
+      notes.push(
+        `scc: ${key(budget)} bajó a ${component.length} módulos (salieron ${gone.join(', ')}). `
+        + 'Actualiza ALLOWED_SCCS para fijar la mejora.',
+      );
+    }
+  }
+
+  for (const budget of recorded) {
+    if (!matched.has(budget)) {
+      notes.push(`scc: ${key(budget)} está roto. Quítalo de ALLOWED_SCCS.`);
+    }
+  }
+}
+
 export function scan() {
-  const { cycles, deepImports, layerViolations, fanout, examples } = analyse();
+  const { cycles, sccs, deepImports, layerViolations, fanout, examples } = analyse();
   const failures = [];
   const notes = [];
 
@@ -389,6 +553,8 @@ export function scan() {
   for (const recorded of ALLOWED_CYCLES) {
     if (!cycles.includes(recorded)) notes.push(`cycle: ${recorded} is broken. Remove it from ALLOWED_CYCLES.`);
   }
+
+  checkStronglyConnected(sccs, failures, notes);
 
   const looseRootFiles = sourceFiles().filter((f) => /^services\/[^/]+\.tsx?$/.test(f));
   if (looseRootFiles.length > SERVICES_ROOT_BUDGET) {
@@ -414,14 +580,21 @@ export function scan() {
     }
   }
 
-  return { failures, notes, cycles, deepImports, layerViolations, examples };
+  return { failures, notes, cycles, sccs, deepImports, layerViolations, examples };
 }
 
 function report() {
-  const { cycles, deepImports, layerViolations, fanout, examples } = analyse();
+  const { cycles, sccs, deepImports, layerViolations, fanout, examples } = analyse();
   const quote = (s) => `  '${s}',`;
   console.log('export const ALLOWED_CYCLES = [');
   cycles.forEach((c) => console.log(quote(c)));
+  console.log('];\n');
+  console.log('export const ALLOWED_SCCS = [');
+  sccs.forEach((component) => {
+    console.log('  [');
+    component.forEach((name) => console.log(`    '${name}',`));
+    console.log('  ],');
+  });
   console.log('];\n');
   console.log('export const LAYER_VIOLATION_BUDGET = {');
   [...layerViolations].sort().forEach(([k, v]) => console.log(`  '${k}': ${v},`));
@@ -433,7 +606,7 @@ function report() {
   [...fanout].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .forEach(([k, v]) => console.log(`  '${k}': ${v},`));
   console.log('};\n');
-  console.log(`// ${cycles.length} cycles, ${layerViolations.size} upward pairs, ${deepImports.size} deep-import pairs, ${fanout.size} screens over the fan-out default`);
+  console.log(`// ${cycles.length} cycles, ${sccs.length} strongly connected components (${sccs.map((c) => c.length).join(' + ')} modules), ${layerViolations.size} upward pairs, ${deepImports.size} deep-import pairs, ${fanout.size} screens over the fan-out default`);
   for (const [k, v] of [...examples].slice(0, 0)) console.log(k, v);
 }
 
@@ -445,7 +618,7 @@ function main() {
   for (const note of notes) console.log(`[check:module-boundaries] ${note}`);
 
   if (failures.length === 0) {
-    console.log('[check:module-boundaries] OK — no new cycle, no new upward import, no new deep import, no new UI fan-out.');
+    console.log('[check:module-boundaries] OK — no new cycle, no larger strongly connected component, no new upward import, no new deep import, no new UI fan-out.');
     return;
   }
 
@@ -457,8 +630,8 @@ function main() {
     if (example) console.error(`      e.g. ${example}`);
   }
   console.error(`
-A module is entered through its \`index.ts\` and does not import a module that
-imports it back. Fix the import rather than the budget: raising a number here
+A module is entered through its \`index.ts\`, does not import a module that
+imports it back, and does not join a group that can reach itself through others. Fix the import rather than the budget: raising a number here
 is how the folders stopped being modules the first time. \`modules.json\` says
 which module is which, and \`--report\` prints the census in the shape this
 file records it.

@@ -141,7 +141,13 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ## Fase 3 — Fronteras y contexto piloto
 
 ### F3-01 · El gate detecta componentes fuertemente conexos
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H03
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H03
+- **Adelantada** desde la fase 3: es la herramienta que mide si la fase 5 avanza.
+- **Evidencia.** `scripts/checkModuleBoundaries.mjs` (Tarjan iterativo, `ALLOWED_SCCS`,
+  `--report` imprime el presupuesto copiable); `__tests__/scripts/moduleBoundaries.test.ts`
+  pasa de 19 a **36** pruebas, **seis de ellas negativas** (componente nuevo, componente
+  que crece nombrando el módulo entrante, dos que se funden, uno que encoge, uno roto,
+  uno sin cambios). Gate en verde: `4 cycles, 2 strongly connected components (3 + 9 modules)`.
 - **Cambios.** Tarjan en `scripts/checkModuleBoundaries.mjs`; presupuesto
   monótono `ALLOWED_SCCS` con los dos componentes de hoy; `--report` los imprime.
 - **Aceptación.** Un ciclo de tres módulos nuevo falla el gate; los dos

@@ -409,6 +409,7 @@ there was no rule; folders enforce nothing.
 |---|---|
 | **Layers** | `foundation` (`lib`, `utils`) must not import `domain`; `domain` (`services/*`) must not import `ui` |
 | **Cycles** | two modules that import each other — one module with twice the surface, and neither readable alone |
+| **Alcanzabilidad** | un grupo de módulos que puede volver a sí mismo siguiendo imports, aunque ningún par se importe mutuamente. `ALLOWED_SCCS` registra los dos de hoy y **sólo puede encoger** — ADR-104 |
 | **Public API** | an import that reaches past a module's `index.ts` into an internal file |
 | **UI fan-out** | a screen under `components/`/`pages/` importing more than **two** service modules |
 | **Loose root files** | a new file dropped at the root of `services/`, which belongs to no module |
@@ -521,7 +522,7 @@ npm run test:merge-reports          # Merge the shards' blobs and enforce the th
 npm run quality        # everything the CI `quality` job runs — static gates + coverage + build + bundle checks
 npm run quality:fast   # the same static gates + `test:ci`, for the inner loop
 npm run quality:static # typecheck, strict, lint and the four budgets only
-npm run check:module-boundaries  # no new cycle, upward import, deep import or UI fan-out
+npm run check:module-boundaries  # ni ciclo, ni componente conexo mayor, ni import ascendente, profundo o fan-out nuevo
 
 npm run e2e            # Playwright (starts the dev server itself)
 npm run e2e:install    # Download chromium + webkit browsers
@@ -535,7 +536,7 @@ bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, adviso
 | Check | Result |
 |---|---|
 | `npm run typecheck` | clean |
-| `npm run check:module-boundaries` | **4 cycles recorded, 0 of them between domain contexts**; **0 upward pairs**; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
+| `npm run check:module-boundaries` | **4 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 9 módulos)**. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar; **0 upward pairs**; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
 | `npm run check:module-size` | clean, y `services/geminiService.ts` baja en las dos tablas: 5 499 → 5 413 líneas y 276 306 → 272 294 bytes. Bajó **mientras** absorbía el enrutado: las dos declaraciones de herramienta en dialecto de Google y la traducción a `AIRequest` salieron del monolito |
 | `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
 | `npm run check:any-budget` | 23 `any` types, budget 23 (eran 38) |
@@ -2074,7 +2075,7 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 - Do not import `@google/genai` outside `services/ai/providers/gemini/` (lint-enforced). Describe output shape with `AIJsonSchema` from `services/ai/schema`; each provider translates it at its own boundary.
 - Do not import `services/geminiService` outside `services/ai/` (lint-enforced). Use a domain façade, or `aiGateway` when you compose your own prompt.
 - Do not name a concrete model outside a provider. Resolve tiers with `resolveModelForSettings`.
-- Do not introduce a cycle between modules, an import that points up through the layers, an import that reaches past a module's `index.ts`, or a screen that imports a third service module — **`npm run check:module-boundaries` enforces all four** against `modules.json`. See *Module boundaries*.
+- Do not introduce a cycle between modules, **a group of modules that can reach itself through others**, an import that points up through the layers, an import that reaches past a module's `index.ts`, or a screen that imports a third service module — **`npm run check:module-boundaries` enforces all five** against `modules.json`. El segundo es el que faltaba: durante una ola entera el gate estuvo verde con nueve contextos de dominio mutuamente alcanzables. Ver *Module boundaries* y `docs/ddd-transformacion/`.
 - Do not grow `services/geminiService.ts` or `components/ArtifactCanvas.tsx` — **`npm run check:module-size` enforces this**, along with a 500-line **and 20 KB** default for every other module. Each oversized file carries both numbers it has today; a change may lower one and may not raise it without a reason in the commit message. The weight is the half that catches data: the `en`/`es` dictionary inside `AppContext` was 17 lines and 20 KB, under every line budget the repository had.
 - Do not introduce a state management library (Redux, Zustand, …) without explicit approval.
 - Do not reintroduce runtime CDN `<script>`/`<link>` tags in `index.html`.
