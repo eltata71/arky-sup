@@ -24,6 +24,22 @@ import {
   type OfficeTask,
 } from '../../services/architectureOffice/OfficeTypes';
 import type { OfficeAgentId } from '../../services/architectureOffice/officeAgentPersonas';
+import type { PersistenceResult } from '../../services/persistence';
+
+/**
+ * Una escritura confirmada, que es lo que el runner espera por defecto.
+ *
+ * Existe porque el puerto dejó de poder decir `undefined`: un `persist` que no
+ * puede reportar un fallo obliga al runner a suponer que todo se guardó, que es
+ * exactamente lo que hacía.
+ */
+const persisted = (engagement: OfficeEngagement): PersistenceResult<OfficeEngagement> => ({
+  status: 'success',
+  success: true,
+  operationId: 'test-persist',
+  target: 'supabase',
+  data: engagement,
+});
 
 const task = (over: Partial<OfficeTask> & Pick<OfficeTask, 'id' | 'kind' | 'assigneeId'>): OfficeTask => ({
   engagementId: 'eng-1',
@@ -84,7 +100,7 @@ const ports = (over: Partial<OfficeRunnerPorts> = {}): OfficeRunnerPorts => ({
     summary: 'Ready.',
     traceId: 'office-consolidate-1',
   })),
-  persist: vi.fn(async () => undefined),
+  persist: vi.fn(async (engagement: OfficeEngagement) => persisted(engagement)),
   ...over,
 });
 

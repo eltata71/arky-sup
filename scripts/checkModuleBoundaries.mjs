@@ -162,7 +162,7 @@ export const DEEP_IMPORT_BUDGET = {
   'components -> services/quality': 8,
   'components -> services/review': 1,
   'context -> services/agent': 1,
-  'context -> services/architectureOffice': 9,
+  'context -> services/architectureOffice': 7,
   'context -> services/architectureProjects': 2,
   'context -> services/artifacts': 2,
   'context -> services/chat': 1,

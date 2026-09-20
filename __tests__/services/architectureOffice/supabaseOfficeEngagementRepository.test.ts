@@ -63,7 +63,7 @@ function fakeClient(options: { data?: unknown; error?: unknown } = {}): FakeClie
 }
 
 describe('SupabaseOfficeEngagementRepository', () => {
-  it('lista encargos propios y fija la revisión observada', async () => {
+  it('lista encargos propios y pega la revisión al agregado que devuelve', async () => {
     const saved = engagement();
     const client = fakeClient({ data: [{ data: { ...saved, arbDecisions: [] }, revision: 3 }] });
     const repository = createSupabaseOfficeEngagementRepository(client);
@@ -71,9 +71,30 @@ describe('SupabaseOfficeEngagementRepository', () => {
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('eng_legacy_001');
     expect(client.calls[0].name).toBe('load_engagements');
-    // Segunda escritura usa la revisión observada, no cero.
-    await repository.save(saved);
+    // La revisión viaja **con el snapshot**, no en un mapa por id.
+    expect(result[0].revision).toBe(3);
+    await repository.save(result[0]);
     expect(client.calls[1].args.p_expected_revision).toBe(3);
+  });
+
+  it('no envía la revisión dentro del documento', () => {
+    // Es una columna. Una copia dentro del JSON sería una segunda verdad sobre
+    // el mismo hecho, y además una que nace obsoleta: la fila la incrementa el
+    // `on conflict do update`, así que la copia quedaría siempre una por detrás.
+    const client = fakeClient({ data: { data: { ...engagement() }, revision: 2 } });
+    const repository = createSupabaseOfficeEngagementRepository(client);
+    return repository.save({ ...engagement(), revision: 1 }).then(() => {
+      expect(client.calls[0].args.p_expected_revision).toBe(1);
+      expect(client.calls[0].args.p_engagement).not.toHaveProperty('revision');
+    });
+  });
+
+  it('devuelve el encargo guardado con la revisión nueva', async () => {
+    const client = fakeClient({ data: { data: { ...engagement() }, revision: 4 } });
+    const repository = createSupabaseOfficeEngagementRepository(client);
+    const result = await repository.save({ ...engagement(), revision: 3 });
+    expect(result.success).toBe(true);
+    expect(result.data?.revision).toBe(4);
   });
 
   it('reemplaza el espejo arbDecisions del documento por el del registro remoto', async () => {
@@ -101,14 +122,52 @@ describe('SupabaseOfficeEngagementRepository', () => {
     expect(result.status).toBe('permission-denied');
   });
 
-  it('borra por proyecto textual con revisión optimista y limpia la revisión observada', async () => {
+  it('borra por proyecto textual con la revisión que le pasa quien borra', async () => {
     const client = fakeClient({ data: [{ data: { ...engagement() }, revision: 4 }] });
     const repository = createSupabaseOfficeEngagementRepository(client);
-    await repository.list('proj_legacy_001');
-    const result = await repository.remove('proj_legacy_001', 'eng_legacy_001');
+    const [listed] = await repository.list('proj_legacy_001');
+    const result = await repository.remove('proj_legacy_001', listed.id, listed.revision ?? 0);
     expect(result.success).toBe(true);
     expect(client.calls[1].args.p_project_id).toBe('proj_legacy_001');
     expect(client.calls[1].args.p_engagement_id).toBe('eng_legacy_001');
     expect(client.calls[1].args.p_expected_revision).toBe(4);
+  });
+});
+
+describe('la revisión no puede prestarse entre snapshots', () => {
+  /**
+   * La reproducción del defecto, y la razón de que exista el campo.
+   *
+   * Antes la revisión vivía en un `Map<string, number>` dentro del cierre del
+   * repositorio —que es un singleton de módulo—, así que cualquier `list()`
+   * la refrescaba para todos los encargos. El guion era éste: una pantalla lee
+   * el encargo en revisión 3, otra sesión lo edita y lo deja en 7, esta
+   * pantalla recarga la lista —el mapa pasa a 7— y guarda **su** snapshot
+   * viejo. La escritura salía con `p_expected_revision: 7`, el servidor la
+   * aceptaba, y la edición de la otra sesión desaparecía. La guarda optimista
+   * no falló: se le mintió.
+   */
+  it('una escritura desde un snapshot viejo no usa la revisión de la última lectura', async () => {
+    const client = fakeClient({ data: [{ data: { ...engagement() }, revision: 7 }] });
+    const repository = createSupabaseOfficeEngagementRepository(client);
+
+    // La pantalla retiene un snapshot de la revisión 3…
+    const stale: OfficeEngagement = { ...engagement(), revision: 3, title: 'Título de hace un rato' };
+    // …y algo recarga la lista, que ahora viene en 7.
+    await repository.list('proj_legacy_001');
+
+    await repository.save(stale);
+    expect(client.calls[1].args.p_expected_revision).toBe(3);
+  });
+
+  it('un encargo sin revisión espera no existir, en vez de pisar lo que haya', async () => {
+    const client = fakeClient({ data: [{ data: { ...engagement() }, revision: 9 }] });
+    const repository = createSupabaseOfficeEngagementRepository(client);
+    await repository.list('proj_legacy_001');
+
+    const { revision: _none, ...withoutToken } = engagement();
+    await repository.save(withoutToken as OfficeEngagement);
+    // Cero, no nueve: el fallo va hacia el conflicto, nunca hacia la escritura.
+    expect(client.calls[1].args.p_expected_revision).toBe(0);
   });
 });

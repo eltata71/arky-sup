@@ -28,6 +28,8 @@ import {
 import { OFFICE_AGENT_PERSONAS } from './officeAgentPersonas';
 import { transitionEngagement } from './officeEngagementTransitions';
 import { withAuditEntry } from './OfficeEngagementRepository';
+import { createRunCheckpoint } from './officeRunCheckpoint';
+import type { PersistenceResult, PersistenceStatus } from '../persistence';
 
 export interface OfficeProduceOutcome {
   status: 'success' | 'failed';
@@ -63,8 +65,21 @@ export interface OfficeRunnerPorts {
   produceArtifact(task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeProduceOutcome>;
   reviewArtifact(task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeTaskReview>;
   consolidate(task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeConsolidateOutcome>;
-  /** Called after every state transition. Failures are surfaced, not thrown. */
-  persist(engagement: OfficeEngagement): Promise<void>;
+  /**
+   * Llamado tras cada transición de estado. **Devuelve cómo fue.**
+   *
+   * Estaba tipado `Promise<void>`, y ése era el defecto más caro de los dos que
+   * tenía este punto. El `catch` vacío de `save()` tragaba las excepciones; el
+   * tipo hacía lo otro, que es peor: un fallo **sin** excepción —que es la
+   * forma normal, un `{ status: 'conflict', success: false }`— era
+   * indistinguible del éxito. El runner seguía gastando llamadas de IA contra
+   * un estado que nadie había guardado, y el encargo que «se reanuda en vez de
+   * reiniciarse» se reanudaba desde el último punto que sí llegó.
+   *
+   * No lanza: un puerto que lanza obliga a envolver cada llamada. Devuelve el
+   * mismo envoltorio que el resto de la persistencia.
+   */
+  persist(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
   /** Optional progress hook for the UI. Must not throw. */
   onProgress?(engagement: OfficeEngagement): void;
 }
@@ -94,8 +109,17 @@ export interface OfficeRunOptions {
 
 export interface OfficeRunResult {
   engagement: OfficeEngagement;
-  status: 'completed' | 'partial' | 'blocked' | 'cancelled' | 'budget-exhausted';
+  status: 'completed' | 'partial' | 'blocked' | 'cancelled' | 'budget-exhausted' | 'not-persisted';
   message: string;
+  /**
+   * El fallo de persistencia que detuvo la ejecución, si la detuvo uno.
+   *
+   * Se distingue de `blocked` a propósito: un encargo bloqueado es un hecho de
+   * negocio —una puerta de calidad, una tarea agotada— y se mira en la pantalla
+   * del encargo. Esto es una avería, y lo que hay que hacer es recargar o
+   * reintentar, no revisar el trabajo.
+   */
+  persistence?: PersistenceStatus;
 }
 
 const DEFAULT_MAX_CONCURRENCY = 3;
@@ -152,26 +176,31 @@ export const runEngagement = async (
     'La Oficina inició la ejecución del encargo.',
   );
 
-  const save = async (): Promise<void> => {
-    try {
-      await ports.persist(engagement);
-    } catch {
-      // Persistence failures are already reported by the repository's
-      // observability path; the run continues on the in-memory state so the
-      // user does not lose work that has already been generated.
-    }
-    try {
-      ports.onProgress?.(engagement);
-    } catch {
-      /* a UI hook must never break the run */
-    }
-  };
+  /**
+   * Un punto de recuperación que no se guardó no detiene el trabajo **ya
+   * hecho** —eso sería tirar minutos de generación— pero sí el que queda:
+   * seguir programando tareas contra un estado que nadie tiene es gastar
+   * llamadas de IA cuyo resultado se va a perder, y dejar un encargo que al
+   * recargar se reanuda desde mucho antes de donde el usuario lo vio.
+   */
+  const checkpoint = createRunCheckpoint(ports.persist, ports.onProgress);
+  const save = async (): Promise<void> => { engagement = await checkpoint.save(engagement); };
+  const stoppedByPersistence = (): OfficeRunResult => ({
+    engagement,
+    status: 'not-persisted',
+    message: checkpoint.message,
+    persistence: checkpoint.failure ?? 'failed',
+  });
 
   await save();
+  if (checkpoint.failure) return stoppedByPersistence();
 
   const cancelled = (): boolean => options.signal?.aborted === true;
 
   while (!cancelled()) {
+    // Se comprueba al principio de cada vuelta, no dentro de `save`: lo que ya
+    // se generó se conserva y se informa, y lo que no ha empezado no empieza.
+    if (checkpoint.failure) return stoppedByPersistence();
     if (budgetExhausted(engagement)) {
       engagement = transitionEngagement(
         engagement,

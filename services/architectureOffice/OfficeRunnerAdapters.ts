@@ -34,6 +34,7 @@ import type {
   OfficeProduceOutcome,
   OfficeRunnerPorts,
 } from './OfficeEngagementRunner';
+import type { PersistenceResult } from '../persistence';
 import type {
   OfficeEngagement,
   OfficeFindingSeverity,
@@ -58,7 +59,12 @@ export interface OfficeRunnerAdapterDeps {
   getSettings: () => Settings;
   store: AgentArtifactStore;
   invokePersona: OfficePersonaInvoker;
-  persist: (engagement: OfficeEngagement) => Promise<void>;
+  /**
+   * Escribe el punto de recuperación y dice cómo fue. Ver
+   * `OfficeRunnerPorts.persist`: un puerto que no puede decir que falló obliga
+   * al runner a suponer que todo se guardó.
+   */
+  persist: (engagement: OfficeEngagement) => Promise<PersistenceResult<OfficeEngagement>>;
   onProgress?: (engagement: OfficeEngagement) => void;
 }
 

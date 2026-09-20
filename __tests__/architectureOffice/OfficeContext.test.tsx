@@ -2,9 +2,26 @@ import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The office context reaches Firestore through the repository and the model
-// through geminiService. Both are mocked: a test must never touch either.
+// El contexto llega a la base por el repositorio y al modelo por geminiService.
+// Los dos están doblados: una prueba no toca ninguno.
+//
+// Se dobla la **puerta** y no cada llamada, que es la regla del repositorio: lo
+// que queda bajo prueba es la traducción de un `PersistenceResult` a lo que la
+// pantalla ve, que es donde vivía el defecto.
 const savedEngagements: unknown[] = [];
+
+type Outcome = { status: string; success: boolean; operationId: string; target: string; message?: string };
+
+/** Lo que devolverá la siguiente escritura. Por defecto, éxito. */
+const nextOutcome: { save: Outcome | null; arb: Outcome | null; remove: Outcome | null } = {
+  save: null, arb: null, remove: null,
+};
+const ok = (data?: unknown): Outcome & { data?: unknown } => ({
+  status: 'success', success: true, operationId: 'op', target: 'supabase', data,
+});
+
+/** Lo que `list()` devolverá. Vacío salvo que una prueba siembre un encargo. */
+let seededEngagements: unknown[] = [];
 
 vi.mock('../../services/architectureOffice/OfficeEngagementRepository', async () => {
   const actual = await vi.importActual<typeof import('../../services/architectureOffice/OfficeEngagementRepository')>(
@@ -13,13 +30,13 @@ vi.mock('../../services/architectureOffice/OfficeEngagementRepository', async ()
   return {
     ...actual,
     officeEngagementRepository: {
-      list: vi.fn(async () => []),
+      list: vi.fn(async () => seededEngagements),
       save: vi.fn(async (engagement: unknown) => {
         savedEngagements.push(engagement);
-        return { status: 'success', success: true, operationId: 'op', target: 'firestore' };
+        return nextOutcome.save ?? ok(engagement);
       }),
-      remove: vi.fn(async () => ({ status: 'success', success: true, operationId: 'op', target: 'firestore' })),
-      recordArbDecision: vi.fn(async () => ({ status: 'success', success: true, operationId: 'op', target: 'firestore' })),
+      remove: vi.fn(async () => nextOutcome.remove ?? ok()),
+      recordArbDecision: vi.fn(async () => nextOutcome.arb ?? ok()),
     },
   };
 });
@@ -76,6 +93,9 @@ describe('OfficeContext', () => {
 
   beforeEach(() => {
     savedEngagements.length = 0;
+    nextOutcome.save = null;
+    nextOutcome.arb = null;
+    nextOutcome.remove = null;
     render(
       <OfficeProvider>
         <Harness onReady={(value) => { office = value; }} />
@@ -197,5 +217,225 @@ describe('OfficeContext', () => {
     let result: Awaited<ReturnType<typeof office.decideEngagement>>;
     await act(async () => { result = await office.decideEngagement(id, 'approved', ''); });
     expect(result!.ok).toBe(false);
+  });
+});
+
+describe('una escritura no confirmada no es un éxito', () => {
+  /*
+   * El defecto que esto cierra: `persistAndTrack` hacía
+   * `await officeEngagementRepository.save(engagement)` y **descartaba** el
+   * resultado —que es justo el envoltorio que `services/persistence` existe
+   * para producir— así que las seis operaciones de este contexto respondían
+   * `ok: true` tanto si la escritura se confirmaba como si el servidor la
+   * rechazaba por conflicto de revisión o por permiso. La pantalla decía
+   * «guardado» y no había nada guardado.
+   */
+  let office: ReturnType<typeof useOffice>;
+
+  const fail = (status: string): Outcome => ({
+    status, success: false, operationId: 'op', target: 'supabase', message: `fallo ${status}`,
+  });
+
+  beforeEach(() => {
+    savedEngagements.length = 0;
+    nextOutcome.save = null;
+    nextOutcome.arb = null;
+    nextOutcome.remove = null;
+    render(
+      <OfficeProvider>
+        <Harness onReady={(value) => { office = value; }} />
+      </OfficeProvider>,
+    );
+  });
+
+  const createEngagement = async (): Promise<string> => {
+    await act(async () => {
+      await office.createEngagement({
+        projectId: 'proj-1',
+        title: 'Encargo',
+        brief: 'Necesitamos una nueva plataforma de cotización de vida.',
+      });
+    });
+    return office.engagements[0].id;
+  };
+
+  it('no dice que creó el encargo cuando el servidor rechazó la escritura', async () => {
+    nextOutcome.save = fail('conflict');
+    let result: Awaited<ReturnType<typeof office.createEngagement>>;
+    await act(async () => {
+      result = await office.createEngagement({
+        projectId: 'proj-1', title: 'Encargo', brief: 'Una necesidad cualquiera del negocio.',
+      });
+    });
+    expect(result!.ok).toBe(false);
+    expect(result!.persistence).toBe('conflict');
+    expect(result!.reason).toMatch(/Recarga/i);
+  });
+
+  it('distingue un rechazo de las reglas de un fallo al guardar', async () => {
+    // No es lo mismo para quien lo lee: lo primero no se reintenta nunca, lo
+    // segundo sí. Antes ambos eran `ok: true`, o —cuando el dominio se negaba—
+    // ambos eran `ok: false` sin nada que los separase.
+    nextOutcome.save = fail('permission-denied');
+    let result: Awaited<ReturnType<typeof office.createEngagement>>;
+    await act(async () => {
+      result = await office.createEngagement({
+        projectId: 'proj-1', title: 'Encargo', brief: 'Una necesidad cualquiera del negocio.',
+      });
+    });
+    expect(result!.persistence).toBe('permission-denied');
+
+    let refused: Awaited<ReturnType<typeof office.createEngagement>>;
+    await act(async () => {
+      refused = await office.createEngagement({ projectId: 'nope', title: 't', brief: 'b' });
+    });
+    expect(refused!.ok).toBe(false);
+    expect(refused!.persistence).toBeUndefined();
+  });
+
+  it('no dice que aprobó el charter cuando la aprobación no se guardó', async () => {
+    const id = await createEngagement();
+    nextOutcome.save = fail('conflict');
+    let result: Awaited<ReturnType<typeof office.approveCharter>>;
+    await act(async () => { result = await office.approveCharter(id); });
+    expect(result!.ok).toBe(false);
+  });
+
+  it('conserva el trabajo en pantalla aunque la escritura falle', async () => {
+    // La degradación optimista se mantiene a propósito: lo generado no se tira
+    // porque la base no esté. Lo que cambia es que ahora se sabe.
+    nextOutcome.save = fail('offline');
+    await act(async () => {
+      await office.createEngagement({
+        projectId: 'proj-1', title: 'Encargo', brief: 'Una necesidad cualquiera del negocio.',
+      });
+    });
+    await waitFor(() => expect(screen.getByTestId('count')).toHaveTextContent('1'));
+  });
+
+  it('guarda el encargo que devolvió el servidor, con su revisión nueva', async () => {
+    let result: Awaited<ReturnType<typeof office.createEngagement>>;
+    await act(async () => {
+      result = await office.createEngagement({
+        projectId: 'proj-1', title: 'Encargo', brief: 'Una necesidad cualquiera del negocio.',
+      });
+    });
+    // El doble devuelve `ok(engagement)`; lo que importa es que el contexto se
+    // quede con `result.data` y no con lo que envió.
+    expect(result!.ok).toBe(true);
+    expect(result!.engagement).toBeDefined();
+  });
+
+  it('restaura el encargo en pantalla cuando el borrado falla', async () => {
+    // Un encargo que sigue en la base y ha desaparecido de la pantalla es peor
+    // que un borrado que falla: la siguiente cosa que hace quien lo ve es
+    // volver a crearlo.
+    const id = await createEngagement();
+    nextOutcome.remove = fail('conflict');
+    let result: Awaited<ReturnType<typeof office.deleteEngagement>>;
+    await act(async () => { result = await office.deleteEngagement(id); });
+    expect(result!.ok).toBe(false);
+    await waitFor(() => expect(screen.getByTestId('count')).toHaveTextContent('1'));
+  });
+});
+
+describe('la decisión del ARB ya no puede quedarse a medias en el peor orden', () => {
+  /*
+   * Eran dos escrituras y el orden era el malo. La primera guardaba el encargo
+   * —con el espejo `arbDecisions` dentro del documento— y la segunda escribía
+   * el registro inmutable «best-effort». Si la segunda fallaba, la pantalla
+   * mostraba una decisión firmada que el registro a prueba de manipulación —el
+   * único que una auditoría acepta— no tenía. De los dos estados intermedios
+   * posibles, ése es el peor: no pierde el dato, lo inventa.
+   *
+   * Siguen siendo dos escrituras: la transacción es `api.decide_engagement` y
+   * es la tarea F2-01. Lo que cambia es que el estado intermedio que queda es
+   * el honesto —decisión registrada, encargo sin transicionar— y que se
+   * informa.
+   */
+  let office: ReturnType<typeof useOffice>;
+
+  const awaitingArb = {
+    id: 'eng-arb-1',
+    projectId: 'proj-1',
+    schemaVersion: 1,
+    title: 'Encargo en comité',
+    brief: 'Listo para el ARB.',
+    initiativeIds: ['init-1'],
+    businessProjectIds: [],
+    status: 'awaiting-arb',
+    priority: 'medium',
+    charter: {
+      kind: 'new-solution', objectives: [], scope: [], outOfScope: [], constraints: [],
+      regulatoryDrivers: [], deliverables: [], participantIds: [],
+      coordinatorId: 'lucia', consolidatorId: 'alejandro',
+      provenance: 'deterministic', proposedAt: '2026-09-20T00:00:00.000Z',
+      approvedAt: '2026-09-20T01:00:00.000Z',
+    },
+    tasks: [],
+    arbDecisions: [],
+    budget: { maxAiCalls: 40, consumedAiCalls: 0 },
+    auditTrail: [],
+    createdBy: { id: 'u1', name: 'Ana', role: 'admin' },
+    createdAt: '2026-09-20T00:00:00.000Z',
+    updatedAt: '2026-09-20T00:00:00.000Z',
+    revision: 5,
+  };
+
+  beforeEach(async () => {
+    savedEngagements.length = 0;
+    nextOutcome.save = null;
+    nextOutcome.arb = null;
+    nextOutcome.remove = null;
+    seededEngagements = [awaitingArb];
+    render(
+      <OfficeProvider>
+        <Harness onReady={(value) => { office = value; }} />
+      </OfficeProvider>,
+    );
+    await act(async () => { await office.loadEngagements('proj-1'); });
+  });
+
+  it('firma y transiciona cuando las dos escrituras se confirman', async () => {
+    let result: Awaited<ReturnType<typeof office.decideEngagement>>;
+    await act(async () => { result = await office.decideEngagement('eng-arb-1', 'approved', ''); });
+    expect(result!.ok).toBe(true);
+    expect(result!.engagement?.status).toBe('delivered');
+    expect(savedEngagements).toHaveLength(1);
+  });
+
+  it('no transiciona el encargo si el registro inmutable rechaza la firma', async () => {
+    nextOutcome.arb = {
+      status: 'permission-denied', success: false, operationId: 'op', target: 'supabase',
+      message: 'Permiso insuficiente: arb:decide',
+    };
+    let result: Awaited<ReturnType<typeof office.decideEngagement>>;
+    await act(async () => { result = await office.decideEngagement('eng-arb-1', 'approved', ''); });
+
+    expect(result!.ok).toBe(false);
+    expect(result!.persistence).toBe('permission-denied');
+    // Lo que importa: no se escribió el encargo. Antes se escribía primero, y
+    // con él el espejo `arbDecisions` que la pantalla lee.
+    expect(savedEngagements).toHaveLength(0);
+    expect(office.engagements[0].status).toBe('awaiting-arb');
+    expect(office.engagements[0].arbDecisions).toEqual([]);
+  });
+
+  it('dice que la decisión quedó registrada cuando lo que falla es la transición', async () => {
+    nextOutcome.save = {
+      status: 'conflict', success: false, operationId: 'op', target: 'supabase',
+      message: 'Conflicto de encargo',
+    };
+    let result: Awaited<ReturnType<typeof office.decideEngagement>>;
+    await act(async () => { result = await office.decideEngagement('eng-arb-1', 'approved', ''); });
+
+    expect(result!.ok).toBe(false);
+    expect(result!.reason).toMatch(/quedó registrada/i);
+    expect(result!.reason).toMatch(/no se duplica/i);
+  });
+
+  it('usa la revisión del snapshot al escribir la transición', async () => {
+    await act(async () => { await office.decideEngagement('eng-arb-1', 'approved', ''); });
+    expect((savedEngagements[0] as { revision?: number }).revision).toBe(5);
   });
 });

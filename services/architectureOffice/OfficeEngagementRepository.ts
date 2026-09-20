@@ -220,6 +220,15 @@ export const normalizeEngagement = (value: unknown, projectId: string): OfficeEn
     createdBy: normalizeActor(raw.createdBy),
     createdAt: asIsoDate(raw.createdAt, now),
     updatedAt: asIsoDate(raw.updatedAt, now),
+    // El testigo de fila sobrevive a la normalización porque el espejo local
+    // guarda el objeto entero y lo vuelve a leer por aquí. No viene nunca del
+    // documento remoto —el repositorio lo quita antes de enviarlo—, así que un
+    // `revision` presente aquí sólo puede haberlo puesto esta aplicación.
+    // Perderlo haría que todo lo leído de la caché valiera 0 y chocara contra
+    // un conflicto en la siguiente escritura.
+    revision: typeof raw.revision === 'number' && Number.isInteger(raw.revision) && raw.revision > 0
+      ? raw.revision
+      : undefined,
   };
 };
 
@@ -270,8 +279,16 @@ export const withAuditEntry = (
 
 export interface OfficeEngagementRepository {
   list(projectId: string): Promise<OfficeEngagement[]>;
-  save(engagement: OfficeEngagement): Promise<PersistenceResult<void>>;
-  remove(projectId: string, engagementId: string): Promise<PersistenceResult<void>>;
+  /**
+   * Guarda y devuelve el encargo **tal y como quedó**, con su revisión nueva.
+   *
+   * Quien llama tiene que quedarse con lo devuelto, no con lo que envió: lo que
+   * envió lleva el testigo anterior, y una segunda escritura partiendo de ahí
+   * es un conflicto garantizado. En degradación local devuelve el encargo tal
+   * cual, sin revisión nueva, porque no la hay — y el estado dice `failed`.
+   */
+  save(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
+  remove(projectId: string, engagementId: string, expectedRevision?: number): Promise<PersistenceResult<void>>;
   recordArbDecision(engagement: OfficeEngagement, decision: OfficeArbDecision): Promise<PersistenceResult<void>>;
 }
 
@@ -317,7 +334,7 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
     }
   }
 
-  async save(engagement: OfficeEngagement): Promise<PersistenceResult<void>> {
+  async save(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>> {
     const normalized: OfficeEngagement = {
       ...engagement,
       initiativeIds: [...new Set(engagement.initiativeIds)],
@@ -325,20 +342,28 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
       schemaVersion: OFFICE_ENGAGEMENT_SCHEMA_VERSION,
       updatedAt: new Date().toISOString(),
     };
-    let result: PersistenceResult<void>;
+    let result: PersistenceResult<OfficeEngagement>;
     try {
       result = await (await getRemote()).save(normalized);
     } catch (error) {
       result = createFailureResult('saveEngagement', error);
     }
-    mirror.upsert(normalized.projectId, normalized, result);
-    return result;
+    // El espejo guarda lo confirmado cuando lo hay —con su revisión nueva— y lo
+    // enviado cuando no: en degradación el trabajo no se pierde, y `result` ya
+    // dice que sólo está en local.
+    const stored = result.success && result.data ? result.data : normalized;
+    mirror.upsert(stored.projectId, stored, result);
+    return result.success && result.data ? result : { ...result, data: stored };
   }
 
-  async remove(projectId: string, engagementId: string): Promise<PersistenceResult<void>> {
+  async remove(
+    projectId: string,
+    engagementId: string,
+    expectedRevision = 0,
+  ): Promise<PersistenceResult<void>> {
     let result: PersistenceResult<void>;
     try {
-      result = await (await getRemote()).remove(projectId, engagementId);
+      result = await (await getRemote()).remove(projectId, engagementId, expectedRevision);
     } catch (error) {
       result = createFailureResult('deleteEngagement', error);
     }

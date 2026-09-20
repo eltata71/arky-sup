@@ -12,6 +12,7 @@ import {
   type OfficeTaskReview,
 } from '../../services/architectureOffice/OfficeTypes';
 import type { OfficeAgentId } from '../../services/architectureOffice/officeAgentPersonas';
+import type { PersistenceResult, PersistenceStatus } from '../../services/persistence';
 
 const task = (overrides: Partial<OfficeTask> & Pick<OfficeTask, 'id' | 'kind' | 'assigneeId'>): OfficeTask => ({
   engagementId: 'eng-1',
@@ -74,11 +75,26 @@ const changesRequested = (reviewerId: OfficeAgentId): OfficeTaskReview => ({
   decidedAt: '2026-08-26T00:00:00.000Z',
 });
 
+/**
+ * Una escritura confirmada, que es lo que el runner espera por defecto.
+ *
+ * Existe porque el puerto dejó de poder decir `undefined`: un `persist` que no
+ * puede reportar un fallo obliga al runner a suponer que todo se guardó, que es
+ * exactamente lo que hacía.
+ */
+const persisted = (engagement: OfficeEngagement): PersistenceResult<OfficeEngagement> => ({
+  status: 'success',
+  success: true,
+  operationId: 'test-persist',
+  target: 'supabase',
+  data: engagement,
+});
+
 const makePorts = (overrides: Partial<OfficeRunnerPorts> = {}): OfficeRunnerPorts => ({
   produceArtifact: vi.fn(async () => ({ status: 'success' as const, artifactId: 'art-1', versionGroupId: 'grp-1' })),
   reviewArtifact: vi.fn(async (current: OfficeTask) => approval(current.assigneeId)),
   consolidate: vi.fn(async () => ({ status: 'success' as const, summary: 'Ready.' })),
-  persist: vi.fn(async () => undefined),
+  persist: vi.fn(async (engagement: OfficeEngagement) => persisted(engagement)),
   ...overrides,
 });
 
@@ -125,7 +141,7 @@ describe('OfficeEngagementRunner', () => {
   });
 
   it('persists after every transition so a reload can resume', async () => {
-    const persist = vi.fn(async () => undefined);
+    const persist = vi.fn(async (engagement: OfficeEngagement) => persisted(engagement));
     const tasks = [
       task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' }),
       task({ id: 'r1', kind: 'review-artifact', assigneeId: 'elena', dependsOn: ['p1'], reviewsTaskId: 'p1' }),
@@ -407,14 +423,97 @@ describe('OfficeEngagementRunner', () => {
     expect(peak).toBe(2);
   });
 
-  it('keeps running when persistence fails', async () => {
-    const persist = vi.fn(async () => { throw new Error('firestore offline'); });
+  /*
+   * Estas cuatro sustituyen a una que se llamaba «keeps running when
+   * persistence fails» y afirmaba exactamente el defecto: que un fallo al
+   * guardar el punto de recuperación no detenía nada y la ejecución terminaba
+   * en `completed`.
+   *
+   * El motivo por el que aquello parecía razonable está en el comentario que
+   * acompañaba al `catch` vacío: no tirar trabajo ya generado. Es correcto, y
+   * se conserva abajo. Lo que no se sigue de ahí es seguir **programando** más
+   * tareas: eso gasta llamadas de IA cuyo resultado nadie va a guardar y deja
+   * un encargo que, al recargar, se reanuda desde mucho antes de donde el
+   * usuario lo vio terminar.
+   */
+  const failingPersist = (status: PersistenceStatus) => ({
+    status,
+    success: false as const,
+    operationId: 'test-persist',
+    target: 'supabase' as const,
+    message: `fallo simulado: ${status}`,
+  });
+
+  it('se detiene cuando el punto de recuperación no se guarda', async () => {
+    const persist = vi.fn(async () => failingPersist('conflict'));
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    const result = await runEngagement(engagementWith(tasks), makePorts({ persist }));
+
+    expect(result.status).toBe('not-persisted');
+    expect(result.persistence).toBe('conflict');
+    expect(result.message).toContain('Recarga');
+  });
+
+  it('trata un puerto que lanza como el fallo que es', async () => {
+    const persist = vi.fn(async () => { throw new Error('la red se cayó'); });
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    const result = await runEngagement(engagementWith(tasks), makePorts({ persist }));
+
+    expect(result.status).toBe('not-persisted');
+    expect(result.persistence).toBe('failed');
+  });
+
+  it('sigue sin conexión, porque el espejo local es la degradación prevista', async () => {
+    // `offline` es el único estado que no detiene: el repositorio conserva el
+    // encargo en el espejo local y eso es precisamente para lo que existe.
+    const persist = vi.fn(async () => failingPersist('offline'));
     const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
 
     const result = await runEngagement(engagementWith(tasks), makePorts({ persist }));
 
     expect(result.status).toBe('completed');
     expect(result.engagement.tasks[0].status).toBe('completed');
+  });
+
+  it('conserva el trabajo ya generado cuando se detiene', async () => {
+    // La mitad legítima de la prueba que esto sustituye: lo generado no se
+    // tira. Guarda bien hasta que la primera tarea termina y falla después.
+    let calls = 0;
+    const persist = vi.fn(async (engagement: OfficeEngagement) => {
+      calls += 1;
+      return calls <= 2 ? persisted(engagement) : failingPersist('permission-denied');
+    });
+    const tasks = [
+      task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' }),
+      task({ id: 'r1', kind: 'review-artifact', assigneeId: 'elena', dependsOn: ['p1'], reviewsTaskId: 'p1' }),
+    ];
+
+    const result = await runEngagement(engagementWith(tasks), makePorts({ persist }));
+
+    expect(result.status).toBe('not-persisted');
+    expect(result.persistence).toBe('permission-denied');
+    // La primera tarea corrió y su estado viaja en el resultado.
+    expect(result.engagement.tasks[0].status).not.toBe('pending');
+  });
+
+  it('se queda con el encargo que devolvió la escritura, no con el que envió', async () => {
+    // Es lo que mantiene el testigo de revisión al día. El runner escribe en
+    // cada transición, así que quedarse con lo enviado convertiría la segunda
+    // escritura en un conflicto garantizado.
+    const persist = vi.fn(async (engagement: OfficeEngagement) => persisted({
+      ...engagement,
+      revision: (engagement.revision ?? 0) + 1,
+    }));
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    await runEngagement(engagementWith(tasks), makePorts({ persist }));
+
+    const seen = persist.mock.calls.map(([engagement]) => engagement.revision);
+    expect(seen[0]).toBeUndefined();
+    expect(seen[1]).toBe(1);
+    expect(seen[seen.length - 1]).toBe(seen.length - 1);
   });
 
   it('records an auditable trail of who did what', async () => {

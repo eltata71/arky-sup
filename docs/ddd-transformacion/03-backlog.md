@@ -89,12 +89,28 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   aprobador autorizado sí puede actuar sobre el encargo.
 
 ### F2-04 · `PersistenceResult` evaluado en toda la Oficina
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H01, H07
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H01 (parcial), H07
 - **Alcance.** `context/OfficeContext.tsx` (`persistAndTrack`, las seis operaciones),
   `OfficeEngagementRunner.ts` (`ports.persist` pasa a devolver `PersistenceResult`).
 - **Aceptación.** Ninguna operación de `OfficeContext` devuelve `ok: true` tras
   una escritura no confirmada; el runner se detiene ante un fallo no recuperable
   y lo reporta.
+- **Evidencia.** Las seis operaciones salieron de React a
+  `services/architectureOffice/application/engagementOperations.ts`, con dos
+  puertos (`EngagementWritePort`, `CharterRefinementPort`). El puerto
+  `OfficeRunnerPorts.persist` pasa de `Promise<void>` a
+  `Promise<PersistenceResult<OfficeEngagement>>` — el tipo era la mitad más cara
+  del defecto: un fallo **sin** excepción era indistinguible del éxito.
+  `services/architectureOffice/officeRunCheckpoint.ts` decide qué fallos
+  detienen la ejecución (`offline` no, porque el espejo local es la degradación
+  prevista; `conflict` y `permission-denied` sí).
+  **16 pruebas nuevas sin React** + 10 en `OfficeContext.test.tsx` + 5 en el
+  runner. Una prueba existente, llamada literalmente «keeps running when
+  persistence fails», **afirmaba el defecto**: se sustituye por cuatro que
+  cubren su mitad legítima —lo generado no se tira— y la que faltaba.
+- **Efecto secundario medido.** `context -> services/architectureOffice` baja de
+  **9 a 7** imports profundos, y `OfficeContext.tsx` de 553 a 401 líneas. La
+  carga inicial sube 1,3 KB gz (323,9 → 325,2 de 340).
 
 ### F2-05 · `StartEngagement` como entrada pública única de ejecución
 - **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H06
@@ -150,11 +166,24 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   el repositorio declara consumir — eso sí necesita el catálogo, y va en pgTAP.
 
 ### F2-10 · La revisión viaja con el snapshot
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H10
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` (Oficina; proyectos e iniciativas pendientes) · **Resuelve** H10
 - **Alcance.** `SupabaseOfficeEngagementRepository.ts`, `OfficeEngagementRepository.ts`,
   `OfficeTypes.ts`, y la auditoría del mismo patrón en proyectos e iniciativas.
 - **Aceptación.** Guardar desde un snapshot obsoleto produce `conflict`; el `Map`
   global deja de decidir la revisión.
+- **Evidencia.** El `Map<string, number>` del cierre del repositorio —un
+  singleton de módulo— desaparece. `OfficeEngagement.revision` es el testigo y
+  viaja con el agregado; un campo funciona donde un `WeakMap` no, porque cada
+  derivación es un spread y el campo va solo. Se quita del documento antes de
+  enviarlo (`asDocument`): es una columna, y una copia dentro del JSON nacería
+  obsoleta. Ausente significa 0, que es «espero que no exista» — el fallo va
+  hacia el conflicto, nunca hacia la escritura.
+  La reproducción está en `supabaseOfficeEngagementRepository.test.ts`: leer en
+  revisión 3, recargar la lista (que viene en 7), guardar el snapshot viejo.
+  Antes salía con 7 y el servidor lo aceptaba; ahora sale con 3. **Comprobado
+  que falla contra el código anterior.**
+- **Pendiente.** El mismo patrón en los repositorios de proyecto e iniciativa,
+  sin auditar todavía.
 
 ### F2-11 · Pruebas de concurrencia y fallo parcial
 - **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F2-01, F2-10

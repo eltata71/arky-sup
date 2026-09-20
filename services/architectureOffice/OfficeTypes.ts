@@ -330,6 +330,33 @@ export interface OfficeEngagement {
   createdBy: OfficeActor;
   createdAt: string;
   updatedAt: string;
+  /**
+   * El testigo de concurrencia de la fila que guarda este encargo, **no** un
+   * campo de dominio: nada en el motor, el runner o las transiciones lo lee.
+   *
+   * Vive aquí por una razón concreta y es la única que lo justifica: **tiene
+   * que viajar con el snapshot**. Antes lo guardaba un `Map<string, number>`
+   * dentro del cierre del repositorio —un singleton de módulo— y cualquier
+   * `list()` posterior lo refrescaba para todos los encargos. Una pantalla que
+   * retenía un snapshot anterior y guardaba lo hacía con la revisión **más
+   * nueva**, así que la guarda optimista del servidor, que existe justo para
+   * detener eso, la dejaba pasar: la actualización perdida no se detectaba, se
+   * confirmaba.
+   *
+   * Un campo funciona donde un `WeakMap` no, y la diferencia importa: cada
+   * derivación del agregado es un `{ ...engagement, … }`, así que el campo
+   * viaja solo por todas ellas, y un snapshot derivado de una lectura vieja
+   * conserva la revisión vieja. Que es exactamente la semántica que se quiere.
+   *
+   * Opcional porque un encargo recién construido por la fábrica todavía no
+   * tiene fila. Ausente significa 0, y 0 significa «espero que no exista»: el
+   * fallo es cerrado, un conflicto, nunca una escritura que pisa.
+   *
+   * No se persiste dentro del documento — el repositorio lo quita antes de
+   * enviarlo, porque es una columna y una copia dentro del JSON sería una
+   * segunda verdad que además nace obsoleta.
+   */
+  revision?: number;
 }
 
 // ---------------------------------------------------------------------------
