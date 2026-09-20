@@ -254,13 +254,17 @@ Lo que se comprobó, y con qué:
 |---|---|---|---|
 | 1 | Variables en Vercel y secretos de despliegue | **Cerrado** | El despliegue de producción de `82be918` está `READY`. El build es *fail-closed* sobre `VITE_SUPABASE_*`: que compile es la prueba de que están puestas |
 | 2 | GitHub Actions desbloqueado | **Cerrado** | Los cuatro workflows corren con duraciones reales. El CI de la PR #32 pasó: gates estáticos, los cuatro shards y la cobertura fusionada |
-| 3 | Protección de rama sobre `main` | **Cerrado** | La PR #32 está `blocked` con checks requeridos y una aprobación pendiente. Es exactamente lo que la protección debe hacer |
-| 4 | Acceso para la UAT | **Cerrado** | Cada PR publica su preview; la de #32 está `READY` y enlazada en el hilo |
+| 3 | Protección de rama sobre `main` | **Existe, y está mal configurada** | El ruleset `23685996` está activo, pero exige un check que F9 borró y una aprobación que nadie puede dar. Detalle y arreglo abajo, y en `docs/ci-cd-pipeline.md` §4 |
+| 4 | Acceso para la UAT | **Cerrado y verificado** | El preview de #32 responde 200 en `/auth` sin muro de *Vercel Authentication*, y el build es *fail-closed*: que exista prueba que `VITE_SUPABASE_*` están puestas. En el proyecto remoto hay **una** identidad con perfil `superadmin` activo, así que hay con qué entrar |
 | 5 | UAT humana e inferencia autenticada real | **Abierto** | Requiere que una persona entre y recorra. No se puede cerrar desde aquí |
 | 6 | *Leaked password protection* (HIBP) | **Abierto** | Sigue siendo el único `WARN` de `get_advisors`, medido hoy |
 | 7 | SLO/RPO/RTO y respaldo remoto programado | **Abierto** | Decisión de negocio, no de código |
 
-Quedan **tres**, no siete, y ninguno es código.
+Quedan **cuatro**, no siete, y ninguno es código: tres decisiones que sólo una
+persona puede tomar (5, 6, 7) y una configuración del repositorio (3) que el
+agente no puede cambiar —su GitHub App no tiene permiso de administración, y es
+correcto que no lo tenga: modificar la protección de rama es la forma más
+directa de desactivar el pipeline que esa protección existe para hacer cumplir.
 
 **El punto 5 merece una frase.** No se puede cerrar desde aquí y no se va a
 declarar cerrado: requiere que una persona inicie sesión en el despliegue y
@@ -274,6 +278,37 @@ alguien pega el client id y el secreto de un proyecto de Google Cloud en
 *Authentication → Providers* y añade la URL del despliegue a *Redirect URLs*.
 Hasta entonces el botón existe y devuelve el error del proveedor, que es lo que
 la pantalla muestra. Los pasos están en `docs/primer-administrador.md`.
+
+**Un detalle que decide si la primera prueba con Google funciona o no.** Entrar
+con Google no crea cuenta: quien vuelva sin perfil en `api.user_profiles` acaba
+otra vez en `/auth`. Supabase enlaza la identidad de Google con la de correo
+cuando **el correo es el mismo y está confirmado**, que es el caso de la única
+cuenta provisionada hoy. Así que la prueba tiene que hacerse con esa misma
+dirección; con otra cuenta de Google el rebote a `/auth` no es un fallo, es la
+regla funcionando, y el arreglo es provisionar antes esa dirección desde
+`/users`.
+
+### El punto 3, medido
+
+El ruleset existe y es estricto; lo que falla es su contenido, y las dos cosas
+que fallan son del titular, no del código:
+
+- **`Firestore rules (emulator)` sigue en la lista de checks obligatorios.** F9
+  borró ese workflow, así que ese contexto no lo reporta ya nadie y la PR se
+  queda esperando un estado que no va a llegar. No bloquea sólo a #32: bloquea
+  **cualquier** PR futura contra `main`. Hay que quitarlo, y **no** sustituirlo
+  por `database`, que se dispara por rutas y reproduciría el mismo problema.
+- **`require_extra_approval_for_unattributed_changes` está activo** mientras
+  `required_approving_review_count` es 0, así que la aprobación que GitHub pide
+  la pide esa casilla: los commits del agente van firmados
+  `Claude <noreply@anthropic.com>`, que no es una cuenta de GitHub. Y el autor
+  de una PR no puede aprobarla, así que en un repositorio de un solo
+  colaborador no hay nadie que pueda darla.
+
+`docs/ci-cd-pipeline.md` §4 lo desarrolla, con las dos salidas y la tercera que
+se descarta a propósito: reescribir los commits a nombre del titular haría pasar
+la regla sin que nadie revise nada, que es renombrar el control en vez de
+satisfacerlo.
 
 ---
 

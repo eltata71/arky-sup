@@ -14,9 +14,14 @@
 > [`plan-consolidacion-tecnica-2026-08-30.md`](./plan-consolidacion-tecnica-2026-08-30.md).
 > Este documento se conserva como historial de deuda cerrada y fases anteriores.
 >
-> **Deuda S-2 verificada:** `npm run test:rules` sí puede correr en CI (requiere
-> `actions/setup-java` y `firebase-tools`); la suite pasa con 58 pruebas. Queda
-> como tarea de la Ola 1, ya no como incógnita.
+> **F9 retiró Firebase (19 sep 2026).** Este documento se conserva como
+> historial y su vocabulario es el de la infraestructura anterior: `firestore.rules`,
+> el emulador, los custom claims y el límite de 1 MiB por documento describen un
+> backend que ya no existe. Lo que seguía anotado aquí como **pendiente** está
+> reconciliado, entrada por entrada, en
+> [§ Reconciliación con F9](#reconciliación-con-f9-19-sep-2026) al final del
+> fichero. No se reescribe el historial: una auditoría que se edita para
+> parecerse al presente deja de servir para saber qué se decidió y cuándo.
 
 > **Rama de trabajo:** `claude/world-class-technical-debt-hardening-B7LCv`
 > **Fecha:** mayo 2026
@@ -440,3 +445,29 @@ rechazaba.
 | S-2 | `npm run test:rules` no corre en CI porque requiere Java y el emulador. | **Pendiente.** Añadir un job aparte en `.github/workflows/ci.yml` con `actions/setup-java`. |
 | S-3 | El comité (`reviewer`) lee todo el portafolio. Es intencional —no se puede gobernar lo que no se puede leer— pero es un ensanchamiento real frente al modelo anterior de solo-propietario. | **Documentado** en `docs/security-hardening.md` §3.1. |
 | S-4 | Eliminar una cuenta borra el documento `users/{uid}` pero no la identidad de Firebase Auth, que sigue pudiendo autenticarse (y ahora se cierra sesión al no encontrar perfil). | **Aceptado**: el efecto es correcto, pero conviene una función server-side que borre también la identidad. |
+
+---
+
+## Reconciliación con F9 (19 sep 2026)
+
+F9 sustituyó Firebase por Supabase: identidad en Supabase Auth, datos en
+PostgreSQL con RLS deny-by-default y RPC `SECURITY DEFINER`, y archivos en
+Storage privado. Un cambio de proveedor cierra algunas deudas y **no cierra
+otras**, y confundir las dos es la forma habitual de perder una: esta tabla
+recorre lo que este fichero seguía presentando como abierto.
+
+| Entrada | Estado tras F9 |
+| --- | --- |
+| **S-1** — perfiles heredados (`student`, `teacher`) migrados en memoria en cada lectura | **Sigue abierta, sin cambios.** `parseAuthRole` los traduce al leer y los rechaza al escribir; el vocabulario viejo sigue en los datos. La migración continúa siendo un cambio con riesgo propio, y ahora se haría con una migración SQL sobre `api.user_profiles`. |
+| **S-2** — `npm run test:rules` no corre en CI porque requiere Java y el emulador | **Cerrada, y por eliminación de la causa.** No hay reglas de Firestore, ni emulador, ni script `test:rules`. Su equivalente son los contratos pgTAP de `supabase/tests/database/`, que corren contra una base real en el trabajo `database` de `.github/workflows/supabase.yml` — sin Java y sin emulador. La diferencia que importa: aquellas pruebas leían un fichero de reglas; éstas ejercitan las políticas que el motor aplica de verdad. |
+| **S-3** — el comité (`reviewer`) lee todo el portafolio | **Sigue abierta y sigue siendo intencional.** Ahora está escrita en dos sitios que se comparan solos: `lib/authz/permissions.ts` y `private.role_permissions`, celda por celda, en `__tests__/authz/sqlMatrixParity.test.ts`. |
+| **S-4** — borrar una cuenta deja viva la identidad del proveedor | **Sigue abierta, con el mismo efecto y otro proveedor.** `api.delete_user_profile` borra el perfil; la fila de `auth.users` permanece, así que esa identidad puede seguir autenticándose y vuelve a `/auth` al no encontrar perfil. El efecto visible es correcto —no entra— y el residuo no: cerrarla pide una Edge Function con clave de servicio, que es el mismo sitio donde ya vive `provision-user`. |
+| **§4 · «Reglas Firebase Security Rules + Custom Claims que rechacen writes a `users/{uid}/role`»** | **Cerrada de raíz.** Ya no hay ninguna escritura directa a una tabla: los privilegios están revocados sobre todas ellas y lo único ejecutable por `authenticated` son las RPC de `api`, que comprueban permiso y sesión viva antes de tocar nada. El rol lo resuelve `private.current_role()` desde la fila del perfil activo, así que la doble fuente que causó D-4 —un claim que nada sembraba frente a un documento— no tiene dónde reaparecer. |
+| **§4 · «Backend proxy o serverless function para Gemini»** | **Cerrada.** `api/ai.ts` y `api/gemini.ts`, apátridas y sin lógica de dominio. |
+| **§4 · «Sub-colección `projects/{id}/artifacts/{id}`»** y las dos notas sobre el **límite de 1 MiB por documento** | **Cerradas por el cambio de motor.** Los artefactos son filas de `api.project_artifacts` y el agregado se guarda en una transacción. Con ellas se fue la poda silenciosa del plan de maquetación y de la traza de generación, que era pérdida de datos que sólo se descubría al abrir un diagrama vacío. |
+| **§4 · «Migrar Tailwind CDN → build-time»** | **Cerrada** antes de F9; el CDN no vuelve y el humo E2E lo comprueba. |
+
+Lo que F9 **no** cerró y no pretendía cerrar: el tamaño de
+`services/geminiService.ts`, `strict` por carpeta y la ausencia de Prettier
+siguen donde estaban. Las tres son deuda de código, y un cambio de proveedor no
+toca ninguna.

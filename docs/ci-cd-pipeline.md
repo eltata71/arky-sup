@@ -78,48 +78,39 @@ mitades: despliega solo desde `main`, y solo después de que `quality`,
 
 ---
 
-## 2. Estado real de la ejecución: **bloqueado por la cuenta, no por el repositorio**
+## 2. La ejecución estuvo bloqueada por la cuenta, y se desbloqueó
 
-Los workflows no se ejecutan desde el **2026-09-13**. Evidencia medida sobre la
-API de GitHub, no inferida:
+**Resuelto.** Se deja escrito porque el diagnóstico costó tiempo y el modo de
+fallo no se parece a su causa: un workflow que no corre parece un workflow roto.
+
+Entre el **2026-09-13** y el **2026-09-18** ninguna ejecución llegó a un runner.
+La evidencia fue toda la misma y toda medida sobre la API, no inferida:
 
 | Hecho | Medición |
 |---|---|
 | Última ejecución correcta de `CI` | run **#23**, commit `58ea544`, 2026-09-13 20:22 UTC, `run_duration_ms: 179 000` |
-| Desde la #24 | **todas** fallan en 2–3 s |
+| Desde la #24 | **todas** fallaban en 2–3 s |
 | Trabajos de la ejecución #39 (`main`, `83485c4`) | 7 trabajos, `duration_ms: 0` **cada uno**, `run_duration_ms: 3 000` |
-| Logs de esos trabajos | HTTP 404 — no existen |
+| Logs de esos trabajos | HTTP 404 — no existían |
 | Alcance | Las 4 familias de workflow, en `main`, en PR de rama y en PR de Dependabot |
-| **Re-verificado 2026-09-18 21:20 UTC** | Sigue igual. Ejecuciones #41–#43 de ese mismo día: 3–5 s, `conclusion: failure`, sin logs. No hay ninguna ejecución posterior, así que un cambio de facturación hecho después **no queda demostrado hasta la siguiente ejecución** |
 
 Un trabajo que termina en dos segundos, sin logs y con cero milisegundos de
-cómputo **nunca fue asignado a un runner**. No llegó a hacer `checkout`. Ningún
-cambio en un fichero `.yml` puede producir eso, y los ficheros no habían
-cambiado entre la #23 y la #24.
+cómputo **nunca fue asignado a un runner**: no llegó a hacer `checkout`. Ningún
+cambio en un `.yml` produce eso, y los ficheros no habían cambiado entre la #23 y
+la #24. La causa compatible con todo era el derecho de ejecución de Actions de la
+cuenta —minutos agotados en un repositorio privado, límite de gasto en cero o un
+cobro fallido—, no el repositorio.
 
-**Causa compatible con toda la evidencia:** el derecho de ejecución de Actions de
-la cuenta está agotado o suspendido — minutos incluidos consumidos en un
-repositorio **privado**, o límite de gasto en cero, o un fallo de cobro. Los
-cuatro workflows de este repositorio consumen del orden de 60–80 minutos de
-runner por cada PR más su merge, lo que agota la asignación mensual de un plan
-gratuito en pocos días de trabajo intenso; el 13 de septiembre concentra
-exactamente ese patrón.
+**Lo que lo resolvió:** el repositorio se hizo **público**, y en un repositorio
+público Actions es gratis e ilimitado. Verificado el 2026-09-20: `visibility:
+public`, y las ejecuciones de la PR de F9 duran lo que deben —`Static gates`
+1 m 28 s, los cuatro shards de Vitest entre 43 s y 56 s, `database` 3 m 13 s,
+`Playwright smoke` 4 m 47 s— con logs completos.
 
-### Cómo desbloquearlo (dueño: titular de la cuenta)
-
-Una de estas tres, por orden de menor a mayor coste:
-
-1. **Hacer público el repositorio.** Actions es gratis e ilimitado en
-   repositorios públicos. Revisar antes que no haya secretos en el historial;
-   `check:bundle-secrets` cubre el artefacto, no el historial de Git.
-2. **Subir el límite de gasto de Actions.** GitHub → *Settings* → *Billing and
-   plans* → *Spending limits* → *Actions*. Comprobar de paso que no hay un pago
-   rechazado en *Payment information*.
-3. **Runner autoalojado.** Sin coste por minuto, a cambio de mantener la máquina.
-
-Hasta entonces, la evidencia sustitutiva es la ejecución local completa, que es
-la excepción que la decisión **5B** de F8 ya aceptó **para el PoC** y que no
-equivale a una aprobación productiva.
+La regla que deja: **hacer público un repositorio es una decisión de seguridad
+antes que de facturación.** `check:bundle-secrets` cubre el artefacto que se
+publica, no el historial de Git; antes de abrir uno hay que revisar el historial,
+y después hay que asumir que cualquier secreto que estuviera en él ya está fuera.
 
 ### Reducción de consumo aplicada en este cambio
 
@@ -142,9 +133,8 @@ revisa) sigue siendo válido.
 que aparece en `main` es nuevo: tiene el mismo árbol que la PR pero otro SHA. De
 modo que E2E y CodeQL quedan validados sobre el contenido que se publica, no
 sobre el identificador exacto. Es el compromiso estándar, y es aceptable aquí
-porque el gate pesado —`quality`, la suite completa con sus umbrales y las
-reglas de Firestore— **sí** vuelve a correr sobre el commit de `main`, y es de
-él de quien cuelga `deploy`. Si en algún momento los minutos dejan de ser el
+porque el gate pesado —`quality` y la suite completa con sus umbrales— **sí**
+vuelve a correr sobre el commit de `main`, y es de él de quien cuelga `deploy`. Si en algún momento los minutos dejan de ser el
 factor limitante, la corrección es devolver `e2e.yml` al disparador `push` y
 añadirlo a `needs` del trabajo `deploy`, en ese orden.
 
@@ -253,35 +243,87 @@ Recomendación al desbloquear Actions: revisarlas **por grupos y en este orden**
 refrescarlas todas a la vez. `npm audit --audit-level=high` reporta hoy **0
 vulnerabilidades**, así que ninguna de esas PR es urgente por seguridad.
 
-## 4. Protección de rama (dueño: titular de la cuenta)
+## 4. Protección de rama — **activa**, y con dos cosas que arreglar
 
-`main` no tiene hoy ninguna regla de protección: acepta push directo y no exige
-ningún check. El pipeline descrito arriba solo es un contrato si la rama lo
-hace cumplir. En GitHub → *Settings* → *Branches* → *Add branch ruleset* sobre
-`main`:
+Medido el 19 sep 2026 sobre el ruleset `23685996` (`Settings` → `Rules` →
+`ruleset`, activo desde el 18 sep, alcance `refs/heads/main`):
 
-- **Require a pull request before merging** (1 aprobación).
-- **Require status checks to pass**, seleccionando:
-  `Static gates (typecheck + lint + budgets + build)`,
-  `Merged coverage (thresholds)`,
-  `Firestore rules (emulator)`,
-  `Playwright smoke (desktop + iPad)`,
-  `CodeQL (JavaScript/TypeScript)`,
-  `Dependency audit`.
-- **Require branches to be up to date before merging**.
-- **Block force pushes** y **Restrict deletions**.
+| Regla | Estado |
+|---|---|
+| `deletion` / `non_fast_forward` | activas — ni borrado ni force-push sobre `main` |
+| `pull_request` | activa. `required_approving_review_count: 0`, **`require_extra_approval_for_unattributed_changes: true`** |
+| `required_status_checks` | activa, `strict` (la rama debe estar al día con `main`) |
+| `bypass_actors` | **vacío**. Nadie salta el ruleset, tampoco el titular |
 
-No se activan desde aquí: cambian quién puede escribir en el repositorio y esa
-es una decisión del titular. Actívelas **después** de desbloquear Actions — si
-se activan antes, con los checks sin poder ejecutarse, ninguna PR podrá
-fusionarse nunca.
+La sección anterior decía que `main` no tenía ninguna protección y recomendaba
+exigir `Firestore rules (emulator)`. Las dos frases se quedaron viejas, y la
+segunda dejó un defecto real en el repositorio. Esto es lo que hay que cambiar,
+y sólo lo puede hacer el titular: el GitHub App de este agente no tiene permiso
+de administración sobre el repositorio, y es correcto que no lo tenga —
+modificar la protección de rama es la forma más directa de desactivar el
+pipeline que la protección existe para hacer cumplir.
+
+### 4.1 `Firestore rules (emulator)` es un check requerido que ya no existe
+
+F9 borró `firestore.yml` con el resto de Firebase. Ese contexto no lo va a
+reportar nadie nunca más, y un check requerido que no llega deja la PR en
+*Expected — waiting for status to be reported*. **No bloquea sólo la PR de F9:
+bloquea cualquier PR futura contra `main`**, para siempre.
+
+Arreglo: *Settings* → *Rules* → `ruleset` → *Require status checks to pass* →
+quitar `Firestore rules (emulator)`. Los cinco que quedan son los correctos:
+
+- `Static gates (typecheck + lint + budgets + build)`
+- `Merged coverage (thresholds)`
+- `Playwright smoke (desktop + iPad)`
+- `CodeQL (JavaScript/TypeScript)`
+- `Dependency audit`
+
+**Y no se sustituye por `database`**, que es el trabajo de contratos pgTAP, por
+mucho que sea el heredero natural del que se va. `supabase.yml` se dispara por
+rutas (`supabase/**`, `scripts/supabase/**`, `package.json`), así que en una PR
+que no toque el esquema no se ejecuta — y un check requerido que no se ejecuta
+es exactamente el problema que se acaba de quitar. Es la misma razón por la que
+el trabajo `deploy` no lo declara en `needs`, y `__tests__/config/ciPipeline.test.ts`
+lo afirma. Si algún día quiere exigirse, primero hay que quitarle las rutas para
+que corra en todas las PR, aceptando sus ~3 minutos.
+
+### 4.2 «Require extra approval for unattributed changes» y los commits del agente
+
+`required_approving_review_count` es **0**, así que la aprobación que GitHub pide
+no viene de ahí: la pide esta otra casilla. Un commit está *sin atribuir* cuando
+su autor no corresponde a ninguna cuenta de GitHub, y los commits del agente se
+firman `Claude <noreply@anthropic.com>`, que no es ninguna. La regla entonces
+exige una revisión aprobatoria.
+
+El bucle se cierra solo: **el autor de una PR no puede aprobarla**, y en un
+repositorio de un solo colaborador el autor es la única persona que hay. Con la
+casilla puesta y sin un segundo revisor, la PR no es fusionable por nadie.
+
+Dos salidas, y la elección es del titular porque cambia la postura de seguridad:
+
+1. **Desmarcar la casilla** (*Rules* → `ruleset` → *Pull request* → *Require
+   extra approval for unattributed changes*). Es coherente con un repositorio
+   cuyo trabajo lo escribe un agente por encargo del propio titular, y deja
+   intactos los cinco checks obligatorios, que son los que miden el código.
+2. **Añadir un segundo colaborador** con permiso de escritura que apruebe. Es la
+   salida que conserva la regla con su intención original — que alguien mire lo
+   que no se puede atribuir— y la que conviene el día que el repositorio deje de
+   tener un solo dueño.
+
+Hay una tercera, y se anota para descartarla: reescribir los commits para que
+figuren a nombre del titular haría pasar la regla sin que nadie revise nada.
+Eso no es satisfacer el control, es renombrarlo, y no debe hacerlo el agente por
+iniciativa propia.
 
 ---
 
-## 5. Lo que el pipeline verifica hoy, medido localmente
+## 5. Medición local de los gates (historial)
 
-Ejecutado sobre `83485c4` con Node 22.22.2 en este entorno (la versión
-declarada es 24; la diferencia se anota, no se esconde):
+Con Actions desbloqueado (§2), **la evidencia es CI**; esta tabla se conserva
+como el registro de lo que se midió mientras no lo era. Ejecutado sobre
+`83485c4` con Node 22.22.2 en este entorno (la versión declarada es 24; la
+diferencia se anota, no se esconde):
 
 | Control | Resultado |
 |---|---|
@@ -294,9 +336,11 @@ declarada es 24; la diferencia se anota, no se esconde):
 | `npm run check:bundle-budget` | exit 0 — eager **438.8 KB gz** de 450.0 |
 | `npm audit --audit-level=high` | **0 vulnerabilidades** |
 
-No ejecutados aquí y por qué: `test:rules` y `e2e` necesitan los emuladores de
-Firebase (JDK 21) y navegadores de Playwright con dependencias de sistema;
-`supabase.yml` necesita Docker. Los tres corren en CI cuando CI pueda correr.
+No ejecutados aquí y por qué: `e2e` necesita los navegadores de Playwright con
+sus dependencias de sistema y una pila Supabase local, y `supabase.yml` necesita
+Docker. Los dos corren en CI. `test:rules` desapareció con Firebase: los
+contratos de autorización son ahora pgTAP contra una base real
+(`bash scripts/supabase/local.sh test`).
 
 ---
 
