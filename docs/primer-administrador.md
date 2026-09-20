@@ -126,9 +126,16 @@ https://<TU-REF>.supabase.co/auth/v1/callback
 panel de Supabase. Copia el **Client ID** y el **Client Secret**.
 
 **En Supabase** → *Authentication → Providers → Google*: actívalo, pega las dos
-cosas y guarda. Después, en *Authentication → URL Configuration → Redirect URLs*,
-asegúrate de que está la dirección de tu despliegue: Google devuelve a Arky, y si
-esa URL no está en la lista el retorno cae en el sitio equivocado.
+cosas y guarda. Después, en *Authentication → URL Configuration*, revisa **las
+dos** casillas:
+
+- **Redirect URLs** tiene que incluir la dirección de tu despliegue, o el
+  retorno de Google cae en el sitio equivocado.
+- **Site URL** tiene que ser *esa misma* dirección. Es la que Supabase usa
+  cuando un correo no dice a dónde volver, y si apunta a un despliegue anterior
+  del producto —uno que todavía esté publicado— el enlace de recuperación
+  abrirá sesión en **la aplicación vieja**. No da ningún error: simplemente te
+  atiende otra versión, con otras pantallas y otros menús.
 
 > **Entrar con Google no crea una cuenta en Arky.** Quien entre con Google sin
 > que tú le hayas dado de alta autentica bien y sale de vuelta, con el mensaje de
