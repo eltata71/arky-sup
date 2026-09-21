@@ -729,6 +729,7 @@ export type Database = {
       list_notes: { Args: never; Returns: Json }
       list_project_aggregates: { Args: never; Returns: Json }
       list_user_profiles: { Args: never; Returns: Json }
+      load_arb_engagements: { Args: never; Returns: Json }
       load_chat_history: { Args: { p_project_id: string }; Returns: Json }
       load_context: { Args: never; Returns: Json }
       load_engagements: { Args: { p_project_id: string }; Returns: Json }
