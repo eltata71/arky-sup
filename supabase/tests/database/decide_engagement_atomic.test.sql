@@ -126,9 +126,12 @@ set local request.jwt.claims = '{"sub":"65000000-0000-4000-8000-000000000001","r
 -- ─────────────────────────────── las guardas, cada una con su negativo
 -- La fila conserva un gate bloqueado aunque el cliente intente aprobarla directo
 -- por RPC: la autoridad es el estado bloqueado, no la UI.
+reset role;
 update api.office_engagements
 set data = jsonb_set(data, '{gateAssessment}', '{"overallStatus":"blocked","gates":[]}'::jsonb)
 where id = 'eng_arb_002';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"65000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"75000000-0000-4000-8000-000000000001"}';
 select throws_ok($$select api.decide_engagement('proj_arb_002', $j${
   "id":"eng_arb_002","projectId":"proj_arb_002","status":"delivered"}$j$::jsonb, 1,
   $j${"id":"arb_blocked","engagementId":"eng_arb_002","verdict":"approved","rationale":""}$j$::jsonb)$$,

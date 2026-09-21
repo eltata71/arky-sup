@@ -44,7 +44,7 @@ const plan = (deterministicArtifactId: string): AgentActionPlan => ({
     requiresConfirmation: false,
     impact: 'medium',
     suggestedTarget: 'new_version',
-    createHint: { deterministicArtifactId },
+    createHint: { templateName: null, deterministicArtifactId },
   },
 });
 

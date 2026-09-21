@@ -24,8 +24,8 @@ select ok(not has_function_privilege('authenticated', 'api.record_arb_decision(j
 select ok(
   (select exists(select 1 from information_schema.routines
     where routine_schema = 'api' and routine_name = 'load_arb_engagements'))
-  is not true,
-  'La bandeja ARB no existe en el esquema base');
+  is true,
+  'La bandeja ARB existe tras las migraciones de gobernanza');
 
 insert into auth.users (id, email) values
   ('63000000-0000-4000-8000-000000000001', 'office-architect@example.invalid'),

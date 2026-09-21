@@ -152,7 +152,7 @@ select throws_ok($$insert into storage.objects (
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"91000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"92000000-0000-4000-8000-000000000001"}';
 select throws_ok($$delete from storage.objects where id = '93000000-0000-4000-8000-000000000001'$$,
-  '42501', 'permission denied for schema storage',
+  '42501', 'Direct deletion from storage tables is not allowed. Use the Storage API instead.',
   'El cliente no elimina un objeto no registrado');
 select lives_ok($$select api.register_file_object(
   'artifact-files',
@@ -169,10 +169,7 @@ set local request.jwt.claims = '{"sub":"91000000-0000-4000-8000-000000000002","r
 select is((select count(*)::bigint from api.file_objects
   where owner_id = '91000000-0000-4000-8000-000000000001'), 0::bigint,
   'Un administrador no lee metadata Storage de otro propietario');
--- En el arnés nativo `authenticated` carece de USAGE en el esquema storage; en
--- la pila real Storage la conexión entra y la política RLS la vacía. Mismo
--- fallo cerrado, camino distinto.
-select throws_ok('select count(*) from storage.objects', '42501', 'permission denied for schema storage',
+select is((select count(*)::bigint from storage.objects), 0::bigint,
   'Un administrador no lee objetos físicos de otro propietario');
 reset role;
 update api.user_profiles set status = 'disabled'
@@ -181,10 +178,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"91000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"92000000-0000-4000-8000-000000000001"}';
 select is((select count(*)::bigint from api.file_objects), 0::bigint,
   'Una cuenta deshabilitada no lee metadata Storage');
--- En el arnés nativo `authenticated` carece de USAGE en el esquema storage, así
--- que la lectura aborta por permiso de esquema; en la pila real Storage acepta
--- la conexión y la política RLS la vacía. Mismo fallo cerrado, camino distinto.
-select throws_ok('select count(*) from storage.objects', '42501', 'permission denied for schema storage',
+select is((select count(*)::bigint from storage.objects), 0::bigint,
   'Una cuenta deshabilitada no lee objetos Storage');
 reset role;
 set local role service_role;
@@ -197,11 +191,7 @@ reset role;
 set local role anon;
 select throws_ok('select * from api.file_objects', '42501', 'permission denied for schema api',
   'Anon no alcanza la metadata');
--- En la pila real Storage concede USAGE en el esquema storage sólo a sus roles
--- de servicio; un cliente anónimo ni siquiera alcanza el esquema. El arnés lo
--- replica: la consulta aborta por permiso de esquema, que es el mismo fallo
--- cerrado que la pila produce de otra forma.
-select throws_ok('select count(*) from storage.objects', '42501', 'permission denied for schema storage',
+select is((select count(*)::bigint from storage.objects), 0::bigint,
   'Anon no lista objetos de Storage');
 reset role;
 
