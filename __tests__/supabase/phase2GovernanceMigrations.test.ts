@@ -38,6 +38,14 @@ describe('cierre técnico de la fase 2', () => {
     expect(canonicalDecisionMigration).not.toContain("jsonb_set(next_data, '{audittrail}'");
   });
 
+  it('F2 follow-up: concede SELECT a authenticated sobre office_arb_decisions', () => {
+    const grantMigration = readFileSync(
+      join(process.cwd(), 'supabase/migrations/20260921070000_grant_office_arb_decisions_read.sql'),
+      'utf8',
+    ).toLowerCase();
+    expect(grantMigration).toContain('grant select on api.office_arb_decisions to authenticated');
+  });
+
   it('F2-09 retira las cuatro concesiones sin consumidor', () => {
     for (const signature of [
       'api.record_arb_decision(jsonb)',
