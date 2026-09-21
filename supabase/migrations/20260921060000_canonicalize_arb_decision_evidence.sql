@@ -79,9 +79,7 @@ begin
     raise exception 'El perfil activo de la sesión no existe' using errcode = '42501';
   end if;
 
-  -- A network retry arrives after the row moved and with an old revision. Its
-  -- immutable intent is compared without the server timestamp, then the exact
-  -- already-persisted aggregate is returned. Any other use of the same id falls
+  -- A network retry arrives after the row moved and with an old revision. Its immutable intent is compared without the server timestamp; the exact already-persisted aggregate is returned.
   -- through to the unique-id collision below and aborts fail-closed.
   if exists (
     select 1 from api.office_arb_decisions d
