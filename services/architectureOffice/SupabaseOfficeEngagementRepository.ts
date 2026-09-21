@@ -5,6 +5,7 @@ import { createOperationId, supabaseFailure, type PersistenceResult } from '../p
 /** Superficie mínima de PostgREST para el agregado; sin SDK en el dominio. */
 export interface SupabaseOfficeClientLike {
   rpc(name: 'load_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
+  rpc(name: 'load_arb_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'save_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'delete_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   // `record_arb_decision` ya no se llama desde aquí: la escribía la mitad de
@@ -21,6 +22,8 @@ interface RemoteEngagementRecord {
 
 export interface SupabaseOfficeEngagementRepository {
   list(projectId: string): Promise<OfficeEngagement[]>;
+  /** Encargos ajenos pendientes de decisión para miembros del ARB. */
+  listForArb(): Promise<OfficeEngagement[]>;
   /**
    * Devuelve el encargo **tal y como quedó guardado**, con su revisión nueva.
    *
@@ -117,6 +120,22 @@ export function createSupabaseOfficeEngagementRepository(
       // nota de `OfficeEngagement.revision`: un mapa compartido acaba diciendo
       // la revisión de la última lectura, no la del snapshot que se edita.
       return valid.map((record) => ({ ...record.engagement, revision: record.revision }));
+    },
+
+    async listForArb() {
+      const { data, error } = await client.rpc('load_arb_engagements', {});
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new Error('La respuesta remota de la bandeja ARB no es una lista.');
+      return data.map((row) => {
+        const projectId = row && typeof row === 'object'
+          && 'data' in row && row.data && typeof row.data === 'object'
+          && 'projectId' in row.data && typeof row.data.projectId === 'string'
+          ? row.data.projectId
+          : '';
+        const record = projectId ? asRemoteRecord(row, projectId) : null;
+        if (!record) throw new Error('La respuesta remota de la bandeja ARB contiene una fila inválida.');
+        return { ...record.engagement, revision: record.revision };
+      });
     },
 
     async save(engagement) {

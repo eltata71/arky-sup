@@ -99,6 +99,7 @@ const normalizeTask = (value: unknown, engagementId: string): OfficeTask | null 
     // the reload it exists to survive.
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : undefined,
     runId: typeof raw.runId === 'string' ? raw.runId : undefined,
+    executionId: typeof raw.executionId === 'string' ? raw.executionId : undefined,
     traceIds: Array.isArray(raw.traceIds) ? asStringArray(raw.traceIds) : undefined,
     kind: raw.kind === 'review-artifact' || raw.kind === 'consolidate' || raw.kind === 'report'
       ? raw.kind
@@ -279,6 +280,8 @@ export const withAuditEntry = (
 
 export interface OfficeEngagementRepository {
   list(projectId: string): Promise<OfficeEngagement[]>;
+  /** Bandeja global de encargos ajenos para quien tenga `arb:decide`. */
+  listForArb(): Promise<OfficeEngagement[]>;
   /**
    * Guarda y devuelve el encargo **tal y como quedó**, con su revisión nueva.
    *
@@ -331,6 +334,19 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
       .map((item) => normalizeEngagement(item, projectId))
       .filter((item): item is OfficeEngagement => item !== null)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+
+  async listForArb(): Promise<OfficeEngagement[]> {
+    try {
+      return (await (await getRemote()).listForArb())
+        .map((item) => normalizeEngagement(item, item.projectId))
+        .filter((item): item is OfficeEngagement => item !== null)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    } catch {
+      // La bandeja ARB no degrada a datos propios: mostrar el espejo del autor
+      // como si fueran encargos revisables violaría la separación adoptada.
+      return [];
+    }
   }
 
   private async fetch(projectId: string): Promise<OfficeEngagement[]> {

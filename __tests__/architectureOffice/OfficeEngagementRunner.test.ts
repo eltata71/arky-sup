@@ -182,6 +182,32 @@ describe('OfficeEngagementRunner', () => {
     expect(result.engagement.tasks.find((item) => item.id === 'p1')?.producedArtifactId).toBe('art-existing');
   });
 
+  it('resumes a task left in-progress by another run without minting a second execution', async () => {
+    const produceArtifact = vi.fn(async (_task: OfficeTask) => ({ status: 'success' as const, artifactId: 'a', versionGroupId: 'g' }));
+    const interrupted = engagementWith([
+      task({
+        id: 'p1',
+        kind: 'produce-artifact',
+        assigneeId: 'felipe',
+        reviewerId: 'elena',
+        status: 'in-progress',
+        attempts: 1,
+        runId: 'run-anterior',
+        executionId: 'office-task-exec-anterior',
+      }),
+    ]);
+    interrupted.currentRunId = 'run-anterior';
+
+    const result = await runEngagement(interrupted, makePorts({ produceArtifact }), { runId: 'run-reanudado' });
+
+    expect(result.status).toBe('completed');
+    expect(produceArtifact).toHaveBeenCalledTimes(1);
+    expect(produceArtifact.mock.calls[0]?.[0].executionId).toBe('office-task-exec-anterior');
+    expect(result.engagement.tasks[0].attempts).toBe(1);
+    expect(result.engagement.tasks[0].runId).toBe('run-reanudado');
+    expect(result.engagement.auditTrail.some((entry) => entry.action === 'run-resumed')).toBe(true);
+  });
+
   it('re-runs production once when the reviewer asks for changes, then converges', async () => {
     let reviewCount = 0;
     const produceArtifact = vi.fn(async () => ({ status: 'success' as const, artifactId: 'a', versionGroupId: 'g' }));
@@ -460,6 +486,59 @@ describe('OfficeEngagementRunner', () => {
     expect(result.status).toBe('not-persisted');
     expect(result.persistence).toBe('conflict');
     expect(result.message).toContain('Recarga');
+  });
+
+  it('dos sesiones desde la misma revisión sólo permiten efectos a la ganadora', async () => {
+    let durableRevision = 1;
+    const produceArtifact = vi.fn(async () => ({ status: 'success' as const, artifactId: 'a', versionGroupId: 'g' }));
+    const persist = vi.fn(async (candidate: OfficeEngagement) => {
+      // Cede una vez para que ambas sesiones alcancen la misma guarda inicial.
+      await Promise.resolve();
+      if (candidate.revision !== durableRevision) return failingPersist('conflict');
+      durableRevision += 1;
+      return persisted({ ...candidate, revision: durableRevision });
+    });
+    const initial = { ...engagementWith([
+      task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' }),
+    ]), revision: 1 };
+
+    const [first, second] = await Promise.all([
+      runEngagement(structuredClone(initial), makePorts({ persist, produceArtifact }), { runId: 'run-a' }),
+      runEngagement(structuredClone(initial), makePorts({ persist, produceArtifact }), { runId: 'run-b' }),
+    ]);
+
+    expect([first.status, second.status].sort()).toEqual(['completed', 'not-persisted']);
+    expect(produceArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('no ejecuta efectos si falla el checkpoint que marca la tarea en curso', async () => {
+    let calls = 0;
+    const persist = vi.fn(async (engagement: OfficeEngagement) => {
+      calls += 1;
+      return calls === 2 ? failingPersist('conflict') : persisted(engagement);
+    });
+    const produceArtifact = vi.fn(async () => ({ status: 'success' as const, artifactId: 'a', versionGroupId: 'g' }));
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    const result = await runEngagement(engagementWith(tasks), makePorts({ persist, produceArtifact }));
+
+    expect(result.status).toBe('not-persisted');
+    expect(produceArtifact).not.toHaveBeenCalled();
+  });
+
+  it('no comunica completed si falla el checkpoint terminal', async () => {
+    let calls = 0;
+    const persist = vi.fn(async (engagement: OfficeEngagement) => {
+      calls += 1;
+      return calls === 4 ? failingPersist('failed') : persisted(engagement);
+    });
+    const tasks = [task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' })];
+
+    const result = await runEngagement(engagementWith(tasks), makePorts({ persist }));
+
+    expect(calls).toBe(4);
+    expect(result.status).toBe('not-persisted');
+    expect(result.persistence).toBe('failed');
   });
 
   it('trata un puerto que lanza como el fallo que es', async () => {

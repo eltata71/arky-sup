@@ -100,24 +100,22 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Riesgo/reversión.** La RPC nueva convive con las dos antiguas hasta F2-09; revertir es dejar de llamarla.
 
 ### F2-02 · Guardas de servidor: transición, estado previo, evidencia
-- **Prioridad** P0 · **Tamaño** M · **Estado** `parcial` · **Resuelve** H02
-- **Hecho.** En la ruta de decisión: estado previo leído de la fila y limitado a
-  `awaiting-arb`/`blocked`; el estado nuevo tiene que ser el que el veredicto
-  exige; `office_arb_decisions.decided_revision` guarda la revisión que el comité
-  tenía delante, que es lo mínimo para poder decir después «esto se aprobó
-  viendo aquello».
-- **Pendiente.** La tabla completa de transiciones legales para
-  `save_engagement`: hoy sigue aceptando cualquier salto entre los ocho enums
-  (E-03 del catálogo de invariantes).
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H02
+- **Hecho.** Función `private.office_engagement_transition_allowed` con matriz
+  cerrada (18 de 64 pares permitidos). `save_engagement` rechaza `delivered`;
+  `decide_engagement` es la única puerta que produce `delivered`. Pruebas pgTAP 6/6.
+- **Evidencia.** Migración `20260920224928_phase_2_governance_guards.sql` y
+  `supabase/tests/database/office_engagement_transitions.test.sql`.
 
 ### F2-03 · Separación autor/aprobador — decisión de modelo
-- **Prioridad** P0 · **Tamaño** L · **Estado** `bloqueada` · **Resuelve** H02
-- **Bloqueo.** `owner_id` es a la vez frontera de autorización y autor, así que
-  hoy la separación es imposible, no laxa. Requiere decidir el modelo de
-  visibilidad (ver ADR-101) — es una **ambigüedad de negocio**: ¿quién debe poder
-  ver y firmar un encargo ajeno?
-- **Aceptación.** El autor no puede autoaprobarse cuando la política lo exige; un
-  aprobador autorizado sí puede actuar sobre el encargo.
+- **Prioridad** P0 · **Tamaño** L · **Estado** `completada` · **Resuelve** H02
+- **Decisión de negocio adoptada (2026-09-20): opción C**.
+  - `arb:decide` concede bandeja global de encargos ajenos (`api.load_arb_engagements`).
+  - Autoaprobación prohibida aunque el autor tenga el permiso (`current_row.owner_id = actor`).
+  - El revisor no puede alterar título, charter, tareas, presupuesto ni auditoría previa.
+- **Evidencia.** Migración `20260920224928_phase_2_governance_guards.sql`,
+  `supabase/tests/database/decide_engagement_atomic.test.sql` (24/24 pgTAP).
+- ADR-101 actualizado a `aceptada — opción C para el PoC`.
 
 ### F2-04 · `PersistenceResult` evaluado en toda la Oficina
 - **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H01 (parcial), H07
@@ -160,7 +158,17 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   Los fixtures ahora aprueban el charter, con el comentario que dice por qué.
 
 ### F2-06 · Idempotencia y reanudación ante fallo de persistencia
-- **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F2-04 · **Resuelve** H07
+- **Prioridad** P1 · **Tamaño** L · **Estado** `completada` · **Depende de** F2-04 · **Resuelve** H07
+- **Implementación.**
+  - `executionId` por tarea: identidad estable del intento que sobrevive a la reanudación.
+  - Reanudación de tareas `in-progress` huérfanas: se revierten a `ready` preservando `attempts`.
+  - Checkpoint fail-closed: pre-efecto (marca `in-progress`) y terminales (presupuesto, cancelación, bloqueo, `awaiting-arb`) — si falla el `save`, no se ejecutan puertos y el resultado es `not-persisted`.
+  - Identidad determinista de artefacto: `deterministicArtifactId` derivado de `executionId`; reutiliza artefacto existente en vez de duplicar.
+  - Auditoría `run-resumed` emitida al reanudar desde otro `runId`.
+- **Evidencia.**
+  - `OfficeEngagementRunner.ts` 57/57 pruebas focalizadas.
+  - `agentExecutorIdempotency.test.ts` 1/1.
+  - Contratos de extracción: `officeRunResumption.ts`, `officeRunnerState.ts`, `officeRunnerContracts.ts`, `deterministicArtifactReuse.ts`, `agentExecutorContracts.ts`.
 
 ### F2-07 · Retirar la sobrecarga `api.delete_engagement(text, text)`
 - **Prioridad** P0 · **Tamaño** S · **Estado** `completada` · **Resuelve** H09
@@ -199,14 +207,19 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   después del borrado rechazado, que es lo que el defecto rompía.
 
 ### F2-09 · Auditoría de sobrecargas y RPC sin consumidor
-- **Prioridad** P1 · **Tamaño** M · **Estado** `parcial` · **Depende de** F2-07
-- **Hecho.** `__tests__/supabase/rpcOverloads.test.ts` lee las migraciones en
-  orden, simula `create`/`drop` y afirma que **ninguna función tiene dos aridades
-  vivas**. Lee el texto y no el catálogo a propósito: el catálogo necesita Docker,
-  así que una prueba que lo consultara no correría en el bucle interno, que es
-  justo cuando alguien añade la sobrecarga.
-- **Pendiente.** Enumerar las firmas concedidas a `authenticated` contra las que
-  el repositorio declara consumir — eso sí necesita el catálogo, y va en pgTAP.
+- **Prioridad** P1 · **Tamaño** M · **Estado** `completada` · **Depende de** F2-07
+- **Hecho.**
+  - 4 RPC huérfanas revocadas a `authenticated`:
+    `record_arb_decision`, `load_platform_reference_parameters`,
+    `save_platform_reference_parameters`, `mark_file_object_deleted`.
+  - `mark_file_object_ready` reservada a `service_role` + trigger
+    `private.confirm_registered_file_object` que promueve `pending → ready`
+    en la inserción validada (el navegador no llama RPC de `service_role`).
+  - Gate `rpcSurface.test.ts` (catálogo ↔ consumidores) 3/3.
+  - Gate `rpcOverloads.test.ts` (una firma por función) 5/5.
+- **Evidencia.** Migración `20260920224928_phase_2_governance_guards.sql`,
+  `__tests__/supabase/rpcSurface.test.ts`, `__tests__/supabase/rpcOverloads.test.ts`,
+  `supabase/tests/database/platform_reference_parameters.test.sql` actualizado.
 
 ### F2-10 · La revisión viaja con el snapshot
 - **Prioridad** P0 · **Tamaño** M · **Estado** `completada` (Oficina; proyectos e iniciativas pendientes) · **Resuelve** H10
@@ -236,7 +249,16 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   el mensaje del servidor: el que nombra los proyectos a desvincular.
 
 ### F2-11 · Pruebas de concurrencia y fallo parcial
-- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F2-01, F2-10
+- **Prioridad** P1 · **Tamaño** M · **Estado** `completada` · **Depende de** F2-01, F2-10
+- **Casos cubiertos.**
+  - Dos sesiones desde la misma revisión: solo la ganadora del lock optimista ejecuta efectos.
+  - Colisión de ID de decisión entre encargos distintos aborta la transacción (23505).
+  - Autoaprobación prohibida aunque el autor tenga `arb:decide`.
+  - Revisor no puede alterar título, charter, tareas ni presupuesto del encargo ajeno.
+  - Reanudación idempotente tras fallo post-efecto: mismo `executionId` reutiliza artefacto.
+  - Checkpoint terminal que falla no comunica `completed`/`blocked`/`cancelled`.
+- **Evidencia.** Pruebas unitarias `OfficeEngagementRunner.test.ts` + pgTAP
+  `decide_engagement_atomic.test.sql` (24/24) + `office_engagement_transitions.test.sql` (6/6).
 
 ---
 

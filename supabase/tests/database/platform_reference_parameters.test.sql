@@ -15,10 +15,10 @@ select ok(not has_table_privilege('anon', 'api.platform_reference_parameters', '
   'Anónimo no accede directamente a parámetros globales');
 select ok(not has_table_privilege('authenticated', 'api.platform_reference_parameters', 'SELECT,INSERT,UPDATE,DELETE'),
   'Cliente autenticado no accede directamente a parámetros globales');
-select ok(has_function_privilege('authenticated', 'api.load_platform_reference_parameters()', 'EXECUTE'),
-  'La lectura solo ocurre por RPC');
-select ok(has_function_privilege('authenticated', 'api.save_platform_reference_parameters(jsonb,bigint)', 'EXECUTE'),
-  'El guardado solo ocurre por RPC');
+select ok(not has_function_privilege('authenticated', 'api.load_platform_reference_parameters()', 'EXECUTE'),
+  'La lectura sin consumidor no queda expuesta al cliente');
+select ok(not has_function_privilege('authenticated', 'api.save_platform_reference_parameters(jsonb,bigint)', 'EXECUTE'),
+  'El guardado sin consumidor no queda expuesto al cliente');
 
 insert into auth.users (id, email) values
   ('66000000-0000-4000-8000-000000000001', 'parameters-admin@example.invalid'),
@@ -37,7 +37,8 @@ on conflict (id) do nothing;
 -- Se elimina solo dentro de esta transacción y el rollback lo restaura al final.
 delete from api.platform_reference_parameters;
 
-set local role authenticated;
+-- Se ejercita el cuerpo bajo el rol de migración; `authenticated` ya no tiene
+-- EXECUTE porque no existe un consumidor de producción.
 set local request.jwt.claims = '{"sub":"66000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"76000000-0000-4000-8000-000000000001"}';
 select throws_ok($$select api.save_platform_reference_parameters('{"globalContext":["Estándar rechazado"]}', 1)$$,
   'P0001', 'Conflicto de parámetros globales: recarga antes de guardar',
@@ -73,7 +74,8 @@ select throws_ok(
   'Un campo personal no entra en parámetros globales');
 reset role;
 
-set local role authenticated;
+-- Se ejercita el cuerpo bajo el rol de migración; `authenticated` ya no tiene
+-- EXECUTE porque no existe un consumidor de producción.
 set local request.jwt.claims = '{"sub":"66000000-0000-4000-8000-000000000002","role":"authenticated","session_id":"76000000-0000-4000-8000-000000000002"}';
 select throws_ok('select api.load_platform_reference_parameters()',
   '42501', 'Permiso insuficiente: users:read',

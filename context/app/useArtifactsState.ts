@@ -129,10 +129,12 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
     });
   }, [handleWriteResult, markArtifactPersistence, setProjects, setPersistenceStatus, setPersistenceMessage]);
 
-  const createArtifact = useCallback((projectId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>): Artifact => {
+  const createArtifact = useCallback((projectId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>, deterministicId?: string): Artifact => {
     // La identidad, el versionado y el resumen de compilación los decide el
     // agregado. Este hook aporta el estado optimista y la escritura.
-    const newArtifact = createArtifactAggregate(artifactData);
+    // `deterministicId` llega de la Oficina: la reanudación de un mismo intento
+    // de tarea debe reencontrar el artefacto, no crear un segundo.
+    const newArtifact = createArtifactAggregate(artifactData, deterministicId ? { id: deterministicId } : undefined);
 
     let previousArtifacts: Artifact[] = [];
     let updatedArtifacts: Artifact[] = [];

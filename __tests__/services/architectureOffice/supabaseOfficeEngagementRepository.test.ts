@@ -63,6 +63,18 @@ function fakeClient(options: { data?: unknown; error?: unknown } = {}): FakeClie
 }
 
 describe('SupabaseOfficeEngagementRepository', () => {
+  it('lista la bandeja ARB mediante una RPC dedicada y conserva revisiones', async () => {
+    const saved = { ...engagement(), status: 'awaiting-arb' as const };
+    const client = fakeClient({ data: [{ data: saved, revision: 7 }] });
+    const repository = createSupabaseOfficeEngagementRepository(client);
+
+    const result = await repository.listForArb();
+
+    expect(client.calls[0]).toEqual({ name: 'load_arb_engagements', args: {} });
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'eng_legacy_001', revision: 7 });
+  });
+
   it('lista encargos propios y pega la revisión al agregado que devuelve', async () => {
     const saved = engagement();
     const client = fakeClient({ data: [{ data: { ...saved, arbDecisions: [] }, revision: 3 }] });

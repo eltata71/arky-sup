@@ -21,144 +21,31 @@ import {
   selectSchedulableTasks,
   summarizeEngagementProgress,
   type OfficeEngagement,
-  type OfficeReviewFinding,
   type OfficeTask,
-  type OfficeTaskReview,
 } from './OfficeTypes';
+import {
+  type OfficeConsolidateOutcome,
+  type OfficeProduceOutcome,
+  type OfficeRunOptions,
+  type OfficeRunResult,
+  type OfficeRunnerPorts,
+} from './officeRunnerContracts';
+export type {
+  OfficeConsolidateOutcome,
+  OfficeProduceOutcome,
+  OfficeRunOptions,
+  OfficeRunResult,
+  OfficeRunnerPorts,
+} from './officeRunnerContracts';
 import { OFFICE_AGENT_PERSONAS } from './officeAgentPersonas';
 import { canRunEngagement, transitionEngagement } from './officeEngagementTransitions';
 import { withAuditEntry } from './OfficeEngagementRepository';
 import { createRunCheckpoint } from './officeRunCheckpoint';
-import type { PersistenceResult, PersistenceStatus } from '../persistence';
+import { resumeInterruptedTasks } from './officeRunResumption';
+import { chargeRunnerBudget, isRunnerBudgetExhausted, replaceRunnerTask, runnerBlockingFindings, runnerNowIso, withTaskTrace } from './officeRunnerState';
 
-export interface OfficeProduceOutcome {
-  status: 'success' | 'failed';
-  artifactId?: string;
-  versionGroupId?: string;
-  /** Number of AI calls the production consumed. Charged to the budget. */
-  aiCalls?: number;
-  /**
-   * The agent trace this production ran under.
-   *
-   * `executeAgentAction` has returned it since the agent shipped and the Office
-   * discarded it, so a deliverable had no way back to the generation that made
-   * it — the prompt, the phases, the versions, the rollback. Reported on
-   * failure too: a run that produced nothing is exactly when the trace matters.
-   */
-  traceId?: string;
-  message?: string;
-}
-
-export interface OfficeConsolidateOutcome {
-  status: 'success' | 'failed';
-  summary: string;
-  aiCalls?: number;
-  traceId?: string;
-}
-
-/**
- * Everything the runner needs from the outside world. The React layer supplies
- * adapters that route production through the existing `agentExecutor` path and
- * review through the artifact compiler plus a persona critique.
- */
-export interface OfficeRunnerPorts {
-  produceArtifact(task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeProduceOutcome>;
-  reviewArtifact(task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeTaskReview>;
-  consolidate(task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeConsolidateOutcome>;
-  /**
-   * Llamado tras cada transición de estado. **Devuelve cómo fue.**
-   *
-   * Estaba tipado `Promise<void>`, y ése era el defecto más caro de los dos que
-   * tenía este punto. El `catch` vacío de `save()` tragaba las excepciones; el
-   * tipo hacía lo otro, que es peor: un fallo **sin** excepción —que es la
-   * forma normal, un `{ status: 'conflict', success: false }`— era
-   * indistinguible del éxito. El runner seguía gastando llamadas de IA contra
-   * un estado que nadie había guardado, y el encargo que «se reanuda en vez de
-   * reiniciarse» se reanudaba desde el último punto que sí llegó.
-   *
-   * No lanza: un puerto que lanza obliga a envolver cada llamada. Devuelve el
-   * mismo envoltorio que el resto de la persistencia.
-   */
-  persist(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
-  /** Optional progress hook for the UI. Must not throw. */
-  onProgress?(engagement: OfficeEngagement): void;
-}
-
-export interface OfficeRunOptions {
-  /** Global ceiling on parallel tasks. Per-persona limits apply on top. */
-  maxConcurrency?: number;
-  /**
-   * Capacity per agent, as this organisation configured it.
-   *
-   * The runner used to read `OFFICE_AGENT_PERSONAS[id].maxConcurrentTasks` —
-   * the value the product ships with — while the agent's card let a user set
-   * their own, validated it, persisted it and resolved it. The card promised a
-   * limit the engine never read: raising Elena to 3 changed a number on a
-   * screen and nothing else.
-   *
-   * Injected rather than looked up so the runner keeps its one useful property:
-   * no React, no Firestore, no AI SDK, everything through a port. A missing
-   * entry falls back to the persona's shipped value, so a caller that has no
-   * profiles loaded behaves exactly as before.
-   */
-  agentConcurrency?: ReadonlyMap<string, number>;
-  /** Correlation id for this attempt. Minted when the caller supplies none. */
-  runId?: string;
-  /**
-   * Si esta sesión ya está ejecutando este encargo.
-   *
-   * Lo aporta quien llama porque es un hecho suyo, no del agregado: dos
-   * pestañas son dos sesiones y ninguna ve el `AbortController` de la otra. La
-   * exclusión entre sesiones la da la revisión optimista del encargo, que es
-   * donde tiene que estar.
-   */
-  isRunning?: boolean;
-  signal?: AbortSignal;
-}
-
-export interface OfficeRunResult {
-  engagement: OfficeEngagement;
-  status: 'completed' | 'partial' | 'blocked' | 'cancelled' | 'budget-exhausted'
-    | 'not-persisted' | 'refused';
-  message: string;
-  /**
-   * El fallo de persistencia que detuvo la ejecución, si la detuvo uno.
-   *
-   * Se distingue de `blocked` a propósito: un encargo bloqueado es un hecho de
-   * negocio —una puerta de calidad, una tarea agotada— y se mira en la pantalla
-   * del encargo. Esto es una avería, y lo que hay que hacer es recargar o
-   * reintentar, no revisar el trabajo.
-   */
-  persistence?: PersistenceStatus;
-}
 
 const DEFAULT_MAX_CONCURRENCY = 3;
-
-const nowIso = (): string => new Date().toISOString();
-
-/** Append a correlation id to a task without losing the ones before it. */
-const withTrace = (task: OfficeTask, traceId?: string): OfficeTask =>
-  traceId ? { ...task, traceIds: [...(task.traceIds ?? []), traceId] } : task;
-
-const replaceTask = (engagement: OfficeEngagement, task: OfficeTask): OfficeEngagement => ({
-  ...engagement,
-  tasks: engagement.tasks.map((candidate) => (candidate.id === task.id ? task : candidate)),
-  updatedAt: nowIso(),
-});
-
-const chargeBudget = (engagement: OfficeEngagement, calls: number): OfficeEngagement => ({
-  ...engagement,
-  budget: {
-    ...engagement.budget,
-    consumedAiCalls: engagement.budget.consumedAiCalls + Math.max(0, calls),
-  },
-});
-
-const budgetExhausted = (engagement: OfficeEngagement): boolean =>
-  engagement.budget.consumedAiCalls >= engagement.budget.maxAiCalls;
-
-const blockingFindings = (findings: readonly OfficeReviewFinding[]): OfficeReviewFinding[] =>
-  findings.filter((finding) => finding.severity === 'critical' || finding.severity === 'high');
 
 /**
  * Ejecuta el encargo hasta un punto de parada.
@@ -198,11 +85,13 @@ export const runEngagement = async (
   // so without it the second attempt appends to the same undifferentiated
   // sequence as the first and the audit trail cannot say which is which.
   const runId = options.runId ?? newPrefixedId('run');
+  const { engagement: resumed } = resumeInterruptedTasks(initial, runId);
+  let engagement = resumed;
   // Arrancar es un cambio de estado con su motivo: `transitionEngagement`
   // impide que se separen, que es como el `in-progress` inicial acabó sin
   // rastro y el `run-started` dos líneas más abajo.
-  let engagement: OfficeEngagement = transitionEngagement(
-    { ...initial, currentRunId: runId },
+  engagement = transitionEngagement(
+    { ...engagement, currentRunId: runId },
     'in-progress',
     'run-started',
     'La Oficina inició la ejecución del encargo.',
@@ -233,7 +122,7 @@ export const runEngagement = async (
     // Se comprueba al principio de cada vuelta, no dentro de `save`: lo que ya
     // se generó se conserva y se informa, y lo que no ha empezado no empieza.
     if (checkpoint.failure) return stoppedByPersistence();
-    if (budgetExhausted(engagement)) {
+    if (isRunnerBudgetExhausted(engagement)) {
       engagement = transitionEngagement(
         engagement,
         'blocked',
@@ -241,6 +130,9 @@ export const runEngagement = async (
         `Presupuesto agotado: ${engagement.budget.consumedAiCalls}/${engagement.budget.maxAiCalls} llamadas de IA.`,
       );
       await save();
+      // Un checkpoint terminal que falla no puede comunicarse como una parada
+      // ordenada: el estado que dice «presupuesto agotado» quizá no llegó.
+      if (checkpoint.failure) return stoppedByPersistence();
       return {
         engagement,
         status: 'budget-exhausted',
@@ -275,11 +167,16 @@ export const runEngagement = async (
     // Mark the batch in-progress before running so a reload mid-batch shows
     // the truth rather than "pending".
     for (const task of batch) {
-      engagement = replaceTask(engagement, {
+      engagement = replaceRunnerTask(engagement, {
         ...task,
         status: 'in-progress',
         runId,
-        startedAt: task.startedAt ?? nowIso(),
+        // La identidad del intento de tarea nace una vez y sobrevive a la
+        // reanudación: es lo que permite al puerto de producción reconocer un
+        // efecto ya ejecutado en vez de repetirlo. Una corrección legítima
+        // (`changes-requested`) abre otra identidad más abajo.
+        executionId: task.executionId ?? newPrefixedId('office-task-exec'),
+        startedAt: task.startedAt ?? runnerNowIso(),
         attempts: task.kind === 'produce-artifact' ? task.attempts + 1 : task.attempts,
       });
       engagement = withAuditEntry(
@@ -290,6 +187,11 @@ export const runEngagement = async (
       );
     }
     await save();
+    // El checkpoint que marca la tarea en curso es el último antes del efecto
+    // externo. Si no se guardó, ejecutar los puertos gastaría llamadas de IA
+    // cuyo resultado nadie puede atribuir a un estado durable — y una
+    // reanudación repetiría el efecto. Se detiene antes de tocarlos.
+    if (checkpoint.failure) return stoppedByPersistence();
 
     const outcomes = await Promise.all(batch.map(async (task) => {
       const current = engagement.tasks.find((candidate) => candidate.id === task.id) ?? task;
@@ -313,25 +215,25 @@ export const runEngagement = async (
       const task = engagement.tasks.find((candidate) => candidate.id === outcome.task.id) ?? outcome.task;
 
       if ('error' in outcome && outcome.error) {
-        engagement = replaceTask(engagement, {
+        engagement = replaceRunnerTask(engagement, {
           ...task,
           status: 'failed',
           error: outcome.error,
-          completedAt: nowIso(),
+          completedAt: runnerNowIso(),
         });
         engagement = withAuditEntry(engagement, 'task-failed', `"${task.title}" falló: ${outcome.error}`, { taskId: task.id });
         continue;
       }
 
       if ('produce' in outcome && outcome.produce) {
-        engagement = chargeBudget(engagement, outcome.produce.aiCalls ?? 1);
-        const traced = withTrace(task, outcome.produce.traceId);
+        engagement = chargeRunnerBudget(engagement, outcome.produce.aiCalls ?? 1);
+        const traced = withTaskTrace(task, outcome.produce.traceId);
         if (outcome.produce.status === 'failed') {
-          engagement = replaceTask(engagement, {
+          engagement = replaceRunnerTask(engagement, {
             ...traced,
             status: 'failed',
             error: outcome.produce.message ?? 'La producción del artefacto no se completó.',
-            completedAt: nowIso(),
+            completedAt: runnerNowIso(),
           });
           engagement = withAuditEntry(
             engagement,
@@ -341,14 +243,14 @@ export const runEngagement = async (
           );
           continue;
         }
-        engagement = replaceTask(engagement, {
+        engagement = replaceRunnerTask(engagement, {
           ...traced,
           status: 'completed',
           producedArtifactId: outcome.produce.artifactId,
           producedVersionGroupId: outcome.produce.versionGroupId,
           error: undefined,
           carriedFindings: undefined,
-          completedAt: nowIso(),
+          completedAt: runnerNowIso(),
         });
         engagement = withAuditEntry(
           engagement,
@@ -360,15 +262,15 @@ export const runEngagement = async (
       }
 
       if ('review' in outcome && outcome.review) {
-        engagement = chargeBudget(engagement, 1);
+        engagement = chargeRunnerBudget(engagement, 1);
         const review = outcome.review;
         const producer = engagement.tasks.find((candidate) => candidate.id === task.reviewsTaskId);
 
-        engagement = replaceTask(engagement, {
-          ...withTrace(task, review.traceId),
+        engagement = replaceRunnerTask(engagement, {
+          ...withTaskTrace(task, review.traceId),
           status: 'completed',
           review,
-          completedAt: nowIso(),
+          completedAt: runnerNowIso(),
         });
 
         if (review.verdict === 'approved' || !producer) {
@@ -386,14 +288,19 @@ export const runEngagement = async (
         // with the reviewer's reasons rather than looping forever.
         const canRetry = review.verdict === 'changes-requested' && producer.attempts < producer.maxAttempts;
         if (canRetry) {
-          engagement = replaceTask(engagement, {
+          engagement = replaceRunnerTask(engagement, {
             ...producer,
             status: 'changes-requested',
-            carriedFindings: blockingFindings(review.findings),
+            carriedFindings: runnerBlockingFindings(review.findings),
+            // Corrección legítima ≠ reanudación: este reintento produce contenido
+            // nuevo a partir de los hallazgos, así que abre otra identidad. La
+            // reanudación tras un fallo conserva la suya — ésa es la diferencia
+            // entre repetir trabajo y repetir un efecto.
+            executionId: undefined,
             completedAt: undefined,
           });
           // The review task must run again after the re-production.
-          engagement = replaceTask(engagement, {
+          engagement = replaceRunnerTask(engagement, {
             ...engagement.tasks.find((candidate) => candidate.id === task.id)!,
             status: 'pending',
             completedAt: undefined,
@@ -405,11 +312,11 @@ export const runEngagement = async (
             { taskId: producer.id },
           );
         } else {
-          engagement = replaceTask(engagement, {
+          engagement = replaceRunnerTask(engagement, {
             ...producer,
             status: 'failed',
             error: `Revisión no superada tras ${producer.attempts} intento(s): ${review.summary}`,
-            completedAt: nowIso(),
+            completedAt: runnerNowIso(),
           });
           engagement = withAuditEntry(
             engagement,
@@ -422,13 +329,13 @@ export const runEngagement = async (
       }
 
       if ('consolidate' in outcome && outcome.consolidate) {
-        engagement = chargeBudget(engagement, outcome.consolidate.aiCalls ?? 1);
-        engagement = replaceTask(engagement, {
-          ...withTrace(task, outcome.consolidate.traceId),
+        engagement = chargeRunnerBudget(engagement, outcome.consolidate.aiCalls ?? 1);
+        engagement = replaceRunnerTask(engagement, {
+          ...withTaskTrace(task, outcome.consolidate.traceId),
           status: outcome.consolidate.status === 'success' ? 'completed' : 'failed',
           error: outcome.consolidate.status === 'success' ? undefined : outcome.consolidate.summary,
           objective: task.objective,
-          completedAt: nowIso(),
+          completedAt: runnerNowIso(),
         });
         engagement = withAuditEntry(
           engagement,
@@ -448,7 +355,7 @@ export const runEngagement = async (
     const withCancelledTasks: OfficeEngagement = {
       ...engagement,
       tasks: engagement.tasks.map((task) => (
-        isTerminalTaskStatus(task.status) ? task : { ...task, status: 'cancelled', completedAt: nowIso() }
+        isTerminalTaskStatus(task.status) ? task : { ...task, status: 'cancelled', completedAt: runnerNowIso() }
       )),
     };
     engagement = transitionEngagement(
@@ -459,6 +366,7 @@ export const runEngagement = async (
       { before: engagement.status },
     );
     await save();
+    if (checkpoint.failure) return stoppedByPersistence();
     return { engagement, status: 'cancelled', message: 'Ejecución cancelada.' };
   }
 
@@ -473,6 +381,7 @@ export const runEngagement = async (
       `${stuck.length} tarea(s) no pueden avanzar porque una dependencia falló.`,
     );
     await save();
+    if (checkpoint.failure) return stoppedByPersistence();
     return {
       engagement,
       status: 'blocked',
@@ -487,6 +396,10 @@ export const runEngagement = async (
     `Ejecución terminada: ${progress.completed}/${progress.total} tareas completadas.`,
   );
   await save();
+  // El último checkpoint es el que deja constancia de que el encargo llegó al
+  // comité. Si falla, no hubo «ejecución terminada»: el resultado es una avería
+  // de persistencia, no un éxito que la pantalla celebraría.
+  if (checkpoint.failure) return stoppedByPersistence();
 
   return {
     engagement,

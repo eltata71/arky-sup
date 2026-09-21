@@ -19,8 +19,13 @@ select ok(has_function_privilege('authenticated', 'api.save_engagement(text,json
   'El cliente recibe una RPC de guardado de encargo');
 select ok(has_function_privilege('authenticated', 'api.load_engagements(text)', 'EXECUTE'),
   'El cliente recibe una RPC de listado de encargos');
-select ok(has_function_privilege('authenticated', 'api.record_arb_decision(jsonb)', 'EXECUTE'),
-  'El cliente recibe una RPC de decisión ARB');
+select ok(not has_function_privilege('authenticated', 'api.record_arb_decision(jsonb)', 'EXECUTE'),
+  'La RPC de decisión antigua ya no forma parte de la superficie cliente');
+select ok(
+  (select exists(select 1 from information_schema.routines
+    where routine_schema = 'api' and routine_name = 'load_arb_engagements'))
+  is not true,
+  'La bandeja ARB no existe en el esquema base');
 
 insert into auth.users (id, email) values
   ('63000000-0000-4000-8000-000000000001', 'office-architect@example.invalid'),
@@ -45,7 +50,7 @@ select is((select (api.save_engagement('proj_legacy_001', $json$
   "id": "eng_legacy_001", "projectId": "proj_legacy_001", "schemaVersion": 1,
   "title": "Encargo de prueba", "brief": "Brief original del encargo",
   "initiativeIds": ["init_legacy_001"], "businessProjectIds": ["NEG-2026-620"],
-  "status": "in-progress", "priority": "medium",
+  "status": "awaiting-charter", "priority": "medium",
   "charter": {"kind": "new-solution", "objectives": [], "scope": [], "outOfScope": [], "constraints": [],
     "regulatoryDrivers": [], "deliverables": [], "participantIds": [], "coordinatorId": "lucia",
     "consolidatorId": "alejandro", "provenance": "deterministic", "proposedAt": "2026-09-12T00:00:00.000Z"},
@@ -72,28 +77,12 @@ select is((select api.load_engagements('proj_legacy_001') -> 0 -> 'data' -> 'arb
   'El espejo de decisiones se reemplaza por el registro inmutable, dentro de `data`');
 reset role;
 
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"63000000-0000-4000-8000-000000000003","role":"authenticated","session_id":"73000000-0000-4000-8000-000000000003"}';
-select lives_ok($$select api.record_arb_decision($json$
-{
-  "id": "arb_legacy_001", "engagementId": "eng_legacy_001",
-  "verdict": "approved", "rationale": "Aprobado por el comité",
-  "actor": {"id": "63000000-0000-4000-8000-000000000003", "name": "Admin", "role": "admin"},
-  "gateStatusAtDecision": "pass", "previousStatus": "awaiting-arb",
-  "decidedAt": "2026-09-12T00:00:00.000Z"
-}$json$::jsonb)$$,
-  'El admin firma una decisión ARB sobre el encargo ajeno');
-reset role;
-
-select is((select count(*) from api.office_arb_decisions where id = 'arb_legacy_001'), 1::bigint,
-  'La decisión queda registrada exactamente una vez');
+-- La API antigua queda cerrada; la decisión se cubre en decide_engagement_atomic.
+select is((select count(*) from api.office_arb_decisions), 0::bigint,
+  'Crear y leer el encargo no inventa decisiones ARB');
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"63000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"73000000-0000-4000-8000-000000000001"}';
-select throws_ok($$select api.record_arb_decision(
-  '{"id":"arb_forge","engagementId":"eng_legacy_001","verdict":"approved","rationale":"x","actor":{"id":"63000000-0000-4000-8000-000000000001","name":"Impostor","role":"admin"},"gateStatusAtDecision":"pass","previousStatus":"awaiting-arb","decidedAt":"2026-09-12T00:00:00.000Z"}'::jsonb)$$,
-  '42501', 'Permiso insuficiente: arb:decide',
-  'El autor no firma la decisión del comité');
 select throws_ok($$select api.save_engagement(
   'proj_legacy_001', '{"id":"eng_secret","projectId":"proj_legacy_001","title":"x","brief":"x","status":"intake","charter":{"k":1},"tasks":[],"auditTrail":[],"budget":{"maxAiCalls":1,"consumedAiCalls":0},"nested":{"apiKey":"[REDACTED]"}}'::jsonb, 0)$$,
   '22023', 'El encargo no puede contener apiKey',
@@ -108,23 +97,15 @@ select throws_ok($$select api.save_engagement(
   'Una revisión obsoleta no sobrescribe el encargo');
 select throws_ok($$select api.save_engagement(
   'proj_legacy_001', '{"id":"eng_legacy_001","projectId":"proj_legacy_001","title":"x","brief":"x","status":"delivered","charter":{"k":1},"tasks":[],"auditTrail":[],"budget":{"maxAiCalls":1,"consumedAiCalls":0}}'::jsonb, 1)$$,
-  '42501', 'Permiso insuficiente: arb:decide',
-  'Sólo el comité lleva un encargo a delivered');
+  '22023', 'Use api.decide_engagement para entregar un encargo',
+  'Sólo la RPC transaccional del comité lleva un encargo a delivered');
 select throws_ok($$select api.delete_engagement('proj_legacy_001', 'eng_legacy_001', 99)$$,
   'P0001', 'Conflicto de encargo: recarga antes de borrar',
   'Un borrado desde una vista obsoleta no elimina una edición concurrente');
 reset role;
 
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"63000000-0000-4000-8000-000000000003","role":"authenticated","session_id":"73000000-0000-4000-8000-000000000003"}';
-select throws_ok($$select api.record_arb_decision(
-  '{"id":"arb_missing_rationale","engagementId":"eng_legacy_001","verdict":"rejected","rationale":"","actor":{"id":"63000000-0000-4000-8000-000000000003","name":"Admin","role":"admin"},"gateStatusAtDecision":"pass","previousStatus":"awaiting-arb","decidedAt":"2026-09-12T00:00:00.000Z"}'::jsonb)$$,
-  '22023', 'Un veredicto de cambio o rechazo exige motivo',
-  'El comité no rechaza sin motivo escrito');
-reset role;
-
-select is((select count(*) from api.office_arb_decisions), 1::bigint,
-  'Los rechazos fallidos no dejan registro');
+select is((select count(*) from api.office_arb_decisions), 0::bigint,
+  'Las operaciones ordinarias no dejaron decisiones ARB');
 
 select * from finish();
 rollback;

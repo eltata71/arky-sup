@@ -60,7 +60,7 @@ describe('folderFor y extensionFor', () => {
 });
 
 describe('put', () => {
-  it('uploads, renames to the id Storage assigned, registers and confirms', async () => {
+  it('uploads, renames to the id Storage assigned and registers it as ready', async () => {
     const api = bucketApi();
     const rpc = vi.fn<Rpc>(async () => ok({ id: 'file-row' }));
     const storage = createSupabaseFileStorage(clientWith(api, rpc));
@@ -76,7 +76,7 @@ describe('put', () => {
     const [from, to] = api.move.mock.calls[0] as unknown as [string, string];
     expect(from).toContain('uid-1/initiative/init-1/doc-1/v1/upload-');
     expect(to).toBe(result.path);
-    expect(rpc.mock.calls.map(([name]) => name)).toEqual(['register_file_object', 'mark_file_object_ready']);
+    expect(rpc.mock.calls.map(([name]) => name)).toEqual(['register_file_object']);
   });
 
   it('removes the staged object when Storage returns no id', async () => {
@@ -96,17 +96,6 @@ describe('put', () => {
 
     await expect(storage.put('uid-1', descriptor, bytes, 'application/pdf')).rejects.toMatchObject({ code: '42501' });
     expect(api.remove).toHaveBeenCalledWith([`uid-1/initiative/init-1/doc-1/v1/object-uuid.pdf`]);
-  });
-
-  it('removes the object when it cannot be marked ready', async () => {
-    const api = bucketApi();
-    const rpc = vi.fn<Rpc>(async (name) => (name === 'mark_file_object_ready'
-      ? ko({ code: 'P0002', message: 'gone' })
-      : ok({ id: 'file-row' })));
-    const storage = createSupabaseFileStorage(clientWith(api, rpc));
-
-    await expect(storage.put('uid-1', descriptor, bytes, 'application/pdf')).rejects.toMatchObject({ code: 'P0002' });
-    expect(api.remove).toHaveBeenCalled();
   });
 
   it('removes the staged object when the rename fails', async () => {

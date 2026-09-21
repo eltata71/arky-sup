@@ -114,6 +114,18 @@ export interface OfficeTask {
    */
   runId?: string;
   /**
+   * Identidad estable del intento de **esta tarea**, no del encargo.
+   *
+   * El `runId` cambia con cada intento de encargo; este no. Nace una sola vez
+   * —cuando la tarea pasa a `in-progress`— y sobrevive a la reanudación, de
+   * modo que el puerto de producción pueda derivar de él la identidad del
+   * artefacto: si el efecto externo ocurrió pero el checkpoint posterior se
+   * perdió, reintentar con la misma `executionId` encuentra el artefacto que ya
+   * existe en vez de generar un segundo. Una corrección legítima
+   * (`changes-requested`) sí abre otro intento y otra identidad.
+   */
+  executionId?: string;
+  /**
    * Correlation ids for the model invocations this task caused, oldest first.
    *
    * For `produce-artifact` these are the agent's own trace ids, so a task joins
