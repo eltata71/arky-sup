@@ -1,16 +1,18 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-22
-**Rama:** `feat/fase-2-consistencia-reanudacion` · **Base:** `2344cf9`
+**Última actualización:** 2026-09-21
+**Estado integrado:** Fase 2 fusionada en `main` (PR #42) y publicada por CI en el destino canónico `arky-sup`.
+**Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **Fase 2 — Consistencia y gobernanza completada íntegramente.**
-- **Estado de los cambios:** 22 archivos modificados, 403 inserciones, 160 eliminaciones. Pendiente de commit y push.
-- **Siguiente paso exacto:** Commit, push, PR contra `main`, y arranque de Fase 3 desde F3-02.
-- **Verificaciones ejecutadas localmente:**
+- **Última tarea completada:** **Fase 2 — Consistencia y gobernanza fusionada y desplegada.**
+- **Estado de los cambios:** integrado en `main` mediante PR #42; el seguimiento técnico parte del contrato de producción y no de una rama ya eliminada.
+- **Siguiente paso exacto:** iniciar Fase 3 desde F3-02.
+- **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
+- **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
   2. **Contratos pgTAP contra PostgreSQL 16 nativo** — `decide_engagement_atomic` (24/24), `office_engagement_transitions` (6/6).
   3. **Lint, module-boundaries, any-budget** — todos en verde.

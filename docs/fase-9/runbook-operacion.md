@@ -144,7 +144,12 @@ recorre las RPC principales en una transacción que se revierte.
 ## 6. Desplegar
 
 Un solo camino publica producción: **PR contra `main` → los gates de `ci.yml` →
-su trabajo `deploy`**. `vercel.json` apaga el despliegue automático de la
+su trabajo `deploy`**. El destino canónico es el proyecto Vercel `arky-sup`
+(`prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`) y su alias estable es
+`https://arky-sup.vercel.app`; consultar
+`docs/operacion/contrato-despliegue.md`. Tras `vercel pull`, CI comprueba ese
+proyecto y aborta antes de publicar si los secretos resolviesen uno distinto.
+`vercel.json` apaga el despliegue automático de la
 integración Git *sólo* en `main`, así que cada PR conserva su vista previa.
 
 Nunca `vercel --prod` a mano: un artefacto que no se puede reconstruir desde

@@ -129,6 +129,22 @@ describe('continuous deployment gates on the quality suite', () => {
     expect(deploy).toMatch(/Faltan secretos de despliegue[\s\S]*?exit 1/);
   });
 
+  it('verifies the Vercel project resolved from secrets before it builds or deploys', () => {
+    const deploy = ci.slice(ci.indexOf('\n  deploy:'));
+    const pullAt = deploy.indexOf('vercel@latest pull');
+    const targetCheckAt = deploy.indexOf('scripts/deploy/assertDeploymentTarget.mjs');
+    const buildAt = deploy.indexOf('vercel@latest build');
+    const deployAt = deploy.indexOf('vercel@latest deploy');
+
+    expect(pullAt, 'deploy debe materializar el destino Vercel').toBeGreaterThan(-1);
+    expect(buildAt, 'deploy debe construir el artefacto preconstruido').toBeGreaterThan(-1);
+    expect(targetCheckAt, 'deploy debe comprobar el destino resuelto de Vercel').toBeGreaterThan(-1);
+    expect(deployAt, 'deploy debe publicar el artefacto preconstruido').toBeGreaterThan(-1);
+    expect(targetCheckAt, 'la comprobación sucede después de vercel pull').toBeGreaterThan(pullAt);
+    expect(targetCheckAt, 'la comprobación sucede antes de vercel build').toBeLessThan(buildAt);
+    expect(targetCheckAt, 'la comprobación sucede antes de vercel deploy').toBeLessThan(deployAt);
+  });
+
   it('re-scans the artefact it publishes, which the placeholder build cannot cover', () => {
     const deploy = ci.slice(ci.indexOf('\n  deploy:'));
     expect(deploy).toContain('scripts/checkBundleSecrets.mjs .vercel/output/static');
