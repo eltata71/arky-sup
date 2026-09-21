@@ -36,18 +36,30 @@ commit;
 -- postura deny-by-default de ningún proyecto real.
 grant usage on schema public to service_role;
 
-create or replace function public.seed_e2e_profile(p_uid uuid, p_display_name text)
+--
+-- El rol es un parámetro porque los recorridos necesitan **dos** identidades,
+-- no una con dos sombreros: desde F2-03 (opción C, ADR-101) `decide_engagement`
+-- rechaza con `42501` que el autor firme su propio encargo, así que una sola
+-- cuenta no puede recorrer el ciclo de gobierno completo. Un fixture con un
+-- único usuario no probaba la separación de funciones: la eludía.
+--
+-- La sobrecarga anterior de dos argumentos se elimina explícitamente. Dejar las
+-- dos vivas haría ambigua la llamada por PostgREST (`PGRST203`) contra un stack
+-- local ya sembrado — es la misma lección que F2-07.
+drop function if exists public.seed_e2e_profile(uuid, text);
+
+create or replace function public.seed_e2e_profile(p_uid uuid, p_display_name text, p_role text)
 returns void
 language plpgsql security definer set search_path = '' as $$
 begin
   insert into api.user_profiles (id, role, status, display_name)
-  values (p_uid, 'superadmin', 'active', p_display_name)
+  values (p_uid, p_role, 'active', p_display_name)
   on conflict (id) do update
-    set role = 'superadmin', status = 'active', display_name = excluded.display_name;
+    set role = excluded.role, status = 'active', display_name = excluded.display_name;
 end;
 $$;
-revoke all on function public.seed_e2e_profile(uuid, text) from public, anon, authenticated;
-grant execute on function public.seed_e2e_profile(uuid, text) to service_role;
+revoke all on function public.seed_e2e_profile(uuid, text, text) from public, anon, authenticated;
+grant execute on function public.seed_e2e_profile(uuid, text, text) to service_role;
 notify pgrst, 'reload schema';
 
 -- ---------------------------------------------------------- fixtures E2E
@@ -66,6 +78,13 @@ notify pgrst, 'reload schema';
 --
 -- El uid no se puede fijar aquí: lo acuña Auth al crear la cuenta, y cambia en
 -- cada ejecución. Por eso es una función que lo recibe.
+--
+-- Recibe **el del autor**, y eso es la mitad del fixture: la iniciativa, el
+-- proyecto y el encargo pertenecen al arquitecto, y quien firma la decisión del
+-- comité es la otra cuenta que `scripts/seedE2E.mjs` siembra. El servidor lo
+-- exige —`decide_engagement` aborta si `owner_id = auth.uid()`— así que sembrar
+-- las dos identidades no es realismo decorativo: sin ellas el recorrido del
+-- comité no puede existir.
 create or replace function public.seed_e2e_fixtures(p_uid uuid)
 returns void
 language plpgsql security definer set search_path = '' as $$
