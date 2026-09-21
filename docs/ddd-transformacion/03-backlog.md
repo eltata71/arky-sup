@@ -279,7 +279,52 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Riesgo.** El gate no puede empezar en rojo. El presupuesto registra lo que hay.
 
 ### F3-02 · Ampliar el alcance del verificador
-- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F3-01
+- **Prioridad** P1 · **Tamaño** M · **Estado** `completada` · **Depende de** F3-01
+- **Problema.** ADR-104 arregló *qué* pregunta hace el gate. Sobre qué grafo la
+  hacía no se revisó, y al grafo le faltaban dos cosas: `import('…')` —21
+  dependencias que la expresión regular no leía— y los ficheros de la raíz, que
+  no son carpeta de nadie y **nunca se abrieron**. `types.ts` lo importan 25 de
+  los 34 módulos.
+- **Cambios.** `DYNAMIC_IMPORT_RE` en `localImports`; `modules.json` admite
+  módulos declarados por fichero y declara cinco (`app`, `types.ts`,
+  `constants.ts`, `utils.ts`, `types/`); presupuestos remedidos con la razón
+  escrita al lado de cada uno.
+- **Evidencia.** `__tests__/scripts/moduleBoundaries.test.ts` pasa de 36 a **42
+  pruebas**, cuatro de ellas sobre el alcance mismo —un `import()` diferido, uno
+  en posición de tipo, la atribución de un fichero de la raíz y la de un import
+  que lo nombra sin extensión— contra dependencias reales del árbol, no contra
+  un fixture.
+- **Lo que se ve al mirar.** 4 → **11** ciclos, 3+9 → **3+27** módulos en los
+  componentes, 0 → **7** pares ascendentes, 59 → **68** pares con import
+  profundo. Ninguna subida es código nuevo. ADR-105.
+- **Riesgo aceptado.** La regla monótona es sobre el código, no sobre la vista;
+  se registra lo que se acaba de ver, fechado, y a partir de ahí sólo baja.
+
+### F3-07 · Deshacer el reexportador `types.ts`
+- **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F3-02
+- **Problema.** Seis de los once ciclos y el salto del componente de dominio de
+  nueve a veintisiete módulos salen de un fichero: `types.ts` reexporta
+  agregados desde el contexto de cada uno, y lo importan 25 de los 34 módulos.
+  Arrastra dentro del componente a `lib` y `utils`, que son la capa de fundación.
+- **Cambios.** Cada consumidor importa del contexto dueño en vez del
+  reexportador; lo que no tiene dueño baja a una hoja (`lib/`). Es la regla que
+  ya está en CLAUDE.md y que la Ola 2 aplicó tres veces.
+- **Aceptación.** `types.ts` sale del componente de dominio y con él `lib` y
+  `utils`; ningún par ascendente sale ya de la raíz; el presupuesto de descarga
+  no empeora.
+- **Por qué antes que la fase 5.** No toca comportamiento: mueve declaraciones.
+  El núcleo de nueve módulos cuesta estrangular un motor de 5 400 líneas.
+
+### F3-08 · `utils.ts` no es un fichero de utilidades
+- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F3-02
+- **Problema.** `buildGlobalPrompt`, `buildBasePrompt`, `buildArtifactsContext` y
+  `buildSiblingDiagramsPromptBlock` son composición de prompts —capa de IA—
+  escrita en la raíz del repositorio, y por eso el fichero importa `services/ai`
+  y `services/memory`: dos de los siete pares ascendentes y el ciclo
+  `services/ai <-> utils.ts`.
+- **Aceptación.** La composición de prompts vive en `services/ai`; lo que quede
+  en `utils.ts` no alcanza ningún módulo de dominio.
+- **Riesgo.** Lo importan diez módulos: es una migración, no un renombrado.
 
 ### F3-03 · Declarar dependencias permitidas entre contextos
 - **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F3-01

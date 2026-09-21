@@ -403,7 +403,7 @@ importing from `services/` in seven files. None of it broke a rule, because
 there was no rule; folders enforce nothing.
 
 `modules.json` now declares the modules, their layer and their public API, and
-`npm run check:module-boundaries` enforces five things on every push:
+`npm run check:module-boundaries` enforces six things on every push:
 
 | Rule | What it refuses |
 |---|---|
@@ -414,7 +414,19 @@ there was no rule; folders enforce nothing.
 | **UI fan-out** | a screen under `components/`/`pages/` importing more than **two** service modules |
 | **Loose root files** | a new file dropped at the root of `services/`, which belongs to no module |
 
-The fourth is Wave 4's. A component that imports one service is using a
+**Las seis se aplican sobre un grafo, y de qué está hecho ese grafo es la mitad
+de la garantía** (F3-02, ADR-105). Se construye leyendo `import`,
+`export … from`, `import type` **e `import('…')`** —en sus dos formas, la
+diferida y la de posición de tipo—, sobre todo `.ts`/`.tsx` de las carpetas
+declaradas **y** sobre los ficheros de la raíz que `modules.json` nombra uno a
+uno: `types.ts`, `constants.ts`, `utils.ts`, `App.tsx`, `index.tsx`. Faltaban
+las dos cosas, y las dos daban el mismo resultado —un gate en verde sobre 27
+módulos mutuamente alcanzables—, que es el modo de fallo de ADR-104 un nivel más
+abajo: allí el gate medía una propiedad más débil que la que decía medir; aquí,
+un árbol más pequeño. La cabecera del script declara qué deja fuera, para que la
+próxima ampliación empiece por leerlo.
+
+**UI fan-out** is Wave 4's. A component that imports one service is using a
 capability; one that imports eight *is* the application layer for that screen,
 written in a file whose job is rendering — which is how `ArtifactCanvas` came to
 decide compilation, validation, quality, review and export policy between two
@@ -446,7 +458,7 @@ Moving orchestration out of a screen moves its imports into the domain layer:
 `services/artifacts -> services/diagram` rose 10 → 14. What matters is where
 the decisions live, and the UI's own total fell from 168 to 157.
 
-The fifth is Ola 1's, and `SERVICES_ROOT_BUDGET` is its number. The root of
+**Loose root files** is Ola 1's, and `SERVICES_ROOT_BUDGET` is its number. The root of
 `services/` is where a file lands when nobody decides which context it belongs
 to: it held **20 files and 9 923 lines**, and was the single largest cause of
 the census — nine of the fourteen cycles, all three upward pairs and sixty deep
@@ -472,7 +484,7 @@ removing something.
 `ai ↔ diagram`. `__tests__/scripts/moduleBoundaries.test.ts` asserts each by
 name, including that it is not quietly re-added to `ALLOWED_CYCLES`.
 
-**And the foundation layer no longer imports the domain at all — zero, not a
+**And `lib/` and `utils/` no longer import the domain at all — zero, not a
 recorded few.** The same test asserts that too. It was three pairs and five
 imports, and two of them came out of `lib/validation/`, a re-export shim that
 reached up into `services/` to republish domain types under `lib/` names and
@@ -481,6 +493,16 @@ bringing the pipeline vocabulary, the artifact classification, the template
 governance and five export declarations down into `lib/artifacts/`, took the
 number to zero. The rule that did it every time is the one already written
 above: a contract with no behaviour moves down to a leaf.
+
+**Pero la capa de fundación son dos carpetas y dos ficheros de la raíz, y ésos
+sí suben — 7 pares, 9 imports** (F3-02, ADR-105). La frase de arriba decía «la
+capa de fundación» y era cierta sólo de las carpetas, porque el gate no abría
+`types.ts` ni `utils.ts`. `types.ts` es exactamente el mismo defecto que
+`lib/validation/` a mayor escala: un reexportador que sube a cinco contextos de
+dominio, sólo que a éste sí lo importa medio repositorio. `utils.ts` sube a
+`services/ai` y `services/memory` porque lo que contiene es composición de
+prompts. La regla que los arregla vuelve a ser la misma, y por eso los dos
+trabajos están en el backlog como F3-07 y F3-08.
 
 Two patterns did the breaking, and they are the ones to reach for next time:
 
@@ -536,7 +558,7 @@ bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, adviso
 | Check | Result |
 |---|---|
 | `npm run typecheck` | clean |
-| `npm run check:module-boundaries` | **4 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 9 módulos)**. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar; **0 upward pairs**; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
+| `npm run check:module-boundaries` | **11 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**, medidos el 2026-09-21 con el alcance completo (F3-02, ADR-105) — antes eran 4 y 3+9, sobre un grafo al que le faltaban `import('…')` y los ficheros de la raíz. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y él importa seis, así que lo cierra entero y arrastra dentro a `lib` y `utils`. **7 upward pairs** (9 imports), todos desde `types.ts` y `utils.ts` — `lib/` y `utils/` siguen en cero, y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
 | `npm run check:module-size` | clean, y `services/geminiService.ts` baja en las dos tablas: 5 499 → 5 413 líneas y 276 306 → 272 294 bytes. Bajó **mientras** absorbía el enrutado: las dos declaraciones de herramienta en dialecto de Google y la traducción a `AIRequest` salieron del monolito |
 | `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
 | `npm run check:any-budget` | 23 `any` types, budget 23 (eran 38) |

@@ -15,6 +15,22 @@
  * Run with `npm run check:module-boundaries`. Pass `--report` to print the
  * current census in the shape this file records it, which is how you update
  * the budget after removing something.
+ *
+ * **Qué mira, y por qué importa que lo diga** (F3-02, ADR-105). Un verificador
+ * de fronteras informa de un grafo, y un grafo incompleto no se ve incompleto:
+ * se ve sano. Éste midió durante toda la transformación un árbol sin dos de
+ * sus nudos y una sintaxis sin leer, y el resultado fue un gate en verde sobre
+ * veintisiete módulos mutuamente alcanzables. Desde F3-02 lee:
+ *
+ *   - `import`, `export … from`, `import type` **y** `import('…')`, en sus dos
+ *     formas —la diferida de ejecución y la de posición de tipo—;
+ *   - todo fichero `.ts`/`.tsx` bajo las carpetas declaradas **y** los ficheros
+ *     de la raíz que `modules.json` declara uno a uno (`types.ts`,
+ *     `constants.ts`, `utils.ts`, `App.tsx`, `index.tsx`).
+ *
+ * Lo que sigue fuera está fuera a propósito y es comprobable: pruebas,
+ * declaraciones `.d.ts`, `e2e/`, `supabase/`, `scripts/` y la configuración de
+ * build. Ninguno participa del grafo que la aplicación ejecuta.
  */
 
 import { readFileSync } from 'node:fs';
@@ -37,12 +53,31 @@ const MANIFEST = JSON.parse(readFileSync('modules.json', 'utf8'));
  * `services (raíz)` — the loose files that belong to no module — and the two
  * UI pairs, which are a different problem: `components <-> context` is React's
  * ordinary shape, not a modularity defect.
+ *
+ * **Siete entradas nuevas el 2026-09-21, y ninguna es código nuevo** (F3-02,
+ * ADR-105). Seis pasan por `types.ts` y una por `utils.ts`: dos ficheros de la
+ * raíz del repositorio que este gate no abrió nunca, porque sólo miraba
+ * carpetas. Estaban ahí desde antes de que existiera el gate. Subir un número
+ * aquí sigue estando prohibido; lo que cambió es cuánto se ve, y ADR-104 ya
+ * sentó el precedente: un gate no puede empezar en rojo, y lo que mide de más
+ * se registra el día que aprende a medirlo.
+ *
+ * Las cuatro que la prueba afirma por nombre —`export ↔ quality`,
+ * `artifacts ↔ export`, `agent ↔ architectureOffice`, `ai ↔ diagram`— siguen
+ * rotas, y ninguna de las siete nuevas las reintroduce.
  */
 export const ALLOWED_CYCLES = [
   'components <-> context',
   'components <-> hooks',
   'context <-> hooks',
+  'lib <-> types.ts',
   'services (raíz) <-> services/ai',
+  'services/ai <-> utils.ts',
+  'services/architectureProjects <-> types.ts',
+  'services/artifacts <-> types.ts',
+  'services/chat <-> types.ts',
+  'services/presentation <-> types.ts',
+  'services/review <-> types.ts',
 ];
 
 /**
@@ -66,30 +101,89 @@ export const ALLOWED_CYCLES = [
  * que lo cierra es `services/ai -> services (raíz)` — los 12 imports de
  * `services/geminiService` desde dentro de la capa que debería ocultarlo.
  * Ver `docs/ddd-transformacion/adr/ADR-104-gate-transitivo.md`.
+ *
+ * **De nueve módulos a veintisiete el 2026-09-21, sin que se escribiera una
+ * línea** (F3-02, ADR-105). La lección de ADR-104, repetida un nivel más
+ * arriba: allí el gate estaba verde porque medía ciclos de longitud 2; aquí
+ * estaba verde porque medía carpetas, y `types.ts` no es una carpeta. Lo
+ * importan 25 de los 34 módulos y él importa seis, así que cerraba el grafo
+ * entero — incluidos `lib` y `utils`, que la capa de fundación no debería
+ * poder alcanzar de vuelta.
+ *
+ * El núcleo de nueve sigue dentro y sigue siendo el objetivo de la fase 5. Lo
+ * que el componente de veintisiete añade es un segundo objetivo, más barato y
+ * anterior: **el que sale al encoger `types.ts`**. Un reexportador es un nudo
+ * que se deshace moviendo declaraciones a sus contextos, no reescribiendo
+ * motores.
  */
 export const ALLOWED_SCCS = [
-  ['components', 'context', 'hooks'],
   [
+    'components',
+    'context',
+    'hooks',
+  ],
+  [
+    'constants.ts',
+    'lib',
     'services (raíz)',
+    'services/adapters',
     'services/agent',
     'services/ai',
     'services/architectureKnowledgeGraph',
     'services/architectureOffice',
     'services/architectureProjects',
+    'services/artifactCompiler',
     'services/artifacts',
+    'services/businessInitiatives',
     'services/chat',
+    'services/contextGraph',
+    'services/diagram',
+    'services/export',
+    'services/identity',
+    'services/memory',
+    'services/observability',
+    'services/persistence',
+    'services/presentation',
     'services/publicationPipeline',
+    'services/quality',
+    'services/review',
+    'types.ts',
+    'utils',
+    'utils.ts',
   ],
 ];
 
 /**
- * Imports that point upward through the layers, measured 2026-09-01.
+ * Imports that point upward through the layers, measured 2026-09-01,
+ * re-medidos con el alcance completo el 2026-09-21.
  *
  * The count is per `source -> target` pair. `lib` is documented in CLAUDE.md as
  * the layer with no dependencies and had seven files importing from
  * `services/`; those are the ones this number is here to retire.
+ *
+ * **`lib/` y `utils/` siguen en cero, y eso se conserva**: las siete entradas
+ * de hoy salen de dos ficheros de la raíz que el gate no abría (F3-02,
+ * ADR-105). Son fundación por lo que hay debajo de ellos —`lib` los importa,
+ * así que están por debajo de `lib`— y suben a cinco contextos de dominio:
+ *
+ *   - `types.ts` es el núcleo compartido y reexporta agregados desde el
+ *     contexto de cada uno. La regla que lo arregla ya está escrita en
+ *     CLAUDE.md y se aplicó tres veces en la Ola 2: un contrato sin
+ *     comportamiento baja a una hoja. Aquí sobra con que cada consumidor
+ *     importe del contexto dueño en vez de del reexportador.
+ *   - `utils.ts` no es un fichero de utilidades: `buildGlobalPrompt`,
+ *     `buildBasePrompt` y `buildArtifactsContext` son composición de prompts,
+ *     es decir capa de IA escrita en la raíz del repositorio. Por eso importa
+ *     `services/ai` y `services/memory`.
  */
 export const LAYER_VIOLATION_BUDGET = {
+  'types.ts -> services/architectureProjects': 1,
+  'types.ts -> services/artifacts': 4,
+  'types.ts -> services/chat': 1,
+  'types.ts -> services/presentation': 1,
+  'types.ts -> services/review': 1,
+  'utils.ts -> services/ai': 1,
+  'utils.ts -> services/memory': 1,
 };
 
 /**
@@ -99,6 +193,12 @@ export const LAYER_VIOLATION_BUDGET = {
  * A module with a barrel and forty imports around it has a public API in name
  * only. Lower an entry when you route a caller through the barrel; a pair not
  * listed here is refused outright, which is what keeps new code honest.
+ *
+ * Nueve pares nuevos y seis subidas el 2026-09-21, todos por alcance y ninguno
+ * por código (F3-02, ADR-105). Tres los escondía la sintaxis —`import()` no lo
+ * leía el verificador, y `context -> services/ai` es justo el import diferido
+ * con el que `OfficeContext` mantiene el motor fuera del arranque—; seis los
+ * escondía la raíz del repositorio, que no es carpeta de nadie.
  */
 /*
  * Two entries rose on 2026-09-02 and the reason is recorded here because the
@@ -162,7 +262,8 @@ export const DEEP_IMPORT_BUDGET = {
   'components -> services/quality': 8,
   'components -> services/review': 1,
   'context -> services/agent': 1,
-  'context -> services/architectureOffice': 7,
+  'context -> services/ai': 1,
+  'context -> services/architectureOffice': 10,
   'context -> services/architectureProjects': 2,
   'context -> services/artifacts': 2,
   'context -> services/chat': 1,
@@ -181,20 +282,6 @@ export const DEEP_IMPORT_BUDGET = {
   'services (raíz) -> services/diagram': 6,
   'services (raíz) -> services/presentation': 2,
   'services (raíz) -> services/quality': 1,
-  /**
-   * The boot-path exception, and the only one recorded deliberately.
-   *
-   * `projectWrites` enters `services/chat` by file path rather than through its
-   * barrel, because `AppContext` reaches it during boot and that barrel exports
-   * `chatCompactor`, which value-imports the `services/ai` barrel, which reaches
-   * `services/geminiService`. Entering through the front door cost **156 KB gz
-   * of eager payload** — the entire AI layer and the 5 400-line engine
-   * downloaded before the login screen rendered, for one Firestore repository
-   * object. `check:bundle-budget` is what tells this case from an ordinary deep
-   * import, exactly as CLAUDE.md says: a barrel from lazy code, a file path from
-   * boot-path code.
-   */
-  'services/architectureProjects -> services/chat': 1,
   'services/agent -> services/diagram': 1,
   'services/agent -> services/memory': 3,
   'services/agent -> services/quality': 1,
@@ -204,11 +291,14 @@ export const DEEP_IMPORT_BUDGET = {
   'services/architectureOffice -> services/ai': 2,
   'services/architectureOffice -> services/diagram': 1,
   'services/architectureOffice -> services/publicationPipeline': 1,
+  'services/architectureProjects -> services/architectureKnowledgeGraph': 1,
   'services/architectureProjects -> services/architectureOffice': 2,
+  'services/architectureProjects -> services/chat': 1,
   'services/architectureProjects -> services/memory': 2,
-  'services/architectureProjects -> services/publicationPipeline': 3,
+  'services/architectureProjects -> services/publicationPipeline': 4,
   'services/artifactCompiler -> services/quality': 3,
   'services/artifacts -> services/ai': 1,
+  'services/artifacts -> services/artifactCompiler': 1,
   'services/artifacts -> services/diagram': 14,
   'services/artifacts -> services/export': 3,
   'services/artifacts -> services/quality': 5,
@@ -217,10 +307,16 @@ export const DEEP_IMPORT_BUDGET = {
   'services/export -> services/quality': 11,
   'services/portfolioGraph -> services/architectureOffice': 3,
   'services/portfolioGraph -> services/businessInitiatives': 2,
-  'services/publicationPipeline -> services/architectureKnowledgeGraph': 5,
+  'services/publicationPipeline -> services/architectureKnowledgeGraph': 7,
   'services/publicationPipeline -> services/artifactCompiler': 1,
   'services/publicationPipeline -> services/export': 7,
   'services/quality -> services/diagram': 1,
+  'types.ts -> services/architectureProjects': 1,
+  'types.ts -> services/artifacts': 4,
+  'types.ts -> services/chat': 1,
+  'types.ts -> services/review': 1,
+  'utils.ts -> services/ai': 1,
+  'utils.ts -> services/memory': 1,
 };
 
 /**
@@ -287,15 +383,38 @@ export const SERVICES_ROOT_BUDGET = 1;
 
 /* ------------------------------------------------------------ the analysis */
 
-const MODULES = MANIFEST.modules.map((m) => ({ ...m, prefix: `${m.path}/` }));
+const MODULES = MANIFEST.modules.map((m) => ({ ...m, prefix: m.path ? `${m.path}/` : null }));
 // Longest path first so `services/diagram` wins over the `services` catch-all.
-const BY_SPECIFICITY = [...MODULES].sort((a, b) => b.path.length - a.path.length);
+const BY_SPECIFICITY = [...MODULES]
+  .filter((m) => m.prefix)
+  .sort((a, b) => b.path.length - a.path.length);
 const LAYER_RANK = Object.fromEntries(MANIFEST.layers.map((l, i) => [l, i]));
 
-const SOURCE_ROOTS = ['api', 'components', 'context', 'hooks', 'lib', 'pages', 'services', 'utils'];
+/**
+ * Módulos declarados por fichero, no por carpeta.
+ *
+ * `types.ts`, `constants.ts`, `utils.ts` y el par `App.tsx`/`index.tsx` viven
+ * en la raíz del repositorio, así que no hay prefijo que los capture y durante
+ * toda la vida del gate **no se abrieron**. `types.ts` lo importan 25 de los 34
+ * módulos, y él importa seis: era el nudo más grande del grafo, medido por un
+ * verificador que no lo miraba. Ver ADR-105.
+ *
+ * Se indexan con y sin extensión porque un import los nombra sin ella
+ * (`from '../types'`) y `git ls-files` con ella.
+ */
+const FILE_MODULES = new Map();
+for (const mod of MODULES) {
+  for (const file of mod.files ?? []) {
+    FILE_MODULES.set(file, mod);
+    FILE_MODULES.set(file.replace(/\.tsx?$/, ''), mod);
+  }
+}
+
+const SOURCE_ROOTS = ['api', 'components', 'context', 'hooks', 'lib', 'pages', 'services', 'types', 'utils'];
 
 export function sourceFiles() {
-  const pathspec = SOURCE_ROOTS.map((root) => `"${root}"`).join(' ');
+  const declaredFiles = MODULES.flatMap((m) => m.files ?? []);
+  const pathspec = [...SOURCE_ROOTS, ...declaredFiles].map((entry) => `"${entry}"`).join(' ');
   return execSync(`git ls-files --cached --others --exclude-standard ${pathspec}`)
     .toString()
     .split('\n')
@@ -305,21 +424,41 @@ export function sourceFiles() {
     .filter((file) => !/\.(test|spec)\.tsx?$/.test(file) && !file.includes('__tests__/'));
 }
 
-export const moduleOf = (file) => BY_SPECIFICITY.find((m) => file.startsWith(m.prefix));
+export const moduleOf = (file) =>
+  FILE_MODULES.get(file) ?? BY_SPECIFICITY.find((m) => file.startsWith(m.prefix));
 
 /** A screen: a rendered file under `components/` or `pages/`. */
 const isScreen = (file) => /\.tsx$/.test(file) && (file.startsWith('components/') || file.startsWith('pages/'));
 
 const IMPORT_RE = /(?:^|[\s;}])(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\sfrom\s+)?['"]([^'"]+)['"]/g;
 
+/**
+ * `import('x')`, en sus dos formas, que la expresión de arriba no ve.
+ *
+ * Son dependencias en los dos casos y por razones distintas. `await import()`
+ * es una dependencia de ejecución que además decide en qué chunk acaba el
+ * código — y este repositorio la usa a propósito: `OfficeContext` carga así la
+ * capa de IA para mantenerla fuera del arranque. `import('x').T` en posición de
+ * tipo no existe en ejecución, pero acopla igual que un `import type`, que el
+ * gate ya cuenta desde el primer día. Medir uno y no el otro sería decidir que
+ * la misma dependencia cuenta según cómo se escribió.
+ *
+ * No se distinguen aquí a propósito: la regla que aplican —ciclo, capa, API
+ * pública— es la misma para las dos, y una excepción por sintaxis es la puerta
+ * por la que se cuela la siguiente.
+ */
+const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+
 /** Every relative or `@/`-aliased specifier in the file, as repo-relative paths. */
 function localImports(file) {
   const source = readFileSync(file, 'utf8');
   const out = [];
-  for (const match of source.matchAll(IMPORT_RE)) {
-    const spec = match[1];
-    if (spec.startsWith('.')) out.push(normalize(join(dirname(file), spec)));
-    else if (spec.startsWith('@/')) out.push(normalize(spec.slice(2)));
+  for (const pattern of [IMPORT_RE, DYNAMIC_IMPORT_RE]) {
+    for (const match of source.matchAll(pattern)) {
+      const spec = match[1];
+      if (spec.startsWith('.')) out.push(normalize(join(dirname(file), spec)));
+      else if (spec.startsWith('@/')) out.push(normalize(spec.slice(2)));
+    }
   }
   return out;
 }
@@ -332,6 +471,7 @@ function localImports(file) {
  */
 function entersThroughApi(target, mod) {
   if (!mod.api) return true;
+  if (mod.files) return true;
   const api = mod.api.replace(/\.tsx?$/, '');
   return target === mod.path || target === api;
 }
@@ -427,7 +567,8 @@ export function analyse() {
     if (!from) continue;
 
     for (const target of localImports(file)) {
-      const to = moduleOf(target.endsWith('/') ? target : `${target}/`)
+      const to = FILE_MODULES.get(target)
+        ?? BY_SPECIFICITY.find((m) => `${target}/`.startsWith(m.prefix))
         ?? BY_SPECIFICITY.find((m) => target === m.path);
       if (!to || to.name === from.name) continue;
 

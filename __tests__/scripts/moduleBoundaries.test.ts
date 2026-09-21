@@ -48,6 +48,49 @@ describe('the gate measures something', () => {
   });
 });
 
+describe('el verificador ve lo que dice ver', () => {
+  // F3-02 (ADR-105). Un gate de fronteras informa de un grafo, y un grafo
+  // incompleto no se ve incompleto: se ve sano. Éste tenía dos puntos ciegos, y
+  // los dos se comprueban aquí contra dependencias reales del repositorio —no
+  // contra un fixture— porque lo que se afirma es justamente que el escáner
+  // alcanza el árbol de verdad.
+
+  it('lee un `import()` diferido, que es como el arranque evita la capa de IA', () => {
+    // `context/OfficeContext.tsx` carga `services/ai/generation/assistantService`
+    // con `await import(...)` y por ningún otro sitio. Si el escáner sólo mirara
+    // los imports estáticos, esta arista no existiría — y durante toda la
+    // transformación no existió.
+    const { edges, deepImports } = analyse();
+    expect(edges.has('context -> services/ai')).toBe(true);
+    expect(deepImports.get('context -> services/ai')).toBe(1);
+  });
+
+  it('lee un `import()` en posición de tipo, que acopla igual', () => {
+    // `services/artifacts/ArtifactTypes.ts` nombra `ArtifactCompilerTypes` con
+    // `import('...').T`. No existe en ejecución y acopla exactamente como el
+    // `import type` que el gate cuenta desde el primer día; medir uno y no el
+    // otro sería decidir que la dependencia cuenta según cómo se escribió.
+    const { deepImports } = analyse();
+    expect(deepImports.get('services/artifacts -> services/artifactCompiler')).toBe(1);
+  });
+
+  it('abre los ficheros de la raíz, que no son carpeta de nadie', () => {
+    expect(moduleOf('types.ts')?.name).toBe('types.ts');
+    expect(moduleOf('utils.ts')?.name).toBe('utils.ts');
+    expect(moduleOf('App.tsx')?.name).toBe('app');
+    // Y el de la raíz no le roba los ficheros a la carpeta del mismo nombre.
+    expect(moduleOf('utils/chatHistory.ts')?.name).toBe('utils');
+    expect(sourceFiles()).toContain('types.ts');
+    expect(sourceFiles()).toContain('utils.ts');
+  });
+
+  it('atribuye un import que nombra un fichero de la raíz sin extensión', () => {
+    // `from '../types'`, que es como lo escriben los 25 módulos que lo importan.
+    const { edges } = analyse();
+    expect(edges.has('services/artifacts -> types.ts')).toBe(true);
+  });
+});
+
 describe('the boundaries hold today', () => {
   it('reports no new cycle, upward import, deep import or UI fan-out', () => {
     const { failures } = scan();
@@ -100,11 +143,8 @@ describe('the budgets are records, not aspirations', () => {
     }
   });
 
-  it('keeps the foundation layer out of the domain, with nothing recorded', () => {
+  it('mantiene `lib/` y `utils/` fuera del dominio — cero, y sigue siendo cero', () => {
     const { layerViolations } = analyse();
-    const upward = [...layerViolations.keys()];
-    // Cero, y este test existe para que siga siéndolo.
-    //
     // Eran tres pares y cinco imports. Dos de ellos salían de `lib/validation/`,
     // un reexportador que subía a `services/` para republicar tipos bajo nombres
     // de `lib/` — y al que no importaba ningún fichero del repositorio, ni
@@ -117,9 +157,36 @@ describe('the budgets are records, not aspirations', () => {
     // gobernanza de plantillas y las cinco declaraciones de exportación que
     // faltaban, y los servicios las importan hacia abajo como todo el mundo.
     //
-    // Un import ascendente nuevo falla aquí en vez de entrar en una lista que
-    // crece.
-    expect(upward).toEqual([]);
+    // Esa mitad se conserva y se afirma por separado de la que F3-02 destapó:
+    // mezclarlas habría dejado un test que pasa de cero a siete y no dice cuál
+    // de las dos cosas cambió.
+    const fromDirectories = [...layerViolations.keys()]
+      .filter((pair) => pair.startsWith('lib -> ') || pair.startsWith('utils -> '));
+    expect(fromDirectories).toEqual([]);
+  });
+
+  it('registra los imports ascendentes de la raíz, y sólo ésos', () => {
+    // Los siete que F3-02 hizo visibles, nombrados uno a uno (ADR-105).
+    //
+    // No son código nuevo: son dos ficheros de la raíz del repositorio que el
+    // verificador no abría porque sólo miraba carpetas. `types.ts` es el núcleo
+    // compartido —lo importan 25 de los 34 módulos— y reexporta agregados desde
+    // el contexto de cada uno; `utils.ts` tiene nombre de utilidad y contiene
+    // composición de prompts, que es capa de IA.
+    //
+    // Se nombran en vez de contarse para que el día que uno baje, el test diga
+    // cuál. Y la lista no puede crecer: un par ascendente nuevo no entra aquí,
+    // falla el gate.
+    const { layerViolations } = analyse();
+    expect([...layerViolations.keys()].sort()).toEqual([
+      'types.ts -> services/architectureProjects',
+      'types.ts -> services/artifacts',
+      'types.ts -> services/chat',
+      'types.ts -> services/presentation',
+      'types.ts -> services/review',
+      'utils.ts -> services/ai',
+      'utils.ts -> services/memory',
+    ]);
   });
 });
 
@@ -216,16 +283,33 @@ describe('the strongly connected components are a budget that only falls', () =>
       .toEqual(ALLOWED_SCCS.map((component: string[]) => [...component].sort()));
   });
 
-  it('still carries the nine-module domain component — the target of phase 5', () => {
-    // Named rather than counted, so the day it shrinks the test says which
-    // module left. `services/ai -> services (raíz)` is the edge that closes it:
-    // 12 imports of `services/geminiService` from inside the layer built to
-    // hide it.
+  it('sigue llevando dentro el núcleo de nueve — el objetivo de la fase 5', () => {
+    // Nombrado en vez de contado, para que el día que encoja el test diga qué
+    // módulo salió. `services/ai -> services (raíz)` es la arista que lo cierra:
+    // 16 imports de `services/geminiService` desde dentro de la capa construida
+    // para ocultarlo.
     const { sccs } = analyse();
     const domain = sccs.find((component: string[]) => component.includes('services/ai'));
     expect(domain).toContain('services (raíz)');
     expect(domain).toContain('services/architectureOffice');
-    expect(domain!.length).toBeLessThanOrEqual(9);
+    expect(domain).toContain('services/architectureProjects');
+  });
+
+  it('nombra a `types.ts` dentro del componente, que es lo que lo llevó a 27', () => {
+    // De nueve módulos a veintisiete el 2026-09-21 sin escribir una línea
+    // (F3-02, ADR-105): el verificador aprendió a abrir los ficheros de la raíz.
+    // `types.ts` los importan 25 de los 34 módulos y él importa seis, así que
+    // cierra el grafo entero — y arrastra dentro a `lib` y `utils`, que son la
+    // capa de fundación y no deberían poder volver.
+    //
+    // Esto se afirma aparte del tamaño porque son dos trabajos distintos:
+    // deshacer el reexportador es mover declaraciones, y romper el núcleo de
+    // nueve es estrangular un motor de 5 400 líneas. El primero es el barato.
+    const { sccs } = analyse();
+    const domain = sccs.find((component: string[]) => component.includes('services/ai'));
+    expect(domain).toContain('types.ts');
+    expect(domain).toContain('lib');
+    expect(domain!.length).toBeLessThanOrEqual(27);
   });
 
   it('keeps the UI component at three — React ordinaria, no un defecto', () => {
