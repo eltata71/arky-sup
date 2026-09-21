@@ -37,29 +37,12 @@ import type {
 import { refuseUnconfirmedAction } from './agentConfirmationGate';
 import { logAgentEvent } from './agentLogger';
 import { matchTemplateFromInstruction, buildCustomTemplate } from './templateMatcher';
+import { reuseDeterministicArtifact } from './deterministicArtifactReuse';
+import type { AgentArtifactStore } from './agentExecutorContracts';
+export type { AgentArtifactStore } from './agentExecutorContracts';
 
 /** Callback fired as the action moves through phases. */
 export type AgentPhaseListener = (phase: AgentExecutionPhase, message: string) => void;
-
-/** Subset of `AppContext` we need — passed in rather than imported to keep this layer pure. */
-export interface AgentArtifactStore {
-  /**
-   * Brand-new artifact (no prior version). Only required when the caller
-   * wants to support `artifact.create`. For backwards compatibility the
-   * existing artifact assistant flows (which never create) can leave it
-   * undefined; the executor surfaces a clear error in that case.
-   */
-  createArtifact?: (
-    projectId: string,
-    artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>,
-  ) => Artifact;
-  createArtifactVersion: (
-    projectId: string,
-    versionGroupId: string,
-    artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>,
-  ) => Artifact;
-  updateArtifact: (projectId: string, artifactId: string, updates: Partial<Artifact>) => void;
-}
 
 /**
  * Persistence handlers for the three memory scopes. Mirrors the existing
@@ -560,6 +543,10 @@ async function executeArtifactCreate(
     };
   }
 
+  const deterministicId = plan.intent.createHint?.deterministicArtifactId ?? null;
+  const reused = reuseDeterministicArtifact(project, deterministicId, traceId, result, emit);
+  if (reused) return reused;
+
   emit('preparing', 'Resolviendo plantilla del catálogo…');
 
   const hintName = plan.intent.createHint?.templateName ?? null;
@@ -718,7 +705,7 @@ async function executeArtifactCreate(
       keyConcepts: baseTemplate.keyConcepts,
       representation: baseTemplate.representation,
       content: finalContent,
-    });
+    }, deterministicId ?? undefined);
     // Defensive: verify the store contract. If the persistence path is
     // broken (offline Firestore, optimistic update rolled back, …) we
     // surface a clean failure instead of silently telling the user the

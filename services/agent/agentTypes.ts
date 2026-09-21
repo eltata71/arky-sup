@@ -99,6 +99,14 @@ export interface AgentIntent {
     objective?: string;
     /** Confidence 0..1 of the template match. */
     matchConfidence?: number;
+    /**
+     * Identidad determinista del artefacto a crear, cuando el llamante la
+     * aporta. La Oficina la deriva de `executionId`: si el efecto ya ocurrió y
+     * el checkpoint se perdió, recrear con el mismo id **encuentra** el
+     * artefacto existente en vez de crear un segundo. `null`/ausente conserva
+     * la identidad aleatoria de fábrica — el resto de llamantes no cambia.
+     */
+    deterministicArtifactId?: string | null;
   };
   /**
    * Candidate artifact ids when the user referenced an artifact by name/type

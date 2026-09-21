@@ -56,7 +56,7 @@ export interface AppContextType {
   ensureProjectArtifacts: (id: string) => Promise<void>;
   updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'artifacts'>>) => void;
   deleteProject: (id: string) => void;
-  createArtifact: (projectId: string, artifact: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => Artifact;
+  createArtifact: (projectId: string, artifact: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>, deterministicId?: string) => Artifact;
   createArtifactVersion: (projectId: string, versionGroupId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => Artifact;
   updateArtifact: (projectId: string, artifactId: string, updates: Partial<Artifact>) => void;
   deleteArtifact: (projectId: string, artifactId: string) => void;

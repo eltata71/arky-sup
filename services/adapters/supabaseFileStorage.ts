@@ -21,15 +21,14 @@
  *   2. **Mover** el objeto a su nombre definitivo, `{id}.{ext}`. `move`
  *      conserva la fila —y con ella el id—, así que renombrar no rompe el
  *      vínculo.
- *   3. **Registrar** la metadata con `api.register_file_object`, que vuelve a
- *      comprobar ruta, propietario, cubo, MIME, tamaño y checksum contra el
- *      objeto real, y deja el registro en `pending` hasta que
- *      `api.mark_file_object_ready` lo confirma.
+ *   3. **Registrar y confirmar** la metadata con
+ *      `api.register_file_object`, que vuelve a comprobar ruta, propietario,
+ *      cubo, MIME, tamaño y checksum contra el objeto real. La propia inserción
+ *      validada lo deja en `ready`; el navegador no llama una RPC reservada a
+ *      `service_role`.
  *
- * El estado `pending` es la mitad que hace el diseño honesto: un binario subido
- * cuyo registro no llegó a `ready` **no se puede leer** (`can_read_storage_object`
- * lo rechaza), así que un fallo a medio camino deja un objeto inaccesible en vez
- * de un documento que existe para el almacenamiento y no para el producto.
+ * Si el registro falla, el objeto se retira. Nunca se devuelve al producto un
+ * archivo cuya metadata no quedó confirmada.
  */
 import { BackendUnavailableError, type FileStoragePort, type StoredFile } from '../ports';
 
@@ -185,12 +184,9 @@ export function createSupabaseFileStorage(client: SupabaseStorageClientLike): Su
           p_sha256: sha256,
         }), 'register_file_object') as { id?: string };
         if (typeof registered.id !== 'string') throw new Error('El registro del archivo no devolvió identidad.');
-        const ready = await client.rpc('mark_file_object_ready', { p_file_id: registered.id });
-        if (ready.error) throw ready.error;
       } catch (error) {
-        // El binario queda sin registro `ready`, así que es ilegible por
-        // política; retirarlo además evita pagar por un objeto que nadie podrá
-        // volver a encontrar.
+        // El registro no quedó confirmado; retirar el binario evita dejar un
+        // objeto huérfano que el producto no puede volver a encontrar.
         await bucketApi(bucket).remove([finalPath]);
         throw error;
       }

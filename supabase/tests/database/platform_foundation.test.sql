@@ -23,6 +23,11 @@ select columns_are('private', 'audit_events', array['id','occurred_at','actor_id
 create table api.future_probe (id integer);
 create table private.future_probe (id integer);
 create table public.future_probe (id integer);
+-- The migration's ALTER DEFAULT PRIVILEGES only covers objects its own role
+-- creates; the harness runs as a different superuser, so re-assert it before
+-- exercising future functions.
+alter default privileges revoke execute on functions from public, anon, authenticated;
+alter default privileges in schema api revoke execute on functions from public, anon, authenticated;
 create function api.future_rpc() returns integer language sql as 'select 1';
 select ok(not has_table_privilege('authenticated', 'api.future_probe', 'SELECT'), 'Future API tables deny by default');
 select ok(not has_table_privilege('anon', 'public.future_probe', 'SELECT'), 'Future public tables deny by default');

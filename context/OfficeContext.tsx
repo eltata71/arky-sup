@@ -134,6 +134,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [runningEngagementIds, setRunningEngagementIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadedProjectIds = useRef(new Set<string>());
+  const loadedArbEngagementIds = useRef(new Set<string>());
   const abortControllers = useRef(new Map<string, AbortController>());
 
   // The runner reads the project fresh on every task: artifacts produced by
@@ -231,6 +232,34 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setIsLoading(false);
     }
   }, [commit]);
+
+  // La opción C de ADR-101 necesita una bandeja independiente del portafolio:
+  // los revisores descubren encargos ajenos sin convertir sus proyectos en
+  // proyectos propios. Al perder el permiso se retiran esos snapshots.
+  useEffect(() => {
+    let cancelled = false;
+    if (!canApprove) {
+      const ids = loadedArbEngagementIds.current;
+      if (ids.size > 0) {
+        commit(engagementsRef.current.filter((item) => !ids.has(item.id)));
+        ids.clear();
+      }
+      return undefined;
+    }
+    setIsLoading(true);
+    void officeEngagementRepository.listForArb()
+      .then((loaded) => {
+        if (cancelled) return;
+        const previousIds = loadedArbEngagementIds.current;
+        loadedArbEngagementIds.current = new Set(loaded.map((item) => item.id));
+        commit([
+          ...engagementsRef.current.filter((item) => !previousIds.has(item.id)),
+          ...loaded,
+        ].sort(byRecency));
+      })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, [canApprove, commit]);
 
   const getEngagement = useCallback(
     (engagementId: string) => engagements.find((item) => item.id === engagementId),

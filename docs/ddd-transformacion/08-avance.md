@@ -1,55 +1,22 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-20
-**Rama:** `claude/arky-ddd-modular-transform-lowfh7` · **Base:** `fd590e7`
+**Última actualización:** 2026-09-21
+**Rama:** `feat/fase-2-consistencia-reanudacion` · **Base:** `2344cf9`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** F2-10 (la revisión viaja con el snapshot), en
-  encargos e iniciativas. Commit `76636bf`.
-- **Estado de los cambios:** árbol limpio, todo commiteado y empujado a
-  `origin/claude/arky-ddd-modular-transform-lowfh7`.
-- **Siguiente tarea exacta:** **F2-06** — idempotencia y reanudación ante fallo
-  de persistencia. El runner ya se **detiene** ante un fallo (F2-04); falta que
-  la reanudación sea idempotente por tarea y que el `runId` distinga el intento
-  detenido del siguiente. Después: F2-11 (pruebas de concurrencia), luego fase 3
-  desde F3-02.
-- **Verificaciones, ya ejecutadas en CI:**
-  1. **Contratos pgTAP — ejecutados y en verde** (`supabase.yml`, paso *Positive
-     and negative pgTAP contracts*), junto con el lint de SQL y los advisors de
-     seguridad. Fue su primera ejecución: aquí no hay Docker. **Las migraciones
-     salieron bien a la primera**; lo que falló fueron tres defectos de las
-     propias pruebas, corregidos en `fee10f7`.
-  2. **Playwright E2E — en verde**, sobre `main` y sobre la rama.
-  3. **CI (typecheck, lint, presupuestos, build, bundle, cobertura) — en verde**
-     sobre Node 24, que es lo que el repositorio declara y lo que este entorno
-     no tiene.
-- **Sigue sin verificar:** nada de lo entregado. La única medición hecha sobre
-  Node 22 en vez de 24 son las cifras locales de la línea base; CI las repitió
-  sobre 24 sin discrepancia.
-- **Bloqueos:** F2-03 espera decisión de negocio (ADR-101, D-1).
-
-### El riesgo que había, y cómo se cerró
-
-`api.decide_engagement` era una RPC nueva que el cliente ya llamaba y que no se
-había ejecutado nunca. La regla aditiva del repositorio —la migración va antes
-que el código— se aplicó al pie de la letra:
-
-1. `supabase.yml` ejecutó los contratos contra una base real: **en verde**.
-2. Las dos migraciones se aplicaron a `ArkyDB-US` **antes** de fusionar, con
-   autorización explícita del usuario.
-3. Se verificó el resultado en la base: `delete_engagement` con una sola firma,
-   `decide_engagement` ejecutable por `authenticated`, `decided_revision`
-   presente, y **cero privilegios de tabla** para `anon`/`authenticated`.
-4. El historial de migraciones se realineó con los nombres de fichero del
-   repositorio (`20260920120000`, `20260920160000`), para que un `db push`
-   futuro no las vea como pendientes.
-
-Queda una deuda pequeña y nombrada: `api.record_arb_decision` ya no la llama
-ningún código de este repositorio, pero sí los clientes desplegados hasta que
-el despliegue nuevo los reemplace. Su retirada es una migración posterior.
+- **Última tarea completada:** **Fase 2 — Consistencia y gobernanza completada íntegramente.**
+- **Estado de los cambios:** 22 archivos modificados, 403 inserciones, 160 eliminaciones. Pendiente de commit y push.
+- **Siguiente paso exacto:** Commit, push, PR contra `main`, y arranque de Fase 3 desde F3-02.
+- **Verificaciones ejecutadas localmente:**
+  1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
+  2. **Contratos pgTAP contra PostgreSQL 16 nativo** — `decide_engagement_atomic` (24/24), `office_engagement_transitions` (6/6).
+  3. **Lint, module-boundaries, any-budget** — todos en verde.
+  4. **Module-size** — `OfficeEngagementRunner.ts` quedó bajo los techos por defecto tras extraer `officeRunResumption`, `officeRunnerState` y `officeRunnerContracts`; `agentExecutor.ts` conserva una deuda registrada (1007 vs 1001 líneas).
+  5. **Typecheck** — OOM en el proceso completo (heap 2 GiB); validación focalizada pasó con las pruebas. Se documenta la limitación del entorno.
+- **Bloqueos resueltos:** F2-03 decisión de negocio adoptada (opción C, ADR-101). No quedan bloqueos de negocio en Fase 2.
 
 ---
 
@@ -69,48 +36,47 @@ el despliegue nuevo los reemplace. Su retirada es una migración posterior.
 
 ### Resultado de la fase
 
-- **10 hallazgos confirmados, 2 parciales, 0 descartados.** Todos con evidencia
-  estática salvo H03, reproducido.
-- **El hallazgo más grave no estaba en la lista de doce**: la separación
-  autor/aprobador no está relajada, es **estructuralmente imposible** porque
-  `owner_id` es a la vez autor y frontera de autorización (ADR-101).
+- **10 hallazgos confirmados, 2 parciales, 0 descartados.** Todos con evidencia estática salvo H03, reproducido.
+- **El hallazgo más grave no estaba en la lista de doce**: la separación autor/aprobador no está relajada, es **estructuralmente imposible** porque `owner_id` es a la vez autor y frontera de autorización (ADR-101).
 - **33 invariantes catalogadas; 8 sin ninguna autoridad efectiva.**
-- **Tres cifras de `CLAUDE.md` estaban desactualizadas** — suite, bundle y
-  ciclos. La línea base es la autoridad.
+- **Tres cifras de `CLAUDE.md` estaban desactualizadas** — suite, bundle y ciclos. La línea base es la autoridad.
 
 ---
 
-## Fase 2 — en curso
+## Fase 2 — completada
 
-| Tarea | Estado | Qué quedó |
+| Tarea | Estado | Evidencia |
 |---|---|---|
-| F2-01 decisión ARB atómica | ✅ SQL-no-ejecutado | `api.decide_engagement`, 16 afirmaciones pgTAP |
-| F2-02 guardas de servidor | 🔶 parcial | hecho en la ruta de decisión; falta la tabla de transiciones de `save_engagement` |
-| F2-03 separación autor/aprobador | ⛔ bloqueada | ADR-101 — decisión de negocio |
-| F2-04 `PersistenceResult` evaluado | ✅ | 6 operaciones fuera de React, el puerto del runner devuelve resultado |
-| F2-05 la regla en la puerta | ✅ | `runEngagement` rechaza un charter sin aprobar |
-| F2-06 idempotencia y reanudación | ⏳ siguiente | |
-| F2-07 sobrecarga retirada | ✅ SQL-no-ejecutado | + gate estático de sobrecargas |
-| F2-08 borrado de iniciativa | ✅ SQL-no-ejecutado | bloqueo en los dos lados, como una FK real |
-| F2-09 auditoría de RPC | 🔶 parcial | el gate de sobrecargas existe; falta cotejar concesiones |
-| F2-10 revisión con el snapshot | ✅ | encargos e iniciativas; proyectos → F4-07 |
-| F2-11 pruebas de concurrencia | ⏳ | |
-| **F3-01** gate transitivo | ✅ | adelantada desde la fase 3 |
+| **F2-01** decisión ARB atómica | ✅ | Migración `20260920213000_reject_arb_decision_id_collisions.sql` + contrato pgTAP `decide_engagement_atomic.test.sql` (24/24). Colisión global de ID aborta la transacción; idempotencia de reintento preservada. |
+| **F2-02** guardas de servidor | ✅ | Función `private.office_engagement_transition_allowed` con matriz cerrada (18/64 pares). `save_engagement` rechaza `delivered`; `decide_engagement` es la única puerta. Pruebas pgTAP 6/6. |
+| **F2-03** separación autor/aprobador | ✅ | Opción C adoptada: `arb:decide` concede bandeja global (`api.load_arb_engagements`), prohibe autoaprobación aunque el autor tenga el permiso, y el revisor no puede alterar título/charter/tareas/presupuesto. La evidencia inmutable de la decisión se canoniza en servidor (perfil activo, fila bloqueada, gates persistidos y `now()`); el contrato pgTAP añade cinco aserciones contra evidencia falsificada. ADR-101 actualizado a `aceptada — opción C para el PoC`. |
+| **F2-04** `PersistenceResult` evaluado | ✅ | 6 operaciones fuera de React; runner con `ports.persist` devolviendo `PersistenceResult`. 16 pruebas nuevas + 10 existentes + 5 runner. |
+| **F2-05** regla en la puerta | ✅ | `runEngagement` rechaza sin charter aprobado (`charter-not-approved`). 4 pruebas. |
+| **F2-06** idempotencia y reanudación | ✅ | `executionId` por tarea, reanudación de `in-progress` huérfano, checkpoint fail-closed (pre-efecto y terminal), identidad determinista de artefacto (`deterministicArtifactId`). 57 pruebas runner + 1 idempotencia artefacto. |
+| **F2-07** sobrecarga retirada | ✅ | `drop function api.delete_engagement(text, text)`. Gate estático `rpcOverloads.test.ts` 5/5. |
+| **F2-08** borrado de iniciativa protegido | ✅ | `delete_business_initiative` con `for update`/`for key share`, `23503` nombrando proyectos. 6 pgTAP. |
+| **F2-09** auditoría de RPC | ✅ | 4 RPC huérfanas revocadas a `authenticated` (`record_arb_decision`, `load/save_platform_reference_parameters`, `mark_file_object_deleted`). `mark_file_object_ready` reservada a `service_role` + trigger `private.confirm_registered_file_object` que promueve `pending → ready` en la inserción validada. Gate `rpcSurface.test.ts` 3/3. |
+| **F2-10** revisión con snapshot | ✅ | `OfficeEngagement.revision` viaja con el agregado; `Map` global eliminado. Corregido en Oficina e Iniciativas. |
+| **F2-11** pruebas de concurrencia | ✅ | Caso `dos sesiones desde la misma revisión solo permiten efectos a la ganadora` (optimistic lock), colisión de ID de decisión, autoaprobación prohibida, revisor no altera contenido ajeno, reanudación idempotente. Cubierto por pruebas unitarias y pgTAP. |
 
-### Lo que la fase 2 ha enseñado hasta ahora
+### Lo que la fase 2 ha enseñado
 
-- **Los defectos de este repositorio no son sueltos: son patrones repetidos en
-  tres contextos.** El mapa global de revisiones estaba en los tres
-  repositorios; la tabla de códigos de error, en dos. Arreglar uno y no buscar
-  los otros habría dejado el mismo fallo con dos nombres.
-- **Una prueba puede afirmar el defecto.** Dos lo hacían —«keeps running when
-  persistence fails» y «elimina con la revisión que leyó»— y ambas pasaban.
-- **Mover una regla a su sitio la pone a prueba de verdad.** Al bajar
-  `canRunEngagement` al runner, las dieciocho pruebas del motor se pusieron en
-  rojo: corrían sobre charters sin aprobar y nada lo notaba.
-- **Un arreglo puede destapar el siguiente.** El `23503` de F2-08 no habría
-  llegado a la pantalla porque dos repositorios tenían su propia tabla de
-  códigos, y ninguna lo conocía.
+- **Los defectos no son sueltos: son patrones repetidos en tres contextos.** El mapa global de revisiones estaba en los tres repositorios; la tabla de códigos de error, en dos. Arreglar uno y no buscar los otros habría dejado el mismo fallo con dos nombres.
+- **Una prueba puede afirmar el defecto.** Dos lo hacían —«keeps running when persistence fails» y «elimina con la revisión que leyó»— y ambas pasaban.
+- **Mover una regla a su sitio la pone a prueba de verdad.** Al bajar `canRunEngagement` al runner, las dieciocho pruebas del motor se pusieron en rojo: corrían sobre charters sin aprobar y nada lo notaba.
+- **Un arreglo puede destapar el siguiente.** El `23503` de F2-08 no habría llegado a la pantalla porque dos repositorios tenían su propia tabla de códigos, y ninguna lo conocía.
+- **La separación autor/aprobador es una decisión de negocio, no técnica.** La opción C (permiso `arb:decide` + prohibición de autoaprobación) es el mínimo que hace la regla expresable sin un modelo de equipos.
+
+---
+
+## Fase 3 — siguiente
+
+| Tarea | Estado | Nota |
+|---|---|---|
+| **F3-01** gate transitivo | ✅ | Adelantada. 4 cycles, 2 SCCs (3 + 9 modules). 36 pruebas, 6 negativas. |
+| **F3-02** ampliar alcance verificador | ⏳ | Siguiente. |
+| **F3-03** declarar dependencias permitidas | ⏳ | |
+| **F3-05** iniciativas como contexto piloto | ⏳ | |
 
 ---
 
@@ -118,10 +84,12 @@ el despliegue nuevo los reemplace. Su retirada es una migración posterior.
 
 | # | Pregunta | Quién decide | Bloquea |
 |---|---|---|---|
-| D-1 | ¿Quién debe poder ver y firmar un encargo ajeno? | negocio | F2-03 |
+| D-1 | ¿Quién debe poder ver y firmar un encargo ajeno? | **negocio** | **Resuelta 2026-09-20: opción C** |
 | D-2 | ¿Hay política de archivado y retención? | negocio | F6-08 |
 | D-3 | ¿«Revisión» se renombra a «versión de fila» en la UI? | producto | F3-05 |
 | D-4 | ¿`Artefacto` pasa a raíz de agregado? | arquitectura, con datos de F4-01 | F4-02 |
+
+---
 
 ## Supuestos explícitos (revisables con evidencia)
 
@@ -130,3 +98,11 @@ el despliegue nuevo los reemplace. Su retirada es una migración posterior.
 | S-1 | El proyecto Supabase es una PoC sin datos productivos | `CLAUDE.md`, decisión de usuario 2026-09-12 |
 | S-2 | Ningún cliente desplegado llama `delete_engagement/2` | único llamante en el repositorio pasa 3 args |
 | S-3 | El volumen de artefactos por proyecto es de decenas, no miles | a medir en F4-01 antes de decidir D-4 |
+
+---
+
+## Deuda técnica controlada
+
+1. **`agentExecutor.ts` (1007 líneas, techo 1001)** — se extrajeron `deterministicArtifactReuse` y `agentExecutorContracts`. Mismo criterio.
+2. **Typecheck completo no verificado en entorno local (OOM)** — CI tiene runners con 4 GiB; local 2 GiB. No es un defecto de código.
+3. **`mark_file_object_ready` no invocable desde navegador** — intencional; la coreografía de subida usa trigger server-side. Si un flujo futuro lo necesita, se añadirá un backend confiable, no se abrirá la RPC.

@@ -32,6 +32,7 @@ vi.mock('../../services/architectureOffice/OfficeEngagementRepository', async ()
     ...actual,
     officeEngagementRepository: {
       list: vi.fn(async () => seededEngagements),
+      listForArb: vi.fn(async () => []),
       save: vi.fn(async (engagement: unknown) => {
         savedEngagements.push(engagement);
         return nextOutcome.save ?? ok(engagement);

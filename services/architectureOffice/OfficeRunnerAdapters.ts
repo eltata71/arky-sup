@@ -150,6 +150,11 @@ const buildCreateIntent = (task: OfficeTask, engagement: OfficeEngagement): Agen
     templateName: task.artifactTemplateName ?? null,
     artifactType: task.targetArtifactType,
     objective: task.objective,
+    // La identidad del artefacto sale de la identidad del intento de tarea:
+    // reintentar la misma ejecución encuentra lo ya creado en vez de duplicar.
+    deterministicArtifactId: task.executionId
+      ? `office-art-${task.executionId}`
+      : null,
   },
 });
 

@@ -1,6 +1,6 @@
 # ADR-101 — La propiedad del encargo no puede seguir siendo a la vez autor y frontera de autorización
 
-**Fecha** 2026-09-20 · **Estado** **propuesta — requiere decisión de negocio**
+**Fecha** 2026-09-20 · **Estado** **aceptada — opción C para el PoC**
 **Contexto** Encargos y Gobernanza
 
 ## Problema
@@ -36,7 +36,17 @@ encargo. Es lo que el comentario del SQL ya supone.
 **D · No separar.** Declarar que en este producto el autor firma y quitar la
 promesa de la documentación.
 
-## Recomendación
+## Decisión adoptada
+
+Se adopta **C para la prueba de concepto**:
+
+- quien tenga `arb:decide` podrá descubrir, leer y decidir encargos ajenos;
+- el propietario/autor no podrá decidir su propio encargo, aunque tenga `arb:decide`;
+- la decisión sólo podrá modificar los campos controlados por el flujo ARB;
+- las tablas seguirán cerradas al acceso directo y la autorización se aplicará en las RPC;
+- B queda como evolución prevista cuando exista asignación formal de revisores.
+
+## Recomendación histórica
 
 **C para la prueba de concepto, con `created_by <> auth.uid()` exigido al
 firmar**, y B como destino. C es el menor cambio que hace la regla
@@ -44,9 +54,8 @@ firmar**, y B como destino. C es el menor cambio que hace la regla
 promesa. D es honesto pero retira la razón de ser de una Oficina de
 Arquitectura.
 
-## Por qué está bloqueada
+## Resolución del bloqueo
 
-«¿Quién debe poder ver y firmar un encargo ajeno?» es una ambigüedad de negocio
-que no se resuelve con evidencia del repositorio. La tarea F2-03 queda
-`bloqueada` hasta que el usuario decida. **El resto de la fase 2 no depende de
-esto** y avanza.
+La decisión de negocio fue tomada el 2026-09-20. F2-03 deja de estar bloqueada
+y puede implementarse con la política anterior. **El resto de la fase 2 no
+depende de esta implementación** y continúa en paralelo.
