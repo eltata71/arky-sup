@@ -19,19 +19,20 @@ marcado como tal y con dueño.
        ▼
   ┌─────────────────────────────────────────────────────────────┐
   │ Pull request contra main                                    │
-  │   ci.yml        quality · tests×4 · coverage · rules        │
-  │   e2e.yml       Playwright (chromium + iPad Safari)         │
-  │   security.yml  CodeQL + npm audit + SBOM                   │
-  │   supabase.yml  pgTAP local (solo si cambia supabase/**)    │
+  │   ci.yml        quality · tests×4 · cobertura                 │
+  │   e2e.yml       Playwright (chromium + iPad Safari)           │
+  │   security.yml  CodeQL + npm audit + SBOM                     │
+  │   supabase.yml  pgTAP local (solo si cambia supabase/**)      │
   └─────────────────────────────────────────────────────────────┘
        │  merge (squash)
        ▼
   ┌─────────────────────────────────────────────────────────────┐
   │ push a main → ci.yml                                        │
-  │   quality · tests×4 · coverage · rules                      │
-  │        └──► deploy  (needs: quality, coverage, rules)       │
-  │               vercel pull → build → check:bundle-secrets    │
-  │               → deploy --prebuilt --prod → smoke            │
+  │   quality · tests×4 · cobertura                               │
+  │        └──► deploy  (needs: quality, coverage)               │
+  │               vercel pull → verifica destino → build          │
+  │               → check:bundle-secrets → deploy --prebuilt      │
+  │               → smoke                                         │
   └─────────────────────────────────────────────────────────────┘
        │
        ▼
@@ -61,10 +62,19 @@ porque el gate de configuración rechazó una clave de proveedor con prefijo
 
 Un artefacto que no se puede reconstruir desde `main` no es un despliegue, y uno
 que nadie ha comprobado tampoco. El trabajo `deploy` de `ci.yml` cierra las dos
-mitades: despliega solo desde `main`, y solo después de que `quality`,
-`coverage` y `rules` hayan pasado sobre ese mismo commit. Para que sea el
+mitades: despliega solo desde `main`, y solo después de que `quality` y
+`coverage` hayan pasado sobre ese mismo commit. Para que sea el
 **único** que publica, `vercel.json` apaga el disparador automático en `main`
 —ver *Un solo camino publica producción*, más abajo—.
+
+El contrato versionado del destino canónico vive en
+`docs/operacion/despliegue.json` y se explica en
+`docs/operacion/contrato-despliegue.md`: `eltata71/arky-sup` publica mediante el
+proyecto y equipo Vercel `arky-sup` (`prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`,
+`team_HGSWQHORpMV8wQUQf3mAdWEl`) y el alias
+estable es `https://arky-sup.vercel.app`. Después de `vercel pull`, CI verifica
+ese destino antes de construir o desplegar; una credencial que resuelva otro
+proyecto falla cerrada.
 
 ### Qué comprueba cada paso del despliegue
 

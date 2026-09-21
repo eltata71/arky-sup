@@ -650,8 +650,13 @@ desplegar, añade la URL a **Supabase → Authentication → URL Configuration �
 Redirect URLs**, o los enlaces de invitación y de recuperación volverán al sitio
 equivocado. Ver `docs/security-hardening.md`.
 
-**Producción la publica un solo camino, y es GitHub Actions.** El proyecto
-`arky-sup` (`prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`) está enlazado a este
+**Producción la publica un solo camino, y es GitHub Actions.** El contrato
+versionado `docs/operacion/despliegue.json` fija conjuntamente el repositorio
+`eltata71/arky-sup`, la rama `main`, el equipo y proyecto Vercel `arky-sup`
+(`team_HGSWQHORpMV8wQUQf3mAdWEl` / `prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`) y el
+alias estable `https://arky-sup.vercel.app`. Tras `vercel pull`, el job `deploy`
+compara `.vercel/project.json` con ese contrato antes de construir: secretos que
+resuelvan otro destino fallan cerrados. El proyecto está enlazado a este
 repositorio, así que su integración Git desplegaría al recibir el push, sin
 leer el resultado de ningún gate. `vercel.json` lo apaga:
 

@@ -265,15 +265,19 @@ Reglas que no se negocian al trabajar aquí:
    dueño (`useProjectsState`). El diccionario `en`/`es` está en `lib/i18n/` y
    ambos idiomas llevan las mismas claves. Detalle en CLAUDE.md →
    *`AppContext` is one context composed of seven hooks*.
-17. **Producción la publica un solo camino, y es `ci.yml`.** El proyecto de
-   Vercel está enlazado al repositorio, así que su integración Git desplegaría
-   al recibir el push sin leer ningún gate. `vercel.json` lo apaga con
-   `git.deploymentEnabled: { main: false }` — sólo `main`, para que cada PR
-   conserve su preview. Las dos mitades están afirmadas por separado en
-   `__tests__/config/ciPipeline.test.ts`. Vive en el repositorio y no en el
-   panel a propósito: un interruptor del dashboard no se revisa en una PR. No
-   despliegues desde una estación de trabajo ni vuelvas a encender el
-   disparador automático. Detalle en `docs/ci-cd-pipeline.md`.
+17. **Producción la publica un solo camino, y es `ci.yml`.** El contrato
+    versionado `docs/operacion/despliegue.json` fija el repositorio
+    `eltata71/arky-sup`, `main`, el equipo y proyecto Vercel `arky-sup`
+    (`team_HGSWQHORpMV8wQUQf3mAdWEl` / `prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk`) y
+    `https://arky-sup.vercel.app`. Tras `vercel pull`, `ci.yml` compara el
+    proyecto resuelto con ese contrato antes de construir o publicar; una
+    credencial para otro destino falla cerrada. La integración Git de Vercel se
+    apaga con `git.deploymentEnabled: { main: false }` — sólo `main`, para que
+    cada PR conserve su preview. Las dos mitades están afirmadas por separado
+    en `__tests__/config/ciPipeline.test.ts`. Vive en el repositorio y no en el
+    panel a propósito: un interruptor del dashboard no se revisa en una PR. No
+    despliegues desde una estación de trabajo ni vuelvas a encender el
+    disparador automático. Detalle en `docs/ci-cd-pipeline.md`.
 18. **Cinco dependencias no pueden subir, y las cinco pasan la suite entera.**
    `vite` 8 (cambia a Rolldown: la carga inicial se multiplica),
    `@excalidraw/excalidraw` 0.18 (pierde la carga diferida: 1 938 KB gz),

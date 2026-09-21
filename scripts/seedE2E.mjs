@@ -14,12 +14,42 @@
  * administrador previo que la llame, así que el perfil se inserta con la clave
  * de servicio también; es el mismo caso que el primer administrador de una
  * instalación, y por eso `docs/primer-administrador.md` lo describe igual.
+ *
+ * **Son dos cuentas, y la segunda no es comodidad.** Desde F2-03 (opción C,
+ * ADR-101) el servidor rechaza que el autor de un encargo firme su propia
+ * decisión del comité. Una única cuenta superadmin podía crear el encargo y
+ * aprobarlo, que es exactamente la separación de funciones que la Oficina
+ * existe para imponer: el fixture la eludía en lugar de ejercerla. Ahora el
+ * arquitecto escribe y la revisora firma, y el recorrido sólo pasa si las dos
+ * mitades del gobierno funcionan.
  */
 
 const SUPABASE_URL = (process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321').replace(/\/+$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
-const EMAIL = process.env.E2E_EMAIL ?? 'architect@arky.e2e';
 const PASSWORD = process.env.E2E_PASSWORD ?? 'Arky-E2E-Only-2026!';
+
+/**
+ * Las dos identidades del recorrido, en el orden en que el gobierno las usa.
+ *
+ * El rol de cada una es el mínimo que su mitad necesita y se declara aquí, no
+ * se hereda: la revisora es `reviewer` —el rol cuyo propósito entero es
+ * gobernar— y no un segundo superadmin, de modo que el recorrido prueba que
+ * `arb:decide` basta para firmar. Deben coincidir con `e2e/support/auth.ts`.
+ */
+const ACCOUNTS = [
+  {
+    email: process.env.E2E_EMAIL ?? 'architect@arky.e2e',
+    displayName: 'Arquitecto E2E',
+    role: 'superadmin',
+    ownsFixtures: true,
+  },
+  {
+    email: process.env.E2E_REVIEWER_EMAIL ?? 'reviewer@arky.e2e',
+    displayName: 'Revisora E2E',
+    role: 'reviewer',
+    ownsFixtures: false,
+  },
+];
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
@@ -47,15 +77,15 @@ const adminHeaders = () => ({
 });
 
 /** Crea la identidad, o devuelve la existente. Idempotente por diseño. */
-async function ensureAuthUser() {
+async function ensureAuthUser(account) {
   const created = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
     method: 'POST',
     headers: adminHeaders(),
     body: JSON.stringify({
-      email: EMAIL,
+      email: account.email,
       password: PASSWORD,
       email_confirm: true,
-      user_metadata: { full_name: 'Arquitecto E2E' },
+      user_metadata: { full_name: account.displayName },
     }),
   });
   if (created.ok) {
@@ -67,9 +97,9 @@ async function ensureAuthUser() {
   const listed = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=200`, { headers: adminHeaders() });
   if (!listed.ok) throw new Error(`No se pudo listar usuarios: ${listed.status}`);
   const body = await listed.json();
-  const match = (body?.users ?? []).find((user) => user?.email === EMAIL);
+  const match = (body?.users ?? []).find((user) => user?.email === account.email);
   if (typeof match?.id !== 'string') {
-    throw new Error(`No se pudo crear ni encontrar la cuenta ${EMAIL}.`);
+    throw new Error(`No se pudo crear ni encontrar la cuenta ${account.email}.`);
   }
   // Se reafirma la contraseña: una siembra anterior pudo usar otra.
   await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${match.id}`, {
@@ -92,17 +122,17 @@ async function ensureAuthUser() {
  * que se quiere: el bootstrap del primer administrador es una operación manual
  * y auditada, no un script.
  */
-async function ensureProfile(uid) {
+async function ensureProfile(uid, account) {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/seed_e2e_profile`, {
     method: 'POST',
     // Sin cabecera de perfil: la función vive en `public`, que es el esquema por
     // defecto de la Data API.
     headers: adminHeaders(),
-    body: JSON.stringify({ p_uid: uid, p_display_name: 'Arquitecto E2E' }),
+    body: JSON.stringify({ p_uid: uid, p_display_name: account.displayName, p_role: account.role }),
   });
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(`No se pudo sembrar el perfil: ${response.status} ${detail}`);
+    throw new Error(`No se pudo sembrar el perfil de ${account.email}: ${response.status} ${detail}`);
   }
 }
 
@@ -115,6 +145,9 @@ async function ensureProfile(uid) {
  * un `e2e-project` y un `e2e-engagement-arb` que ya no creaba nadie. El
  * síntoma no era «faltan datos» sino «no aparece el desplegable de proyecto»,
  * que se parece a un fallo de la interfaz.
+ *
+ * Recibe el uid **del arquitecto**: todo lo sembrado le pertenece, y esa
+ * propiedad es la que hace que la revisora sea un tercero a ojos del servidor.
  */
 async function ensureFixtures(uid) {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/seed_e2e_fixtures`, {
@@ -130,10 +163,21 @@ async function ensureFixtures(uid) {
 
 async function main() {
   assertLocal();
-  const uid = await ensureAuthUser();
-  await ensureProfile(uid);
-  await ensureFixtures(uid);
-  process.stdout.write(`E2E seed listo: ${EMAIL} (${uid}) + iniciativa, proyecto y encargo ARB\n`);
+
+  // Secuencial y no en paralelo: la API de administración de Auth se consulta
+  // por listado cuando la cuenta ya existe, y dos altas simultáneas contra el
+  // mismo correo devuelven la carrera en vez del uid.
+  const seeded = [];
+  for (const account of ACCOUNTS) {
+    const uid = await ensureAuthUser(account);
+    await ensureProfile(uid, account);
+    if (account.ownsFixtures) await ensureFixtures(uid);
+    seeded.push(`${account.email} (${account.role})`);
+  }
+
+  process.stdout.write(
+    `E2E seed listo: ${seeded.join(' + ')} + iniciativa, proyecto y encargo ARB\n`,
+  );
 }
 
 main().catch((error) => {

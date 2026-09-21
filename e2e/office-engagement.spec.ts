@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { signInE2E } from './support/auth';
+import { E2E_ARCHITECT, E2E_REVIEWER, signInE2E } from './support/auth';
 
 /**
  * E2E — Oficina de Arquitectura Empresarial.
@@ -10,10 +10,14 @@ import { signInE2E } from './support/auth';
  *  1. **Sin autenticación** (corre siempre): las rutas de la Oficina están
  *     protegidas y su chunk carga sin excepciones.
  *
- *  2. **Con autenticación**: el flujo real recepción (Nuevo entregable) →
- *     charter con productor y revisor distintos, contra el stack local de
- *     Supabase. Los selectores ejercen la UI que existe — el
+ *  2. **Con autenticación, como autor**: el flujo real recepción (Nuevo
+ *     entregable) → charter con productor y revisor distintos, contra el stack
+ *     local de Supabase. Los selectores ejercen la UI que existe — el
  *     wizard real es EngagementIntakeWizard, con su título "Nuevo entregable".
+ *
+ *  3. **Con autenticación, como comité**: la firma de la decisión, en otra
+ *     sesión. Son dos sesiones y no dos pestañas de la misma porque la
+ *     separación autor/aprobador es la regla que el bloque prueba.
  */
 
 const ENV_NOISE =
@@ -97,30 +101,78 @@ test.describe('Oficina de Arquitectura — panel autenticado', () => {
     await expect(dialog.getByText(/^Produce /).first()).toBeVisible();
     await expect(dialog.getByText(/^Revisa /).first()).toBeVisible();
   });
+});
 
-  test('la sala registra una aprobación ARB y entrega el encargo seedeado', async ({ page }) => {
+/**
+ * El comité, firmado por quien no escribió el encargo.
+ *
+ * Va en su propio bloque porque la sesión es otra, y **tiene que serlo**: desde
+ * F2-03 (opción C, ADR-101) `decide_engagement` aborta con `42501` si el autor
+ * firma su propio encargo. Este recorrido hacía exactamente eso —la cuenta que
+ * posee el fixture pulsaba «Aprobar entrega»— y pasaba sólo porque el servidor
+ * aún no imponía la regla; el día que empezó a imponerla, el recorrido la
+ * encontró. Se corrige el fixture, no la regla.
+ *
+ * La revisora es `reviewer`, el rol cuyo propósito entero es gobernar, así que
+ * el recorrido prueba además que `arb:decide` basta para firmar: no hace falta
+ * ser administrador. Llega al encargo por la bandeja global
+ * (`api.load_arb_engagements`), que es lo que la opción C añadió para que un
+ * revisor descubra trabajo ajeno sin adueñarse de su proyecto.
+ */
+test.describe('Oficina de Arquitectura — comité', () => {
+  test.skip(({ browserName }) => browserName !== 'chromium', 'Journeys autenticados: sólo desktop-chromium.');
+
+  test.beforeEach(async ({ page }) => {
+    await signInE2E(page, E2E_REVIEWER);
+  });
+
+  test('una revisora ajena firma la entrega, y el autor la ve firmada', async ({ page, browser, contextOptions }) => {
     // El fixture llega al comité con gates condicionales, que son deliberables:
     // el ARB puede aceptar condiciones, pero nunca saltar un gate bloqueado.
     await page.goto('/office/e2e-engagement-arb');
-    await expect(page.getByRole('heading', { name: 'Decisión ARB E2E' })).toBeVisible({ timeout: 15_000 });
 
-    const committee = page.locator('#comite');
-    const approve = committee.getByRole('button', { name: 'Aprobar entrega' });
+    // La bandeja sólo trae encargos en `awaiting-arb`/`blocked`, así que un
+    // reintento de Playwright —que comparte el stack local de esta ejecución—
+    // encuentra la sala vacía si el intento anterior ya firmó. Las dos salidas
+    // se esperan a la vez: firmar dos veces violaría la máquina de estados, y
+    // asumir que la sala está ahí convertiría un reintento en un fallo que no
+    // se parece a su causa.
+    const room = page.getByRole('heading', { name: 'Decisión ARB E2E' });
+    const alreadyDecided = page.getByText('Entregable no encontrado');
+    await expect(room.or(alreadyDecided).first()).toBeVisible({ timeout: 15_000 });
 
-    // Un reintento de Playwright comparte el stack local de esta ejecución. Si el
-    // primer intento alcanzó a persistir la firma pero falló una aserción
-    // posterior, validar el resultado ya registrado es correcto; intentar
-    // firmar otra vez violaría la máquina de estados del agregado.
-    if (await approve.isVisible()) {
+    if (await room.isVisible()) {
+      const committee = page.locator('#comite');
+      const approve = committee.getByRole('button', { name: 'Aprobar entrega' });
       await expect(approve).toBeEnabled();
       await approve.click();
+      // La sala se actualiza desde el agregado que devuelve la RPC, no desde un
+      // toast: el estado prueba el ciclo UI → RLS/RPC → PostgreSQL → UI.
+      await expect(page.getByText('Entregado', { exact: true })).toBeVisible({ timeout: 15_000 });
     }
 
-    // La sala se actualiza desde el agregado persistido, no sólo desde un toast:
-    // estado y rastro de decisión prueban el ciclo UI → RLS/RPC → PostgreSQL → UI.
-    await expect(page.getByText('Entregado', { exact: true })).toBeVisible({ timeout: 15_000 });
-    await expect(committee.getByText('Decisiones registradas')).toBeVisible();
-    await expect(committee.getByText('Aprobado', { exact: true })).toBeVisible();
-    await expect(committee.getByText('Arquitecto E2E', { exact: true })).toBeVisible();
+    // La verificación la hace el autor, y por eso vive en otra sesión: es la
+    // única de las dos que ve el encargo en cualquier estado, así que el aserto
+    // significa lo mismo en el primer intento y en un reintento. Y afirma lo que
+    // de verdad importa de la opción C: el autor encuentra su entregable firmado
+    // por alguien que no es él.
+    const authorContext = await browser.newContext(contextOptions);
+    try {
+      const authorPage = await authorContext.newPage();
+      await signInE2E(authorPage, E2E_ARCHITECT);
+      await authorPage.goto('/office/e2e-engagement-arb');
+      await expect(authorPage.getByRole('heading', { name: 'Decisión ARB E2E' })).toBeVisible({ timeout: 15_000 });
+      await expect(authorPage.getByText('Entregado', { exact: true })).toBeVisible({ timeout: 15_000 });
+
+      const committee = authorPage.locator('#comite');
+      await expect(committee.getByText('Decisiones registradas')).toBeVisible();
+      await expect(committee.getByText('Aprobado', { exact: true })).toBeVisible();
+      // El nombre lo canoniza el servidor desde el perfil de la sesión que firmó,
+      // así que leerlo aquí es leer quién decidió de verdad, no quién lo propuso.
+      await expect(committee.getByText(E2E_REVIEWER.displayName, { exact: true })).toBeVisible();
+      await expect(committee.getByText(E2E_ARCHITECT.displayName, { exact: true })).toHaveCount(0);
+    } finally {
+      await authorContext.close();
+    }
   });
 });

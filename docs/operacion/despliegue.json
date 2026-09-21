@@ -1,0 +1,10 @@
+{
+  "repository": "eltata71/arky-sup",
+  "branch": "main",
+  "vercel": {
+    "orgId": "team_HGSWQHORpMV8wQUQf3mAdWEl",
+    "projectId": "prj_Sr0cq7A21ZX8MfEmyLBbEkpO0Bfk",
+    "projectName": "arky-sup",
+    "productionUrl": "https://arky-sup.vercel.app"
+  }
+}

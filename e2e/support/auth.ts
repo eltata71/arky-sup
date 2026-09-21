@@ -1,9 +1,30 @@
 import { expect, type Page } from '@playwright/test';
 
-export const E2E_ACCOUNT = {
+const E2E_PASSWORD = 'Arky-E2E-Only-2026!';
+
+/**
+ * Las dos identidades que `scripts/seedE2E.mjs` siembra, y por qué son dos.
+ *
+ * `decide_engagement` rechaza con `42501` que el autor de un encargo firme su
+ * propia decisión del comité (F2-03, opción C, ADR-101). Un recorrido de
+ * gobierno con una sola cuenta no prueba la separación de funciones: la elude.
+ * El nombre visible importa además de las credenciales, porque la decisión se
+ * firma con el `display_name` del perfil —lo canoniza el servidor, no el
+ * cliente—, así que es lo que la sala muestra y lo que el aserto lee.
+ */
+export const E2E_ARCHITECT = {
   email: 'architect@arky.e2e',
-  password: 'Arky-E2E-Only-2026!',
+  password: E2E_PASSWORD,
+  displayName: 'Arquitecto E2E',
 } as const;
+
+export const E2E_REVIEWER = {
+  email: 'reviewer@arky.e2e',
+  password: E2E_PASSWORD,
+  displayName: 'Revisora E2E',
+} as const;
+
+type E2EAccount = typeof E2E_ARCHITECT | typeof E2E_REVIEWER;
 
 /**
  * Lo que la pantalla y el navegador dijeron mientras se intentaba entrar.
@@ -58,12 +79,12 @@ const visibleText = async (page: Page): Promise<string> => {
 };
 
 /** Sign in through the real UI against the isolated local Supabase stack. */
-export async function signInE2E(page: Page): Promise<void> {
+export async function signInE2E(page: Page, account: E2EAccount = E2E_ARCHITECT): Promise<void> {
   const diagnostics = watchForDiagnostics(page);
 
   await page.goto('/auth');
-  await page.getByLabel('Correo electrónico').fill(E2E_ACCOUNT.email);
-  await page.getByLabel('Contraseña').fill(E2E_ACCOUNT.password);
+  await page.getByLabel('Correo electrónico').fill(account.email);
+  await page.getByLabel('Contraseña').fill(account.password);
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
 
   try {
@@ -73,7 +94,7 @@ export async function signInE2E(page: Page): Promise<void> {
     // siendo la afirmación que falló, y perderlo dejaría un error sin el «qué
     // se esperaba» que lo hace legible.
     const report = [
-      `No se completó el inicio de sesión. URL final: ${page.url()}`,
+      `No se completó el inicio de sesión de ${account.email}. URL final: ${page.url()}`,
       `Pantalla: ${await visibleText(page)}`,
       diagnostics.failedResponses.length
         ? `Respuestas del backend con error:\n  ${diagnostics.failedResponses.join('\n  ')}`

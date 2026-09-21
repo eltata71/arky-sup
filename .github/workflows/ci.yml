@@ -332,6 +332,12 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: npx --yes vercel@latest pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
 
+      # `vercel pull` materializa el proyecto al que apuntan los secretos. Antes
+      # de construir o publicar se compara contra el contrato versionado: una
+      # credencial válida para otro proyecto no puede terminar en producción.
+      - name: Verify resolved Vercel production target
+        run: node scripts/deploy/assertDeploymentTarget.mjs
+
       - name: Build production artefact
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

@@ -1,16 +1,23 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-22
-**Rama:** `feat/fase-2-consistencia-reanudacion` · **Base:** `2344cf9`
+**Última actualización:** 2026-09-21
+**Estado integrado:** Fase 2 fusionada en `main` (PR #42) y publicada por CI en el destino canónico `arky-sup`.
+**Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **Fase 2 — Consistencia y gobernanza completada íntegramente.**
-- **Estado de los cambios:** 22 archivos modificados, 403 inserciones, 160 eliminaciones. Pendiente de commit y push.
-- **Siguiente paso exacto:** Commit, push, PR contra `main`, y arranque de Fase 3 desde F3-02.
-- **Verificaciones ejecutadas localmente:**
+- **Última tarea completada:** **F2-12 — el fixture E2E se pone al día con la regla
+  de la fase 2** (ver abajo). Antes: Fase 2 fusionada y desplegada.
+- **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
+  en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
+  y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
+  dejado un fixture que ya no podía existir. Lo que falló fue leerlo.
+- **Estado de los cambios:** integrado en `main` mediante PR #42; el seguimiento técnico parte del contrato de producción y no de una rama ya eliminada.
+- **Siguiente paso exacto:** iniciar Fase 3 desde F3-02.
+- **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
+- **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
   2. **Contratos pgTAP contra PostgreSQL 16 nativo** — `decide_engagement_atomic` (24/24), `office_engagement_transitions` (6/6).
   3. **Lint, module-boundaries, any-budget** — todos en verde.
@@ -58,6 +65,7 @@
 | **F2-09** auditoría de RPC | ✅ | 4 RPC huérfanas revocadas a `authenticated` (`record_arb_decision`, `load/save_platform_reference_parameters`, `mark_file_object_deleted`). `mark_file_object_ready` reservada a `service_role` + trigger `private.confirm_registered_file_object` que promueve `pending → ready` en la inserción validada. Gate `rpcSurface.test.ts` 3/3. |
 | **F2-10** revisión con snapshot | ✅ | `OfficeEngagement.revision` viaja con el agregado; `Map` global eliminado. Corregido en Oficina e Iniciativas. |
 | **F2-11** pruebas de concurrencia | ✅ | Caso `dos sesiones desde la misma revisión solo permiten efectos a la ganadora` (optimistic lock), colisión de ID de decisión, autoaprobación prohibida, revisor no altera contenido ajeno, reanudación idempotente. Cubierto por pruebas unitarias y pgTAP. |
+| **F2-12** fixture E2E con dos identidades | ✅ | `decide_engagement` aborta con `42501` si el autor firma su propio encargo, y el recorrido del comité hacía exactamente eso: la cuenta dueña del fixture pulsaba «Aprobar entrega». `scripts/seedE2E.mjs` siembra ahora dos cuentas —`architect@arky.e2e` (`superadmin`, autor) y `reviewer@arky.e2e` (`reviewer`, firmante)—, `seed_e2e_profile` recibe el rol, y el recorrido firma en la sesión de la revisora y **verifica en la del autor**: la bandeja `load_arb_engagements` sólo trae `awaiting-arb`/`blocked`, así que tras la firma la revisora deja de ver el encargo y un reintento de Playwright no podría afirmar nada. |
 
 ### Lo que la fase 2 ha enseñado
 
@@ -103,6 +111,15 @@
 
 ## Deuda técnica controlada
 
-1. **`agentExecutor.ts` (1007 líneas, techo 1001)** — se extrajeron `deterministicArtifactReuse` y `agentExecutorContracts`. Mismo criterio.
-2. **Typecheck completo no verificado en entorno local (OOM)** — CI tiene runners con 4 GiB; local 2 GiB. No es un defecto de código.
-3. **`mark_file_object_ready` no invocable desde navegador** — intencional; la coreografía de subida usa trigger server-side. Si un flujo futuro lo necesita, se añadirá un backend confiable, no se abrirá la RPC.
+1. **El botón que siempre falla.** `ArbDecisionPanel` habilita «Aprobar entrega»
+   con `canActAsArb(actor)`, que es sólo el permiso: a un autor con `arb:decide`
+   —cualquier `reviewer`, `admin` o `superadmin` mirando su propio encargo— se le
+   ofrece un botón que el servidor rechazará siempre con `42501`. `lib/authz`
+   decide lo que *se muestra* y PostgreSQL lo que *se permite*, así que no es un
+   fallo de seguridad; es la mitad de la opción C que no bajó a la pantalla. El
+   arreglo es una función de dominio —«¿puede *este* actor firmar *este*
+   encargo?»— leída por la sala, no un `if` en el componente. Pendiente.
+
+2. **`agentExecutor.ts` (1007 líneas, techo 1001)** — se extrajeron `deterministicArtifactReuse` y `agentExecutorContracts`. Mismo criterio.
+3. **Typecheck completo no verificado en entorno local (OOM)** — CI tiene runners con 4 GiB; local 2 GiB. No es un defecto de código.
+4. **`mark_file_object_ready` no invocable desde navegador** — intencional; la coreografía de subida usa trigger server-side. Si un flujo futuro lo necesita, se añadirá un backend confiable, no se abrirá la RPC.
