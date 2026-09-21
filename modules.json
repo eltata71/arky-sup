@@ -21,7 +21,13 @@
     "     the surface, and neither can be read, tested or moved alone.",
     "  3. PUBLIC API. A module that declares an `api` is entered through it. An",
     "     import that reaches past `index.ts` into an internal file couples the",
-    "     caller to a decision the module never published."
+    "     caller to a decision the module never published.",
+    "",
+    "Las tres se aplican sobre un grafo, y de qué está hecho ese grafo es la",
+    "otra mitad de la garantía. Un módulo se declara por carpeta (`path`) o por",
+    "fichero (`files`), y lo segundo existe porque durante toda la vida de este",
+    "manifiesto los cinco ficheros de la raíz del repositorio —`types.ts` el",
+    "primero— quedaron fuera del grafo por no ser carpeta de nadie. Ver ADR-105."
   ],
 
   "layers": ["ui", "domain", "foundation"],
@@ -68,6 +74,22 @@
     },
 
     { "name": "lib", "path": "lib", "layer": "foundation" },
-    { "name": "utils", "path": "utils", "layer": "foundation" }
+    { "name": "utils", "path": "utils", "layer": "foundation" },
+
+    {
+      "name": "app",
+      "files": ["App.tsx", "index.tsx"],
+      "layer": "ui",
+      "$comment": "A module may be declared by file instead of by folder, and these five entries are why. `App.tsx`, `index.tsx`, `types.ts`, `constants.ts` and `utils.ts` live at the root of the repository, so no prefix caught them and the gate never opened them — for its whole life. That is not a detail: `types.ts` is imported by 25 of the 34 modules and imports six, so it closes the graph on its own. Measuring the modular monolith without it produced a green gate over 27 mutually reachable modules. See ADR-105."
+    },
+    {
+      "name": "types.ts",
+      "files": ["types.ts"],
+      "layer": "foundation",
+      "$comment": "Declared one by one rather than as a single `shared kernel` because each is fixed on its own and the budget has to be able to fall one at a time: `constants.ts` only imports types and is inert, `types.ts` is the knot (F3-07), and `utils.ts` is a file with a utility's name holding prompt composition (F3-08). `foundation` and not `domain` because the layer is decided by what sits below: `lib` imports them, so they are below `lib`. Calling them domain would have turned the finding into `lib imports domain`, naming the consumer instead of the cause."
+    },
+    { "name": "constants.ts", "files": ["constants.ts"], "layer": "foundation" },
+    { "name": "utils.ts", "files": ["utils.ts"], "layer": "foundation" },
+    { "name": "types", "path": "types", "layer": "foundation" }
   ]
 }

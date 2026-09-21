@@ -8,14 +8,16 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F2-12 — el fixture E2E se pone al día con la regla
-  de la fase 2** (ver abajo). Antes: Fase 2 fusionada y desplegada.
+- **Última tarea completada:** **F3-02 — el verificador mide todo el árbol**
+  (ADR-105). Antes: F2-12, el fixture E2E, fusionado en `main` con la PR #43.
 - **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
   dejado un fixture que ya no podía existir. Lo que falló fue leerlo.
 - **Estado de los cambios:** integrado en `main` mediante PR #42; el seguimiento técnico parte del contrato de producción y no de una rama ya eliminada.
-- **Siguiente paso exacto:** iniciar Fase 3 desde F3-02.
+- **Siguiente paso exacto:** **F3-07** — deshacer el reexportador `types.ts`. Es
+  el trabajo que F3-02 hizo visible y el más barato de los dos que destapó: mueve
+  declaraciones, no comportamiento.
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -77,14 +79,41 @@
 
 ---
 
-## Fase 3 — siguiente
+## Fase 3 — en curso
 
 | Tarea | Estado | Nota |
 |---|---|---|
 | **F3-01** gate transitivo | ✅ | Adelantada. 4 cycles, 2 SCCs (3 + 9 modules). 36 pruebas, 6 negativas. |
-| **F3-02** ampliar alcance verificador | ⏳ | Siguiente. |
+| **F3-02** ampliar alcance verificador | ✅ | ADR-105. Lee `import('…')` y abre los ficheros de la raíz. 42 pruebas. |
+| **F3-07** deshacer el reexportador `types.ts` | ⏳ | **Siguiente.** Lo destapó F3-02. |
+| **F3-08** `utils.ts` no es utilidades | ⏳ | Lo destapó F3-02. |
 | **F3-03** declarar dependencias permitidas | ⏳ | |
 | **F3-05** iniciativas como contexto piloto | ⏳ | |
+
+### Lo que F3-02 hizo visible
+
+El gate llevaba toda la transformación midiendo un grafo al que le faltaban dos
+cosas: una sintaxis —`import('…')`, 21 dependencias— y los ficheros de la raíz,
+que no son carpeta de nadie y por eso no se abrieron nunca. Con las dos dentro:
+
+| | antes | después |
+|---|---|---|
+| Ciclos | 4 | **11** |
+| Componentes fuertemente conexos | 3 + 9 módulos | **3 + 27** |
+| Pares ascendentes | 0 | **7** (9 imports) |
+| Pares con import profundo | 59 | **68** |
+
+Ninguna subida es código nuevo, y casi todo sale de un fichero: `types.ts` lo
+importan 25 de los 34 módulos y él importa seis, así que cierra el grafo entero
+—incluidos `lib` y `utils`, que son la capa de fundación y no deberían poder
+volver—. `utils.ts` pone los otros dos pares ascendentes: tiene nombre de
+utilidad y contiene composición de prompts.
+
+**Es la lección de ADR-104 repetida un nivel más abajo.** Allí el gate estaba
+verde porque medía una propiedad más débil que la que decía medir; aquí, porque
+medía un árbol más pequeño que el que decía medir. Un grafo incompleto no se ve
+incompleto: se ve sano. La cabecera del script ahora declara qué abre y qué deja
+fuera, para que la próxima ampliación empiece por leerlo.
 
 ---
 
