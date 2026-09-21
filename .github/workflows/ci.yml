@@ -167,7 +167,9 @@ jobs:
       - name: Vitest shard ${{ matrix.shard }} of 4
         env:
           VITEST_SKIP_THRESHOLDS: '1'
-        run: npm run test:shard -- --shard=${{ matrix.shard }}/4
+        # El blob conserva resultados para el merge; el reporter estándar deja
+        # visible el error que determina el código de salida en el log del job.
+        run: npm run test:shard -- --shard=${{ matrix.shard }}/4 --reporter=blob --reporter=default
 
       # `.vitest/blob/` es un directorio oculto y upload-artifact salta los
       # ocultos salvo que se le diga, así que la bandera es obligatoria.

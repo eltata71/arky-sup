@@ -1,6 +1,6 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-21
+**Última actualización:** 2026-09-22
 **Rama:** `feat/fase-2-consistencia-reanudacion` · **Base:** `2344cf9`
 
 ---
