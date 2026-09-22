@@ -26,7 +26,7 @@
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
   2. **Contratos pgTAP contra PostgreSQL 16 nativo** — `decide_engagement_atomic` (24/24), `office_engagement_transitions` (6/6).
   3. **Lint, module-boundaries, any-budget** — todos en verde.
-  4. **Module-size** — `OfficeEngagementRunner.ts` quedó bajo los techos por defecto tras extraer `officeRunResumption`, `officeRunnerState` y `officeRunnerContracts`; `agentExecutor.ts` conserva una deuda registrada (1007 vs 1001 líneas).
+  4. **Module-size** — `OfficeEngagementRunner.ts` quedó bajo los techos por defecto tras extraer `officeRunResumption`, `officeRunnerState` y `officeRunnerContracts`; `agentExecutor.ts` también quedó por debajo, y su techo se fijó en 988 el 2026-09-22.
   5. **Typecheck** — OOM en el proceso completo (heap 2 GiB); validación focalizada pasó con las pruebas. Se documenta la limitación del entorno.
 - **Bloqueos resueltos:** F2-03 decisión de negocio adoptada (opción C, ADR-101). No quedan bloqueos de negocio en Fase 2.
 
@@ -186,7 +186,13 @@ fuera, para que la próxima ampliación empiece por leerlo.
    nombra antes que la autoría, porque es la razón que sigue siendo cierta si el
    encargo cambia de autor.
 
-2. **`agentExecutor.ts` (1007 líneas, techo 1001)** — se extrajeron `deterministicArtifactReuse` y `agentExecutorContracts`. Mismo criterio.
+2. ~~**`agentExecutor.ts` (1007 líneas, techo 1001)**~~ **Ya no era deuda, y eso
+   era el defecto.** Las extracciones de la fase 2 —`deterministicArtifactReuse`
+   y `agentExecutorContracts`— lo habían dejado en **988 líneas y 41 175 bytes**,
+   por debajo del techo, y nadie bajó el número: el gate estaba en verde y esta
+   lista seguía diciendo que no. Fijado el 2026-09-22. Un presupuesto que no se
+   baja cuando se gana es un presupuesto que permite volver a subir sin que se
+   note.
 3. **Typecheck y build completos no corren en este equipo, y ya está medido.**
    `tsc --noEmit` muere por OOM del sistema con **RSS máximo 2 076 MB** en tres
    intentos —incluido uno excluyendo `__tests__`, que sólo bajó a 2 044— frente a
