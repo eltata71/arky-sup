@@ -108,7 +108,14 @@ export const BYTE_CEILINGS = {
   'pages/LMS/CourseView.tsx': 24691,
   'services/diagram/irToReactFlow.ts': 23866,
   'services/architectureOffice/officePortfolio.ts': 23864,
-  'pages/EngagementRoom.tsx': 23338,
+  // 23338 → 23347 el 2026-09-22: nueve bytes, y la razón es la que el gate
+  // pide que se escriba. La sala pasó de leer un booleano de permiso
+  // (`canApprove`) a preguntar si **esta** persona puede firmar **este**
+  // encargo (`arbEligibility(engagement)`), porque el autor no decide lo suyo
+  // y la pantalla le ofrecía un botón que el servidor rechaza siempre. La regla
+  // vive en `describeArbDecisionEligibility`; lo que creció es la llamada, no
+  // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
+  'pages/EngagementRoom.tsx': 23347,
   'pages/LMS/LMSCatalog.tsx': 22897,
   'components/ChatInterface.tsx': 22576,
   'services/diagram/diagramTypeQualityGates.ts': 22356,

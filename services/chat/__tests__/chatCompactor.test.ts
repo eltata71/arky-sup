@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deterministicCompactionDigest } from '../chatCompactor';
-import type { ChatMessage } from '../../../types';
+import type { ChatMessage } from '../ChatTypes';
 
 describe('deterministicCompactionDigest', () => {
     it('returns a safe placeholder when no messages are given', () => {

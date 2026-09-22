@@ -23,9 +23,11 @@ import {
   type OfficeEngagement,
   type OfficeTask,
 } from './OfficeTypes';
+// Sólo los tres que este fichero usa. `OfficeConsolidateOutcome` y
+// `OfficeProduceOutcome` los publica el `export type` de abajo, que no necesita
+// importarlos: tenerlos en las dos listas dejaba dos avisos de ESLint, y un
+// aviso es un hallazgo que nadie lee en cuanto hay diez.
 import {
-  type OfficeConsolidateOutcome,
-  type OfficeProduceOutcome,
   type OfficeRunOptions,
   type OfficeRunResult,
   type OfficeRunnerPorts,

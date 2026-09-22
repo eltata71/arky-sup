@@ -128,6 +128,22 @@ export {
   type AiCallResult,
 } from './callControl/aiCallControlService';
 export { budgetChatHistory, type BudgetOptions, type BudgetedChatContext } from './callControl/contextBudget';
+
+// La composición de prompts sobre un proyecto, que vivía en `utils.ts` (F3-08).
+// Se publica porque `services/agent` la usa para su propio contexto; el resto
+// de consumidores están dentro de esta capa y entran por el fichero.
+export {
+  buildGlobalPrompt,
+  buildLMSTutorPersona,
+  buildBasePrompt,
+  buildArtifactsContext,
+  buildArtifactExcerpt,
+  selectExcerptCandidates,
+  buildSiblingDiagramsPromptBlock,
+  type BasePromptMode,
+  type BasePromptOptions,
+  type ArtifactsContextOptions,
+} from './prompts/projectPrompts';
 export {
   DEFAULT_TEXT_MODEL,
   listCurrentGeminiModels,

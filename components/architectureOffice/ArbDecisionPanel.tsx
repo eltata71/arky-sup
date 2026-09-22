@@ -15,11 +15,24 @@ import type {
   OfficeArbVerdict,
   OfficeEngagement,
 } from '../../services/architectureOffice/OfficeTypes';
+// Por el barril y no por el fichero: es un `import type`, así que TypeScript lo
+// borra entero y no cuesta un byte de bundle — que es lo único que justifica
+// entrar por una ruta profunda en este repositorio.
+import type { ArbDecisionEligibility } from '../../services/architectureOffice';
 import { GATE_STATUS_LABELS, GATE_STATUS_TONES, REVIEW_VERDICT_LABELS, REVIEW_VERDICT_TONES } from './officeUiLabels';
 
 interface ArbDecisionPanelProps {
   engagement: OfficeEngagement;
-  canApprove: boolean;
+  /**
+   * Si esta persona puede firmar **este** encargo, con el motivo cuando no.
+   *
+   * Era un `boolean` que sólo miraba el permiso, y por eso a quien había
+   * escrito el encargo se le ofrecía «Aprobar entrega» habilitado para una
+   * llamada que el servidor rechaza siempre (ADR-101, opción C). El motivo
+   * viaja porque las dos negativas se explican distinto; la regla la decide
+   * `describeArbDecisionEligibility` y aquí sólo se elige la frase.
+   */
+  eligibility: ArbDecisionEligibility;
   busy?: boolean;
   onDecide: (verdict: OfficeArbVerdict, rationale: string) => void;
   onReevaluateGates: () => void;
@@ -27,7 +40,7 @@ interface ArbDecisionPanelProps {
 
 export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
   engagement,
-  canApprove,
+  eligibility,
   busy = false,
   onDecide,
   onReevaluateGates,
@@ -114,14 +127,15 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
         </Alert>
       )}
 
-      {decidable && !canApprove && (
+      {decidable && !eligibility.allowed && (
         <Alert tone="warning">
-          Solo un administrador puede emitir la decisión del comité. Es la separación de funciones:
-          quien produce el trabajo no lo aprueba.
+          {eligibility.reason === 'own-engagement'
+            ? 'Este entregable lo creaste tú, así que su decisión la firma otro miembro del comité. Es la separación de funciones: quien produce el trabajo no lo aprueba.'
+            : 'Solo un miembro del comité puede emitir esta decisión. Es la separación de funciones: quien produce el trabajo no lo aprueba.'}
         </Alert>
       )}
 
-      {decidable && canApprove && (
+      {decidable && eligibility.allowed && (
         <div className="space-y-2">
           <label htmlFor="arb-rationale" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Motivo de la decisión

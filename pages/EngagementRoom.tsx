@@ -68,7 +68,7 @@ const EngagementRoom: React.FC = () => {
   const {
     engagements,
     runningEngagementIds,
-    canApprove,
+    arbEligibility,
     loadEngagements,
     approveCharter,
     runEngagementNow,
@@ -492,7 +492,7 @@ const EngagementRoom: React.FC = () => {
             <div id="comite" className="scroll-mt-16">
               <ArbDecisionPanel
                 engagement={engagement}
-                canApprove={canApprove}
+                eligibility={arbEligibility(engagement)}
                 busy={busy}
                 onDecide={handleDecide}
                 onReevaluateGates={handleEvaluateGates}

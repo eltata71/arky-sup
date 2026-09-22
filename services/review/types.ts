@@ -19,7 +19,7 @@ import type {
   ArtifactCommentVisibility,
   ArtifactReviewDecision,
   ArtifactReviewStatus,
-} from '../../types';
+} from './ReviewTypes';
 
 export type Unsubscribe = () => void;
 

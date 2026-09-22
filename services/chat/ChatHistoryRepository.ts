@@ -15,7 +15,7 @@
  * no tenga que entrar por un fichero que llama a un modelo.
  */
 
-import type { ChatMessage } from '../../types';
+import type { ChatMessage } from './ChatTypes';
 import { observabilityService } from '../observability';
 import {
   classifyPersistenceError,

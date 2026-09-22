@@ -115,6 +115,27 @@ export function contentToText(content: AIMessageContent): string {
     .join('\n');
 }
 
+/**
+ * Un turno de conversación, tal y como esta capa lo necesita.
+ *
+ * Es un **puerto**, y existe por la razón por la que `services/agent` declara
+ * `AgentPersonaBriefing` en vez de importar la Oficina: la dependencia tiene
+ * que apuntar en un solo sentido. `services/chat` importa `services/ai` —el
+ * compactador llama al modelo—, así que si la capa de IA importara el
+ * `ChatMessage` del contexto de chat, los dos módulos se importarían
+ * mutuamente y ninguno se podría leer solo.
+ *
+ * Declara sólo lo que esta capa lee: el papel y el texto. `ChatMessage` encaja
+ * estructuralmente —sus campos extra son opcionales— así que quien ya tenía un
+ * historial lo sigue pasando sin convertir nada, y el día que el contexto de
+ * chat añada un campo, esta capa no se entera, que es exactamente lo que un
+ * puerto compra.
+ */
+export interface AIConversationTurn {
+  role: 'user' | 'model';
+  content: string;
+}
+
 /** True when any part needs a capability beyond plain text. */
 export function contentNeeds(
   content: AIMessageContent,

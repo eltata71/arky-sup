@@ -166,13 +166,18 @@ describe('the budgets are records, not aspirations', () => {
   });
 
   it('registra los imports ascendentes de la raíz, y sólo ésos', () => {
-    // Los siete que F3-02 hizo visibles, nombrados uno a uno (ADR-105).
+    // Siete cuando F3-02 los hizo visibles (ADR-105); **dos** hoy.
     //
-    // No son código nuevo: son dos ficheros de la raíz del repositorio que el
-    // verificador no abría porque sólo miraba carpetas. `types.ts` es el núcleo
-    // compartido —lo importan 25 de los 34 módulos— y reexporta agregados desde
-    // el contexto de cada uno; `utils.ts` tiene nombre de utilidad y contiene
-    // composición de prompts, que es capa de IA.
+    // Los cinco que se fueron: tres eran reexportaciones de `types.ts` que
+    // nadie consumía salvo los propios módulos dueños (F3-07), y dos eran la
+    // composición de prompts que vivía en `utils.ts` bajo nombre de utilidad
+    // (F3-08).
+    //
+    // Los dos que quedan son un solo hecho dicho dos veces: `Project` contiene
+    // artefactos y el contexto de artefactos necesita el proyecto. Repuntarlos
+    // cambiaría este par ascendente por un ciclo entre dos contextos de dominio
+    // reales, que es peor y que el bloque de arriba prohíbe por nombre. Debajo
+    // está la frontera del agregado Proyecto–Artefacto: D-4, que decide F4-02.
     //
     // Se nombran en vez de contarse para que el día que uno baje, el test diga
     // cuál. Y la lista no puede crecer: un par ascendente nuevo no entra aquí,
@@ -181,11 +186,6 @@ describe('the budgets are records, not aspirations', () => {
     expect([...layerViolations.keys()].sort()).toEqual([
       'types.ts -> services/architectureProjects',
       'types.ts -> services/artifacts',
-      'types.ts -> services/chat',
-      'types.ts -> services/presentation',
-      'types.ts -> services/review',
-      'utils.ts -> services/ai',
-      'utils.ts -> services/memory',
     ]);
   });
 });

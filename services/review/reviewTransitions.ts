@@ -21,7 +21,7 @@
  *    living document and re-editing an approved artifact must be possible.
  */
 
-import type { ArtifactReviewStatus } from '../../types';
+import type { ArtifactReviewStatus } from './ReviewTypes';
 
 export const ARTIFACT_REVIEW_TRANSITIONS: Readonly<
   Record<ArtifactReviewStatus, readonly ArtifactReviewStatus[]>

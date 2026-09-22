@@ -6,7 +6,16 @@ import type { ArtifactReviewSuggestion } from './review';
 import type { ChatMessage } from './chat';
 import type { DiagramAudience, DiagramIR } from '../lib/diagram';
 import { ARTIFACT_TEMPLATES } from "../constants";
-import { cleanJsonString as cleanJsonStringUtil, buildGlobalPrompt as buildGlobalPromptUtil, buildBasePrompt as buildBasePromptUtil, buildArtifactsContext as buildArtifactsContextUtil, buildSiblingDiagramsPromptBlock as buildSiblingDiagramsPromptBlockUtil, buildLMSTutorPersona as buildLMSTutorPersonaUtil, type BasePromptOptions, type ArtifactsContextOptions } from '../utils';
+import { cleanJsonString as cleanJsonStringUtil } from '../utils';
+import {
+  buildGlobalPrompt as buildGlobalPromptUtil,
+  buildBasePrompt as buildBasePromptUtil,
+  buildArtifactsContext as buildArtifactsContextUtil,
+  buildSiblingDiagramsPromptBlock as buildSiblingDiagramsPromptBlockUtil,
+  buildLMSTutorPersona as buildLMSTutorPersonaUtil,
+  type BasePromptOptions,
+  type ArtifactsContextOptions,
+} from './ai/prompts/projectPrompts';
 import { buildAgentSystemInstruction, prepareChatHistoryForModel } from './agent/agentContextComposer';
 import { MODEL_FALLBACK_CHAIN, MODEL_TIERS, IMAGE_MODEL, TTS_MODEL, type ModelTier } from '../lib/ai/modelCatalog';
 import { proxyProviderFor, resolveModelForSettings, resolveProviderId } from './ai/catalog';

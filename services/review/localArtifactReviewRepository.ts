@@ -15,7 +15,7 @@ import type {
   ArtifactCommentReply,
   ArtifactReviewDecision,
   ArtifactReviewStatus,
-} from '../../types';
+} from './ReviewTypes';
 import {
   LOCAL_ONLY_SYNC_STATE,
   type AddCommentInput,

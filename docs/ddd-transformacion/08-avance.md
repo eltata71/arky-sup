@@ -8,16 +8,19 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F3-02 — el verificador mide todo el árbol**
-  (ADR-105). Antes: F2-12, el fixture E2E, fusionado en `main` con la PR #43.
+- **Última tarea completada:** **F3-07 (parcial) y F3-08** — el nudo de la raíz,
+  deshecho hasta donde no depende de D-4. Antes: F3-02 (ADR-105) y F2-12.
 - **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
   dejado un fixture que ya no podía existir. Lo que falló fue leerlo.
 - **Estado de los cambios:** integrado en `main` mediante PR #42; el seguimiento técnico parte del contrato de producción y no de una rama ya eliminada.
-- **Siguiente paso exacto:** **F3-07** — deshacer el reexportador `types.ts`. Es
-  el trabajo que F3-02 hizo visible y el más barato de los dos que destapó: mueve
-  declaraciones, no comportamiento.
+- **Siguiente paso exacto:** **F4-01** — medir el volumen y los conflictos del
+  agregado Proyecto–Artefacto. Ha dejado de ser una tarea de la fase 4 que
+  esperaba su turno: es lo que **bloquea** el resto de F3-07. Las dos últimas
+  aristas de `types.ts` son `Artifact` y `Project`, y no se repuntan sin decidir
+  antes si `Artefacto` es raíz de agregado (D-4, que resuelve F4-02 con los
+  datos de F4-01).
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -85,8 +88,8 @@
 |---|---|---|
 | **F3-01** gate transitivo | ✅ | Adelantada. 4 cycles, 2 SCCs (3 + 9 modules). 36 pruebas, 6 negativas. |
 | **F3-02** ampliar alcance verificador | ✅ | ADR-105. Lee `import('…')` y abre los ficheros de la raíz. 42 pruebas. |
-| **F3-07** deshacer el reexportador `types.ts` | ⏳ | **Siguiente.** Lo destapó F3-02. |
-| **F3-08** `utils.ts` no es utilidades | ⏳ | Lo destapó F3-02. |
+| **F3-07** deshacer el reexportador `types.ts` | 🟡 | Cuatro de seis ciclos. Las dos que faltan **bloqueadas por D-4**. |
+| **F3-08** `utils.ts` no es utilidades | ✅ | 290 líneas de composición de prompts a `services/ai`. |
 | **F3-03** declarar dependencias permitidas | ⏳ | |
 | **F3-05** iniciativas como contexto piloto | ⏳ | |
 
@@ -108,6 +111,38 @@ importan 25 de los 34 módulos y él importa seis, así que cierra el grafo ente
 —incluidos `lib` y `utils`, que son la capa de fundación y no deberían poder
 volver—. `utils.ts` pone los otros dos pares ascendentes: tiene nombre de
 utilidad y contiene composición de prompts.
+
+### Lo que F3-07 y F3-08 deshicieron, y lo que no
+
+| | tras F3-02 | hoy |
+|---|---|---|
+| Ciclos | 11 | **6** |
+| Pares ascendentes | 7 | **2** |
+| Pares con import profundo | 68 | **64** |
+| Componentes fuertemente conexos | 3 + 27 | 3 + 27 |
+
+**Casi todo era andamio que ya no sostenía nada.** `types.ts` reexportaba 19
+declaraciones de diagrama que **no tenía un solo consumidor**, y las de
+presentación, revisión y chat sólo las consumían **los propios módulos dueños**,
+que importaban sus tipos por la raíz del repositorio en vez de por el fichero de
+al lado. Once ficheros repuntados y cuatro bloques retirados: cuatro ciclos y
+tres imports ascendentes menos. Nada de eso era una decisión de diseño; era una
+nota de «reexportado para que los imports existentes sigan funcionando» que
+sobrevivió a los imports que iba a proteger.
+
+`utils.ts` era el otro: 290 líneas que componen prompts —leen el contexto y la
+memoria de un proyecto para redactar lo que se manda a un modelo— viviendo en la
+raíz bajo un nombre que promete utilidades. Están en
+`services/ai/prompts/projectPrompts.ts`.
+
+**El componente de 27 no se mueve, y ésa es la información.** `types.ts` sigue
+dentro por dos aristas, `Artifact` y `Project`, y arrastra con él a `lib`.
+Repuntarlas cambiaría un ciclo contra `types.ts` por uno **entre dos contextos
+de dominio reales**: `services/artifacts` necesita el proyecto y
+`services/architectureProjects` necesita el artefacto. Eso no es un problema de
+imports sino la frontera del agregado Proyecto–Artefacto — **D-4**, que decide
+F4-02 con los datos de F4-01. La consecuencia de orden es que F4-01 deja de ser
+«la fase siguiente» y pasa a ser el desbloqueo de ésta.
 
 **Es la lección de ADR-104 repetida un nivel más abajo.** Allí el gate estaba
 verde porque medía una propiedad más débil que la que decía medir; aquí, porque
@@ -140,15 +175,28 @@ fuera, para que la próxima ampliación empiece por leerlo.
 
 ## Deuda técnica controlada
 
-1. **El botón que siempre falla.** `ArbDecisionPanel` habilita «Aprobar entrega»
-   con `canActAsArb(actor)`, que es sólo el permiso: a un autor con `arb:decide`
-   —cualquier `reviewer`, `admin` o `superadmin` mirando su propio encargo— se le
-   ofrece un botón que el servidor rechazará siempre con `42501`. `lib/authz`
-   decide lo que *se muestra* y PostgreSQL lo que *se permite*, así que no es un
-   fallo de seguridad; es la mitad de la opción C que no bajó a la pantalla. El
-   arreglo es una función de dominio —«¿puede *este* actor firmar *este*
-   encargo?»— leída por la sala, no un `if` en el componente. Pendiente.
+1. ~~**El botón que siempre falla.**~~ **Resuelta el 2026-09-22.**
+   `describeArbDecisionEligibility` (`services/architectureOffice/OfficeArbService`)
+   responde «¿puede *este* actor firmar *este* encargo?» y devuelve el motivo, no
+   un booleano: las dos negativas se explican distinto y un `false` habría
+   obligado a la pantalla a adivinar cuál —que es como se escribe la regla por
+   segunda vez—. La regla rechaza al autor **antes de la llamada**, el contexto
+   la expone como `arbEligibility(engagement)` y `ArbDecisionPanel` sólo elige la
+   frase. Cinco pruebas nuevas, incluida la precedencia: faltar el permiso se
+   nombra antes que la autoría, porque es la razón que sigue siendo cierta si el
+   encargo cambia de autor.
 
 2. **`agentExecutor.ts` (1007 líneas, techo 1001)** — se extrajeron `deterministicArtifactReuse` y `agentExecutorContracts`. Mismo criterio.
-3. **Typecheck completo no verificado en entorno local (OOM)** — CI tiene runners con 4 GiB; local 2 GiB. No es un defecto de código.
+3. **Typecheck y build completos no corren en este equipo, y ya está medido.**
+   `tsc --noEmit` muere por OOM del sistema con **RSS máximo 2 076 MB** en tres
+   intentos —incluido uno excluyendo `__tests__`, que sólo bajó a 2 044— frente a
+   **~1 900 MB disponibles**; con el heap limitado a 1,5 GiB aborta dentro de V8.
+   `npm run build` muere igual. La máquina tiene 7,9 GiB, **cero swap**, y un
+   navegador ocupa ~2,5. No es un defecto de código y no se arregla en el
+   repositorio: o se libera memoria durante la comprobación, o se añade swap.
+   Lo que **sí** corre en local, y es la señal utilizable: `typecheck:strict`
+   (497 MB, verde), lint, los cinco gates y las 4 419 pruebas.
+   Node quedó en **24.21.0** (`.nvmrc`), que era el defecto real: con Node 20 el
+   SDK de Supabase no encuentra `WebSocket` nativo y `supabaseIdentityAdapter`
+   fallaba una prueba que en CI pasaba.
 4. **`mark_file_object_ready` no invocable desde navegador** — intencional; la coreografía de subida usa trigger server-side. Si un flujo futuro lo necesita, se añadirá un backend confiable, no se abrirá la RPC.

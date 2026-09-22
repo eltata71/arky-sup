@@ -17,7 +17,7 @@ import type {
   ArtifactComment,
   ArtifactReviewDecision,
   ArtifactReviewStatus,
-} from '../../types';
+} from './ReviewTypes';
 import { observabilityService } from '../observability';
 import { createOperationId } from '../persistence';
 import { LocalArtifactReviewRepository } from './localArtifactReviewRepository';

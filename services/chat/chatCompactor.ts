@@ -16,7 +16,8 @@
  *    when the API is down (it still saves storage; it just won't paraphrase).
  */
 
-import type { ChatMessage, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { ChatMessage } from './ChatTypes';
 import { aiGateway } from '../ai';
 import { deterministicCompactionDigest, type CompactionDigest } from './compactionDigest';
 import { resolveEffectiveModel } from '../../lib/ai/modelCatalog';

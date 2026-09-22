@@ -36,6 +36,7 @@ export type {
 export { contentNeeds, contentToText, textPart, toContentParts } from './AIContent';
 export type {
   AIContentPart,
+  AIConversationTurn,
   AIFilePart,
   AIImagePart,
   AIMessageContent,

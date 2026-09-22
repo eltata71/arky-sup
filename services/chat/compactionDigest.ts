@@ -17,7 +17,7 @@
  * does.** Splitting the file is what lets the compactor stay where it is.
  */
 
-import type { ChatMessage } from '../../types';
+import type { ChatMessage } from './ChatTypes';
 
 export interface CompactionDigest {
   /** Title summarising the compacted range. */

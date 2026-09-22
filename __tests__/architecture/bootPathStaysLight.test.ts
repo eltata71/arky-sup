@@ -118,23 +118,26 @@ describe('the boot path', () => {
   });
 
   /**
-   * Four AI modules *are* eager, and legitimately: they are pure, they never
-   * call a model, and boot code genuinely needs them — `OfficeEngagementPlanner`
-   * validates a charter refinement with `parseStructured`, and `utils.ts` builds
-   * prompt context. Listing them by name is the point: the next addition to this
-   * set is a decision someone makes on purpose, not a barrel nobody noticed.
+   * Dos módulos de IA *son* eager, y legítimamente: son puros, no llaman a
+   * ningún modelo, y el arranque los necesita de verdad —
+   * `OfficeEngagementPlanner` valida un refinamiento de charter con
+   * `parseStructured`. Nombrarlos es el punto: la siguiente incorporación a
+   * este conjunto es una decisión que alguien toma a propósito, no un barril
+   * que nadie miró.
    *
-   * `diagramStorySchema` is the fourth, added on purpose: it is the `metadata`
-   * half of the diagram contract — template strings and a plain schema object,
-   * no model and no SDK — split out of `diagramPrompts` when the narrative
-   * became structured. It adds no reach, because the file that imports it was
-   * already here; it moves bytes out of a module sitting at its ceiling.
+   * **Eran cuatro hasta F3-08, y bajar a dos no fue trabajo de arranque.**
+   * `utils.ts` componía los prompts del proyecto, así que importaba
+   * `services/ai/prompts/diagramPrompts` —y con él `diagramStorySchema`—, y
+   * `utils.ts` sí está en el camino de arranque: diez módulos lo importan. Al
+   * mudarse esa composición a `services/ai/prompts/projectPrompts.ts`, los dos
+   * ficheros de diagrama salieron del arranque con ella. La razón por la que
+   * aquel import ascendente de fundación a dominio era un problema y este test
+   * la nombra sin proponérselo: lo que la capa de fundación importa, el
+   * arranque lo descarga.
    */
   it('reaches only the pure, model-free AI leaves', () => {
     expect(reachableUnder('services/ai/')).toEqual([
       'services/ai/parseAiJson.ts',
-      'services/ai/prompts/diagramPrompts.ts',
-      'services/ai/prompts/diagramStorySchema.ts',
       'services/ai/structuredOutput/index.ts',
     ]);
   });

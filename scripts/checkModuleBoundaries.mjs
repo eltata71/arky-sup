@@ -65,19 +65,27 @@ const MANIFEST = JSON.parse(readFileSync('modules.json', 'utf8'));
  * Las cuatro que la prueba afirma por nombre —`export ↔ quality`,
  * `artifacts ↔ export`, `agent ↔ architectureOffice`, `ai ↔ diagram`— siguen
  * rotas, y ninguna de las siete nuevas las reintroduce.
+ *
+ * **Cuatro de las siete duraron un día** (F3-07): `lib`, `services/chat`,
+ * `services/presentation` y `services/review` salieron de la lista al dejar
+ * `types.ts` de reexportar lo que ya no leía nadie. Las 19 declaraciones de
+ * diagrama que reexportaba **no tenían un solo consumidor**, y de las otras
+ * tres familias los únicos consumidores eran los propios módulos dueños,
+ * importando sus tipos por la raíz del repositorio en vez de por su fichero.
+ *
+ * Quedan dos, y son el mismo hecho: `Project` contiene artefactos y el
+ * contexto de artefactos necesita el proyecto. Deshacerlo no es repuntar
+ * imports —eso sólo cambiaría un ciclo contra `types.ts` por uno entre dos
+ * contextos de dominio reales—, sino decidir si `Artefacto` es raíz de
+ * agregado. Es D-4, y la decide F4-02 con los datos de F4-01.
  */
 export const ALLOWED_CYCLES = [
   'components <-> context',
   'components <-> hooks',
   'context <-> hooks',
-  'lib <-> types.ts',
   'services (raíz) <-> services/ai',
-  'services/ai <-> utils.ts',
   'services/architectureProjects <-> types.ts',
   'services/artifacts <-> types.ts',
-  'services/chat <-> types.ts',
-  'services/presentation <-> types.ts',
-  'services/review <-> types.ts',
 ];
 
 /**
@@ -175,15 +183,14 @@ export const ALLOWED_SCCS = [
  *     `buildBasePrompt` y `buildArtifactsContext` son composición de prompts,
  *     es decir capa de IA escrita en la raíz del repositorio. Por eso importa
  *     `services/ai` y `services/memory`.
+ *
+ * De los siete originales quedan cuatro: F3-07 retiró los tres que salían de
+ * reexportaciones que nadie consumía. Los dos de `types.ts` que siguen son el
+ * agregado Proyecto–Artefacto y esperan a D-4; los dos de `utils.ts` son F3-08.
  */
 export const LAYER_VIOLATION_BUDGET = {
   'types.ts -> services/architectureProjects': 1,
   'types.ts -> services/artifacts': 4,
-  'types.ts -> services/chat': 1,
-  'types.ts -> services/presentation': 1,
-  'types.ts -> services/review': 1,
-  'utils.ts -> services/ai': 1,
-  'utils.ts -> services/memory': 1,
 };
 
 /**
@@ -276,7 +283,19 @@ export const DEEP_IMPORT_BUDGET = {
   'pages -> services/architectureOffice': 9,
   'pages -> services/artifacts': 1,
   'services (raíz) -> services/agent': 1,
-  'services (raíz) -> services/ai': 16,
+  /**
+   * 16 → 17 el 2026-09-22, y es el único número que F3-07/F3-08 suben.
+   *
+   * No es acoplamiento nuevo: `services/geminiService.ts` ya importaba la
+   * composición de prompts, sólo que desde `utils.ts` —la raíz del
+   * repositorio— y ahora desde `services/ai/prompts/projectPrompts.ts`, que es
+   * donde vive. El intercambio es deliberado: se cambia **un import dentro de
+   * un ciclo ya registrado** (`services (raíz) <-> services/ai`, que F5-01
+   * disuelve) por **dos imports ascendentes de fundación a dominio**, que es la
+   * clase de violación que ninguna fase tiene planeado arreglar porque no
+   * debería existir. Baja cuando F5-01 estrangule el monolito.
+   */
+  'services (raíz) -> services/ai': 17,
   'services (raíz) -> services/architectureOffice': 3,
   'services (raíz) -> services/artifacts': 4,
   'services (raíz) -> services/diagram': 6,
@@ -313,10 +332,6 @@ export const DEEP_IMPORT_BUDGET = {
   'services/quality -> services/diagram': 1,
   'types.ts -> services/architectureProjects': 1,
   'types.ts -> services/artifacts': 4,
-  'types.ts -> services/chat': 1,
-  'types.ts -> services/review': 1,
-  'utils.ts -> services/ai': 1,
-  'utils.ts -> services/memory': 1,
 };
 
 /**

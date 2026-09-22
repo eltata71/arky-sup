@@ -29,7 +29,7 @@ import type {
   ArtifactCommentReply,
   ArtifactReviewDecision,
   ArtifactReviewStatus,
-} from '../../types';
+} from './ReviewTypes';
 import { callRpc, isSupabaseDataBackendConfigured } from '../adapters';
 import {
   newCommentId,

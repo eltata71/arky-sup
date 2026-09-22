@@ -7,7 +7,8 @@
  */
 
 import type { Settings } from '../../../../types';
-import { buildLMSTutorPersona, cleanJsonString } from '../../../../utils';
+import { cleanJsonString } from '../../../../utils';
+import { buildLMSTutorPersona } from '../../prompts/projectPrompts';
 import { aiGateway } from '../aiGateway';
 import { resolveModelForSettings } from '../../catalog';
 import type { DiagramChallengeEvaluation } from '../../../../types/lms';
