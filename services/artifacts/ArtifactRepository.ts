@@ -8,45 +8,63 @@
  * fichero: cambiar la forma de un artefacto era editar un módulo del que
  * dependían otros seis dominios.
  *
- * Ahora vive en `artifactPersistence.ts`, al lado de este fichero. Las guardas
- * de tamaño, el índice de artefactos y el reintento contra la carrera de
- * creación están ahí; esto es sólo la puerta.
+ * Ahora vive en `artifactPersistence.ts`, al lado de este fichero, y desde
+ * F4-03 cada operación es un comando del servidor con la revisión del propio
+ * artefacto (ADR-106). Esto es sólo la puerta.
  */
 
 import {
   createArtifact,
+  createArtifactVersion,
   deleteArtifact,
-  restoreArtifactVersion,
+  deletionChanges,
+  reviseArtifacts,
   updateArtifact,
-  updateProjectArtifacts,
+  type ArtifactRevisionChange,
+  type ArtifactWriteConfirmation,
 } from './artifactPersistence';
 import type { PersistenceResult } from '../persistence';
 import type { Artifact } from '../../types';
 
+export type { ArtifactRevisionChange, ArtifactWriteConfirmation } from './artifactPersistence';
+
+/**
+ * Un método por comando (ADR-106). No hay «reemplazar todos»: la operación que
+ * recibía la lista entera era la que podía borrar lo que no nombraba.
+ */
 export interface ArtifactRepository {
+  /** Un artefacto en un grupo de versiones nuevo. */
   create(projectId: string, artifact: Artifact, userId?: string): Promise<PersistenceResult<Artifact>>;
+  /** La versión siguiente de un grupo existente — también al restaurar una anterior. */
+  createVersion(projectId: string, artifact: Artifact, userId?: string): Promise<PersistenceResult<Artifact>>;
   update(
     projectId: string,
     artifactId: string,
     updates: Partial<Artifact>,
-    options?: { expectedUpdatedAt?: string; userId?: string },
-  ): Promise<PersistenceResult<{ updatedAt: string }>>;
-  remove(projectId: string, artifactId: string, userId?: string): Promise<PersistenceResult<{ updatedAt: string }>>;
-  /** Replace the whole set — used by the flows that rewrite several at once. */
-  replaceAll(
+    options?: { expectedRevision?: number; userId?: string },
+  ): Promise<PersistenceResult<ArtifactWriteConfirmation>>;
+  remove(
     projectId: string,
-    artifacts: Artifact[],
-    options?: { expectedUpdatedAt?: string; userId?: string },
+    artifactId: string,
+    options?: { expectedRevision?: number; userId?: string },
   ): Promise<PersistenceResult<{ updatedAt: string }>>;
-  restoreVersion(projectId: string, version: Artifact): Promise<PersistenceResult<Artifact>>;
+  /** Varias versiones y borrados en una transacción: todo o nada. */
+  revise(projectId: string, changes: readonly ArtifactRevisionChange[], userId?: string): Promise<PersistenceResult<Artifact[]>>;
+  /** Borra varios en una transacción, cada uno con su revisión. */
+  removeMany(
+    projectId: string,
+    artifacts: readonly Pick<Artifact, 'id' | 'revision'>[],
+    userId?: string,
+  ): Promise<PersistenceResult<Artifact[]>>;
 }
 
 export const artifactRepository: ArtifactRepository = {
   create: (projectId, artifact, userId) => createArtifact(projectId, artifact, { userId }),
+  createVersion: (projectId, artifact, userId) => createArtifactVersion(projectId, artifact, { userId }),
   update: (projectId, artifactId, updates, options = {}) =>
     updateArtifact(projectId, artifactId, updates, options),
-  remove: (projectId, artifactId, userId) => deleteArtifact(projectId, artifactId, { userId }),
-  replaceAll: (projectId, artifacts, options = {}) =>
-    updateProjectArtifacts(projectId, artifacts, options),
-  restoreVersion: (projectId, version) => restoreArtifactVersion(projectId, version),
+  remove: (projectId, artifactId, options = {}) => deleteArtifact(projectId, artifactId, options),
+  revise: (projectId, changes, userId) => reviseArtifacts(projectId, changes, { userId }),
+  removeMany: async (projectId, artifacts, userId) =>
+    reviseArtifacts(projectId, await deletionChanges(projectId, artifacts), { userId }),
 };

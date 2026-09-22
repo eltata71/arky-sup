@@ -137,6 +137,11 @@ export function validateArtifact(input: unknown, pathPrefix = 'artifact'): Valid
   };
 
   // Optional fields preserved as-is when present and well-formed.
+  // La revisión es lo que el siguiente comando compara (ADR-106): perderla al
+  // sanear convertiría cada edición tras una recarga en un conflicto falso.
+  if (typeof input.revision === 'number' && Number.isInteger(input.revision) && input.revision > 0) {
+    safeArtifact.revision = input.revision;
+  }
   if (isObject(input.ir)) safeArtifact.ir = input.ir as unknown as Artifact['ir'];
   if (typeof input.lucidDocumentId === 'string') safeArtifact.lucidDocumentId = input.lucidDocumentId;
   if (input.audience === 'executive' || input.audience === 'technical' || input.audience === 'operations') {

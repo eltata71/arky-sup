@@ -196,6 +196,14 @@ export interface Artifact {
   keyConcepts: { term: string; definition: string; }[];
   representation: 'diagram' | 'document' | 'hybrid';
   /**
+   * La revisión optimista de **este** artefacto, tal y como la devolvió la
+   * base de datos (ADR-106). Viaja con el artefacto —el patrón de F2-10— en
+   * vez de en un mapa global, y el servidor nunca la guarda dentro del
+   * documento: la superpone al leer y la quita al escribir. Ausente en un
+   * artefacto que todavía no ha llegado a la base de datos.
+   */
+  revision?: number;
+  /**
    * High-level semantic shape ('document' | 'diagram' | 'presentation' | 'hybrid').
    * Optional for backwards compatibility — legacy artifacts derive the kind
    * from `type` via `getArtifactKind`. Populated for new artifacts so the UI

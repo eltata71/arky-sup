@@ -1,6 +1,13 @@
 /**
  * El agregado Proyecto/Atención contra PostgreSQL.
  *
+ * **Desde F4-03 (ADR-106) el Proyecto ya no contiene artefactos.** `saveRoot`
+ * —`api.save_project`— guarda sólo la raíz, y cada artefacto se escribe con su
+ * propio comando desde `services/artifacts`. `save` —la RPC compuesta— queda
+ * para crear un proyecto junto con sus artefactos iniciales; sobre un proyecto
+ * existente el servidor sólo acepta la lista que ya tiene. Lo que sigue
+ * describe cómo se llegó aquí.
+ *
  * Una diferencia de forma con el camino que sustituye, y es la que explica
  * todo lo demás: en Firestore un proyecto eran **muchos documentos** —la raíz,
  * un documento por artefacto, el índice, el grafo, un documento por paquete— y
@@ -74,7 +81,7 @@ const asAggregate = (value: unknown): RemoteProjectAggregate | null => {
  * en cada escritura.
  */
 const withoutDerived = (document: Record<string, unknown>): Record<string, unknown> => {
-  const { artifacts: _a, artifactIndex: _i, artifactCount: _c, artifactsLoaded: _l, ...rest } = document;
+  const { artifacts: _a, artifactIndex: _i, artifactCount: _c, artifactsLoaded: _l, revision: _r, ...rest } = document;
   return rest;
 };
 
@@ -86,8 +93,35 @@ export interface SupabaseProjectRepository {
     artifacts: Artifact[],
     expectedRevision?: number,
   ): Promise<PersistenceResult<RemoteProjectAggregate>>;
+  /** Sólo la raíz: nunca toca artefactos, contador ni índice (ADR-106). */
+  saveRoot(
+    document: Record<string, unknown>,
+    expectedRevision?: number,
+  ): Promise<PersistenceResult<RemoteProjectAggregate>>;
   remove(projectId: string, expectedRevision?: number): Promise<PersistenceResult<void>>;
 }
+
+const confirmSave = async (
+  projectId: string,
+  operationId: string,
+  call: () => Promise<unknown>,
+): Promise<PersistenceResult<RemoteProjectAggregate>> => {
+  try {
+    const aggregate = asAggregate(await call());
+    if (!aggregate) {
+      return {
+        status: 'failed', success: false, operationId, target: 'supabase',
+        message: 'La base de datos confirmó una respuesta de proyecto inválida.',
+      };
+    }
+    revisions.set(projectId, aggregate.revision);
+    return { status: 'success', success: true, operationId, target: 'supabase', data: aggregate };
+  } catch (error) {
+    return supabaseFailure<RemoteProjectAggregate>(
+      operationId, error, 'No se pudo confirmar el proyecto en la base de datos.',
+    );
+  }
+};
 
 export const supabaseProjectRepository: SupabaseProjectRepository = {
   async list() {
@@ -117,28 +151,23 @@ export const supabaseProjectRepository: SupabaseProjectRepository = {
 
   async save(document, artifacts, expectedRevision) {
     const projectId = typeof document.id === 'string' ? document.id : '';
-    const operationId = createOperationId('saveProjectAggregate');
     const expected = expectedRevision ?? knownProjectRevision(projectId);
-    try {
-      const row = await callRpc<unknown>('save_project_aggregate', {
+    return confirmSave(projectId, createOperationId('saveProjectAggregate'), () =>
+      callRpc<unknown>('save_project_aggregate', {
         p_project: withoutDerived(document),
         p_artifacts: artifacts,
         p_expected_revision: expected,
-      });
-      const aggregate = asAggregate(row);
-      if (!aggregate) {
-        return {
-          status: 'failed', success: false, operationId, target: 'supabase',
-          message: 'La base de datos confirmó una respuesta de proyecto inválida.',
-        };
-      }
-      revisions.set(projectId, aggregate.revision);
-      return { status: 'success', success: true, operationId, target: 'supabase', data: aggregate };
-    } catch (error) {
-      return supabaseFailure<RemoteProjectAggregate>(
-        operationId, error, 'No se pudo confirmar el proyecto en la base de datos.',
-      );
-    }
+      }));
+  },
+
+  async saveRoot(document, expectedRevision) {
+    const projectId = typeof document.id === 'string' ? document.id : '';
+    const expected = expectedRevision ?? knownProjectRevision(projectId);
+    return confirmSave(projectId, createOperationId('saveProject'), () =>
+      callRpc<unknown>('save_project', {
+        p_project: withoutDerived(document),
+        p_expected_revision: expected,
+      }));
   },
 
   async remove(projectId, expectedRevision) {

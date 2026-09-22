@@ -26,7 +26,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | P-01 | Un proyecto tiene nombre | `TS` + `RPC` (`project_name = ''` → 22023) | ✅ |
 | P-02 | Un proyecto tiene al menos una iniciativa | `TS` (`createArchitectureProject`) + `RPC` | ✅ **la referencia del repositorio** |
 | P-03 | Las iniciativas citadas existen y son del actor | `RPC` | ✅ al escribir — pero ver I-03 |
-| P-04 | `artifactCount` y `artifactIndex` coinciden con los artefactos | `RPC` (recalculados) | ✅ |
+| P-04 | `artifactCount` y `artifactIndex` coinciden con los artefactos | `RPC` (recalculados **desde las filas** por cada comando, F4-03) | ✅ |
 | P-05 | Un artefacto pertenece a un solo proyecto | `RPC` (23505) | ✅ |
 | P-06 | Una escritura desde vista obsoleta no pisa otra | `RPC` (revisión optimista) | ⚠️ depende de que el cliente mande la revisión correcta — **H10** |
 | P-07 | El dueño es el actor | `RPC` + `RLS` | ✅ |
@@ -56,8 +56,8 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | # | Invariante | Autoridad hoy | ¿Basta? |
 |---|---|---|---|
 | A-01 | Un artefacto tiene id, nombre, tipo, `versionGroupId` y versión numérica | `TS` (`artifactFactory`) + `RPC` | ✅ |
-| A-02 | El versionado es monótono dentro de un `versionGroupId` | `TS` (`useArtifactsState`) | ❌ ninguna guarda de servidor |
-| A-03 | Editar un artefacto no borra los demás | `RPC`, **sólo** por la revisión del proyecto | ⚠️ **H05** |
+| A-02 | El versionado es monótono dentro de un `versionGroupId` | `SQL` (índice único `(project_id, version_group_id, version)`) + `RPC` (versión = máx + 1) — F4-03 | ✅ |
+| A-03 | Editar un artefacto no borra los demás | Por construcción: ningún comando recibe la lista (F4-03, ADR-106); la ruta compuesta rechaza una lista distinta de la almacenada | ✅ |
 | A-04 | Una decisión de revisión es inmutable | `RPC` (`on conflict do nothing`) | ✅ |
 
 ## Identidad y Acceso

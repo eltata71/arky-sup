@@ -1,12 +1,12 @@
 /**
  * Cómo se escribe un Proyecto de Arquitectura.
  *
- * Una sola puerta: `api.save_project_aggregate`, que en una transacción deja
- * consistentes la raíz, las filas de artefacto, el contador y el índice. Eso es
- * lo que hace que este contexto no pueda quedar a medias, y es también la razón
- * por la que **una actualización parcial lee antes de escribir**: la RPC recibe
- * el agregado completo, así que un `updateProject` con tres campos necesita los
- * demás para no borrarlos.
+ * Dos puertas desde ADR-106: `api.save_project` guarda la raíz —y es la que usa
+ * `updateProject`— y `api.save_project_aggregate` crea un proyecto junto con
+ * sus artefactos iniciales. Ninguna escribe un artefacto de un proyecto que ya
+ * existe: eso es de `services/artifacts`, comando a comando. **Una
+ * actualización parcial sigue leyendo antes de escribir**, porque la raíz se
+ * guarda entera y un `updateProject` con tres campos necesita los demás.
  *
  * El grafo de conocimiento viaja aparte, a `api.save_knowledge_graph`. Es dato
  * derivado que se reconstruye con cada cambio de artefacto y crece con su
@@ -53,26 +53,26 @@ const getGraphRepository = async () => {
 /** Solo para pruebas: olvida el repositorio de grafo memorizado. */
 export const resetProjectWriteCaches = (): void => { graphRepository = null; };
 
+type RemoteSave = (document: Record<string, unknown>) => ReturnType<typeof supabaseProjectRepository.save>;
+
 /**
- * Guarda el agregado completo.
- *
- * Compartido por las tres operaciones públicas y por `services/artifacts`: es
- * el único sitio que llama a la RPC compuesta, de modo que la invalidación de
- * caché y el borrador local se deciden una vez.
+ * Lo común a las dos escrituras: el registro en observabilidad, la
+ * invalidación de caché y el borrador local, decididos una vez.
  */
-export const persistProjectAggregate = async (
+const persistProject = async (
     project: Project & { userId?: string },
-    artifacts: Artifact[],
-    context: { operationName: string; expectedRevision?: number },
+    operationName: string,
+    save: RemoteSave,
+    draft: unknown,
 ): Promise<PersistenceResult<{ updatedAt: string }>> => {
     const updatedAt = typeof project.updatedAt === 'string' ? project.updatedAt : new Date().toISOString();
     const document = toProjectDocument({ ...project, updatedAt });
     let result: PersistenceResult<{ updatedAt: string }>;
     try {
         result = await executeRemoteWrite<{ updatedAt: string }>(
-            { operationName: context.operationName, userId: project.userId, projectId: project.id },
+            { operationName, userId: project.userId, projectId: project.id },
             async () => {
-                const saved = await supabaseProjectRepository.save(document, artifacts, context.expectedRevision);
+                const saved = await save(document);
                 // `save` devuelve el sobre en vez de lanzar, para que sus
                 // llamantes directos no tengan que envolverlo. Aquí sí se
                 // lanza: `executeRemoteWrite` es lo que registra el fallo en
@@ -82,12 +82,41 @@ export const persistProjectAggregate = async (
             },
         );
     } catch (error) {
-        result = createFailureResult('saveProjectAggregate', error);
+        result = createFailureResult(operationName, error);
     }
     if (isWriteConfirmed(result)) forgetProject(project.id);
-    else if (result.status === 'offline') writeLocalDraft(`project.${project.id}`, { ...project, artifacts });
+    else if (result.status === 'offline') writeLocalDraft(`project.${project.id}`, draft);
     return result;
 };
+
+/**
+ * Crea el agregado con sus artefactos iniciales, en una transacción.
+ *
+ * Es el único uso que le queda a la RPC compuesta (ADR-106 §5): sobre un
+ * proyecto existente el servidor ya no acepta una lista distinta de la que
+ * tiene, porque cada artefacto se escribe con su propio comando.
+ */
+export const persistProjectAggregate = (
+    project: Project & { userId?: string },
+    artifacts: Artifact[],
+    context: { operationName: string; expectedRevision?: number },
+): Promise<PersistenceResult<{ updatedAt: string }>> => persistProject(
+    project,
+    context.operationName,
+    (document) => supabaseProjectRepository.save(document, artifacts, context.expectedRevision),
+    { ...project, artifacts },
+);
+
+/** Guarda sólo la raíz. Los artefactos no viajan: no hay lista que pueda borrar nada. */
+const persistProjectRoot = (
+    project: Project & { userId?: string },
+    context: { operationName: string; expectedRevision?: number },
+): Promise<PersistenceResult<{ updatedAt: string }>> => persistProject(
+    project,
+    context.operationName,
+    (document) => supabaseProjectRepository.saveRoot(document, context.expectedRevision),
+    project,
+);
 
 
 export const createProject = async (project: Project & { userId?: string }): Promise<PersistenceResult> => {
@@ -160,7 +189,9 @@ export const updateProject = async (
         };
     }
 
-    const { architectureKnowledgeGraph, artifacts, ...rest } = updates;
+    // `artifacts` se descarta a propósito: desde ADR-106 los artefactos se
+    // escriben con sus comandos, y la raíz no tiene forma de enviarlos.
+    const { architectureKnowledgeGraph, artifacts: _artifacts, ...rest } = updates;
     const next: Project & { userId?: string } = {
         ...current,
         ...rest,
@@ -168,9 +199,7 @@ export const updateProject = async (
         updatedAt,
         userId: options.userId ?? (current as Project & { userId?: string }).userId,
     };
-    const result = await persistProjectAggregate(next, artifacts ?? current.artifacts ?? [], {
-        operationName: 'updateProject',
-    });
+    const result = await persistProjectRoot(next, { operationName: 'updateProject' });
     if (isWriteConfirmed(result) && architectureKnowledgeGraph !== undefined) {
         await saveKnowledgeGraph(projectId, architectureKnowledgeGraph);
     }

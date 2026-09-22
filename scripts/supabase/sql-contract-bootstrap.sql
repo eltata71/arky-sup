@@ -5,6 +5,9 @@
 create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin bypassrls;
+-- PostgREST se conecta como `authenticator`; la migración F9.1 le fija los
+-- esquemas expuestos con `alter role`, y en PostgreSQL sin Supabase no existe.
+create role authenticator noinherit nologin;
 create schema auth;
 create schema extensions;
 create table auth.users (id uuid primary key, email text);

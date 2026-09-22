@@ -108,8 +108,12 @@ export function reviseArtifact(
   options: ArtifactFactoryOptions = {},
 ): Artifact {
   const now = options.now ?? (() => new Date().toISOString());
+  // Una versión nueva es otro artefacto: no hereda la revisión de su origen
+  // (ADR-106). Heredarla haría que la primera edición de la versión recién
+  // creada comparara la revisión de otra fila.
+  const { revision: _revision, ...origin } = source;
   return recompileArtifactBeforePersist({
-    ...source,
+    ...origin,
     ...overrides,
     id: options.id ?? newArtifactId(),
     version: latestVersion + 1,
