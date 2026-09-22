@@ -31,7 +31,9 @@
  * artefactos y el contexto de artefactos necesita el proyecto: repuntar sus
  * imports cambiaría un ciclo contra este fichero por uno entre dos contextos
  * de dominio reales, que es peor. Lo que hay debajo es la frontera del
- * agregado Proyecto–Artefacto, o sea la decisión D-4 que resuelve F4-02.
+ * agregado Proyecto–Artefacto: D-4, resuelta por ADR-106 (el Artefacto es
+ * raíz propia y `Project` dejará de contener artefactos). Se retiran cuando
+ * F4-04 separe el modelo de lectura que hoy los combina.
  *
  * What is left is the part that really does cross every context: the artifact
  * and the words used to classify it, the user's settings, a memory entry, and

@@ -1,17 +1,17 @@
 # Registro de avance y punto de reanudación
 
 **Última actualización:** 2026-09-22
-**Estado integrado:** Fase 2 completa y **fase 3 en curso** (F3-01, F3-02, F3-08 cerradas; F3-07 parcial, bloqueada por D-4), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
-**Trabajo local de esta tarea:** F4-01 medida sobre el proyecto Supabase vinculado; aún no integrada ni publicada.
+**Estado integrado:** Fase 2 completa, **fase 3 en curso** (F3-01, F3-02, F3-08 cerradas; F3-07 parcial, desbloqueada por ADR-106) y **fase 4 iniciada** (F4-01 y F4-02 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea medida localmente:** **F4-01** — 0 proyectos y 0 artefactos en
-  la base vinculada; comportamiento de concurrencia documentado. Últimas tareas
-  integradas: F3-07 (parcial) y F3-08.
+- **Última tarea completada:** **F4-02** — ADR-106: el Artefacto es raíz de su
+  propio agregado (D-4 resuelta). Antes: **F4-01** (#48), que midió la
+  amplificación `N:1` y una base vacía (0 proyectos, 0 artefactos,
+  reconfirmado el 2026-09-22).
 - **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
@@ -21,14 +21,12 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** **F4-02** — decidir por ADR la frontera
-  Proyecto–Artefacto con las invariantes y la medición de F4-01. La base
-  vinculada tiene 0 proyectos y 0 artefactos; no hay tasa de conflictos
-  estimable. La evidencia está en `evidencias/f4-01-proyecto-artefacto.md`.
-  D-4 todavía **bloquea** el resto de F3-07. Las dos últimas
-  aristas de `types.ts` son `Artifact` y `Project`, y no se repuntan sin decidir
-  antes si `Artefacto` es raíz de agregado (D-4, que resuelve F4-02 con los
-  datos de F4-01).
+- **Siguiente paso exacto:** **F4-03** — los cinco comandos por artefacto que
+  fija ADR-106 (`create_artifact`, `create_artifact_version`, `update_artifact`,
+  `delete_artifact`, `revise_artifacts`), el índice único
+  `(project_id, version_group_id, version)` y sus contratos pgTAP con el caso
+  negativo. Después F4-07, F4-04 y, con los tipos ya en su frontera, el cierre
+  de F3-07.
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -96,10 +94,21 @@
 |---|---|---|
 | **F3-01** gate transitivo | ✅ | Adelantada. 4 cycles, 2 SCCs (3 + 9 modules). 36 pruebas, 6 negativas. |
 | **F3-02** ampliar alcance verificador | ✅ | ADR-105. Lee `import('…')` y abre los ficheros de la raíz. 42 pruebas. |
-| **F3-07** deshacer el reexportador `types.ts` | 🟡 | Cuatro de seis ciclos. Las dos que faltan **bloqueadas por D-4**. |
+| **F3-07** deshacer el reexportador `types.ts` | 🟡 | Cuatro de seis ciclos. Las dos que faltan, desbloqueadas por ADR-106 §6; se cierran tras F4-04. |
 | **F3-08** `utils.ts` no es utilidades | ✅ | 290 líneas de composición de prompts a `services/ai`. |
 | **F3-03** declarar dependencias permitidas | ⏳ | |
 | **F3-05** iniciativas como contexto piloto | ⏳ | |
+
+---
+
+## Fase 4 — en curso
+
+| Tarea | Estado | Nota |
+|---|---|---|
+| **F4-01** medir Proyecto–Artefacto | ✅ | #48. Amplificación `N:1`, contención por revisión del proyecto, borrado por omisión. Base vacía: tasa de conflictos no estimable. |
+| **F4-02** ¿Artefacto es raíz? | ✅ | ADR-106: sí. Ninguna invariante lee el contenido de dos artefactos; P-04 y A-02 son de conjunto y las sostiene el servidor. |
+| **F4-03** comandos por artefacto | ⏳ | Contrato fijado en ADR-106 §3. |
+| **F4-07** mapa de revisiones de proyectos | ⏳ | Tras F4-03. |
 
 ### Lo que F3-02 hizo visible
 
@@ -167,7 +176,7 @@ fuera, para que la próxima ampliación empiece por leerlo.
 | D-1 | ¿Quién debe poder ver y firmar un encargo ajeno? | **negocio** | **Resuelta 2026-09-20: opción C** |
 | D-2 | ¿Hay política de archivado y retención? | negocio | F6-08 |
 | D-3 | ¿«Revisión» se renombra a «versión de fila» en la UI? | producto | F3-05 |
-| D-4 | ¿`Artefacto` pasa a raíz de agregado? | arquitectura, con datos de F4-01 | F4-02 |
+| D-4 | ¿`Artefacto` pasa a raíz de agregado? | arquitectura, con datos de F4-01 | **Resuelta 2026-09-22: sí, ADR-106** |
 
 ---
 
@@ -177,7 +186,7 @@ fuera, para que la próxima ampliación empiece por leerlo.
 |---|---|---|
 | S-1 | El proyecto Supabase es una PoC sin datos productivos | `CLAUDE.md`, decisión de usuario 2026-09-12 |
 | S-2 | Ningún cliente desplegado llama `delete_engagement/2` | único llamante en el repositorio pasa 3 args |
-| S-3 | El volumen de artefactos por proyecto es de decenas, no miles | a medir en F4-01 antes de decidir D-4 |
+| S-3 | El volumen de artefactos por proyecto es de decenas, no miles | F4-01 no pudo medirlo (base vacía); ADR-106 no depende de él |
 
 ---
 
