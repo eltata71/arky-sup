@@ -447,6 +447,9 @@ when to recompute:
 | Service | What it took out of a screen |
 |---|---|
 | `services/artifacts/application/artifactAssessment` | the canvas's whole derivation chain — quality with real positions, preflight, presentation, export formats, exportability, the visual gate — plus `hooks/artifacts/useArtifactAssessment` for the memo boundaries |
+| `services/artifacts/application/artifactWorkflow` | **F4-05.** Everything `useArtifactsState` decided between two `setState` calls — which version follows which, what is recompiled, which command carries each intent, which revision is compared, and what is rolled back when the database refuses. The hook now only applies the plan; `__tests__/context/artifactCoordinationOutOfReact.test.ts` keeps the factory and the compiler out of it |
+| `services/artifacts/application/artifactImprovement` | **F4-05.** The canvas's deterministic diagram auto-improve (and when it improved *nothing*), the derived artifacts (test cases, document) and the improve-with-suggestions call. `ArtifactCanvas` went 5 → 2 service modules and left the fan-out table |
+| `services/artifacts/application/generationFailure` | **F4-05.** How a failed generation is told to the person — the only reason `Workspace` imported the AI layer |
 | `services/architectureOffice/application/assistantConsultation` | what the Office knows about a project when it answers, and who signs the reply |
 | `hooks/useAgentMemoryStore` | 30 lines of memory-store adapter that were **written twice, line for line**, in `AssistantPanel` and `ProjectCopilotChatModal` |
 
@@ -838,7 +841,7 @@ manipulado no gane nada: no hay superficie que atacar.
 
 | Tabla | RPC de entrada | Contenido |
 |---|---|---|
-| `api.architecture_projects` | `list_project_aggregates`, `load_project_aggregate`, `save_project`, `save_project_aggregate` (sólo creación), `delete_project_aggregate` | La raíz del Proyecto/Atención. Su contador e índice de artefactos son una **proyección** que recalcula el servidor; las lecturas devuelven `revision` |
+| `api.architecture_projects` | `list_project_aggregates`, `load_project_aggregate`, `save_project` (crea con revisión 0, actualiza con la vigente — la **única** escritura de la raíz desde F4-06), `delete_project_aggregate` | La raíz del Proyecto/Atención. Su contador e índice de artefactos son una **proyección** que recalcula el servidor; las lecturas devuelven `revision` |
 | `api.project_artifacts` | `create_artifact`, `create_artifact_version`, `update_artifact`, `delete_artifact`, `revise_artifacts` | El Artefacto es raíz de su propio agregado (ADR-106): un comando por intención, revisión **del artefacto**, índice único por versión de grupo (A-02). Ningún comando recibe la lista del proyecto |
 | `api.project_chat_history` | `load_chat_history`, `save_chat_history` | Una fila por proyecto, reescrita entera |
 | `api.agent_actions` | `list_agent_actions`, `append_agent_action` | Registro append-only de lo que hizo el agente |
@@ -1209,6 +1212,12 @@ only a root, so no project write can carry — or delete — an artifact; a
 screen that needs the view of a project it just created uses `newProjectView`.
 `toProjectDocument` is the one producer of `PersistedProjectDocument`, and never
 emits a derived field.
+
+**And it has one write path** (F4-06). `api.save_project` creates (expected
+revision 0) and updates; the composite `save_project_aggregate` —project plus
+the whole artifact list, deleting whatever was missing— was dropped once its
+last caller migrated. `__tests__/supabase/retiredRpcs.test.ts` fails if a later
+migration recreates it, a client file calls it, or the generated types offer it.
 
 **The revision travels with the record, never in a map** (F4-07). `Project.revision`
 comes from the read, the next write sends it as `expectedRevision`, and the

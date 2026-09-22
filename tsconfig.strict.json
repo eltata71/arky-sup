@@ -47,6 +47,7 @@
     "services/architectureProjects/ArchitectureProjectTypes.ts",
     "services/architectureProjects/architectureProjectFactory.ts",
     "services/architectureProjects/attentionTracking.ts",
+    "services/artifacts/application/artifactWorkflow.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",

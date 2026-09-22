@@ -63,12 +63,12 @@ export const BYTE_CEILINGS = {
   'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
   'components/MemoryCenterModal.tsx': 55475, // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/ArtifactCanvas.tsx': 46837, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/ArtifactCanvas.tsx': 43291, // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 49197,
   'pages/ProjectsPage.tsx': 45101,
   'pages/LMS/LessonModal.tsx': 43207,
   'services/export/adapters/pdfExporter.ts': 43514,
-  'components/artifacts/export/ArtifactExportModal.tsx': 42860, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/artifacts/export/ArtifactExportModal.tsx': 42543, // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42400, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/CustomArtifactBriefWizard.tsx': 41919, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'pages/SDDProcessView.tsx': 41451, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -81,7 +81,7 @@ export const BYTE_CEILINGS = {
    */
   'services/agent/agentExecutor.ts': 41265, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/AssistantPanel.tsx': 37688,
-  'pages/Workspace.tsx': 36951, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'pages/Workspace.tsx': 36196, // F4-05: la coordinación salió a `services/artifacts/application`
   'services/artifacts/artifactRefinementOrchestrator.ts': 36722, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35804,
@@ -104,7 +104,7 @@ export const BYTE_CEILINGS = {
   'services/artifactCompiler/profiles/contractDefinitions.ts': 26764,
   'services/diagram/quality/diagramQualityService.ts': 26442,
   'services/publicationPipeline/PublicationPreflightService.ts': 26117, // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/artifacts/ArtifactInspectorPanel.tsx': 25277,
+  'components/artifacts/ArtifactInspectorPanel.tsx': 24735, // F4-05: la coordinación salió a `services/artifacts/application`
   'pages/LMS/CourseView.tsx': 24691,
   'services/diagram/irToReactFlow.ts': 23866,
   'services/architectureOffice/officePortfolio.ts': 23876, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -167,8 +167,8 @@ export const CEILINGS = {
   'services/geminiService.ts': 5405,
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
-  'components/ArtifactCanvas.tsx': 1068,
-  'pages/Workspace.tsx': 738,
+  'components/ArtifactCanvas.tsx': 981,
+  'pages/Workspace.tsx': 728,
   'services/ai/prompts/diagramPrompts.ts': 1145,
   'services/export/adapters/pdfExporter.ts': 1125,
   'components/ProjectHub.tsx': 1063, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -181,7 +181,7 @@ export const CEILINGS = {
   'services/agent/agentExecutor.ts': 990, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'pages/ProjectsPage.tsx': 925,
   'services/diagram/mermaidToIR.ts': 856,
-  'components/artifacts/export/ArtifactExportModal.tsx': 848,
+  'components/artifacts/export/ArtifactExportModal.tsx': 844,
   'components/CustomArtifactBriefWizard.tsx': 845,
   'components/CustomArtifactRequestModal.tsx': 845,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
@@ -223,7 +223,7 @@ export const CEILINGS = {
   'pages/EngagementRoom.tsx': 540,
   'services/architectureOffice/OfficeEngagementPlanner.ts': 540,
   'components/artifacts/toolbar/ArtifactBottomToolbar.tsx': 520,
-  'components/artifacts/ArtifactInspectorPanel.tsx': 515,
+  'components/artifacts/ArtifactInspectorPanel.tsx': 505,
 };
 
 const SOURCE_ROOTS = [

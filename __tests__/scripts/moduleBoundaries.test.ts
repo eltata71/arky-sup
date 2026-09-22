@@ -218,16 +218,21 @@ describe('a screen is not the application layer', () => {
     }
   });
 
-  it('sigue nombrando a ArtifactCanvas, el caso para el que se escribió la regla', () => {
+  it('ArtifactCanvas, el caso para el que se escribió la regla, ya no está en la tabla', () => {
     // Eran ocho módulos de servicio detrás de un lienzo. La Ola 4 se llevó la
     // orquestación —calidad, preflight, presentación, formatos, exportabilidad
     // y la puerta visual— a `services/artifacts/application/artifactAssessment`
-    // y a `hooks/artifacts/useArtifactAssessment`, y bajó a cinco.
+    // y bajó a cinco. F4-05 se llevó el resto —la auto-mejora del diagrama, los
+    // artefactos derivados y la mejora con sugerencias— a
+    // `artifactImprovement`, y el lienzo quedó en dos: el que cualquier
+    // pantalla nueva tiene.
     //
-    // El número se fija aquí, y no sólo en el presupuesto, porque este fichero
-    // es el ejemplo que `CLAUDE.md` cita: si vuelve a subir, lo que se rompió
-    // es el argumento.
-    expect(UI_SERVICE_FANOUT_BUDGET['components/ArtifactCanvas.tsx']).toBeLessThanOrEqual(5);
+    // Se afirma aquí, y no sólo en el presupuesto, porque este fichero es el
+    // ejemplo que `CLAUDE.md` cita: si vuelve a la tabla, lo que se rompió es
+    // el argumento.
+    const { fanout } = analyse();
+    expect(fanout.has('components/ArtifactCanvas.tsx')).toBe(false);
+    expect(Object.keys(UI_SERVICE_FANOUT_BUDGET)).not.toContain('components/ArtifactCanvas.tsx');
   });
 
   it('leaves AppContext out of it — a context is allowed to compose', () => {

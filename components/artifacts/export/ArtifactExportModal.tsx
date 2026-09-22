@@ -1,23 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from '../../Modal';
 import type { Artifact } from '../../../lib/artifacts';
-import type { DiagramPreflightReport } from '../../../services/diagram';
-import type {
-  ArtifactView,
-  ExportFormat,
-  ExportFormatOption,
-} from '../../../services/export';
-import {
-  buildArtifactExportabilityState,
-  evaluateExportQualityGate,
-} from '../../../services/quality/artifactQualityGateService';
-import type { ArtifactQualityGateResult } from '../../../services/quality/artifactQualityModel';
 import type { ArtifactPresentationModel, PublicationExportMode } from '../../../lib/artifacts/artifactPresentationModel';
-import type { VisualGateState } from '../../../services/diagram/visualQualityGate';
 import {
+  assessExportability,
+  assessExportGate,
   assessVisualGate,
   describeQualityTier,
   isPublicationExportEnabled,
+  type ArtifactQualityGateResult,
+  type ArtifactView,
+  type DiagramPreflightReport,
+  type ExportFormat,
+  type ExportFormatOption,
+  type VisualGateState,
 } from '../../../services/artifacts/application/artifactAssessment';
 
 export type ImageExportView = 'useful' | 'current' | 'executive' | 'technical' | 'full';
@@ -416,14 +412,14 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
   };
 
   const { report, state } = useMemo(
-    () => buildArtifactExportabilityState(artifact, { activeView }),
+    () => assessExportability(artifact, activeView),
     [artifact, activeView],
   );
 
   const gateByFormat = useMemo(() => {
     const map = new Map<ExportFormat, ArtifactQualityGateResult>();
     formatOptions.forEach((option) => {
-      map.set(option.format, evaluateExportQualityGate(report, option.format, activeView));
+      map.set(option.format, assessExportGate(report, option.format, activeView));
     });
     return map;
   }, [formatOptions, report, activeView]);

@@ -24,7 +24,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Artifact } from '../../lib/artifacts';
-import type { Project } from '../../services/architectureProjects';
+import type { Project, ProjectRoot } from '../../services/architectureProjects';
 
 const rpc = vi.fn(async (_name: string, _args?: Record<string, unknown>) => ({
   data: null as unknown,
@@ -340,19 +340,23 @@ describe('writing the project root', () => {
     expect(rpc.mock.calls.some(([name]) => name === 'save_project_aggregate')).toBe(false);
   });
 
-  it('creates through the aggregate path with revision 0, the only use it has left', async () => {
+  it('creates through save_project with revision 0: one write path for the root (F4-06)', async () => {
     rpc.mockImplementation(async (name, args) => (
-      name === 'save_project_aggregate'
+      name === 'save_project'
         ? { data: { ...(args?.p_project as object), revision: 1 }, error: null }
         : { data: null, error: null }
     ));
     const { createProject } = await load();
 
-    const result = await createProject({ ...projectRow([]), artifacts: [] } as unknown as Project);
+    const result = await createProject(projectRow([]) as unknown as ProjectRoot & { userId: string });
 
     expect(result.success).toBe(true);
-    const call = rpc.mock.calls.find(([name]) => name === 'save_project_aggregate');
+    expect(result.data?.revision).toBe(1);
+    const call = rpc.mock.calls.find(([name]) => name === 'save_project');
     expect(call?.[1]?.p_expected_revision).toBe(0);
+    expect(call?.[1]).not.toHaveProperty('p_artifacts');
+    expect(call?.[1]?.p_project).not.toHaveProperty('artifacts');
+    expect(rpc.mock.calls.some(([name]) => name === 'save_project_aggregate')).toBe(false);
   });
 });
 

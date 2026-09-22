@@ -33,17 +33,19 @@ end $$;
 do $$ declare aggregate jsonb; revision bigint; begin
   set local role authenticated;
   perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-  select (api.save_project_aggregate($json${
+  -- F4-06: crear es guardar la raíz con revisión 0; el artefacto, su comando.
+  select (api.save_project($json${
     "id":"proj_remote_probe", "name":"Atención digital", "description":"", "projectContext":[],
     "initiativeIds":["init_project_remote_probe"], "linkedBusinessProjects":["NEG-2026-830"],
     "userId":"83000000-0000-4000-8000-000000000001",
     "createdAt":"2026-09-12T00:00:00.000Z", "updatedAt":"2026-09-12T00:00:00.000Z"
-  }$json$::jsonb, $json$[
+  }$json$::jsonb, 0)).revision into revision;
+  perform api.create_artifact('proj_remote_probe', $json$
     {"id":"art_remote_probe", "name":"Diagrama", "type":"mermaid-graph", "versionGroupId":"vg_remote", "version":1, "createdAt":"2026-09-12T00:00:00.000Z", "phase":"design", "architecturalView":"Vista Lógica y de Diseño", "content":"graph TD; A-->B", "objective":"Explicar la relación", "keyConcepts":[{"term":"A","definition":"Origen"}], "representation":"diagram"}
-  ]$json$::jsonb, 0)).revision into revision;
+  $json$::jsonb);
   select api.load_project_aggregate('proj_remote_probe') into aggregate;
   reset role;
-  insert into project_probe_results values ('02 arquitecto guarda e hidrata el agregado',
+  insert into project_probe_results values ('02 arquitecto crea raíz y artefacto por sus comandos e hidrata el agregado',
     case when revision = 1 and jsonb_array_length(aggregate -> 'artifacts') = 1
       and jsonb_array_length(aggregate -> 'artifactIndex') = 1 then 'OK' else 'FALLO' end);
 end $$;
@@ -52,9 +54,8 @@ do $$ declare m text; begin
   begin
     set local role authenticated;
     perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-    perform api.save_project_aggregate(
-      '{"id":"proj_remote_probe","name":"Atención digital","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001"}'::jsonb,
-      '[]'::jsonb, 0);
+    perform api.save_project(
+      '{"id":"proj_remote_probe","name":"Atención digital","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001"}'::jsonb, 0);
     reset role; m := 'FALLO: permitido';
   exception when others then m := case when sqlstate = 'P0001' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
   insert into project_probe_results values ('03 revisión obsoleta rechazada', m);
@@ -74,9 +75,8 @@ do $$ declare m text; begin
   begin
     set local role authenticated;
     perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-    perform api.save_project_aggregate(
-      '{"id":"proj_remote_secret","name":"Secreto","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001","nested":{"apiKey":"[REDACTED]"}}'::jsonb,
-      '[]'::jsonb, 0);
+    perform api.save_project(
+      '{"id":"proj_remote_secret","name":"Secreto","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001","nested":{"apiKey":"[REDACTED]"}}'::jsonb, 0);
     reset role; m := 'FALLO: permitido';
   exception when others then m := case when sqlstate = '22023' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
   insert into project_probe_results values ('05 secreto anidado rechazado', m);
@@ -86,14 +86,10 @@ do $$ declare m text; begin
   begin
     set local role authenticated;
     perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-    perform api.save_project_aggregate(
-      '{"id":"proj_remote_duplicates","name":"Duplicados","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001"}'::jsonb,
-      '[
-        {"id":"art_duplicate","name":"Uno","type":"mermaid-graph","versionGroupId":"vg_one","version":1,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"Vista Lógica y de Diseño","content":"graph TD; A-->B","objective":"Uno","keyConcepts":[{"term":"A","definition":"Uno"}],"representation":"diagram"},
-        {"id":"art_duplicate","name":"Dos","type":"mermaid-graph","versionGroupId":"vg_two","version":1,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"Vista Lógica y de Diseño","content":"graph TD; A-->C","objective":"Dos","keyConcepts":[{"term":"A","definition":"Dos"}],"representation":"diagram"}
-      ]'::jsonb, 0);
+    perform api.create_artifact('proj_remote_probe',
+      '{"id":"art_remote_probe","name":"Dos","type":"mermaid-graph","versionGroupId":"vg_two","version":1,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"Vista Lógica y de Diseño","content":"graph TD; A-->C","objective":"Dos","keyConcepts":[{"term":"A","definition":"Dos"}],"representation":"diagram"}'::jsonb);
     reset role; m := 'FALLO: permitido';
-  exception when others then m := case when sqlstate = '22023' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
+  exception when others then m := case when sqlstate = '23505' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
   insert into project_probe_results values ('06 artefactos duplicados rechazados', m);
 end $$;
 
@@ -101,9 +97,8 @@ do $$ declare m text; begin
   begin
     set local role authenticated;
     perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-    perform api.save_project_aggregate(
-      '{"id":"proj_remote_incomplete","name":"Incompleto","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001"}'::jsonb,
-      '[{"id":"art_incomplete","name":"Incompleto","type":"mermaid-graph","versionGroupId":"vg_incomplete","version":1}]'::jsonb, 0);
+    perform api.create_artifact('proj_remote_probe',
+      '{"id":"art_incomplete","name":"Incompleto","type":"mermaid-graph","versionGroupId":"vg_incomplete","version":1}'::jsonb);
     reset role; m := 'FALLO: permitido';
   exception when others then m := case when sqlstate = '22023' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
   insert into project_probe_results values ('07 contrato de artefacto incompleto rechazado', m);
@@ -113,9 +108,8 @@ do $$ declare m text; begin
   begin
     set local role authenticated;
     perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-    perform api.save_project_aggregate(
-      '{"id":"proj_remote_unknown_type","name":"Tipo inválido","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001"}'::jsonb,
-      '[{"id":"art_unknown_type","name":"Inválido","type":"unknown-artifact","versionGroupId":"vg_invalid","version":1,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"Vista Lógica y de Diseño","content":"x","objective":"x","keyConcepts":[],"representation":"diagram"}]'::jsonb, 0);
+    perform api.create_artifact('proj_remote_probe',
+      '{"id":"art_unknown_type","name":"Inválido","type":"unknown-artifact","versionGroupId":"vg_invalid","version":1,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"Vista Lógica y de Diseño","content":"x","objective":"x","keyConcepts":[],"representation":"diagram"}'::jsonb);
     reset role; m := 'FALLO: permitido';
   exception when others then m := case when sqlstate = '22023' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
   insert into project_probe_results values ('08 tipo fuera del contrato rechazado', m);
@@ -125,9 +119,8 @@ do $$ declare m text; begin
   begin
     set local role authenticated;
     perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-    perform api.save_project_aggregate(
-      '{"id":"proj_remote_unknown_view","name":"Vista inválida","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001"}'::jsonb,
-      '[{"id":"art_unknown_view","name":"Inválido","type":"mermaid-graph","versionGroupId":"vg_invalid","version":1,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"logical","content":"x","objective":"x","keyConcepts":[],"representation":"diagram"}]'::jsonb, 0);
+    perform api.create_artifact('proj_remote_probe',
+      '{"id":"art_unknown_view","name":"Inválido","type":"mermaid-graph","versionGroupId":"vg_invalid","version":1,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"logical","content":"x","objective":"x","keyConcepts":[],"representation":"diagram"}'::jsonb);
     reset role; m := 'FALLO: permitido';
   exception when others then m := case when sqlstate = '22023' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
   insert into project_probe_results values ('09 vista fuera del contrato rechazada', m);
@@ -137,9 +130,8 @@ do $$ declare m text; begin
   begin
     set local role authenticated;
     perform set_config('request.jwt.claims', '{"sub":"83000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"84000000-0000-4000-8000-000000000001"}', true);
-    perform api.save_project_aggregate(
-      '{"id":"proj_remote_invalid_version","name":"Versión inválida","initiativeIds":["init_project_remote_probe"],"userId":"83000000-0000-4000-8000-000000000001"}'::jsonb,
-      '[{"id":"art_invalid_version","name":"Inválido","type":"mermaid-graph","versionGroupId":"vg_invalid","version":0,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"Vista Lógica y de Diseño","content":"x","objective":"x","keyConcepts":[],"representation":"diagram"}]'::jsonb, 0);
+    perform api.create_artifact('proj_remote_probe',
+      '{"id":"art_invalid_version","name":"Inválido","type":"mermaid-graph","versionGroupId":"vg_invalid","version":0,"createdAt":"2026-09-12T00:00:00.000Z","phase":"design","architecturalView":"Vista Lógica y de Diseño","content":"x","objective":"x","keyConcepts":[],"representation":"diagram"}'::jsonb);
     reset role; m := 'FALLO: permitido';
   exception when others then m := case when sqlstate = '22023' then 'OK: ' || sqlstate else 'FALLO: ' || sqlstate end; end;
   insert into project_probe_results values ('10 versión no positiva rechazada', m);

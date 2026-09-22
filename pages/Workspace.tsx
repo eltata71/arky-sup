@@ -5,7 +5,6 @@ import { useOffice } from '../context/OfficeContext';
 import { useToast } from '../context/ToastContext';
 import { ArtifactTemplate } from '../types';
 import type { Artifact, ArtifactGenerationPhaseListener } from '../lib/artifacts';
-import { classifyAIError, AIServiceError } from '../services/ai';
 import { ArtifactCanvas } from '../components/ArtifactCanvas';
 import { ProjectHub } from '../components/ProjectHub';
 import { ProjectContextBar } from '../components/navigation';
@@ -21,6 +20,7 @@ import { validateArtifactReadiness, type ReadinessResult } from '../lib/artifact
 import { observabilityService } from '../services/observability';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { runArtifactGeneration } from '../services/artifacts/artifactGenerationRun';
+import { describeGenerationFailure } from '../services/artifacts/application/generationFailure';
 
 interface WorkspaceProps {
   projectId: string;
@@ -331,46 +331,40 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
         // First-attempt 503 / network errors are common during peak hours;
         // surfacing a one-tap retry instead of a stack trace keeps the
         // architect productive without having to redo their click chain.
-        const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
+        const failure = describeGenerationFailure(error);
         console.error('[Workspace] generation failed', {
             artifactName: template.name,
-            category: friendly.category,
-            status: friendly.status,
-            message: friendly.message,
+            category: failure.category,
+            status: failure.status,
+            message: failure.message,
         });
-        const headline = friendly.category === 'overloaded' ? 'Modelo saturado' :
-                             friendly.category === 'rate-limit' ? 'Límite alcanzado' :
-                             friendly.category === 'timeout' ? 'Tiempo agotado' :
-                             friendly.category === 'auth' ? 'Autenticación fallida' :
-                             friendly.category === 'network' ? 'Sin conexión' :
-                             'Error en la generación';
-        observedOperation.fail(friendly.message, {
-            title: headline,
-            message: friendly.userMessage,
-            detail: `category=${friendly.category}; status=${friendly.status ?? 'n/a'}; message=${friendly.message}`,
-            severity: friendly.category === 'auth' || friendly.category === 'invalid-request' ? 'error' : 'warning',
-            recoverable: friendly.retryable,
+        observedOperation.fail(failure.message, {
+            title: failure.headline,
+            message: failure.userMessage,
+            detail: failure.technicalDetail,
+            severity: failure.severity,
+            recoverable: failure.retryable,
             metadata: {
                 artifactName: template.name,
                 artifactType: template.type,
                 operationId: generationOperationId,
-                category: friendly.category,
-                status: friendly.status,
+                category: failure.category,
+                status: failure.status,
             },
         });
         if (isMounted.current) {
             const retry = () => proceedWithGeneration(template, action, existingArtifact);
             setGenerationFailure({
                 artifactName: template.name,
-                headline,
-                userMessage: friendly.userMessage,
-                technicalMessage: `category=${friendly.category}; status=${friendly.status ?? 'n/a'}; message=${friendly.message}`,
+                headline: failure.headline,
+                userMessage: failure.userMessage,
+                technicalMessage: failure.technicalDetail,
                 onRetry: retry,
             });
             addToast(
-                `${headline} al generar "${template.name}". ${friendly.userMessage}`,
-                friendly.category === 'auth' || friendly.category === 'invalid-request' ? 'error' : 'warning',
-                friendly.retryable
+                `${failure.headline} al generar "${template.name}". ${failure.userMessage}`,
+                failure.severity,
+                failure.retryable
                     ? {
                         action: {
                             label: 'Reintentar',

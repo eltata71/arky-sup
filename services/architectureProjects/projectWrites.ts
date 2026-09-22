@@ -1,10 +1,11 @@
 /**
  * Cómo se escribe un Proyecto de Arquitectura.
  *
- * Dos puertas desde ADR-106: `api.save_project` guarda la raíz —y es la que usa
- * `updateProject`— y `api.save_project_aggregate` crea un proyecto junto con
- * sus artefactos iniciales. Ninguna escribe un artefacto de un proyecto que ya
- * existe: eso es de `services/artifacts`, comando a comando. **Una
+ * Una puerta desde F4-06: `api.save_project` guarda la raíz, y es la misma para
+ * crear (revisión esperada 0) y para actualizar. La RPC compuesta que creaba un
+ * proyecto «con sus artefactos iniciales» se retiró: ningún llamante los traía,
+ * y cada artefacto se escribe con su propio comando desde `services/artifacts`
+ * (ADR-106 §5). **Una
  * actualización parcial sigue leyendo antes de escribir**, porque la raíz se
  * guarda entera y un `updateProject` con tres campos necesita los demás.
  *
@@ -23,7 +24,6 @@
  * objeto que sólo habla con la base de datos.
  */
 
-import type { Artifact } from '../../lib/artifacts';
 import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
 import { chatHistoryRepository } from '../chat/ChatHistoryRepository';
 import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../persistence';
@@ -48,10 +48,10 @@ const getGraphRepository = async () => {
 /** Solo para pruebas: olvida el repositorio de grafo memorizado. */
 export const resetProjectWriteCaches = (): void => { graphRepository = null; };
 
-type RemoteSave = (document: PersistedProjectDocument) => ReturnType<typeof supabaseProjectRepository.save>;
+type RemoteSave = (document: PersistedProjectDocument) => ReturnType<typeof supabaseProjectRepository.saveRoot>;
 
 /**
- * Lo común a las dos escrituras: el registro en observabilidad, la
+ * Lo común a crear y actualizar: el registro en observabilidad, la
  * invalidación de caché y el borrador local, decididos una vez.
  */
 /** Lo que devuelve una escritura confirmada: la marca de tiempo y la revisión nueva. */
@@ -90,24 +90,6 @@ const persistProject = async (
     return result;
 };
 
-/**
- * Crea el agregado con sus artefactos iniciales, en una transacción.
- *
- * Es el único uso que le queda a la RPC compuesta (ADR-106 §5): sobre un
- * proyecto existente el servidor ya no acepta una lista distinta de la que
- * tiene, porque cada artefacto se escribe con su propio comando.
- */
-export const persistProjectAggregate = (
-    project: ProjectRoot & { userId?: string },
-    artifacts: Artifact[],
-    context: { operationName: string; expectedRevision: number },
-): Promise<PersistenceResult<ProjectWriteConfirmation>> => persistProject(
-    project,
-    context.operationName,
-    (document) => supabaseProjectRepository.save(document, artifacts, context.expectedRevision),
-    { ...project, artifacts },
-);
-
 /** Guarda sólo la raíz. Los artefactos no viajan: no hay lista que pueda borrar nada. */
 const persistProjectRoot = (
     project: ProjectRoot & { userId?: string },
@@ -141,7 +123,7 @@ export const createProject = async (project: ProjectRoot & { userId?: string }):
     // Revisión 0 = «no existe todavía». La RPC crea la fila con revisión 1 y
     // rechaza el segundo intento con el mismo id, que es lo que impide que dos
     // pestañas creen dos proyectos con la misma identidad.
-    return persistProjectAggregate(project, [], {
+    return persistProjectRoot(project, {
         operationName: 'createProject',
         expectedRevision: 0,
     });

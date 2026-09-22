@@ -178,3 +178,18 @@ bloqueada por esta decisión.
   cambiar todavía la forma de `Project`. Separar el modelo de lectura
   («proyecto con sus artefactos») de la raíz sigue siendo F4-04, y ahora es una
   decisión de modelado, no una condición para romper un ciclo.
+
+## Nota de ejecución — F4-04 a F4-07 (2026-09-23)
+
+- **§5 está hecho (F4-06).** `api.save_project_aggregate` ya no existe: su
+  último llamante era la creación, siempre con la lista vacía, y crear pasó a
+  `api.save_project` con revisión esperada 0. Tres gates impiden su vuelta
+  (`rpcSurface`, `retiredRpcs` y el `hasnt_function` del contrato pgTAP).
+- **§6 está hecho (F4-04).** `ProjectRoot` es el agregado y no tiene
+  artefactos; `Project` es el modelo de lectura que los añade. La fábrica, la
+  creación y el repositorio sólo aceptan la raíz.
+- **La revisión del proyecto viaja con el registro (F4-07)**, como la del
+  artefacto: sin mapa de módulo y sin exportarla.
+- **La coordinación de artefactos salió de React (F4-05):**
+  `services/artifacts/application/artifactWorkflow` decide versión,
+  recompilación, comando, revisión y reversión; el hook sólo los aplica.
