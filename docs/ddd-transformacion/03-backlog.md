@@ -381,22 +381,53 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   fase tenía planeado arreglar. La razón queda escrita junto al presupuesto.
 
 ### F3-03 · Declarar dependencias permitidas entre contextos
-- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F3-01
+- **Prioridad** P1 · **Tamaño** M · **Estado** `completada` · **Depende de** F3-01
+- **Hecho (2026-09-22).** `modules.json` → `allowedDependencies`: las 246 aristas
+  entre los 39 módulos, medidas sobre el grafo completo. `checkDeclaredDependencies`
+  falla una arista no declarada y un módulo sin lista, y avisa de una declarada
+  que ya no existe, para que la lista sólo encoja. Cinco pruebas, tres negativas;
+  una sexta afirma que el contexto piloto sólo depende de `persistence` y
+  `adapters` en el dominio.
 
 ### F3-04 · Presupuestos decrecientes con objetivo y fecha
-- **Prioridad** P2 · **Tamaño** S · **Estado** `pendiente`
+- **Prioridad** P2 · **Tamaño** S · **Estado** `completada`
+- **Hecho (2026-09-22).** `scripts/budgetTargets.mjs`: seis números con objetivo,
+  fecha y la fase que los cumple (componente de dominio → 0, ciclos → 3, ficheros
+  sueltos → 0, pantallas sobre el fan-out → 0, pares profundos → 30, `any` → 7).
+  `check:module-boundaries` y `check:any-budget` los evalúan: antes de la fecha
+  informan, después fallan si no se cumplieron. Las fechas son propuesta de la
+  fase 3 sobre el plan; moverlas se hace ahí, con la razón. `BUDGET_TODAY` permite
+  probarlo (`budgetTargets.test.ts`).
 
 ### F3-05 · Iniciativas como contexto piloto — dominio puro
-- **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente`
+- **Prioridad** P0 · **Tamaño** L · **Estado** `completada`
 - **Cambios.** `services/businessInitiatives/domain/` con reglas puras;
   puertos de repositorio; comandos/consultas/DTO publicados; objetos de valor
   para identificador, código y revisión; operaciones de negocio explícitas en
   lugar de `update(partial)`.
 - **Aceptación.** Las reglas se prueban sin React ni Supabase; los consumidores
   no importan infraestructura; el presupuesto de descarga no empeora.
+- **Hecho (2026-09-22).** `domain/` (tipos, identidades, revisión como objeto de
+  valor, lectura de lo almacenado, fábrica, cálculos y **20 operaciones con
+  nombre** en `applyInitiativeCommand`) e `infrastructure/` (adaptador y
+  repositorio). `updateInitiative(partial)` desapareció: el contexto expone
+  `runInitiativeCommand`, y los paneles emiten comandos. Las reglas que vivían
+  en los paneles —fechar una medición de KPI, fechar el cierre de un hito,
+  ordenar los hitos— son ahora del dominio. Un panel importaba el repositorio
+  (infraestructura) para acuñar ids; ya no. Pruebas: `initiativeCommands.test.ts`
+  (14, sin mocks), `domainPurity.test.ts` (4), `initiativeCommandContext.test.tsx`
+  (3). Carga inicial 309,5 KB gz: los comandos se cargan en diferido.
+- **D-3** deja de bloquear: el contador no se muestra en ninguna pantalla (ver
+  `09-cierre-fase-3.md`).
 
 ### F3-06 · Entradas públicas pequeñas compatibles con carga diferida
-- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F3-05
+- **Prioridad** P1 · **Tamaño** M · **Estado** `completada` · **Depende de** F3-05
+- **Hecho (2026-09-22).** `modules.json` admite varias puertas por módulo
+  (`api` como lista); el gate las acepta como entrada. Iniciativas publica tres:
+  el barril, `domain` (sin infraestructura) y `commands` (para el `import()`
+  diferido del proveedor, que devolvió 1,2 KB gz a la carga inicial). Efecto: los
+  19 imports que entraban por ficheros internos del contexto usan su puerta, y
+  los pares profundos bajan de 60 a 57.
 
 ---
 

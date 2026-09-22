@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import {
   rollUpInitiativeDelivery,
   type DeliveryContributor,
-} from '../../services/businessInitiatives/initiativeDelivery';
+} from '../../services/businessInitiatives/domain';
 
 const initiative = {
   expectedOutcomes: [

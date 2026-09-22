@@ -20,9 +20,12 @@ import {
   LAYER_VIOLATION_BUDGET,
   UI_SERVICE_FANOUT_BUDGET,
   UI_SERVICE_FANOUT_DEFAULT,
+  ALLOWED_DEPENDENCIES,
   analyse,
+  checkDeclaredDependencies,
   checkStronglyConnected,
   moduleOf,
+  publicEntries,
   scan,
   sourceFiles,
   stronglyConnectedComponents,
@@ -396,5 +399,79 @@ describe('the strongly connected budget refuses to be walked past', () => {
     const { failures, notes } = run([['a', 'b']], [['a', 'b']]);
     expect(failures).toEqual([]);
     expect(notes).toEqual([]);
+  });
+});
+
+describe('declared dependencies (F3-03)', () => {
+  const run = (edges: string[], declared: Record<string, string[]>) => {
+    const failures: string[] = [];
+    const notes: string[] = [];
+    checkDeclaredDependencies(new Map(edges.map((edge) => [edge, 1])), failures, notes, declared);
+    return { failures, notes };
+  };
+
+  it('every module in the manifest declares its list', () => {
+    const { failures } = run([], ALLOWED_DEPENDENCIES as Record<string, string[]>);
+    expect(failures).toEqual([]);
+  });
+
+  it('matches the real graph today: no undeclared edge, no stale declaration', () => {
+    const { edges } = analyse();
+    const failures: string[] = [];
+    const notes: string[] = [];
+    checkDeclaredDependencies(edges, failures, notes);
+    expect(failures).toEqual([]);
+    expect(notes).toEqual([]);
+  });
+
+  it('refuses an edge nobody declared', () => {
+    const declared = { ...(ALLOWED_DEPENDENCIES as Record<string, string[]>), 'services/review': [] };
+    const { failures } = run(['services/review -> services/diagram'], declared);
+    expect(failures).toContain(
+      'dependency: services/review -> services/diagram no está declarada en modules.json → allowedDependencies',
+    );
+  });
+
+  it('refuses a module that declares nothing, rather than letting it depend on anything', () => {
+    const declared = { ...(ALLOWED_DEPENDENCIES as Record<string, string[]>) };
+    delete declared['services/review'];
+    const { failures } = run([], declared);
+    expect(failures).toContain('dependency: services/review no declara sus dependencias en modules.json');
+  });
+
+  it('asks for a declaration that no longer exists to be removed, so the list only shrinks', () => {
+    const declared = { ...(ALLOWED_DEPENDENCIES as Record<string, string[]>), 'services/review': ['lib'] };
+    const { failures, notes } = run([], declared);
+    expect(failures).toEqual([]);
+    expect(notes).toContain('dependency: services/review -> lib ya no existe. Quítala de allowedDependencies.');
+  });
+
+  it('the pilot context depends on nothing in the domain but persistence and adapters', () => {
+    // F3-05: el dominio de Iniciativas es puro y su infraestructura habla sólo
+    // con la capa de persistencia. Si esta lista crece, alguien acopló el
+    // contexto piloto a otro contexto de negocio.
+    const declared = (ALLOWED_DEPENDENCIES as Record<string, string[]>)['services/businessInitiatives'];
+    expect(declared.filter((name) => name.startsWith('services/')).sort())
+      .toEqual(['services/adapters', 'services/persistence']);
+  });
+});
+
+describe('a module may publish more than one door (F3-06)', () => {
+  it('declares the pilot context with its small domain entry', () => {
+    const mod = moduleOf('services/businessInitiatives/index.ts');
+    expect(publicEntries(mod)).toEqual([
+      'services/businessInitiatives/index.ts',
+      'services/businessInitiatives/domain/index.ts',
+      'services/businessInitiatives/commands.ts',
+    ]);
+  });
+
+  it('counts the domain entry as a way in, and an internal file as a deep import', () => {
+    const { deepImports } = analyse();
+    // Los 19 imports que entraban por ficheros internos de `domain/` entran
+    // ahora por su puerta: ningún par profundo hacia el contexto piloto.
+    for (const [pair] of deepImports) {
+      expect(pair.endsWith('-> services/businessInitiatives'), pair).toBe(false);
+    }
   });
 });

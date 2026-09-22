@@ -22,7 +22,7 @@ import {
   PRIORITY_LABELS,
   PRIORITY_TONES,
 } from './initiativeUiLabels';
-import type { BusinessInitiative } from '../../services/businessInitiatives/BusinessInitiativeTypes';
+import type { BusinessInitiative } from '../../services/businessInitiatives/domain';
 
 export interface InitiativePickerProps {
   /** Every initiative the user may link to. */

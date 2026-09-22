@@ -22,12 +22,10 @@ import {
   INITIATIVE_HEALTH_ORDER,
   initiativeHealth,
   type InitiativePortfolioRollup,
-} from '../../services/businessInitiatives/initiativeMetrics';
-import type {
-  BusinessInitiative,
-  InitiativeHorizon,
-  InitiativeRiskLevel,
-} from '../../services/businessInitiatives/BusinessInitiativeTypes';
+  type BusinessInitiative,
+  type InitiativeHorizon,
+  type InitiativeRiskLevel,
+} from '../../services/businessInitiatives/domain';
 
 export interface InitiativePulseProps {
   initiatives: BusinessInitiative[];

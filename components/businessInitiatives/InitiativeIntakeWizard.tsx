@@ -30,7 +30,7 @@ import type { InitiativeDraft } from '../../services/ai/generation/initiativeAss
 import type {
   InitiativeHorizon,
   InitiativePriority,
-} from '../../services/businessInitiatives/BusinessInitiativeTypes';
+} from '../../services/businessInitiatives/domain';
 
 export interface InitiativeIntakeSubmit {
   title: string;

@@ -35,7 +35,7 @@ export const BUSINESS_INITIATIVE_SCHEMA_VERSION = 1;
  * once the outcomes have been measured. `delivered` is "built"; `realized` is
  * "it did what we said it would".
  */
-import type { BusinessInitiativeCode } from '../../lib/eaTerminology';
+import type { BusinessInitiativeCode } from '../../../lib/eaTerminology';
 
 export type InitiativeStatus =
   | 'draft'

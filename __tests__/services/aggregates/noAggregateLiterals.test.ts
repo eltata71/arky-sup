@@ -56,9 +56,9 @@ const AGGREGATES = [
   },
   {
     type: 'BusinessInitiative',
-    factory: 'services/businessInitiatives/businessInitiativeFactory.ts',
+    factory: 'services/businessInitiatives/domain/businessInitiativeFactory.ts',
     /** `buildInitiative` es el ensamblador que la fábrica usa por dentro. */
-    alsoAllowed: ['services/businessInitiatives/BusinessInitiativeRepository.ts'],
+    alsoAllowed: ['services/businessInitiatives/infrastructure/BusinessInitiativeRepository.ts'],
   },
 ] as const;
 

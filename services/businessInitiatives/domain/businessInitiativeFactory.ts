@@ -18,7 +18,7 @@
  * esta fábrica es la puerta.
  */
 
-import { buildInitiative, type CreateInitiativeInput } from './BusinessInitiativeRepository';
+import { buildInitiative, type CreateInitiativeInput } from './initiativeRecord';
 import type { BusinessInitiative } from './BusinessInitiativeTypes';
 
 /** Por qué no se pudo crear la iniciativa. */

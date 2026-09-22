@@ -61,7 +61,7 @@ import {
   isClosedInitiative,
   kpiProgress,
   summarizeMilestones,
-  type BusinessInitiative,
+  type InitiativeCommand,
   type InitiativeHorizon,
   type InitiativePriority,
   type InitiativeStatus,
@@ -85,7 +85,7 @@ const InitiativeRoom: React.FC = () => {
   const navigate = useNavigate();
   const { projects, settings } = useAppContext();
   const { user, profile } = useAuth();
-  const { initiatives, getInitiative, updateInitiative, deleteInitiative } = useInitiatives();
+  const { initiatives, getInitiative, runInitiativeCommand, deleteInitiative } = useInitiatives();
   const { addToast } = useToast();
 
   const [busy, setBusy] = useState(false);
@@ -100,15 +100,13 @@ const InitiativeRoom: React.FC = () => {
     [projects, initiative],
   );
 
-  const patch = useCallback(async (
-    changes: Partial<Omit<BusinessInitiative, 'id' | 'userId' | 'createdAt' | 'schemaVersion'>>,
-  ) => {
+  const run = useCallback(async (command: InitiativeCommand) => {
     if (!initiativeId) return;
     setBusy(true);
-    const result = await updateInitiative(initiativeId, changes);
+    const result = await runInitiativeCommand(initiativeId, command);
     setBusy(false);
     if (!result.ok) addToast(result.reason ?? 'No se pudieron guardar los cambios.', 'error');
-  }, [initiativeId, updateInitiative, addToast]);
+  }, [initiativeId, runInitiativeCommand, addToast]);
 
   /**
    * What the office is told about this initiative. Only fields that are
@@ -250,7 +248,7 @@ const InitiativeRoom: React.FC = () => {
               <select
                 aria-label="Estado de la iniciativa"
                 value={initiative.status}
-                onChange={(event) => patch({ status: event.target.value as InitiativeStatus })}
+                onChange={(event) => run({ kind: 'reclassify', status: event.target.value as InitiativeStatus })}
                 className={selectClass}
                 disabled={busy}
               >
@@ -261,7 +259,7 @@ const InitiativeRoom: React.FC = () => {
               <select
                 aria-label="Prioridad"
                 value={initiative.priority}
-                onChange={(event) => patch({ priority: event.target.value as InitiativePriority })}
+                onChange={(event) => run({ kind: 'reclassify', priority: event.target.value as InitiativePriority })}
                 className={selectClass}
                 disabled={busy}
               >
@@ -272,7 +270,7 @@ const InitiativeRoom: React.FC = () => {
               <select
                 aria-label="Horizonte"
                 value={initiative.horizon}
-                onChange={(event) => patch({ horizon: event.target.value as InitiativeHorizon })}
+                onChange={(event) => run({ kind: 'reclassify', horizon: event.target.value as InitiativeHorizon })}
                 className={selectClass}
                 disabled={busy}
               >
@@ -362,20 +360,20 @@ const InitiativeRoom: React.FC = () => {
           <div className="space-y-5">
             <InitiativeMotivationPanel
               initiative={initiative}
-              onPatch={patch}
+              onCommand={run}
               busy={busy}
               assist={capture.binding}
             />
 
-            <OutcomesPanel initiative={initiative} onPatch={patch} busy={busy} assist={capture.binding} />
-            <KpiPanel initiative={initiative} onPatch={patch} busy={busy} assist={capture.binding} />
-            <MilestonePanel initiative={initiative} onPatch={patch} busy={busy} assist={capture.binding} />
+            <OutcomesPanel initiative={initiative} onCommand={run} busy={busy} assist={capture.binding} />
+            <KpiPanel initiative={initiative} onCommand={run} busy={busy} assist={capture.binding} />
+            <MilestonePanel initiative={initiative} onCommand={run} busy={busy} assist={capture.binding} />
           </div>
 
           <div className="space-y-5">
-            <RiskPanel initiative={initiative} onPatch={patch} busy={busy} assist={capture.binding} />
-            <StakeholderPanel initiative={initiative} onPatch={patch} busy={busy} assist={capture.binding} />
-            <DocumentsPanel initiative={initiative} onPatch={patch} busy={busy} addedBy={addedBy} ownerId={user?.uid} />
+            <RiskPanel initiative={initiative} onCommand={run} busy={busy} assist={capture.binding} />
+            <StakeholderPanel initiative={initiative} onCommand={run} busy={busy} assist={capture.binding} />
+            <DocumentsPanel initiative={initiative} onCommand={run} busy={busy} addedBy={addedBy} ownerId={user?.uid} />
 
             <InitiativeDeliveryPanel
               id="proyectos"

@@ -22,15 +22,15 @@ import {
   PRIORITY_TONES,
 } from './initiativeUiLabels';
 import { formatPercent } from '../architectureOffice/officeChartTokens';
-import { initiativeHealth } from '../../services/businessInitiatives/initiativeMetrics';
-import { assessCompleteness } from '../../services/businessInitiatives/initiativeMetrics';
 import {
+  initiativeHealth,
+  assessCompleteness,
   daysRemaining,
   isClosedInitiative,
   kpiProgress,
   summarizeMilestones,
   type BusinessInitiative,
-} from '../../services/businessInitiatives/BusinessInitiativeTypes';
+} from '../../services/businessInitiatives/domain';
 
 /** One entry in the card's overflow menu. */
 export interface InitiativeCardAction {

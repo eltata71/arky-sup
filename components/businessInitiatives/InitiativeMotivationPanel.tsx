@@ -17,18 +17,19 @@ import { CaptureAssist } from '../capture';
 import type { CaptureAssistantApi } from '../../hooks/useCaptureAssistant';
 import type { CaptureContext } from '../../lib/capture';
 import { INITIATIVE_SECTION_ICONS } from './initiativeUiLabels';
-import type { BusinessInitiative } from '../../services/businessInitiatives';
+import type { BusinessInitiative, InitiativeCommand } from '../../services/businessInitiatives';
 
 export interface InitiativeMotivationPanelProps {
   initiative: BusinessInitiative;
-  onPatch: (patch: Partial<Omit<BusinessInitiative, 'id' | 'userId' | 'createdAt' | 'schemaVersion'>>) => void;
+  /** Una operación con nombre (F3-05): reformular el motivo, o mover las fechas. */
+  onCommand: (command: InitiativeCommand) => void;
   busy?: boolean;
   assist?: { assistant: CaptureAssistantApi; context: CaptureContext | null };
 }
 
 export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps> = ({
   initiative,
-  onPatch,
+  onCommand,
   busy,
   assist,
 }) => {
@@ -38,7 +39,6 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
    * y una condición de carrera. `null` significa «no hay edición en curso».
    */
   const [driverDraft, setDriverDraft] = useState<string | null>(null);
-  const patch = onPatch;
   const MotivationIcon = INITIATIVE_SECTION_ICONS.motivation;
 
   return (
@@ -83,7 +83,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
                   // propuesta es una decisión explícita, y dejarla sólo en el
                   // campo obligaría a un segundo gesto para conservarla.
                   setDriverDraft(null);
-                  patch({ driver: value });
+                  onCommand({ kind: 'restate-driver', driver: value });
                 }}
               />
             )}
@@ -94,7 +94,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
             onChange={(event) => setDriverDraft(event.target.value)}
             onBlur={() => {
               if (driverDraft !== null && driverDraft !== initiative.driver) {
-                void patch({ driver: driverDraft.trim() });
+                onCommand({ kind: 'restate-driver', driver: driverDraft });
               }
               setDriverDraft(null);
             }}
@@ -142,9 +142,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
               type="date"
               className="mt-1"
               value={initiative.startDate?.slice(0, 10) ?? ''}
-              onChange={(event) => patch({
-                startDate: event.target.value ? new Date(event.target.value).toISOString() : undefined,
-              })}
+              onChange={(event) => onCommand({ kind: 'reschedule', startDate: event.target.value || null })}
               disabled={busy}
             />
           </div>
@@ -157,9 +155,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
               type="date"
               className="mt-1"
               value={initiative.targetEndDate?.slice(0, 10) ?? ''}
-              onChange={(event) => patch({
-                targetEndDate: event.target.value ? new Date(event.target.value).toISOString() : undefined,
-              })}
+              onChange={(event) => onCommand({ kind: 'reschedule', targetEndDate: event.target.value || null })}
               disabled={busy}
             />
           </div>

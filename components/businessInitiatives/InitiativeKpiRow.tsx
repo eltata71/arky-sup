@@ -10,7 +10,7 @@ import { StatTile } from '../ui';
 import { AlertTriangle, CalendarClock, Gavel, Landmark, TrendingUp } from 'lucide-react';
 import { formatPercent } from '../architectureOffice/officeChartTokens';
 import { formatInvestment } from './initiativeUiLabels';
-import type { InitiativePortfolioRollup } from '../../services/businessInitiatives/initiativeMetrics';
+import type { InitiativePortfolioRollup } from '../../services/businessInitiatives/domain';
 
 export interface InitiativeKpiRowProps {
   rollup: InitiativePortfolioRollup;

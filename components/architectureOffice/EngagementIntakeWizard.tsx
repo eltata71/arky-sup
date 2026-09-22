@@ -23,7 +23,7 @@ import { Alert, Button, Input, Spinner } from '../ui';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { InitiativePicker } from '../businessInitiatives/InitiativePicker';
 import { codesForInitiativeIds } from '../../services/portfolioGraph';
-import type { BusinessInitiative } from '../../services/businessInitiatives/BusinessInitiativeTypes';
+import type { BusinessInitiative } from '../../services/businessInitiatives/domain';
 import type { OfficeEngagement } from '../../services/architectureOffice/OfficeTypes';
 import { EngagementCharterReview } from './EngagementCharterReview';
 import { CaptureAssist, FormAssistBar } from '../capture';

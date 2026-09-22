@@ -15,6 +15,7 @@ como antecedente, no como estado.
 | `06-propiedad-datos.md` | Matriz de propiedad: tabla, RPC, contexto dueño, consumidores. |
 | `07-invariantes.md` | Catálogo de invariantes y **dónde se aplica cada una**. |
 | `08-avance.md` | Registro de avance y punto de reanudación. |
+| `09-cierre-fase-3.md` | Cierre de la fase 3: criterios contrastados, cifras y el patrón del contexto piloto. |
 | `adr/` | Decisiones arquitectónicas de esta transformación (ADR-1xx). |
 | `evidencias/` | Salidas de comandos, censos y capturas de medición. |
 

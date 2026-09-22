@@ -24,10 +24,12 @@ import { useAuth } from './AuthContext';
 import {
   createBusinessInitiative,
   deleteInitiative as deleteInitiativeRemote,
+  expectedRevisionOf,
   listInitiatives,
   saveInitiative,
   type BusinessInitiative,
   type CreateInitiativeInput,
+  type InitiativeCommand,
 } from '../services/businessInitiatives';
 
 export interface InitiativeOperationResult {
@@ -48,13 +50,17 @@ interface InitiativeContextType {
   getByCode: (code: string) => BusinessInitiative | undefined;
   createInitiative: (input: CreateInitiativeInput) => Promise<InitiativeOperationResult>;
   /**
-   * Applies a partial change. Merges over the current record rather than
-   * replacing it, so two panels editing different sections cannot clobber
-   * each other's fields.
+   * Runs one named operation on an initiative (F3-05).
+   *
+   * There is no `update(partial)` any more: the rules of each operation —
+   * which date it stamps, what it refuses — live in
+   * `applyInitiativeCommand`, where they are tested without React. This
+   * provider only does what a provider is for: optimistic state, the write,
+   * and rolling back when the database does not confirm.
    */
-  updateInitiative: (
+  runInitiativeCommand: (
     initiativeId: string,
-    patch: Partial<Omit<BusinessInitiative, 'id' | 'userId' | 'createdAt' | 'schemaVersion'>>,
+    command: InitiativeCommand,
   ) => Promise<InitiativeOperationResult>;
   deleteInitiative: (initiativeId: string) => Promise<InitiativeOperationResult>;
 }
@@ -152,22 +158,20 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
     return { ok: true, initiative: confirmed };
   }, [userId, upsert, commit]);
 
-  const updateInitiative = useCallback(async (
+  const runInitiativeCommand = useCallback(async (
     initiativeId: string,
-    patch: Partial<Omit<BusinessInitiative, 'id' | 'userId' | 'createdAt' | 'schemaVersion'>>,
+    command: InitiativeCommand,
   ): Promise<InitiativeOperationResult> => {
     const current = initiativesRef.current.find((item) => item.id === initiativeId);
     if (!current) return { ok: false, reason: 'La iniciativa no existe.' };
 
-    const next: BusinessInitiative = {
-      ...current,
-      ...patch,
-      id: current.id,
-      userId: current.userId,
-      createdAt: current.createdAt,
-      schemaVersion: current.schemaVersion,
-      updatedAt: new Date().toISOString(),
-    };
+    // Por fichero y en diferido: este proveedor está en el árbol del arranque, y
+    // las reglas de las operaciones sólo hacen falta cuando alguien edita. Con
+    // un import estático, F3-05 subía la carga inicial 1,2 KB gz.
+    const { applyInitiativeCommand } = await import('../services/businessInitiatives/commands');
+    const outcome = applyInitiativeCommand(current, command);
+    if (!outcome.ok) return { ok: false, reason: outcome.rejection.message };
+    const next = outcome.initiative;
     upsert(next);
 
     const result = await saveInitiative(next);
@@ -188,7 +192,7 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
 
     commit(initiativesRef.current.filter((item) => item.id !== initiativeId));
     // La revisión del snapshot que se está viendo, no la de la última lectura.
-    const result = await deleteInitiativeRemote(userId, initiativeId, current.revision ?? 0);
+    const result = await deleteInitiativeRemote(userId, initiativeId, expectedRevisionOf(current));
     if (!result.success) {
       upsert(current);
       return { ok: false, reason: result.message ?? 'El borrado quedó sin confirmar.' };
@@ -204,11 +208,11 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
     getInitiative,
     getByCode,
     createInitiative,
-    updateInitiative,
+    runInitiativeCommand,
     deleteInitiative,
   }), [
     initiatives, isLoading, usedCodes, reload, getInitiative,
-    getByCode, createInitiative, updateInitiative, deleteInitiative,
+    getByCode, createInitiative, runInitiativeCommand, deleteInitiative,
   ]);
 
   return (
