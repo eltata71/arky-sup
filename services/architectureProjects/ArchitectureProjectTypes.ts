@@ -140,7 +140,18 @@ export interface ProjectAttentionTracking {
 }
 
 
-export interface Project {
+/**
+ * La raíz del agregado Proyecto (F4-04, ADR-106 §6).
+ *
+ * Es lo que `api.save_project` guarda y lo que su revisión protege: el nombre,
+ * las iniciativas a las que responde, su seguimiento, su memoria y sus paquetes
+ * de publicación. **No contiene artefactos**: desde ADR-106 el Artefacto es raíz
+ * de su propio agregado y se escribe con sus comandos. La fábrica construye
+ * esto, las reglas de seguimiento lo leen, y la ruta de escritura sólo acepta
+ * esto — así ninguna escritura del proyecto puede llevar, ni borrar, un
+ * artefacto.
+ */
+export interface ProjectRoot {
   id: string;
   name: string;
   description: string;
@@ -179,6 +190,34 @@ export interface Project {
   initialCapture?: string[];
   /** Metadatos estructurados (fecha, autor, prioridad) de `initialCapture`. */
   initialCaptureEntries?: MemoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+  /**
+   * La revisión optimista de la fila, tal y como la devolvió la lectura
+   * (F4-07). La siguiente escritura la compara: viaja con el registro que se
+   * está viendo, no en un mapa del repositorio. Ausente en un proyecto que
+   * todavía no se ha guardado.
+   */
+  revision?: number;
+  /**
+   * Professional publication packages: governed, accessible, auditable
+   * deliverables built from the project's artifacts by the
+   * `publicationPipeline` service. Additive and backwards-compatible — absent
+   * on legacy projects until the first package is created.
+   */
+  publicationPackages?: import('../publicationPipeline/PublicationPipelineTypes').PublicationPackage[];
+}
+
+/**
+ * Lo que una pantalla ve: la raíz con sus artefactos y sus proyecciones.
+ *
+ * Es un **modelo de lectura**, no el agregado: los artefactos llegan de su
+ * propia tabla, el índice y el contador los recalcula el servidor, y el grafo de
+ * conocimiento es dato derivado con su propia RPC. Ninguno de estos campos se
+ * escribe a través del proyecto. `Project` conserva el nombre porque es lo que
+ * leen cuarenta módulos; el agregado es `ProjectRoot`.
+ */
+export interface Project extends ProjectRoot {
   /**
    * The project's artifacts — **the full documents, and only when loaded**.
    *
@@ -216,8 +255,6 @@ export interface Project {
   artifactIndex?: ArtifactSummary[];
   /** Number of artifacts, denormalised on the project document. */
   artifactCount?: number;
-  createdAt: string;
-  updatedAt: string;
   /**
    * Persisted Architecture Knowledge Graph: the canonical, typed model of the
    * project's architectural knowledge (entities, relations, evidence). Built
@@ -225,11 +262,4 @@ export interface Project {
    * backwards-compatible — absent on legacy projects until the first rebuild.
    */
   architectureKnowledgeGraph?: import('../architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes').ArchitectureGraph;
-  /**
-   * Professional publication packages: governed, accessible, auditable
-   * deliverables built from the project's artifacts by the
-   * `publicationPipeline` service. Additive and backwards-compatible — absent
-   * on legacy projects until the first package is created.
-   */
-  publicationPackages?: import('../publicationPipeline/PublicationPipelineTypes').PublicationPackage[];
 }

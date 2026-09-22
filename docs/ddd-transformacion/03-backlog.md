@@ -482,13 +482,45 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   `expectedUpdatedAt` (reloj del cliente) se sustituye por la revisión.
 
 ### F4-04 · Separar dominio, documento persistido y modelo de lectura
-- **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente`
+- **Prioridad** P1 · **Tamaño** L · **Estado** `completada` · **Depende de** F4-02, F4-03
+- **Hecho (2026-09-22).** Tres formas con nombre, cada una con un solo
+  productor:
+  - **`ProjectRoot`**: el agregado. Lo que `save_project` guarda y lo que su
+    revisión protege. **No tiene `artifacts`**: la fábrica lo construye, y
+    `createProject`, `persistProjectRoot` y el repositorio sólo aceptan esto, así
+    que ninguna escritura del proyecto puede llevar, ni borrar, un artefacto
+    (ADR-106 §6).
+  - **`PersistedProjectDocument`**: el documento de la fila. `toProjectDocument`
+    es el único que lo produce, y ya no emite `lastArtifactUpdatedAt` ni ningún
+    campo derivado. Una prueba lo afirma aunque se le pase una vista entera.
+  - **`Project`** (`extends ProjectRoot`): el modelo de lectura. Añade los
+    artefactos, el índice, el contador y el grafo, que llegan de sus propias
+    tablas. Conserva el nombre porque lo leen cuarenta módulos.
+    `toProjectView` compone la vista y `newProjectView` da la de un proyecto
+    recién creado: cargado y vacío.
+- **Lo que cambia de comportamiento.** Crear un proyecto ya no escribe un grafo
+  de conocimiento vacío: es dato derivado con su propia RPC y el primer
+  reconstruido lo crea.
 
 ### F4-05 · Sacar de React la coordinación de artefactos
 - **Prioridad** P0 · **Tamaño** XL · **Estado** `pendiente`
 
 ### F4-07 · El mapa de revisiones de proyectos, y su fuga al contrato público
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H10 (resto), H04
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H10 (resto), H04
+- **Hecho (2026-09-22).** El `Map` de `SupabaseProjectRepository` desapareció,
+  y con él `knownProjectRevision` y `forgetProjectRevisions` del `index.ts`.
+  `save`, `saveRoot` y `remove` exigen `expectedRevision`: el llamante la trae
+  del registro que está viendo. `Project.revision` la lleva desde la lectura,
+  `createProject` y `updateProject` devuelven la confirmada y
+  `useProjectsState` la escribe de vuelta. La comprobación por
+  `expectedUpdatedAt` —el reloj del cliente— se retiró: la revisión es la única
+  autoridad de concurrencia.
+- **El mismo defecto que F4-03 encontró en artefactos.** `updateProject` y
+  `deleteProject` tomaban su instantánea **dentro** del actualizador de
+  `setProjects`; la segunda edición consecutiva no tenía instantánea, ni rollback,
+  ni revisión que comparar. Leen ahora `projectsRef`.
+  `projectRevisionFlow.test.tsx` lo fija y `noRevisionCache.test.ts` escanea que
+  ningún repositorio vuelva a guardar revisiones en un mapa.
 - **Problema.** `SupabaseProjectRepository` tiene el mismo `Map` global que
   encargos e iniciativas tenían, y además lo **publica**: `knownProjectRevision`
   y `forgetProjectRevisions` salen por el `index.ts` del contexto, así que la

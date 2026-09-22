@@ -351,6 +351,12 @@ export function validateProject(input: unknown, pathPrefix = 'project'): Validat
     }
   }
 
+  // La revisión optimista de la fila (F4-07): la próxima escritura la compara.
+  // Perderla al sanear era perder la única forma correcta de guardar después.
+  if (typeof input.revision === 'number' && Number.isInteger(input.revision) && input.revision > 0) {
+    safeProject.revision = input.revision;
+  }
+
   // Artifact loading state.
   //
   // These must survive the re-shape or the safety property they exist for is

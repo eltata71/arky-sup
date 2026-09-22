@@ -1193,10 +1193,28 @@ Four aggregates, four factories, and none of them is a React component any more:
 
 | Aggregate | Factory | What it refuses |
 |---|---|---|
-| `Project` (atención) | `services/architectureProjects/architectureProjectFactory` | no name, no initiative |
+| `ProjectRoot` (atención) | `services/architectureProjects/architectureProjectFactory` | no name, no initiative |
 | `OfficeEngagement` (entregable) | `services/architectureOffice/officeEngagementFactory` | no title, no attention, no initiative link |
 | `BusinessInitiative` | `services/businessInitiatives/businessInitiativeFactory` | no title, no stated need, no owner |
 | `Artifact` | `services/artifacts/artifactFactory` | — it enforces identity and versioning rather than refusing |
+
+**The project's aggregate is `ProjectRoot`, and `Project` is its read model**
+(F4-04, ADR-106 §6). The root is what `api.save_project` writes and its revision
+protects — name, initiatives, tracking, memory, publication packages — and it
+has **no `artifacts`**: since ADR-106 each artifact is the root of its own
+aggregate and is written by its own commands. `Project extends ProjectRoot` adds
+the artifacts, the index, the count and the knowledge graph, all of which arrive
+from their own tables. The factory, `createProject` and the repository accept
+only a root, so no project write can carry — or delete — an artifact; a
+screen that needs the view of a project it just created uses `newProjectView`.
+`toProjectDocument` is the one producer of `PersistedProjectDocument`, and never
+emits a derived field.
+
+**The revision travels with the record, never in a map** (F4-07). `Project.revision`
+comes from the read, the next write sends it as `expectedRevision`, and the
+confirmed one is written back into state. `SupabaseProjectRepository` used to
+keep a module-level `Map` of revisions and publish it through the context's
+`index.ts`; `__tests__/services/noRevisionCache.test.ts` keeps it gone.
 
 Until Ola 3 three of the four were built with an object literal **inside a
 React context**: `OfficeContext` assembled a 60-line `OfficeEngagement` in a

@@ -18,7 +18,7 @@
  */
 
 import type { Artifact } from '../../lib/artifacts';
-import type { Project, ArtifactSummary } from './ArchitectureProjectTypes';
+import type { Project, ProjectRoot, ArtifactSummary } from './ArchitectureProjectTypes';
 import { sanitizeMemoryEntryList } from '../memory/memoryEntries';
 import { toInitiativeCodes as normalizeBusinessProjectIds } from '../../lib/eaTerminology';
 import { normalizeAttentionTracking } from './projectRuntimeValidation';
@@ -26,10 +26,41 @@ import type { ArchitectureGraph } from '../architectureKnowledgeGraph';
 import type { PublicationPackage } from '../publicationPipeline/PublicationPipelineTypes';
 import { stripUndefined as sanitize } from '../../lib/jsonSafe';
 
-/** Documento remoto: lo que la RPC devuelve dentro de `data`. */
+/**
+ * Documento remoto **leído**: lo que la RPC devuelve dentro de `data`. Sin
+ * tipo a propósito —puede venir de un esquema anterior o editado a mano—; lo
+ * vuelven utilizable `toProjectRoot` y la validación de lectura.
+ */
 export type ProjectDocument = Record<string, unknown>;
 
-export const toProjectDocument = (project: Project & { userId?: string }): ProjectDocument => sanitize({
+/**
+ * Documento **escrito**: exactamente lo que `api.save_project` recibe (F4-04).
+ *
+ * Tres formas del mismo proyecto, cada una con su trabajo: `ProjectRoot` es el
+ * agregado, esto es su forma persistida, y `Project` es lo que ve una pantalla.
+ * Aquí no hay artefactos, índice, contador, grafo ni revisión: la revisión viaja
+ * como argumento de la RPC, y lo demás lo escribe quien es su dueño.
+ */
+export interface PersistedProjectDocument {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string;
+    readonly projectContext: string[];
+    readonly initiativeIds: string[];
+    readonly linkedBusinessProjects: string[];
+    readonly agentMemory: string[];
+    readonly initialCapture: string[];
+    readonly projectContextEntries?: ProjectRoot['projectContextEntries'];
+    readonly agentMemoryEntries?: ProjectRoot['agentMemoryEntries'];
+    readonly initialCaptureEntries?: ProjectRoot['initialCaptureEntries'];
+    readonly publicationPackages?: ProjectRoot['publicationPackages'];
+    readonly attention?: ProjectRoot['attention'];
+    readonly userId?: string;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+export const toProjectDocument = (project: ProjectRoot & { userId?: string }): PersistedProjectDocument => sanitize({
     id: project.id,
     name: project.name,
     description: project.description,
@@ -58,7 +89,6 @@ export const toProjectDocument = (project: Project & { userId?: string }): Proje
     userId: project.userId,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
-    lastArtifactUpdatedAt: project.artifacts?.length ? project.updatedAt : undefined,
 });
 
 export interface ProjectAggregates {
@@ -69,12 +99,8 @@ export interface ProjectAggregates {
     artifactIndex?: ArtifactSummary[];
 }
 
-export const fromProjectSnapshot = (
-    id: string,
-    data: ProjectDocument,
-    artifacts: Artifact[],
-    aggregates: ProjectAggregates = {},
-): Project => ({
+/** La raíz, leída de un documento que puede venir de cualquier versión. */
+export const toProjectRoot = (id: string, data: ProjectDocument): ProjectRoot => ({
     id,
     name: typeof data.name === 'string' ? data.name : 'Proyecto sin nombre',
     description: typeof data.description === 'string' ? data.description : '',
@@ -89,8 +115,28 @@ export const fromProjectSnapshot = (
     projectContextEntries: Array.isArray(data.projectContextEntries) ? sanitizeMemoryEntryList(data.projectContextEntries) : undefined,
     agentMemoryEntries: Array.isArray(data.agentMemoryEntries) ? sanitizeMemoryEntryList(data.agentMemoryEntries) : undefined,
     initialCaptureEntries: Array.isArray(data.initialCaptureEntries) ? sanitizeMemoryEntryList(data.initialCaptureEntries) : undefined,
-    // Resolved by the caller: the graph comes from its own RPC and the
-    // packages from the document itself.
+    createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
+    updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
+    // La lectura la devuelve desde F4-03; viaja con el registro (F4-07).
+    revision: typeof data.revision === 'number' && Number.isInteger(data.revision) && data.revision > 0
+        ? data.revision
+        : undefined,
+});
+
+/**
+ * El modelo de lectura: la raíz, sus artefactos y sus proyecciones (F4-04).
+ *
+ * `artifactCount` sale del documento cuando lo trae —lo recalcula el servidor—
+ * y de los artefactos cuando no. Los paquetes y el grafo los resuelve quien
+ * llama: los paquetes vienen del documento, el grafo de su propia RPC.
+ */
+export const toProjectView = (
+    root: ProjectRoot,
+    artifacts: Artifact[],
+    aggregates: ProjectAggregates = {},
+    artifactCount?: number,
+): Project => ({
+    ...root,
     architectureKnowledgeGraph: aggregates.architectureKnowledgeGraph,
     publicationPackages: aggregates.publicationPackages,
     artifacts,
@@ -98,10 +144,21 @@ export const fromProjectSnapshot = (
     // yet" for "there are none".
     artifactsLoaded: aggregates.artifactsLoaded ?? true,
     artifactIndex: aggregates.artifactIndex,
-    artifactCount: typeof data.artifactCount === 'number' ? data.artifactCount : artifacts.length,
-    createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
-    updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
+    artifactCount: artifactCount ?? artifacts.length,
 });
+
+/** Documento leído + artefactos → lo que una pantalla ve. */
+export const fromProjectSnapshot = (
+    id: string,
+    data: ProjectDocument,
+    artifacts: Artifact[],
+    aggregates: ProjectAggregates = {},
+): Project => toProjectView(
+    toProjectRoot(id, data),
+    artifacts,
+    aggregates,
+    typeof data.artifactCount === 'number' ? data.artifactCount : undefined,
+);
 
 /** Identity of one artifact, without its body. */
 export const toArtifactSummary = (artifact: Artifact): ArtifactSummary => sanitize({

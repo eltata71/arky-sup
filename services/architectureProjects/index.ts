@@ -19,6 +19,7 @@ export type {
   AttentionStatus,
   Project,
   ProjectAttentionTracking,
+  ProjectRoot,
 } from './ArchitectureProjectTypes';
 
 /**
@@ -46,6 +47,7 @@ export {
 } from './attentionTracking';
 export {
   createArchitectureProject,
+  newProjectView,
   type ArchitectureProjectRejection,
   type CreateArchitectureProjectInput,
   type CreateArchitectureProjectResult,
@@ -64,7 +66,10 @@ export {
  * el índice y el contador que el servidor recalcula al escribir un artefacto.
  * `persistProjectAggregate` ya no sale de aquí: sólo lo usa la creación.
  */
-export { toArtifactSummary, type ProjectDocument } from './projectDocumentMapper';
+export {
+  toArtifactSummary,
+  type PersistedProjectDocument,
+  type ProjectDocument,
+} from './projectDocumentMapper';
 export { clearProjectCache, forgetProject } from './projectCache';
 export { getProject } from './projectReads';
-export { forgetProjectRevisions, knownProjectRevision } from './SupabaseProjectRepository';

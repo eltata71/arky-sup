@@ -14,7 +14,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { createArchitectureProject } from '../../services/architectureProjects';
+import { createArchitectureProject, newProjectView } from '../../services/architectureProjects';
+import { toProjectDocument } from '../../services/architectureProjects/projectDocumentMapper';
 
 const validInput = {
   name: 'Modernización de siniestros',
@@ -55,8 +56,39 @@ describe('an attention cannot be created without an initiative', () => {
     expect(result.outcome).toBe('created');
     if (result.outcome !== 'created') throw new Error('unreachable');
     expect(result.project.initiativeIds).toEqual(['ini-1']);
-    expect(result.project.artifacts).toEqual([]);
     expect(result.project.id).toMatch(/^proj_/);
+  });
+});
+
+describe('the root carries no artifacts (F4-04, ADR-106 §6)', () => {
+  it('builds a root, never a read model', () => {
+    const result = createArchitectureProject(validInput);
+    if (result.outcome !== 'created') throw new Error('unreachable');
+    expect(result.project).not.toHaveProperty('artifacts');
+    expect(result.project).not.toHaveProperty('artifactIndex');
+    expect(result.project).not.toHaveProperty('artifactCount');
+  });
+
+  it('turns a new root into a loaded, empty view', () => {
+    const result = createArchitectureProject(validInput);
+    if (result.outcome !== 'created') throw new Error('unreachable');
+    const view = newProjectView(result.project);
+    expect(view.artifacts).toEqual([]);
+    expect(view.artifactsLoaded).toBe(true);
+    expect(view.artifactIndex).toEqual([]);
+    expect(view.artifactCount).toBe(0);
+    expect(view.id).toBe(result.project.id);
+  });
+
+  it('never writes the derived fields, even when handed a full view', () => {
+    const result = createArchitectureProject(validInput);
+    if (result.outcome !== 'created') throw new Error('unreachable');
+    const view = { ...newProjectView(result.project), revision: 7 };
+    const document = toProjectDocument(view) as unknown as Record<string, unknown>;
+    for (const derived of ['artifacts', 'artifactIndex', 'artifactCount', 'artifactsLoaded', 'revision', 'architectureKnowledgeGraph']) {
+      expect(document).not.toHaveProperty(derived);
+    }
+    expect(document.name).toBe(validInput.name);
   });
 });
 

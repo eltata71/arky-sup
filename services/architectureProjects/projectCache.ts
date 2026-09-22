@@ -3,8 +3,9 @@
  *
  * Está en su propio fichero porque la comparten las lecturas y las escrituras
  * de este contexto, y porque `services/artifacts` necesita invalidarla: el
- * documento del proyecto lleva `artifactCount` y `lastArtifactUpdatedAt`, así
- * que escribir un artefacto deja obsoleto al proyecto cacheado.
+ * la vista del proyecto lleva el índice y el contador de artefactos, que
+ * recalcula el servidor, así que escribir un artefacto deja obsoleto al
+ * proyecto cacheado.
  *
  * `forgetProject` es toda la superficie que otro módulo ve. Exponer el `Map`
  * sería tener dos módulos escribiendo en la misma estructura, que es de donde
