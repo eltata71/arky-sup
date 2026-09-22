@@ -973,31 +973,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      save_project_aggregate: {
-        Args: {
-          p_artifacts: Json
-          p_expected_revision: number
-          p_project: Json
-        }
-        Returns: {
-          artifact_count: number
-          artifact_index: Json
-          created_at: string
-          data: Json
-          id: string
-          initiative_ids: string[]
-          name: string
-          owner_id: string
-          revision: number
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "architecture_projects"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       save_user_settings: {
         Args: { p_expected_revision: number; p_settings: Json }
         Returns: {

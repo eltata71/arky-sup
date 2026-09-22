@@ -64,7 +64,6 @@ export {
  * comandos, así que la costura se estrechó: leer el proyecto (`getProject`) e
  * invalidar su caché (`forgetProject`), porque el documento del proyecto lleva
  * el índice y el contador que el servidor recalcula al escribir un artefacto.
- * `persistProjectAggregate` ya no sale de aquí: sólo lo usa la creación.
  */
 export {
   toArtifactSummary,

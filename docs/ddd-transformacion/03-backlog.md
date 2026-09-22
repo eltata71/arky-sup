@@ -503,7 +503,39 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   reconstruido lo crea.
 
 ### F4-05 · Sacar de React la coordinación de artefactos
-- **Prioridad** P0 · **Tamaño** XL · **Estado** `pendiente`
+- **Prioridad** P0 · **Tamaño** XL · **Estado** `completada` · **Depende de** F4-03
+- **Hecho (2026-09-23).** Tres servicios de aplicación en
+  `services/artifacts/application/`, declarados como puertas del módulo en
+  `modules.json`:
+  - **`artifactWorkflow`** — lo que decidía `useArtifactsState` entre dos
+    `setState`: qué versión sigue a cuál, qué se recompila, qué comando lleva
+    cada intención, qué revisión se compara y qué se revierte cuando la base no
+    confirma (`planArtifactIntent` → `executeArtifactWrite` →
+    `settleArtifactWrite`). Puro salvo la escritura, que recibe el repositorio.
+    Entra en `typecheck:strict` con todo su cierre transitivo. El hook queda en
+    estado optimista, escritura y aviso; `artifactCoordinationOutOfReact.test.ts`
+    impide que vuelva a importar la fábrica o el compilador.
+  - **`artifactImprovement`** — lo que decidía el lienzo: la auto-mejora
+    determinista del diagrama (y cuándo *no* mejoró nada), los artefactos
+    derivados y la mejora con sugerencias.
+  - **`generationFailure`** — cómo se le cuenta al Workspace un fallo de
+    generación, que era su única razón para importar la capa de IA.
+- **Pantallas.** `ArtifactCanvas` (5 → 2), `ArtifactExportModal` (4 → 1),
+  `ArtifactInspectorPanel` (3 → 2) y `Workspace` (3 → 2) salen de la tabla de
+  fan-out: **10 → 6**. `artifactAssessment` publica el vocabulario de lo que
+  devuelve y asume la regla del grafo de conocimiento del inspector.
+- **El intercambio, medido.** `components -> services/diagram` 20 → 16,
+  `components -> services/quality` 7 → 3, `components -> services/artifacts`
+  13 → 11, `components -> services/ai` 3 → 2, `context -> services/artifacts`
+  desaparece y `context -> services/artifactCompiler` también; suben
+  `services/artifacts -> services/diagram` 14 → 17 y `-> services/ai` 1 → 2, y
+  aparece `services/artifacts -> services/review` (sólo tipo). Es el patrón de
+  la Ola 4: las decisiones bajan al dominio.
+- **Lo que no es de esta tarea.** Las seis pantallas que quedan sobre el fan-out
+  son de la Oficina, las iniciativas y el asistente, no de artefactos. Su
+  objetivo (0 antes del 2027-01-31) pasa a **F5-02** sin mover la fecha.
+  La publicación ya estaba fuera de React: sus transiciones son funciones puras
+  de `publicationPipeline` y `PublicationCenter` no pasa del fan-out por defecto.
 
 ### F4-07 · El mapa de revisiones de proyectos, y su fuga al contrato público
 - **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H10 (resto), H04
@@ -530,7 +562,26 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   testigo sobre una frontera que va a cambiar.
 
 ### F4-06 · Migración por cortes verticales con ruta de escritura única
-- **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F4-03
+- **Prioridad** P0 · **Tamaño** L · **Estado** `completada` · **Depende de** F4-03, F4-04
+- **Hecho (2026-09-23).** ADR-106 §5: `api.save_project_aggregate` se retira
+  cuando migra su último llamante. Era la creación de proyectos, siempre con la
+  lista vacía; ahora crear es `api.save_project` con revisión esperada 0, la
+  misma puerta que actualizar. Migración
+  `20260923090000_retire_save_project_aggregate.sql` (`revoke` + `drop`, con su
+  nota de compatibilidad y de reversión) y tipos generados sin la RPC.
+- **Tres gates para que no vuelva.** `rpcSurface.test.ts` falla con una
+  concesión sin consumidor; `retiredRpcs.test.ts` —nuevo— falla si una migración
+  posterior la recrea, si un fichero del cliente la llama o si el tipo generado
+  la ofrece (comprobado: sin la migración, los dos primeros fallan); y el
+  contrato pgTAP afirma `hasnt_function`.
+- **Contratos.** `projects_artifacts`, `artifact_commands` y
+  `engagement_overload_and_initiative_references` se reescribieron sobre
+  `save_project` + comandos de artefacto, conservando todos los casos
+  negativos (forma, tipo, vista, versión, secreto anidado, id repetido,
+  revisión obsoleta) y añadiendo dos: un segundo «crear» con el mismo id y una
+  edición de la raíz sobre una copia vieja. La sonda remota también.
+  Verificado en PostgreSQL 16 nativo: 15 contratos, dos reconstrucciones,
+  `plpgsql_check` sin hallazgos.
 
 ---
 
@@ -544,6 +595,12 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 
 ### F5-02 · Políticas de negocio a su contexto propietario
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F5-01
+- **Hereda de F4-05** las seis pantallas que siguen sobre el fan-out por
+  defecto —`ProjectCopilotChatModal`, `InitiativesPage`,
+  `EngagementIntakeWizard`, `OfficeCapabilitiesPanel`, `AssistantPanel`,
+  `ProjectsPage`— y su objetivo: 0 antes del 2027-01-31. Un ejemplo de lo que
+  hay debajo: el asistente de alta de un entregable calcula el espejo de códigos
+  `NEG-YYYY-NNN` en la pantalla, cuando es una regla de la fábrica del encargo.
 
 ### F5-03 · Eliminar las 22 aristas internas del SCC
 - **Prioridad** P0 · **Tamaño** XL · **Estado** `pendiente` · **Depende de** F5-01

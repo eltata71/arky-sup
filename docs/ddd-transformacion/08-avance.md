@@ -1,14 +1,18 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-22
-**Estado integrado:** Fase 2 completa, **fase 3 cerrada** (`09-cierre-fase-3.md`) y **fase 4 en curso** (F4-01, F4-02, F4-03, F4-04 y F4-07 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Última actualización:** 2026-09-23
+**Estado integrado:** Fase 2 completa, **fase 3 cerrada** (`09-cierre-fase-3.md`) y **fase 4 en curso** (las siete tareas F4-01…F4-07 cerradas; D-4 resuelta; falta el documento de cierre), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F4-07 y F4-04** — la revisión del proyecto
+- **Última tarea completada:** **F4-05 y F4-06** — la coordinación de
+  artefactos sale de React a `services/artifacts/application/` (el hook y cuatro
+  pantallas dejan de decidir; fan-out 10 → 6) y `api.save_project_aggregate` se
+  retira: el Proyecto tiene una sola ruta de escritura. Antes: **F4-07 y F4-04**
+  (#53) — la revisión del proyecto
   viaja con el registro (sin mapa global ni fuga al contrato público) y el
   Proyecto se separa en raíz (`ProjectRoot`), documento persistido y modelo de
   lectura (`Project`). Antes: **cierre de la fase 3** — F3-03 (dependencias
@@ -24,9 +28,10 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** fase 4 — **F4-05** (sacar de React la
-  coordinación de artefactos) y **F4-06** (migración por cortes verticales con
-  ruta de escritura única).
+- **Siguiente paso exacto:** cerrar la fase 4 con su documento
+  (`10-cierre-fase-4.md`, mismo formato que el de la fase 3) y empezar la fase 5
+  por **F5-01** (romper `services/ai -> services (raíz)`). Las seis pantallas
+  que siguen sobre el fan-out pasaron a **F5-02** con la misma fecha objetivo.
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -111,6 +116,8 @@
 | **F4-02** ¿Artefacto es raíz? | ✅ | ADR-106: sí. Ninguna invariante lee el contenido de dos artefactos; P-04 y A-02 son de conjunto y las sostiene el servidor. |
 | **F4-03** comandos por artefacto | ✅ | Cinco comandos + `save_project`, índice único por versión, revisión en las lecturas. 61 aserciones pgTAP. |
 | **F4-04** raíz, documento y modelo de lectura | ✅ | `ProjectRoot` sin artefactos; `PersistedProjectDocument`; `Project` es la vista. |
+| **F4-05** coordinación de artefactos fuera de React | ✅ | `artifactWorkflow`, `artifactImprovement`, `generationFailure`. Fan-out 10 → 6; las seis restantes, a F5-02. |
+| **F4-06** ruta de escritura única | ✅ | `save_project_aggregate` retirada: `revoke` + `drop`, contratos reescritos, `retiredRpcs.test.ts`. |
 | **F4-07** mapa de revisiones de proyectos | ✅ | Sin `Map` ni exportación; la revisión viaja en `Project.revision`. Mismo defecto del actualizador que F4-03. |
 
 ### Lo que F3-02 hizo visible

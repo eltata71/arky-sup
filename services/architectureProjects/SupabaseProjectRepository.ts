@@ -1,30 +1,16 @@
 /**
  * El agregado Proyecto/Atención contra PostgreSQL.
  *
- * **Desde F4-03 (ADR-106) el Proyecto ya no contiene artefactos.** `saveRoot`
- * —`api.save_project`— guarda sólo la raíz, y cada artefacto se escribe con su
- * propio comando desde `services/artifacts`. `save` —la RPC compuesta— queda
- * para crear un proyecto junto con sus artefactos iniciales; sobre un proyecto
- * existente el servidor sólo acepta la lista que ya tiene. Lo que sigue
- * describe cómo se llegó aquí.
+ * **Una sola ruta de escritura (F4-06).** `saveRoot` —`api.save_project`— guarda
+ * la raíz: con revisión esperada 0 la crea, con cualquier otra la actualiza si
+ * sigue siendo la almacenada. Cada artefacto se escribe con su propio comando
+ * desde `services/artifacts` (ADR-106). La RPC compuesta que recibía el
+ * proyecto y la lista entera de artefactos, y borraba los que no viajaban, se
+ * retiró cuando su último llamante —la creación, siempre con la lista vacía—
+ * pasó a esta puerta; `retiredRpcs.test.ts` impide que vuelva.
  *
- * Una diferencia de forma con el camino que sustituye, y es la que explica
- * todo lo demás: en Firestore un proyecto eran **muchos documentos** —la raíz,
- * un documento por artefacto, el índice, el grafo, un documento por paquete— y
- * cada escritura tocaba los que le correspondían. Aquí hay **una RPC
- * compuesta**: `api.save_project_aggregate` recibe el proyecto y la lista
- * completa de artefactos, y mantiene en la misma transacción la raíz, las filas
- * hijas, el contador y el índice. Los artefactos que no viajan en la carga se
- * borran, que es justamente lo que hace que el agregado no pueda quedar a
- * medias.
+ * Dos cosas que conviene ver escritas:
  *
- * Tres consecuencias que conviene ver escritas:
- *
- *  - **Una escritura de un artefacto es una escritura del agregado.** No hay
- *    forma de tocar un artefacto sin enviar los demás, y eso es correcto para
- *    un agregado: el contador y el índice no pueden discrepar de las filas.
- *    `services/artifacts` lee el proyecto, aplica su cambio y vuelve a
- *    guardarlo.
  *  - **La concurrencia es por revisión, no por `updatedAt`.** Firestore
  *    comparaba cadenas de fecha, que es una heurística: dos escrituras en el
  *    mismo milisegundo empataban. `revision` es un entero que el servidor
@@ -89,12 +75,10 @@ const asAggregate = (value: unknown): RemoteProjectAggregate | null => {
 export interface SupabaseProjectRepository {
   list(): Promise<RemoteProjectAggregate[]>;
   load(projectId: string): Promise<RemoteProjectAggregate | null>;
-  save(
-    document: PersistedProjectDocument,
-    artifacts: Artifact[],
-    expectedRevision: number,
-  ): Promise<PersistenceResult<RemoteProjectAggregate>>;
-  /** Sólo la raíz: nunca toca artefactos, contador ni índice (ADR-106). */
+  /**
+   * Sólo la raíz: nunca toca artefactos, contador ni índice (ADR-106). Con
+   * revisión 0 crea; con otra, actualiza si sigue siendo la almacenada.
+   */
   saveRoot(
     document: PersistedProjectDocument,
     expectedRevision: number,
@@ -138,15 +122,6 @@ export const supabaseProjectRepository: SupabaseProjectRepository = {
       if (supabaseErrorCode(error) === NOT_FOUND) return null;
       throw error;
     }
-  },
-
-  async save(document, artifacts, expectedRevision) {
-    return confirmSave(createOperationId('saveProjectAggregate'), () =>
-      callRpc<unknown>('save_project_aggregate', {
-        p_project: document,
-        p_artifacts: artifacts,
-        p_expected_revision: expectedRevision,
-      }));
   },
 
   async saveRoot(document, expectedRevision) {

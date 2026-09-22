@@ -49,7 +49,10 @@ export const BUDGET_TARGETS = Object.freeze([
     label: 'pantallas por encima del fan-out por defecto',
     target: 0,
     due: '2027-01-31',
-    phase: 'F4-05 — sacar de React la coordinación de artefactos',
+    // F4-05 sacó las cuatro pantallas de artefactos (10 → 6). Las seis que
+    // quedan son de la Oficina, las iniciativas y el asistente: sus políticas
+    // van a su contexto propietario, que es F5-02. La fecha no se movió.
+    phase: 'F5-02 — políticas de negocio a su contexto propietario (F4-05 hizo las de artefactos)',
   },
   {
     id: 'deep-import-pairs',

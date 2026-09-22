@@ -12,12 +12,13 @@ import { ReviewPanel } from './ReviewPanel';
 import { DocumentOutline } from './DocumentOutline';
 import { useOptionalAppContext } from '../../context/AppContext';
 import {
-    buildArchitectureKnowledgeGraphForProject,
-    buildArtifactGraphInsight,
-    describeArchitectureGraphFreshness,
-} from '../../services/architectureKnowledgeGraph';
-import { buildArtifactExportabilityState } from '../../services/quality/artifactQualityGateService';
-import { tierLabel, type ArtifactQualityScope, type ArtifactQualitySeverity } from '../../services/quality/artifactQualityModel';
+    assessArtifactKnowledge,
+    assessExportability,
+    describeKnowledgeFreshness,
+    describeQualityTier,
+    type ArtifactQualityScope,
+    type ArtifactQualitySeverity,
+} from '../../services/artifacts/application/artifactAssessment';
 
 interface ArtifactInspectorPanelProps {
     artifact: Artifact;
@@ -172,24 +173,16 @@ const GraphInsightCard: React.FC<{ projectId: string; artifact: Artifact }> = ({
     const app = useOptionalAppContext();
     const project = app?.getProject(projectId);
     const globalContext = app?.settings.globalContext;
-    const insight = useMemo(() => {
-        if (!project) return null;
-        try {
-            // Prefer the persisted canonical graph; fall back to a
-            // deterministic in-memory build for projects without one.
-            const graph = project.architectureKnowledgeGraph
-                ?? buildArchitectureKnowledgeGraphForProject(project, {
-                    globalContext: globalContext ?? [],
-                });
-            return buildArtifactGraphInsight(graph, artifact.id);
-        } catch {
-            return null;
-        }
+    // La regla —grafo persistido primero, construido en memoria si falta, y
+    // `null` ante cualquier fallo— es de la capa de aplicación (F4-05).
+    const insight = useMemo(
+        () => assessArtifactKnowledge(project, artifact.id, globalContext ?? []),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [projectId, project?.updatedAt, project?.artifacts.length, artifact.id, globalContext]);
+        [projectId, project?.updatedAt, project?.artifacts.length, artifact.id, globalContext],
+    );
 
     if (!insight) return null;
-    const freshnessInfo = describeArchitectureGraphFreshness(
+    const freshnessInfo = describeKnowledgeFreshness(
         app?.getArchitectureGraphFreshness(projectId) ?? 'missing',
     );
     const tone: 'success' | 'warning' | 'danger' = insight.shouldBlock
@@ -234,7 +227,7 @@ const GraphInsightCard: React.FC<{ projectId: string; artifact: Artifact }> = ({
  */
 const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artifact, projectId }) => {
     const { report, state } = useMemo(
-        () => buildArtifactExportabilityState(artifact),
+        () => assessExportability(artifact),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [artifact.id, artifact.content, artifact.ir, artifact.type],
     );
@@ -251,7 +244,7 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
                     {score}<span className="text-lg text-gray-400">/100</span>
                 </div>
                 <div className="mt-1 flex items-center justify-center gap-2">
-                    <Badge tone={tone} size="sm">{tierLabel(report.score.tier)}</Badge>
+                    <Badge tone={tone} size="sm">{describeQualityTier(report.score.tier)}</Badge>
                     <Badge tone="gray" size="sm">{report.profile.label}</Badge>
                 </div>
                 <div

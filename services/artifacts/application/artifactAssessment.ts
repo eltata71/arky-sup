@@ -43,13 +43,41 @@ import type {
   NodeRect,
   ViewportRect,
 } from '../../diagram/layoutQualityService';
-import { getExportFormatOptions, type ArtifactView } from '../../export';
-import { buildArtifactExportabilityState } from '../../quality/artifactQualityGateService';
+import { getExportFormatOptions, type ArtifactView, type ExportFormat } from '../../export';
+
+// El vocabulario de lo que esta capa devuelve. Las pantallas del lienzo lo
+// leen de aquí para no importar de cuatro módulos de servicio sólo para nombrar
+// un resultado que reciben de este fichero (F4-05).
+export type { ArtifactView, ExportFormat, ExportFormatOption } from '../../export';
+export type { DiagramPreflightReport } from '../../diagram';
+export type { VisualGateState } from '../../diagram/visualQualityGate';
+export type {
+  EdgeSegment,
+  FloatingObstacleRect,
+  GroupRect,
+  NodeRect,
+  ViewportRect,
+} from '../../diagram/layoutQualityService';
+export type {
+  ArtifactQualityGateResult,
+  ArtifactQualityScope,
+  ArtifactQualitySeverity,
+} from '../../quality';
+import {
+  buildArtifactExportabilityState,
+  evaluateExportQualityGate,
+  tierLabel,
+  type ArtifactQualityReport,
+} from '../../quality';
+import {
+  buildArchitectureKnowledgeGraphForProject,
+  buildArtifactGraphInsight,
+  describeArchitectureGraphFreshness,
+} from '../../architectureKnowledgeGraph';
 import { getCompilationFreshness } from '../../artifactCompiler';
 import { buildArtifactSuggestionContext } from '../../ai/artifactSuggestionService';
 import { compileArtifactPresentation } from '../artifactPresentationCompiler';
 import { deriveHardBlockContext, evaluateGateGuard, gateGuardTone } from '../../diagram/visualGateGuard';
-import { tierLabel } from '../../quality/artifactQualityModel';
 import { isPresentationExportEnabled } from '../artifactPresentationFlags';
 
 /** Lo que el lienzo mide cuando ReactFlow ya ha pintado. */
@@ -134,9 +162,43 @@ export const assessExportFormats = (
   preflight: DiagramPreflightReport | null,
 ) => getExportFormatOptions({ artifact, activeView, diagramPreflight: preflight, includeUnavailable: true });
 
-/** La foto formal de calidad del artefacto y sus puertas de exportación por familia. */
-export const assessExportability = (artifact: Artifact, activeView: ArtifactView) =>
-  buildArtifactExportabilityState(artifact, { activeView });
+/**
+ * La foto formal de calidad del artefacto y sus puertas de exportación por
+ * familia. Sin vista activa, la del artefacto tal como está guardado — que es lo
+ * que el inspector enseña.
+ */
+export const assessExportability = (artifact: Artifact, activeView?: ArtifactView) =>
+  buildArtifactExportabilityState(artifact, activeView ? { activeView } : undefined);
+
+/** La puerta de calidad de un formato concreto, sobre el informe ya calculado. */
+export const assessExportGate = (report: ArtifactQualityReport, format: ExportFormat, activeView: ArtifactView) =>
+  evaluateExportQualityGate(report, format, activeView);
+
+/**
+ * Qué dice el grafo de conocimiento de este artefacto (F4-05).
+ *
+ * La regla vivía en el inspector: preferir el grafo persistido y, si el
+ * proyecto no tiene uno, construirlo en memoria de forma determinista. Un fallo
+ * del grafo nunca rompe el panel —es un consumidor periférico—, así que se
+ * informa como `null`, igual que «no hay proyecto».
+ */
+export const assessArtifactKnowledge = (
+  project: Project | undefined,
+  artifactId: string,
+  globalContext: readonly string[] = [],
+) => {
+  if (!project) return null;
+  try {
+    const graph = project.architectureKnowledgeGraph
+      ?? buildArchitectureKnowledgeGraphForProject(project, { globalContext: [...globalContext] });
+    return buildArtifactGraphInsight(graph, artifactId);
+  } catch {
+    return null;
+  }
+};
+
+/** La frescura del grafo, en palabras. */
+export const describeKnowledgeFreshness = describeArchitectureGraphFreshness;
 
 /** Si la compilación guardada corresponde al contenido actual. */
 export const assessCompilationFreshness = (artifact: Artifact) => getCompilationFreshness(artifact);

@@ -256,24 +256,23 @@ export const LAYER_VIOLATION_BUDGET = {
 export const DEEP_IMPORT_BUDGET = {
   'api -> services/ai': 1,
   'components -> services/agent': 2,
-  'components -> services/ai': 3,
+  'components -> services/ai': 2,
   'components -> services/architectureOffice': 44,
-  'components -> services/artifacts': 13,
+  'components -> services/artifacts': 11,
   'components -> services/chat': 1,
-  'components -> services/diagram': 20,
+  'components -> services/diagram': 16,
   'components -> services/export': 1,
   'components -> services/presentation': 1,
-  'components -> services/quality': 7,
+  'components -> services/quality': 3,
   'components -> services/review': 1,
   'context -> services/agent': 1,
   'context -> services/ai': 1,
   'context -> services/architectureOffice': 10,
   'context -> services/architectureProjects': 2,
-  'context -> services/artifacts': 2,
   'context -> services/chat': 1,
   'hooks -> services/agent': 2,
   'hooks -> services/ai': 2,
-  'hooks -> services/artifacts': 4,
+  'hooks -> services/artifacts': 3,
   'hooks -> services/diagram': 5,
   'hooks -> services/export': 2,
   'pages -> services/ai': 1,
@@ -311,10 +310,17 @@ export const DEEP_IMPORT_BUDGET = {
   'services/architectureProjects -> services/memory': 2,
   'services/architectureProjects -> services/publicationPipeline': 4,
   'services/artifactCompiler -> services/quality': 3,
-  'services/artifacts -> services/ai': 1,
-  'services/artifacts -> services/diagram': 14,
+  // F4-05: el lienzo y el Workspace dejaron de importar la capa de IA; la
+  // clasificación del fallo y el vocabulario de sugerencias bajaron a
+  // `services/artifacts/application`. Es el intercambio que la regla de
+  // fan-out busca: `components -> services/ai` bajó a la vez.
+  'services/artifacts -> services/ai': 2,
+  // F4-05: la auto-mejora determinista del diagrama y los tipos de medida del
+  // lienzo salieron de cuatro pantallas; `components -> services/diagram`
+  // bajó de 20 a 16 en el mismo cambio.
+  'services/artifacts -> services/diagram': 17,
   'services/artifacts -> services/export': 3,
-  'services/artifacts -> services/quality': 5,
+  'services/artifacts -> services/quality': 3,
   'services/export -> services/diagram': 1,
   'services/export -> services/presentation': 1,
   'services/export -> services/quality': 11,
@@ -346,16 +352,12 @@ export const DEEP_IMPORT_BUDGET = {
  * pantalla alcanza un solo módulo de servicio — por debajo del defecto.
  */
 export const UI_SERVICE_FANOUT_BUDGET = {
-  'components/ArtifactCanvas.tsx': 5,
-  'components/artifacts/export/ArtifactExportModal.tsx': 4,
   'components/copilot/ProjectCopilotChatModal.tsx': 4,
   'pages/InitiativesPage.tsx': 4,
   'components/architectureOffice/EngagementIntakeWizard.tsx': 3,
   'components/architectureOffice/OfficeCapabilitiesPanel.tsx': 3,
-  'components/artifacts/ArtifactInspectorPanel.tsx': 3,
   'components/AssistantPanel.tsx': 3,
   'pages/ProjectsPage.tsx': 3,
-  'pages/Workspace.tsx': 3,
 };
 
 /** The rule new screens live under: at most this many service modules. */

@@ -225,21 +225,22 @@ select throws_ok($$select api.update_artifact('art_a1', 3, '{"name":"Lector"}'::
   'Un lector no escribe artefactos');
 reset role;
 
--- ───────────────────────────────── la guarda de la ruta compuesta
+-- ───────────────────── una sola ruta de escritura para la raíz (F4-06)
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"64000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"74000000-0000-4000-8000-000000000001"}';
-select throws_ok($$select api.save_project_aggregate(
-  '{"id":"proj_cmd","name":"Cliente viejo","initiativeIds":["init_artifact_cmd"],"userId":"64000000-0000-4000-8000-000000000001"}'::jsonb,
-  '[]'::jsonb, 1)$$,
-  'P0001', 'Los artefactos se guardan con sus propios comandos: recarga la aplicación',
-  'Un cliente viejo con una lista distinta no borra lo que otros escribieron');
-select is((api.save_project_aggregate(
+select hasnt_function('api', 'save_project_aggregate', array['jsonb', 'jsonb', 'bigint'],
+  'La RPC compuesta ya no existe: un cliente viejo no puede reescribir la lista de artefactos');
+select is((api.save_project(
   '{"id":"proj_cmd","name":"Raíz renombrada","initiativeIds":["init_artifact_cmd"],"userId":"64000000-0000-4000-8000-000000000001"}'::jsonb,
-  api.load_project_aggregate('proj_cmd') -> 'artifacts', 1)).revision, 2::bigint,
-  'Con la lista vigente, la ruta compuesta sólo guarda la raíz');
+  1)).revision, 2::bigint, 'save_project guarda sólo la raíz');
 select is((api.save_project(
   '{"id":"proj_cmd","name":"Raíz otra vez","initiativeIds":["init_artifact_cmd"],"userId":"64000000-0000-4000-8000-000000000001"}'::jsonb,
   2)).revision, 3::bigint, 'save_project edita la raíz con su revisión');
+select throws_ok($$select api.save_project(
+  '{"id":"proj_cmd","name":"Copia vieja","initiativeIds":["init_artifact_cmd"],"userId":"64000000-0000-4000-8000-000000000001"}'::jsonb,
+  2)$$,
+  'P0001', 'Conflicto de proyecto: recarga antes de guardar',
+  'Una edición de la raíz sobre una copia vieja se rechaza');
 reset role;
 select is((select artifact_count from api.architecture_projects where id = 'proj_cmd'), 4,
   'Guardar la raíz no toca los artefactos');

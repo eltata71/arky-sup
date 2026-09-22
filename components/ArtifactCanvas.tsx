@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Artifact } from '../lib/artifacts';
 import { type Project, useAppContext } from '../context/AppContext';
-import type { ArtifactReviewSuggestion } from '../services/review';
 import type { DiagramAudience, DiagramIR } from '../lib/diagram';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
-import { artifactGenerationService, documentGenerationService } from '../services/ai';
 import type { ReactFlowCanvasHandle } from './ReactFlowCanvas';
 import ExecutiveOnePager from './ExecutiveOnePager';
 import { printDocumentHtml } from '../lib/printDocument';
@@ -16,10 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ExportErrorBoundary, PresentationErrorBoundary } from './diagram/CanvasErrorBoundaries';
 import { ConfirmDialog } from './ConfirmDialog';
 import { observabilityService } from '../services/observability';
-import type { NodeRect, GroupRect, ViewportRect, FloatingObstacleRect, EdgeSegment } from '../services/diagram/layoutQualityService';
 import { useRegisterCommands } from '../context/CommandPaletteContext';
-import { irToMermaid } from '../services/diagram/irToMermaid';
-import { runDiagramQualityGate } from '../services/diagram/qualityGate';
 import { buildGenerationObservabilityAlert } from './artifactCanvasObservability';
 import {
   ArtifactExportModal,
@@ -42,12 +37,22 @@ import {
 } from './artifacts';
 import { isPresentationArtifactType } from '../lib/artifacts/artifactKind';
 import { useArtifactSuggestions } from '../hooks/artifacts/useArtifactSuggestions';
-import type { ArtifactSuggestionGapType } from '../services/ai/artifactSuggestionService';
 import {
   assessHardBlockContext,
   assessVisualGate,
   enrichSuggestions,
+  type EdgeSegment,
+  type FloatingObstacleRect,
+  type GroupRect,
+  type NodeRect,
+  type ViewportRect,
 } from '../services/artifacts/application/artifactAssessment';
+import {
+  draftDocumentFromDiagram,
+  draftTestCases,
+  improveWithSuggestions,
+  planDiagramAutoImprove,
+} from '../services/artifacts/application/artifactImprovement';
 import { useArtifactViewMode } from '../hooks/artifacts/useArtifactViewMode';
 import { useGenerationDiagnostic } from '../hooks/artifacts/useGenerationDiagnostic';
 import { useDocumentRendering } from '../hooks/artifacts/useDocumentRendering';
@@ -62,27 +67,6 @@ import { useCanvasStorytellingCommands } from '../hooks/artifacts/useCanvasStory
 import { useSuggestionActionRunner } from '../hooks/artifacts/useSuggestionActionRunner';
 import type { ArtifactViewMode } from '../lib/artifacts/contracts';
 import { useArtifactAssessment } from '../hooks/artifacts/useArtifactAssessment';
-
-/** Replaces (or appends) the fenced ```mermaid``` block inside `content`. */
-const replaceMermaidBlock = (content: string, mermaid: string): string => {
-  const fenced = /```mermaid\s*[\s\S]*?```/m;
-  if (fenced.test(content)) return content.replace(fenced, `\`\`\`mermaid\n${mermaid}\n\`\`\``);
-  return mermaid;
-};
-
-/** Maps a suggestion gap type onto the review-suggestion category vocabulary. */
-const GAP_TO_REVIEW_CATEGORY: Record<ArtifactSuggestionGapType, ArtifactReviewSuggestion['category']> = {
-  security: 'Security',
-  data: 'Scalability',
-  integration: 'Best Practices',
-  technical: 'Best Practices',
-  architecture: 'Best Practices',
-  business: 'Clarity',
-  'ux-ui': 'Clarity',
-  documentation: 'Clarity',
-  diagram: 'Clarity',
-  traceability: 'Clarity',
-};
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -421,60 +405,23 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     if (!renderable.ir || isAutoImprovingDiagram) return;
     setIsAutoImprovingDiagram(true);
     try {
-      const beforeScore = qualityReport?.score ?? 0;
-      const gate = runDiagramQualityGate(renderable.ir, {
-        artifact: {
-          name: artifact.name,
-          type: artifact.type,
-          objective: artifact.objective,
-          audience: artifact.audience,
-          theme: artifact.theme,
-        },
+      // Qué repara la puerta y qué se guarda de ello lo decide la capa de
+      // aplicación (F4-05); aquí sólo se guarda y se avisa.
+      const plan = planDiagramAutoImprove({
+        artifact,
+        ir: renderable.ir,
         audience,
-        targetScore: 90,
-        maxPasses: 4,
-        aggressive: true,
+        beforeScore: qualityReport?.score ?? 0,
       });
-
-      const improvedIR = {
-        ...gate.ir,
-        metadata: {
-          ...(gate.ir.metadata ?? {}),
-          qualityReview: {
-            score: gate.quality.score,
-            issues: gate.quality.issues.map((issue) => ({
-              severity: issue.severity,
-              message: issue.message,
-              recommendation: issue.recommendation,
-            })),
-          },
-        },
-      };
-
-      const patch: Partial<Artifact> = { ir: improvedIR };
-      const isC4 = artifact.type.startsWith('mermaid-c4-');
-      if (!isC4) {
-        try {
-          const code = irToMermaid(improvedIR);
-          if (artifact.type === 'hybrid-text-diagram') {
-            patch.content = replaceMermaidBlock(artifact.content, code);
-          } else if (artifact.type.startsWith('mermaid') && artifact.representation === 'diagram') {
-            patch.content = code;
-          }
-        } catch (err) {
-          console.warn('[ArtifactCanvas] auto-improve failed to serialize Mermaid', err);
-        }
-      }
-
-      if (gate.changes.length === 0 && gate.quality.score <= beforeScore) {
+      if (plan.kind === 'no-change') {
         addToast('Auto-mejora ejecutada: no se detectaron reparaciones determinísticas adicionales. Usa Generación de clase mundial para una nueva versión con IA.', 'warning');
         return;
       }
 
-      updateArtifact(project.id, artifact.id, patch);
+      updateArtifact(project.id, artifact.id, plan.patch);
       setShowQualityPanel(true);
-      const tone = gate.reachedTarget ? 'success' : 'warning';
-      addToast(`Auto-mejora aplicada: score ${beforeScore}/100 → ${gate.quality.score}/100 · ${gate.changes.length} cambio(s).`, tone);
+      const tone = plan.reachedTarget ? 'success' : 'warning';
+      addToast(`Auto-mejora aplicada: score ${plan.beforeScore}/100 → ${plan.afterScore}/100 · ${plan.changes} cambio(s).`, tone);
     } finally {
       setIsAutoImprovingDiagram(false);
     }
@@ -484,18 +431,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     if (isGeneratingTests) return;
     setIsGeneratingTests(true);
     try {
-      const testContent = await artifactGenerationService.generateTestCases(artifact, project, settings);
-      const newArtifact = createArtifact(project.id, {
-        name: `Casos de Prueba: ${artifact.name}`,
-        type: 'markdown',
-        phase: 'Validación y Pruebas',
-        architecturalView: 'Vista de Calidad y Validación',
-        content: testContent,
-        objective: `Casos de prueba automatizados para validar el artefacto ${artifact.name}.`,
-        keyConcepts: artifact.keyConcepts,
-        representation: 'document',
-        isFavorite: false,
-      });
+      const newArtifact = createArtifact(project.id, await draftTestCases(artifact, project, settings));
       if (isMounted.current) setActiveArtifactId(newArtifact.id);
     } catch (error) {
       console.error('Error generating test cases:', error);
@@ -509,18 +445,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     if (isConvertingToDoc) return;
     setIsConvertingToDoc(true);
     try {
-      const docContent = await documentGenerationService.convertDiagramToDocument(artifact, project, settings);
-      const newArtifact = createArtifact(project.id, {
-        name: `Documento: ${artifact.name}`,
-        type: 'markdown',
-        phase: artifact.phase,
-        architecturalView: artifact.architecturalView,
-        content: docContent,
-        objective: `Descripción en documento del diagrama ${artifact.name}.`,
-        keyConcepts: artifact.keyConcepts,
-        representation: 'document',
-        isFavorite: false,
-      });
+      const newArtifact = createArtifact(project.id, await draftDocumentFromDiagram(artifact, project, settings));
       if (isMounted.current) setActiveArtifactId(newArtifact.id);
     } catch (error) {
       console.error('Error converting to document:', error);
@@ -545,21 +470,9 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     if (list.length === 0 || isApplyingSuggestions) return;
     setIsApplyingSuggestions(true);
     try {
-      const reviewSuggestions: ArtifactReviewSuggestion[] = list.map((item) => ({
-        id: item.id,
-        title: item.title,
-        description: `${item.description} Acción recomendada: ${item.recommendedAction}`,
-        category: GAP_TO_REVIEW_CATEGORY[item.gapType],
-      }));
-      const newContent = await artifactGenerationService.applyArtifactImprovements(
-        artifact,
-        reviewSuggestions,
-        project,
-        settings,
-      );
+      const newContent = await improveWithSuggestions(artifact, list, project, settings);
       if (!isMounted.current) return;
-      const trimmed = (newContent ?? '').trim();
-      if (!trimmed || trimmed === artifact.content.trim()) {
+      if (newContent === null) {
         addToast('La IA no propuso cambios aplicables. Revisa las sugerencias manualmente.', 'warning');
         return;
       }

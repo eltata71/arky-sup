@@ -87,12 +87,12 @@ select is((select (api.save_business_initiative($json${
   "createdAt":"2026-09-20T00:00:00.000Z", "updatedAt":"2026-09-20T00:00:00.000Z"
 }$json$::jsonb, 0)).revision), 1::bigint, 'Existe una iniciativa que nadie cita');
 
-select is((select (api.save_project_aggregate($json${
+select is((select (api.save_project($json${
   "id":"proj_ref_001", "name":"Atención que cita", "description":"", "projectContext":[],
   "initiativeIds":["init_ref_cited"], "linkedBusinessProjects":["NEG-2026-701"],
   "userId":"64000000-0000-4000-8000-000000000001",
   "createdAt":"2026-09-20T00:00:00.000Z", "updatedAt":"2026-09-20T00:00:00.000Z"
-}$json$::jsonb, '[]'::jsonb, 0)).revision), 1::bigint,
+}$json$::jsonb, 0)).revision), 1::bigint,
   'El proyecto se guarda citando una iniciativa viva — el bloqueo no estorba al camino feliz');
 
 -- El caso negativo que da nombre al hallazgo.
@@ -111,12 +111,12 @@ select is((select count(*)::int from api.business_initiatives where id = 'init_r
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"64000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"74000000-0000-4000-8000-000000000001"}';
 
-select is((select (api.save_project_aggregate($json${
+select is((select (api.save_project($json${
   "id":"proj_ref_001", "name":"Atención que cita", "description":"", "projectContext":[],
   "initiativeIds":["init_ref_cited"], "linkedBusinessProjects":["NEG-2026-701"],
   "userId":"64000000-0000-4000-8000-000000000001",
   "createdAt":"2026-09-20T00:00:00.000Z", "updatedAt":"2026-09-20T00:00:00.000Z"
-}$json$::jsonb, '[]'::jsonb, 1)).revision), 2::bigint,
+}$json$::jsonb, 1)).revision), 2::bigint,
   'El proyecto sigue siendo guardable — que es lo que el borrado silencioso rompía');
 
 -- Una iniciativa sin citas se borra igual que antes: la guarda nueva no
