@@ -1,17 +1,18 @@
 # Registro de avance y punto de reanudación
 
 **Última actualización:** 2026-09-22
-**Estado integrado:** Fase 2 completa, **fase 3 en curso** (F3-01, F3-02, F3-08 cerradas; F3-07 parcial, desbloqueada por ADR-106) y **fase 4 iniciada** (F4-01 y F4-02 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Estado integrado:** Fase 2 completa, **fase 3 en curso** (F3-01, F3-02, F3-08 cerradas; F3-07 parcial, desbloqueada por ADR-106) y **fase 4 en curso** (F4-01, F4-02 y F4-03 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F4-02** — ADR-106: el Artefacto es raíz de su
-  propio agregado (D-4 resuelta). Antes: **F4-01** (#48), que midió la
-  amplificación `N:1` y una base vacía (0 proyectos, 0 artefactos,
-  reconfirmado el 2026-09-22).
+- **Última tarea completada:** **F4-03** — el Artefacto se escribe con sus
+  propios comandos (migración `20260922180000_artifact_commands.sql`, contrato
+  pgTAP de 61 aserciones). Corrige de paso dos defectos vivos: la revisión que
+  las lecturas no devolvían y la segunda edición consecutiva que el hook no
+  escribía. Antes: F4-02 (ADR-106, #49) y F4-01 (#48).
 - **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
@@ -21,12 +22,9 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** **F4-03** — los cinco comandos por artefacto que
-  fija ADR-106 (`create_artifact`, `create_artifact_version`, `update_artifact`,
-  `delete_artifact`, `revise_artifacts`), el índice único
-  `(project_id, version_group_id, version)` y sus contratos pgTAP con el caso
-  negativo. Después F4-07, F4-04 y, con los tipos ya en su frontera, el cierre
-  de F3-07.
+- **Siguiente paso exacto:** **cierre de F3-07** — `Project` deja de contener
+  `Artifact[]` como agregado (ADR-106 §6) y `types.ts` pierde sus dos últimas
+  aristas; después, el resto de la fase 3 (F3-03, F3-04, F3-05, F3-06).
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -107,7 +105,7 @@
 |---|---|---|
 | **F4-01** medir Proyecto–Artefacto | ✅ | #48. Amplificación `N:1`, contención por revisión del proyecto, borrado por omisión. Base vacía: tasa de conflictos no estimable. |
 | **F4-02** ¿Artefacto es raíz? | ✅ | ADR-106: sí. Ninguna invariante lee el contenido de dos artefactos; P-04 y A-02 son de conjunto y las sostiene el servidor. |
-| **F4-03** comandos por artefacto | ⏳ | Contrato fijado en ADR-106 §3. |
+| **F4-03** comandos por artefacto | ✅ | Cinco comandos + `save_project`, índice único por versión, revisión en las lecturas. 61 aserciones pgTAP. |
 | **F4-07** mapa de revisiones de proyectos | ⏳ | Tras F4-03. |
 
 ### Lo que F3-02 hizo visible

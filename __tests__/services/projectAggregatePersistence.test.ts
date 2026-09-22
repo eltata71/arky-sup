@@ -18,8 +18,9 @@
  *      vacío, porque un proyecto vacío se parece demasiado a uno sin trabajo;
  *   3. una escritura no confirmada no se informa como guardada, y sólo el caso
  *      `offline` deja borrador local;
- *   4. escribir un artefacto es escribir el agregado: el contador y el índice
- *      no pueden discrepar de las filas, y de eso responde el servidor.
+ *   4. desde ADR-106, escribir un artefacto es **un comando sobre ese
+ *      artefacto**: viaja uno, se compara su revisión, y nada que no se nombre
+ *      puede borrarse. El contador y el índice los recalcula el servidor.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Artifact, Project } from '../../types';
@@ -187,37 +188,86 @@ describe('opening one project', () => {
   });
 });
 
-describe('writing an artifact writes the aggregate', () => {
-  const setupProject = (entries: Artifact[]) => {
+describe('writing an artifact is one command on that artifact (ADR-106)', () => {
+  const withRevision = (entry: Artifact, revision: number): Artifact => ({ ...entry, revision });
+  const setupProject = (entries: Artifact[], commands: Record<string, (args: Record<string, unknown>) => unknown> = {}) => {
     rpc.mockImplementation(async (name, args) => {
       if (name === 'load_project_aggregate') return { data: projectRow(entries), error: null };
-      if (name === 'save_project_aggregate') return { data: { ...projectRow(entries), revision: 4, ...(args ?? {}) }, error: null };
+      if (name === 'load_knowledge_graph') return { data: null, error: { code: 'P0002', message: 'absent' } };
+      const command = commands[name];
+      if (command) return { data: command(args ?? {}), error: null };
       return { data: null, error: null };
     });
   };
+  const names = () => rpc.mock.calls.map(([name]) => name);
 
-  it('sends the whole artifact list, so the server can keep count and index in step', async () => {
-    setupProject([artifact('a1')]);
+  it('creates by sending one artifact, never the list — so nothing it omits can be deleted', async () => {
+    setupProject([artifact('a1')], { create_artifact: (args) => ({ ...(args.p_artifact as object), revision: 1 }) });
     const { createArtifact } = await load();
 
     const result = await createArtifact('p1', artifact('a2'));
 
     expect(result.success).toBe(true);
-    const save = rpc.mock.calls.find(([name]) => name === 'save_project_aggregate');
-    expect(save).toBeDefined();
-    const sent = (save?.[1]?.p_artifacts ?? []) as Artifact[];
-    expect(sent.map((entry) => entry.id)).toEqual(['a1', 'a2']);
+    expect(result.data?.revision).toBe(1);
+    const call = rpc.mock.calls.find(([name]) => name === 'create_artifact');
+    expect(call?.[1]).toMatchObject({ p_project_id: 'p1', p_artifact: { id: 'a2' } });
+    expect(names()).not.toContain('save_project_aggregate');
+    expect(names()).not.toContain('load_project_aggregate');
   });
 
-  it('refuses a duplicate id as a conflict, without calling the server', async () => {
-    setupProject([artifact('a1')]);
+  it('never sends the revision inside the document: the server overlays it on read', async () => {
+    setupProject([], { create_artifact_version: (args) => ({ ...(args.p_artifact as object), revision: 1 }) });
+    const { createArtifactVersion } = await load();
+
+    await createArtifactVersion('p1', withRevision(artifact('a3'), 9));
+
+    const call = rpc.mock.calls.find(([name]) => name === 'create_artifact_version');
+    expect(call?.[1]?.p_artifact).not.toHaveProperty('revision');
+  });
+
+  it('edits with the revision of that artifact, read from the project when the caller has none', async () => {
+    setupProject([withRevision(artifact('a1'), 5), withRevision(artifact('a2'), 2)], {
+      update_artifact: () => ({ ...artifact('a1'), revision: 6 }),
+    });
+    const { updateArtifact } = await load();
+
+    const result = await updateArtifact('p1', 'a1', { name: 'Otro' });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.revision).toBe(6);
+    const call = rpc.mock.calls.find(([name]) => name === 'update_artifact');
+    expect(call?.[1]).toMatchObject({ p_artifact_id: 'a1', p_expected_revision: 5, p_patch: { name: 'Otro' } });
+    expect(names()).not.toContain('save_project_aggregate');
+  });
+
+  it('uses the revision the caller carries without re-reading the project', async () => {
+    setupProject([], { update_artifact: () => ({ ...artifact('a1'), revision: 8 }) });
+    const { updateArtifact } = await load();
+
+    await updateArtifact('p1', 'a1', { name: 'Otro' }, { expectedRevision: 7 });
+
+    expect(names()).toEqual(['update_artifact']);
+    expect(rpc.mock.calls[0][1]).toMatchObject({ p_expected_revision: 7 });
+  });
+
+  it('reports a stale revision as a conflict, which the hook rolls back', async () => {
+    rpc.mockImplementation(async () => ({ data: null, error: { code: 'P0001', message: 'Conflicto de artefacto: recarga antes de guardar' } }));
+    const { updateArtifact } = await load();
+
+    const result = await updateArtifact('p1', 'a1', { name: 'Otro' }, { expectedRevision: 1 });
+
+    expect(result.success).toBe(false);
+    expect(result.status).toBe('conflict');
+  });
+
+  it('refuses a duplicate id as a conflict', async () => {
+    rpc.mockImplementation(async () => ({ data: null, error: { code: '23505', message: 'El id de artefacto ya existe' } }));
     const { createArtifact } = await load();
 
     const result = await createArtifact('p1', artifact('a1'));
 
     expect(result.success).toBe(false);
     expect(result.status).toBe('conflict');
-    expect(rpc.mock.calls.some(([name]) => name === 'save_project_aggregate')).toBe(false);
   });
 
   it('deleting something already gone is a success, not an error', async () => {
@@ -227,20 +277,81 @@ describe('writing an artifact writes the aggregate', () => {
     const result = await deleteArtifact('p1', 'nope');
 
     expect(result.success).toBe(true);
-    expect(rpc.mock.calls.some(([name]) => name === 'save_project_aggregate')).toBe(false);
+    expect(names()).not.toContain('delete_artifact');
+  });
+
+  it('deletes one artifact by id and revision', async () => {
+    setupProject([withRevision(artifact('a1'), 3)]);
+    const { deleteArtifact } = await load();
+
+    const result = await deleteArtifact('p1', 'a1');
+
+    expect(result.success).toBe(true);
+    const call = rpc.mock.calls.find(([name]) => name === 'delete_artifact');
+    expect(call?.[1]).toEqual({ p_artifact_id: 'a1', p_expected_revision: 3 });
+  });
+
+  it('applies several changes in one transaction, each carrying its revision', async () => {
+    setupProject([withRevision(artifact('a1'), 4)], { revise_artifacts: () => [] });
+    const { reviseArtifacts, deletionChanges } = await load();
+
+    const changes = await deletionChanges('p1', [{ id: 'a1' }, { id: 'gone' }]);
+    const result = await reviseArtifacts('p1', changes);
+
+    expect(result.success).toBe(true);
+    const call = rpc.mock.calls.find(([name]) => name === 'revise_artifacts');
+    expect(call?.[1]).toEqual({
+      p_project_id: 'p1',
+      p_changes: [{ op: 'delete', artifactId: 'a1', expectedRevision: 4 }],
+    });
   });
 
   it('reports a rejected write instead of resolving as saved', async () => {
-    rpc.mockImplementation(async (name) => {
-      if (name === 'load_project_aggregate') return { data: projectRow([artifact('a1')]), error: null };
-      return { data: null, error: { code: '42501', message: 'Permiso insuficiente: artifact:write' } };
-    });
+    rpc.mockImplementation(async () => ({ data: null, error: { code: '42501', message: 'Permiso insuficiente: project:write' } }));
     const { updateArtifact } = await load();
 
-    const result = await updateArtifact('p1', 'a1', { name: 'Otro' });
+    const result = await updateArtifact('p1', 'a1', { name: 'Otro' }, { expectedRevision: 1 });
 
     expect(result.success).toBe(false);
     expect(result.status).toBe('permission-denied');
+  });
+});
+
+describe('writing the project root', () => {
+  it('updates through save_project, with the revision the read returned, and sends no artifacts', async () => {
+    rpc.mockImplementation(async (name, args) => {
+      if (name === 'load_project_aggregate') return { data: projectRow([artifact('a1')], { revision: 3 }), error: null };
+      if (name === 'load_knowledge_graph') return { data: null, error: { code: 'P0002', message: 'absent' } };
+      if (name === 'save_project') return { data: { ...(args?.p_project as object), revision: 4 }, error: null };
+      return { data: null, error: null };
+    });
+    const { updateProject } = await load();
+
+    const result = await updateProject('p1', { name: 'Renombrado' });
+
+    expect(result.success).toBe(true);
+    const call = rpc.mock.calls.find(([name]) => name === 'save_project');
+    // La revisión viene de la lectura: antes de F4-03 la lectura no la
+    // devolvía y el cliente enviaba 0, así que la primera edición tras
+    // recargar era un conflicto falso.
+    expect(call?.[1]?.p_expected_revision).toBe(3);
+    expect(call?.[1]?.p_project).not.toHaveProperty('artifacts');
+    expect(rpc.mock.calls.some(([name]) => name === 'save_project_aggregate')).toBe(false);
+  });
+
+  it('creates through the aggregate path with revision 0, the only use it has left', async () => {
+    rpc.mockImplementation(async (name, args) => (
+      name === 'save_project_aggregate'
+        ? { data: { ...(args?.p_project as object), revision: 1 }, error: null }
+        : { data: null, error: null }
+    ));
+    const { createProject } = await load();
+
+    const result = await createProject({ ...projectRow([]), artifacts: [] } as unknown as Project);
+
+    expect(result.success).toBe(true);
+    const call = rpc.mock.calls.find(([name]) => name === 'save_project_aggregate');
+    expect(call?.[1]?.p_expected_revision).toBe(0);
   });
 });
 

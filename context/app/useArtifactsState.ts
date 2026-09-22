@@ -64,6 +64,38 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
   }, [setProjects]);
 
   /**
+   * Stores the revision the database confirmed on each artifact (ADR-106).
+   *
+   * The next command on that artifact compares it, so it travels with the
+   * artifact in state — never in a module-level map, which is the defect
+   * (H10) F2-10 removed from engagements. Without it, the second edit of the
+   * same artifact would carry a stale revision and be refused as a conflict.
+   */
+  const recordRevisions = useCallback((projectId: string, confirmed: readonly Pick<Artifact, 'id' | 'revision'>[]) => {
+    const byId = new Map(confirmed
+      .filter((entry) => typeof entry.revision === 'number')
+      .map((entry) => [entry.id, entry.revision as number]));
+    if (byId.size === 0) return;
+    setProjects(prev => prev.map(project => project.id !== projectId ? project : {
+      ...project,
+      artifacts: project.artifacts.map(artifact => byId.has(artifact.id)
+        ? { ...artifact, revision: byId.get(artifact.id) }
+        : artifact),
+    }));
+  }, [setProjects]);
+
+  /** Wraps a command so a confirmed result records its revisions. */
+  const confirming = useCallback(<T,>(
+    projectId: string,
+    write: () => Promise<PersistenceResult<T>>,
+    revisionsOf: (data: T) => readonly Pick<Artifact, 'id' | 'revision'>[],
+  ) => async (): Promise<PersistenceResult<T>> => {
+    const result = await write();
+    if (result.success && result.data !== undefined) recordRevisions(projectId, revisionsOf(result.data));
+    return result;
+  }, [recordRevisions]);
+
+  /**
    * Persists artifact mutations and rolls back non-generated edits on any
    * unconfirmed remote write. Generated artifacts may remain visible, but they
    * are marked as remote failed/conflict and never presented as persisted.
@@ -129,58 +161,56 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
     });
   }, [handleWriteResult, markArtifactPersistence, setProjects, setPersistenceStatus, setPersistenceMessage]);
 
+  /**
+   * Applies a pure change to one project's artifacts and returns what the write
+   * needs: the list before and after.
+   *
+   * The change is computed on the current snapshot and the **same** function
+   * is applied inside the state updater. The hook used to decide what to
+   * persist from variables assigned *inside* the updater, which only works if
+   * React runs it synchronously — and React only does that for the first
+   * update of a render: the second consecutive edit of an artifact left them
+   * empty and was never written, with no error anywhere (found while wiring
+   * F4-03; `artifactRevisionFlow.test.tsx` pins it).
+   */
+  const changeArtifacts = useCallback((
+    projectId: string,
+    change: (artifacts: Artifact[]) => Artifact[],
+  ): { previous: Artifact[]; next: Artifact[] } | null => {
+    const snapshot = getProject(projectId);
+    if (!snapshot) return null;
+    const previous = snapshot.artifacts;
+    const next = change(previous);
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, artifacts: change(p.artifacts) } : p));
+    return { previous, next };
+  }, [getProject, setProjects]);
+
   const createArtifact = useCallback((projectId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>, deterministicId?: string): Artifact => {
     // La identidad, el versionado y el resumen de compilación los decide el
     // agregado. Este hook aporta el estado optimista y la escritura.
     // `deterministicId` llega de la Oficina: la reanudación de un mismo intento
     // de tarea debe reencontrar el artefacto, no crear un segundo.
     const newArtifact = createArtifactAggregate(artifactData, deterministicId ? { id: deterministicId } : undefined);
-
-    let previousArtifacts: Artifact[] = [];
-    let updatedArtifacts: Artifact[] = [];
-
-    setProjects(prev => {
-      return prev.map(p => {
-        if (p.id === projectId) {
-          previousArtifacts = p.artifacts;
-          updatedArtifacts = [...p.artifacts, newArtifact];
-          return { ...p, artifacts: updatedArtifacts };
-        }
-        return p;
-      });
-    });
-
-    if (updatedArtifacts.length > 0) {
-      persistArtifacts(projectId, updatedArtifacts, previousArtifacts, 'createArtifact', () => artifactRepository.create(projectId, newArtifact, user?.uid));
+    const changed = changeArtifacts(projectId, artifacts => [...artifacts, newArtifact]);
+    if (changed) {
+      persistArtifacts(projectId, changed.next, changed.previous, 'createArtifact', confirming(projectId,
+        () => artifactRepository.create(projectId, newArtifact, user?.uid),
+        (saved) => [saved]));
     }
-
     return newArtifact;
-  }, [persistArtifacts, setProjects, user]);
+  }, [changeArtifacts, confirming, persistArtifacts, user]);
 
   const createArtifactVersion = useCallback((projectId: string, versionGroupId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>): Artifact => {
-    let newArtifact: Artifact | null = null;
-    let previousArtifacts: Artifact[] = [];
-    let updatedArtifacts: Artifact[] = [];
-
-    setProjects(prev => {
-      return prev.map(p => {
-        if (p.id === projectId) {
-          previousArtifacts = p.artifacts;
-          newArtifact = createArtifactVersionAggregate(versionGroupId, artifactData, p.artifacts);
-
-          updatedArtifacts = [...p.artifacts, newArtifact];
-          return { ...p, artifacts: updatedArtifacts };
-        }
-        return p;
-      });
-    });
-
-    if (updatedArtifacts.length > 0) {
-      persistArtifacts(projectId, updatedArtifacts, previousArtifacts, 'createArtifactVersion', () => artifactRepository.create(projectId, newArtifact!, user?.uid));
+    const siblings = getProject(projectId)?.artifacts ?? [];
+    const newArtifact = createArtifactVersionAggregate(versionGroupId, artifactData, siblings);
+    const changed = changeArtifacts(projectId, artifacts => [...artifacts, newArtifact]);
+    if (changed) {
+      persistArtifacts(projectId, changed.next, changed.previous, 'createArtifactVersion', confirming(projectId,
+        () => artifactRepository.createVersion(projectId, newArtifact, user?.uid),
+        (saved) => [saved]));
     }
-
-    return newArtifact!;
-  }, [persistArtifacts, setProjects, user]);
+    return newArtifact;
+  }, [changeArtifacts, confirming, getProject, persistArtifacts, user]);
 
   const getArtifact = useCallback((projectId: string, artifactId: string) => {
     const project = getProject(projectId);
@@ -188,106 +218,74 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
   }, [getProject]);
 
   const updateArtifact = useCallback((projectId: string, artifactId: string, updates: Partial<Artifact>) => {
-    let previousArtifacts: Artifact[] = [];
-    let updatedArtifacts: Artifact[] = [];
+    const current = getProject(projectId)?.artifacts.find(a => a.id === artifactId);
+    if (!current) return;
+    // Centralised recompilation in `safe` mode: keeps `compilation`
+    // synchronised with the artifact's real content on the manual-edit path.
+    // The fast-path inside recompile skips work when no compilation-relevant
+    // field changed (e.g. favorite/review toggles).
+    const outcome = recompileArtifactBeforePersist({ ...current, ...updates }, { source: 'manual' });
     // The remote write carries only the partial. When a recompilation refreshes
     // the compilation block, that fresh block is added to the partial so the
-    // persisted artifact never keeps a stale `compilation` (Task 1/3/4).
-    let remoteUpdates: Partial<Artifact> = updates;
-
-    setProjects(prev => {
-      return prev.map(p => {
-        if (p.id === projectId) {
-          previousArtifacts = p.artifacts;
-          updatedArtifacts = p.artifacts.map(a => {
-            if (a.id !== artifactId) return a;
-            // Centralised recompilation in `safe` mode: keeps `compilation`
-            // synchronised with the artifact's real content on the manual-edit
-            // path. The fast-path inside recompile skips work when no
-            // compilation-relevant field changed (e.g. favorite/review toggles).
-            const outcome = recompileArtifactBeforePersist({ ...a, ...updates }, { source: 'manual' });
-            remoteUpdates = outcome.recompiled
-              ? { ...updates, compilation: outcome.artifact.compilation }
-              : updates;
-            return outcome.artifact;
-          });
-          return { ...p, artifacts: updatedArtifacts };
-        }
-        return p;
-      });
-    });
-
-    if (updatedArtifacts.length > 0) {
-      persistArtifacts(projectId, updatedArtifacts, previousArtifacts, 'updateArtifact', () => artifactRepository.update(projectId, artifactId, remoteUpdates, { userId: user?.uid }));
+    // persisted artifact never keeps a stale `compilation`.
+    const remoteUpdates: Partial<Artifact> = outcome.recompiled
+      ? { ...updates, compilation: outcome.artifact.compilation }
+      : updates;
+    // The revision this edit was made against: the server compares it, so an
+    // edit made on a stale copy is refused instead of overwriting another.
+    const expectedRevision = current.revision;
+    const changed = changeArtifacts(projectId, artifacts =>
+      artifacts.map(a => a.id === artifactId ? { ...a, ...remoteUpdates } : a));
+    if (changed) {
+      persistArtifacts(projectId, changed.next, changed.previous, 'updateArtifact', confirming(projectId,
+        () => artifactRepository.update(projectId, artifactId, remoteUpdates, { userId: user?.uid, expectedRevision }),
+        (saved) => [{ id: artifactId, revision: saved.revision }]));
     }
-  }, [persistArtifacts, setProjects, user]);
+  }, [changeArtifacts, confirming, getProject, persistArtifacts, user]);
 
   const deleteArtifact = useCallback((projectId: string, artifactId: string) => {
-    let previousArtifacts: Artifact[] = [];
-    let updatedArtifacts: Artifact[] = [];
+    const changed = changeArtifacts(projectId, artifacts => artifacts.filter(a => a.id !== artifactId));
+    if (!changed) return;
+    const expectedRevision = changed.previous.find(a => a.id === artifactId)?.revision;
+    persistArtifacts(projectId, changed.next, changed.previous, 'deleteArtifact', () => artifactRepository.remove(projectId, artifactId, { userId: user?.uid, expectedRevision }));
+  }, [changeArtifacts, persistArtifacts, user]);
 
-    setProjects(prev => {
-      return prev.map(p => {
-        if (p.id === projectId) {
-          previousArtifacts = p.artifacts;
-          updatedArtifacts = p.artifacts.filter(a => a.id !== artifactId);
-          return { ...p, artifacts: updatedArtifacts };
-        }
-        return p;
-      });
-    });
-
-    persistArtifacts(projectId, updatedArtifacts, previousArtifacts, 'deleteArtifact', () => artifactRepository.remove(projectId, artifactId, user?.uid));
-  }, [persistArtifacts, setProjects, user]);
-  
   const getGroupedArtifactsByView = useCallback((projectId: string): GroupedArtifacts => {
     const project = getProject(projectId);
     if (!project || !Array.isArray(project.artifacts)) return {};
     return groupArtifactsByView(project.artifacts);
   }, [getProject]);
-  
+
   const applyConsistencySuggestion = useCallback((projectId: string, suggestion: ConsistencySuggestion) => {
-    let previousArtifacts: Artifact[] = [];
-    let updatedArtifacts: Artifact[] = [];
-
-    setProjects(prev => {
-      return prev.map(p => {
-        if (p.id === projectId) {
-          previousArtifacts = p.artifacts;
-          updatedArtifacts = [...p.artifacts];
-
-          suggestion.changes.forEach(change => {
-            const artifactToChange = updatedArtifacts.find(a => a.id === change.artifactId);
-            if (!artifactToChange) return;
-
-            const allVersionsInGroup = updatedArtifacts
-              .filter(a => a.versionGroupId === artifactToChange.versionGroupId)
-              .sort((a, b) => b.version - a.version);
-
-            const latestVersionInGroup = allVersionsInGroup[0];
-            // A consistency suggestion replaces `content`; recompile so the new
-            // version never inherits the previous version's stale compilation.
-            // Una sugerencia de consistencia reemplaza el contenido, así que
-            // esto recompila: heredar la compilación anterior haría que el
-            // artefacto dijera estar puntuado sobre un texto que ya no tiene.
-            const newVersion = reviseArtifact(
-              latestVersionInGroup,
-              latestVersionInGroup.version,
-              { content: change.newContent },
-            );
-            updatedArtifacts.push(newVersion);
-          });
-          return { ...p, artifacts: updatedArtifacts };
-        }
-        return p;
-      });
+    const snapshot = getProject(projectId)?.artifacts ?? [];
+    const newVersions: Artifact[] = [];
+    const working = [...snapshot];
+    suggestion.changes.forEach(change => {
+      const artifactToChange = working.find(a => a.id === change.artifactId);
+      if (!artifactToChange) return;
+      const latestVersionInGroup = working
+        .filter(a => a.versionGroupId === artifactToChange.versionGroupId)
+        .sort((a, b) => b.version - a.version)[0];
+      // A consistency suggestion replaces `content`; recompile so the new
+      // version never inherits the previous version's stale compilation.
+      // Una sugerencia de consistencia reemplaza el contenido, así que
+      // esto recompila: heredar la compilación anterior haría que el
+      // artefacto dijera estar puntuado sobre un texto que ya no tiene.
+      const newVersion = reviseArtifact(latestVersionInGroup, latestVersionInGroup.version, { content: change.newContent });
+      working.push(newVersion);
+      newVersions.push(newVersion);
     });
-
-    if (updatedArtifacts.length > 0) {
-      persistArtifacts(projectId, updatedArtifacts, previousArtifacts, 'applyConsistencySuggestion', () => artifactRepository.replaceAll(projectId, updatedArtifacts, { userId: user?.uid }));
+    if (newVersions.length === 0) return;
+    const changed = changeArtifacts(projectId, artifacts => [...artifacts, ...newVersions]);
+    if (changed) {
+      // One user intent, one transaction: every new version lands or none do
+      // (ADR-106 §4), so a consistency fix is never left half applied.
+      persistArtifacts(projectId, changed.next, changed.previous, 'applyConsistencySuggestion', confirming(projectId,
+        () => artifactRepository.revise(projectId, newVersions.map(artifact => ({ op: 'create-version' as const, artifact })), user?.uid),
+        (saved) => saved));
     }
-  }, [persistArtifacts, setProjects, user]);
-  
+  }, [changeArtifacts, confirming, getProject, persistArtifacts, user]);
+
   const toggleArtifactFavorite = useCallback((projectId: string, artifactId: string) => {
       const artifact = getArtifact(projectId, artifactId);
       if (artifact) {
@@ -304,12 +302,12 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
   const getArtifactVersions = useCallback((projectId: string, versionGroupId: string): Artifact[] => {
       const project = getProject(projectId);
       if (!project) return [];
-      
+
       return project.artifacts
         .filter(a => a.versionGroupId === versionGroupId)
         .sort((a, b) => b.version - a.version);
   }, [getProject]);
-  
+
   const restoreArtifactVersion = useCallback((projectId: string, versionToRestore: Artifact): Artifact => {
     const allVersions = getArtifactVersions(projectId, versionToRestore.versionGroupId);
     const latestVersionNumber = allVersions.length > 0 ? allVersions[0].version : 0;
@@ -318,43 +316,21 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
     // cuyo contenido puede diferir del que se puntuó. `reviseArtifact`
     // recompila por eso.
     const newVersion = reviseArtifact(versionToRestore, latestVersionNumber);
-
-    let previousArtifacts: Artifact[] = [];
-    let updatedArtifacts: Artifact[] = [];
-    setProjects(prev => {
-      return prev.map(p => {
-        if (p.id === projectId) {
-          previousArtifacts = p.artifacts;
-          updatedArtifacts = [...p.artifacts, newVersion];
-          return { ...p, artifacts: updatedArtifacts };
-        }
-        return p;
-      });
-    });
-
-    if (updatedArtifacts.length > 0) {
-      persistArtifacts(projectId, updatedArtifacts, previousArtifacts, 'restoreArtifactVersion', () => artifactRepository.create(projectId, newVersion, user?.uid));
+    const changed = changeArtifacts(projectId, artifacts => [...artifacts, newVersion]);
+    if (changed) {
+      persistArtifacts(projectId, changed.next, changed.previous, 'restoreArtifactVersion', confirming(projectId,
+        () => artifactRepository.createVersion(projectId, newVersion, user?.uid),
+        (saved) => [saved]));
     }
-
     return newVersion;
-  }, [getArtifactVersions, persistArtifacts, setProjects, user]);
+  }, [changeArtifacts, confirming, getArtifactVersions, persistArtifacts, user]);
 
   const removeCorruptArtifacts = useCallback((projectId: string, corruptArtifactIds: string[]) => {
-    let previousArtifacts: Artifact[] = [];
-    let updatedArtifacts: Artifact[] = [];
-    setProjects(prevProjects => {
-      return prevProjects.map(p => {
-        if (p.id === projectId) {
-          previousArtifacts = p.artifacts;
-          updatedArtifacts = p.artifacts.filter(a => !corruptArtifactIds.includes(a.id));
-          return { ...p, artifacts: updatedArtifacts };
-        }
-        return p;
-      });
-    });
-
-    persistArtifacts(projectId, updatedArtifacts, previousArtifacts, 'removeCorruptArtifacts', () => artifactRepository.replaceAll(projectId, updatedArtifacts, { userId: user?.uid }));
-  }, [persistArtifacts, setProjects, user]);
+    const changed = changeArtifacts(projectId, artifacts => artifacts.filter(a => !corruptArtifactIds.includes(a.id)));
+    if (!changed) return;
+    const removed = changed.previous.filter(a => corruptArtifactIds.includes(a.id));
+    persistArtifacts(projectId, changed.next, changed.previous, 'removeCorruptArtifacts', () => artifactRepository.removeMany(projectId, removed, user?.uid));
+  }, [changeArtifacts, persistArtifacts, user]);
 
   return {
     createArtifact,

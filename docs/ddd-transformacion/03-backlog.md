@@ -399,7 +399,20 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   pudo estimar; el ADR dice por qué y qué la haría revisar.
 
 ### F4-03 · Revisión y comandos por artefacto
-- **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F4-02
+- **Prioridad** P0 · **Tamaño** L · **Estado** `completada` · **Depende de** F4-02 · **Resuelve** H05, A-02, A-03
+- **Hecho (2026-09-22).** Migración `20260922180000_artifact_commands.sql` y
+  contrato `artifact_commands.test.sql` (61 aserciones, dos reconstrucciones en
+  PostgreSQL 16 nativo, `plpgsql_check` sin hallazgos). Cliente:
+  `SupabaseArtifactCommands`, `artifactPersistence` reescrito, `updateProject`
+  por `save_project`, y la revisión viajando en el artefacto.
+- **Dos defectos vivos que salieron al hacerlo.** (1) Ni `load_project_aggregate`
+  ni `list_project_aggregates` devolvían la revisión: tras recargar, la primera
+  edición de un proyecto existente era un `P0001` falso. (2) `useArtifactsState`
+  decidía qué persistir desde variables asignadas **dentro** del actualizador de
+  `setProjects`; React sólo lo ejecuta en el acto para la primera actualización,
+  así que la segunda edición consecutiva de un artefacto no se escribía nunca,
+  sin error. Reproducido sobre `main` antes de corregirlo;
+  `artifactRevisionFlow.test.tsx` lo fija.
 - **Contrato.** ADR-106 §3: `create_artifact`, `create_artifact_version`,
   `update_artifact`, `delete_artifact` y `revise_artifacts` (varias versiones
   en una transacción, para `applyConsistencySuggestion`). Cada una con

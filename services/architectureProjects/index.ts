@@ -58,13 +58,13 @@ export {
 /**
  * Lo que `services/artifacts` necesita de este agregado.
  *
- * Un artefacto vive dentro del Proyecto —en su tabla hija, en su
- * `artifactCount`, en su índice— así que escribirlo es escribir el agregado.
- * `persistProjectAggregate` es esa costura, y es deliberadamente estrecha: la
- * caché de proyectos se invalida con `forgetProject` y no exponiendo el `Map`.
+ * Desde ADR-106 el Artefacto es raíz de su propio agregado y se escribe con sus
+ * comandos, así que la costura se estrechó: leer el proyecto (`getProject`) e
+ * invalidar su caché (`forgetProject`), porque el documento del proyecto lleva
+ * el índice y el contador que el servidor recalcula al escribir un artefacto.
+ * `persistProjectAggregate` ya no sale de aquí: sólo lo usa la creación.
  */
 export { toArtifactSummary, type ProjectDocument } from './projectDocumentMapper';
 export { clearProjectCache, forgetProject } from './projectCache';
 export { getProject } from './projectReads';
-export { persistProjectAggregate } from './projectWrites';
 export { forgetProjectRevisions, knownProjectRevision } from './SupabaseProjectRepository';

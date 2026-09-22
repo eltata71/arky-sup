@@ -519,6 +519,8 @@ export type Database = {
           project_id: string
           revision: number
           updated_at: string
+          version: number | null
+          version_group_id: string | null
         }
         Insert: {
           created_at?: string
@@ -528,6 +530,8 @@ export type Database = {
           project_id: string
           revision?: number
           updated_at?: string
+          version?: number | null
+          version_group_id?: string | null
         }
         Update: {
           created_at?: string
@@ -537,6 +541,8 @@ export type Database = {
           project_id?: string
           revision?: number
           updated_at?: string
+          version?: number | null
+          version_group_id?: string | null
         }
         Relationships: [
           {
@@ -640,6 +646,14 @@ export type Database = {
         Args: { p_action: Json; p_project_id: string }
         Returns: undefined
       }
+      create_artifact: {
+        Args: { p_artifact: Json; p_project_id: string }
+        Returns: Json
+      }
+      create_artifact_version: {
+        Args: { p_artifact: Json; p_project_id: string }
+        Returns: Json
+      }
       current_permissions: { Args: never; Returns: string[] }
       decide_engagement: {
         Args: {
@@ -665,6 +679,10 @@ export type Database = {
         }
       }
       delete_agent_profile: { Args: { p_agent_id: string }; Returns: undefined }
+      delete_artifact: {
+        Args: { p_artifact_id: string; p_expected_revision: number }
+        Returns: undefined
+      }
       delete_artifact_comment: {
         Args: { p_comment_id: string }
         Returns: undefined
@@ -821,6 +839,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revise_artifacts: {
+        Args: { p_changes: Json; p_project_id: string }
+        Returns: Json
+      }
       save_agent_profile: { Args: { p_profile: Json }; Returns: undefined }
       save_artifact_comment: { Args: { p_comment: Json }; Returns: undefined }
       save_business_initiative: {
@@ -930,6 +952,27 @@ export type Database = {
         }
       }
       save_progress: { Args: { p_progress: Json }; Returns: undefined }
+      save_project: {
+        Args: { p_expected_revision: number; p_project: Json }
+        Returns: {
+          artifact_count: number
+          artifact_index: Json
+          created_at: string
+          data: Json
+          id: string
+          initiative_ids: string[]
+          name: string
+          owner_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "architecture_projects"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       save_project_aggregate: {
         Args: {
           p_artifacts: Json
@@ -978,6 +1021,14 @@ export type Database = {
       set_user_status: {
         Args: { new_status: string; target: string }
         Returns: undefined
+      }
+      update_artifact: {
+        Args: {
+          p_artifact_id: string
+          p_expected_revision: number
+          p_patch: Json
+        }
+        Returns: Json
       }
       update_own_display_name: {
         Args: { p_display_name: string }

@@ -823,7 +823,8 @@ manipulado no gane nada: no hay superficie que atacar.
 
 | Tabla | RPC de entrada | Contenido |
 |---|---|---|
-| `api.architecture_projects` + `api.project_artifacts` | `list_project_aggregates`, `load_project_aggregate`, `save_project_aggregate`, `delete_project_aggregate` | El agregado Proyecto/Atención: raíz, artefactos, contador e índice, en una transacción |
+| `api.architecture_projects` | `list_project_aggregates`, `load_project_aggregate`, `save_project`, `save_project_aggregate` (sólo creación), `delete_project_aggregate` | La raíz del Proyecto/Atención. Su contador e índice de artefactos son una **proyección** que recalcula el servidor; las lecturas devuelven `revision` |
+| `api.project_artifacts` | `create_artifact`, `create_artifact_version`, `update_artifact`, `delete_artifact`, `revise_artifacts` | El Artefacto es raíz de su propio agregado (ADR-106): un comando por intención, revisión **del artefacto**, índice único por versión de grupo (A-02). Ningún comando recibe la lista del proyecto |
 | `api.project_chat_history` | `load_chat_history`, `save_chat_history` | Una fila por proyecto, reescrita entera |
 | `api.agent_actions` | `list_agent_actions`, `append_agent_action` | Registro append-only de lo que hizo el agente |
 | `api.artifact_comments` | `list_artifact_comments`, `save_artifact_comment`, `delete_artifact_comment` | Hilos de revisión |
