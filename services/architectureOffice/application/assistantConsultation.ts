@@ -22,7 +22,8 @@
  *   peor que una que avisa.
  */
 
-import type { Project, Settings } from '../../../types';
+import type { Settings } from '../../../types';
+import type { Project } from '../../architectureProjects';
 import type { BusinessInitiative } from '../../businessInitiatives';
 import { coordinateRequest, type CoordinationScope } from '../officeCoordination';
 import { buildCoordinationInvoker } from '../officeCoordinationInvoker';

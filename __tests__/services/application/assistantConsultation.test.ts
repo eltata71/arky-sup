@@ -15,7 +15,7 @@ import {
   buildTeamAttribution,
   initiativeDisplayName,
 } from '../../../services/architectureOffice/application/assistantConsultation';
-import type { Project } from '../../../types';
+import type { Project } from '../../../services/architectureProjects';
 import type { BusinessInitiative } from '../../../services/businessInitiatives';
 
 const project = {

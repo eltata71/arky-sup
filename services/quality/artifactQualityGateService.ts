@@ -14,7 +14,7 @@
  * separate concerns that the pipeline composes.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { buildArtifactQualityReport } from './artifactQualityService';
 import type {
   ArtifactQualityGateResult,

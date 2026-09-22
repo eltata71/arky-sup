@@ -27,9 +27,8 @@
  * most common reasons a diagram fails to clear the 90/100 threshold.
  */
 
-import type { Artifact } from '../../types';
-import type { DiagramAudience, DiagramDensity, DiagramIR, DiagramIREdge, DiagramIRGroup, DiagramIRNode, DiagramNarrative, DiagramTheme } from '../../lib/diagram';
-import { narrativeHasText } from '../../lib/diagram';
+import type { Artifact } from '../../lib/artifacts';
+import { type DiagramAudience, type DiagramDensity, type DiagramIR, type DiagramIREdge, type DiagramIRGroup, type DiagramIRNode, type DiagramNarrative, type DiagramTheme, narrativeHasText } from '../../lib/diagram';
 import { detectSemanticRole, type SemanticRole } from '../../lib/diagramTokens';
 
 export interface QualityRepairChange {

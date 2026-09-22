@@ -21,7 +21,7 @@ import {
   StopCircleIcon,
   ViewfinderCircleIcon,
 } from '../../Icons';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramAudience } from '../../../lib/diagram';
 import type { ArtifactViewMode } from '../../../lib/artifacts/contracts';
 

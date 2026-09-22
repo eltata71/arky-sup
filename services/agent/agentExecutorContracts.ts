@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 /** Artifact persistence operations required by the agent executor. */
 export interface AgentArtifactStore {

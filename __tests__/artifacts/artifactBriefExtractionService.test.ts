@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import { extractArtifactBriefWithAI, type BriefAiProposer } from '../../services/artifacts/artifactBriefExtractionService';
 
 const project: Project = {

@@ -12,7 +12,12 @@
  * build one, and it is what enforces the invariant.
  */
 
-import type { Artifact, ArtifactType, ArchitecturalView, MemoryEntry } from '../../types';
+import type { MemoryEntry } from '../../types';
+import type { Artifact, ArtifactSummary } from '../../lib/artifacts';
+
+// El resumen del índice es un contrato sin comportamiento que leen el
+// portafolio y el proyecto: vive en `lib/artifacts` (ADR-106 §6).
+export type { ArtifactSummary } from '../../lib/artifacts';
 
 export type AttentionStatus =
   | 'discovery'
@@ -134,24 +139,6 @@ export interface ProjectAttentionTracking {
   contributions?: AttentionContribution[];
 }
 
-/**
- * An artifact's identity, without its content.
- *
- * Everything the portfolio, the rollups and the pickers actually read. Kept
- * deliberately small: the point of the index is that a hundred projects'
- * worth of it costs less than one project's worth of documents.
- */
-export interface ArtifactSummary {
-  id: string;
-  name: string;
-  type: ArtifactType;
-  versionGroupId: string;
-  version: number;
-  architecturalView?: ArchitecturalView;
-  phase?: string;
-  updatedAt?: string;
-  createdAt?: string;
-}
 
 export interface Project {
   id: string;

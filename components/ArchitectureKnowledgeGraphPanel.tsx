@@ -18,7 +18,7 @@
 import React, { useMemo, useState } from 'react';
 import { Badge, Alert, Button, EmptyState, Tabs, TabList, Tab, TabPanel } from './ui';
 import { useAppContext } from '../context/AppContext';
-import { Artifact } from '../types';
+import type { Artifact } from '../lib/artifacts';
 import {
   analyzeArchitectureConsistency,
   analyzeArchitectureImpact,

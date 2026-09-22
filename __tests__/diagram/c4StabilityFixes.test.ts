@@ -17,7 +17,8 @@ import { describe, it, expect } from 'vitest';
 import { projectIR } from '../../services/diagram/audienceProjector';
 import { mermaidToIR } from '../../services/diagram/mermaidToIR';
 import { buildDeterministicDiagramSkeleton } from '../../services/artifacts/deterministicArtifactFallbacks';
-import type { ArtifactTemplate, Project } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import type { DiagramIR } from '../../lib/diagram';
 
 const project: Project = {

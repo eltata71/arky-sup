@@ -1,5 +1,7 @@
 import React, { useCallback, useState, useMemo, useEffect, useRef } from 'react';
-import { Project, Artifact, ArtifactTemplate, ArtifactGenerationPhaseListener } from '../types';
+import { ArtifactTemplate } from '../types';
+import type { Artifact, ArtifactGenerationPhaseListener } from '../lib/artifacts';
+import { type Project, useAppContext } from '../context/AppContext';
 import { ARTIFACT_TEMPLATES, KANBAN_COLUMNS } from '../constants';
 import { sortTemplatesByRoadmap } from '../lib/artifacts/artifactGovernance';
 import {
@@ -41,7 +43,6 @@ import { PublicationCenter } from './publication';
 import { LatestArtifactCard } from './LatestArtifactCard';
 import { ArtifactSortControl } from './ArtifactSortControl';
 import { ArtifactOriginBadge } from './ArtifactOriginBadge';
-import { useAppContext } from '../context/AppContext';
 import { OfficeCapabilitiesPanel } from './architectureOffice/OfficeCapabilitiesPanel';
 import { AttentionDetailsPanel } from './attentions';
 import { useInitiatives } from '../context/InitiativeContext';

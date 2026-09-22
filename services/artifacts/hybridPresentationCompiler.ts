@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { MarkdownPresentationParts } from './markdownPresentationCompiler';
 import type { DiagramPresentationParts } from './diagramPresentationCompiler';
 

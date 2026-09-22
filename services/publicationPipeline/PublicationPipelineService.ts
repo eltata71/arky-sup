@@ -11,7 +11,7 @@
  * than throwing, so the UI never faces a blank screen.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
   getPublicationProfile,
   resolvePublicationProfile,

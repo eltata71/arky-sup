@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildCorrectiveDiagramPrompt } from '../../services/ai/prompts/diagramPrompts';
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 function makeProject(): Project {
     return {

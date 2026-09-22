@@ -17,12 +17,11 @@
  *    caller is told via `contentChanged` so the change stays traceable.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { observabilityService } from '../observability';
 import { buildCompilerSummary, compileArtifact } from './ArtifactCompiler';
-import type { CompilationStatus, CompileArtifactOptions } from './ArtifactCompilerTypes';
+import type { CompilationStatus, CompileArtifactOptions, CompilationFreshness } from './ArtifactCompilerTypes';
 import { getCompilationFreshness } from './artifactSignature';
-import type { CompilationFreshness } from './ArtifactCompilerTypes';
 
 /**
  * Compilation mode.

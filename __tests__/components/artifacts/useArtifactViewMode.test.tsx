@@ -2,7 +2,7 @@ import React from 'react';
 import { render, act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useArtifactViewMode } from '../../../hooks/artifacts/useArtifactViewMode';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const documentArtifact: Artifact = {
     id: 'doc',

@@ -24,7 +24,9 @@ vi.mock('../../../services/ai/providers/gemini/geminiClient', () => ({
 }));
 
 import { geminiService, AIServiceError } from '../../../services/geminiService';
-import type { Artifact, Project, Settings } from '../../../types';
+import type { Settings } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../../services/architectureProjects';
 import type { DiagramIR } from '../../../lib/diagram';
 
 const settings: Settings = {

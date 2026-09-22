@@ -174,9 +174,9 @@ arkypro-1.0/
 ├── index.tsx               # React entry: provider tree + boot recovery fallback
 ├── App.tsx                 # Router, AppRail/MobileBottomNav shell, global commands
 ├── constants.ts            # Project/artifact templates, Kanban columns (~800 lines)
-├── types.ts                # The shared kernel — Settings, MemoryEntry, templates. Every
-│                          # aggregate lives in its context; sólo `Artifact` y `Project` se
-│                          # reexportan aquí todavía, y es lo que D-4 decide (F3-07).
+├── types.ts                # The shared kernel — Settings, MemoryEntry, templates. **Imports
+│                          # nothing** (F3-07): `Artifact` is in `lib/artifacts`, `Project` in
+│                          # `services/architectureProjects` (screens get it from AppContext).
 ├── utils.ts                # Shared utility helpers — JSON extraction, artifact grouping, a
 │                          # memory cache. **No prompt composition**: eso es `services/ai/prompts/`
 ├── env.d.ts                # Ambient declarations for `import.meta.env`
@@ -512,9 +512,21 @@ de presentación, revisión y chat sólo las importaban los propios módulos due
 escrita bajo un nombre que promete utilidades; están en
 `services/ai/prompts/projectPrompts.ts`, y de paso **dos ficheros de IA salieron
 del arranque**, porque lo que la fundación importa el arranque lo descarga
-(`bootPathStaysLight.test.ts` lo mide). Los dos pares que siguen, `Artifact` y
-`Project`, no son andamio: son la frontera del agregado Proyecto–Artefacto y
-esperan a D-4.
+(`bootPathStaysLight.test.ts` lo mide).
+
+**Y los dos últimos se fueron cuando D-4 se decidió (ADR-106).** No se
+repuntaron al contexto dueño: la medición mostró que eso creaba ciclos directos
+(`services/artifacts` importa `diagram`, `export`, `quality`… que nombran el
+Artefacto) y subía doce pantallas por encima del fan-out. Lo que decidió fue
+quién lee el tipo: **`Artifact` lo lee la fundación**, así que es núcleo
+compartido y **bajó a `lib/artifacts/artifactModel.ts`**, con su vocabulario de
+generación y el resumen de compilación persistido; el comportamiento se quedó en
+su contexto. `Project` se importa de `services/architectureProjects`, y las
+pantallas lo reciben de `context/AppContext`, que es quien se lo entrega. Los
+tres contextos que lo nombraban y que el proyecto importa —grafo, publicación,
+Oficina— declaran ahora el puerto que leen. **`types.ts` no importa nada**, el
+componente de dominio pasó de 27 a 14 módulos y los pares ascendentes están en
+**cero**; `moduleBoundaries.test.ts` afirma las tres cosas.
 
 Two patterns did the breaking, and they are the ones to reach for next time:
 
@@ -570,7 +582,7 @@ bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, adviso
 | Check | Result |
 |---|---|
 | `npm run typecheck` | clean |
-| `npm run check:module-boundaries` | **6 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**. El alcance completo (F3-02, ADR-105) hizo visibles 11 ciclos y 7 pares ascendentes el 2026-09-21; F3-07 y F3-08 retiraron cinco ciclos y cinco pares al día siguiente, y casi todo era andamio: `types.ts` reexportaba 19 declaraciones de diagrama **sin un solo consumidor**, y las de presentación, revisión y chat sólo las usaban los módulos dueños. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y le quedan **dos** aristas de salida, `Artifact` y `Project`, con las que cierra el grafo entero y arrastra dentro a `lib`. No se repuntan con un codemod: `services/artifacts` necesita el proyecto y `services/architectureProjects` necesita el artefacto, así que cambiar el ciclo contra `types.ts` por uno entre dos contextos de dominio sería peor — debajo está la frontera del agregado Proyecto–Artefacto (D-4, la decide F4-02 con los datos de F4-01). **2 upward pairs**, las dos de `types.ts`; `lib/` y `utils/` siguen en cero y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
+| `npm run check:module-boundaries` | **Tras F3-07 (2026-09-22): 4 ciclos directos, 2 componentes fuertemente conexos (3 + 14 módulos), 0 pares ascendentes, 60 pares con import profundo.** `types.ts` no importa nada y ninguna pieza de la fundación está en el componente de dominio; lo que queda de él lo cierra `services/ai -> services (raíz)` (fase 5). Lo que sigue es la historia de cómo se llegó: **6 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**. El alcance completo (F3-02, ADR-105) hizo visibles 11 ciclos y 7 pares ascendentes el 2026-09-21; F3-07 y F3-08 retiraron cinco ciclos y cinco pares al día siguiente, y casi todo era andamio: `types.ts` reexportaba 19 declaraciones de diagrama **sin un solo consumidor**, y las de presentación, revisión y chat sólo las usaban los módulos dueños. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y le quedan **dos** aristas de salida, `Artifact` y `Project`, con las que cierra el grafo entero y arrastra dentro a `lib`. No se repuntan con un codemod: `services/artifacts` necesita el proyecto y `services/architectureProjects` necesita el artefacto, así que cambiar el ciclo contra `types.ts` por uno entre dos contextos de dominio sería peor — debajo está la frontera del agregado Proyecto–Artefacto (D-4, la decide F4-02 con los datos de F4-01). **2 upward pairs**, las dos de `types.ts`; `lib/` y `utils/` siguen en cero y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
 | `npm run check:module-size` | clean. Tres techos bajaron el 2026-09-22 al fijar lo que ya se había ganado y nadie había registrado: `services/geminiService.ts` a 5 405 líneas / 271 653 bytes y `services/agent/agentExecutor.ts` a 988 / 41 175 — este último figuraba como deuda abierta («1007 vs 1001») mientras el gate estaba en verde. Un presupuesto que no se baja cuando se gana permite volver a subir sin que se note. Sube uno, con su razón al lado: `pages/EngagementRoom.tsx`, nueve bytes, por preguntar si *este* actor puede firmar *este* encargo en vez de leer un booleano de permiso |
 | `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
 | `npm run check:any-budget` | 23 `any` types, budget 23 (eran 38) |

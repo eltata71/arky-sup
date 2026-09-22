@@ -12,7 +12,9 @@
 import { describe, expect, it } from 'vitest';
 import { geminiService } from '../../services/geminiService';
 import { buildArchitectureKnowledgeGraphForProject } from '../../services/architectureKnowledgeGraph';
-import type { Artifact, ArtifactTemplate, Project, Settings } from '../../types';
+import type { ArtifactTemplate, Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const artifact = (overrides: Partial<Artifact>): Artifact => ({
   id: 'a1',

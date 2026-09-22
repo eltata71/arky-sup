@@ -10,7 +10,7 @@
  * `services/memory`. Están en `services/ai/prompts/projectPrompts.ts`.
  */
 
-import type { Artifact, GroupedArtifacts } from './types';
+import type { Artifact, GroupedArtifacts } from './lib/artifacts';
 
 // --- JSON Extraction (from geminiService) ---
 

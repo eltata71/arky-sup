@@ -23,7 +23,7 @@
 import { getAllProjects, getProject } from './projectReads';
 import { createProject, deleteProject, updateProject } from './projectWrites';
 import type { PersistenceResult } from '../persistence';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { Project } from './ArchitectureProjectTypes';
 
 export interface ArchitectureProjectRepository {

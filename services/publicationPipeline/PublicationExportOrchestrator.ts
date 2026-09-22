@@ -15,7 +15,7 @@
  * quality gate already enforces that. Every function degrades safely.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { newPrefixedId } from '../../lib/ids';
 import { exportArtifact } from '../export/exportService';
 import { downloadFile } from '../export/downloadService';

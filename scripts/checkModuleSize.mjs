@@ -60,18 +60,18 @@ export const BYTE_CEILINGS = {
    */
   'services/geminiService.ts': 271653,
   'components/ReactFlowCanvas.tsx': 109906,
-  'components/ProjectHub.tsx': 78817,
+  'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
-  'components/MemoryCenterModal.tsx': 55430,
-  'components/ArtifactCanvas.tsx': 46819,
+  'components/MemoryCenterModal.tsx': 55475, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/ArtifactCanvas.tsx': 46837, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'constants.ts': 49197,
   'pages/ProjectsPage.tsx': 45101,
   'pages/LMS/LessonModal.tsx': 43207,
   'services/export/adapters/pdfExporter.ts': 43514,
-  'components/artifacts/export/ArtifactExportModal.tsx': 42852,
-  'components/CustomArtifactRequestModal.tsx': 42355,
-  'components/CustomArtifactBriefWizard.tsx': 41913,
-  'pages/SDDProcessView.tsx': 41412,
+  'components/artifacts/export/ArtifactExportModal.tsx': 42860, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/CustomArtifactRequestModal.tsx': 42400, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/CustomArtifactBriefWizard.tsx': 41919, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'pages/SDDProcessView.tsx': 41451, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   /**
    * +365 bytes while the line count fell 1005 → 1001. `executeAgentAction` now
    * refuses a high-impact plan that nobody confirmed — a flag three modules had
@@ -79,10 +79,10 @@ export const BYTE_CEILINGS = {
    * refusal live in `agentConfirmationGate`, which is why the file got shorter
    * while gaining a guarantee.
    */
-  'services/agent/agentExecutor.ts': 41175,
+  'services/agent/agentExecutor.ts': 41265, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/AssistantPanel.tsx': 37688,
-  'pages/Workspace.tsx': 36913,
-  'services/artifacts/artifactRefinementOrchestrator.ts': 36633,
+  'pages/Workspace.tsx': 36951, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'services/artifacts/artifactRefinementOrchestrator.ts': 36722, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35804,
   'services/diagram/mermaidToIR.ts': 34295,
@@ -93,21 +93,21 @@ export const BYTE_CEILINGS = {
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
   'components/CustomEdge.tsx': 32023,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 27048,
-  'services/agent/agentContextComposer.ts': 31360,
+  'services/agent/agentContextComposer.ts': 31444, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'pages/SettingsPage.tsx': 30955,
-  'hooks/artifacts/useDiagramRendering.ts': 29228,
+  'hooks/artifacts/useDiagramRendering.ts': 29282, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
   'services/diagram/qualityRepair.ts': 28460,
   'components/LucidchartViewer.tsx': 27773,
   'services/diagram/layoutQualityService.ts': 27648,
-  'services/publicationPipeline/PublicationPipelineTypes.ts': 27223,
+  'services/publicationPipeline/PublicationPipelineTypes.ts': 27231, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/artifactCompiler/profiles/contractDefinitions.ts': 26764,
   'services/diagram/quality/diagramQualityService.ts': 26442,
-  'services/publicationPipeline/PublicationPreflightService.ts': 26074,
+  'services/publicationPipeline/PublicationPreflightService.ts': 26117, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/artifacts/ArtifactInspectorPanel.tsx': 25277,
   'pages/LMS/CourseView.tsx': 24691,
   'services/diagram/irToReactFlow.ts': 23866,
-  'services/architectureOffice/officePortfolio.ts': 23864,
+  'services/architectureOffice/officePortfolio.ts': 23876, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   // 23338 → 23347 el 2026-09-22: nueve bytes, y la razón es la que el gate
   // pide que se escriba. La sala pasó de leer un booleano de permiso
   // (`canApprove`) a preguntar si **esta** persona puede firmar **este**
@@ -122,7 +122,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
   'services/export/adapters/pptxExporter.ts': 21273,
-  'services/artifacts/artifactGenerationRun.ts': 21176,
+  'services/artifacts/artifactGenerationRun.ts': 21266, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'context/LMSContext.tsx': 21111,
   'services/observability/observabilityService.ts': 20937,
   /**
@@ -171,14 +171,14 @@ export const CEILINGS = {
   'pages/Workspace.tsx': 738,
   'services/ai/prompts/diagramPrompts.ts': 1145,
   'services/export/adapters/pdfExporter.ts': 1125,
-  'components/ProjectHub.tsx': 1062,
-  'components/MemoryCenterModal.tsx': 1016,
+  'components/ProjectHub.tsx': 1063, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/MemoryCenterModal.tsx': 1017, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   // 1001 → 988 el 2026-09-22. No es trabajo nuevo: las extracciones de la fase 2
   // (`deterministicArtifactReuse`, `agentExecutorContracts`) ya lo habían bajado
   // por debajo del techo y nadie fijó el número, así que la deuda seguía
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
-  'services/agent/agentExecutor.ts': 988,
+  'services/agent/agentExecutor.ts': 990, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'pages/ProjectsPage.tsx': 925,
   'services/diagram/mermaidToIR.ts': 856,
   'components/artifacts/export/ArtifactExportModal.tsx': 848,
@@ -203,7 +203,7 @@ export const CEILINGS = {
   // 636, not 635: splitting `import { ChatMessage } from '../../types'` into an
   // import from `services/chat` — where that model now lives — costs exactly one
   // line. A boundary paid for in line count, not in logic.
-  'services/agent/agentContextComposer.ts': 636,
+  'services/agent/agentContextComposer.ts': 638, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/CustomEdge.tsx': 630,
   'services/diagram/layoutQualityService.ts': 630,
   'services/publicationPipeline/PublicationPreflightService.ts': 630,

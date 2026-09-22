@@ -1,14 +1,9 @@
 import { useCallback, useState, type RefObject } from 'react';
-import type { Artifact, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { ArtifactPresentationModel, PublicationExportMode } from '../../lib/artifacts/artifactPresentationModel';
 import type { DiagramPreflightReport } from '../../services/diagram';
-import type {
-  ArtifactView,
-  ExportFormat,
-} from '../../services/export';
-import {
-  validateArtifactForExport,
-} from '../../services/export';
+import { type ArtifactView, type ExportFormat, validateArtifactForExport } from '../../services/export';
 import { exportArtifact } from '../../services/export/exportService';
 import { downloadFile } from '../../services/export/downloadService';
 import type { ReactFlowCanvasHandle } from '../../components/ReactFlowCanvas';

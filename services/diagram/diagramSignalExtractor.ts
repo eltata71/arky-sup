@@ -31,7 +31,8 @@
  * never breaks an existing diagram type.
  */
 
-import type { ArtifactType, Project } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Project } from '../architectureProjects';
 
 export interface DiagramSignal {
     /** Short label suitable for inline display (e.g. node label). */

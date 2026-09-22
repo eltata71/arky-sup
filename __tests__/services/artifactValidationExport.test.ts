@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { getExportFormatOptions, validateArtifactForExport } from '../../services/export/artifactExportValidation';
 import { buildArtifactExportPayload, extractTablesFromContent } from '../../services/export/artifactExportPayload';
 

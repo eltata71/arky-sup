@@ -17,13 +17,8 @@
  * Firestore persistence (see `contextGraphSerializer`).
  */
 
-import type {
-  ArchitecturalView,
-  Artifact,
-  ArtifactRequestContext,
-  ArtifactType,
-  MemoryScope,
-} from '../../types';
+import type { ArchitecturalView, ArtifactRequestContext, ArtifactType, MemoryScope } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 /** Bump when the persisted shape changes in a non-backwards-compatible way. */
 export const CONTEXT_GRAPH_SCHEMA_VERSION = 1;

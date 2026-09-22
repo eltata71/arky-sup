@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import type { ArtifactGenerationContract } from '../../services/artifacts/artifactGenerationContract';
 import { buildDeterministicArtifactBrief } from '../../services/artifacts/artifactBriefService';
 import { buildArtifactRecommendationCandidates } from '../../services/artifacts/artifactRecommendationService';

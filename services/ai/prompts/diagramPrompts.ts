@@ -13,7 +13,9 @@
  * The prompts are grouped by intent; call sites import the builder they need.
  */
 
-import type { Artifact, ArtifactType, Project, Settings } from '../../../types';
+import type { ArtifactType, Settings } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import { extractDiagramSignals, renderDiagramSignals } from '../../diagram/diagramSignalExtractor';
 import { METADATA_CONTRACT, METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';

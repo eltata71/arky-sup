@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import type { Artifact } from '../../../../types';
+import type { Artifact } from '../../../../lib/artifacts';
 import { SourceSelectionCard } from '../../../../components/artifacts/wizard/SourceSelectionCard';
 
 const artifact: Artifact = {

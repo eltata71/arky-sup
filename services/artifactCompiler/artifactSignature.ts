@@ -14,7 +14,7 @@
  * compiler core and the recompilation layer can import it without cycles.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { CompilationFreshness } from './ArtifactCompilerTypes';
 
 /**

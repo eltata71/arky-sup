@@ -11,7 +11,8 @@
  * Phases 2–4 will lean on this surface (quality, AI/context, UX), so keep
  * shapes additive and avoid breaking changes when extending it.
  */
-import type { Artifact, ArtifactGenerationTrace, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep, ArtifactType } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Artifact, ArtifactGenerationTrace, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from './artifactModel';
 import type { DiagramAudience, DiagramIR, DiagramTheme } from '../diagram';
 import type {
   ArtifactDiagnostic as PipelineArtifactDiagnostic,

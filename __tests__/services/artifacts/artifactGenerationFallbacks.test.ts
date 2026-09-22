@@ -7,7 +7,8 @@ import {
     type DiagramFallbackContext,
 } from '../../../services/artifacts/artifactGenerationFallbacks';
 import { createTraceLog } from '../../../services/artifacts/artifactGenerationTrace';
-import type { ArtifactTemplate, Project } from '../../../types';
+import type { ArtifactTemplate } from '../../../types';
+import type { Project } from '../../../services/architectureProjects';
 
 const project: Project = {
     id: 'p1',

@@ -66,12 +66,16 @@ describe('el verificador ve lo que dice ver', () => {
   });
 
   it('lee un `import()` en posición de tipo, que acopla igual', () => {
-    // `services/artifacts/ArtifactTypes.ts` nombra `ArtifactCompilerTypes` con
-    // `import('...').T`. No existe en ejecución y acopla exactamente como el
-    // `import type` que el gate cuenta desde el primer día; medir uno y no el
-    // otro sería decidir que la dependencia cuenta según cómo se escribió.
+    // `Project.architectureKnowledgeGraph` nombra el tipo del grafo con
+    // `import('...').T`, y es la única vía por la que `architectureProjects`
+    // entra en un fichero interno de ese contexto. No existe en ejecución y
+    // acopla exactamente como el `import type` que el gate cuenta desde el
+    // primer día; medir uno y no el otro sería decidir que la dependencia cuenta
+    // según cómo se escribió. (El ejemplo anterior, `ArtifactTypes` nombrando
+    // al compilador, desapareció con F3-07: el resumen de compilación bajó a
+    // `lib/artifacts` junto con el Artefacto.)
     const { deepImports } = analyse();
-    expect(deepImports.get('services/artifacts -> services/artifactCompiler')).toBe(1);
+    expect(deepImports.get('services/architectureProjects -> services/architectureKnowledgeGraph')).toBe(1);
   });
 
   it('abre los ficheros de la raíz, que no son carpeta de nadie', () => {
@@ -165,28 +169,31 @@ describe('the budgets are records, not aspirations', () => {
     expect(fromDirectories).toEqual([]);
   });
 
-  it('registra los imports ascendentes de la raíz, y sólo ésos', () => {
-    // Siete cuando F3-02 los hizo visibles (ADR-105); **dos** hoy.
+  it('no deja ningún import ascendente, tampoco desde la raíz', () => {
+    // Siete cuando F3-02 los hizo visibles (ADR-105); dos tras F3-08; **cero**
+    // desde F3-07.
     //
     // Los cinco que se fueron: tres eran reexportaciones de `types.ts` que
     // nadie consumía salvo los propios módulos dueños (F3-07), y dos eran la
     // composición de prompts que vivía en `utils.ts` bajo nombre de utilidad
     // (F3-08).
     //
-    // Los dos que quedan son un solo hecho dicho dos veces: `Project` contiene
-    // artefactos y el contexto de artefactos necesita el proyecto. Repuntarlos
-    // cambiaría este par ascendente por un ciclo entre dos contextos de dominio
-    // reales, que es peor y que el bloque de arriba prohíbe por nombre. Debajo
-    // está la frontera del agregado Proyecto–Artefacto: D-4, que decide F4-02.
+    // Los dos últimos eran un solo hecho dicho dos veces: `types.ts`
+    // reexportaba `Artifact` y `Project` desde sus contextos. D-4 (ADR-106)
+    // decidió la frontera y F3-07 hizo lo que ella permitía: el Artefacto es
+    // núcleo compartido —lo lee la fundación y quince contextos— y bajó a
+    // `lib/artifacts`; `Project` se importa de su módulo, y las pantallas lo
+    // reciben de `context/AppContext`. `types.ts` ya no importa nada.
     //
-    // Se nombran en vez de contarse para que el día que uno baje, el test diga
-    // cuál. Y la lista no puede crecer: un par ascendente nuevo no entra aquí,
-    // falla el gate.
-    const { layerViolations } = analyse();
-    expect([...layerViolations.keys()].sort()).toEqual([
-      'types.ts -> services/architectureProjects',
-      'types.ts -> services/artifacts',
-    ]);
+    // La lista vacía es la afirmación: un par ascendente nuevo falla aquí y en
+    // el gate.
+    const { layerViolations, edges } = analyse();
+    expect([...layerViolations.keys()]).toEqual([]);
+    // Y `types.ts` no importa nada: `lib` depende de él, así que cualquier
+    // arista que salga de aquí cierra un ciclo en la fundación o sube al
+    // dominio. Se afirma por separado porque un import hacia `lib` no es
+    // ascendente y no lo vería la línea de arriba.
+    expect([...edges.keys()].filter((edge) => edge.startsWith('types.ts -> '))).toEqual([]);
   });
 });
 
@@ -295,7 +302,7 @@ describe('the strongly connected components are a budget that only falls', () =>
     expect(domain).toContain('services/architectureProjects');
   });
 
-  it('nombra a `types.ts` dentro del componente, que es lo que lo llevó a 27', () => {
+  it('deja fuera del componente a `types.ts` y a toda la fundación (F3-07)', () => {
     // De nueve módulos a veintisiete el 2026-09-21 sin escribir una línea
     // (F3-02, ADR-105): el verificador aprendió a abrir los ficheros de la raíz.
     // `types.ts` los importan 25 de los 34 módulos y él importa seis, así que
@@ -304,12 +311,15 @@ describe('the strongly connected components are a budget that only falls', () =>
     //
     // Esto se afirma aparte del tamaño porque son dos trabajos distintos:
     // deshacer el reexportador es mover declaraciones, y romper el núcleo de
-    // nueve es estrangular un motor de 5 400 líneas. El primero es el barato.
+    // nueve es estrangular un motor de 5 400 líneas. El primero es el barato,
+    // y F3-07 lo terminó: de 27 a 14. Que ninguna pieza de la fundación vuelva
+    // a entrar es lo que este test impide.
     const { sccs } = analyse();
     const domain = sccs.find((component: string[]) => component.includes('services/ai'));
-    expect(domain).toContain('types.ts');
-    expect(domain).toContain('lib');
-    expect(domain!.length).toBeLessThanOrEqual(27);
+    for (const foundation of ['types.ts', 'lib', 'utils', 'utils.ts', 'constants.ts']) {
+      expect(domain).not.toContain(foundation);
+    }
+    expect(domain!.length).toBeLessThanOrEqual(14);
   });
 
   it('keeps the UI component at three — React ordinaria, no un defecto', () => {

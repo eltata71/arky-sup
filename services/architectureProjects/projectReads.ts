@@ -27,18 +27,17 @@
  * mal negocio.
  */
 
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project, ArtifactSummary } from './ArchitectureProjectTypes';
 import { observabilityService } from '../observability';
 import { validateProject, validateProjects } from './projectRuntimeValidation';
-import { createSupabaseKnowledgeGraphRepository } from '../architectureKnowledgeGraph';
-import type { ArchitectureGraph } from '../architectureKnowledgeGraph';
+import { createSupabaseKnowledgeGraphRepository, type ArchitectureGraph } from '../architectureKnowledgeGraph';
 import { deserializePublicationPackages } from '../publicationPipeline/PublicationPersistenceAdapter';
 import {
     classifyPersistenceError,
     getErrorCode,
     readLocal,
 } from '../persistence';
-import type { ArtifactSummary } from './ArchitectureProjectTypes';
 import { fromProjectSnapshot, toArtifactSummary } from './projectDocumentMapper';
 import { projectCache as cache } from './projectCache';
 import { supabaseProjectRepository } from './SupabaseProjectRepository';

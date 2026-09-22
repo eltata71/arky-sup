@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { Artifact, ArtifactTemplate } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
   getPhaseLabel,
   getArtifactActivityDate,

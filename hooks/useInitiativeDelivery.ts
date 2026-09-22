@@ -15,17 +15,13 @@
  */
 
 import { useMemo } from 'react';
-import {
-  describeAttentionDelivery,
-  type AttentionDeliveryReport,
-} from '../services/architectureProjects';
+import { describeAttentionDelivery, type AttentionDeliveryReport, type Project } from '../services/architectureProjects';
 import {
   rollUpInitiativeDelivery,
   type BusinessInitiative,
   type InitiativeDeliveryRollup,
 } from '../services/businessInitiatives';
 import { resolvePortfolioGraph } from '../services/portfolioGraph';
-import type { Project } from '../types';
 
 export interface InitiativeDelivery {
   /** Los proyectos de arquitectura que responden a esta iniciativa. */

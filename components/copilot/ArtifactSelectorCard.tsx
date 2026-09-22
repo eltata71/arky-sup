@@ -10,7 +10,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRightIcon, XMarkIcon } from '../Icons';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 interface ArtifactSelectorCardProps {
   candidates: Artifact[];

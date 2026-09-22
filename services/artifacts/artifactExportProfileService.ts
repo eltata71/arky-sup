@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { ExportFormat } from '../export/exportTypes';
 import type { ArtifactExportProfile, ArtifactPresentationQuality } from '../../lib/artifacts/artifactPresentationModel';
 import { isPresentationExportEnabled } from './artifactPresentationFlags';

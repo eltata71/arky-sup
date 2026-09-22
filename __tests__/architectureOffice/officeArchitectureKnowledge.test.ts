@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildGraphInputFromProject } from '../../services/architectureKnowledgeGraph';
 import { getOfficeArchitectureContext } from '../../services/architectureOffice/officeArchitectureKnowledge';
 import { validateProject } from '../../services/architectureProjects/projectRuntimeValidation';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const project: Project = {
   id: 'PROJ-2026-001',

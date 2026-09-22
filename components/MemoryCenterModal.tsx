@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from './Modal';
 import { ConfirmDialog } from './ConfirmDialog';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, type Project } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { documentGenerationService } from '../services/ai';
-import { Project, Artifact, MemoryScope, MemoryEntry, MemoryPriority } from '../types';
+import { MemoryScope, MemoryEntry, MemoryPriority } from '../types';
+import type { Artifact } from '../lib/artifacts';
 import {
     MEMORY_SCOPES,
     DEFAULT_MEMORY_PRIORITY,

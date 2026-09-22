@@ -17,7 +17,8 @@
  * having to ask who produced the content.
  */
 
-import type { ArtifactTemplate, Project } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { Project } from '../architectureProjects';
 import {
     DETERMINISTIC_DOCUMENT_FALLBACK_MARKER,
     SKELETON_FALLBACK_MARKER,

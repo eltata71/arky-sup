@@ -1,4 +1,5 @@
-import { Artifact, ArtifactTemplate, Project } from '../../types';
+import { ArtifactTemplate } from '../../types';
+import type { Artifact } from './artifactModel';
 
 const PHASE_ORDER: Record<string, number> = {
   'Fase 1: Estratégica y de Visión de Negocio': 1,
@@ -59,7 +60,20 @@ export function sortTemplatesByRoadmap(templates: ArtifactTemplate[]): ArtifactT
   });
 }
 
-export function validateArtifactReadiness(project: Project, template: ArtifactTemplate): ReadinessResult {
+/**
+ * Lo que la regla de preparación lee de un proyecto.
+ *
+ * Declarado aquí en vez de importar `Project`: esta es la capa de fundación y
+ * `Project` es el modelo de `services/architectureProjects`. Cualquier
+ * `Project` encaja por estructura, así que ningún llamador cambia.
+ */
+export interface ArtifactReadinessProject {
+  readonly artifacts: readonly Artifact[];
+  readonly description?: string;
+  readonly projectContext?: readonly string[];
+}
+
+export function validateArtifactReadiness(project: ArtifactReadinessProject, template: ArtifactTemplate): ReadinessResult {
   const projectArtifacts = project.artifacts;
   const latestByName = new Map<string, Artifact>();
   projectArtifacts.forEach(artifact => {

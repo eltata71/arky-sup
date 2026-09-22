@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from '../../Modal';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramPreflightReport } from '../../../services/diagram';
 import type {
   ArtifactView,

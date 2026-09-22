@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import type { ArchitectureGraph } from '../../services/architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes';
 import { buildDeterministicArtifactBrief, updateArtifactBriefFromForm } from '../../services/artifacts/artifactBriefService';
 import {

@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import type { Artifact } from '../types';
+import type { Artifact } from '../lib/artifacts';
 import { getArtifactOrigin, type ArtifactOriginKind } from '../utils/artifactExploration';
 import { SparklesIcon, ClipboardDocumentListIcon, ArrowPathIcon, ClockIcon } from './Icons';
 

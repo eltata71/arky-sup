@@ -17,7 +17,9 @@
  * comes back is everything needed to perform that write.
  */
 
-import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactTemplate, Project, Settings } from '../../types';
+import type { ArtifactTemplate, Settings } from '../../types';
+import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTrace } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
 import { artifactGenerationService } from '../ai';
 import { resolveEffectiveModel } from '../../lib/ai/modelCatalog';

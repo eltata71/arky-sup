@@ -14,7 +14,7 @@
  * so it can be consumed by services, components and tests without pulling in
  * the heavy generation pipeline.
  */
-import type { ArtifactGenerationTraceStatus } from '../../types';
+import type { ArtifactGenerationTraceStatus } from '../../lib/artifacts';
 import type { DiagramErrorRecord } from '../../lib/diagram';
 
 /**

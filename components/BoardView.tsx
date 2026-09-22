@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useAppContext } from '../context/AppContext';
-import { Project, Artifact } from '../types';
+import { useAppContext, type Project } from '../context/AppContext';
+import type { Artifact } from '../lib/artifacts';
 import { KANBAN_COLUMNS } from '../constants';
 import { DocumentTextIcon, DiagramIcon } from './Icons';
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ArtifactTemplate, Project, Settings } from '../../../types';
+import type { ArtifactTemplate, Settings } from '../../../types';
+import type { Project } from '../../../services/architectureProjects';
 
 const generateArtifactContent = vi.hoisted(() => vi.fn());
 const refineArtifactBeforePersistence = vi.hoisted(() => vi.fn());

@@ -12,7 +12,7 @@
  * Pure & total — never throws, never mutates.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { newPrefixedId } from '../../lib/ids';
 import { getExportCapabilities } from '../export/exportRegistry';
 import type { ExportFormat } from '../export/exportTypes';

@@ -23,15 +23,10 @@
  * objeto que sólo habla con la base de datos.
  */
 
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from './ArchitectureProjectTypes';
 import { chatHistoryRepository } from '../chat/ChatHistoryRepository';
-import {
-    createFailureResult,
-    executeRemoteWrite,
-    isWriteConfirmed,
-    writeLocalDraft,
-} from '../persistence';
-import type { PersistenceResult } from '../persistence';
+import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../persistence';
 import { toProjectDocument } from './projectDocumentMapper';
 import { forgetProject } from './projectCache';
 import { getProject } from './projectReads';

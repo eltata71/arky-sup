@@ -162,3 +162,19 @@ bloqueada por esta decisión.
   revisiones de proyectos, que ya no tendrá que cubrir artefactos) → F4-04
   (modelo de lectura) → cierre de F3-07 → F4-06 (retirada de
   `save_project_aggregate`).
+
+## Nota de ejecución — F4-03 y F3-07 (2026-09-22)
+
+- **§3–§5 están hechos** en la migración `20260922180000_artifact_commands.sql`
+  y su contrato pgTAP (61 aserciones). Hubo que añadir `save_project` (la raíz
+  sola), que el punto 2 implicaba y el punto 3 no listaba.
+- **§6 se cumplió por otro camino, y la medición lo dictó.** El plan era que
+  `Project` dejara de contener `Artifact[]` para que la dependencia apuntara en
+  un solo sentido. Al medir los consumidores, el hecho decisivo resultó otro:
+  **`Artifact` lo lee la capa de fundación** y quince contextos, varios de los
+  cuales importa `services/artifacts`. Con eso, el Artefacto es núcleo
+  compartido y su forma bajó a `lib/artifacts` (ADR-103): `architectureProjects`
+  lo nombra sin importar `services/artifacts`, y el ciclo desaparece sin
+  cambiar todavía la forma de `Project`. Separar el modelo de lectura
+  («proyecto con sus artefactos») de la raíz sigue siendo F4-04, y ahora es una
+  decisión de modelado, no una condición para romper un ciclo.

@@ -1,4 +1,5 @@
-import type { Artifact, ArtifactGenerationTraceStep, ArtifactType } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Artifact, ArtifactGenerationTraceStep } from '../../lib/artifacts';
 import type {
   ArtifactDiagnostic,
   ArtifactEnvelope,

@@ -84,8 +84,6 @@ export const ALLOWED_CYCLES = [
   'components <-> hooks',
   'context <-> hooks',
   'services (raíz) <-> services/ai',
-  'services/architectureProjects <-> types.ts',
-  'services/artifacts <-> types.ts',
 ];
 
 /**
@@ -123,6 +121,15 @@ export const ALLOWED_CYCLES = [
  * anterior: **el que sale al encoger `types.ts`**. Un reexportador es un nudo
  * que se deshace moviendo declaraciones a sus contextos, no reescribiendo
  * motores.
+ *
+ * **De veintisiete a catorce el 2026-09-22 (F3-07, tras ADR-106).** Salieron
+ * `types.ts`, `lib`, `utils`, `utils.ts`, `constants.ts` y ocho contextos de
+ * dominio. Lo que lo hizo fue bajar el Artefacto a `lib/artifacts` —es núcleo
+ * compartido: lo lee la fundación y quince contextos— y que `types.ts` dejara
+ * de importar nada. Los tres ciclos directos que eso destapaba
+ * (`architectureProjects` con la Oficina, el grafo y la publicación) se
+ * cerraron con puertos, no con presupuesto. Lo que queda es el núcleo de
+ * dominio que cierra `services/ai -> services (raíz)`: la fase 5.
  */
 export const ALLOWED_SCCS = [
   [
@@ -131,10 +138,7 @@ export const ALLOWED_SCCS = [
     'hooks',
   ],
   [
-    'constants.ts',
-    'lib',
     'services (raíz)',
-    'services/adapters',
     'services/agent',
     'services/ai',
     'services/architectureKnowledgeGraph',
@@ -142,22 +146,12 @@ export const ALLOWED_SCCS = [
     'services/architectureProjects',
     'services/artifactCompiler',
     'services/artifacts',
-    'services/businessInitiatives',
     'services/chat',
     'services/contextGraph',
     'services/diagram',
     'services/export',
-    'services/identity',
-    'services/memory',
-    'services/observability',
-    'services/persistence',
-    'services/presentation',
     'services/publicationPipeline',
     'services/quality',
-    'services/review',
-    'types.ts',
-    'utils',
-    'utils.ts',
   ],
 ];
 
@@ -187,10 +181,13 @@ export const ALLOWED_SCCS = [
  * De los siete originales quedan cuatro: F3-07 retiró los tres que salían de
  * reexportaciones que nadie consumía. Los dos de `types.ts` que siguen son el
  * agregado Proyecto–Artefacto y esperan a D-4; los dos de `utils.ts` son F3-08.
+ *
+ * **Cero desde el 2026-09-22.** F3-08 retiró los de `utils.ts`; F3-07 —con
+ * D-4 resuelta por ADR-106— los de `types.ts`, que ya no importa nada. La capa
+ * de fundación entera, carpetas y ficheros de la raíz, no alcanza el dominio.
+ * El presupuesto queda vacío y no vuelve a tener entradas.
  */
 export const LAYER_VIOLATION_BUDGET = {
-  'types.ts -> services/architectureProjects': 1,
-  'types.ts -> services/artifacts': 4,
 };
 
 /**
@@ -311,13 +308,11 @@ export const DEEP_IMPORT_BUDGET = {
   'services/architectureOffice -> services/diagram': 1,
   'services/architectureOffice -> services/publicationPipeline': 1,
   'services/architectureProjects -> services/architectureKnowledgeGraph': 1,
-  'services/architectureProjects -> services/architectureOffice': 2,
   'services/architectureProjects -> services/chat': 1,
   'services/architectureProjects -> services/memory': 2,
   'services/architectureProjects -> services/publicationPipeline': 4,
   'services/artifactCompiler -> services/quality': 3,
   'services/artifacts -> services/ai': 1,
-  'services/artifacts -> services/artifactCompiler': 1,
   'services/artifacts -> services/diagram': 14,
   'services/artifacts -> services/export': 3,
   'services/artifacts -> services/quality': 5,
@@ -330,8 +325,6 @@ export const DEEP_IMPORT_BUDGET = {
   'services/publicationPipeline -> services/artifactCompiler': 1,
   'services/publicationPipeline -> services/export': 7,
   'services/quality -> services/diagram': 1,
-  'types.ts -> services/architectureProjects': 1,
-  'types.ts -> services/artifacts': 4,
 };
 
 /**

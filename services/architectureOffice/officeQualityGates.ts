@@ -1,4 +1,5 @@
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import { validateOfficeArtifact } from './officeArtifactValidators';
 
 export const OFFICE_QUALITY_GATE_IDS = [

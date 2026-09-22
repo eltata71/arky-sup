@@ -11,7 +11,7 @@
  * reads the project's artifacts. Every helper is pure and total.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { resolveArtifactCompilation } from './PublicationQualityBridge';
 import { appendAuditEntry } from './PublicationAuditTrailService';
 import { trackPublicationEvent } from './PublicationObservability';

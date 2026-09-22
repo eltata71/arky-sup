@@ -14,7 +14,8 @@ import {
   type OfficeEngagement,
   type OfficeTask,
 } from '../../services/architectureOffice/OfficeTypes';
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const NOW = '2026-08-27T12:00:00.000Z';
 

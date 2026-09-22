@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import { clearArtifactPresentationCache, compileArtifactPresentation, getArtifactPresentationStatus } from '../../../services/artifacts/artifactPresentationCompiler';
 
 const baseArtifact = (overrides: Partial<Artifact>): Artifact => ({

@@ -8,7 +8,8 @@
  * template asks for a hybrid.
  */
 
-import type { ArtifactTemplate, Project } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { Project } from '../architectureProjects';
 import { safeMermaidLabel } from './deterministicMermaidLabels';
 
 export function buildBusinessProcessHybridFallback(project: Project, template: ArtifactTemplate): string {

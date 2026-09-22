@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Clipboard, ShieldCheck, X } from 'lucide-react';
 import { useObservability } from '../context/ObservabilityContext';
 import type { ObservabilityEvent, ObservabilitySeverity } from '../services/observability';
-import type { Project } from '../types';
+import type { Project } from '../context/AppContext';
 import { evaluateOfficeQualityGates, OFFICE_GATE_LABELS } from '../services/architectureOffice/officeQualityGates';
 
 interface GlobalObservabilityCenterProps {

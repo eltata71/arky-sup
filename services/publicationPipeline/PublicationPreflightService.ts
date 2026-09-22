@@ -11,7 +11,8 @@
  * the Architecture Knowledge Graph rather than re-deriving their signal.
  */
 
-import type { Artifact, ArtifactType } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramIR } from '../../lib/diagram';
 import { newPrefixedId } from '../../lib/ids';
 import { getExportCapabilities } from '../export/exportRegistry';

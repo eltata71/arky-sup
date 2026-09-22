@@ -5,7 +5,7 @@ import React from 'react';
 import { ArtifactExportModal } from '../../../components/artifacts/export/ArtifactExportModal';
 import type { ExportFormatOption } from '../../../services/export/artifactExportValidation';
 import type { ArtifactPresentationModel } from '../../../lib/artifacts/artifactPresentationModel';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const artifact: Artifact = {
   id: 'artifact-modal-1',

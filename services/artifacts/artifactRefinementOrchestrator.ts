@@ -1,4 +1,6 @@
-import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep, ArtifactTemplate, Project, Settings } from '../../types';
+import type { ArtifactTemplate, Settings } from '../../types';
+import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import type { DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
 import {
   normalizeArtifactEnvelope,

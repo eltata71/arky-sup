@@ -730,7 +730,7 @@ export interface PublicationExportBatchResult {
 export interface PublicationProjectInput {
   projectId: string;
   projectName: string;
-  artifacts: import('../../types').Artifact[];
+  artifacts: import('../../lib/artifacts').Artifact[];
   architectureKnowledgeGraph?: import('../architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes').ArchitectureGraph;
   /**
    * Freshness of the persisted graph relative to the project's current

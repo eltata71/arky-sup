@@ -13,7 +13,7 @@
  * absent — so it never does redundant work. Every function is total.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { compileArtifact, buildCompilerSummary, getCompilationFreshness } from '../artifactCompiler';
 import type { ArtifactCompilerSummary } from '../artifactCompiler/ArtifactCompilerTypes';
 import {

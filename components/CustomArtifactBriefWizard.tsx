@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { Artifact, Project } from '../types';
-import type { ArtifactGenerationContract, ArtifactAudience, ArtifactDetailLevel, ArtifactFamilyPreference, ArtifactPurpose } from '../services/artifacts/artifactGenerationContract';
+import type { Artifact } from '../lib/artifacts';
+import type { Project } from '../context/AppContext';
+import { type ArtifactGenerationContract, type ArtifactAudience, type ArtifactDetailLevel, type ArtifactFamilyPreference, type ArtifactPurpose, validateArtifactGenerationContract } from '../services/artifacts/artifactGenerationContract';
 import type { ArtifactRecommendationCandidate } from '../services/artifacts/artifactRecommendationService';
-import { validateArtifactGenerationContract } from '../services/artifacts/artifactGenerationContract';
 import { updateArtifactBriefFromForm } from '../services/artifacts/artifactBriefService';
 import { selectArtifactGenerationContext } from '../services/artifacts/artifactContextSelectionService';
 import { ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, InformationCircleIcon, MagnifyingGlassIcon, SparklesIcon, XCircleIcon } from './Icons';

@@ -5,7 +5,9 @@ import {
     buildCanonicalReviewPrompt,
     buildExecutiveNarrativePrompt,
 } from '../../services/ai/prompts/diagramPrompts';
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const project: Project = {
     id: 'p1',

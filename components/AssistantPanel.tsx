@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAppContext } from '../context/AppContext';
-import { Project, Artifact, ArtifactTemplate } from '../types';
-import type { ChatMessage } from '../services/chat';
-import { createChatMessage } from '../services/chat';
+import { useAppContext, type Project } from '../context/AppContext';
+import { ArtifactTemplate } from '../types';
+import type { Artifact } from '../lib/artifacts';
+import { type ChatMessage, createChatMessage } from '../services/chat';
 import { useAgentLessonStore, useAgentMemoryStore } from '../hooks/useAgentMemoryStore';
-import { assistantService, recommendationService, classifyAIError, AIServiceError } from '../services/ai';
-import type { ArtifactTemplateSuggestion } from '../services/ai';
+import { assistantService, recommendationService, classifyAIError, AIServiceError, type ArtifactTemplateSuggestion } from '../services/ai';
 import { PlusCircleIcon, SparklesIcon, TrashIcon, ArrowUpTrayIcon, ArrowPathIcon, ExclamationTriangleIcon } from './Icons';
 import { ARTIFACT_TEMPLATES } from '../constants';
 import { AIArchitectAvatar } from './ui/AIArchitectIdentity';

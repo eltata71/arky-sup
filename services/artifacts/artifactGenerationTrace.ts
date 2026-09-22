@@ -9,7 +9,8 @@
  * when it is a placeholder.
  */
 
-import type { ArtifactGenerationTrace, ArtifactGenerationTraceStep, ArtifactTemplate } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { ArtifactGenerationTrace, ArtifactGenerationTraceStep } from '../../lib/artifacts';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
 import type { resolveEffectiveModel } from '../../lib/ai/modelCatalog';
 import type { buildArtifactGenerationGraphContext } from '../architectureKnowledgeGraph';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge, BadgeTone, Tooltip } from '../ui';
-import { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
     CheckCircleIcon,
     ExclamationTriangleIcon,

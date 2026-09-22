@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Badge, Button } from '../ui';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
   publicationStatusLabel,
   suggestPackageArtifacts,

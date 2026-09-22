@@ -1,20 +1,22 @@
 /**
- * El agregado Artefacto, y el vocabulario de su generación.
+ * El Artefacto, como contrato compartido (F3-07, ADR-103, ADR-106).
  *
- * Estaban en `types.ts`, el núcleo compartido: 249 líneas que declaraban el
- * ciclo de vida completo de una generación de IA —`ArtifactGenerationTrace`,
- * sus etapas, sus eventos de fase, el modelo efectivo que se usó— en el fichero
- * que todo módulo del repositorio puede importar sin pedir permiso.
+ * Vivió en `types.ts`, después en `services/artifacts/ArtifactTypes` con una
+ * reexportación desde `types.ts`, y esa reexportación era la mitad de las dos
+ * aristas ascendentes que mantenían a 27 módulos mutuamente alcanzables. La
+ * medición de F3-07 decidió dónde va: lo leen la capa de fundación
+ * (`lib/artifacts/contracts`, `utils/artifactExploration`) y quince contextos de
+ * dominio, varios de los cuales importa `services/artifacts`. Repuntarlos al
+ * contexto dueño cambiaba un ciclo contra `types.ts` por ciclos directos entre
+ * contextos reales. Es núcleo compartido en el sentido estricto: una forma sin
+ * comportamiento que todos leen, así que baja a una hoja.
  *
- * Un *shared kernel* debe ser pequeño e inerte: lo que de verdad comparten
- * todos los contextos. `Settings` y `MemoryEntry` lo son. El estado interno de
- * una generación de artefactos no: es el modelo de este contexto, y tenerlo
- * arriba significaba que cualquier módulo podía acoplarse a él sin que nadie lo
- * viera.
+ * Lo que **no** baja es su comportamiento: la fábrica, las transiciones, la
+ * persistencia y los comandos siguen en `services/artifacts`.
  *
- * `types.ts` lo reexporta, así que ningún llamador cambia de puerta — es el
- * mismo patrón con el que `Project`, `ChatMessage` y los tipos de revisión ya
- * viven en su contexto y se publican desde arriba.
+ * Dirección: este fichero importa de `types.ts` (el vocabulario de clasificación
+ * y `MemoryEntry`), y `types.ts` no importa nada. Así la fundación no tiene
+ * ciclo interno.
  */
 
 import type {
@@ -23,10 +25,37 @@ import type {
   ArtifactType,
   MemoryEntry,
 } from '../../types';
-import type { DiagramAudience, DiagramErrorRecord, DiagramIR, DiagramTheme } from '../../lib/diagram';
-// Por el barril: es `import type`, así que no emite nada y no puede pesar en
-// el chunk. `services/review` no importa este módulo, de modo que no hay ciclo.
-import type { ArtifactReviewStatus } from '../review';
+import type { DiagramAudience, DiagramErrorRecord, DiagramIR, DiagramTheme } from '../diagram';
+
+/**
+ * Workflow status of an artifact within the review/approval cycle. Stored on
+ * Artifact.reviewStatus and shown in the unified status badge.
+ */
+export type ArtifactReviewStatus =
+  | 'draft'              // recién generado o editado, no enviado a revisión
+  | 'pending-review'     // enviado, esperando aprobación
+  | 'changes-requested'  // un reviewer pidió cambios
+  | 'approved'           // aprobado, listo para uso
+  | 'rejected';          // rechazado definitivamente
+
+/**
+ * An artifact's identity, without its content.
+ *
+ * Everything the portfolio, the rollups and the pickers actually read. Kept
+ * deliberately small: the point of the index is that a hundred projects'
+ * worth of it costs less than one project's worth of documents.
+ */
+export interface ArtifactSummary {
+  id: string;
+  name: string;
+  type: ArtifactType;
+  versionGroupId: string;
+  version: number;
+  architecturalView?: ArchitecturalView;
+  phase?: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
 
 export type ArtifactGenerationTraceStatus = 'clean' | 'warning' | 'fallback' | 'failed';
 
@@ -232,7 +261,7 @@ export interface Artifact {
   /** Raw AI response retained for parser/render/export troubleshooting. */
   rawResponse?: string;
   /** Normalized envelope snapshot used by the resilient artifact pipeline. */
-  artifactEnvelope?: import('./artifactGenerationPipeline').ArtifactEnvelope;
+  artifactEnvelope?: import('./artifactPipelineContracts').ArtifactEnvelope;
   /** Notas/contexto específico para este artefacto gestionados desde el Centro de Memoria. */
   artifactMemory?: string[];
   /** Metadatos estructurados (fecha, autor, prioridad) de `artifactMemory`. */
@@ -244,5 +273,8 @@ export interface Artifact {
    * status, score, tier, issue counts, repairs, recommendations and export
    * readiness. Additive and backwards-compatible — absent on legacy artifacts.
    */
-  compilation?: import('../artifactCompiler/ArtifactCompilerTypes').ArtifactCompilerSummary;
+  compilation?: import('./artifactCompilationSummary').ArtifactCompilerSummary;
 }
+
+/** Artefactos agrupados por vista arquitectónica, como los pinta la barra lateral. */
+export type GroupedArtifacts = { [view: string]: Artifact[] };

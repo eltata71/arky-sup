@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { ArtifactViewMode } from '../../lib/artifacts/contracts';
 import {
   getArtifactViewCapabilities,

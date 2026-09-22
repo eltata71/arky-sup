@@ -19,16 +19,8 @@ export interface ArtifactReviewSuggestion {
 
 // --- Collaborative review (Phase 1: local persistence, multi-user-ready) ---
 
-/**
- * Workflow status of an artifact within the review/approval cycle. Stored on
- * Artifact.reviewStatus and shown in the unified status badge.
- */
-export type ArtifactReviewStatus =
-  | 'draft'              // recién generado o editado, no enviado a revisión
-  | 'pending-review'     // enviado, esperando aprobación
-  | 'changes-requested'  // un reviewer pidió cambios
-  | 'approved'           // aprobado, listo para uso
-  | 'rejected';          // rechazado definitivamente
+export type { ArtifactReviewStatus } from '../../lib/artifacts';
+import type { ArtifactReviewStatus } from '../../lib/artifacts';
 
 /** Where a comment is anchored inside an artifact. */
 export type ArtifactCommentAnchor =

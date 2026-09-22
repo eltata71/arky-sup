@@ -5,7 +5,7 @@
  * quedarse atrás. `BUSINESS_PROJECT_ID_PATTERN` se reexporta porque el nombre
  * está en uso, pero la fuente es una sola.
  */
-import { INITIATIVE_CODE_PATTERN, toInitiativeCode, type BusinessInitiativeCode } from '../../lib/eaTerminology';
+import { INITIATIVE_CODE_PATTERN, toInitiativeCode, toInitiativeCodes, type BusinessInitiativeCode } from '../../lib/eaTerminology';
 
 export const BUSINESS_PROJECT_ID_PATTERN = INITIATIVE_CODE_PATTERN;
 
@@ -17,13 +17,8 @@ export const foldOfficeText = (value: string): string => value
 export const normalizeBusinessProjectId = (value: unknown): BusinessInitiativeCode | null =>
   toInitiativeCode(value);
 
-export const normalizeBusinessProjectIds = (values: unknown): BusinessInitiativeCode[] => {
-  if (!Array.isArray(values)) return [];
-  const valid = values
-    .map(normalizeBusinessProjectId)
-    .filter((value): value is BusinessInitiativeCode => value !== null);
-  return Array.from(new Set(valid));
-};
+export const normalizeBusinessProjectIds = (values: unknown): BusinessInitiativeCode[] =>
+  toInitiativeCodes(values);
 
 export const hasExactOfficeMention = (message: string, alias: string): boolean => {
   const normalized = foldOfficeText(message.trim());

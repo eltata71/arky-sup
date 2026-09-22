@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { GlobalObservabilityCenter } from '../../components/GlobalObservabilityCenter';
 import { ObservabilityProvider } from '../../context/ObservabilityContext';
 import { observabilityService } from '../../services/observability';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const renderCenter = (project?: Project) => render(
   <ObservabilityProvider>

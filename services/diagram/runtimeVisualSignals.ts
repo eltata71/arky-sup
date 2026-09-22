@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 export interface RuntimeVisualSignals {
   recentRenderErrors: number;

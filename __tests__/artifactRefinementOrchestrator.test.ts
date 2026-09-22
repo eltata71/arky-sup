@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ArtifactGenerationStage, ArtifactTemplate, Project, Settings } from '../types';
+import type { ArtifactTemplate, Settings } from '../types';
+import type { ArtifactGenerationStage } from '../lib/artifacts';
+import type { Project } from '../services/architectureProjects';
 import { normalizeArtifactEnvelope } from '../services/artifacts/artifactGenerationPipeline';
 import {
   refineArtifactBeforePersistence,

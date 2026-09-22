@@ -15,7 +15,9 @@
  */
 
 import React, { useCallback } from 'react';
-import type { Artifact, ConsistencySuggestion, GroupedArtifacts, Project } from '../../types';
+import type { ConsistencySuggestion } from '../../types';
+import type { Artifact, GroupedArtifacts } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import type { PersistenceResult } from '../../services/persistence';
 import { artifactRepository } from '../../services/artifacts/ArtifactRepository';
 import { observabilityService } from '../../services/observability';

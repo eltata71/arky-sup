@@ -1,27 +1,11 @@
 import { ARTIFACT_TEMPLATES } from '../../constants';
-import type { ArchitecturalView, ArtifactTemplate, ArtifactType, Project } from '../../types';
+import type { ArchitecturalView, ArtifactTemplate, ArtifactType, ArtifactRecommendationScoreBreakdown } from '../../types';
+import type { Project } from '../architectureProjects';
 import type { ArtifactGenerationContract } from './artifactGenerationContract';
 import { selectArtifactGenerationContext, type ArtifactContextSelectionResult } from './artifactContextSelectionService';
 import { scoreArchitectureGraphAlignment } from './architectureGraphAlignment';
 
-export interface ArtifactRecommendationScoreBreakdown {
-  intentMatch: number;
-  audienceMatch: number;
-  representationMatch: number;
-  contextAvailability: number;
-  sourceArtifactRelevance: number;
-  riskPenalty: number;
-  /** Bonus from the optional Architecture Knowledge Graph; absent when no graph. */
-  architectureGraphAlignment?: number;
-  /** Bonus from the measured quality of the selected source artifacts. */
-  sourceQualityScore?: number;
-  /** Bonus from how recent the selected source artifacts are. */
-  freshnessScore?: number;
-  /** Bonus from how well the template phase/view fit the request. */
-  phaseViewAlignment?: number;
-  /** Estimated coverage of the explicit acceptance criteria. */
-  acceptanceCriteriaCoverage?: number;
-}
+export type { ArtifactRecommendationScoreBreakdown } from '../../types';
 
 export interface ArtifactRecommendationCandidate {
   id: string;

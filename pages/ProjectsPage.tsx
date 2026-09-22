@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
-import { Project, ChatModalPurpose, Template } from '../types';
+import { useAppContext, type Project } from '../context/AppContext';
+import { ChatModalPurpose, Template } from '../types';
 import { useCreateAttention } from '../hooks/useCreateAttention';
-import { artifactGenerationService } from '../services/ai';
+import { artifactGenerationService, type GuidedProjectData } from '../services/ai';
 import { 
     ChatBubbleLeftRightIcon,
     DocumentTextIcon,
@@ -44,7 +44,6 @@ import {
 import { buildOfficePortfolio } from '../services/architectureOffice/officePortfolio';
 import { resolvePortfolioGraph } from '../services/portfolioGraph';
 import { EA_LEVELS } from '../lib/eaTerminology';
-import type { GuidedProjectData } from '../services/ai';
 
 interface ProjectsPageProps {
   navigateToWorkspace: (id: string) => void;

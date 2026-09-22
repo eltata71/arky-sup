@@ -23,7 +23,8 @@
  *      puede borrarse. El contador y el índice los recalcula el servidor.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const rpc = vi.fn(async (_name: string, _args?: Record<string, unknown>) => ({
   data: null as unknown,

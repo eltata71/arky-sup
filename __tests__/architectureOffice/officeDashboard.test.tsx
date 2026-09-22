@@ -13,7 +13,7 @@ import {
   buildOfficePortfolio,
   emptyPortfolioRollup,
 } from '../../services/architectureOffice/officePortfolio';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,

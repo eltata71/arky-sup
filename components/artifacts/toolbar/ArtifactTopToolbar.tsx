@@ -11,7 +11,7 @@ import {
   Squares2X2Icon,
   ViewColumnsIcon,
 } from '../../Icons';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { ArtifactViewMode } from '../../../lib/artifacts/contracts';
 
 export interface ArtifactTopToolbarProps {

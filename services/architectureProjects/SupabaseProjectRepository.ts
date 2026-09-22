@@ -37,7 +37,7 @@
  *    lo que el producto quería y no podía.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
   createOperationId,
   supabaseErrorCode,

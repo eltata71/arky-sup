@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { extractIRFromArtifact } from '../../services/diagram';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 const buildArtifact = (content: string): Artifact => ({
   id: 'a',

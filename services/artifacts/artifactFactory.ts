@@ -25,7 +25,7 @@
  * retroceso optimista.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { newArtifactId } from '../../lib/ids';
 import { attachCompilerSummary, recompileArtifactBeforePersist } from '../artifactCompiler';
 

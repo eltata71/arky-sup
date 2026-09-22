@@ -37,7 +37,7 @@ import { useInitiativeDelivery } from '../../hooks/useInitiativeDelivery';
 import { EA_LEVELS } from '../../lib/eaTerminology';
 import type { BusinessInitiative } from '../../services/businessInitiatives';
 import type { AttentionDeliveryReport } from '../../services/architectureProjects';
-import type { Project } from '../../types';
+import type { Project } from '../../context/AppContext';
 
 export interface InitiativeDeliveryPanelProps {
   initiative: BusinessInitiative;

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { planAgentAction } from '../agentPlanner';
 import type { AgentIntent } from '../agentTypes';
-import type { Artifact, Project } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 
 const FAKE_ARTIFACT: Artifact = {
   id: 'art-1',

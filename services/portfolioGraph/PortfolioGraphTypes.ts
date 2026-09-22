@@ -21,7 +21,8 @@
  * following references rather than by re-matching strings at each level.
  */
 
-import type { ArtifactSummary, Project } from '../../types';
+import type { ArtifactSummary } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import type { BusinessInitiative } from '../businessInitiatives/BusinessInitiativeTypes';
 import type { OfficeEngagement, OfficeTask } from '../architectureOffice/OfficeTypes';
 

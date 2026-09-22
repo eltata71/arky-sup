@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import { executeAgentAction } from '../../services/agent/agentExecutor';
 import type { AgentActionPlan } from '../../services/agent/agentTypes';
 

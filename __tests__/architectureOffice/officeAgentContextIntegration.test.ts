@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildAgentSystemInstruction } from '../../services/agent/agentContextComposer';
 import { buildOfficePersonaBriefing } from '../../services/architectureOffice/officeAgentPersonas';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const settings: Settings = {
   language: 'es',

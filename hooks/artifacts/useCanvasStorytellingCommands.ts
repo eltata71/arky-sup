@@ -13,7 +13,7 @@
 
 import { useMemo, type RefObject } from 'react';
 import type { Command } from '../../context/CommandPaletteContext';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramAudience } from '../../lib/diagram';
 import type { ReactFlowCanvasHandle } from '../../components/ReactFlowCanvas';
 

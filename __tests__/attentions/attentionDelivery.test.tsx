@@ -12,10 +12,9 @@ import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { InitiativeDeliveryPanel } from '../../components/businessInitiatives';
-import { buildInitiative } from '../../services/businessInitiatives';
+import { buildInitiative, type BusinessInitiative } from '../../services/businessInitiatives';
 import { toInitiativeCode } from '../../lib/eaTerminology';
-import type { BusinessInitiative } from '../../services/businessInitiatives';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const ISO = '2026-08-27T12:00:00.000Z';
 

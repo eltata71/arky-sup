@@ -24,7 +24,9 @@
  * Lo que se gana: estas decisiones se pueden probar sin montar un lienzo.
  */
 
-import type { Artifact, Project, Settings } from '../../../types';
+import type { Settings } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 import type { DiagramIR } from '../../../lib/diagram';
 import {
   analyzeDiagramQuality,

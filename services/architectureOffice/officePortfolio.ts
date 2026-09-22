@@ -17,7 +17,7 @@
  * Everything is a pure function over plain data: no React, no Firestore, no AI.
  */
 
-import type { Project } from '../../types';
+import type { Project } from '../architectureProjects';
 import type { OfficeAgentId } from './officeAgentPersonas';
 import type { OfficeQualityGateStatus } from './officeQualityGates';
 import {

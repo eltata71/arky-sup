@@ -12,7 +12,7 @@
  *   - share the same "safe view" semantics across ArtifactCanvas, command
  *     palette routing, and Phase 4 workspace shells.
  */
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type {
   ArtifactDiagramRenderStatus,
   ArtifactDocumentRenderStatus,

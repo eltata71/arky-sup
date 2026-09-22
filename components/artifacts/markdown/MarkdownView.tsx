@@ -11,7 +11,7 @@ import {
   LightBulbIcon,
   Square2StackIcon,
 } from '../../Icons';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 export interface MarkdownViewProps {
   markdownHtml: string;

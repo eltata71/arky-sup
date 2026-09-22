@@ -14,7 +14,7 @@ import {
   createArtifactVersion,
   reviseArtifact,
 } from '../../../services/artifacts/artifactFactory';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const draft = {
   name: 'Diagrama de contexto',

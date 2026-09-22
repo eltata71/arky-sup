@@ -15,7 +15,7 @@
  * stay stable — it simply composes the canonical gate service.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
   evaluateDocumentExportGate,
   evaluateDiagramExportGate,

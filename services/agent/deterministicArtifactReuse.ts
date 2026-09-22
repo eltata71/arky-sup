@@ -1,4 +1,4 @@
-import type { Project } from '../../types';
+import type { Project } from '../architectureProjects';
 import type { AgentActionResult, AgentExecutionPhase } from './agentTypes';
 
 /** Reuses the artifact created by the same Office task execution, if any. */

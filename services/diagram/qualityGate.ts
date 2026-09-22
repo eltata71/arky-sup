@@ -22,7 +22,7 @@
  * to escalate to an AI critique pass.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramAudience, DiagramIR } from '../../lib/diagram';
 import {
     analyzeDiagramQuality,

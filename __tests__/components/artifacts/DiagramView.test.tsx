@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { DiagramView } from '../../../components/artifacts/diagram/DiagramView';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { RenderableDiagramResolution } from '../../../services/diagram/resolveRenderableDiagram';
 import type { ReactFlowCanvasHandle } from '../../../components/ReactFlowCanvas';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { ArtifactPresentationModel } from '../../../lib/artifacts/artifactPresentationModel';
 import {
   extractPresentationTables,

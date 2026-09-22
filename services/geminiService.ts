@@ -1,10 +1,12 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
 import { createGeminiAIClient } from "./ai/providers/gemini/geminiClient";
-import { Project, Artifact, Settings, ArtifactTemplate, ConsistencySuggestion, ChatModalPurpose, UploadedFile, ArtifactType, ArchitecturalView, CustomArtifactRecommendation, ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../types';
+import { Settings, ArtifactTemplate, ConsistencySuggestion, ChatModalPurpose, UploadedFile, ArtifactType, ArchitecturalView, CustomArtifactRecommendation } from '../types';
+import type { Artifact, ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../lib/artifacts';
+import type { Project } from './architectureProjects';
 import type { ArtifactReviewSuggestion } from './review';
 import type { ChatMessage } from './chat';
-import type { DiagramAudience, DiagramIR } from '../lib/diagram';
+import type { DiagramAudience, DiagramIR, DiagramFailureReason } from '../lib/diagram';
 import { ARTIFACT_TEMPLATES } from "../constants";
 import { cleanJsonString as cleanJsonStringUtil } from '../utils';
 import {
@@ -53,7 +55,6 @@ import {
     buildSkeletonIRFromArtifact,
     DIAGRAM_SYSTEM_INSTRUCTION,
 } from './ai/prompts/diagramPrompts';
-import type { DiagramFailureReason } from '../lib/diagram';
 
 
 /**
@@ -160,13 +161,7 @@ import { extractDiagramSignals, renderDiagramSignals } from './diagram/diagramSi
 import { selectArtifactGenerationContext, validateControlledContextForPrompt } from './artifacts/artifactContextSelectionService';
 import type { ArtifactGenerationContract, ArtifactGenerationContractProposal } from './artifacts/artifactGenerationContract';
 import { SKELETON_FALLBACK_MARKER } from './artifacts/artifactFallbackDetection';
-import {
-    buildOfficePersonaInstruction,
-    resolveOfficeAgentMention,
-    buildOfficePersonaBriefing,
-    OFFICE_AGENT_PERSONAS,
-} from './architectureOffice/officeAgentPersonas';
-import type { OfficeAgentId } from './architectureOffice/officeAgentPersonas';
+import { buildOfficePersonaInstruction, resolveOfficeAgentMention, buildOfficePersonaBriefing, OFFICE_AGENT_PERSONAS, type OfficeAgentId } from './architectureOffice/officeAgentPersonas';
 import { getOfficeArchitectureContext } from './architectureOffice/officeArchitectureKnowledge';
 
 /** Returns true when an ArtifactTemplate.type requires diagram-flavoured generation. */

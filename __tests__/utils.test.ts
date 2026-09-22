@@ -8,13 +8,10 @@ import {
   getFileIcon,
   MemoryCache,
 } from '../utils';
-import {
-  buildGlobalPrompt,
-  buildBasePrompt,
-  buildArtifactsContext,
-  buildSiblingDiagramsPromptBlock,
-} from '../services/ai/prompts/projectPrompts';
-import { Artifact, Settings, Project } from '../types';
+import { buildGlobalPrompt, buildBasePrompt, buildArtifactsContext, buildSiblingDiagramsPromptBlock, buildArtifactExcerpt, selectExcerptCandidates } from '../services/ai/prompts/projectPrompts';
+import { Settings } from '../types';
+import type { Artifact } from '../lib/artifacts';
+import type { Project } from '../services/architectureProjects';
 
 // --- Test Helpers ---
 
@@ -496,7 +493,6 @@ describe('MemoryCache', () => {
 // buildArtifactsContext — cross-artifact content excerpts (round 2 Top 5)
 // ---------------------------------------------------------------------------
 
-import { buildArtifactExcerpt, selectExcerptCandidates } from '../services/ai/prompts/projectPrompts';
 
 describe('buildArtifactExcerpt', () => {
   it('strips fenced diagram/code blocks and keeps the prose', () => {

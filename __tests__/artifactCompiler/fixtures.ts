@@ -1,4 +1,5 @@
-import type { Artifact, ArtifactType } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramIR } from '../../lib/diagram';
 
 export const makeArtifact = (overrides: Partial<Artifact> = {}): Artifact => ({

@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramPreflightReport } from '../diagram';
 import type { ArtifactPresentationModel, PublicationExportMode } from '../../lib/artifacts/artifactPresentationModel';
 import {

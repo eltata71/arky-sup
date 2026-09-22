@@ -30,7 +30,7 @@ import {
   type InitiativeCaptureSubject,
 } from '../services/architectureOffice';
 import type { BusinessInitiative } from '../services/businessInitiatives';
-import type { Project } from '../types';
+import type { Project } from '../services/architectureProjects';
 import type { CaptureContext, CaptureFieldId } from '../lib/capture';
 
 export interface LevelCapture {

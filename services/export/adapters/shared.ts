@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { ExportContext, ExportedFile } from '../exportTypes';
 import { EXPORT_DEFINITIONS } from '../exportRegistry';
 import { sanitizeFileName } from '../fileNameSanitizer';

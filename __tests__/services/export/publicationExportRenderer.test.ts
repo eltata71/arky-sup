@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import { compileArtifactPresentation } from '../../../services/artifacts/artifactPresentationCompiler';
 import { renderPresentationModelToHtml, renderPresentationModelToJson, renderPresentationModelToMarkdown, extractPresentationTables } from '../../../services/export/publicationExportRenderer';
 import { exportArtifact } from '../../../services/export/exportService';

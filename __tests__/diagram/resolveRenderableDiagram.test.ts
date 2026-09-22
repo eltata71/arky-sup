@@ -4,7 +4,7 @@ import path from 'node:path';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
 import { mermaidToIR } from '../../services/diagram/mermaidToIR';
 import { analyzeDiagramQuality } from '../../services/diagram/quality/diagramQualityService';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 const fixture = (name: string) =>
   fs.readFileSync(path.join(process.cwd(), 'tests/fixtures', name), 'utf-8');
