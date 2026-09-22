@@ -1,7 +1,7 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-21
-**Estado integrado:** Fase 2 fusionada en `main` (PR #42) y publicada por CI en el destino canónico `arky-sup`.
+**Última actualización:** 2026-09-22
+**Estado integrado:** Fase 2 completa y **fase 3 en curso** (F3-01, F3-02, F3-08 cerradas; F3-07 parcial, bloqueada por D-4), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
@@ -14,7 +14,11 @@
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
   dejado un fixture que ya no podía existir. Lo que falló fue leerlo.
-- **Estado de los cambios:** integrado en `main` mediante PR #42; el seguimiento técnico parte del contrato de producción y no de una rama ya eliminada.
+- **Estado de los cambios:** todo integrado en `main` y publicado por CI. Las
+  cuatro PR de esta tanda: **#43** (contrato del destino Vercel + el fixture E2E
+  de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
+  parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
+  fijados en lo medido).
 - **Siguiente paso exacto:** **F4-01** — medir el volumen y los conflictos del
   agregado Proyecto–Artefacto. Ha dejado de ser una tarea de la fase 4 que
   esperaba su turno: es lo que **bloquea** el resto de F3-07. Las dos últimas
