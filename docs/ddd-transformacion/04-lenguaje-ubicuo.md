@@ -64,6 +64,12 @@ proyectos encuentra códigos de iniciativa.
 > artefacto (`services/review`, `OfficeTask.review`). En español no se distinguen.
 > Propuesta: llamar **«versión de fila»** al contador en toda superficie de
 > usuario y dejar «revisión» para el acto. Decisión pendiente — F3-05.
+>
+> **Estado tras F3-05 (2026-09-22):** en el código el contador tiene nombre y
+> objeto de valor propios (`services/businessInitiatives/domain/initiativeRevision.ts`:
+> «la versión de la fila, no el acto de revisar»). Ninguna pantalla lo muestra,
+> así que la decisión de producto (D-3) ya no bloquea nada; se toma el día que
+> se enseñe a un usuario.
 
 ## Lo que deliberadamente **no** se renombra
 

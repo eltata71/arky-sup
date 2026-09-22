@@ -3,7 +3,7 @@ import type { Project } from '../../context/AppContext';
 import { Badge } from '../ui';
 import { InitiativePicker } from '../businessInitiatives/InitiativePicker';
 import { codesForInitiativeIds } from '../../services/portfolioGraph';
-import type { BusinessInitiative } from '../../services/businessInitiatives/BusinessInitiativeTypes';
+import type { BusinessInitiative } from '../../services/businessInitiatives/domain';
 import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
 import { OFFICE_VALIDATORS } from '../../services/architectureOffice/officeArtifactValidators';
 import { evaluateOfficeQualityGates, OFFICE_GATE_LABELS } from '../../services/architectureOffice/officeQualityGates';

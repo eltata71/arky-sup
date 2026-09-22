@@ -31,8 +31,7 @@ import {
   INITIATIVE_STATUS_LABELS,
   initiativeHealthVisual,
 } from '../businessInitiatives/initiativeUiLabels';
-import { initiativeHealth } from '../../services/businessInitiatives/initiativeMetrics';
-import type { BusinessInitiative } from '../../services/businessInitiatives/BusinessInitiativeTypes';
+import { initiativeHealth, type BusinessInitiative } from '../../services/businessInitiatives/domain';
 import {
   healthBucketOf,
   type ArchitectureProjectNode,

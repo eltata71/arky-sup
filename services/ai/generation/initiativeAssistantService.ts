@@ -28,7 +28,7 @@ import type { Settings } from '../../../types';
 import type {
   InitiativePriority,
   InitiativeRiskLevel,
-} from '../../businessInitiatives/BusinessInitiativeTypes';
+} from '../../businessInitiatives/domain';
 
 /** What the assistant is allowed to propose. Deliberately no free-form prose. */
 export interface InitiativeDraft {

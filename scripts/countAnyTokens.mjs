@@ -19,6 +19,7 @@
  * how a gate stops meaning anything.
  */
 
+import { evaluateBudgetTargets, todayIso } from './budgetTargets.mjs';
 import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
@@ -111,6 +112,14 @@ function main() {
     console.error('\nReplace `any` with `unknown` plus a type guard, a precise type, or a');
     console.error('discriminated union. If a cast is genuinely unavoidable, narrow its scope');
     console.error('so it covers one expression rather than a whole signature.');
+    process.exit(1);
+  }
+
+  // F3-04: el presupuesto tiene además objetivo y fecha.
+  const targets = evaluateBudgetTargets({ 'any-tokens': total }, todayIso());
+  for (const note of targets.notes) console.log(`[check:any-budget] ${note}`);
+  if (targets.failures.length > 0) {
+    for (const failure of targets.failures) console.error(`[check:any-budget] ${failure}`);
     process.exit(1);
   }
 

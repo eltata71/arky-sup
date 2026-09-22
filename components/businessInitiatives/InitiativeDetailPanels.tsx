@@ -29,30 +29,22 @@ import {
   STAKEHOLDER_KIND_LABELS,
 } from './initiativeUiLabels';
 import {
-  newKpiId,
-  newMilestoneId,
-  newOutcomeId,
-  newRiskId,
-  newStakeholderId,
-} from '../../services/businessInitiatives/BusinessInitiativeRepository';
-import {
   kpiProgress,
   type BusinessInitiative,
-  type InitiativeKpi,
-  type InitiativeMilestone,
   type InitiativeMilestoneStatus,
-  type InitiativeOutcome,
-  type InitiativeRisk,
   type InitiativeRiskLevel,
-  type InitiativeStakeholder,
   type InitiativeStakeholderKind,
-} from '../../services/businessInitiatives/BusinessInitiativeTypes';
-
-type Patch = Partial<Omit<BusinessInitiative, 'id' | 'userId' | 'createdAt' | 'schemaVersion'>>;
+  type InitiativeCommand,
+} from '../../services/businessInitiatives/domain';
 
 export interface PanelProps {
   initiative: BusinessInitiative;
-  onPatch: (patch: Patch) => void;
+  /**
+   * Una operación con nombre, no un parche (F3-05). Lo que cada una hace —qué
+   * fecha estampa, qué rechaza, en qué orden deja los hitos— lo decide
+   * `applyInitiativeCommand`; el panel sólo dice qué quiere el usuario.
+   */
+  onCommand: (command: InitiativeCommand) => void;
   /** Read-only rendering, e.g. while a save is in flight. */
   busy?: boolean;
   /**
@@ -74,7 +66,7 @@ export interface PanelProps {
 // Objectives and outcomes
 // ---------------------------------------------------------------------------
 
-export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assist }) => {
+export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
   const [objective, setObjective] = useState('');
   const [statement, setStatement] = useState('');
   const [measure, setMeasure] = useState('');
@@ -82,22 +74,17 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy,
   const addObjective = useCallback(() => {
     const value = objective.trim();
     if (!value) return;
-    onPatch({ objectives: [...initiative.objectives, value] });
+    onCommand({ kind: 'add-objective', objective: value });
     setObjective('');
-  }, [objective, initiative.objectives, onPatch]);
+  }, [objective, onCommand]);
 
   const addOutcome = useCallback(() => {
     const value = statement.trim();
     if (!value) return;
-    const outcome: InitiativeOutcome = {
-      id: newOutcomeId(),
-      statement: value,
-      measure: measure.trim() || undefined,
-    };
-    onPatch({ expectedOutcomes: [...initiative.expectedOutcomes, outcome] });
+    onCommand({ kind: 'add-outcome', statement: value, measure: measure.trim() || undefined });
     setStatement('');
     setMeasure('');
-  }, [statement, measure, initiative.expectedOutcomes, onPatch]);
+  }, [statement, measure, onCommand]);
 
   return (
     <SectionCard
@@ -133,9 +120,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy,
                 <RemoveButton
                   label={`Quitar objetivo ${item}`}
                   disabled={busy}
-                  onClick={() => onPatch({
-                    objectives: initiative.objectives.filter((_, position) => position !== index),
-                  })}
+                  onClick={() => onCommand({ kind: 'remove-objective', index })}
                 />
               </li>
             ))}
@@ -186,9 +171,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy,
                 <RemoveButton
                   label={`Quitar resultado ${outcome.statement}`}
                   disabled={busy}
-                  onClick={() => onPatch({
-                    expectedOutcomes: initiative.expectedOutcomes.filter((item) => item.id !== outcome.id),
-                  })}
+                  onClick={() => onCommand({ kind: 'remove-outcome', outcomeId: outcome.id })}
                 />
               </li>
             ))}
@@ -220,7 +203,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy,
 // KPIs
 // ---------------------------------------------------------------------------
 
-export const KpiPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assist }) => {
+export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('');
   const [baseline, setBaseline] = useState('');
@@ -236,16 +219,9 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assi
   const addKpi = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const kpi: InitiativeKpi = {
-      id: newKpiId(),
-      name: trimmed,
-      unit: unit.trim(),
-      baseline: parse(baseline),
-      target: parse(target),
-    };
-    onPatch({ kpis: [...initiative.kpis, kpi] });
+    onCommand({ kind: 'add-kpi', name: trimmed, unit, baseline: parse(baseline), target: parse(target) });
     setName(''); setUnit(''); setBaseline(''); setTarget('');
-  }, [name, unit, baseline, target, initiative.kpis, onPatch]);
+  }, [name, unit, baseline, target, onCommand]);
 
   /**
    * El asistente propone «Nombre (unidad)» porque un indicador sin unidad no
@@ -260,13 +236,8 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assi
   }, []);
 
   const setCurrent = useCallback((kpiId: string, raw: string) => {
-    const value = parse(raw);
-    onPatch({
-      kpis: initiative.kpis.map((kpi) => (kpi.id === kpiId
-        ? { ...kpi, current: value, measuredAt: value === undefined ? undefined : new Date().toISOString() }
-        : kpi)),
-    });
-  }, [initiative.kpis, onPatch]);
+    onCommand({ kind: 'record-kpi-measurement', kpiId, value: parse(raw) });
+  }, [onCommand]);
 
   return (
     <SectionCard
@@ -314,7 +285,7 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assi
                     <RemoveButton
                       label={`Quitar indicador ${kpi.name}`}
                       disabled={busy}
-                      onClick={() => onPatch({ kpis: initiative.kpis.filter((item) => item.id !== kpi.id) })}
+                      onClick={() => onCommand({ kind: 'remove-kpi', kpiId: kpi.id })}
                     />
                   </div>
                 </div>
@@ -368,36 +339,20 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assi
 // Milestones
 // ---------------------------------------------------------------------------
 
-export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assist }) => {
+export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
   const [name, setName] = useState('');
   const [dueAt, setDueAt] = useState('');
 
   const addMilestone = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed || !dueAt) return;
-    const milestone: InitiativeMilestone = {
-      id: newMilestoneId(),
-      name: trimmed,
-      dueAt: new Date(dueAt).toISOString(),
-      status: 'pending',
-    };
-    onPatch({
-      milestones: [...initiative.milestones, milestone].sort((a, b) => a.dueAt.localeCompare(b.dueAt)),
-    });
+    onCommand({ kind: 'add-milestone', name: trimmed, dueAt: new Date(dueAt).toISOString() });
     setName(''); setDueAt('');
-  }, [name, dueAt, initiative.milestones, onPatch]);
+  }, [name, dueAt, onCommand]);
 
   const setStatus = useCallback((milestoneId: string, status: InitiativeMilestoneStatus) => {
-    onPatch({
-      milestones: initiative.milestones.map((milestone) => (milestone.id === milestoneId
-        ? {
-          ...milestone,
-          status,
-          completedAt: status === 'met' ? new Date().toISOString() : undefined,
-        }
-        : milestone)),
-    });
-  }, [initiative.milestones, onPatch]);
+    onCommand({ kind: 'set-milestone-status', milestoneId, status });
+  }, [onCommand]);
 
   return (
     <SectionCard
@@ -443,9 +398,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onPatch, busy
               <RemoveButton
                 label={`Quitar hito ${milestone.name}`}
                 disabled={busy}
-                onClick={() => onPatch({
-                  milestones: initiative.milestones.filter((item) => item.id !== milestone.id),
-                })}
+                onClick={() => onCommand({ kind: 'remove-milestone', milestoneId: milestone.id })}
               />
             </li>
           ))}
@@ -466,7 +419,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onPatch, busy
 // Risks
 // ---------------------------------------------------------------------------
 
-export const RiskPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assist }) => {
+export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState<InitiativeRiskLevel>('medium');
   const [mitigation, setMitigation] = useState('');
@@ -474,15 +427,9 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, ass
   const addRisk = useCallback(() => {
     const trimmed = description.trim();
     if (!trimmed) return;
-    const risk: InitiativeRisk = {
-      id: newRiskId(),
-      description: trimmed,
-      level,
-      mitigation: mitigation.trim() || undefined,
-    };
-    onPatch({ risks: [...initiative.risks, risk] });
+    onCommand({ kind: 'add-risk', description: trimmed, level, mitigation: mitigation.trim() || undefined });
     setDescription(''); setMitigation(''); setLevel('medium');
-  }, [description, level, mitigation, initiative.risks, onPatch]);
+  }, [description, level, mitigation, onCommand]);
 
   return (
     <SectionCard
@@ -517,7 +464,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, ass
               <RemoveButton
                 label={`Quitar riesgo ${risk.description}`}
                 disabled={busy}
-                onClick={() => onPatch({ risks: initiative.risks.filter((item) => item.id !== risk.id) })}
+                onClick={() => onCommand({ kind: 'remove-risk', riskId: risk.id })}
               />
             </li>
           ))}
@@ -548,7 +495,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, ass
 // Stakeholders
 // ---------------------------------------------------------------------------
 
-export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onPatch, busy, assist }) => {
+export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [kind, setKind] = useState<InitiativeStakeholderKind>('stakeholder');
@@ -556,15 +503,9 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onPatch, bu
   const addStakeholder = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const stakeholder: InitiativeStakeholder = {
-      id: newStakeholderId(),
-      name: trimmed,
-      role: role.trim(),
-      kind,
-    };
-    onPatch({ stakeholders: [...initiative.stakeholders, stakeholder] });
+    onCommand({ kind: 'add-stakeholder', name: trimmed, role, stakeholderKind: kind });
     setName(''); setRole(''); setKind('stakeholder');
-  }, [name, role, kind, initiative.stakeholders, onPatch]);
+  }, [name, role, kind, onCommand]);
 
   const hasSponsor = initiative.stakeholders.some((item) => item.kind === 'sponsor');
 
@@ -606,9 +547,7 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onPatch, bu
               <RemoveButton
                 label={`Quitar a ${stakeholder.name}`}
                 disabled={busy}
-                onClick={() => onPatch({
-                  stakeholders: initiative.stakeholders.filter((item) => item.id !== stakeholder.id),
-                })}
+                onClick={() => onCommand({ kind: 'remove-stakeholder', stakeholderId: stakeholder.id })}
               />
             </li>
           ))}

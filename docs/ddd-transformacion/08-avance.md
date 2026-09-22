@@ -1,17 +1,17 @@
 # Registro de avance y punto de reanudación
 
 **Última actualización:** 2026-09-22
-**Estado integrado:** Fase 2 completa, **fase 3 en curso** (F3-01, F3-02, F3-07 y F3-08 cerradas) y **fase 4 en curso** (F4-01, F4-02 y F4-03 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Estado integrado:** Fase 2 completa, **fase 3 cerrada** (`09-cierre-fase-3.md`) y **fase 4 en curso** (F4-01, F4-02 y F4-03 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F3-07** — `types.ts` no importa nada: el
-  Artefacto bajó a `lib/artifacts` (núcleo compartido), `Project` se importa de
-  su módulo y tres ciclos se cerraron con puertos. Componente de dominio 27 →
-  14, pares ascendentes 2 → 0. Antes: F4-03 (#50), F4-02 (#49), F4-01 (#48).
+- **Última tarea completada:** **cierre de la fase 3** — F3-03 (dependencias
+  declaradas), F3-04 (presupuestos con objetivo y fecha), F3-05 (Iniciativas como
+  contexto piloto) y F3-06 (puertas pequeñas). Ver `09-cierre-fase-3.md`. Antes:
+  F3-07 (#51), F4-03 (#50), F4-02 (#49), F4-01 (#48).
 - **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
@@ -21,8 +21,10 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** el resto de la fase 3 — F3-03, F3-04, F3-05 y
-  F3-06 — y su documento de cierre.
+- **Siguiente paso exacto:** fase 4 — **F4-07** (el mapa de revisiones de
+  proyectos: la lectura ya devuelve la revisión desde F4-03, así que el `Map`
+  global puede dar paso a la revisión en el registro, como en Iniciativas) y
+  **F4-04** (separar la raíz del Proyecto del modelo de lectura con artefactos).
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -84,7 +86,7 @@
 
 ---
 
-## Fase 3 — en curso
+## Fase 3 — cerrada
 
 | Tarea | Estado | Nota |
 |---|---|---|
@@ -92,8 +94,10 @@
 | **F3-02** ampliar alcance verificador | ✅ | ADR-105. Lee `import('…')` y abre los ficheros de la raíz. 42 pruebas. |
 | **F3-07** deshacer el reexportador `types.ts` | ✅ | `types.ts` no importa nada. Componente 27 → 14, pares ascendentes 0. |
 | **F3-08** `utils.ts` no es utilidades | ✅ | 290 líneas de composición de prompts a `services/ai`. |
-| **F3-03** declarar dependencias permitidas | ⏳ | |
-| **F3-05** iniciativas como contexto piloto | ⏳ | |
+| **F3-03** declarar dependencias permitidas | ✅ | 246 aristas declaradas en `modules.json`; una nueva falla. |
+| **F3-04** presupuestos con objetivo y fecha | ✅ | `scripts/budgetTargets.mjs`: seis objetivos con fecha y fase. |
+| **F3-05** iniciativas como contexto piloto | ✅ | `domain/` + `infrastructure/`, 20 operaciones con nombre, prueba de pureza. |
+| **F3-06** entradas públicas pequeñas | ✅ | Varias puertas por módulo; pares profundos 60 → 57. |
 
 ---
 
@@ -171,7 +175,7 @@ fuera, para que la próxima ampliación empiece por leerlo.
 |---|---|---|---|
 | D-1 | ¿Quién debe poder ver y firmar un encargo ajeno? | **negocio** | **Resuelta 2026-09-20: opción C** |
 | D-2 | ¿Hay política de archivado y retención? | negocio | F6-08 |
-| D-3 | ¿«Revisión» se renombra a «versión de fila» en la UI? | producto | F3-05 |
+| D-3 | ¿«Revisión» se renombra a «versión de fila» en la UI? | producto | **Ya no bloquea**: ninguna pantalla muestra el contador (2026-09-22) |
 | D-4 | ¿`Artefacto` pasa a raíz de agregado? | arquitectura, con datos de F4-01 | **Resuelta 2026-09-22: sí, ADR-106** |
 
 ---

@@ -36,9 +36,6 @@ import {
 } from '../services/architectureOffice/application/assistantConsultation';
 import { initiativeAssistantService } from '../services/ai/generation';
 import {
-  newKpiId,
-  newOutcomeId,
-  newRiskId,
   rollupInitiatives,
   type BusinessInitiative,
   type InitiativeStatus,
@@ -58,7 +55,7 @@ const InitiativesPage: React.FC = () => {
     isLoading,
     usedCodes,
     createInitiative,
-    updateInitiative,
+    runInitiativeCommand,
     deleteInitiative,
   } = useInitiatives();
   const { addToast } = useToast();
@@ -139,37 +136,21 @@ const InitiativesPage: React.FC = () => {
 
     const draft = input.draft;
     if (draft) {
-      await updateInitiative(created.initiative.id, {
-        expectedOutcomes: draft.outcomes.map((outcome) => ({
-          id: newOutcomeId(),
-          statement: outcome.statement,
-          measure: outcome.measure,
-        })),
-        kpis: draft.kpis.map((kpi) => ({
-          id: newKpiId(),
-          name: kpi.name,
-          unit: kpi.unit,
-          baseline: kpi.baseline,
-          target: kpi.target,
-        })),
+      await runInitiativeCommand(created.initiative.id, {
+        kind: 'adopt-intake-draft',
+        outcomes: draft.outcomes,
+        kpis: draft.kpis,
+        risks: draft.risks,
         affectedCapabilities: draft.affectedCapabilities,
         regulatoryDrivers: draft.regulatoryDrivers,
-        risks: draft.risks.map((risk) => ({
-          id: newRiskId(),
-          description: risk.description,
-          level: risk.level,
-          mitigation: risk.mitigation,
-        })),
-        notes: draft.openQuestions.length > 0
-          ? [`Preguntas abiertas del asistente: ${draft.openQuestions.join(' · ')}`]
-          : [],
+        openQuestions: draft.openQuestions,
       });
     }
 
     addToast('Iniciativa de negocio creada.', 'success');
     navigate(`/initiatives/${created.initiative.id}`);
     return { ok: true };
-  }, [createInitiative, updateInitiative, addToast, navigate]);
+  }, [createInitiative, runInitiativeCommand, addToast, navigate]);
 
   const openInitiative = useCallback(
     (initiative: BusinessInitiative) => navigate(`/initiatives/${initiative.id}`),

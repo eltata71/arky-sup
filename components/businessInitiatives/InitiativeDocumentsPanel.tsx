@@ -35,7 +35,7 @@ const formatSize = (bytes: number): string => (bytes >= 1_048_576
 // ---------------------------------------------------------------------------
 
 export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: string | null }> = ({
-  initiative, onPatch, busy, addedBy, ownerId,
+  initiative, onCommand, busy, addedBy, ownerId,
 }) => {
   const [name, setName] = useState('');
   const [kind, setKind] = useState<InitiativeDocumentKind>('business-case');
@@ -79,12 +79,12 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
       addedAt: new Date().toISOString(),
       addedBy,
     };
-    onPatch({ documents: [...initiative.documents, document] });
+    onCommand({ kind: 'attach-document', document });
     setName(''); setUrl(''); setContent(''); setShowPaste(false);
     setAttached(null); setAttachedName('');
     if (fileInput.current) fileInput.current.value = '';
     documentId.current = newDocumentId();
-  }, [name, kind, url, content, attached, addedBy, initiative.documents, onPatch]);
+  }, [name, kind, url, content, attached, addedBy, onCommand]);
 
   return (
     <SectionCard
@@ -141,9 +141,7 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
               <RemoveButton
                 label={`Quitar documento ${document.name}`}
                 disabled={busy}
-                onClick={() => onPatch({
-                  documents: initiative.documents.filter((item) => item.id !== document.id),
-                })}
+                onClick={() => onCommand({ kind: 'remove-document', documentId: document.id })}
               />
             </li>
           ))}

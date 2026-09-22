@@ -24,8 +24,8 @@
  */
 
 import type { BadgeTone } from '../ui';
-import type { LucideIcon } from 'lucide-react';
 import {
+  type LucideIcon,
   AlertTriangle,
   BadgeCheck,
   CalendarClock,
@@ -44,8 +44,8 @@ import {
 } from 'lucide-react';
 import { OFFICE_HEALTH_VISUALS } from '../architectureOffice/officeChartTokens';
 import type { OfficeHealthBucket } from '../../services/architectureOffice/officePortfolio';
-import type { InitiativeHealth } from '../../services/businessInitiatives/initiativeMetrics';
 import type {
+  InitiativeHealth,
   InitiativeDocumentKind,
   InitiativeHorizon,
   InitiativeMilestoneStatus,
@@ -53,7 +53,7 @@ import type {
   InitiativeRiskLevel,
   InitiativeStakeholderKind,
   InitiativeStatus,
-} from '../../services/businessInitiatives/BusinessInitiativeTypes';
+} from '../../services/businessInitiatives/domain';
 
 export const INITIATIVE_STATUS_LABELS: Readonly<Record<InitiativeStatus, string>> = Object.freeze({
   draft: 'Borrador',

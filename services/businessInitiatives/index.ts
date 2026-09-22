@@ -1,47 +1,25 @@
 /**
- * Business initiatives — the top of the hierarchy.
+ * Business initiatives — the top of the hierarchy, and the pilot context of the
+ * DDD transformation (F3-05).
  *
- * Import from this barrel rather than reaching into the modules: the split
- * between types, persistence and metrics is an implementation detail.
+ * Two folders and one door:
+ *
+ *  - `domain/` — the rules: the aggregate's shape, its identities and
+ *    revision, how a stored record is read, the factory that decides whether an
+ *    initiative may exist, the named operations (`applyInitiativeCommand`) that
+ *    replaced `update(partial)`, and the rollups. Pure; tested without mocks.
+ *  - `infrastructure/` — the persistence: the Supabase adapter and the
+ *    repository with its local mirror.
+ *
+ * Consumers enter through this file. What it publishes from `infrastructure/`
+ * is the repository's three operations, which the context calls; the adapter
+ * factory stays inside, because nothing outside the module has a reason to
+ * build one.
  */
-export * from './BusinessInitiativeTypes';
-export * from './initiativeMetrics';
-/**
- * Lo que los proyectos mueven en la iniciativa, consolidado. Declara su propio
- * puerto: la iniciativa no conoce el módulo de proyectos, sólo la forma del
- * parte que espera de cada uno.
- */
-export * from './initiativeDelivery';
+export * from './domain';
 export {
-  buildInitiative,
+  clearInitiativeCache,
   deleteInitiative,
   listInitiatives,
-  normalizeInitiative,
   saveInitiative,
-  newInitiativeId,
-  newOutcomeId,
-  newKpiId,
-  newRiskId,
-  newStakeholderId,
-  newDocumentId,
-  newMilestoneId,
-} from './BusinessInitiativeRepository';
-export type { CreateInitiativeInput } from './BusinessInitiativeRepository';
-export {
-  createSupabaseBusinessInitiativeRepository,
-  type SupabaseBusinessInitiativeRepository,
-  type SupabaseBusinessInitiativesClientLike,
-} from './SupabaseBusinessInitiativeRepository';
-
-/**
- * La puerta del agregado. `buildInitiative` sigue exportado porque el
- * repositorio lo usa al normalizar lo que lee, pero para *crear* una
- * iniciativa nueva se entra por aquí: es donde viven las reglas que deciden si
- * puede existir.
- */
-export {
-  createBusinessInitiative,
-  type BusinessInitiativeRejection,
-  type CreateBusinessInitiativeParams,
-  type CreateBusinessInitiativeResult,
-} from './businessInitiativeFactory';
+} from './infrastructure/BusinessInitiativeRepository';

@@ -34,6 +34,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { evaluateBudgetTargets, todayIso } from './budgetTargets.mjs';
 import { execSync } from 'node:child_process';
 import { dirname, join, normalize, resolve } from 'node:path';
 
@@ -257,13 +258,12 @@ export const DEEP_IMPORT_BUDGET = {
   'components -> services/agent': 2,
   'components -> services/ai': 3,
   'components -> services/architectureOffice': 44,
-  'components -> services/artifacts': 14,
-  'components -> services/businessInitiatives': 16,
+  'components -> services/artifacts': 13,
   'components -> services/chat': 1,
   'components -> services/diagram': 20,
   'components -> services/export': 1,
   'components -> services/presentation': 1,
-  'components -> services/quality': 8,
+  'components -> services/quality': 7,
   'components -> services/review': 1,
   'context -> services/agent': 1,
   'context -> services/ai': 1,
@@ -293,7 +293,7 @@ export const DEEP_IMPORT_BUDGET = {
    * debería existir. Baja cuando F5-01 estrangule el monolito.
    */
   'services (raíz) -> services/ai': 17,
-  'services (raíz) -> services/architectureOffice': 3,
+  'services (raíz) -> services/architectureOffice': 2,
   'services (raíz) -> services/artifacts': 4,
   'services (raíz) -> services/diagram': 6,
   'services (raíz) -> services/presentation': 2,
@@ -301,7 +301,6 @@ export const DEEP_IMPORT_BUDGET = {
   'services/agent -> services/diagram': 1,
   'services/agent -> services/memory': 3,
   'services/agent -> services/quality': 1,
-  'services/ai -> services/businessInitiatives': 1,
   'services/ai -> services/diagram': 1,
   'services/architectureKnowledgeGraph -> services/architectureOffice': 1,
   'services/architectureOffice -> services/ai': 2,
@@ -320,7 +319,6 @@ export const DEEP_IMPORT_BUDGET = {
   'services/export -> services/presentation': 1,
   'services/export -> services/quality': 11,
   'services/portfolioGraph -> services/architectureOffice': 3,
-  'services/portfolioGraph -> services/businessInitiatives': 2,
   'services/publicationPipeline -> services/architectureKnowledgeGraph': 7,
   'services/publicationPipeline -> services/artifactCompiler': 1,
   'services/publicationPipeline -> services/export': 7,
@@ -480,8 +478,56 @@ function localImports(file) {
 function entersThroughApi(target, mod) {
   if (!mod.api) return true;
   if (mod.files) return true;
-  const api = mod.api.replace(/\.tsx?$/, '');
-  return target === mod.path || target === api;
+  if (target === mod.path) return true;
+  // F3-06: un módulo puede publicar más de una puerta —la principal y una
+  // entrada pequeña, compatible con carga diferida, que no arrastra su
+  // infraestructura—. Cada puerta declarada cuenta como entrada, por su fichero
+  // o por su carpeta (`domain` resuelve a `domain/index.ts`).
+  return publicEntries(mod).some((api) => {
+    const file = api.replace(/\.tsx?$/, '');
+    return target === file || target === file.replace(/\/index$/, '');
+  });
+}
+
+/**
+ * F3-03 — Las dependencias declaradas entre módulos.
+ *
+ * `modules.json` → `allowedDependencies` dice, módulo a módulo, de quién puede
+ * depender. Tres cosas se comprueban: que todo módulo declare su lista (un
+ * módulo sin lista es uno que puede depender de cualquiera), que ninguna arista
+ * del grafo falte en ella, y —como nota, para que la lista encoja— que ninguna
+ * declarada haya dejado de existir.
+ */
+export const ALLOWED_DEPENDENCIES = Object.fromEntries(
+  Object.entries(MANIFEST.allowedDependencies ?? {}).filter(([name]) => name !== '$comment'),
+);
+
+export function checkDeclaredDependencies(edges, failures, notes, declared = ALLOWED_DEPENDENCIES) {
+  for (const mod of MODULES) {
+    if (!(mod.name in declared)) {
+      failures.push(`dependency: ${mod.name} no declara sus dependencias en modules.json`);
+    }
+  }
+  for (const edge of edges.keys()) {
+    const [from, to] = edge.split(' -> ');
+    if (from === to) continue;
+    if (!(declared[from] ?? []).includes(to)) {
+      failures.push(`dependency: ${edge} no está declarada en modules.json → allowedDependencies`);
+    }
+  }
+  for (const [from, targets] of Object.entries(declared)) {
+    for (const to of targets) {
+      if (!edges.has(`${from} -> ${to}`)) {
+        notes.push(`dependency: ${from} -> ${to} ya no existe. Quítala de allowedDependencies.`);
+      }
+    }
+  }
+}
+
+/** Las puertas públicas de un módulo, se declaren como una o como varias. */
+export function publicEntries(mod) {
+  if (!mod.api) return [];
+  return Array.isArray(mod.api) ? mod.api : [mod.api];
 }
 
 /**
@@ -692,7 +738,7 @@ export function checkStronglyConnected(sccs, failures, notes, recordedBudget = A
 }
 
 export function scan() {
-  const { cycles, sccs, deepImports, layerViolations, fanout, examples } = analyse();
+  const { edges, cycles, sccs, deepImports, layerViolations, fanout, examples } = analyse();
   const failures = [];
   const notes = [];
 
@@ -704,6 +750,19 @@ export function scan() {
   }
 
   checkStronglyConnected(sccs, failures, notes);
+  checkDeclaredDependencies(edges, failures, notes);
+
+  // F3-04: los números de este gate que tienen objetivo y fecha.
+  const domainComponent = sccs.find((component) => component.includes('services/ai')) ?? [];
+  const targets = evaluateBudgetTargets({
+    'domain-scc-modules': domainComponent.length,
+    cycles: cycles.length,
+    'loose-root-files': sourceFiles().filter((f) => /^services\/[^/]+\.tsx?$/.test(f)).length,
+    'ui-fanout-screens': fanout.size,
+    'deep-import-pairs': deepImports.size,
+  }, todayIso());
+  failures.push(...targets.failures);
+  notes.push(...targets.notes);
 
   const looseRootFiles = sourceFiles().filter((f) => /^services\/[^/]+\.tsx?$/.test(f));
   if (looseRootFiles.length > SERVICES_ROOT_BUDGET) {
@@ -721,11 +780,12 @@ export function scan() {
 
   // A module that claims a public API has to have one.
   for (const mod of MODULES) {
-    if (!mod.api) continue;
-    try {
-      readFileSync(resolve(ROOT, mod.api), 'utf8');
-    } catch {
-      failures.push(`api: ${mod.name} declares ${mod.api} and the file is missing`);
+    for (const api of publicEntries(mod)) {
+      try {
+        readFileSync(resolve(ROOT, api), 'utf8');
+      } catch {
+        failures.push(`api: ${mod.name} declares ${api} and the file is missing`);
+      }
     }
   }
 

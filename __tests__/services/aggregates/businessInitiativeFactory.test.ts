@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createBusinessInitiative } from '../../../services/businessInitiatives/businessInitiativeFactory';
+import { createBusinessInitiative } from '../../../services/businessInitiatives/domain';
 
 const valid = {
   input: { title: 'Alta digital de clientes', need: 'El alta tarda 12 días' },

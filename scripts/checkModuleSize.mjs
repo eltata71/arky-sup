@@ -92,7 +92,7 @@ export const BYTE_CEILINGS = {
   'components/copilot/ProjectCopilotChatModal.tsx': 28652,
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
   'components/CustomEdge.tsx': 32023,
-  'components/businessInitiatives/InitiativeDetailPanels.tsx': 27048,
+  'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
   'services/agent/agentContextComposer.ts': 31444, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'pages/SettingsPage.tsx': 30955,
   'hooks/artifacts/useDiagramRendering.ts': 29282, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -192,7 +192,7 @@ export const CEILINGS = {
   'services/artifacts/artifactRefinementOrchestrator.ts': 785,
   'components/copilot/ProjectCopilotChatModal.tsx': 675,
   'services/diagram/suggestionActionExecutors.ts': 760,
-  'components/businessInitiatives/InitiativeDetailPanels.tsx': 637,
+  'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,
   'services/diagram/qualityRepair.ts': 705,
   'hooks/artifacts/useDiagramRendering.ts': 685,

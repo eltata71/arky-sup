@@ -1,6 +1,6 @@
-import type { BusinessInitiative } from './BusinessInitiativeTypes';
-import { normalizeInitiative } from './BusinessInitiativeRepository';
-import { createOperationId, supabaseFailure, type PersistenceResult } from '../persistence';
+import type { BusinessInitiative } from '../domain/BusinessInitiativeTypes';
+import { normalizeInitiative } from '../domain/initiativeRecord';
+import { createOperationId, supabaseFailure, type PersistenceResult } from '../../persistence';
 
 /** Superficie mínima de PostgREST para el agregado; sin SDK en el dominio. */
 export interface SupabaseBusinessInitiativesClientLike {

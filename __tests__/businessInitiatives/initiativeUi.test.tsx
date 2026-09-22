@@ -96,7 +96,7 @@ describe('KpiPanel', () => {
     render(
       <KpiPanel
         initiative={initiative({ kpis: [{ id: 'k', name: 'Tiempo de respuesta', unit: 'min' }] })}
-        onPatch={() => {}}
+        onCommand={() => {}}
       />,
     );
     expect(screen.getByText(/todavía no se puede medir el avance/i)).toBeInTheDocument();
@@ -109,23 +109,21 @@ describe('KpiPanel', () => {
         initiative={initiative({
           kpis: [{ id: 'k', name: 'Adopción', unit: '%', baseline: 0, target: 100, current: 40 }],
         })}
-        onPatch={() => {}}
+        onCommand={() => {}}
       />,
     );
     expect(screen.getByRole('progressbar', { name: 'Avance de Adopción' }))
       .toHaveAttribute('aria-valuenow', '40');
   });
 
-  it('emits a patch rather than a whole initiative when a KPI is added', () => {
-    const onPatch = vi.fn();
-    render(<KpiPanel initiative={initiative()} onPatch={onPatch} />);
+  it('emits the named operation, not a rebuilt list, when a KPI is added (F3-05)', () => {
+    const onCommand = vi.fn();
+    render(<KpiPanel initiative={initiative()} onCommand={onCommand} />);
     fireEvent.change(screen.getByLabelText('Indicador'), { target: { value: 'Nuevo KPI' } });
     fireEvent.change(screen.getByLabelText('Unidad'), { target: { value: '%' } });
     fireEvent.click(screen.getByRole('button', { name: '' }));
-    expect(onPatch).toHaveBeenCalledOnce();
-    const patch = onPatch.mock.calls[0][0];
-    expect(Object.keys(patch)).toEqual(['kpis']);
-    expect(patch.kpis[0].name).toBe('Nuevo KPI');
+    expect(onCommand).toHaveBeenCalledOnce();
+    expect(onCommand.mock.calls[0][0]).toMatchObject({ kind: 'add-kpi', name: 'Nuevo KPI', unit: '%' });
   });
 });
 
@@ -134,7 +132,7 @@ describe('OutcomesPanel', () => {
     render(
       <OutcomesPanel
         initiative={initiative({ expectedOutcomes: [{ id: 'o', statement: 'Menos rechazos' }] })}
-        onPatch={() => {}}
+        onCommand={() => {}}
       />,
     );
     expect(screen.getByText(/Falta acordar cómo se evidencia/i)).toBeInTheDocument();
@@ -143,8 +141,8 @@ describe('OutcomesPanel', () => {
 
 describe('DocumentsPanel', () => {
   it('accepts a link or pasted content, and refuses an empty row', () => {
-    const onPatch = vi.fn();
-    render(<DocumentsPanel initiative={initiative()} onPatch={onPatch} addedBy="Ana" />);
+    const onCommand = vi.fn();
+    render(<DocumentsPanel initiative={initiative()} onCommand={onCommand} addedBy="Ana" />);
 
     const add = screen.getByRole('button', { name: /Añadir documento/ });
     expect(add).toBeDisabled();
@@ -154,8 +152,9 @@ describe('DocumentsPanel', () => {
 
     fireEvent.change(screen.getByLabelText('https://… (donde ya vive el documento)'), { target: { value: 'https://x/doc' } });
     fireEvent.click(add);
-    expect(onPatch).toHaveBeenCalledOnce();
-    expect(onPatch.mock.calls[0][0].documents[0]).toMatchObject({
+    expect(onCommand).toHaveBeenCalledOnce();
+    expect(onCommand.mock.calls[0][0].kind).toBe('attach-document');
+    expect(onCommand.mock.calls[0][0].document).toMatchObject({
       name: 'Caso de negocio',
       url: 'https://x/doc',
       addedBy: 'Ana',
@@ -166,7 +165,7 @@ describe('DocumentsPanel', () => {
     render(
       <DocumentsPanel
         addedBy="Ana"
-        onPatch={() => {}}
+        onCommand={() => {}}
         initiative={initiative({
           documents: [{
             id: 'd', name: 'Normativa', kind: 'regulation',

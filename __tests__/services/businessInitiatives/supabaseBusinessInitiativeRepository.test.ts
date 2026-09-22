@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createSupabaseBusinessInitiativeRepository,
   type SupabaseBusinessInitiativesClientLike,
-} from '../../../services/businessInitiatives';
+} from '../../../services/businessInitiatives/infrastructure/SupabaseBusinessInitiativeRepository';
 import { buildInitiative, type BusinessInitiative } from '../../../services/businessInitiatives';
 import { formatInitiativeCode } from '../../../lib/eaTerminology';
 

@@ -212,7 +212,7 @@ arkypro-1.0/
 │   │                           # useSettingsState, useProjectsState, useArtifactsState,
 │   │                           # useProjectHistory, useArchitectureGraphSync + appContextTypes
 │   ├── AuthContext.tsx         # Auth state + login/logout/register + role
-│   ├── InitiativeContext.tsx   # Business initiatives (top of the hierarchy): CRUD + patches
+│   ├── InitiativeContext.tsx   # Business initiatives: CRUD + `runInitiativeCommand` (named operations)
 │   ├── OfficeContext.tsx       # Architecture Office engagements: intake, run, gates, ARB
 │   ├── LMSContext.tsx          # Courses, progress, notes, catalog
 │   ├── ToastContext.tsx        # Transient notifications
@@ -244,7 +244,8 @@ arkypro-1.0/
 │   ├── learning/             # ★ LMS CRUD (courses, progress, context, notes)
 │   ├── lucid/                # ★ Lucidchart REST integration (token, embed, export)
 │   ├── agent/                # "Arquitecto Agente": planner, executor, intent, memory
-│   ├── businessInitiatives/  # ★ Business initiatives: types, repository, metrics
+│   ├── businessInitiatives/  # ★ The pilot context (F3-05): domain/ (pure rules, named operations)
+│   │                        # + infrastructure/ (Supabase, mirror); three declared doors
 │   ├── portfolioGraph/       # ★ The four levels as a keyed graph: resolution, integrity, search
 │   ├── architectureProjects/ # ★ The Proyecto de Arquitectura aggregate: type, factory, repository,
 │   │                        # and `attentionTracking` — its progress, health and contributions
@@ -405,18 +406,20 @@ importing from `services/` in seven files. None of it broke a rule, because
 there was no rule; folders enforce nothing.
 
 `modules.json` now declares the modules, their layer and their public API, and
-`npm run check:module-boundaries` enforces six things on every push:
+`npm run check:module-boundaries` enforces seven things on every push, and reports an eighth:
 
 | Rule | What it refuses |
 |---|---|
 | **Layers** | `foundation` (`lib`, `utils`) must not import `domain`; `domain` (`services/*`) must not import `ui` |
 | **Cycles** | two modules that import each other — one module with twice the surface, and neither readable alone |
 | **Alcanzabilidad** | un grupo de módulos que puede volver a sí mismo siguiendo imports, aunque ningún par se importe mutuamente. `ALLOWED_SCCS` registra los dos de hoy y **sólo puede encoger** — ADR-104 |
-| **Public API** | an import that reaches past a module's `index.ts` into an internal file |
+| **Public API** | an import that reaches past a module's declared doors into an internal file. A module may publish **more than one door** (`api` as a list, F3-06): `services/businessInitiatives` publishes its barrel, a small `domain` entry with no infrastructure, and `commands`, which the boot-path provider loads with `import()` |
 | **UI fan-out** | a screen under `components/`/`pages/` importing more than **two** service modules |
 | **Loose root files** | a new file dropped at the root of `services/`, which belongs to no module |
+| **Dependencias declaradas** (F3-03) | una arista entre dos módulos que no está en `modules.json` → `allowedDependencies`, o un módulo sin lista. Las 246 de hoy están declaradas; añadir una es una decisión que se revisa en la PR del import que la necesita, y una declarada que ya no existe se avisa para quitarla |
+| *Objetivos con fecha* (F3-04, informa) | `scripts/budgetTargets.mjs` da a seis números —componente de dominio, ciclos, ficheros sueltos, pantallas sobre el fan-out, pares profundos, `any`— un objetivo, una fecha y la fase que lo cumple. Antes de la fecha informa; **después falla** si no se cumplió. Mover una fecha es legítimo, en ese fichero y con la razón |
 
-**Las seis se aplican sobre un grafo, y de qué está hecho ese grafo es la mitad
+**Todas se aplican sobre un grafo, y de qué está hecho ese grafo es la mitad
 de la garantía** (F3-02, ADR-105). Se construye leyendo `import`,
 `export … from`, `import type` **e `import('…')`** —en sus dos formas, la
 diferida y la de posición de tipo—, sobre todo `.ts`/`.tsx` de las carpetas
@@ -781,7 +784,7 @@ React Context only — no Redux/Zustand/Jotai.
 |---|---|---|
 | `AppContext` | `context/AppContext.tsx` + `context/app/` | Projects, artifacts + versions, settings, `t()` i18n, chat history, agent action log, architecture graph, publication packages, `persistenceStatus` |
 | `AuthContext` | `context/AuthContext.tsx` | Logged-in user, role, sign-in/out/register |
-| `InitiativeContext` | `context/InitiativeContext.tsx` | Business initiatives: capture, tracking fields, KPIs, milestones, risks, stakeholders, supporting documents |
+| `InitiativeContext` | `context/InitiativeContext.tsx` | Business initiatives: capture, and every change as a **named operation** (`runInitiativeCommand` → `applyInitiativeCommand`); there is no `update(partial)` |
 | `OfficeContext` | `context/OfficeContext.tsx` | Architecture Office engagements: intake, charter approval, running the task DAG, gates, ARB decisions |
 | `LMSContext` | `context/LMSContext.tsx` | Courses, progress, notes, catalog |
 | `ToastContext` | `context/ToastContext.tsx` | Transient notifications |
@@ -1158,6 +1161,31 @@ and `docs/diagram-story-and-patches.md`.
 `components/ArtifactCanvas.tsx` is the central canvas. It has been decomposed: rendering, export, editing, speech, fullscreen, view mode, suggestions and diagnostics all live in `hooks/artifacts/*`, and the per-format views live in `components/artifacts/<format>/`. **When extending the canvas, add a hook or a subview — do not grow `ArtifactCanvas.tsx`.**
 
 ---
+
+## Initiatives are the pilot context — copy this shape
+
+Phase 3 of the DDD transformation left one context with the full shape, on
+purpose, so the next ones copy it rather than rediscover it
+(`docs/ddd-transformacion/09-cierre-fase-3.md`):
+
+- **`services/businessInitiatives/domain/`** holds the rules: the aggregate, its
+  identities, its revision as a value object, how a stored record is read, the
+  factory, the rollups — and **named operations** instead of
+  `update(partial)`. `applyInitiativeCommand(initiative, command, { now })`
+  returns the new aggregate or a typed rejection. Recording a KPI measurement
+  dates it; marking a milestone `met` dates its completion; milestones stay in
+  date order. Those rules lived in panel `useCallback`s and could only be
+  tested by rendering.
+- **`infrastructure/`** holds the Supabase adapter and the mirrored repository.
+  No screen imports it.
+- **`domainPurity.test.ts`** scans `domain/` for imports of persistence,
+  adapters, React or another context: the compiler cannot see that coupling,
+  because the import is valid.
+- **Screens emit commands** (`onCommand`), the provider applies them and only
+  does what a provider is for: optimistic state, the write, the rollback.
+
+Do not add `updateInitiative(partial)` back, and do not mint an entity id in a
+screen: both put a rule of the model in the one place it cannot be tested.
 
 ## Aggregates: one factory each, and a gate
 
