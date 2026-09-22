@@ -471,3 +471,12 @@ Lo que F9 **no** cerró y no pretendía cerrar: el tamaño de
 `services/geminiService.ts`, `strict` por carpeta y la ausencia de Prettier
 siguen donde estaban. Las tres son deuda de código, y un cambio de proveedor no
 toca ninguna.
+
+## Aviso de build observado durante F4-01 (22 sep 2026)
+
+Vite/Rollup advierte que `artifactGenerationService` se reexporta por
+`services/ai/index.ts` mientras ambos terminan en chunks que dependen entre sí.
+El build y `check:bundle-budget` pasan (308,6/340,0 KB gzip eager), pero Rollup
+avisa de un posible orden de ejecución roto. Revisar las importaciones del
+barril en el trabajo de fronteras/IA; F4-01 sólo midió Proyecto–Artefacto y no
+modificó ese módulo. Salida y comandos: `docs/ddd-transformacion/evidencias/f4-01-proyecto-artefacto.md`.

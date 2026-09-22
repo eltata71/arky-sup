@@ -2,26 +2,30 @@
 
 **Última actualización:** 2026-09-22
 **Estado integrado:** Fase 2 completa y **fase 3 en curso** (F3-01, F3-02, F3-08 cerradas; F3-07 parcial, bloqueada por D-4), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Trabajo local de esta tarea:** F4-01 medida sobre el proyecto Supabase vinculado; aún no integrada ni publicada.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F3-07 (parcial) y F3-08** — el nudo de la raíz,
-  deshecho hasta donde no depende de D-4. Antes: F3-02 (ADR-105) y F2-12.
+- **Última tarea medida localmente:** **F4-01** — 0 proyectos y 0 artefactos en
+  la base vinculada; comportamiento de concurrencia documentado. Últimas tareas
+  integradas: F3-07 (parcial) y F3-08.
 - **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
   dejado un fixture que ya no podía existir. Lo que falló fue leerlo.
-- **Estado de los cambios:** todo integrado en `main` y publicado por CI. Las
+- **Estado de la tanda anterior:** integrada en `main` y publicada por CI. Las
   cuatro PR de esta tanda: **#43** (contrato del destino Vercel + el fixture E2E
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** **F4-01** — medir el volumen y los conflictos del
-  agregado Proyecto–Artefacto. Ha dejado de ser una tarea de la fase 4 que
-  esperaba su turno: es lo que **bloquea** el resto de F3-07. Las dos últimas
+- **Siguiente paso exacto:** **F4-02** — decidir por ADR la frontera
+  Proyecto–Artefacto con las invariantes y la medición de F4-01. La base
+  vinculada tiene 0 proyectos y 0 artefactos; no hay tasa de conflictos
+  estimable. La evidencia está en `evidencias/f4-01-proyecto-artefacto.md`.
+  D-4 todavía **bloquea** el resto de F3-07. Las dos últimas
   aristas de `types.ts` son `Artifact` y `Project`, y no se repuntan sin decidir
   antes si `Artefacto` es raíz de agregado (D-4, que resuelve F4-02 con los
   datos de F4-01).

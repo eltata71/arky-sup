@@ -375,7 +375,18 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ## Fase 4 — Proyectos y Entregables
 
 ### F4-01 · Medir volumen y conflictos del agregado Proyecto–Artefacto
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Resuelve** H05
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Resuelve** H05
+- **Medición estructural (2026-09-22).** Una edición envía y actualiza los `N`
+  artefactos del proyecto; dos ediciones de hijos distintos compiten por la
+  misma revisión. Evidencia y consulta agregada de lectura en
+  `evidencias/f4-01-proyecto-artefacto.md` y `evidencias/f4-01-volumen.sql`.
+- **Volumen observado.** La consulta `supabase db query --linked --file ...`
+  devolvió **0 proyectos y 0 artefactos** en el proyecto vinculado. La tasa de
+  conflictos es **no estimable** con una población vacía y sin serie de errores
+  por operación; no se atribuye una tasa a partir de pruebas sintéticas.
+- **Condición para revisar F4-02.** Si aparece carga real, medir en una ventana
+  definida percentiles de volumen e intentos/rechazos `P0001` antes de
+  extrapolar la decisión. El vacío actual es un resultado medido.
 
 ### F4-02 · ADR: ¿Artefacto es raíz de agregado?
 - **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F4-01
