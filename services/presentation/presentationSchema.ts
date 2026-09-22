@@ -11,6 +11,7 @@
  * (e.g. a pre-migration "Presentación Ejecutiva") the deck still renders as a
  * minimal one-slide deck instead of a blank canvas.
  */
+import type { ArtifactType } from '../../types';
 import type {
   PresentationDeck,
   PresentationSlide,
@@ -21,8 +22,7 @@ import type {
   PresentationKpiContent,
   PresentationCalloutContent,
   PresentationDiagramContent,
-  ArtifactType,
-} from '../../types';
+} from './PresentationTypes';
 
 export const PRESENTATION_SCHEMA_VERSION = '1.0.0';
 

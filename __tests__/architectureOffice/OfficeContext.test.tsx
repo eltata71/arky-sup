@@ -385,7 +385,12 @@ describe('la decisión del ARB ya no puede quedarse a medias en el peor orden', 
     arbDecisions: [],
     budget: { maxAiCalls: 40, consumedAiCalls: 0 },
     auditTrail: [],
-    createdBy: { id: 'u1', name: 'Ana', role: 'admin' },
+    // Lo escribió otra persona, y eso es parte del fixture: Ana (`u1`) es quien
+    // tiene la sesión, y desde ADR-101 (opción C) nadie firma la decisión de un
+    // encargo propio. Con `createdBy: u1` estas tres pruebas comprobaban una
+    // firma que el servidor rechaza con `42501` — el mismo defecto de fixture
+    // que tenía el recorrido E2E del comité.
+    createdBy: { id: 'u2', name: 'Bruno', role: 'architect' },
     createdAt: '2026-09-20T00:00:00.000Z',
     updatedAt: '2026-09-20T00:00:00.000Z',
     revision: 5,

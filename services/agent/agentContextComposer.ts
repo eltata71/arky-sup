@@ -30,7 +30,7 @@
 
 import type { Artifact, MemoryEntry, Project, Settings } from '../../types';
 import type { ChatMessage } from '../chat';
-import { buildBasePrompt } from '../../utils';
+import { buildBasePrompt } from '../ai';
 import {
   MEMORY_PRIORITY_WEIGHT,
   formatMemoryEntryAnnotation,

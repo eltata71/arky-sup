@@ -1,8 +1,8 @@
-import type { ChatMessage } from '../../../types';
+import type { AIConversationTurn } from '../core/AIContent';
 import { estimatePayloadSize } from './aiCallControlService';
 
 export interface BudgetedChatContext {
-  messages: ChatMessage[];
+  messages: AIConversationTurn[];
   approximateSize: number;
   truncated: boolean;
 }
@@ -12,7 +12,10 @@ export interface BudgetOptions {
   maxChars: number;
 }
 
-export function budgetChatHistory(history: ChatMessage[], options: BudgetOptions): BudgetedChatContext {
+export function budgetChatHistory(
+  history: readonly AIConversationTurn[],
+  options: BudgetOptions,
+): BudgetedChatContext {
   const relevant = history
     .filter(message => message.content.trim().length > 0)
     .slice(-options.maxMessages)

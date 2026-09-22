@@ -14,7 +14,7 @@
 
 import { MarkerType, Position, type Edge, type Node } from 'reactflow';
 import { estimateLabelDims, estimateNodeDims, LAYOUT_PRESETS, MARKER_TOKENS } from '../../lib/diagramTokens';
-import type { DiagramDensity } from '../../lib/diagram';
+import type { DiagramDensity, NodeShape } from '../../lib/diagram';
 import { inferDirection, layoutIR } from '../../lib/layoutEngine';
 import { separateGroupClusters } from '../../services/diagram/groupZoneSeparation';
 import { computeEdgeLabelSlots } from '../../services/diagram/edgeLabelSlots';
@@ -119,7 +119,7 @@ export const calculateLayout = (nodes: Node[], edges: Edge[], direction: 'TB' | 
                 kind: String((node.data as { kind?: string; type?: string })?.kind ?? (node.data as { type?: string })?.type ?? 'Component'),
                 description: String((node.data as { description?: string })?.description ?? '') || undefined,
                 group: (node.data as { group?: string })?.group,
-                shape: (node.data as { shape?: import('../../types').NodeShape })?.shape,
+                shape: (node.data as { shape?: NodeShape })?.shape,
             })),
             edges: edges.map((edge) => ({
                 id: edge.id,

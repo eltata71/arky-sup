@@ -1,5 +1,5 @@
 import { Settings } from '../../../types';
-import type { ChatMessage } from '../../../types';
+import type { AIConversationTurn } from '../core/AIContent';
 import { cleanJsonString } from '../../../utils';
 import { aiGateway } from './aiGateway';
 import { AIServiceError, classifyAIError } from '../errors';
@@ -169,7 +169,7 @@ function createProxyError(response: Response, data: GeminiProxyErrorResponse, re
   return classifyAIError({ status: response.status, message: JSON.stringify(data), retryAfterMs });
 }
 
-function normalizeGuidedMessages(history: ChatMessage[]): ChatMessage[] {
+function normalizeGuidedMessages(history: readonly AIConversationTurn[]): AIConversationTurn[] {
   const budgeted = budgetChatHistory(history, GUIDED_HISTORY_BUDGET).messages;
   return budgeted
     .filter(message => !message.content.startsWith('[Contexto del Sistema]'))
@@ -281,7 +281,7 @@ async function callDirectGemini(modelId: string, contents: { role: string; parts
   return result.text;
 }
 
-export async function sendGuidedProjectCreationMessage(history: ChatMessage[], userMessage: string, settings: Settings, signal?: AbortSignal): Promise<GuidedCreationResult> {
+export async function sendGuidedProjectCreationMessage(history: readonly AIConversationTurn[], userMessage: string, settings: Settings, signal?: AbortSignal): Promise<GuidedCreationResult> {
   const normalizedMessages = normalizeGuidedMessages(history);
   const model = resolveEffectiveModel('default', settings);
   const contents = normalizedMessages.map(message => ({

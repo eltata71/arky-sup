@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   cleanJsonString,
-  buildGlobalPrompt,
-  buildBasePrompt,
-  buildArtifactsContext,
-  buildSiblingDiagramsPromptBlock,
   getLatestArtifacts,
   groupArtifactsByView,
   findLatestArtifactByName,
@@ -12,6 +8,12 @@ import {
   getFileIcon,
   MemoryCache,
 } from '../utils';
+import {
+  buildGlobalPrompt,
+  buildBasePrompt,
+  buildArtifactsContext,
+  buildSiblingDiagramsPromptBlock,
+} from '../services/ai/prompts/projectPrompts';
 import { Artifact, Settings, Project } from '../types';
 
 // --- Test Helpers ---
@@ -494,7 +496,7 @@ describe('MemoryCache', () => {
 // buildArtifactsContext — cross-artifact content excerpts (round 2 Top 5)
 // ---------------------------------------------------------------------------
 
-import { buildArtifactExcerpt, selectExcerptCandidates } from '../utils';
+import { buildArtifactExcerpt, selectExcerptCandidates } from '../services/ai/prompts/projectPrompts';
 
 describe('buildArtifactExcerpt', () => {
   it('strips fenced diagram/code blocks and keeps the prose', () => {

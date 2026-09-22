@@ -34,7 +34,11 @@ import {
   type CreateEngagementCommand,
   type OfficeOperationResult,
 } from '../services/architectureOffice/application/engagementOperations';
-import { canActAsArb } from '../services/architectureOffice/OfficeArbService';
+import {
+  canActAsArb,
+  describeArbDecisionEligibility,
+  type ArbDecisionEligibility,
+} from '../services/architectureOffice/OfficeArbService';
 import {
   type OfficeActor,
   type OfficeArbVerdict,
@@ -62,6 +66,11 @@ interface OfficeContextType {
   isLoading: boolean;
   /** True when the signed-in user may sit on the review board. */
   canApprove: boolean;
+  /**
+   * Y si puede firmar **este** encargo, que no es la misma pregunta: el autor
+   * no decide lo suyo aunque tenga el permiso (ADR-101, opción C).
+   */
+  arbEligibility: (engagement: OfficeEngagement) => ArbDecisionEligibility;
 
   loadEngagements: (projectId: string) => Promise<void>;
   getEngagement: (engagementId: string) => OfficeEngagement | undefined;
@@ -173,6 +182,11 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }), [user, profile]);
 
   const canApprove = canActAsArb(actor);
+
+  const arbEligibility = useCallback(
+    (engagement: OfficeEngagement) => describeArbDecisionEligibility(engagement, actor),
+    [actor],
+  );
 
   const byRecency = (a: OfficeEngagement, b: OfficeEngagement): number =>
     b.updatedAt.localeCompare(a.updatedAt);
@@ -405,6 +419,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     runningEngagementIds,
     isLoading,
     canApprove,
+    arbEligibility,
     loadEngagements,
     getEngagement,
     listEngagementsForProject,
@@ -416,7 +431,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     decideEngagement,
     deleteEngagement,
   }), [
-    engagements, runningEngagementIds, isLoading, canApprove,
+    engagements, runningEngagementIds, isLoading, canApprove, arbEligibility,
     loadEngagements, getEngagement, listEngagementsForProject,
     createEngagement, approveCharter, runEngagementNow, cancelRun,
     evaluateGates, decideEngagement, deleteEngagement,

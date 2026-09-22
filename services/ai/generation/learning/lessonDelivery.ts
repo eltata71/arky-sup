@@ -9,7 +9,7 @@
 
 import type { Settings } from '../../../../types';
 import type { StudentContext } from '../../../../types/lms';
-import { buildLMSTutorPersona } from '../../../../utils';
+import { buildLMSTutorPersona } from '../../prompts/projectPrompts';
 import { aiGateway } from '../aiGateway';
 import { resolveModelForSettings } from '../../catalog';
 

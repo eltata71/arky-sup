@@ -4,6 +4,7 @@ import {
   attachGateAssessment,
   canActAsArb,
   decideEngagement,
+  describeArbDecisionEligibility,
 } from '../../services/architectureOffice/OfficeArbService';
 import {
   DEFAULT_OFFICE_BUDGET,
@@ -125,6 +126,56 @@ describe('OfficeArbService — board decision', () => {
     );
     expect(result.ok).toBe(false);
     expect(result.reason).toMatch(/administrador/i);
+  });
+
+  /**
+   * Quién puede firmar **este** encargo, que no es quién puede firmar.
+   *
+   * El servidor rechaza con `42501` que el autor decida lo suyo desde F2-03
+   * (opción C, ADR-101). La pantalla seguía leyendo sólo el permiso, así que
+   * ofrecía «Aprobar entrega» habilitado a quien iba a recibir ese error —y el
+   * único sitio donde se notó fue un recorrido E2E, cuatro fases después.
+   */
+  describe('elegibilidad por encargo', () => {
+    const boardMember: OfficeActor = { ...ADMIN };
+    const authored = (author: OfficeActor): OfficeEngagement =>
+      engagement('awaiting-arb', { gateAssessment: assessment('pass'), createdBy: author });
+
+    it('deja firmar a un miembro del comité que no lo escribió', () => {
+      expect(describeArbDecisionEligibility(authored(AUTHOR), boardMember))
+        .toEqual({ allowed: true });
+    });
+
+    it('se lo niega al autor aunque tenga el permiso', () => {
+      // El caso que importa: un `reviewer`, `admin` o `superadmin` mirando un
+      // encargo suyo. `canActAsArb` dice que sí y el servidor dice que no.
+      expect(canActAsArb(boardMember)).toBe(true);
+      expect(describeArbDecisionEligibility(authored(boardMember), boardMember))
+        .toEqual({ allowed: false, reason: 'own-engagement' });
+    });
+
+    it('nombra la falta de permiso antes que la autoría cuando faltan las dos', () => {
+      // Precedencia deliberada: no tener el permiso es la razón más general, y
+      // es la que sigue siendo cierta si el encargo cambia de autor.
+      expect(describeArbDecisionEligibility(authored(AUTHOR), AUTHOR))
+        .toEqual({ allowed: false, reason: 'missing-permission' });
+    });
+
+    it('falla cerrado sin sesión', () => {
+      expect(describeArbDecisionEligibility(authored(AUTHOR), null))
+        .toEqual({ allowed: false, reason: 'missing-permission' });
+    });
+
+    it('la regla rechaza al autor antes de tocar la red, y lo dice con sus palabras', () => {
+      const result = decideEngagement(authored(boardMember), {
+        verdict: 'approved', rationale: '', actor: boardMember,
+      });
+      expect(result.ok).toBe(false);
+      expect(result.reason).toMatch(/no firma su decisión|separación de funciones/i);
+      // Y no deja una decisión a medias que alguien pueda dar por registrada.
+      expect(result.decision).toBeUndefined();
+      expect(result.engagement.status).toBe('awaiting-arb');
+    });
   });
 
   it('refuses a decision when the engagement is not before the board', () => {

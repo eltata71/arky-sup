@@ -18,7 +18,7 @@
  * caído, y gastaría tokens en cada autoguardado.
  */
 
-import type { ChatMessage } from '../../types';
+import type { ChatMessage } from './ChatTypes';
 import { observabilityService } from '../observability';
 // The leaf, not the compactor: this module is reachable from the boot path and
 // `chatCompactor` imports the AI layer. See `compactionDigest.ts`.

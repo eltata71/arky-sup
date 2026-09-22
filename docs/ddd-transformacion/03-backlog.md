@@ -301,7 +301,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   se registra lo que se acaba de ver, fechado, y a partir de ahí sólo baja.
 
 ### F3-07 · Deshacer el reexportador `types.ts`
-- **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F3-02
+- **Prioridad** P0 · **Tamaño** L · **Estado** `parcial — lo que no depende de D-4, hecho` · **Depende de** F3-02
 - **Problema.** Seis de los once ciclos y el salto del componente de dominio de
   nueve a veintisiete módulos salen de un fichero: `types.ts` reexporta
   agregados desde el contexto de cada uno, y lo importan 25 de los 34 módulos.
@@ -314,9 +314,25 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   no empeora.
 - **Por qué antes que la fase 5.** No toca comportamiento: mueve declaraciones.
   El núcleo de nueve módulos cuesta estrangular un motor de 5 400 líneas.
+- **Hecho (2026-09-22).** Cuatro de los seis ciclos. Al medir los consumidores
+  resultó que el andamio ya no sostenía nada: las **19 declaraciones de diagrama
+  reexportadas no tenían un solo consumidor**, y de presentación, revisión y
+  chat los únicos consumidores eran **los propios módulos dueños**, importando
+  sus tipos por la raíz del repositorio en vez de por el fichero de al lado.
+  Se repuntaron 11 ficheros y se retiraron los cuatro bloques.
+- **Lo que falta, y por qué no es repuntar imports.** `Artifact` (178 ficheros)
+  y `Project` (133). Repuntarlos cambiaría un ciclo contra `types.ts` por uno
+  **entre dos contextos de dominio reales** —`services/artifacts` necesita
+  `Project` y `services/architectureProjects` necesita `Artifact`—, que es
+  justo lo que `moduleBoundaries.test.ts` afirma que no puede pasar. Debajo
+  está la frontera del agregado Proyecto–Artefacto: **bloqueado por D-4, que
+  decide F4-02 con los datos de F4-01.**
+- **Efecto medido.** 11 → 7 ciclos, 7 → 4 pares ascendentes, 68 → 66 pares con
+  import profundo. El componente de 27 no se mueve: `types.ts` sigue dentro por
+  esas dos aristas, y arrastra a `lib`.
 
 ### F3-08 · `utils.ts` no es un fichero de utilidades
-- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F3-02
+- **Prioridad** P1 · **Tamaño** M · **Estado** `completada` · **Depende de** F3-02
 - **Problema.** `buildGlobalPrompt`, `buildBasePrompt`, `buildArtifactsContext` y
   `buildSiblingDiagramsPromptBlock` son composición de prompts —capa de IA—
   escrita en la raíz del repositorio, y por eso el fichero importa `services/ai`
@@ -325,6 +341,16 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Aceptación.** La composición de prompts vive en `services/ai`; lo que quede
   en `utils.ts` no alcanza ningún módulo de dominio.
 - **Riesgo.** Lo importan diez módulos: es una migración, no un renombrado.
+- **Hecho (2026-09-22).** 290 líneas a `services/ai/prompts/projectPrompts.ts`,
+  seis consumidores repuntados. El riesgo resultó menor de lo temido: los diez
+  módulos importan `utils.ts`, pero sólo seis ficheros importaban **estas**
+  funciones. Desaparecen los dos pares ascendentes y el ciclo
+  `services/ai <-> utils.ts`.
+- **El único número que sube.** `services (raíz) -> services/ai`: 16 → 17,
+  porque `geminiService` importaba esta composición desde `utils.ts` y ahora la
+  importa de donde vive. Se cambia un import dentro de un ciclo **ya
+  registrado** —que F5-01 disuelve— por dos violaciones de capa que ninguna
+  fase tenía planeado arreglar. La razón queda escrita junto al presupuesto.
 
 ### F3-03 · Declarar dependencias permitidas entre contextos
 - **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F3-01

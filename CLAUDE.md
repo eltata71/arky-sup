@@ -174,9 +174,11 @@ arkypro-1.0/
 ├── index.tsx               # React entry: provider tree + boot recovery fallback
 ├── App.tsx                 # Router, AppRail/MobileBottomNav shell, global commands
 ├── constants.ts            # Project/artifact templates, Kanban columns (~800 lines)
-├── types.ts                # The shared kernel (339 lines) — Settings, MemoryEntry, templates.
-│                          # Every aggregate lives in its context and is re-exported here.
-├── utils.ts                # Shared utility helpers
+├── types.ts                # The shared kernel — Settings, MemoryEntry, templates. Every
+│                          # aggregate lives in its context; sólo `Artifact` y `Project` se
+│                          # reexportan aquí todavía, y es lo que D-4 decide (F3-07).
+├── utils.ts                # Shared utility helpers — JSON extraction, artifact grouping, a
+│                          # memory cache. **No prompt composition**: eso es `services/ai/prompts/`
 ├── env.d.ts                # Ambient declarations for `import.meta.env`
 ├── vite.config.ts          # Vite + Vitest config (port 3000, `@` alias, manualChunks)
 ├── vitest.setup.dom.ts     # `dom` project setup: jest-dom matchers + auto `cleanup()`
@@ -495,14 +497,24 @@ number to zero. The rule that did it every time is the one already written
 above: a contract with no behaviour moves down to a leaf.
 
 **Pero la capa de fundación son dos carpetas y dos ficheros de la raíz, y ésos
-sí suben — 7 pares, 9 imports** (F3-02, ADR-105). La frase de arriba decía «la
+subían — 7 pares, 9 imports** (F3-02, ADR-105). La frase de arriba decía «la
 capa de fundación» y era cierta sólo de las carpetas, porque el gate no abría
-`types.ts` ni `utils.ts`. `types.ts` es exactamente el mismo defecto que
-`lib/validation/` a mayor escala: un reexportador que sube a cinco contextos de
-dominio, sólo que a éste sí lo importa medio repositorio. `utils.ts` sube a
-`services/ai` y `services/memory` porque lo que contiene es composición de
-prompts. La regla que los arregla vuelve a ser la misma, y por eso los dos
-trabajos están en el backlog como F3-07 y F3-08.
+`types.ts` ni `utils.ts`. `types.ts` era exactamente el mismo defecto que
+`lib/validation/` a mayor escala: un reexportador que subía a cinco contextos de
+dominio, sólo que a éste sí lo importa medio repositorio.
+
+**Quedan dos, y la misma regla retiró los otros cinco.** F3-07 midió los
+consumidores antes de mover nada, y el andamio no sostenía casi nada: las 19
+declaraciones de diagrama reexportadas no tenían **un solo consumidor**, y las
+de presentación, revisión y chat sólo las importaban los propios módulos dueños
+—por la raíz del repositorio en vez de por el fichero de al lado—. F3-08 sacó de
+`utils.ts` las 290 líneas que componen prompts de proyecto, que son capa de IA
+escrita bajo un nombre que promete utilidades; están en
+`services/ai/prompts/projectPrompts.ts`, y de paso **dos ficheros de IA salieron
+del arranque**, porque lo que la fundación importa el arranque lo descarga
+(`bootPathStaysLight.test.ts` lo mide). Los dos pares que siguen, `Artifact` y
+`Project`, no son andamio: son la frontera del agregado Proyecto–Artefacto y
+esperan a D-4.
 
 Two patterns did the breaking, and they are the ones to reach for next time:
 
@@ -558,12 +570,12 @@ bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, adviso
 | Check | Result |
 |---|---|
 | `npm run typecheck` | clean |
-| `npm run check:module-boundaries` | **11 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**, medidos el 2026-09-21 con el alcance completo (F3-02, ADR-105) — antes eran 4 y 3+9, sobre un grafo al que le faltaban `import('…')` y los ficheros de la raíz. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y él importa seis, así que lo cierra entero y arrastra dentro a `lib` y `utils`. **7 upward pairs** (9 imports), todos desde `types.ts` y `utils.ts` — `lib/` y `utils/` siguen en cero, y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
+| `npm run check:module-boundaries` | **6 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**. El alcance completo (F3-02, ADR-105) hizo visibles 11 ciclos y 7 pares ascendentes el 2026-09-21; F3-07 y F3-08 retiraron cinco ciclos y cinco pares al día siguiente, y casi todo era andamio: `types.ts` reexportaba 19 declaraciones de diagrama **sin un solo consumidor**, y las de presentación, revisión y chat sólo las usaban los módulos dueños. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y le quedan **dos** aristas de salida, `Artifact` y `Project`, con las que cierra el grafo entero y arrastra dentro a `lib`. No se repuntan con un codemod: `services/artifacts` necesita el proyecto y `services/architectureProjects` necesita el artefacto, así que cambiar el ciclo contra `types.ts` por uno entre dos contextos de dominio sería peor — debajo está la frontera del agregado Proyecto–Artefacto (D-4, la decide F4-02 con los datos de F4-01). **2 upward pairs**, las dos de `types.ts`; `lib/` y `utils/` siguen en cero y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
 | `npm run check:module-size` | clean, y `services/geminiService.ts` baja en las dos tablas: 5 499 → 5 413 líneas y 276 306 → 272 294 bytes. Bajó **mientras** absorbía el enrutado: las dos declaraciones de herramienta en dialecto de Google y la traducción a `AIRequest` salieron del monolito |
 | `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
 | `npm run check:any-budget` | 23 `any` types, budget 23 (eran 38) |
-| `npm run lint` | **clean — 0 errors, 0 warnings.** Keep it that way: a warning is a finding nobody will read once there are ten of them |
-| `npm run test:ci` | **456 ficheros (455 + 1 omitido), 4 359 pruebas pasadas y 64 omitidas**, bajo **Vitest 5**. Incluye 7 nuevas: la detección del muro de *Vercel Authentication* con los cuerpos reales del despliegue #46, y sus dos casos negativos —un 401 legítimo del proxy y el HTML del SPA capturando `/api/*` deben seguir contándose como fallo |
+| `npm run lint` | **clean — 0 errors, 0 warnings**, y volvió a serlo el 2026-09-22: `OfficeEngagementRunner.ts` importaba dos tipos que sólo reexportaba, así que arrastraba dos avisos que `eslint .` no hace fallar. Keep it that way: a warning is a finding nobody will read once there are ten of them |
+| `npm run test:ci` | **456 ficheros y 4 419 pruebas, todas pasando**, medido el 2026-09-22 sobre Node 24. Sube desde 4 359 con las de F3-02 (alcance del verificador), la elegibilidad del comité y el fixture E2E de dos identidades. **El entorno local también se arregló**: con Node 20 el SDK de Supabase no encuentra `WebSocket` nativo y `supabaseIdentityAdapter` fallaba una prueba que en CI pasaba — `.nvmrc` pide 24 y ahora eso es lo que hay instalado |
 | `npm run test:coverage` | 65,20 % statements / 56,53 branches / 57,64 functions / 67,03 lines — por encima de todos los suelos de `vite.config.ts`, y de los cuatro valores anteriores |
 | `npm run check:bundle-budget` | **eager 439,1 KB gz de 450; entrada 200,3** — sube 7,5 desde los 431,6 de la ola anterior, repartidos entre las subidas de dependencia y las hojas del guardrail. El margen es de **10,9 KB gz**, y conviene leerlo como lo que es: dos de las subidas que Dependabot propone como «minor» se lo comen entero (ver *Dependencias que no pueden subir*) |
 | `npm run check:bundle-secrets` | clean — y ahora conoce `sk-ant-`, que faltaba mientras Anthropic ya era un proveedor embarcado: una clave suya en el bundle se reportaba como «OpenAI-style» o, con sufijo corto, no se reportaba |
@@ -2130,6 +2142,19 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 - Do not make an agent's artifact assignments, its reviewer duties or its
   orchestration role configurable from a screen. That half of the card is
   governance.
+- Do not offer an ARB decision control by reading the permission alone. El autor
+  no firma su propio encargo —el servidor lo rechaza con `42501`— y la pregunta
+  es «¿puede *este* actor firmar *este* encargo?»:
+  `describeArbDecisionEligibility`, que devuelve el motivo para que la pantalla
+  elija la frase y no vuelva a decidir la regla.
+- Do not re-export a type from `types.ts` «para que los imports existentes sigan
+  funcionando». Eso creó cuatro ciclos y tres imports ascendentes que
+  sobrevivieron a los imports que iban a proteger — 19 de las declaraciones
+  reexportadas no tenían **un solo consumidor**. Importa del contexto dueño.
+- Do not put prompt composition in `utils.ts`, ni en ningún fichero de la raíz.
+  Lo que la capa de fundación importa, el arranque lo descarga: esas 290 líneas
+  metían dos ficheros de `services/ai` en el chunk eager, y
+  `bootPathStaysLight.test.ts` es lo que lo mide.
 - Do not answer "which agent?" anywhere but `agentRegistry`. Filtering
   `OFFICE_AGENT_PERSONAS` inline is what produced two routing tables that
   disagreed; `agentRegistrySingleDoor.test.ts` scans for it.

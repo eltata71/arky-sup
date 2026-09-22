@@ -23,6 +23,16 @@ const assessment = (overallStatus: OfficeQualityAssessment['overallStatus']): Of
   }],
 });
 
+/**
+ * Las tres respuestas de `describeArbDecisionEligibility`, escritas como datos.
+ *
+ * El panel no vuelve a decidir quién puede firmar: recibe el veredicto y elige
+ * la frase. Por eso aquí son literales y no una llamada a la regla — si la
+ * prueba la invocara, dejaría de comprobar que el componente sabe pintar los
+ * dos motivos y pasaría a comprobar la regla por segunda vez.
+ */
+const ALLOWED = { allowed: true } as const;
+
 const engagement = (
   status: OfficeEngagementStatus,
   gateAssessment?: OfficeQualityAssessment,
@@ -58,7 +68,7 @@ describe('ArbDecisionPanel', () => {
     render(
       <ArbDecisionPanel
         engagement={engagement('awaiting-arb', assessment('blocked'))}
-        canApprove
+        eligibility={ALLOWED}
         onDecide={vi.fn()}
         onReevaluateGates={vi.fn()}
       />,
@@ -70,7 +80,7 @@ describe('ArbDecisionPanel', () => {
     const { rerender } = render(
       <ArbDecisionPanel
         engagement={engagement('awaiting-arb', assessment('conditional'))}
-        canApprove
+        eligibility={ALLOWED}
         onDecide={vi.fn()}
         onReevaluateGates={vi.fn()}
       />,
@@ -80,7 +90,7 @@ describe('ArbDecisionPanel', () => {
     rerender(
       <ArbDecisionPanel
         engagement={engagement('awaiting-arb', assessment('pass'))}
-        canApprove
+        eligibility={ALLOWED}
         onDecide={vi.fn()}
         onReevaluateGates={vi.fn()}
       />,
@@ -93,7 +103,7 @@ describe('ArbDecisionPanel', () => {
     render(
       <ArbDecisionPanel
         engagement={engagement('awaiting-arb', assessment('blocked'))}
-        canApprove
+        eligibility={ALLOWED}
         onDecide={onDecide}
         onReevaluateGates={vi.fn()}
       />,
@@ -101,16 +111,34 @@ describe('ArbDecisionPanel', () => {
     expect(screen.getByRole('button', { name: 'Aprobar entrega' })).toBeDisabled();
   });
 
-  it('explains separation of duties to a non-admin instead of offering the buttons', () => {
+  it('dice al autor que su entregable lo firma otro, en vez de ofrecerle el botón', () => {
+    // El defecto que esto cierra: el panel leía sólo el permiso, así que a un
+    // `reviewer`, `admin` o `superadmin` mirando un encargo **suyo** le ofrecía
+    // «Aprobar entrega» habilitado para una llamada que el servidor rechaza
+    // siempre con `42501` (ADR-101, opción C). Lo único que lo notó fue un
+    // recorrido E2E, cuatro fases después.
     render(
       <ArbDecisionPanel
         engagement={engagement('awaiting-arb', assessment('pass'))}
-        canApprove={false}
+        eligibility={{ allowed: false, reason: 'own-engagement' }}
         onDecide={vi.fn()}
         onReevaluateGates={vi.fn()}
       />,
     );
-    expect(screen.getByText(/Solo un administrador/i)).toBeInTheDocument();
+    expect(screen.getByText(/lo creaste tú/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aprobar entrega' })).not.toBeInTheDocument();
+  });
+
+  it('explains separation of duties to a non-admin instead of offering the buttons', () => {
+    render(
+      <ArbDecisionPanel
+        engagement={engagement('awaiting-arb', assessment('pass'))}
+        eligibility={{ allowed: false, reason: 'missing-permission' }}
+        onDecide={vi.fn()}
+        onReevaluateGates={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Solo un miembro del comité/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aprobar entrega' })).not.toBeInTheDocument();
   });
 
@@ -119,7 +147,7 @@ describe('ArbDecisionPanel', () => {
     render(
       <ArbDecisionPanel
         engagement={engagement('awaiting-arb', assessment('pass'))}
-        canApprove
+        eligibility={ALLOWED}
         onDecide={onDecide}
         onReevaluateGates={vi.fn()}
       />,
@@ -142,7 +170,7 @@ describe('ArbDecisionPanel', () => {
     render(
       <ArbDecisionPanel
         engagement={engagement('in-progress', assessment('pass'))}
-        canApprove
+        eligibility={ALLOWED}
         onDecide={vi.fn()}
         onReevaluateGates={vi.fn()}
       />,
@@ -156,7 +184,7 @@ describe('ArbDecisionPanel', () => {
     render(
       <ArbDecisionPanel
         engagement={engagement('awaiting-arb', assessment('pass'))}
-        canApprove
+        eligibility={ALLOWED}
         onDecide={vi.fn()}
         onReevaluateGates={onReevaluateGates}
       />,

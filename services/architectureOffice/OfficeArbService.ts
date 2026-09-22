@@ -59,6 +59,44 @@ const fail = (engagement: OfficeEngagement, reason: string): OfficeTransitionRes
 export const canActAsArb = (actor: OfficeActor | null | undefined): boolean =>
   can(actor, 'arb:decide');
 
+/**
+ * Por qué esta persona no puede firmar **este** encargo.
+ *
+ * `canActAsArb` responde por el permiso y nada más, y con eso no basta desde
+ * F2-03 (opción C, ADR-101): el servidor rechaza con `42501` que el autor firme
+ * su propio encargo, tenga el permiso que tenga. La pantalla seguía leyendo
+ * sólo el permiso, así que a cualquier `reviewer`, `admin` o `superadmin`
+ * mirando un encargo suyo se le ofrecía un botón habilitado que iba a fallar
+ * siempre — y el único sitio donde eso se notó fue un recorrido E2E.
+ *
+ * `lib/authz` decide lo que se **muestra** y PostgreSQL lo que se **permite**;
+ * esa división se conserva y no es lo que estaba mal. Lo que estaba mal es que
+ * la pantalla mostrara como disponible una acción cuya imposibilidad ya conocía.
+ *
+ * Devuelve un motivo en vez de un booleano porque las dos negativas se explican
+ * distinto: a quien no tiene el permiso se le dice que el comité decide; a quien
+ * escribió el encargo se le dice que no firma lo suyo. Un `false` obligaría a la
+ * pantalla a adivinar cuál de las dos es, que es como se acaba escribiendo la
+ * regla por segunda vez.
+ */
+export type ArbDecisionEligibility =
+  | { readonly allowed: true }
+  | { readonly allowed: false; readonly reason: 'missing-permission' | 'own-engagement' };
+
+export const describeArbDecisionEligibility = (
+  engagement: OfficeEngagement,
+  actor: OfficeActor | null | undefined,
+): ArbDecisionEligibility => {
+  if (!canActAsArb(actor)) return { allowed: false, reason: 'missing-permission' };
+  // `createdBy.id` es el equivalente en el documento de `owner_id`, que es lo
+  // que el servidor compara. Sin actor no hay identidad que comparar y la
+  // primera guarda ya ha devuelto: `can()` falla cerrado sobre un actor nulo.
+  if (actor && engagement.createdBy.id === actor.id) {
+    return { allowed: false, reason: 'own-engagement' };
+  }
+  return { allowed: true };
+};
+
 // ---------------------------------------------------------------------------
 // Charter approval
 // ---------------------------------------------------------------------------
@@ -134,8 +172,18 @@ export const decideEngagement = (
   if (!DECIDABLE_FROM.includes(engagement.status)) {
     return fail(engagement, `El encargo no está en revisión del comité (estado actual: "${engagement.status}").`);
   }
-  if (!canActAsArb(input.actor)) {
-    return fail(engagement, 'Solo un administrador puede emitir una decisión del comité de arquitectura.');
+  const eligibility = describeArbDecisionEligibility(engagement, input.actor);
+  if (!eligibility.allowed) {
+    // Se rechaza aquí, antes de tocar la red, por lo mismo que los handoffs
+    // imposibles no se emiten: una negativa que el cliente ya puede dar cuesta
+    // cero, y la del servidor llega como un error de PostgreSQL que hay que
+    // traducir.
+    return fail(
+      engagement,
+      eligibility.reason === 'own-engagement'
+        ? 'Quien crea un entregable no firma su decisión: la separación de funciones la exige el comité.'
+        : 'Solo un administrador puede emitir una decisión del comité de arquitectura.',
+    );
   }
 
   const rationale = input.rationale.trim();

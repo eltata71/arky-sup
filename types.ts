@@ -16,15 +16,30 @@
  *   - the `Project` aggregate        → `services/architectureProjects/`
  *   - the Training Center            → `types/lms.ts` (a dead duplicate, deleted)
  *
- * Each is still re-exported below so existing imports keep working, but the
- * consumers were repointed, and new code should import from the module.
+ * **Y las reexportaciones que quedaban detrás se retiraron en F3-07.** Estaban
+ * pensadas como andamio temporal —«para que los imports existentes sigan
+ * funcionando»—, y al medirlas resultó que el andamio ya no sostenía nada: las
+ * 19 declaraciones de diagrama no tenían **un solo consumidor**, y de las de
+ * presentación, revisión y chat los únicos consumidores eran los propios
+ * módulos dueños, importando sus tipos por la raíz del repositorio en vez de
+ * por su fichero de al lado. Mientras existieron, este fichero importaba de
+ * cuatro módulos que a su vez lo importaban: cuatro ciclos y tres imports
+ * ascendentes que ningún gate veía, porque el verificador no abría la raíz
+ * (F3-02, ADR-105).
+ *
+ * **Quedan dos, `Artifact` y `Project`, y no son andamio.** `Project` contiene
+ * artefactos y el contexto de artefactos necesita el proyecto: repuntar sus
+ * imports cambiaría un ciclo contra este fichero por uno entre dos contextos
+ * de dominio reales, que es peor. Lo que hay debajo es la frontera del
+ * agregado Proyecto–Artefacto, o sea la decisión D-4 que resuelve F4-02.
  *
  * What is left is the part that really does cross every context: the artifact
  * and the words used to classify it, the user's settings, a memory entry, and
  * the generation trace — which stays because `lib/artifacts/contracts.ts` and
  * `utils/artifactExploration.ts` read it, and the foundation layer may not
  * import the domain. Keep this file that shape: a type that only one context
- * needs belongs in that context.
+ * needs belongs in that context, y no se reexporta desde aquí «por
+ * compatibilidad»: eso es lo que creó los cuatro ciclos.
  */
 
 import type { ArtifactGenerationContract } from './services/artifacts/artifactGenerationContract';
@@ -139,17 +154,6 @@ export type ArchitecturalView =
   | 'Vista SDD'; // Specification-Driven Development artifacts
 
 
-// The diagram vocabulary lives with the pipeline that speaks it, in
-// `services/diagram/DiagramIRTypes.ts`. Re-exported for existing callers.
-export type {
-  DiagramAudience,
-  DiagramDensity,
-  DiagramErrorRecord,
-  DiagramFailureReason,
-  DiagramTheme,
-} from './lib/diagram';
-
-
 /**
  * El agregado Artefacto vive en su contexto.
  *
@@ -174,19 +178,6 @@ export type {
   ArtifactGenerationTraceStatus,
   ArtifactGenerationTraceStep,
 } from './services/artifacts/ArtifactTypes';
-
-export type {
-  ArtifactComment,
-  ArtifactCommentAnchor,
-  ArtifactCommentAuthor,
-  ArtifactCommentReply,
-  ArtifactCommentStatus,
-  ArtifactCommentVisibility,
-  ArtifactReviewDecision,
-  ArtifactReviewRecordSource,
-  ArtifactReviewStatus,
-  ArtifactReviewSuggestion,
-} from './services/review/ReviewTypes';
 
 /**
  * The Proyecto de Arquitectura now has a module: `services/architectureProjects`.
@@ -274,7 +265,6 @@ export interface CustomArtifactRecommendation {
 
 // The chat model lives with the module that owns it, in
 // `services/chat/ChatTypes.ts`. Re-exported for existing callers.
-export type { ChatMessage, ChatMessageMeta } from './services/chat/ChatTypes';
 
 export type ConsistencySuggestion = {
   id: string;
@@ -288,36 +278,6 @@ export type ConsistencySuggestion = {
   }[];
 };
 
-/**
- * The diagram and presentation models moved to the contexts that own them:
- * `services/diagram/DiagramIRTypes.ts` and
- * `services/presentation/PresentationTypes.ts`. Re-exported here so existing
- * imports keep working; new code should import from the module.
- */
-export type {
-  DiagramCallout,
-  DiagramEdgeData,
-  DiagramIR,
-  DiagramIREdge,
-  DiagramIRGroup,
-  DiagramIRNode,
-  DiagramNarrative,
-  DiagramNodeData,
-  DiagramScene,
-  NodeShape,
-} from './lib/diagram';
-export type {
-  PresentationBlockContent,
-  PresentationBlockKind,
-  PresentationCalloutContent,
-  PresentationContentBlock,
-  PresentationDeck,
-  PresentationDiagramContent,
-  PresentationKpiContent,
-  PresentationLayout,
-  PresentationSlide,
-  PresentationTableContent,
-} from './services/presentation';
 
 export type GroupedArtifacts = { [view: string]: import('./services/artifacts/ArtifactTypes').Artifact[] };
 
