@@ -21,7 +21,7 @@ import PresentationMode from './PresentationMode';
 import { XMarkIcon, ChevronDownIcon, ArrowUturnLeftIcon, ArrowPathIcon, ViewfinderCircleIcon, PresentationChartBarIcon, SparklesIcon } from './Icons';
 import { Dropdown, type DropdownItem } from './ui/Dropdown';
 import { CANVAS_BACKGROUND, MARKER_TOKENS } from '../lib/diagramTokens';
-import type { DiagramDensity, DiagramTheme } from '../lib/diagram';
+import type { DiagramDensity, DiagramIR, DiagramTheme } from '../lib/diagram';
 import type { EdgeSemanticType, NodeSemanticType } from '../lib/diagramCategoryLabels';
 import { EdgeInspector, NodeInspector } from './diagram/DiagramInspectorSection';
 import { applySmartFit } from '../services/diagram/smartFit';
@@ -100,7 +100,7 @@ interface ReactFlowCanvasProps {
   presentation?: {
     title?: string;
     summary?: string;
-    ir?: import('../types').DiagramIR;
+    ir?: DiagramIR;
   };
   /**
    * Whether the React Flow minimap is visible. Hidden by default so the
