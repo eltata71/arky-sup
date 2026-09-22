@@ -17,6 +17,7 @@ import type { Project } from '../../services/architectureProjects';
 import { architectureProjectRepository } from '../../services/architectureProjects/ArchitectureProjectRepository';
 import {
   createArchitectureProject,
+  newProjectView,
   type CreateArchitectureProjectInput,
   type CreateArchitectureProjectResult,
 } from '../../services/architectureProjects/architectureProjectFactory';
@@ -73,16 +74,23 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
     });
     if (created.outcome === 'rejected') return created;
 
-    const newProject = created.project;
+    const newProject = newProjectView(created.project);
 
     // Optimistic UI update with an explicit remote-pending state.
     setProjects(prev => [...prev, newProject]);
     setPersistenceStatus('saving');
     setPersistenceMessage('Guardando proyecto en base de datos…');
 
-    architectureProjectRepository.create(newProject, user?.uid).then(result => {
+    architectureProjectRepository.create(created.project, user?.uid).then(result => {
       if (!handleWriteResult(result, 'Proyecto guardado en base de datos.')) {
         setProjects(prev => prev.filter(p => p.id !== newProject.id));
+        return;
+      }
+      // La revisión que la base asignó al crear: sin ella, la primera edición
+      // de un proyecto recién creado iría contra 0 y chocaría (F4-07).
+      const confirmed = result.data?.revision;
+      if (typeof confirmed === 'number') {
+        setProjects(prev => prev.map(p => (p.id === newProject.id ? { ...p, revision: confirmed } : p)));
       }
     }).catch(e => {
       observabilityService.reportError(e, {
@@ -152,18 +160,33 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
     return request;
   }, []);
 
+  /**
+   * Writes a change to a project's root.
+   *
+   * The snapshot is read from `projectsRef`, not captured inside the state
+   * updater: React only runs an updater synchronously for the first update of
+   * a render, so the second consecutive edit found no snapshot — no rollback
+   * if the write failed, and no revision to compare (F4-07; the same defect
+   * `useArtifactsState` had). The revision it sends is the one this record was
+   * read with, and the one the database confirms is written back into state,
+   * so the next edit compares against it.
+   */
   const updateProject = useCallback((id: string, updates: Partial<Omit<Project, 'id' | 'artifacts'>>) => {
-    const updatedFields = { ...updates, updatedAt: new Date().toISOString() };
-    let snapshot: Project | undefined;
-    setProjects(prev => {
-      snapshot = prev.find(p => p.id === id);
-      return prev.map(p => (p.id === id ? { ...p, ...updatedFields } : p));
-    });
+    const snapshot = projectsRef.current.find(p => p.id === id);
+    if (!snapshot) return;
+    const { revision: _revision, ...changes } = updates;
+    const updatedFields = { ...changes, updatedAt: new Date().toISOString() };
+    setProjects(prev => prev.map(p => (p.id === id ? { ...p, ...updatedFields } : p)));
     setPersistenceStatus('saving');
-    architectureProjectRepository.update(id, updatedFields, { userId: user?.uid, expectedUpdatedAt: snapshot?.updatedAt }).then(result => {
-      if (!handleWriteResult(result, 'Proyecto actualizado en base de datos.') && snapshot) {
-        const rollback = snapshot;
-        setProjects(prev => prev.map(p => (p.id === id ? rollback : p)));
+    const rollback = () => setProjects(prev => prev.map(p => (p.id === id ? snapshot : p)));
+    architectureProjectRepository.update(id, updatedFields, { userId: user?.uid, expectedRevision: snapshot.revision }).then(result => {
+      if (!handleWriteResult(result, 'Proyecto actualizado en base de datos.')) {
+        rollback();
+        return;
+      }
+      const confirmed = result.data?.revision;
+      if (typeof confirmed === 'number') {
+        setProjects(prev => prev.map(p => (p.id === id ? { ...p, revision: confirmed } : p)));
       }
     }).catch(e => {
       observabilityService.reportError(e, {
@@ -175,25 +198,18 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
         userVisible: true,
         metadata: { projectId: id },
       });
-      if (snapshot) {
-        const rollback = snapshot;
-        setProjects(prev => prev.map(p => (p.id === id ? rollback : p)));
-      }
+      rollback();
     });
   }, [user, handleWriteResult, setPersistenceStatus]);
 
   const deleteProject = useCallback((id: string) => {
-    let snapshot: Project | undefined;
-    setProjects(prev => {
-      snapshot = prev.find(p => p.id === id);
-      return prev.filter(p => p.id !== id);
-    });
+    const snapshot = projectsRef.current.find(p => p.id === id);
+    if (!snapshot) return;
+    setProjects(prev => prev.filter(p => p.id !== id));
     setPersistenceStatus('saving');
-    architectureProjectRepository.remove(id).then(result => {
-      if (!handleWriteResult(result, 'Proyecto eliminado en base de datos.') && snapshot) {
-        const rollback = snapshot;
-        setProjects(prev => (prev.some(p => p.id === id) ? prev : [...prev, rollback]));
-      }
+    const rollback = () => setProjects(prev => (prev.some(p => p.id === id) ? prev : [...prev, snapshot]));
+    architectureProjectRepository.remove(id, snapshot.revision).then(result => {
+      if (!handleWriteResult(result, 'Proyecto eliminado en base de datos.')) rollback();
     }).catch(e => {
       observabilityService.reportError(e, {
         source: 'operation',
@@ -204,10 +220,7 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
         userVisible: true,
         metadata: { projectId: id },
       });
-      if (snapshot) {
-        const rollback = snapshot;
-        setProjects(prev => (prev.some(p => p.id === id) ? prev : [...prev, rollback]));
-      }
+      rollback();
     });
   }, [handleWriteResult, setPersistenceStatus]);
 

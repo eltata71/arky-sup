@@ -1,14 +1,17 @@
 # Registro de avance y punto de reanudación
 
 **Última actualización:** 2026-09-22
-**Estado integrado:** Fase 2 completa, **fase 3 cerrada** (`09-cierre-fase-3.md`) y **fase 4 en curso** (F4-01, F4-02 y F4-03 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Estado integrado:** Fase 2 completa, **fase 3 cerrada** (`09-cierre-fase-3.md`) y **fase 4 en curso** (F4-01, F4-02, F4-03, F4-04 y F4-07 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **cierre de la fase 3** — F3-03 (dependencias
+- **Última tarea completada:** **F4-07 y F4-04** — la revisión del proyecto
+  viaja con el registro (sin mapa global ni fuga al contrato público) y el
+  Proyecto se separa en raíz (`ProjectRoot`), documento persistido y modelo de
+  lectura (`Project`). Antes: **cierre de la fase 3** — F3-03 (dependencias
   declaradas), F3-04 (presupuestos con objetivo y fecha), F3-05 (Iniciativas como
   contexto piloto) y F3-06 (puertas pequeñas). Ver `09-cierre-fase-3.md`. Antes:
   F3-07 (#51), F4-03 (#50), F4-02 (#49), F4-01 (#48).
@@ -21,10 +24,9 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** fase 4 — **F4-07** (el mapa de revisiones de
-  proyectos: la lectura ya devuelve la revisión desde F4-03, así que el `Map`
-  global puede dar paso a la revisión en el registro, como en Iniciativas) y
-  **F4-04** (separar la raíz del Proyecto del modelo de lectura con artefactos).
+- **Siguiente paso exacto:** fase 4 — **F4-05** (sacar de React la
+  coordinación de artefactos) y **F4-06** (migración por cortes verticales con
+  ruta de escritura única).
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -108,7 +110,8 @@
 | **F4-01** medir Proyecto–Artefacto | ✅ | #48. Amplificación `N:1`, contención por revisión del proyecto, borrado por omisión. Base vacía: tasa de conflictos no estimable. |
 | **F4-02** ¿Artefacto es raíz? | ✅ | ADR-106: sí. Ninguna invariante lee el contenido de dos artefactos; P-04 y A-02 son de conjunto y las sostiene el servidor. |
 | **F4-03** comandos por artefacto | ✅ | Cinco comandos + `save_project`, índice único por versión, revisión en las lecturas. 61 aserciones pgTAP. |
-| **F4-07** mapa de revisiones de proyectos | ⏳ | Tras F4-03. |
+| **F4-04** raíz, documento y modelo de lectura | ✅ | `ProjectRoot` sin artefactos; `PersistedProjectDocument`; `Project` es la vista. |
+| **F4-07** mapa de revisiones de proyectos | ✅ | Sin `Map` ni exportación; la revisión viaja en `Project.revision`. Mismo defecto del actualizador que F4-03. |
 
 ### Lo que F3-02 hizo visible
 

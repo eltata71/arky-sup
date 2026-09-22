@@ -23,7 +23,8 @@
 import { newPrefixedId } from '../../lib/ids';
 import { createMemoryEntry } from '../memory';
 import type { MemoryEntry } from '../../types';
-import type { Project } from './ArchitectureProjectTypes';
+import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
+import { toProjectView } from './projectDocumentMapper';
 
 /** Why a project could not be created. One case today; the shape is the point. */
 export type ArchitectureProjectRejection =
@@ -45,7 +46,7 @@ export type ArchitectureProjectRejection =
  * at the call site besides.
  */
 export type CreateArchitectureProjectResult =
-  | { readonly outcome: 'created'; readonly project: Project }
+  | { readonly outcome: 'created'; readonly project: ProjectRoot }
   | { readonly outcome: 'rejected'; readonly rejection: ArchitectureProjectRejection };
 
 export interface CreateArchitectureProjectInput {
@@ -140,9 +141,19 @@ export function createArchitectureProject(
       projectContextEntries: projectContext.length > 0 ? projectContext.map(stamp) : undefined,
       initialCapture: initialCapture.length > 0 ? initialCapture : undefined,
       initialCaptureEntries: initialCapture.length > 0 ? initialCapture.map(stamp) : undefined,
-      artifacts: [],
       createdAt,
       updatedAt: createdAt,
     },
   };
 }
+
+/**
+ * La primera vista de un proyecto recién creado: sin artefactos, y sabiéndolo
+ * (F4-04).
+ *
+ * La fábrica construye la **raíz**; esto es lo que la pantalla muestra de ella
+ * mientras la escritura viaja. Vive aquí, al lado de donde nace el proyecto,
+ * para que el proveedor del arranque la obtenga sin entrar por otro fichero.
+ */
+export const newProjectView = (root: ProjectRoot): Project =>
+  toProjectView(root, [], { artifactsLoaded: true, artifactIndex: [] }, 0);

@@ -17,7 +17,7 @@
 import { useCallback } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
-import type { CreateArchitectureProjectInput, Project } from '../services/architectureProjects';
+import { newProjectView, type CreateArchitectureProjectInput, type Project } from '../services/architectureProjects';
 
 export type CreateAttention = (input: CreateArchitectureProjectInput) => Project | null;
 
@@ -37,6 +37,8 @@ export const useCreateAttention = (): CreateAttention => {
       addToast(created.rejection.message, 'error');
       return null;
     }
-    return created.project;
+    // La fábrica devuelve la raíz del agregado (F4-04); la pantalla que acaba de
+    // crearla trabaja con la vista, recién nacida y sin artefactos.
+    return newProjectView(created.project);
   }, [addProject, addToast]);
 };

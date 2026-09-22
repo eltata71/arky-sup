@@ -29,8 +29,8 @@
  *    comparaba cadenas de fecha, que es una heurística: dos escrituras en el
  *    mismo milisegundo empataban. `revision` es un entero que el servidor
  *    incrementa, y la RPC rechaza la escritura cuya revisión esperada ya no es
- *    la vigente. Este repositorio recuerda la última revisión leída por
- *    proyecto, igual que los de iniciativas y encargos.
+ *    la vigente. Quien escribe la dice: viaja en el `Project` leído (F4-07),
+ *    igual que en iniciativas y encargos.
  *  - **Ya no hace falta podar el artefacto.** El límite de 1 MiB por documento
  *    era de Firestore; una fila `jsonb` admite tres órdenes de magnitud más.
  *    El plan de maquetación y la traza de generación se guardan enteros, que es
@@ -45,6 +45,7 @@ import {
   type PersistenceResult,
 } from '../persistence';
 import { callRpc } from '../adapters';
+import type { PersistedProjectDocument } from './projectDocumentMapper';
 
 /** El proyecto tal y como lo devuelve `load_project_aggregate`. */
 export interface RemoteProjectAggregate {
@@ -56,13 +57,18 @@ export interface RemoteProjectAggregate {
 /** Código que `load_project_aggregate` usa para «ese proyecto no existe». */
 const NOT_FOUND = 'P0002';
 
-const revisions = new Map<string, number>();
-
-/** La última revisión confirmada de un proyecto, o 0 si nunca se leyó. */
-export const knownProjectRevision = (projectId: string): number => revisions.get(projectId) ?? 0;
-
-/** Solo para pruebas y para el cierre de sesión. */
-export const forgetProjectRevisions = (): void => revisions.clear();
+/*
+ * F4-07 · Aquí había un `Map` global de revisiones por proyecto, y el `index.ts`
+ * del contexto lo publicaba (`knownProjectRevision`, `forgetProjectRevisions`):
+ * la caché de concurrencia era parte del contrato del módulo. Es el defecto H10
+ * que F2-10 quitó de encargos e iniciativas —el mapa recuerda la última
+ * revisión que **esta pestaña** leyó, no la del registro que la persona está
+ * viendo— y, mientras la lectura no devolvía la revisión (hasta F4-03), valía 0
+ * para todo proyecto recargado.
+ *
+ * Ahora la revisión viaja en el `Project` y quien escribe dice contra cuál. Este
+ * repositorio no recuerda nada.
+ */
 
 const asAggregate = (value: unknown): RemoteProjectAggregate | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -72,37 +78,31 @@ const asAggregate = (value: unknown): RemoteProjectAggregate | null => {
   return { document: row, artifacts, revision };
 };
 
-/**
- * Lo que se envía como proyecto: todo menos los artefactos y lo que el
- * servidor deriva.
- *
- * La RPC ya quita `artifacts`, `artifactIndex` y `artifactCount` antes de
- * guardar, pero enviarlos sería enviar el cuerpo de cada artefacto dos veces
- * en cada escritura.
+/*
+ * Lo que se envía como proyecto es un `PersistedProjectDocument` (F4-04): la
+ * forma escrita de la raíz, sin artefactos, índice, contador ni revisión. Aquí
+ * había un `withoutDerived` que los quitaba de un `Record` cualquiera; con el
+ * documento tipado ya no hay nada que quitar, y un campo derivado que intentara
+ * colarse no compilaría.
  */
-const withoutDerived = (document: Record<string, unknown>): Record<string, unknown> => {
-  const { artifacts: _a, artifactIndex: _i, artifactCount: _c, artifactsLoaded: _l, revision: _r, ...rest } = document;
-  return rest;
-};
 
 export interface SupabaseProjectRepository {
   list(): Promise<RemoteProjectAggregate[]>;
   load(projectId: string): Promise<RemoteProjectAggregate | null>;
   save(
-    document: Record<string, unknown>,
+    document: PersistedProjectDocument,
     artifacts: Artifact[],
-    expectedRevision?: number,
+    expectedRevision: number,
   ): Promise<PersistenceResult<RemoteProjectAggregate>>;
   /** Sólo la raíz: nunca toca artefactos, contador ni índice (ADR-106). */
   saveRoot(
-    document: Record<string, unknown>,
-    expectedRevision?: number,
+    document: PersistedProjectDocument,
+    expectedRevision: number,
   ): Promise<PersistenceResult<RemoteProjectAggregate>>;
-  remove(projectId: string, expectedRevision?: number): Promise<PersistenceResult<void>>;
+  remove(projectId: string, expectedRevision: number): Promise<PersistenceResult<void>>;
 }
 
 const confirmSave = async (
-  projectId: string,
   operationId: string,
   call: () => Promise<unknown>,
 ): Promise<PersistenceResult<RemoteProjectAggregate>> => {
@@ -114,7 +114,6 @@ const confirmSave = async (
         message: 'La base de datos confirmó una respuesta de proyecto inválida.',
       };
     }
-    revisions.set(projectId, aggregate.revision);
     return { status: 'success', success: true, operationId, target: 'supabase', data: aggregate };
   } catch (error) {
     return supabaseFailure<RemoteProjectAggregate>(
@@ -127,20 +126,12 @@ export const supabaseProjectRepository: SupabaseProjectRepository = {
   async list() {
     const rows = await callRpc<unknown>('list_project_aggregates');
     if (!Array.isArray(rows)) throw new Error('La respuesta remota de proyectos no es una lista.');
-    const aggregates = rows.map(asAggregate).filter((row): row is RemoteProjectAggregate => row !== null);
-    for (const aggregate of aggregates) {
-      const id = aggregate.document.id;
-      if (typeof id === 'string') revisions.set(id, aggregate.revision);
-    }
-    return aggregates;
+    return rows.map(asAggregate).filter((row): row is RemoteProjectAggregate => row !== null);
   },
 
   async load(projectId) {
     try {
-      const row = await callRpc<unknown>('load_project_aggregate', { p_id: projectId });
-      const aggregate = asAggregate(row);
-      if (aggregate) revisions.set(projectId, aggregate.revision);
-      return aggregate;
+      return asAggregate(await callRpc<unknown>('load_project_aggregate', { p_id: projectId }));
     } catch (error) {
       // Ausente no es fallo: el llamante decide si eso significa «se borró» o
       // «este id nunca existió», y las dos respuestas son `undefined`.
@@ -150,23 +141,19 @@ export const supabaseProjectRepository: SupabaseProjectRepository = {
   },
 
   async save(document, artifacts, expectedRevision) {
-    const projectId = typeof document.id === 'string' ? document.id : '';
-    const expected = expectedRevision ?? knownProjectRevision(projectId);
-    return confirmSave(projectId, createOperationId('saveProjectAggregate'), () =>
+    return confirmSave(createOperationId('saveProjectAggregate'), () =>
       callRpc<unknown>('save_project_aggregate', {
-        p_project: withoutDerived(document),
+        p_project: document,
         p_artifacts: artifacts,
-        p_expected_revision: expected,
+        p_expected_revision: expectedRevision,
       }));
   },
 
   async saveRoot(document, expectedRevision) {
-    const projectId = typeof document.id === 'string' ? document.id : '';
-    const expected = expectedRevision ?? knownProjectRevision(projectId);
-    return confirmSave(projectId, createOperationId('saveProject'), () =>
+    return confirmSave(createOperationId('saveProject'), () =>
       callRpc<unknown>('save_project', {
-        p_project: withoutDerived(document),
-        p_expected_revision: expected,
+        p_project: document,
+        p_expected_revision: expectedRevision,
       }));
   },
 
@@ -175,9 +162,8 @@ export const supabaseProjectRepository: SupabaseProjectRepository = {
     try {
       await callRpc<unknown>('delete_project_aggregate', {
         p_id: projectId,
-        p_expected_revision: expectedRevision ?? knownProjectRevision(projectId),
+        p_expected_revision: expectedRevision,
       });
-      revisions.delete(projectId);
       return { status: 'success', success: true, operationId, target: 'supabase' };
     } catch (error) {
       return supabaseFailure<void>(

@@ -21,10 +21,10 @@
  */
 
 import { getAllProjects, getProject } from './projectReads';
-import { createProject, deleteProject, updateProject } from './projectWrites';
+import { createProject, deleteProject, updateProject, type ProjectWriteConfirmation } from './projectWrites';
 import type { PersistenceResult } from '../persistence';
 import type { Artifact } from '../../lib/artifacts';
-import type { Project } from './ArchitectureProjectTypes';
+import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
 
 export interface ArchitectureProjectRepository {
   list(userId?: string, isAdmin?: boolean): Promise<Project[]>;
@@ -36,13 +36,18 @@ export interface ArchitectureProjectRepository {
    * way to obtain one is `createArchitectureProject` — which is what makes the
    * initiative invariant unavoidable rather than merely documented.
    */
-  create(project: Project, userId: string | undefined): Promise<PersistenceResult<unknown>>;
+  create(project: ProjectRoot, userId: string | undefined): Promise<PersistenceResult<ProjectWriteConfirmation>>;
+  /**
+   * `expectedRevision` es la del registro que se está viendo (F4-07): viaja en
+   * el `Project`, y quien la trae evita que una edición hecha sobre una copia
+   * vieja pise otra.
+   */
   update(
     projectId: string,
     updates: Partial<Project>,
-    options?: { userId?: string; expectedUpdatedAt?: string },
-  ): Promise<PersistenceResult<{ updatedAt: string }>>;
-  remove(projectId: string): Promise<PersistenceResult<unknown>>;
+    options?: { userId?: string; expectedRevision?: number },
+  ): Promise<PersistenceResult<ProjectWriteConfirmation>>;
+  remove(projectId: string, expectedRevision?: number): Promise<PersistenceResult<unknown>>;
   /** Hydrate the artifacts of a project loaded from the portfolio index. */
   loadArtifacts(projectId: string): Promise<Artifact[] | undefined>;
 }
@@ -52,6 +57,6 @@ export const architectureProjectRepository: ArchitectureProjectRepository = {
   get: (projectId) => getProject(projectId),
   create: (project, userId) => createProject({ ...project, userId }),
   update: (projectId, updates, options = {}) => updateProject(projectId, updates, options),
-  remove: (projectId) => deleteProject(projectId),
+  remove: (projectId, expectedRevision) => deleteProject(projectId, { expectedRevision }),
   loadArtifacts: async (projectId) => (await getProject(projectId))?.artifacts,
 };

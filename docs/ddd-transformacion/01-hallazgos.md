@@ -230,7 +230,7 @@ se detecta: se confirma.
 |---|---|---|
 | `SupabaseOfficeEngagementRepository` | `const revisions = new Map<string, number>()` en el cierre | **corregido** |
 | `SupabaseBusinessInitiativeRepository` | idéntico, línea por línea | **corregido** |
-| `SupabaseProjectRepository` | `const revisions` a nivel de módulo, además **exportado** como `knownProjectRevision` | **pendiente — F4-07** |
+| `SupabaseProjectRepository` | `const revisions` a nivel de módulo, además **exportado** como `knownProjectRevision` | **corregido — F4-07** |
 
 El de proyectos es el peor de los tres y por eso va aparte. El mapa no sólo
 decide la revisión: se publica por el `index.ts` del contexto

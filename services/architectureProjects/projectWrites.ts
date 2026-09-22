@@ -24,13 +24,13 @@
  */
 
 import type { Artifact } from '../../lib/artifacts';
-import type { Project } from './ArchitectureProjectTypes';
+import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
 import { chatHistoryRepository } from '../chat/ChatHistoryRepository';
 import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../persistence';
-import { toProjectDocument } from './projectDocumentMapper';
+import { toProjectDocument, type PersistedProjectDocument } from './projectDocumentMapper';
 import { forgetProject } from './projectCache';
 import { getProject } from './projectReads';
-import { knownProjectRevision, supabaseProjectRepository } from './SupabaseProjectRepository';
+import { supabaseProjectRepository } from './SupabaseProjectRepository';
 import { createSupabaseKnowledgeGraphRepository } from '../architectureKnowledgeGraph';
 import { loadSupabaseDataClient } from '../adapters';
 
@@ -48,23 +48,29 @@ const getGraphRepository = async () => {
 /** Solo para pruebas: olvida el repositorio de grafo memorizado. */
 export const resetProjectWriteCaches = (): void => { graphRepository = null; };
 
-type RemoteSave = (document: Record<string, unknown>) => ReturnType<typeof supabaseProjectRepository.save>;
+type RemoteSave = (document: PersistedProjectDocument) => ReturnType<typeof supabaseProjectRepository.save>;
 
 /**
  * Lo común a las dos escrituras: el registro en observabilidad, la
  * invalidación de caché y el borrador local, decididos una vez.
  */
+/** Lo que devuelve una escritura confirmada: la marca de tiempo y la revisión nueva. */
+export interface ProjectWriteConfirmation {
+    readonly updatedAt: string;
+    readonly revision?: number;
+}
+
 const persistProject = async (
-    project: Project & { userId?: string },
+    project: ProjectRoot & { userId?: string },
     operationName: string,
     save: RemoteSave,
     draft: unknown,
-): Promise<PersistenceResult<{ updatedAt: string }>> => {
+): Promise<PersistenceResult<ProjectWriteConfirmation>> => {
     const updatedAt = typeof project.updatedAt === 'string' ? project.updatedAt : new Date().toISOString();
     const document = toProjectDocument({ ...project, updatedAt });
-    let result: PersistenceResult<{ updatedAt: string }>;
+    let result: PersistenceResult<ProjectWriteConfirmation>;
     try {
-        result = await executeRemoteWrite<{ updatedAt: string }>(
+        result = await executeRemoteWrite<ProjectWriteConfirmation>(
             { operationName, userId: project.userId, projectId: project.id },
             async () => {
                 const saved = await save(document);
@@ -73,7 +79,7 @@ const persistProject = async (
                 // lanza: `executeRemoteWrite` es lo que registra el fallo en
                 // observabilidad con su duración y su código.
                 if (!isWriteConfirmed(saved)) throw saved.error ?? new Error(saved.message ?? 'Escritura no confirmada.');
-                return { updatedAt };
+                return { updatedAt, revision: saved.data?.revision };
             },
         );
     } catch (error) {
@@ -92,10 +98,10 @@ const persistProject = async (
  * tiene, porque cada artefacto se escribe con su propio comando.
  */
 export const persistProjectAggregate = (
-    project: Project & { userId?: string },
+    project: ProjectRoot & { userId?: string },
     artifacts: Artifact[],
-    context: { operationName: string; expectedRevision?: number },
-): Promise<PersistenceResult<{ updatedAt: string }>> => persistProject(
+    context: { operationName: string; expectedRevision: number },
+): Promise<PersistenceResult<ProjectWriteConfirmation>> => persistProject(
     project,
     context.operationName,
     (document) => supabaseProjectRepository.save(document, artifacts, context.expectedRevision),
@@ -104,9 +110,9 @@ export const persistProjectAggregate = (
 
 /** Guarda sólo la raíz. Los artefactos no viajan: no hay lista que pueda borrar nada. */
 const persistProjectRoot = (
-    project: Project & { userId?: string },
-    context: { operationName: string; expectedRevision?: number },
-): Promise<PersistenceResult<{ updatedAt: string }>> => persistProject(
+    project: ProjectRoot & { userId?: string },
+    context: { operationName: string; expectedRevision: number },
+): Promise<PersistenceResult<ProjectWriteConfirmation>> => persistProject(
     project,
     context.operationName,
     (document) => supabaseProjectRepository.saveRoot(document, context.expectedRevision),
@@ -114,7 +120,14 @@ const persistProjectRoot = (
 );
 
 
-export const createProject = async (project: Project & { userId?: string }): Promise<PersistenceResult> => {
+/**
+ * Crea un proyecto a partir de la raíz que construyó la fábrica.
+ *
+ * Nace sin artefactos —cada uno se crea después con su comando— y sin grafo de
+ * conocimiento, que es derivado de los artefactos. Por eso esta firma no acepta
+ * el modelo de lectura: no hay nada de él que tenga sentido guardar al crear.
+ */
+export const createProject = async (project: ProjectRoot & { userId?: string }): Promise<PersistenceResult<ProjectWriteConfirmation>> => {
     if (!project.userId) {
         return {
             status: 'validation-error',
@@ -128,14 +141,10 @@ export const createProject = async (project: Project & { userId?: string }): Pro
     // Revisión 0 = «no existe todavía». La RPC crea la fila con revisión 1 y
     // rechaza el segundo intento con el mismo id, que es lo que impide que dos
     // pestañas creen dos proyectos con la misma identidad.
-    const result = await persistProjectAggregate(project, project.artifacts ?? [], {
+    return persistProjectAggregate(project, [], {
         operationName: 'createProject',
         expectedRevision: 0,
     });
-    if (isWriteConfirmed(result) && project.architectureKnowledgeGraph) {
-        await saveKnowledgeGraph(project.id, project.architectureKnowledgeGraph);
-    }
-    return result;
 };
 
 
@@ -153,11 +162,19 @@ const saveKnowledgeGraph = async (
 };
 
 
+/**
+ * Guarda cambios en la raíz del proyecto.
+ *
+ * La revisión esperada es la del registro que la persona está viendo: la trae
+ * quien llama (F4-07). Si no la trae, se usa la de la última lectura del
+ * proyecto — nunca un mapa del repositorio, y nunca una comparación de fechas,
+ * que depende del reloj de quien escribió (ADR-106 §7).
+ */
 export const updateProject = async (
     projectId: string,
     updates: Partial<Project>,
-    options: { userId?: string; expectedUpdatedAt?: string } = {},
-): Promise<PersistenceResult<{ updatedAt: string }>> => {
+    options: { userId?: string; expectedRevision?: number } = {},
+): Promise<PersistenceResult<ProjectWriteConfirmation>> => {
     const updatedAt = typeof updates.updatedAt === 'string' ? updates.updatedAt : new Date().toISOString();
     const current = await getProject(projectId);
     if (!current) {
@@ -170,23 +187,10 @@ export const updateProject = async (
             message: `El proyecto ${projectId} no existe o no pertenece a esta sesión.`,
         };
     }
-    // Conflicto por fecha, **antes** de llegar al servidor. La RPC comprueba la
-    // revisión, que es la garantía real; esto atrapa el caso en que esta pestaña
-    // sabe que hay una versión más nueva y evita gastar la ida y vuelta.
-    if (options.expectedUpdatedAt && current.updatedAt > options.expectedUpdatedAt) {
-        return {
-            status: 'conflict',
-            success: false,
-            operationId: `updateProject-${Date.now()}`,
-            target: 'supabase',
-            message: 'El proyecto cambió en otra sesión. Recarga antes de sobrescribir.',
-            conflict: { remoteUpdatedAt: current.updatedAt, expectedUpdatedAt: options.expectedUpdatedAt },
-        };
-    }
 
     // `artifacts` se descarta a propósito: desde ADR-106 los artefactos se
     // escriben con sus comandos, y la raíz no tiene forma de enviarlos.
-    const { architectureKnowledgeGraph, artifacts: _artifacts, ...rest } = updates;
+    const { architectureKnowledgeGraph, artifacts: _artifacts, revision: _revision, ...rest } = updates;
     const next: Project & { userId?: string } = {
         ...current,
         ...rest,
@@ -194,7 +198,10 @@ export const updateProject = async (
         updatedAt,
         userId: options.userId ?? (current as Project & { userId?: string }).userId,
     };
-    const result = await persistProjectRoot(next, { operationName: 'updateProject' });
+    // Sin revisión conocida se envía 0, que la base sólo acepta para crear: una
+    // escritura que no sabe contra qué fila va se rechaza, no pisa a nadie.
+    const expectedRevision = options.expectedRevision ?? current.revision ?? 0;
+    const result = await persistProjectRoot(next, { operationName: 'updateProject', expectedRevision });
     if (isWriteConfirmed(result) && architectureKnowledgeGraph !== undefined) {
         await saveKnowledgeGraph(projectId, architectureKnowledgeGraph);
     }
@@ -202,11 +209,15 @@ export const updateProject = async (
 };
 
 
-export const deleteProject = async (projectId: string): Promise<PersistenceResult> => {
+export const deleteProject = async (
+    projectId: string,
+    options: { expectedRevision?: number } = {},
+): Promise<PersistenceResult> => {
+    const expectedRevision = options.expectedRevision ?? (await getProject(projectId))?.revision ?? 0;
     let result: PersistenceResult;
     try {
         result = await executeRemoteWrite({ operationName: 'deleteProject', projectId }, async () => {
-            const removed = await supabaseProjectRepository.remove(projectId, knownProjectRevision(projectId));
+            const removed = await supabaseProjectRepository.remove(projectId, expectedRevision);
             if (!isWriteConfirmed(removed)) throw removed.error ?? new Error(removed.message ?? 'Borrado no confirmado.');
         });
     } catch (error) {
