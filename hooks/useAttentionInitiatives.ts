@@ -16,7 +16,7 @@
 import { useMemo } from 'react';
 import { resolvePortfolioGraph } from '../services/portfolioGraph';
 import type { BusinessInitiative } from '../services/businessInitiatives';
-import type { Project } from '../types';
+import type { Project } from '../services/architectureProjects';
 
 export const useAttentionInitiatives = (
   project: Project,

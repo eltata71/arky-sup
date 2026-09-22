@@ -17,19 +17,9 @@
  */
 
 import { useEffect, useMemo } from 'react';
-import type { Project } from '../types';
-import type { BusinessInitiative } from '../services/businessInitiatives';
-import { rollupInitiatives } from '../services/businessInitiatives';
-import type { OfficeEngagement } from '../services/architectureOffice';
-import {
-  buildOfficePortfolio,
-  buildPortfolioCommandCenter,
-  windowedDelta,
-  type OfficeActivityPoint,
-  type OfficePortfolio,
-  type PortfolioCommandCenter,
-  type WindowedDelta,
-} from '../services/architectureOffice';
+import type { Project } from '../services/architectureProjects';
+import { type BusinessInitiative, rollupInitiatives } from '../services/businessInitiatives';
+import { type OfficeEngagement, buildOfficePortfolio, buildPortfolioCommandCenter, windowedDelta, type OfficeActivityPoint, type OfficePortfolio, type PortfolioCommandCenter, type WindowedDelta } from '../services/architectureOffice';
 import { resolvePortfolioGraph, type PortfolioGraph } from '../services/portfolioGraph';
 
 /**

@@ -6,6 +6,8 @@
  * shape stable while the underlying implementation evolves through phases
  * 2–4.
  */
+export * from './artifactModel';
+export * from './artifactCompilationSummary';
 export * from './contracts';
 export * from './exportContracts';
 // Artifact classification and the presentation contract. Both were pure

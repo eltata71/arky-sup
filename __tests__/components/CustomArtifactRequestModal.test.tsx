@@ -2,7 +2,8 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { describe, expect, it, vi } from 'vitest';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import { CustomArtifactRequestModal } from '../../components/CustomArtifactRequestModal';
 
 const settings: Settings = {

@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { executeAgentAction } from '../agentExecutor';
 import { planAgentAction } from '../agentPlanner';
 import type { AgentIntent } from '../agentTypes';
-import type { Artifact, Project, Settings } from '../../../types';
+import type { Settings } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 // The executor reuses `geminiService` — we mock its surface so the tests stay

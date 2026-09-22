@@ -25,7 +25,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Project, Artifact, ArtifactTemplate } from '../types';
+import { ArtifactTemplate } from '../types';
+import type { Artifact } from '../lib/artifacts';
+import type { Project } from '../context/AppContext';
 import { AssistantPanel } from './AssistantPanel';
 import { AIArchitectAvatar, AIArchitectChip } from './ui/AIArchitectIdentity';
 import { ResizeHandle } from './ui/ResizeHandle';

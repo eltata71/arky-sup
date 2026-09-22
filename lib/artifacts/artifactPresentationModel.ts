@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from './artifactModel';
 import type { DiagramIR } from '../diagram';
 import type { ExportFormat } from './exportContracts';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
 import { mermaidToIR } from '../../services/diagram/mermaidToIR';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 const baseArtifact = (content: string, type: Artifact['type'] = 'mermaid-c4-container'): Artifact => ({
     id: 'a1',

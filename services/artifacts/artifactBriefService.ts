@@ -1,13 +1,5 @@
-import type { Project } from '../../types';
-import type {
-  ArtifactAudience,
-  ArtifactDetailLevel,
-  ArtifactFamilyPreference,
-  ArtifactGenerationContract,
-  ArtifactPurpose,
-  ArtifactVisualPreferences,
-} from './artifactGenerationContract';
-import { normalizeArtifactGenerationContract } from './artifactGenerationContract';
+import type { Project } from '../architectureProjects';
+import { type ArtifactAudience, type ArtifactDetailLevel, type ArtifactFamilyPreference, type ArtifactGenerationContract, type ArtifactPurpose, type ArtifactVisualPreferences, normalizeArtifactGenerationContract } from './artifactGenerationContract';
 
 const normalizeText = (value: string): string => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const includesAny = (text: string, terms: readonly string[]): boolean => terms.some(term => text.includes(term));

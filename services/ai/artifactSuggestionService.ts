@@ -6,7 +6,9 @@
  * the inference to `geminiService`, and validates the response into a safe
  * {@link ArtifactSuggestionReport}.
  */
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import { geminiService } from '../geminiService';
 import {
   ArtifactSuggestionError,

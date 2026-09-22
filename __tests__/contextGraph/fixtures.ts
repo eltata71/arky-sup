@@ -3,7 +3,9 @@
  * Not a spec file — vitest only collects `*.test.ts`.
  */
 
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 export const makeArtifact = (over: Partial<Artifact> = {}): Artifact => ({
   id: 'art-1',

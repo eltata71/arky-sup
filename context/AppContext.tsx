@@ -36,7 +36,7 @@ import { useArtifactsState } from './app/useArtifactsState';
 import { useProjectHistory } from './app/useProjectHistory';
 import { useArchitectureGraphSync } from './app/useArchitectureGraphSync';
 
-export type { AppContextType } from './app/appContextTypes';
+export type { AppContextType, Project, ProjectAttentionTracking } from './app/appContextTypes';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import {
   attachGraphToProject,
   buildArchitectureKnowledgeGraph,

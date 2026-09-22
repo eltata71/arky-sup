@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import { CollapsibleSection } from './CollapsibleSection';
 import { cn } from '../../ui/cn';
 

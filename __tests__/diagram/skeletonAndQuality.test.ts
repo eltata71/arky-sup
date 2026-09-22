@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildSkeletonIRFromArtifact } from '../../services/ai/prompts/diagramPrompts';
 import { analyzeDiagramQuality } from '../../services/diagram/quality/diagramQualityService';
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 function makeProject(overrides: Partial<Project> = {}): Project {
     return {

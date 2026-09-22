@@ -14,6 +14,7 @@
  *   - review comments and decisions  → `services/review/`
  *   - the chat message               → `services/chat/`
  *   - the `Project` aggregate        → `services/architectureProjects/`
+ *   - the `Artifact`                 → `lib/artifacts/` (shared kernel, F3-07)
  *   - the Training Center            → `types/lms.ts` (a dead duplicate, deleted)
  *
  * **Y las reexportaciones que quedaban detrás se retiraron en F3-07.** Estaban
@@ -27,24 +28,109 @@
  * ascendentes que ningún gate veía, porque el verificador no abría la raíz
  * (F3-02, ADR-105).
  *
- * **Quedan dos, `Artifact` y `Project`, y no son andamio.** `Project` contiene
- * artefactos y el contexto de artefactos necesita el proyecto: repuntar sus
- * imports cambiaría un ciclo contra este fichero por uno entre dos contextos
- * de dominio reales, que es peor. Lo que hay debajo es la frontera del
- * agregado Proyecto–Artefacto: D-4, resuelta por ADR-106 (el Artefacto es
- * raíz propia y `Project` dejará de contener artefactos). Se retiran cuando
- * F4-04 separe el modelo de lectura que hoy los combina.
+ * **Y las dos últimas, `Artifact` y `Project`, se retiraron también (F3-07),
+ * cuando D-4 decidió la frontera (ADR-106).** No eran andamio: eran la
+ * frontera del agregado Proyecto–Artefacto dicha con un import. La medición
+ * decidió a dónde iba cada una:
  *
- * What is left is the part that really does cross every context: the artifact
- * and the words used to classify it, the user's settings, a memory entry, and
- * the generation trace — which stays because `lib/artifacts/contracts.ts` and
- * `utils/artifactExploration.ts` read it, and the foundation layer may not
- * import the domain. Keep this file that shape: a type that only one context
- * needs belongs in that context, y no se reexporta desde aquí «por
- * compatibilidad»: eso es lo que creó los cuatro ciclos.
+ *   - **`Artifact` bajó a `lib/artifacts`.** Lo leen la fundación y quince
+ *     contextos, varios de los cuales importa `services/artifacts`: repuntarlos
+ *     al contexto dueño cambiaba un ciclo contra este fichero por ciclos
+ *     directos entre contextos reales. Es núcleo compartido en sentido estricto
+ *     —forma sin comportamiento— y su comportamiento sigue en su contexto.
+ *   - **`Project` se importa de `services/architectureProjects`**, y las
+ *     pantallas lo reciben de `context/AppContext`, que es quien les entrega los
+ *     proyectos. Los tres contextos que lo nombraban y a los que el proyecto
+ *     importa (grafo, publicación, Oficina) declaran ahora el puerto que leen.
+ *
+ * **Este fichero no importa nada**, y así se queda: `lib` depende de él, y un
+ * import desde aquí hacia `lib` o hacia un contexto cierra un ciclo en la
+ * fundación. Por eso las declaraciones del brief de generación
+ * (`ArtifactGenerationContract` y su vocabulario) están aquí: `ArtifactTemplate`
+ * las transporta, y antes se importaban de `services/artifacts`.
+ *
+ * What is left is what really does cross every context: the words used to
+ * classify an artifact, the user's settings, a memory entry, the templates.
+ * Keep this file that shape: a type that only one context needs belongs in
+ * that context, y no se reexporta desde aquí «por compatibilidad»: eso es lo
+ * que creó los cuatro ciclos, y después los otros dos.
  */
 
-import type { ArtifactGenerationContract } from './services/artifacts/artifactGenerationContract';
+
+/**
+ * El brief estructurado de una generación a demanda.
+ *
+ * Declaraciones sin comportamiento que `ArtifactTemplate.requestContext`
+ * transporta; por eso están aquí y no en `services/artifacts`, que conserva la
+ * normalización, la validación y la fusión. Estaban allí, y `types.ts` las
+ * importaba: una de las cuatro importaciones ascendentes que F3-07 retiró.
+ */
+export type ArtifactAudience = 'executive' | 'technical' | 'operations' | 'business' | 'mixed';
+
+export type ArtifactFamilyPreference = 'auto' | 'document' | 'diagram' | 'hybrid' | 'table' | 'matrix' | 'presentation';
+
+export type ArtifactPurpose =
+  | 'decision'
+  | 'explanation'
+  | 'design'
+  | 'implementation'
+  | 'analysis'
+  | 'governance'
+  | 'comparison'
+  | 'validation'
+  | 'communication';
+
+export type ArtifactDetailLevel = 'executive' | 'conceptual' | 'logical' | 'physical' | 'technical' | 'deep-technical';
+
+export interface ArtifactVisualPreferences {
+  orientation?: 'auto' | 'LR' | 'TD';
+  density?: 'simple' | 'balanced' | 'detailed';
+  includeLegend?: boolean;
+  includeBoundaries?: boolean;
+  includeMetrics?: boolean;
+  preferredDiagramStyle?: 'auto' | 'c4' | 'flowchart' | 'sequence' | 'bpmn' | 'dfd' | 'erd' | 'state';
+}
+
+export interface ArtifactGenerationContract {
+  id: string;
+  originalRequest: string;
+  normalizedIntent: string;
+  audience: ArtifactAudience;
+  artifactFamily: ArtifactFamilyPreference;
+  purpose: ArtifactPurpose;
+  detailLevel: ArtifactDetailLevel;
+  requiredSourceArtifactIds: string[];
+  optionalSourceArtifactIds: string[];
+  excludedSourceArtifactIds: string[];
+  requiredContextItems: string[];
+  excludedContextItems: string[];
+  acceptanceCriteria: string[];
+  exportTargets: string[];
+  visualPreferences?: ArtifactVisualPreferences;
+  language: 'es' | 'en';
+  qualityTarget: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArtifactRecommendationScoreBreakdown {
+  intentMatch: number;
+  audienceMatch: number;
+  representationMatch: number;
+  contextAvailability: number;
+  sourceArtifactRelevance: number;
+  riskPenalty: number;
+  /** Bonus from the optional Architecture Knowledge Graph; absent when no graph. */
+  architectureGraphAlignment?: number;
+  /** Bonus from the measured quality of the selected source artifacts. */
+  sourceQualityScore?: number;
+  /** Bonus from how recent the selected source artifacts are. */
+  freshnessScore?: number;
+  /** Bonus from how well the template phase/view fit the request. */
+  phaseViewAlignment?: number;
+  /** Estimated coverage of the explicit acceptance criteria. */
+  acceptanceCriteriaCoverage?: number;
+}
 
 export interface AIConfig {
   model: string;
@@ -156,43 +242,7 @@ export type ArchitecturalView =
   | 'Vista SDD'; // Specification-Driven Development artifacts
 
 
-/**
- * El agregado Artefacto vive en su contexto.
- *
- * Estas 249 líneas declaraban aquí el ciclo de vida completo de una generación
- * —traza, etapas, eventos de fase, modelo efectivo— en el fichero que todo el
- * repositorio puede importar. Ahora están en `services/artifacts/ArtifactTypes`
- * y se reexportan desde aquí, igual que `Project`, `ChatMessage` y los tipos de
- * revisión: el núcleo compartido publica lo que de verdad se comparte, y el
- * modelo lo posee su contexto.
- */
-export type {
-  Artifact,
-  ArtifactGenerationGraphUsage,
-  ArtifactGenerationLifecycleState,
-  ArtifactGenerationModelEffective,
-  ArtifactGenerationModelSource,
-  ArtifactGenerationPhaseEvent,
-  ArtifactGenerationPhaseListener,
-  ArtifactGenerationStage,
-  ArtifactGenerationStepStatus,
-  ArtifactGenerationTrace,
-  ArtifactGenerationTraceStatus,
-  ArtifactGenerationTraceStep,
-} from './services/artifacts/ArtifactTypes';
 
-/**
- * The Proyecto de Arquitectura now has a module: `services/architectureProjects`.
- *
- * Re-exported here because 71 files import `Project` from this file and a
- * rename of that size buys nothing. New code should import from the module —
- * that is where the aggregate, its factory and its invariant live.
- */
-export type {
-  ArtifactSummary,
-  Project,
-  ProjectAttentionTracking,
-} from './services/architectureProjects/ArchitectureProjectTypes';
 
 export type MemoryScope =
   | 'global'           // Settings.globalContext
@@ -260,7 +310,7 @@ export interface CustomArtifactRecommendation {
   audience: 'technical' | 'executive' | 'mixed';
   confidence: number;
   candidateId?: string;
-  scoreBreakdown?: import('./services/artifacts/artifactRecommendationService').ArtifactRecommendationScoreBreakdown;
+  scoreBreakdown?: ArtifactRecommendationScoreBreakdown;
   risks?: string[];
   expectedOutput?: string;
 }
@@ -281,7 +331,6 @@ export type ConsistencySuggestion = {
 };
 
 
-export type GroupedArtifacts = { [view: string]: import('./services/artifacts/ArtifactTypes').Artifact[] };
 
 export type ChatModalPurpose = 'guided-creation' | 'analyze-document' | 'review-architecture' | 'project-chat';
 

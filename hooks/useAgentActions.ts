@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
-import type { Artifact, Project, Settings } from '../types';
+import type { Settings } from '../types';
+import type { Artifact } from '../lib/artifacts';
+import type { Project } from '../services/architectureProjects';
 import type { ArtifactReviewSuggestion } from '../services/review';
 import type { ChatMessage } from '../services/chat';
 import {

@@ -28,7 +28,9 @@
  * budgets, new memory scopes, embeddings) stay local.
  */
 
-import type { Artifact, MemoryEntry, Project, Settings } from '../../types';
+import type { MemoryEntry, Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import type { ChatMessage } from '../chat';
 import { buildBasePrompt } from '../ai';
 import {

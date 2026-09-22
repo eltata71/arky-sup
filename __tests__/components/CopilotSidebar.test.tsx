@@ -2,7 +2,8 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import { CopilotSidebar } from '../../components/CopilotSidebar';
 
 // AssistantPanel pulls in the whole app context surface (Firebase, Gemini,

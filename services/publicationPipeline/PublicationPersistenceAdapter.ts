@@ -13,7 +13,14 @@
  * callers. Every function is total — it never throws.
  */
 
-import type { Project } from '../../types';
+/**
+ * El registro que lleva los paquetes. Un puerto y no `Project`: el proyecto
+ * importa este adaptador para leer sus paquetes, así que éste no puede
+ * importarlo de vuelta (F3-07).
+ */
+export interface PublicationPackageHost {
+  publicationPackages?: PublicationPackage[];
+}
 import { observabilityService } from '../observability';
 import { validatePublicationPackages } from './PublicationRuntimeValidation';
 import type { PublicationPackage } from './PublicationPipelineTypes';
@@ -60,11 +67,11 @@ export const deserializePublicationPackages = (raw: unknown): PublicationPackage
 };
 
 /** Read the validated publication packages off a project. */
-export const readPublicationPackages = (project: Pick<Project, 'publicationPackages'>): PublicationPackage[] =>
+export const readPublicationPackages = (project: PublicationPackageHost): PublicationPackage[] =>
   deserializePublicationPackages(project.publicationPackages);
 
 /** Return a NEW project with the given packages attached (serialised). */
-export const attachPublicationPackages = <T extends Project>(
+export const attachPublicationPackages = <T extends PublicationPackageHost>(
   project: T,
   packages: PublicationPackage[],
 ): T => ({
@@ -93,6 +100,6 @@ export const removePublicationPackage = (
 /** Build the additive project-update payload for a package change. */
 export const buildPublicationUpdatePayload = (
   packages: PublicationPackage[],
-): Pick<Project, 'publicationPackages'> => ({
+): Required<PublicationPackageHost> => ({
   publicationPackages: serializePublicationPackages(packages),
 });

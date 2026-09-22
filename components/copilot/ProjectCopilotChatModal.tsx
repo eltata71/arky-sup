@@ -28,10 +28,10 @@ import { ArtifactSelectorCard } from './ArtifactSelectorCard';
 import { AIArchitectAvatar } from '../ui/AIArchitectIdentity';
 import { ArrowUpTrayIcon, ExclamationTriangleIcon, ArrowPathIcon, SparklesIcon } from '../Icons';
 import { Copy, Check } from 'lucide-react';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext, type Project } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAgentActions } from '../../hooks/useAgentActions';
-import { createChatMessage } from '../../services/chat';
+import { createChatMessage, type ChatMessage } from '../../services/chat';
 import { assistantService, classifyAIError, AIServiceError } from '../../services/ai';
 import {
   classifyAgentIntent,
@@ -41,8 +41,7 @@ import {
   type MemoryScope,
 } from '../../services/agent';
 import { resolveArtifactReference } from '../../services/agent/artifactReferenceResolver';
-import type { Artifact, Project } from '../../types';
-import type { ChatMessage } from '../../services/chat';
+import type { Artifact } from '../../lib/artifacts';
 import { useAgentLessonStore, useAgentMemoryStore } from '../../hooks/useAgentMemoryStore';
 import { OfficeAgentPicker } from '../architectureOffice/OfficeAgentPicker';
 import {

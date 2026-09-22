@@ -1,18 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Node, Edge } from 'reactflow';
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import type { DiagramAudience } from '../../lib/diagram';
 import type { ArtifactViewMode } from '../../lib/artifacts/contracts';
 import type { RenderableDiagramResolution } from '../../services/diagram/resolveRenderableDiagram';
 import { diagramGenerationService } from '../../services/ai';
-import {
-  isDiagramAIFallbackEnabled,
-  mermaidToReactFlow as mermaidToReactFlowDeterministic,
-  resolveRenderableDiagram,
-} from '../../services/diagram';
+import { isDiagramAIFallbackEnabled, mermaidToReactFlow as mermaidToReactFlowDeterministic, resolveRenderableDiagram, toDiagramIR as reactFlowToIR, mergeIRMetadata } from '../../services/diagram';
 import { hasManualLayout, irToReactFlowSmart } from '../../services/diagram/irToReactFlow';
 import { irToMermaid } from '../../services/diagram/irToMermaid';
-import { toDiagramIR as reactFlowToIR, mergeIRMetadata } from '../../services/diagram';
 import { isDiagramFlowData, type DiagramFlowData } from '../../components/artifacts/diagram/diagramFlow';
 import type { LayoutPlan } from '../../lib/layoutSelector';
 

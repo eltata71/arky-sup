@@ -23,15 +23,8 @@
  *    formulario siguiera respondiendo igual sería una configuración decorativa.
  */
 
-import type {
-  CaptureContext,
-  CaptureContextLine,
-  CaptureFieldId,
-  CaptureLevel,
-  CaptureSuggestionRequest,
-} from '../../../lib/capture';
-import { captureField, captureFieldsForLevel } from '../../../lib/capture';
-import type { Project } from '../../../types';
+import { type CaptureContext, type CaptureContextLine, type CaptureFieldId, type CaptureLevel, type CaptureSuggestionRequest, captureField, captureFieldsForLevel } from '../../../lib/capture';
+import type { Project } from '../../architectureProjects';
 import type { BusinessInitiative } from '../../businessInitiatives';
 import { getOfficeArchitectureContext } from '../officeArchitectureKnowledge';
 import type { OfficeAgentId } from '../officeAgentPersonas';

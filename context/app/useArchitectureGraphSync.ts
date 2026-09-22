@@ -19,7 +19,7 @@
  */
 
 import React, { useCallback, useEffect } from 'react';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import type { PublicationPackage } from '../../services/publicationPipeline';
 import {
   buildArchitectureKnowledgeGraphForProject,

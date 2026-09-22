@@ -301,7 +301,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   se registra lo que se acaba de ver, fechado, y a partir de ahí sólo baja.
 
 ### F3-07 · Deshacer el reexportador `types.ts`
-- **Prioridad** P0 · **Tamaño** L · **Estado** `parcial — lo que no depende de D-4, hecho` · **Depende de** F3-02
+- **Prioridad** P0 · **Tamaño** L · **Estado** `completada` · **Depende de** F3-02, F4-02 (D-4)
 - **Problema.** Seis de los once ciclos y el salto del componente de dominio de
   nueve a veintisiete módulos salen de un fichero: `types.ts` reexporta
   agregados desde el contexto de cada uno, y lo importan 25 de los 34 módulos.
@@ -330,6 +330,34 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Efecto medido.** 11 → 7 ciclos, 7 → 4 pares ascendentes, 68 → 66 pares con
   import profundo. El componente de 27 no se mueve: `types.ts` sigue dentro por
   esas dos aristas, y arrastra a `lib`.
+- **Cerrada (2026-09-22), con D-4 resuelta por ADR-106.** Las dos aristas no
+  se repuntaron al contexto dueño —eso era el ciclo directo que la medición
+  predecía—, y la segunda medición dijo por qué: **`Artifact` lo lee la
+  fundación** (`lib/artifacts/contracts`, `utils/artifactExploration`) y quince
+  contextos, y `services/diagram`, `export`, `quality` y otros son importados
+  por `services/artifacts`. Repuntar creaba `diagram ↔ artifacts` y compañía, y
+  subía doce pantallas por encima del fan-out. Así que:
+  - **`Artifact` bajó a `lib/artifacts/artifactModel.ts`** con su vocabulario de
+    generación, `ArtifactSummary`, `GroupedArtifacts`, `ArtifactReviewStatus` y
+    el resumen de compilación persistido (`artifactCompilationSummary.ts`). Es
+    forma sin comportamiento; la fábrica, los comandos y el compilador siguen
+    en sus contextos.
+  - **`Project` se importa de `services/architectureProjects`**; las pantallas
+    lo reciben de `context/AppContext`, que es quien les entrega los proyectos,
+    y así ningún fan-out sube.
+  - **`types.ts` no importa nada.** Las declaraciones del brief de generación
+    viven en él porque `ArtifactTemplate` las transporta.
+  - **Tres ciclos directos que esto destapaba, cerrados con puertos**, no con
+    presupuesto: el grafo de conocimiento (`ArchitectureGraphProjectSource`,
+    `ArchitectureGraphHost`), la publicación (`PublicationPackageHost`) y la
+    Oficina (`normalizeBusinessProjectIds` bajó a `lib/eaTerminology` como
+    `toInitiativeCodes`, porque sólo habla de códigos).
+- **Efecto medido (final).** 6 → 4 ciclos (quedan el de UI y
+  `services (raíz) <-> services/ai`), componente de dominio **27 → 14**
+  módulos, pares ascendentes **2 → 0**, pares con import profundo 64 → 60.
+  Carga inicial 309,4 / 340 KB gz. Doce techos de tamaño suben unos bytes
+  —el import nombra `lib/artifacts` en vez de `types`— y cada uno lo dice en
+  su línea.
 
 ### F3-08 · `utils.ts` no es un fichero de utilidades
 - **Prioridad** P1 · **Tamaño** M · **Estado** `completada` · **Depende de** F3-02

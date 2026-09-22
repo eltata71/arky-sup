@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { classifyAgentIntent } from '../intentClassifier';
 import type { AgentContext } from '../agentTypes';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const FAKE_ARTIFACT: Artifact = {
   id: 'art-1',

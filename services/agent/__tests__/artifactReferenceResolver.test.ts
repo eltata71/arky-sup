@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveArtifactReference } from '../artifactReferenceResolver';
-import type { Artifact, Project } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 
 const baseArtifact = (overrides: Partial<Artifact>): Artifact => ({
   id: 'art-1',

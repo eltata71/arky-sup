@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
   ARTIFACT_PRESENTATION_COMPILER_VERSION,
   type ArtifactPresentationCompileOptions,

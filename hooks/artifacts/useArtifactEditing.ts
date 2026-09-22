@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 export interface UseArtifactEditingResult {
   isEditMode: boolean;

@@ -36,7 +36,8 @@ import { buildCoordinationInvoker } from '../../services/architectureOffice/offi
 import { assistantService } from '../../services/ai';
 import { configuredModelTiers, customizedAgentBriefings, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../../context/AppContext';
 import { SafeRichText } from '../ui/SafeRichText';
 
 /** One exchange in the dock. `team`/`events` attach to the office's answer. */

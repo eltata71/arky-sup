@@ -13,7 +13,7 @@ import { Button } from '../ui';
 import { InitiativePicker } from '../businessInitiatives/InitiativePicker';
 import { codesForInitiativeIds } from '../../services/portfolioGraph';
 import type { BusinessInitiative } from '../../services/businessInitiatives';
-import type { Project } from '../../types';
+import type { Project } from '../../context/AppContext';
 
 export interface LinkInitiativeModalProps {
   project: Project | null;

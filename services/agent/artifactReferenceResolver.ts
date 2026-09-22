@@ -15,7 +15,8 @@
  * we never act on historical versions implicitly.
  */
 
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 
 export interface ArtifactReferenceResolution {
   /** The best-match artifact when the reference is unambiguous. */

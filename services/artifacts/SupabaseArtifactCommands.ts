@@ -17,7 +17,7 @@
  * devuelve lo que la base confirmó o lanza, y `artifactPersistence` traduce.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { callRpc } from '../adapters';
 
 /** Una operación de `api.revise_artifacts`. */

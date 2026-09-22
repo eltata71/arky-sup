@@ -10,7 +10,8 @@
  * never throw.
  */
 
-import type { Artifact, ArtifactType } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { newPrefixedId } from '../../lib/ids';
 import {
   resolvePublicationProfile,

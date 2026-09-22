@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { RenderableDiagramResolution } from '../../services/diagram/resolveRenderableDiagram';
 import {
   buildArtifactDiagnosticReport,

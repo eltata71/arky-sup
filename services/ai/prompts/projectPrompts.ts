@@ -14,7 +14,9 @@
  * modelo ni sabe que existe.
  */
 
-import type { Artifact, Project, Settings } from '../../../types';
+import type { Settings } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 import { prioritizeProjectContext } from './diagramPrompts';
 // Por el barril: `services/memory` ya publica esta función y es un módulo de
 // declaraciones puras —ningún chunk pesado detrás—, así que no hay razón de

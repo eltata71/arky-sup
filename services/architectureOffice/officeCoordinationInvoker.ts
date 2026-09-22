@@ -24,7 +24,8 @@
 
 import type { OfficeAgentInvoker } from './officeOrchestration';
 import type { CoordinationScope } from './officeCoordination';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../architectureProjects';
 import type { ModelTier } from '../../lib/ai/modelCatalog';
 import type { OfficeAgentId } from './officeAgentPersonas';
 

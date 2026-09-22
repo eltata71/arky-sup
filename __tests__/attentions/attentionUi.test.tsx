@@ -1,6 +1,6 @@
 import React from 'react';
 import { toInitiativeCode } from '../../lib/eaTerminology';
-import type { BusinessInitiative } from '../../services/businessInitiatives';
+import { type BusinessInitiative, buildInitiative } from '../../services/businessInitiatives';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AttentionCard, AttentionInitiativeGate, AttentionKpiRow } from '../../components/attentions';
@@ -11,9 +11,8 @@ import {
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
 } from '../../services/architectureOffice/OfficeTypes';
-import { buildInitiative } from '../../services/businessInitiatives';
 import { InitiativeCard } from '../../components/businessInitiatives';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const NOW = Date.parse('2026-08-27T12:00:00.000Z');
 const ISO = new Date(NOW).toISOString();

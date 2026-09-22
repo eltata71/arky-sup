@@ -6,7 +6,7 @@ import {
   isCompilationFresh,
   recompileArtifactBeforePersist,
 } from '../../services/artifactCompiler';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import {
   makeArtifact,
   brdComplete,

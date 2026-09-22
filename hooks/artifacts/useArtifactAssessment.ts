@@ -16,7 +16,9 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import type { DiagramIR } from '../../lib/diagram';
 import {
   assessCompilationFreshness,

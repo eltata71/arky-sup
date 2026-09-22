@@ -3,7 +3,7 @@ import {
     buildArtifactDiagnosticReport,
     buildRenderDiagnosticsSummary,
 } from '../../services/artifacts/diagnostics';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { RenderableDiagramResolution } from '../../services/diagram/resolveRenderableDiagram';
 
 const makeRenderable = (overrides: Partial<RenderableDiagramResolution> = {}): RenderableDiagramResolution => ({

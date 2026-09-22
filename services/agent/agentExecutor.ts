@@ -15,7 +15,9 @@
  * the live state (analizando → preparando → generando → validando → finalizado).
  */
 
-import type { Artifact, ArtifactTemplate, MemoryEntry, Project, Settings } from '../../types';
+import type { ArtifactTemplate, MemoryEntry, Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../review';
 import type { ChatMessage } from '../chat';
 import { appendMemoryNotes } from '../memory/memoryEntries';

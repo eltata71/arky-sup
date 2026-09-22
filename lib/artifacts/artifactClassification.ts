@@ -1,4 +1,5 @@
-import type { Artifact, ArtifactType } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Artifact } from './artifactModel';
 import { isPresentationArtifactType } from './artifactKind';
 
 export type ArtifactContentKind =

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Artifact } from '../types';
+import type { Artifact } from '../lib/artifacts';
 import type { ArtifactReviewStatus } from '../services/review';
 import {
   ClockIcon,

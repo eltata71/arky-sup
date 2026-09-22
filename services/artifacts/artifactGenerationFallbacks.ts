@@ -13,7 +13,9 @@
  * is the failure mode this module exists to prevent.
  */
 
-import type { ArtifactGenerationPhaseListener, ArtifactTemplate, Project } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { ArtifactGenerationPhaseListener } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import type { DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
 import {
     buildDeterministicArtifactFallback,

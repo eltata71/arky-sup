@@ -14,7 +14,8 @@
  * so the prompt-facing helper degrades to an empty string.
  */
 
-import type { ArtifactRequestContext, Project, Settings } from '../../types';
+import type { ArtifactRequestContext, Settings } from '../../types';
+import type { Project } from '../architectureProjects';
 import { getLatestArtifacts } from '../../utils';
 import {
   type ArchitectureContextGraph,

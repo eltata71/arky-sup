@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { ArtifactStatusBadge, deriveArtifactStatus } from '../../../components/artifacts/ArtifactStatusBadge';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 function buildArtifact(partial: Partial<Artifact>): Artifact {
     return {

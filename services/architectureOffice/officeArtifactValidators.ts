@@ -1,4 +1,4 @@
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { buildAccessibleSummary } from '../diagram/accessibleSummary';
 import { extractMermaid } from '../../utils/diagram/extractMermaid';
 import {

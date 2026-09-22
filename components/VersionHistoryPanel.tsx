@@ -1,5 +1,5 @@
 import React from 'react';
-import { Artifact } from '../types';
+import type { Artifact } from '../lib/artifacts';
 import { useAppContext } from '../context/AppContext';
 import { ArrowPathIcon, EyeIcon, XMarkIcon } from './Icons';
 

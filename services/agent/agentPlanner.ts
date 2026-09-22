@@ -7,7 +7,8 @@
  * card snappy and lets us preview "what will happen" without burning tokens.
  */
 
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import type { AgentActionPlan, AgentIntent, AgentIntentType, BatchMatcher } from './agentTypes';
 import { newTraceId, logAgentEvent } from './agentLogger';
 

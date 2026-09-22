@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Marked } from 'marked';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { sanitizeGeneratedHtml } from '../../lib/security';
 import { extractMermaidCode } from '../../utils/diagram/extractMermaid';
 import { highlightCode, escapeHtml, resolveHighlightLanguage } from '../../lib/codeHighlight';

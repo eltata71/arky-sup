@@ -1,4 +1,6 @@
-import type { Project, Settings, ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../../types';
+import type { Settings } from '../../types';
+import type { ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import { buildDeterministicArtifactBrief } from './artifactBriefService';
 import {
   mergeArtifactGenerationContracts,

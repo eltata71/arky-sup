@@ -189,6 +189,23 @@ export const toInitiativeCode = (value: unknown): BusinessInitiativeCode | null 
 };
 
 /** `NEG-2026-007` for the seventh initiative opened in 2026. */
+/**
+ * Una lista de códigos, normalizada: sólo los válidos, sin repetir.
+ *
+ * Es el espejo derivado `Project.linkedBusinessProjects`. Vivía en
+ * `services/architectureOffice/officeShared`, y `services/architectureProjects`
+ * lo importaba de allí para leer sus propios documentos: una arista hacia la
+ * Oficina que cerraba un ciclo en cuanto la Oficina nombraba `Project` desde su
+ * dueño (F3-07). Sólo habla de códigos, así que su sitio es éste.
+ */
+export const toInitiativeCodes = (values: unknown): BusinessInitiativeCode[] => {
+  if (!Array.isArray(values)) return [];
+  const valid = values
+    .map(toInitiativeCode)
+    .filter((value): value is BusinessInitiativeCode => value !== null);
+  return Array.from(new Set(valid));
+};
+
 export const formatInitiativeCode = (year: number, sequence: number): BusinessInitiativeCode =>
   `NEG-${String(year).padStart(4, '0')}-${String(sequence).padStart(3, '0')}` as BusinessInitiativeCode;
 

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import type { Artifact, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramPreflightReport } from '../../services/diagram';
 import type {
   ArtifactView,

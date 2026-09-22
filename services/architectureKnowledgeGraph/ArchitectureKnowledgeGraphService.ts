@@ -11,17 +11,28 @@
  * rest of Arky Pro keeps working without the graph.
  */
 
-import type { Project } from '../../types';
-import type {
-  ArchitectureEntity,
-  ArchitectureGraph,
-  ArchitectureGraphArtifactInput,
-  ArchitectureGraphBuildInput,
-  ArchitectureGraphQuality,
-  ArchitectureGraphStatistics,
-  ArchitectureRelation,
-} from './ArchitectureKnowledgeGraphTypes';
-import { ARCHITECTURE_GRAPH_SCHEMA_VERSION } from './ArchitectureKnowledgeGraphTypes';
+import type { Artifact } from '../../lib/artifacts';
+
+/**
+ * Lo que el grafo lee de un proyecto: su descripción, sus superficies de
+ * contexto y sus artefactos.
+ *
+ * Es un puerto, no `Project`. `services/architectureProjects` importa este
+ * contexto (lee y guarda el grafo); si éste importara `Project` de vuelta, los
+ * dos serían un solo módulo con dos carpetas (F3-07). Cualquier `Project` encaja
+ * por estructura, así que ningún llamador cambia.
+ */
+export interface ArchitectureGraphProjectSource {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly projectContext?: readonly string[];
+  readonly agentMemory?: readonly string[];
+  readonly initialCapture?: readonly string[];
+  readonly linkedBusinessProjects?: readonly string[];
+  readonly artifacts?: readonly Artifact[];
+}
+import { type ArchitectureEntity, type ArchitectureGraph, type ArchitectureGraphArtifactInput, type ArchitectureGraphBuildInput, type ArchitectureGraphQuality, type ArchitectureGraphStatistics, type ArchitectureRelation, ARCHITECTURE_GRAPH_SCHEMA_VERSION } from './ArchitectureKnowledgeGraphTypes';
 import { architectureEntityExtractor } from './ArchitectureEntityExtractor';
 import { architectureRelationExtractor } from './ArchitectureRelationExtractor';
 import { consolidateEntities, consolidateRelations } from './ArchitectureGraphDeduplication';
@@ -70,15 +81,15 @@ export const createEmptyArchitectureGraph = (projectId: string, now?: string): A
 
 /** Maps a `Project` to the decoupled build input the extractors consume. */
 export const buildGraphInputFromProject = (
-  project: Project,
+  project: ArchitectureGraphProjectSource,
   options: { globalContext?: string[]; now?: string; previousGraph?: ArchitectureGraph } = {},
 ): ArchitectureGraphBuildInput => ({
   projectId: project.id,
   projectName: project.name,
   projectDescription: project.description,
-  projectContext: project.projectContext ?? [],
-  agentMemory: project.agentMemory ?? [],
-  initialCapture: project.initialCapture ?? [],
+  projectContext: [...(project.projectContext ?? [])],
+  agentMemory: [...(project.agentMemory ?? [])],
+  initialCapture: [...(project.initialCapture ?? [])],
   globalContext: [
     ...(options.globalContext ?? []),
     ...(project.linkedBusinessProjects ?? []).map(
@@ -295,7 +306,7 @@ export const buildArchitectureKnowledgeGraph = (
 
 /** Convenience: builds the graph straight from a `Project`. */
 export const buildArchitectureKnowledgeGraphForProject = (
-  project: Project,
+  project: ArchitectureGraphProjectSource,
   options: { globalContext?: string[]; now?: string; previousGraph?: ArchitectureGraph; includeOfficeContext?: boolean } = {},
 ): ArchitectureGraph => {
   const globalContext = Array.from(new Set([
@@ -314,7 +325,7 @@ export const buildArchitectureKnowledgeGraphForProject = (
  * generation pipeline and the publication pipeline to check graph freshness.
  */
 export const resolveProjectArchitectureGraphFreshness = (
-  project: Project,
+  project: ArchitectureGraphProjectSource & { readonly architectureKnowledgeGraph?: ArchitectureGraph },
   options: { globalContext?: string[]; includeOfficeContext?: boolean } = {},
 ): ArchitectureGraphFreshness => {
   const globalContext = Array.from(new Set([

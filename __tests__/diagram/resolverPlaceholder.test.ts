@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
 import { buildDiagramPreflightReport } from '../../services/diagram/quality/diagramQualityService';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 const baseArtifact = (over: Partial<Artifact> = {}): Artifact => ({
     id: 'a1',

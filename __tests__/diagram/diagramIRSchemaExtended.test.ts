@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildDiagramIRSchema, buildIRDirectGenerationPrompt } from '../../services/ai/prompts/diagramPrompts';
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 describe('buildDiagramIRSchema — extended types.ts alignment (Gap 6)', () => {
     const schema = buildDiagramIRSchema() as {

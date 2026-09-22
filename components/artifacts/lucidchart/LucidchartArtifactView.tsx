@@ -3,7 +3,7 @@ import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
 import LucidchartViewer from '../../LucidchartViewer';
 import type { LucidDocumentSummary } from '../../../services/lucid';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramFlowData } from '../diagram/diagramFlow';
 
 export interface LucidchartArtifactViewProps {

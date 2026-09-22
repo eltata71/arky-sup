@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramIR } from '../../lib/diagram';
 
 const baseArtifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'> = {

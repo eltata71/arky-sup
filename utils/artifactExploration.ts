@@ -9,7 +9,8 @@
  * "Mis artefactos" and "Catálogo" surfaces and keeps JSX declarative.
  */
 
-import type { Artifact, ArtifactTemplate } from '../types';
+import type { ArtifactTemplate } from '../types';
+import type { Artifact } from '../lib/artifacts';
 import { KANBAN_COLUMNS } from '../constants';
 import { sortTemplatesByRoadmap } from '../lib/artifacts/artifactGovernance';
 import { toValidDate, type DateLike } from './datetime';

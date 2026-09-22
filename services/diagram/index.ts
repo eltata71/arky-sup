@@ -13,7 +13,7 @@
  * remains reachable for migration/debugging.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramIR, NodeShape } from '../../lib/diagram';
 import { mermaidToIR, mermaidToIRWithDiagnostics } from './mermaidToIR';
 import { irToReactFlow, IRToReactFlowResult } from './irToReactFlow';

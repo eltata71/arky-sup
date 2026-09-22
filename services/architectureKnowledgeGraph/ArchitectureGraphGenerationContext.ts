@@ -13,7 +13,8 @@
  * so generation continues exactly as before.
  */
 
-import type { ArtifactType, ArtifactGenerationGraphUsage } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { ArtifactGenerationGraphUsage } from '../../lib/artifacts';
 import type { ArchitectureGraph } from './ArchitectureKnowledgeGraphTypes';
 import type { ArchitectureGraphFreshness } from './ArchitectureGraphFreshness';
 import { buildArchitectureGraphPromptContext } from './ArchitectureGraphPromptContextBuilder';

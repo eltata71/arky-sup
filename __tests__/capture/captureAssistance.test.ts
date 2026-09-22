@@ -19,7 +19,7 @@ import {
 } from '../../services/architectureOffice/application/captureAssistance';
 import { createAgentProfileOverride } from '../../services/architectureOffice/officeAgentProfile';
 import type { BusinessInitiative } from '../../services/businessInitiatives';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const initiative = {
   id: 'ini-1',

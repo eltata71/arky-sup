@@ -13,7 +13,7 @@
  */
 
 import React, { useCallback, useRef, useState } from 'react';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import { architectureProjectRepository } from '../../services/architectureProjects/ArchitectureProjectRepository';
 import {
   createArchitectureProject,

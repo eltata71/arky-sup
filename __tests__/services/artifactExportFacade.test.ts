@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 const exportArtifactMock = vi.fn();
 const downloadFileMock = vi.fn();

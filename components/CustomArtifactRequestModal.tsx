@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from './Modal';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, type Project } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
-import { Project, ArtifactTemplate, CustomArtifactRecommendation, ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener, ArtifactGenerationStage } from '../types';
+import { ArtifactTemplate, CustomArtifactRecommendation } from '../types';
+import type { ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener, ArtifactGenerationStage } from '../lib/artifacts';
 import { recommendationService, classifyAIError, AIServiceError } from '../services/ai';
 import { buildDeterministicArtifactBrief } from '../services/artifacts/artifactBriefService';
 import { extractArtifactBriefWithAI } from '../services/artifacts/artifactBriefExtractionService';

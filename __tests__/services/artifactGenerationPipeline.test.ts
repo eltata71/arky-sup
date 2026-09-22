@@ -3,7 +3,7 @@ import { getArtifactViewCapabilities, normalizeArtifactEnvelope, resolveSafeArti
 import { sanitizeGeneratedHtml } from '../../lib/security';
 import { buildGenerationObservabilityAlert } from '../../components/artifactCanvasObservability';
 import { validateArtifactForExport } from '../../services/export/artifactExportValidation';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 const baseArtifact: Artifact = {
   id: 'a1',

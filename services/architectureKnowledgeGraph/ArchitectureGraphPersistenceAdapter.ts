@@ -17,7 +17,14 @@
  * arrastrara el grafo entero por la red.
  */
 
-import type { Project } from '../../types';
+/**
+ * El registro que lleva el grafo adjunto. Un puerto y no `Project`, por la
+ * misma razón que `ArchitectureGraphProjectSource`: el proyecto importa este
+ * contexto, y éste no puede importarlo de vuelta.
+ */
+export interface ArchitectureGraphHost {
+  architectureKnowledgeGraph?: ArchitectureGraph;
+}
 import { stripUndefined } from '../../lib/jsonSafe';
 import type { ArchitectureGraph } from './ArchitectureKnowledgeGraphTypes';
 import { migrateArchitectureGraph } from './ArchitectureGraphMigrations';
@@ -60,7 +67,7 @@ export const deserializeArchitectureGraph = (raw: unknown): ArchitectureGraph | 
 
 /** Reads + validates the graph attached to a project, if any. */
 export const readGraphFromProject = (
-  project: Pick<Project, 'architectureKnowledgeGraph'> | null | undefined,
+  project: ArchitectureGraphHost | null | undefined,
 ): ArchitectureGraph | null => {
   if (!project) return null;
   return deserializeArchitectureGraph(project.architectureKnowledgeGraph);
@@ -71,7 +78,7 @@ export const readGraphFromProject = (
  * Non-mutating — the caller persists the result through the normal project
  * update path so rollback and concurrency control are unchanged.
  */
-export const attachGraphToProject = (project: Project, graph: ArchitectureGraph): Project => ({
+export const attachGraphToProject = <T extends ArchitectureGraphHost>(project: T, graph: ArchitectureGraph): T => ({
   ...project,
   architectureKnowledgeGraph: serializeArchitectureGraph(graph),
 });

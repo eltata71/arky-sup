@@ -13,7 +13,7 @@
  * construction. Every function is total — it never throws.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { newPrefixedId } from '../../lib/ids';
 import {
   clampPublicationScore,

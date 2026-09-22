@@ -15,7 +15,7 @@
  *  - `getCompilationFreshness`       — `current` | `stale` | `missing` (Task 5).
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { recompileArtifactBeforePersist } from './recompile';
 
 export { compileArtifact, buildCompilerSummary } from './ArtifactCompiler';

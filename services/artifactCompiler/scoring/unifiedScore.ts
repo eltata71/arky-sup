@@ -11,7 +11,7 @@
  * fixed world-class tier ladder.
  */
 
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import { buildArtifactQualityReport } from '../../quality/artifactQualityService';
 import type {
   ArtifactQualityIssue,

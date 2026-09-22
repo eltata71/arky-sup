@@ -13,7 +13,9 @@ import {
 } from '../../services/artifacts/deterministicArtifactFallbacks';
 import { SKELETON_FALLBACK_MARKER } from '../../services/artifacts/artifactFallbackDetection';
 import { mermaidToIR } from '../../services/diagram/mermaidToIR';
-import type { ArtifactGenerationPhaseEvent, ArtifactTemplate, Project, Settings } from '../../types';
+import type { ArtifactTemplate, Settings } from '../../types';
+import type { ArtifactGenerationPhaseEvent } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import type { DiagramIR } from '../../lib/diagram';
 
 const baseProject = (overrides: Partial<Project> = {}): Project => ({

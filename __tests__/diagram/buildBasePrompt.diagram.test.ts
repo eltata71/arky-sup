@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildBasePrompt } from '../../services/ai/prompts/projectPrompts';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const baseSettings: Settings = {
     globalContext: ['SLA estricto', 'On-Prem first'],

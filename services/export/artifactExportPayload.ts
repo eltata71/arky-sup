@@ -1,4 +1,5 @@
-import type { Artifact, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { ExportFormat } from './artifactExportValidation';
 import { exportArtifact } from './exportService';
 import { downloadFile } from './downloadService';

@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { Tabs, TabList, Tab, TabPanel, Badge, Alert, Button } from '../ui';
 import { ArrowLeftIcon } from '../Icons';
-import { Artifact } from '../../types';
-import type { ArtifactCommentAuthor, ArtifactReviewStatus } from '../../services/review';
+import type { Artifact } from '../../lib/artifacts';
+import { type ArtifactCommentAuthor, type ArtifactReviewStatus, artifactReviewService } from '../../services/review';
 import { OutlineSection } from '../../utils/markdownOutline';
 import { ArtifactStatusBadge, deriveArtifactStatus } from './ArtifactStatusBadge';
 import { ContextGraphPanel } from '../ContextGraphPanel';
@@ -10,7 +10,6 @@ import { ArchitectureKnowledgeGraphPanel } from '../ArchitectureKnowledgeGraphPa
 import { CommentThread } from './CommentThread';
 import { ReviewPanel } from './ReviewPanel';
 import { DocumentOutline } from './DocumentOutline';
-import { artifactReviewService } from '../../services/review';
 import { useOptionalAppContext } from '../../context/AppContext';
 import {
     buildArchitectureKnowledgeGraphForProject,
@@ -18,8 +17,7 @@ import {
     describeArchitectureGraphFreshness,
 } from '../../services/architectureKnowledgeGraph';
 import { buildArtifactExportabilityState } from '../../services/quality/artifactQualityGateService';
-import { tierLabel } from '../../services/quality/artifactQualityModel';
-import type { ArtifactQualityScope, ArtifactQualitySeverity } from '../../services/quality/artifactQualityModel';
+import { tierLabel, type ArtifactQualityScope, type ArtifactQualitySeverity } from '../../services/quality/artifactQualityModel';
 
 interface ArtifactInspectorPanelProps {
     artifact: Artifact;

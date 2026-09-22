@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Modal } from './Modal';
-import { Artifact } from '../types';
+import type { Artifact } from '../lib/artifacts';
 import { useAppContext } from '../context/AppContext';
 import { ClockIcon, EyeIcon } from './Icons';
 import { buildDiffHunks, computeLineDiff, summarizeDiff } from '../lib/textDiff';

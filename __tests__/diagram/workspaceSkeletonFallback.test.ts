@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildDeterministicDiagramSkeleton } from '../../services/artifacts/deterministicArtifactFallbacks';
 import { extractIRFromArtifact } from '../../services/diagram';
-import type { ArtifactTemplate, Project } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const project: Project = {
     id: 'p1',

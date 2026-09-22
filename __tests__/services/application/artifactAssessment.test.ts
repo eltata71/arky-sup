@@ -15,7 +15,7 @@ import {
   enrichSuggestions,
   resolveExportView,
 } from '../../../services/artifacts/application/artifactAssessment';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const artifact = { id: 'a1', content: '', lastDiagramError: undefined } as unknown as Artifact;
 

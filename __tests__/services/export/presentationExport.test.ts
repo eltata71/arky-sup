@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getCandidateFormats, getExportCapabilities, getPreferredExportsForArtifact } from '../../../services/export/exportRegistry';
 import { pptxExporter } from '../../../services/export/adapters/pptxExporter';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const buildPresentationArtifact = (over: Partial<Artifact> = {}): Artifact => ({
   id: 'pres-1',

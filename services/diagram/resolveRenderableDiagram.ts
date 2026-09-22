@@ -1,5 +1,5 @@
 import type { Edge, Node } from 'reactflow';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramAudience, DiagramIR } from '../../lib/diagram';
 import { extractMermaidCode } from '../../utils/diagram/extractMermaid';
 import { extractIRFromArtifact, mermaidToIR, renderIRToReactFlow } from './index';

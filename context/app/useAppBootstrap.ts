@@ -10,7 +10,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 import { assertBackendConfigured } from '../../services/persistence';
 import { settingsRepository } from '../../services/settings';
 import { resolveTextModel } from '../../lib/ai/modelCatalog';

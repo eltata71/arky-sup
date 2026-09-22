@@ -10,7 +10,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Artifact, Project } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const repository = vi.hoisted(() => ({
   create: vi.fn(),

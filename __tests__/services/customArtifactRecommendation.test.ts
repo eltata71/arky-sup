@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { __test__, geminiService } from '../../services/geminiService';
-import { Project, ArtifactGenerationPhaseEvent, Settings } from '../../types';
+import { Settings } from '../../types';
+import type { ArtifactGenerationPhaseEvent } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const {
     buildCustomArtifactRecommendationContext,

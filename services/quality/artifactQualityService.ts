@@ -9,7 +9,7 @@
  * `artifact.ir` and `artifact.type`.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { DiagramIR } from '../../lib/diagram';
 import { classifyArtifact } from '../../lib/artifacts/artifactClassification';
 import { analyzeDocumentQuality } from './documentQualityService';

@@ -12,7 +12,8 @@
 import { describe, expect, it } from 'vitest';
 import { resolvePortfolioGraph } from '../../services/portfolioGraph';
 import { buildOfficePortfolio } from '../../services/architectureOffice/officePortfolio';
-import type { Project, ArtifactSummary } from '../../types';
+import type { ArtifactSummary } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const summary = (id: string, group = id, version = 1): ArtifactSummary => ({
   id,

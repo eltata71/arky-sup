@@ -20,7 +20,7 @@ import type {
   ContextSource,
   ContextSourceType,
 } from './contextGraphTypes';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 /* --------------------------------------------------------------------- */
 /* Shared text helpers (re-exported for the rest of the pipeline)         */

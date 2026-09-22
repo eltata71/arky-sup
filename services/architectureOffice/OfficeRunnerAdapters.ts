@@ -16,7 +16,9 @@
  *    cannot approve away a broken contract.
  */
 
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import {
   planAgentAction,
   executeAgentAction,

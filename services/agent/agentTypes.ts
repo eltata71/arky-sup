@@ -17,7 +17,7 @@
  * docblock is how the next author learns the wrong rule.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import type { ChatMessage } from '../chat';
 
 /** All intents the assistant can act on. `unknown` means "no actionable intent". */

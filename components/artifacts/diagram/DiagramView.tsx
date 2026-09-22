@@ -11,7 +11,7 @@ import {
   CheckCircleIcon,
   Square2StackIcon,
 } from '../../Icons';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramAudience } from '../../../lib/diagram';
 import type { RenderableDiagramResolution } from '../../../services/diagram/resolveRenderableDiagram';
 import type { DiagramFlowData } from './diagramFlow';

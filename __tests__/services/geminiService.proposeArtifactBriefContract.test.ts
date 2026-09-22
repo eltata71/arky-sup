@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { geminiService } from '../../services/geminiService';
 import { buildDeterministicArtifactBrief } from '../../services/artifacts/artifactBriefService';
-import type { Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const project: Project = {
   id: 'p1',

@@ -9,7 +9,8 @@
  */
 
 import React, { useMemo } from 'react';
-import { Project, Artifact } from '../types';
+import type { Artifact } from '../lib/artifacts';
+import type { Project } from '../context/AppContext';
 import { ARTIFACT_TEMPLATES } from '../constants';
 import { Card, CardEyebrow, Badge } from './ui';
 import { cn } from './ui/cn';

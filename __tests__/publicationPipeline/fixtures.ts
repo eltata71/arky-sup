@@ -1,4 +1,6 @@
-import type { Artifact, ArtifactType, Project } from '../../types';
+import type { ArtifactType } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 import type { ArtifactCompilerSummary } from '../../services/artifactCompiler/ArtifactCompilerTypes';
 import { computeArtifactCompilationSignature } from '../../services/artifactCompiler';
 

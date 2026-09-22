@@ -22,7 +22,8 @@
  * Pure functions over plain data: no React, no Firestore, no AI.
  */
 
-import type { ArtifactSummary, Project } from '../../types';
+import type { ArtifactSummary } from '../../lib/artifacts';
+import type { Project } from '../architectureProjects';
 import { isInitiativeCode, type BusinessInitiativeCode } from '../../lib/eaTerminology';
 import type { BusinessInitiative } from '../businessInitiatives/BusinessInitiativeTypes';
 import type { OfficeEngagement } from '../architectureOffice/OfficeTypes';

@@ -13,11 +13,10 @@
  *  - Diagram quality stays owned by the existing deterministic diagram gate.
  */
 
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 import { buildArtifactExportabilityState } from '../quality/artifactQualityGateService';
 import { CompilationTraceRecorder } from './ArtifactCompilationTrace';
-import type { ArtifactContract } from './ArtifactContract';
-import { compareSeverity } from './ArtifactContract';
+import { type ArtifactContract, compareSeverity } from './ArtifactContract';
 import type {
   ArtifactCompilerSummary,
   CompileArtifactOptions,

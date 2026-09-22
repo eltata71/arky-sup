@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { OfficeCapabilitiesPanel } from '../../components/architectureOffice/OfficeCapabilitiesPanel';
 import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
 import { buildInitiative, type BusinessInitiative } from '../../services/businessInitiatives';
-import type { Project } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const NOW = '2026-08-23T00:00:00.000Z';
 

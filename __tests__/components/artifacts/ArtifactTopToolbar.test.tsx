@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { ArtifactTopToolbar } from '../../../components/artifacts/toolbar/ArtifactTopToolbar';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const artifact: Artifact = {
   id: 'a1',

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Project, Artifact } from '../types';
+import type { Artifact } from '../lib/artifacts';
+import { type Project, useAppContext } from '../context/AppContext';
 import type { ArtifactReviewSuggestion } from '../services/review';
 import type { DiagramAudience, DiagramIR } from '../lib/diagram';
-import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { artifactGenerationService, documentGenerationService } from '../services/ai';

@@ -5,7 +5,9 @@ import {
     buildIRDirectGenerationPrompt,
     DIAGRAM_SYSTEM_INSTRUCTION,
 } from '../../services/ai/prompts/diagramPrompts';
-import type { Artifact, Project, Settings } from '../../types';
+import type { Settings } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 describe('DIAGRAM_SYSTEM_INSTRUCTION', () => {
     it('declares the canonical 9 semantic roles', () => {

@@ -33,7 +33,7 @@ import { useAttentionInitiatives } from '../../hooks/useAttentionInitiatives';
 import { AttentionTrackingPanel } from './AttentionTrackingPanel';
 import { AttentionContributionPanel } from './AttentionContributionPanel';
 import { EA_LEVELS } from '../../lib/eaTerminology';
-import type { Project } from '../../types';
+import type { Project } from '../../context/AppContext';
 import type { ProjectAttentionTracking } from '../../services/architectureProjects';
 import type { BusinessInitiative } from '../../services/businessInitiatives';
 

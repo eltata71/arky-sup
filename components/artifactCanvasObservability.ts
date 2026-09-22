@@ -1,4 +1,4 @@
-import type { ArtifactGenerationTraceStatus } from '../types';
+import type { ArtifactGenerationTraceStatus } from '../lib/artifacts';
 
 /**
  * Banner tone vocabulary:

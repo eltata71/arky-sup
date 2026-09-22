@@ -3,7 +3,9 @@ import { mermaidToIR } from '../../services/diagram/mermaidToIR';
 import { buildDeterministicDiagramSkeleton } from '../../services/artifacts/deterministicArtifactFallbacks';
 import { extractIRFromArtifact } from '../../services/diagram';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
-import type { ArtifactTemplate, Project, Artifact } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../services/architectureProjects';
 
 const project: Project = {
     id: 'p1',

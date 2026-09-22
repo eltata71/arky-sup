@@ -1,18 +1,17 @@
 # Registro de avance y punto de reanudación
 
 **Última actualización:** 2026-09-22
-**Estado integrado:** Fase 2 completa, **fase 3 en curso** (F3-01, F3-02, F3-08 cerradas; F3-07 parcial, desbloqueada por ADR-106) y **fase 4 en curso** (F4-01, F4-02 y F4-03 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Estado integrado:** Fase 2 completa, **fase 3 en curso** (F3-01, F3-02, F3-07 y F3-08 cerradas) y **fase 4 en curso** (F4-01, F4-02 y F4-03 cerradas; D-4 resuelta), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F4-03** — el Artefacto se escribe con sus
-  propios comandos (migración `20260922180000_artifact_commands.sql`, contrato
-  pgTAP de 61 aserciones). Corrige de paso dos defectos vivos: la revisión que
-  las lecturas no devolvían y la segunda edición consecutiva que el hook no
-  escribía. Antes: F4-02 (ADR-106, #49) y F4-01 (#48).
+- **Última tarea completada:** **F3-07** — `types.ts` no importa nada: el
+  Artefacto bajó a `lib/artifacts` (núcleo compartido), `Project` se importa de
+  su módulo y tres ciclos se cerraron con puertos. Componente de dominio 27 →
+  14, pares ascendentes 2 → 0. Antes: F4-03 (#50), F4-02 (#49), F4-01 (#48).
 - **Aviso que este arreglo deja escrito:** la PR #42 se fusionó con la suite E2E
   en rojo —cinco ejecuciones fallidas seguidas en `feat/fase-2-consistencia-reanudacion`—
   y la PR siguiente heredó el rojo. El gate funcionó: detectó que F2-03 había
@@ -22,9 +21,8 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** **cierre de F3-07** — `Project` deja de contener
-  `Artifact[]` como agregado (ADR-106 §6) y `types.ts` pierde sus dos últimas
-  aristas; después, el resto de la fase 3 (F3-03, F3-04, F3-05, F3-06).
+- **Siguiente paso exacto:** el resto de la fase 3 — F3-03, F3-04, F3-05 y
+  F3-06 — y su documento de cierre.
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -92,7 +90,7 @@
 |---|---|---|
 | **F3-01** gate transitivo | ✅ | Adelantada. 4 cycles, 2 SCCs (3 + 9 modules). 36 pruebas, 6 negativas. |
 | **F3-02** ampliar alcance verificador | ✅ | ADR-105. Lee `import('…')` y abre los ficheros de la raíz. 42 pruebas. |
-| **F3-07** deshacer el reexportador `types.ts` | 🟡 | Cuatro de seis ciclos. Las dos que faltan, desbloqueadas por ADR-106 §6; se cierran tras F4-04. |
+| **F3-07** deshacer el reexportador `types.ts` | ✅ | `types.ts` no importa nada. Componente 27 → 14, pares ascendentes 0. |
 | **F3-08** `utils.ts` no es utilidades | ✅ | 290 líneas de composición de prompts a `services/ai`. |
 | **F3-03** declarar dependencias permitidas | ⏳ | |
 | **F3-05** iniciativas como contexto piloto | ⏳ | |

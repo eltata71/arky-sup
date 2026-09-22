@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
-import { useAppContext } from '../context/AppContext';
-import { Project, ConsistencySuggestion } from '../types';
+import { useAppContext, type Project } from '../context/AppContext';
+import { ConsistencySuggestion } from '../types';
 import { assistantService } from '../services/ai';
 import { CheckCircleIcon } from './Icons';
 

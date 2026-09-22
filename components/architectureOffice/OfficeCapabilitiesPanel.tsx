@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { Project } from '../../types';
+import type { Project } from '../../context/AppContext';
 import { Badge } from '../ui';
 import { InitiativePicker } from '../businessInitiatives/InitiativePicker';
 import { codesForInitiativeIds } from '../../services/portfolioGraph';

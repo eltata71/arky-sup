@@ -7,7 +7,7 @@ import {
     getArtifactViewCapabilities,
     resolveSafeArtifactView,
 } from '../../services/artifacts/viewController';
-import type { Artifact } from '../../types';
+import type { Artifact } from '../../lib/artifacts';
 
 const baseDocumentArtifact: Artifact = {
     id: 'a-doc',

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAppContext } from '@/context/AppContext';
 import { ARTIFACT_TEMPLATES } from '@/constants';
-import { Artifact, ArtifactTemplate, ArtifactType } from '@/types';
+import { ArtifactTemplate, ArtifactType } from '@/types';
+import type { Artifact } from '@/lib/artifacts';
 import { artifactGenerationService, documentGenerationService, classifyAIError, AIServiceError } from '../services/ai';
 import { motion, AnimatePresence } from 'motion/react';
 import { SafeRichText } from '../components/ui/SafeRichText';

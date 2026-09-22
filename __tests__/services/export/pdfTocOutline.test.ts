@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildPdfBlob, computeTocPageCount } from '../../../services/export/adapters/pdfExporter';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const artifact = (content: string, overrides: Partial<Artifact> = {}): Artifact => ({
   id: 'art-pdf-toc',

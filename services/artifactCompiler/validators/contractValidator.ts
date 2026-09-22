@@ -7,7 +7,7 @@
  * diagram quality gate and only verify that a renderable diagram exists.
  */
 
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 import type { ArtifactContract } from '../ArtifactContract';
 import type { CompilerIssue, CompilerIssueSeverity } from '../ArtifactCompilerTypes';
 import { analyzeDocumentStructure, isSectionPresent, type DocumentStructure } from './sectionValidator';

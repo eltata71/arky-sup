@@ -11,7 +11,7 @@ import { parseMarkdownTables } from '../../../lib/markdownTables';
 import { getExportCapabilities } from '../../../services/export/exportRegistry';
 import { exportArtifact } from '../../../services/export/exportService';
 import { downloadFile } from '../../../services/export/downloadService';
-import type { Artifact } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
 
 const baseArtifact: Artifact = {
   id: 'art-1',

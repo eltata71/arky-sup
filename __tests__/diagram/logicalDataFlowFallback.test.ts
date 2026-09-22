@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { __test__ } from '../../services/geminiService';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
-import type { ArtifactTemplate, Project } from '../../types';
+import type { ArtifactTemplate } from '../../types';
+import type { Project } from '../../services/architectureProjects';
 
 const project: Project = {
   id: 'claims-project',

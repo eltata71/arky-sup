@@ -8,27 +8,30 @@
  * back exactly this.
  */
 
-import type {
-  Artifact,
-  ConsistencySuggestion,
-  GroupedArtifacts,
-  Project,
-  Settings,
-} from '../../types';
+import type { ConsistencySuggestion, Settings } from '../../types';
+import type { Artifact, GroupedArtifacts } from '../../lib/artifacts';
+import type { Project, CreateArchitectureProjectInput, CreateArchitectureProjectResult } from '../../services/architectureProjects';
 // Type-only, so these enter through the modules' barrels rather than naming a
 // file: `import type` is erased at build time, so a barrel costs nothing here.
 // The value imports in the hooks still name the file — see `useProjectsState`.
 import type { AgentActionRecord } from '../../services/agent';
 import type { ChatMessage } from '../../services/chat';
 import type { PublicationPackage } from '../../services/publicationPipeline';
+
+/**
+ * El vocabulario del estado que este contexto entrega a las pantallas.
+ *
+ * `projects: Project[]` sale del contexto, así que el tipo también: una pantalla
+ * que lo importara de `services/architectureProjects` sumaría un módulo de
+ * servicio a su fan-out por nombrar lo que ya recibe de aquí (F3-07). No es la
+ * reexportación de compatibilidad que retiró `types.ts`: aquélla subía de la
+ * fundación al dominio; ésta baja de la capa de interfaz a él.
+ */
+export type { Project, ProjectAttentionTracking } from '../../services/architectureProjects';
 import type {
   ArchitectureGraph,
   ArchitectureGraphFreshness,
 } from '../../services/architectureKnowledgeGraph';
-import type {
-  CreateArchitectureProjectInput,
-  CreateArchitectureProjectResult,
-} from '../../services/architectureProjects';
 
 /** How the last remote write went, as the status banner reports it. */
 export type PersistenceStatus = 'ready' | 'degraded' | 'saving' | 'error';

@@ -15,7 +15,9 @@
  */
 
 import { useMemo } from 'react';
-import type { MemoryEntry, Project, Artifact, Settings } from '../types';
+import type { MemoryEntry, Settings } from '../types';
+import type { Artifact } from '../lib/artifacts';
+import type { Project } from '../services/architectureProjects';
 import type { AgentMemoryStore } from '../services/agent';
 import { reconcileMemoryEntries } from '../services/memory';
 

@@ -1,52 +1,25 @@
-import type { Project } from '../../types';
+import type { Project } from '../architectureProjects';
 
-export type ArtifactAudience = 'executive' | 'technical' | 'operations' | 'business' | 'mixed';
+import type {
+  ArtifactAudience,
+  ArtifactDetailLevel,
+  ArtifactFamilyPreference,
+  ArtifactGenerationContract,
+  ArtifactPurpose,
+  ArtifactVisualPreferences,
+} from '../../types';
 
-export type ArtifactFamilyPreference = 'auto' | 'document' | 'diagram' | 'hybrid' | 'table' | 'matrix' | 'presentation';
-
-export type ArtifactPurpose =
-  | 'decision'
-  | 'explanation'
-  | 'design'
-  | 'implementation'
-  | 'analysis'
-  | 'governance'
-  | 'comparison'
-  | 'validation'
-  | 'communication';
-
-export type ArtifactDetailLevel = 'executive' | 'conceptual' | 'logical' | 'physical' | 'technical' | 'deep-technical';
-
-export interface ArtifactVisualPreferences {
-  orientation?: 'auto' | 'LR' | 'TD';
-  density?: 'simple' | 'balanced' | 'detailed';
-  includeLegend?: boolean;
-  includeBoundaries?: boolean;
-  includeMetrics?: boolean;
-  preferredDiagramStyle?: 'auto' | 'c4' | 'flowchart' | 'sequence' | 'bpmn' | 'dfd' | 'erd' | 'state';
-}
-
-export interface ArtifactGenerationContract {
-  id: string;
-  originalRequest: string;
-  normalizedIntent: string;
-  audience: ArtifactAudience;
-  artifactFamily: ArtifactFamilyPreference;
-  purpose: ArtifactPurpose;
-  detailLevel: ArtifactDetailLevel;
-  requiredSourceArtifactIds: string[];
-  optionalSourceArtifactIds: string[];
-  excludedSourceArtifactIds: string[];
-  requiredContextItems: string[];
-  excludedContextItems: string[];
-  acceptanceCriteria: string[];
-  exportTargets: string[];
-  visualPreferences?: ArtifactVisualPreferences;
-  language: 'es' | 'en';
-  qualityTarget: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// Las declaraciones viven en `types.ts` (F3-07): `ArtifactTemplate` ya las
+// transporta en `requestContext`, y `types.ts` no puede importar de un contexto
+// de dominio. Aquí queda el comportamiento — normalizar, validar, fusionar.
+export type {
+  ArtifactAudience,
+  ArtifactDetailLevel,
+  ArtifactFamilyPreference,
+  ArtifactGenerationContract,
+  ArtifactPurpose,
+  ArtifactVisualPreferences,
+};
 
 /**
  * Hard floor for `qualityTarget`. The structured brief never lets an AI

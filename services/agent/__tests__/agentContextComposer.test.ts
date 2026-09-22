@@ -11,7 +11,9 @@ import {
   selectRelevantMemoryEntries,
   stemMatchToken,
 } from '../agentContextComposer';
-import type { Artifact, MemoryEntry, Project, Settings } from '../../../types';
+import type { MemoryEntry, Settings } from '../../../types';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 
 const SETTINGS: Settings = {
   language: 'es',
