@@ -530,8 +530,8 @@ export type Database = {
           project_id: string
           revision?: number
           updated_at?: string
-          version?: never
-          version_group_id?: never
+          version?: number | null
+          version_group_id?: string | null
         }
         Update: {
           created_at?: string
@@ -541,8 +541,8 @@ export type Database = {
           project_id?: string
           revision?: number
           updated_at?: string
-          version?: never
-          version_group_id?: never
+          version?: number | null
+          version_group_id?: string | null
         }
         Relationships: [
           {
