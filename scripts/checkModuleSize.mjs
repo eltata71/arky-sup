@@ -58,7 +58,7 @@ export const BYTE_CEILINGS = {
    * resolved model through `settings.aiConfig.model`, which would have made the
    * trace attribute a per-agent decision to the user's own preference.
    */
-  'services/geminiService.ts': 272427,
+  'services/geminiService.ts': 271653,
   'components/ReactFlowCanvas.tsx': 109906,
   'components/ProjectHub.tsx': 78817,
   'services/ai/prompts/diagramPrompts.ts': 57600,
@@ -79,7 +79,7 @@ export const BYTE_CEILINGS = {
    * refusal live in `agentConfirmationGate`, which is why the file got shorter
    * while gaining a guarantee.
    */
-  'services/agent/agentExecutor.ts': 41585,
+  'services/agent/agentExecutor.ts': 41175,
   'components/AssistantPanel.tsx': 37688,
   'pages/Workspace.tsx': 36913,
   'services/artifacts/artifactRefinementOrchestrator.ts': 36633,
@@ -164,7 +164,7 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/geminiService.ts': 5414,
+  'services/geminiService.ts': 5405,
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 1068,
@@ -173,7 +173,12 @@ export const CEILINGS = {
   'services/export/adapters/pdfExporter.ts': 1125,
   'components/ProjectHub.tsx': 1062,
   'components/MemoryCenterModal.tsx': 1016,
-  'services/agent/agentExecutor.ts': 1001,
+  // 1001 → 988 el 2026-09-22. No es trabajo nuevo: las extracciones de la fase 2
+  // (`deterministicArtifactReuse`, `agentExecutorContracts`) ya lo habían bajado
+  // por debajo del techo y nadie fijó el número, así que la deuda seguía
+  // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
+  // no se baja cuando se gana es un presupuesto que permite volver a subir.
+  'services/agent/agentExecutor.ts': 988,
   'pages/ProjectsPage.tsx': 925,
   'services/diagram/mermaidToIR.ts': 856,
   'components/artifacts/export/ArtifactExportModal.tsx': 848,
