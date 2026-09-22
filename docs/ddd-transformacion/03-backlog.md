@@ -389,10 +389,25 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   extrapolar la decisión. El vacío actual es un resultado medido.
 
 ### F4-02 · ADR: ¿Artefacto es raíz de agregado?
-- **Prioridad** P0 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F4-01
+- **Prioridad** P0 · **Tamaño** M · **Estado** `completada` · **Depende de** F4-01 · **Resuelve** D-4
+- **Decisión (2026-09-22).** Sí: `adr/ADR-106-artefacto-raiz-de-agregado.md`.
+  Ninguna invariante necesita el contenido de dos artefactos en la misma
+  transacción; P-04 (índice) y A-02 (versionado) son de conjunto y pasan a
+  sostenerlas el servidor. El Proyecto deja de contener artefactos y su
+  índice es una proyección que sólo escriben los comandos de artefacto.
+- **Sin volumen.** La decisión no depende de la tasa de conflictos que F4-01 no
+  pudo estimar; el ADR dice por qué y qué la haría revisar.
 
 ### F4-03 · Revisión y comandos por artefacto
 - **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F4-02
+- **Contrato.** ADR-106 §3: `create_artifact`, `create_artifact_version`,
+  `update_artifact`, `delete_artifact` y `revise_artifacts` (varias versiones
+  en una transacción, para `applyConsistencySuggestion`). Cada una con
+  `project:write`, sesión viva, `revoke`, revisión **del artefacto** y contrato
+  pgTAP con el caso negativo. Índice único
+  `(project_id, version_group_id, version)`: A-02 gana autoridad de servidor.
+- **Cliente.** `artifactPersistence` deja «lee, muta en memoria, guarda todo»;
+  `expectedUpdatedAt` (reloj del cliente) se sustituye por la revisión.
 
 ### F4-04 · Separar dominio, documento persistido y modelo de lectura
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente`
