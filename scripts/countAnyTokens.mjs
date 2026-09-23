@@ -30,8 +30,9 @@ import { execSync } from 'node:child_process';
  * What is left is concentrated rather than scattered, and each group has a
  * named reason:
  *
- * - 2 in `services/geminiService.ts` — the monolith the strangler migration
- *   carries away one capability at a time. The LMS vertical took its share
+ * - 0 in `services/geminiService.ts` — the corte 10 cleanup typed its remaining
+ *   transport config and artifact model config after the prompt move exposed
+ *   two tokens hidden by this lexical scanner. The LMS vertical took its share
  *   with it, and the transport took five more (F5-01): it left typed, with
  *   `unknown` and the SDK's own parameter types, rather than carrying them;
  *   `evaluateChallenge` left the same way (corte 2), the recommendation
@@ -48,7 +49,7 @@ import { execSync } from 'node:child_process';
  *   is how React's own `lazy` is declared; narrowing it would reject valid
  *   components.
  */
-export const MAX_ANY_TOKENS = 13;
+export const MAX_ANY_TOKENS = 11;
 
 /**
  * Directories, not globs.

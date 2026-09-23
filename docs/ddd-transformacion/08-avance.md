@@ -8,7 +8,10 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F5-01, corte 8** (#64, `d35b479`) — el asistente con persona
+- **Última tarea integrada:** **F5-01, corte 9** (#66, `1195ffc`) — la propuesta de
+  nombres iniciales de artefactos sale del motor y usa `aiGateway`; el motor
+  queda en 2 431 líneas. Evidencia en `evidencias/f5-01-corte-9.md`.
+  Antes: **F5-01, corte 8** (#64, `d35b479`) — el asistente con persona
   (chat del proyecto y los dos turnos del Arquitecto Agente) sale del motor
   partido en tres mitades: la IA pregunta sobre una instrucción compuesta, el
   agente compone su turno, la Oficina decide quién responde. `assistantService`
@@ -61,19 +64,21 @@
   fijados en lo medido).
 - **Siguiente paso exacto (reanudado por instrucción del propietario):**
   F5-01, la vertical de artefactos (`artifactGenerationService`), el último
-  importador del motor y el grueso de lo que queda en él (2 442 líneas). Es
-  previsible que lleve varios cortes: la generación de artefactos todavía
+  importador del motor y el grueso de lo que queda en él (2 330 líneas según el
+  gate tras el corte 10). Es previsible que lleve varios cortes: la generación
+  de artefactos todavía
   compone personas de la Oficina (`buildOfficePersonaInstruction`,
   `resolveOfficeAgentMention`) y lee grafo de conocimiento, grafo de contexto,
   presentación y calidad, así que cada dependencia ascendente se corta antes de
   mover. Cuando salga, la arista `services/ai -> services (raíz)` y el SCC de
   catorce desaparecen. Las seis pantallas que siguen sobre el fan-out son de
   **F5-02**.
-- **Corte 9 en preparación:** la propuesta de nombres iniciales para una
-  plantilla sale del motor a `generation/artifactTemplateSuggestions.ts` y
-  entra por `aiGateway`. Conserva el esquema JSON y la lista determinista de
-  respaldo; una respuesta JSON de forma incorrecta también usa ese respaldo.
-  Quedan en el motor los caminos de contenido, revisión y refinamiento.
+- **Corte 10 en preparación:** crítica y refinamiento antes de persistir un
+  artefacto salen del motor a `generation/artifactQualityRefinement.ts`. Sus
+  prompts, temperaturas, presupuestos y contrato de la fachada se conservan.
+  Quedan en el motor los caminos de contenido, revisión y mejoras posteriores.
+  Al tipar la configuración legacy, `any` baja de 13 a 11 sin subir el
+  presupuesto.
 - **Estado medido tras #64 (2026-09-23, `d35b479`):** 473 ficheros y 4 626
   pruebas en verde; cobertura 66,83 % / 57,69 % / 59,86 % / 68,71 %
   (sentencias / ramas / funciones / líneas); carga inicial 309,6 KB gz de 340;

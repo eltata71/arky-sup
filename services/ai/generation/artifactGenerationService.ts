@@ -19,6 +19,7 @@
 import { geminiService } from '../../geminiService';
 import { suggestArtifactImprovements } from './artifactSuggestions';
 import { getInitialArtifactsForTemplate } from './artifactTemplateSuggestions';
+import { critiqueArtifactContent, refineArtifactContent } from './artifactQualityRefinement';
 
 export const artifactGenerationService = {
   /** Generate (or regenerate) the content for a catalog/on-demand artifact. */
@@ -47,11 +48,11 @@ export const artifactGenerationService = {
   },
   /** Critique artifact content against the quality rubric. */
   get critiqueArtifactContent() {
-    return geminiService.critiqueArtifactContent.bind(geminiService);
+    return critiqueArtifactContent;
   },
   /** Rewrite artifact content once the refinement gate has approved a pass. */
   get refineArtifactContent() {
-    return geminiService.refineArtifactContent.bind(geminiService);
+    return refineArtifactContent;
   },
   /** Refine the structured generation brief before an artifact is produced. */
   get proposeArtifactBriefContract() {

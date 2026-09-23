@@ -177,7 +177,7 @@ Reglas que no se negocian al trabajar aquí:
    (`tsconfig.json` habilita la strictness de forma incremental; el `strict`
    completo sigue bloqueado por el split de `services/geminiService.ts`.
    `tsconfig.strict.json` lista los módulos que ya lo cumplen y sólo crece;
-   `npm run check:any-budget` sostiene el repositorio en 17 `any`. Al enrolar un
+   `npm run check:any-budget` sostiene el repositorio en 11 `any`. Al enrolar un
    módulo recuerda que `tsc` comprueba todo lo alcanzable: entran las reglas, no
    sus repositorios. Ver CLAUDE.md.)
 5. Aplicar cambios mínimos, trazables y testeables.

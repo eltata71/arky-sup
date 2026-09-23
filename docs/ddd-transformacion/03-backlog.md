@@ -683,6 +683,17 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   importar `services/agent` y `services/chat` (dos dependencias declaradas
   menos), baja a 2 443 líneas, y los pares con import profundo 56 → 54;
   `any` 14 → 13.
+- **Corte 9 — nombres iniciales de artefactos (2026-09-23, #66).**
+  `getInitialArtifactsForTemplate` sale a
+  `generation/artifactTemplateSuggestions.ts` y pasa por `aiGateway`; conserva
+  prompt, esquema JSON y respaldo determinista. El motor baja a 2 431 líneas.
+- **Corte 10 — crítica y refinamiento previo a persistir (2026-09-23).**
+  `critiqueArtifactContent` y `refineArtifactContent` salen a
+  `generation/artifactQualityRefinement.ts` y pasan por `aiGateway`. El
+  orquestador conserva la decisión de cuándo pedir IA y qué candidato aceptar.
+  El motor baja a 2 330 líneas según el gate; `any` 13 → 11 al tipar la
+  configuración legacy que el escáner léxico dejó visible. Evidencia en
+  `evidencias/f5-01-corte-10.md`.
 - **Lo que queda.** La vertical de artefactos (`artifactGenerationService`),
   que es el grueso del motor. La arista `services/ai -> services (raíz)` y el
   SCC de catorce no desaparecen hasta que salga.
