@@ -8,11 +8,13 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F5-01, corte 4** — la vertical de
-  recomendaciones sale entera del motor a `generation/recommendation/`
-  (recomendación de artefacto a solicitud y acciones sugeridas) y entra por
-  `aiGateway`; importadores del motor 5 → 4; el motor baja a 4 015 líneas.
-  Evidencia en `evidencias/f5-01-corte-4.md`. Antes: **F5-01, corte 3** (#58) —
+- **Última tarea completada:** **F5-01, corte 5** — la vertical de documentos
+  (diagrama a documento, nota inteligente, plan y salud SDD, extracción de
+  memoria) sale del motor a `generation/documents/` y entra por `aiGateway`;
+  importadores del motor 4 → 3; el motor baja a 3 661 líneas. Evidencia en
+  `evidencias/f5-01-corte-5.md`. Antes: **F5-01, corte 4** (#59) — la vertical
+  de recomendaciones a `generation/recommendation/`, 5 → 4. Antes:
+  **F5-01, corte 3** (#58) —
   las sugerencias de mejora de artefactos a `generation/artifactSuggestions.ts`.
   Antes: **F4-05 y F4-06** — la coordinación de
   artefactos sale de React a `services/artifacts/application/` (el hook y cuatro
@@ -34,11 +36,11 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 5: la vertical de
-  documentos (`documentGenerationService`, cinco métodos; incluye
-  `synthesizeSmartNote`, con la persona del tutor del LMS). Quedan cuatro
-  importadores del motor en `services/ai`: documentos, diagramas, asistente y
-  artefactos, en ese orden de tamaño. Las seis pantallas que
+- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 6: la vertical de
+  diagramas (`diagramGenerationService`, seis métodos). Quedan tres
+  importadores del motor en `services/ai`: diagramas, asistente (incluye
+  `consultArchitecture`, con la persona del tutor del LMS) y artefactos, en
+  ese orden de tamaño. Las seis pantallas que
   siguen sobre el fan-out son de **F5-02**.
 - **Esquema de producción al día (2026-09-23).** Con la aprobación del
   propietario se aplicaron a `ArkyDB-US` las dos migraciones que faltaban —
@@ -140,7 +142,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–4 hechos | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. |
+| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–5 hechos | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. |
 | **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible

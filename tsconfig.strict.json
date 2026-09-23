@@ -53,6 +53,7 @@
     "lib/artifacts/generationPhase.ts",
     "services/ai/generation/recommendation/index.ts",
     "services/ai/generation/recommendationService.ts",
+    "services/ai/generation/documentGenerationService.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",

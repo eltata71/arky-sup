@@ -1018,11 +1018,12 @@ four façades that only send their own prompt — assisted capture, the platform
 guide, the initiative assistant and diagram edit — reach the transport without
 loading the engine, which took five files off the edge
 `services/ai -> services (raíz)` that closes the nine-context component.
-`__tests__/services/ai/engineImporters.test.ts` lists the four that still
+`__tests__/services/ai/engineImporters.test.ts` lists the three that still
 import the engine (`learningService` left in the second cut, with
 `evaluateChallenge`; `artifactSuggestionService` left in the third cut;
 `recommendationService` left whole in the fourth, into
-`services/ai/generation/recommendation/`); the list may only shrink, and each one leaves the way the LMS
+`services/ai/generation/recommendation/`; `documentGenerationService` in the
+fifth, into `services/ai/generation/documents/`); the list may only shrink, and each one leaves the way the LMS
 did — as a vertical, its upward dependency cut first.
 
 **A vertical that leaves stops calling the SDK itself.** The custom-artifact
