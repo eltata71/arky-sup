@@ -33,8 +33,7 @@ import {
   type CoordinationTeamMember,
 } from '../../services/architectureOffice/officeCoordination';
 import { buildCoordinationInvoker } from '../../services/architectureOffice/officeCoordinationInvoker';
-import { assistantService } from '../../services/ai';
-import { configuredModelTiers, customizedAgentBriefings, disabledAgentIds } from '../../services/architectureOffice';
+import { chatWithProject, configuredModelTiers, customizedAgentBriefings, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
 import type { Settings } from '../../types';
 import type { Project } from '../../context/AppContext';
@@ -129,7 +128,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
       scope,
       invoke: buildCoordinationInvoker({
         chat: (carrier, message, history, currentSettings, personaOverride, modelTier) =>
-          assistantService.chatWithProject(
+          chatWithProject(
             carrier,
             message,
             history,

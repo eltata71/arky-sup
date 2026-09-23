@@ -23,7 +23,7 @@ vi.mock('../../ai', () => ({
     applyArtifactImprovements: vi.fn(async () => 'contenido mejorado'),
     generateArtifactContent: vi.fn(async () => 'contenido nuevo'),
   },
-  assistantService: { processAssistantChat: vi.fn(async () => ({ text: 'ok' })) },
+  assistantService: { runAgentTurn: vi.fn(async () => ({ text: 'ok' })) },
   classifyAIError: vi.fn(() => ({ category: 'unknown' })),
   AIServiceError: class extends Error {},
 }));

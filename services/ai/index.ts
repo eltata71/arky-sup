@@ -72,8 +72,11 @@ export {
   recommendationService,
 } from './generation';
 export type {
+  AgentFunctionCall,
+  AgentTurnResult,
   AIModelOption,
   CaptureAssistantService,
+  ProjectChatTurn,
   DiagramEditRequest,
   DiagramEditResult,
   DiagramEditService,

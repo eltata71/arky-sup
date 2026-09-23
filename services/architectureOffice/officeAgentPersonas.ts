@@ -384,3 +384,11 @@ export const buildOfficePersonaBriefing = (personaId: OfficeAgentId): AgentPerso
     ],
   };
 };
+
+/**
+ * The briefing for whoever a message names — `@Alias` — or Arky when it names
+ * nobody. What the engine did inside every agent turn before F5-01 (corte 8);
+ * now the side that knows the Office hands it to the agent.
+ */
+export const officePersonaForMessage = (message: string): AgentPersonaBriefing =>
+  buildOfficePersonaBriefing(resolveOfficeAgentMention(message).id);

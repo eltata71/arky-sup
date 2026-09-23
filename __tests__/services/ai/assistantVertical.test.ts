@@ -1,13 +1,13 @@
 /**
- * Four assistant turns are out of the engine (F5-01, corte 7), and stay out.
+ * The assistant is out of the engine (F5-01, cortes 7 y 8), and stays out.
  *
- * The consulting room, the chat-context note, the consistency check and the
- * multimodal modal left `services/geminiService.ts` for
- * `services/ai/generation/assistant/` and reach a model through `aiGateway`.
- * None had a test inside the engine; these pin what each keeps — the
- * persona, the retry budget, the failure that degrades instead of throwing,
- * and where the uploaded files travel. The three persona-bound turns are still
- * the engine's, and the last case says so, so their departure is written down.
+ * Corte 7 moved the four turns that carry no persona — the consulting room,
+ * the chat-context note, the consistency check and the multimodal modal.
+ * Corte 8 moved the three that speak as an agent, by splitting each where the
+ * dependency points: `services/ai` asks the model over an instruction it is
+ * handed, `services/agent` composes the agent's turn, and the Office composes
+ * the project chat and supplies the persona. These pin that split — nothing
+ * in the vertical looks a persona up — and what each turn keeps.
  */
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +19,10 @@ import {
   runConsistencyCheck,
 } from '../../../services/ai/generation/assistant';
 import { assistantService } from '../../../services/ai/generation/assistantService';
+import { runAgentTurn, streamAgentTurn } from '../../../services/ai/generation/assistant/agentTurn';
+import { generateProjectChatReply } from '../../../services/ai/generation/assistant/projectChat';
+import { chatWithProject, composeProjectChatInstruction } from '../../../services/architectureOffice/application/projectConversation';
+import { officePersonaForMessage, OFFICE_AGENT_PERSONAS } from '../../../services/architectureOffice/officeAgentPersonas';
 import type { Project } from '../../../services/architectureProjects';
 import type { Course } from '../../../types/lms';
 import type { Settings } from '../../../types';
@@ -48,9 +52,12 @@ afterEach(() => {
 });
 
 describe('the assistant vertical outside the engine', () => {
-  const moved = ['consultArchitecture', 'analyzeChatForContext', 'runConsistencyCheck', 'processMultimodalChat'];
+  const moved = [
+    'consultArchitecture', 'analyzeChatForContext', 'runConsistencyCheck', 'processMultimodalChat',
+    'chatWithProject', 'processAssistantChat', 'processAssistantChatStream',
+  ];
 
-  it('the engine no longer declares any of the four turns', () => {
+  it('the engine no longer declares any of the seven turns', () => {
     const engine = readCode('services/geminiService.ts');
     for (const method of moved) {
       expect(engine, method).not.toMatch(new RegExp(`\\b${method}\\s*\\(`));
@@ -58,21 +65,15 @@ describe('the assistant vertical outside the engine', () => {
   });
 
   it('the vertical reaches neither the engine nor the contexts that import this layer back', () => {
-    for (const file of ['assistantPorts', 'architectureConsultation', 'conversationAnalysis', 'multimodalChat', 'index']) {
+    for (const file of ['assistantPorts', 'architectureConsultation', 'conversationAnalysis', 'multimodalChat', 'agentTurn', 'projectChat', 'index']) {
       const code = readCode(`services/ai/generation/assistant/${file}.ts`);
       expect(code, file).not.toMatch(/geminiService['"]/);
       expect(code, file).not.toMatch(/services\/(chat|agent|architectureOffice)|\.\.\/\.\.\/\.\.\/(chat|agent|architectureOffice)/);
     }
   });
 
-  it('the façade serves the four from the vertical, and only the persona-bound turns from the engine', () => {
-    for (const method of moved) {
-      expect(assistantService[method as keyof typeof assistantService], method).toBeTypeOf('function');
-    }
-    const facade = readCode('services/ai/generation/assistantService.ts');
-    expect(facade.match(/geminiService\.\w+/g)?.map((m) => m.split('.')[1]).sort()).toEqual(
-      ['chatWithProject', 'processAssistantChat', 'processAssistantChatStream'],
-    );
+  it('the façade no longer imports the engine at all', () => {
+    expect(readCode('services/ai/generation/assistantService.ts')).not.toMatch(/geminiService/);
   });
 });
 
@@ -156,5 +157,106 @@ describe('assistant turns through the gateway', () => {
     expect(instruction).toContain('Project: Portal de asegurados');
     expect(instruction).toContain('Course: Event Storming');
     expect(instruction).toContain('- Eventos: Qué es un evento');
+  });
+});
+
+describe('the turns that speak as an agent', () => {
+  it('runs an agent turn over the instruction it is handed, and reads back modifyArtifact', async () => {
+    const spy = vi.spyOn(aiGateway, 'generateContent').mockResolvedValue({
+      text: 'Hecho',
+      functionCalls: [{ name: 'modifyArtifact', args: { newContent: '# nuevo', target: 'current' } }],
+    });
+
+    const result = await runAgentTurn({
+      systemInstruction: 'INSTRUCCION-COMPUESTA',
+      history: [{ role: 'user', parts: [{ text: 'antes' }] }],
+      question: 'cámbialo',
+      settings,
+      offerArtifactTool: true,
+    });
+
+    expect(result).toEqual({ text: 'Hecho', functionCall: { name: 'modifyArtifact', args: { newContent: '# nuevo', target: 'current' } } });
+    const [, , contents, config, options] = spy.mock.calls[0] as unknown as [unknown, unknown, Array<{ role: string }>, { systemInstruction: string; tools?: unknown[]; temperature: number }, unknown];
+    expect(contents.map((turn) => turn.role)).toEqual(['user', 'user']);
+    expect(config.systemInstruction).toBe('INSTRUCCION-COMPUESTA');
+    expect(config.tools).toHaveLength(1);
+    expect(config.temperature).toBe(0.6);
+    expect(options).toEqual({ maxRetries: 1 });
+  });
+
+  it('offers no tool when no artifact is open', async () => {
+    const spy = vi.spyOn(aiGateway, 'generateContent').mockResolvedValue({ text: 'ok' });
+    await expect(runAgentTurn({ systemInstruction: 'x', history: [], question: 'q', settings, offerArtifactTool: false }))
+      .resolves.toEqual({ text: 'ok' });
+    expect((spy.mock.calls[0][3] as { tools?: unknown }).tools).toBeUndefined();
+  });
+
+  it('streams deltas, keeps the first tool call, and rewraps a mid-stream failure', async () => {
+    async function* chunks() {
+      yield { text: 'Ho' };
+      yield { text: 'la', functionCalls: [{ name: 'modifyArtifact', args: { newContent: 'a' } }] };
+      yield { functionCalls: [{ name: 'otro', args: {} }] };
+    }
+    vi.spyOn(aiGateway, 'generateContentStream').mockResolvedValueOnce(chunks());
+    const deltas: string[] = [];
+
+    const result = await streamAgentTurn(
+      { systemInstruction: 'x', history: [], question: 'q', settings, offerArtifactTool: true },
+      (full) => deltas.push(full),
+    );
+    expect(deltas).toEqual(['Ho', 'Hola']);
+    expect(result).toEqual({ text: 'Hola', functionCall: { name: 'modifyArtifact', args: { newContent: 'a' } } });
+
+    async function* broken() {
+      yield { text: 'a' };
+      throw new Error('socket closed');
+    }
+    vi.spyOn(aiGateway, 'generateContentStream').mockResolvedValueOnce(broken());
+    await expect(streamAgentTurn({ systemInstruction: 'x', history: [], question: 'q', settings, offerArtifactTool: false }, () => undefined))
+      .rejects.toMatchObject({ userMessage: expect.any(String) });
+  });
+
+  it('keeps the project chat history inside the prompt and honours the tier', async () => {
+    const spy = vi.spyOn(aiGateway, 'generateContent').mockResolvedValue({ text: 'respuesta' });
+
+    await generateProjectChatReply({
+      systemInstruction: 'MARCO',
+      message: '¿y el impacto?',
+      history: [{ role: 'user', parts: [{ text: 'hola' }] }, { role: 'model', parts: [{ text: 'buenas' }] }],
+      settings,
+    });
+
+    const [, , prompt, config] = spy.mock.calls[0] as unknown as [unknown, unknown, string, { systemInstruction: string }];
+    expect(prompt).toBe('Previous Conversation:\nUser: hola\n\nArchitect: buenas\n\nUser: ¿y el impacto?');
+    expect(config.systemInstruction).toBe('MARCO');
+  });
+});
+
+describe('the Office decides who answers', () => {
+  it('frames the project chat with the named persona and the Office standards', () => {
+    const sofia = Object.values(OFFICE_AGENT_PERSONAS).find((persona) => persona.id !== 'arky');
+    expect(sofia).toBeDefined();
+    const instruction = composeProjectChatInstruction(project, `@${sofia!.alias} revisa esto`, settings);
+    expect(instruction).toContain('Chief Software Architect');
+    expect(instruction).toContain('ARCHITECTURE OFFICE STANDARDS:');
+    expect(instruction).toContain(sofia!.alias);
+  });
+
+  it('binds the persona explicitly over any mention in the message', () => {
+    const [first, second] = Object.values(OFFICE_AGENT_PERSONAS).filter((persona) => persona.id !== 'arky');
+    const instruction = composeProjectChatInstruction(project, `@${first.alias} dice algo`, settings, second.id);
+    expect(instruction).toContain(second.alias);
+  });
+
+  it('sends the framed instruction through the vertical', async () => {
+    const spy = vi.spyOn(aiGateway, 'generateContent').mockResolvedValue({ text: 'ok' });
+    await expect(chatWithProject(project, 'hola', [], settings, undefined, 'default')).resolves.toBe('ok');
+    expect((spy.mock.calls[0][3] as { systemInstruction: string }).systemInstruction).toContain('ARCHITECTURE OFFICE STANDARDS:');
+  });
+
+  it('hands the agent a briefing for whoever the message names, Arky by default', () => {
+    const briefing = officePersonaForMessage('sin mención');
+    expect(briefing.composeInstruction('BASE')).toContain('BASE');
+    expect(briefing.sections.length).toBeGreaterThan(0);
   });
 });

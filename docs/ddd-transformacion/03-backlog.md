@@ -669,18 +669,23 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   ciclo aunque el import fuera de tipo. El contexto de cursos deja de leerse por
   `any` (15 → 14). `assistantService` **sigue importando el motor**, sólo por
   sus tres turnos con persona.
-- **Lo que queda.** Los tres turnos del asistente con persona
-  (`chatWithProject`, `processAssistantChat` y su variante en streaming) y la
-  vertical de artefactos. Los tres turnos no pueden salir moviéndose: componen
-  la persona de la Oficina (`buildOfficePersonaInstruction`,
-  `buildOfficePersonaBriefing`) y, los dos del agente, su instrucción de sistema
-  (`buildAgentSystemInstruction`), y `services/agent` y
-  `services/architectureOffice` importan `services/ai`. El corte que les toca
-  (8) invierte esa dependencia: la vertical recibe la instrucción ya compuesta,
-  y la composición la aporta quien ya puede ver a la Oficina y al agente —el
-  patrón `AgentPersonaBriefing`—. `agentExecutor` es el caso delicado: no puede
-  importar la Oficina, así que la persona le tiene que llegar por su puerto.
-  La arista no desaparece hasta el último importador; el SCC tampoco.
+- **Corte 8 — el asistente con persona (2026-09-23).** `chatWithProject`,
+  `processAssistantChat` y su variante en streaming salen del motor partidos
+  por donde apunta la dependencia: `services/ai/generation/assistant/` pregunta
+  al modelo sobre una instrucción que recibe compuesta (`runAgentTurn`,
+  `streamAgentTurn`, `generateProjectChatReply`, más el prompt propio del
+  proyecto); `services/agent/agentConversation` compone el turno del agente
+  con la persona que le entregan (su puerto `AgentPersonaBriefing`), y la
+  Oficina decide quién responde (`chatWithProject`, `officePersonaForMessage`).
+  El ejecutor recibe la persona por `resolvePersona`; las pantallas juntan las
+  tres mitades en `hooks/useAssistantTurns`, sin subir su fan-out.
+  `assistantService` deja de importar el motor: **2 → 1**. El motor deja de
+  importar `services/agent` y `services/chat` (dos dependencias declaradas
+  menos), baja a 2 443 líneas, y los pares con import profundo 56 → 54;
+  `any` 14 → 13.
+- **Lo que queda.** La vertical de artefactos (`artifactGenerationService`),
+  que es el grueso del motor. La arista `services/ai -> services (raíz)` y el
+  SCC de catorce no desaparecen hasta que salga.
 
 ### F5-02 · Políticas de negocio a su contexto propietario
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F5-01

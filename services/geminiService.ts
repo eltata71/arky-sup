@@ -13,7 +13,6 @@ import {
 import { emitGenerationPhase, type Artifact, type ArtifactGenerationPhaseEvent, type ArtifactGenerationPhaseListener } from '../lib/artifacts';
 import type { Project } from './architectureProjects';
 import type { ArtifactReviewSuggestion } from './review';
-import type { ChatMessage } from './chat';
 import { cleanJsonString as cleanJsonStringUtil } from '../utils';
 import {
   buildGlobalPrompt as buildGlobalPromptUtil,
@@ -23,11 +22,9 @@ import {
   type BasePromptOptions,
   type ArtifactsContextOptions,
 } from './ai/prompts/projectPrompts';
-import { buildAgentSystemInstruction, prepareChatHistoryForModel } from './agent/agentContextComposer';
-import { IMAGE_MODEL, TTS_MODEL, type ModelTier } from '../lib/ai/modelCatalog';
+import { IMAGE_MODEL, TTS_MODEL } from '../lib/ai/modelCatalog';
 import { resolveModelForSettings, resolveProviderId } from './ai/catalog';
 import { activeProviderCapabilities } from './ai/capabilities';
-import { MODIFY_ARTIFACT_TOOL } from './ai/tools';
 import {
     effectiveGeminiApiKey,
     LegacyGenerationTransport,
@@ -115,8 +112,7 @@ import { extractDiagramSignals, renderDiagramSignals } from './diagram/diagramSi
 import { selectArtifactGenerationContext, validateControlledContextForPrompt } from './artifacts/artifactContextSelectionService';
 import type { ArtifactGenerationContract, ArtifactGenerationContractProposal } from './artifacts/artifactGenerationContract';
 import { SKELETON_FALLBACK_MARKER } from './artifacts/artifactFallbackDetection';
-import { buildOfficePersonaInstruction, resolveOfficeAgentMention, buildOfficePersonaBriefing, OFFICE_AGENT_PERSONAS, type OfficeAgentId } from './architectureOffice/officeAgentPersonas';
-import { getOfficeArchitectureContext } from './architectureOffice/officeArchitectureKnowledge';
+import { buildOfficePersonaInstruction, resolveOfficeAgentMention } from './architectureOffice/officeAgentPersonas';
 
 /** Returns true when an ArtifactTemplate.type requires diagram-flavoured generation. */
 function isDiagramArtifactType(type: string): boolean {
@@ -2250,130 +2246,6 @@ Return ONLY valid JSON compatible with this partial shape (no prose, omit unknow
     }
 
 
-    public async processAssistantChat(
-        project: Project,
-        activeArtifact: Artifact | null,
-        history: ChatMessage[],
-        question: string,
-        settings: Settings
-    ): Promise<{ text: string, functionCall?: any }> {
-        // Single source of truth for the Arquitecto Agente system instruction:
-        // base persona → Memoria del Agente → AI config → Global → Project →
-        // Project-agent → Artifact → execution rules. The composer applies
-        // per-scope budgets and relevance selection so token usage stays
-        // predictable as memories grow.
-        const systemInstruction = buildAgentSystemInstruction({
-            project,
-            activeArtifact,
-            settings,
-            userQuery: question,
-            persona: buildOfficePersonaBriefing(resolveOfficeAgentMention(question).id),
-        });
-
-        const includeChatHistory = settings.aiConfig?.includeChatHistoryByDefault === true;
-        const chatHistory = prepareChatHistoryForModel({ history, includeChatHistory });
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const result = await this.generateContentWithFallback(
-            settings,
-            modelName,
-            [...chatHistory, { role: 'user', parts: [{ text: question }] }],
-            {
-                systemInstruction,
-                temperature: settings.aiConfig?.temperature ?? 0.7,
-                tools: activeArtifact ? [MODIFY_ARTIFACT_TOOL] : undefined,
-            },
-            { maxRetries: 1 },
-        );
-        if (result.functionCalls && result.functionCalls.length > 0) {
-            const call = result.functionCalls[0];
-            return { text: result.text, functionCall: { name: call.name, args: call.args } };
-        }
-        return { text: result.text };
-    }
-
-    /**
-     * Streaming variant of {@link processAssistantChat}.
-     *
-     * Calls `generateContentStream` and forwards each chunk of text to
-     * `onDelta(fullText, deltaText)` so the UI can render token-by-token
-     * progress.  Function calls are surfaced once the stream finishes
-     * (Gemini emits the full function call in the final chunk's accumulated
-     * payload, not interleaved with text).
-     *
-     * Errors from the underlying SDK are still retried by the transport
-     * — but only for the *initial* connection attempt.  Once the stream is
-     * open we don't retry, because partial output may already be on screen.
-     */
-    public async processAssistantChatStream(
-        project: Project,
-        activeArtifact: Artifact | null,
-        history: ChatMessage[],
-        question: string,
-        settings: Settings,
-        onDelta: (fullText: string, deltaText: string) => void,
-    ): Promise<{ text: string; functionCall?: { name: string; args: Record<string, unknown> } }> {
-        // Same composition contract as the non-streaming variant — keeping the
-        // two methods in lock-step means the model never sees a different
-        // identity depending on whether the UI used streaming.
-        const systemInstruction = buildAgentSystemInstruction({
-            project,
-            activeArtifact,
-            settings,
-            userQuery: question,
-            persona: buildOfficePersonaBriefing(resolveOfficeAgentMention(question).id),
-        });
-
-        const includeChatHistory = settings.aiConfig?.includeChatHistoryByDefault === true;
-        const chatHistory = prepareChatHistoryForModel({ history, includeChatHistory });
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        // Open the stream — guarded by the unified model-fallback pipeline so
-        // 429/overloaded responses on the preferred model fall through to the
-        // next candidate before the user ever sees a hard error. Mid-stream
-        // failures (after first chunk) are NOT retried because partial output
-        // may already be rendered.
-        const stream = await this.generateContentStreamWithFallback(
-            settings,
-            modelName,
-            [...chatHistory, { role: 'user', parts: [{ text: question }] }],
-            {
-                systemInstruction,
-                temperature: settings.aiConfig?.temperature ?? 0.7,
-                tools: activeArtifact ? [MODIFY_ARTIFACT_TOOL] : undefined,
-            },
-            { maxRetries: 1 },
-        );
-
-        let fullText = '';
-        let lastFunctionCall: { name: string; args: Record<string, unknown> } | undefined;
-
-        try {
-            for await (const chunk of stream) {
-                // Function calls arrive on a separate field; capture the
-                // first non-empty one we see (Gemini emits at most one per
-                // turn for our tool schema).
-                const calls = (chunk as { functionCalls?: Array<{ name?: string; args?: Record<string, unknown> }> }).functionCalls;
-                if (calls && calls.length > 0 && !lastFunctionCall) {
-                    const call = calls[0];
-                    if (call.name) {
-                        lastFunctionCall = { name: call.name, args: call.args ?? {} };
-                    }
-                }
-                const delta = (chunk as { text?: string }).text ?? '';
-                if (delta) {
-                    fullText += delta;
-                    onDelta(fullText, delta);
-                }
-            }
-        } catch (err) {
-            // Mid-stream failures: rewrap so the UI gets a clean userMessage.
-            throw classifyAIError(err);
-        }
-
-        return lastFunctionCall ? { text: fullText, functionCall: lastFunctionCall } : { text: fullText };
-    }
-
     public async generateImageForArtifact(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
         // Image generation is a Gemini capability, not a universal one. Checking
         // first turns "the button failed with an SDK error" into a stated limit
@@ -2560,70 +2432,10 @@ INSTRUCTIONS:
     // Do not add LMS generation here again.
 
 
-    public async chatWithProject(
-        project: Project,
-        message: string,
-        history: { role: 'user' | 'model', parts: { text: string }[] }[],
-        settings: Settings,
-        /**
-         * Explicit persona for this turn. The Architecture Office runner passes
-         * it so the specialist is bound by the caller, not inferred from the
-         * message text — a coordination brief that happens to contain an
-         * `@Alias` must never hijack the persona of a downstream workstream.
-         */
-        personaOverride?: OfficeAgentId,
-        /** Tier for this turn — the Office resolves it from the agent's card. */
-        modelTier: ModelTier = 'default',
-    ): Promise<string> {
-        const basePrompt = this.buildBasePrompt(project, settings);
-        // Build a summary of all artifacts to give the AI global context
-        const artifactsSummary = project.artifacts.map(a => 
-            `--- Artifact: ${a.name} (${a.type}) ---\nObjective: ${a.objective}\nContent Snippet: ${a.content.substring(0, 500)}...\n`
-        ).join('\n');
-
-        const projectInstruction = `
-${basePrompt}
-
-You are the Chief Software Architect for this project. You have GLOBAL CONTEXT of all the artifacts in the system.
-The user is asking a question or requesting an action that may span multiple artifacts or require understanding the system as a whole.
-
-PROJECT ARTIFACTS SUMMARY:
-${artifactsSummary}
-
-INSTRUCTIONS:
-1. Answer the user's question based on the global context of the project.
-2. If the user asks about the impact of a change, analyze how it affects different artifacts.
-3. Be concise, technical, and authoritative.
-4. If you need to suggest code or configuration (like docker-compose, Kubernetes manifests, etc.), provide it in standard Markdown code blocks.
-`;
-        const officeContext = getOfficeArchitectureContext();
-        const systemInstruction = buildOfficePersonaInstruction(
-            `${projectInstruction}\n\nARCHITECTURE OFFICE STANDARDS:\n${officeContext.promptContext.map((item) => `- ${item}`).join('\n')}`,
-            personaOverride ? OFFICE_AGENT_PERSONAS[personaOverride] : resolveOfficeAgentMention(message),
-        );
-
-        const modelName = resolveModelForSettings(modelTier, settings).id;
-
-        // Format history into the prompt to ensure context is kept across model fallbacks.
-        const historyText = history.map(h => `${h.role === 'user' ? 'User' : 'Architect'}: ${h.parts[0].text}`).join('\n\n');
-        const fullMessage = historyText ? `Previous Conversation:\n${historyText}\n\nUser: ${message}` : message;
-
-        const result = await this.generateContentWithFallback(
-            settings,
-            modelName,
-            fullMessage,
-            {
-                systemInstruction,
-                temperature: settings.aiConfig?.temperature ?? 0.7,
-            },
-            { maxRetries: 1 },
-        );
-        return result.text;
-    }
-
-    // The assistant turns that need no persona — the consulting room, the
-    // chat-context note, the consistency check and the multimodal modal — are
-    // `services/ai/generation/assistant/` now (F5-01, corte 7).
+    // The assistant is `services/ai/generation/assistant/` now (F5-01, cortes
+    // 7 y 8). The three turns that speak as an agent are composed outside this
+    // layer — the agent's by `services/agent`, the project chat's by the Office
+    // — and reach the vertical with their instruction already written.
 
 }
 

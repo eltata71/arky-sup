@@ -26,6 +26,7 @@ import {
 } from '../services/agent';
 import { extractMemoryBullets, fallbackBulletsFromInstruction } from '../services/agent/memoryExtractor';
 import { buildAgentLesson, mergeAgentLesson } from '../services/agent/agentLessonRecorder';
+import { officePersonaForMessage } from '../services/architectureOffice';
 
 /**
  * React-side controller for the agent. Owns:
@@ -378,6 +379,9 @@ export function useAgentActions(): UseAgentActionsResult {
         // action card and accepted; that acceptance is what this flag carries
         // into the executor's gate.
         confirmedByUser: true,
+        // The patch speaks as whoever the instruction names — the Office's
+        // rule, supplied here because the agent must not look the Office up.
+        resolvePersona: officePersonaForMessage,
         actor: actor ? { id: actor.id ?? null, name: actor.name ?? null } : undefined,
         onPhase: (phase) => setExecutionPhase(phase),
       });

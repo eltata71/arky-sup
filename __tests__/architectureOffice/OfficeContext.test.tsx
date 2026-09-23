@@ -46,11 +46,11 @@ vi.mock('../../services/architectureOffice/OfficeEngagementRepository', async ()
   };
 });
 
-vi.mock('../../services/geminiService', () => ({
-  geminiService: {
-    // Refinement is unavailable — the deterministic charter must still stand.
-    chatWithProject: vi.fn(async () => { throw new Error('sin proveedor de IA'); }),
-  },
+// Refinement is unavailable — the deterministic charter must still stand. The
+// model call is the project chat's reply; the Office still composes the prompt.
+vi.mock('../../services/ai/generation/assistant/projectChat', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../services/ai/generation/assistant/projectChat')>()),
+  generateProjectChatReply: vi.fn(async () => { throw new Error('sin proveedor de IA'); }),
 }));
 
 const mockAuth = { user: { uid: 'u1', email: 'ana@example.com' }, profile: { role: 'admin', displayName: 'Ana' } };

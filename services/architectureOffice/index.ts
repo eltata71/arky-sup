@@ -67,6 +67,7 @@ export * from './officePortfolio';
 export * from './application/captureAssistance';
 export * from './application/platformGuidance';
 export * from './application/portfolioCommandCenter';
+export * from './application/projectConversation';
 
 // Legacy chat-triggered orchestration. Superseded by the engagement engine
 // above; still reachable from the project copilot via "@Lucía coordina…".

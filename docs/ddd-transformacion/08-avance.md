@@ -8,7 +8,13 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F5-01, corte 7** — el asistente sin persona
+- **Última tarea completada:** **F5-01, corte 8** — el asistente con persona
+  (chat del proyecto y los dos turnos del Arquitecto Agente) sale del motor
+  partido en tres mitades: la IA pregunta sobre una instrucción compuesta, el
+  agente compone su turno, la Oficina decide quién responde. `assistantService`
+  deja de importar el motor (**2 → 1**, queda artefactos); el motor deja de
+  importar `agent` y `chat` y baja a 2 443 líneas. Evidencia en
+  `evidencias/f5-01-corte-8.md`. Antes: **F5-01, corte 7** (#63) — el asistente sin persona
   (consulta de arquitectura, nota de contexto del chat, chequeo de consistencia
   y chat multimodal) sale del motor a `generation/assistant/`; el motor baja a
   2 631 líneas y `any` a 14. `assistantService` sigue importando el motor por

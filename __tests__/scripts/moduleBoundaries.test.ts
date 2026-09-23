@@ -12,6 +12,8 @@
  * would notice if one came back: they were introduced one import at a time.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   ALLOWED_CYCLES,
@@ -59,13 +61,18 @@ describe('el verificador ve lo que dice ver', () => {
   // alcanza el árbol de verdad.
 
   it('lee un `import()` diferido, que es como el arranque evita la capa de IA', () => {
-    // `context/OfficeContext.tsx` carga `services/ai/generation/assistantService`
-    // con `await import(...)` y por ningún otro sitio. Si el escáner sólo mirara
+    // `App.tsx` alcanza cada página sólo con `lazyWithRetry(() => import(...))`:
+    // ningún import estático cruza de `app` a `pages`. Si el escáner sólo mirara
     // los imports estáticos, esta arista no existiría — y durante toda la
-    // transformación no existió.
-    const { edges, deepImports } = analyse();
-    expect(edges.has('context -> services/ai')).toBe(true);
-    expect(deepImports.get('context -> services/ai')).toBe(1);
+    // transformación no existió. (El ejemplo anterior, `OfficeContext`
+    // cargando `services/ai` en diferido, desapareció con F5-01 corte 8: ahora
+    // carga el chat de proyecto de la Oficina, y la arista `context ->
+    // services/ai` ya no existe.)
+    const appSource = readFileSync(join(process.cwd(), 'App.tsx'), 'utf8');
+    expect(appSource).not.toMatch(/from ['"]\.\/pages\//);
+    const { edges } = analyse();
+    expect(edges.has('app -> pages')).toBe(true);
+    expect(edges.has('context -> services/ai')).toBe(false);
   });
 
   it('lee un `import()` en posición de tipo, que acopla igual', () => {

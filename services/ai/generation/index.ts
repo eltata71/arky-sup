@@ -13,7 +13,15 @@ export type { DocumentGenerationService } from './documentGenerationService';
 export { diagramGenerationService } from './diagramGenerationService';
 export type { DiagramGenerationService } from './diagramGenerationService';
 export { assistantService } from './assistantService';
-export type { AssistantService } from './assistantService';
+export type {
+  AgentFunctionCall,
+  AgentModelTurn,
+  AgentTurnRequest,
+  AgentTurnResult,
+  AssistantService,
+  ProjectChatReplyRequest,
+  ProjectChatTurn,
+} from './assistantService';
 export { learningService } from './learningService';
 export type { LearningService } from './learningService';
 // The shapes the LMS generators return, and the two coercions that turn a

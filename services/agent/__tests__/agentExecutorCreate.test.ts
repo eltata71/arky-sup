@@ -33,7 +33,6 @@ vi.mock('../../geminiService', () => {
     geminiService: {
       generateArtifactContent: (...args: unknown[]) => generateArtifactContent(...args),
       applyArtifactImprovements: vi.fn(),
-      processAssistantChat: vi.fn(),
     },
     AIServiceError,
     classifyAIError: (err: unknown) => {

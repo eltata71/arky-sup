@@ -10,10 +10,11 @@ import type { Project } from '../../architectureProjects';
 // The executor reuses `geminiService` — we mock its surface so the tests stay
 // fast and offline. The contract we exercise:
 //   - applyArtifactImprovements   → improve / applySuggestion paths
-//   - processAssistantChat        → patch path (function-calling)
+//   - runAgentTurn (AI boundary)  → patch path (function-calling), composed
+//                                   by `agentConversation` since F5-01 corte 8
 //   - generateArtifactContent     → regenerate path
 const applyArtifactImprovements = vi.fn(async (..._args: unknown[]) => 'graph TD\n  A --> B\n  B --> C');
-const processAssistantChat = vi.fn(async (..._args: unknown[]) => ({
+const runAgentTurn = vi.fn(async (..._args: unknown[]) => ({
   text: '',
   functionCall: { name: 'modifyArtifact', args: { newContent: 'graph TD\n  A --> B\n  B --> C', target: 'new_version' } },
 }));
@@ -32,7 +33,6 @@ vi.mock('../../geminiService', () => {
   return {
     geminiService: {
       applyArtifactImprovements: (...args: [unknown, unknown, unknown, unknown]) => applyArtifactImprovements(...args),
-      processAssistantChat: (...args: [unknown, unknown, unknown, unknown, unknown]) => processAssistantChat(...args),
       generateArtifactContent: (...args: [unknown, unknown, unknown, unknown?]) => generateArtifactContent(...args),
     },
     AIServiceError,
@@ -42,6 +42,11 @@ vi.mock('../../geminiService', () => {
     },
   };
 });
+
+vi.mock('../../ai/generation/assistant/agentTurn', () => ({
+  runAgentTurn: (...args: unknown[]) => runAgentTurn(...args),
+  streamAgentTurn: vi.fn(),
+}));
 
 // The quality gate runs only on diagrams with an IR — our fixture has none,
 // so we exercise the structural validation path. That's fine: it's the path
@@ -110,7 +115,7 @@ describe('executeAgentAction', () => {
     })) as ReturnType<typeof vi.fn> & CreateVersionFn;
     updateArtifact = vi.fn() as ReturnType<typeof vi.fn> & UpdateArtifactFn;
     applyArtifactImprovements.mockClear();
-    processAssistantChat.mockClear();
+    runAgentTurn.mockClear();
     generateArtifactContent.mockClear();
   });
 
@@ -131,7 +136,7 @@ describe('executeAgentAction', () => {
     expect(result.newArtifactVersionId).toBe('art-2');
   });
 
-  it('uses processAssistantChat for the patch action and respects current-target override', async () => {
+  it('uses the agent turn for the patch action and respects current-target override', async () => {
     const plan = planAgentAction({ intent: baseIntent({ type: 'artifact.patch' }), artifact: ARTIFACT });
     const result = await executeAgentAction({
       confirmedByUser: true,
@@ -143,10 +148,35 @@ describe('executeAgentAction', () => {
       store: { createArtifactVersion, updateArtifact },
       targetOverride: 'current',
     });
-    expect(processAssistantChat).toHaveBeenCalledTimes(1);
+    expect(runAgentTurn).toHaveBeenCalledTimes(1);
     expect(updateArtifact).toHaveBeenCalledWith(PROJECT.id, ARTIFACT.id, { content: expect.any(String) });
     expect(createArtifactVersion).not.toHaveBeenCalled();
     expect(result.status).toBe('success');
+  });
+
+  it('speaks the patch in the persona its caller resolves from the instruction, offering the artifact tool', async () => {
+    const plan = planAgentAction({ intent: baseIntent({ type: 'artifact.patch' }), artifact: ARTIFACT });
+    const resolvePersona = vi.fn((_message: string) => ({
+      composeInstruction: (base: string) => `PERSONA-SOFIA\n${base}`,
+      sections: ['ESTANDARES-OFICINA'],
+    }));
+    await executeAgentAction({
+      confirmedByUser: true,
+      plan,
+      artifact: ARTIFACT,
+      project: PROJECT,
+      settings: SETTINGS,
+      history: [],
+      store: { createArtifactVersion, updateArtifact },
+      targetOverride: 'current',
+      resolvePersona,
+    });
+    expect(resolvePersona).toHaveBeenCalledTimes(1);
+    expect(resolvePersona.mock.calls[0][0]).toContain('Cambio solicitado:');
+    const request = runAgentTurn.mock.calls[0][0] as { systemInstruction: string; offerArtifactTool: boolean };
+    expect(request.systemInstruction).toContain('PERSONA-SOFIA');
+    expect(request.systemInstruction).toContain('ESTANDARES-OFICINA');
+    expect(request.offerArtifactTool).toBe(true);
   });
 
   it('uses generateArtifactContent for the regenerate action', async () => {
