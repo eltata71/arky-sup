@@ -2284,17 +2284,6 @@ Return ONLY valid JSON compatible with this partial shape (no prose, omit unknow
         return data;
     }
 
-    public async getInitialArtifactsForTemplate(templateName: string, settings: Settings): Promise<string[]> {
-        const prompt = `Suggest 3-5 artifact template names for project type: "${templateName}". Return JSON Array of strings.`;
-        try {
-            const { text } = await this.generateContentWithFallback(settings, resolveModelForSettings('default', settings).id, prompt, {
-                responseMimeType: 'application/json', responseSchema: { type: 'array', items: { type: 'string' } }
-            });
-            const cleanJson = this.cleanJsonString(text || '');
-            return JSON.parse(cleanJson || '[]');
-        } catch { return ["Diagrama de Contexto (C4-N1)", "Visión de la Arquitectura"]; }
-    }
-
     public async generateSvgForArtifact(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
         const prompt = `Generate a clean, professional SVG for this architecture artifact. ONLY raw SVG code. No markdown blocks.\n\n${artifact.content}`;
         const modelName = resolveModelForSettings('default', settings).id;

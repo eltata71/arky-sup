@@ -18,6 +18,7 @@
 
 import { geminiService } from '../../geminiService';
 import { suggestArtifactImprovements } from './artifactSuggestions';
+import { getInitialArtifactsForTemplate } from './artifactTemplateSuggestions';
 
 export const artifactGenerationService = {
   /** Generate (or regenerate) the content for a catalog/on-demand artifact. */
@@ -26,7 +27,7 @@ export const artifactGenerationService = {
   },
   /** Resolve the initial artifact set proposed for a project template. */
   get getInitialArtifactsForTemplate() {
-    return geminiService.getInitialArtifactsForTemplate.bind(geminiService);
+    return getInitialArtifactsForTemplate;
   },
   /** Review an artifact and return improvement suggestions. */
   get reviewArtifact() {
