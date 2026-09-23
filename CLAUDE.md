@@ -1038,13 +1038,14 @@ sides still need does not stay in the engine and does not go deep into
 `services/ai` either: `emitGenerationPhase` moved down beside its event type,
 to `lib/artifacts/generationPhase.ts`.
 
-**Open defect found by the sixth cut, not fixed by it:** the text path of the
-transport (`generateTextWithFallback`) never tries the proxy. With the operator
-key server-side, it throws «No se encontró una API Key personal» for every user
-without a personal key — so in production diagram IR generation always ends in
-the deterministic skeleton, and the engine's artifact generation hits the same
-wall. The cut kept the behaviour on purpose; the fix is its own change
-(`docs/ddd-transformacion/evidencias/f5-01-corte-6.md`).
+**All three transport paths try the proxy first.** The text path
+(`generateTextWithFallback`) did not, and the sixth cut found it: with the
+operator key server-side it threw «No se encontró una API Key personal» for
+every user without a personal key, so in production diagram IR always ended in
+the deterministic skeleton and the engine's artifact generation failed — while
+the content and streaming paths worked. It now calls the same `tryAiProxy`, and
+`geminiServiceFacade.test.ts` pins it next to the streaming case. A path that
+reaches a provider without trying the proxy first is this defect again.
 
 
 **The LMS no longer lives here.** The Training Center's ten generation methods

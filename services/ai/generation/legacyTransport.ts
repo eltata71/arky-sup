@@ -230,6 +230,11 @@ export class LegacyGenerationTransport {
         config: LegacyGenerationConfig,
         options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
     ): Promise<string> {
+        // Proxy first, like the other two paths: skipping it left users without
+        // a personal key with no model at all in production.
+        const proxied = await this.tryAiProxy(settings, preferredModel, contents, config, options);
+        if (proxied !== null) return proxied;
+
         const textRequest = buildCanonicalRequest(preferredModel, contents, config, options, 'generation');
         const textRoute = routeLegacyRequest(settings, textRequest);
         if (textRoute.plan.primary.provider !== 'gemini') {
@@ -304,11 +309,6 @@ export class LegacyGenerationTransport {
         }, options);
     }
 
-    /**
-     * Produces a concise semantic critique for the pre-persistence artifact
-     * refinement gate. It deliberately goes through generateContentWithFallback
-     * so model fallback/retry behavior remains centralized in this service.
-     */
     /**
      * Streaming counterpart of {@link generateContentWithFallback}. Falls
      * back through {@link MODEL_FALLBACK_CHAIN} only on stream-open errors

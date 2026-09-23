@@ -47,8 +47,11 @@ producción, donde la clave de operador vive sólo en el servidor, eso significa
   determinista (la autorreparación lo disimula: el lienzo nunca queda vacío);
 - la generación de artefactos del motor choca con lo mismo.
 
-No se arregla en este corte, que es de movimiento: cambiar el transporte
-tocaría también el camino de artefactos. Queda como siguiente paso propuesto.
+No se arregló en este corte, que era de movimiento. **Arreglado en el cambio
+siguiente:** `generateTextWithFallback` llama ahora a `tryAiProxy` antes del
+SDK, igual que los otros dos caminos; la prueba nueva de
+`geminiServiceFacade.test.ts` falla sin el arreglo con el mismo mensaje que veía
+el usuario.
 
 ## Pruebas
 
