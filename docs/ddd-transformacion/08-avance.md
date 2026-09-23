@@ -1,7 +1,7 @@
 # Registro de avance y punto de reanudación
 
 **Última actualización:** 2026-09-23
-**Estado integrado:** Fase 2 completa, **fase 3 cerrada** (`09-cierre-fase-3.md`) y **fase 4 en curso** (las siete tareas F4-01…F4-07 cerradas; D-4 resuelta; falta el documento de cierre), todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Estado integrado:** Fase 2 completa, **fases 3 y 4 cerradas** (`09-cierre-fase-3.md`, `10-cierre-fase-4.md`) y **fase 5 en curso**, todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
@@ -28,10 +28,11 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** cerrar la fase 4 con su documento
-  (`10-cierre-fase-4.md`, mismo formato que el de la fase 3) y empezar la fase 5
-  por **F5-01** (romper `services/ai -> services (raíz)`). Las seis pantallas
-  que siguen sobre el fan-out pasaron a **F5-02** con la misma fecha objetivo.
+- **Siguiente paso exacto:** fase 5 — **F5-01** (romper
+  `services/ai -> services (raíz)`, vertical a vertical, con el patrón de
+  `learningService`). Las seis pantallas que siguen sobre el fan-out son de
+  **F5-02**. Pendiente de decisión del propietario: aplicar la migración de
+  F4-06 a `ArkyDB-US` (`supabase db push`).
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -108,7 +109,7 @@
 
 ---
 
-## Fase 4 — en curso
+## Fase 4 — cerrada (`10-cierre-fase-4.md`)
 
 | Tarea | Estado | Nota |
 |---|---|---|

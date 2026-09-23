@@ -106,7 +106,8 @@ un `Map` de módulo) publica infraestructura, no un contrato.
 
 ## H05 · Modificar un artefacto persiste el proyecto y su colección completa
 
-**Confirmado · evidencia estática.**
+**Confirmado · evidencia estática. Corregido en la fase 4** (F4-03 comandos por
+artefacto, F4-06 retirada de la RPC compuesta; `10-cierre-fase-4.md`).
 `supabase/migrations/20260912060530_projects_artifacts.sql:46-158`.
 
 `api.save_project_aggregate(p_project, p_artifacts, p_expected_revision)` es la

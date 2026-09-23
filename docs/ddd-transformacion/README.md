@@ -16,6 +16,7 @@ como antecedente, no como estado.
 | `07-invariantes.md` | Catálogo de invariantes y **dónde se aplica cada una**. |
 | `08-avance.md` | Registro de avance y punto de reanudación. |
 | `09-cierre-fase-3.md` | Cierre de la fase 3: criterios contrastados, cifras y el patrón del contexto piloto. |
+| `10-cierre-fase-4.md` | Cierre de la fase 4: la frontera Proyecto–Artefacto ejecutada, una sola ruta de escritura y la coordinación fuera de React. |
 | `adr/` | Decisiones arquitectónicas de esta transformación (ADR-1xx). |
 | `evidencias/` | Salidas de comandos, censos y capturas de medición. |
 
