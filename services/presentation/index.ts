@@ -7,3 +7,4 @@
 export * from './PresentationTypes';
 export * from './presentationPrompt';
 export * from './presentationSchema';
+export * from './presentationFallback';

@@ -385,10 +385,11 @@ Reglas que no se negocian al trabajar aquí:
     artefactos. Dentro de él ya salieron los nombres iniciales (corte 9), la
     crítica y el refinamiento (10) y la revisión, las mejoras y los casos de
     prueba (11, `generation/artifactReview.ts`, que declara su propio puerto
-    de sugerencia en vez de importar `services/review`); imagen, voz y SVG se
-    borraron porque nadie los llamaba. Quedan contenido, presentaciones y el
-    brief, el grueso del motor (2 145 líneas tras el corte 11, desde unas
-    5 400); cuando salga, desaparecen la arista `services/ai -> services
+    de sugerencia en vez de importar `services/review`), y el brief y el deck
+    de presentación (12); imagen, voz y SVG se borraron porque nadie los
+    llamaba, y el deck mínimo, que no llama a ningún modelo, vive en
+    `services/presentation`. Queda la generación principal, todo el motor
+    (1 923 líneas tras el corte 12, desde unas 5 400); cuando salga, desaparecen la arista `services/ai -> services
     (raíz)` y el SCC de catorce. Los **tres** caminos del transporte intentan primero el proxy:
     el de texto (`generateTextWithFallback`) no lo hacía, y sin clave personal
     la generación de diagramas y de artefactos no llegaba a un modelo en

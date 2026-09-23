@@ -21,6 +21,7 @@ import { suggestArtifactImprovements } from './artifactSuggestions';
 import { getInitialArtifactsForTemplate } from './artifactTemplateSuggestions';
 import { critiqueArtifactContent, refineArtifactContent } from './artifactQualityRefinement';
 import { applyArtifactImprovements, generateTestCases, reviewArtifact } from './artifactReview';
+import { proposeArtifactBriefContract } from './artifactBriefProposal';
 
 export const artifactGenerationService = {
   /** Generate (or regenerate) the content for a catalog/on-demand artifact. */
@@ -57,7 +58,7 @@ export const artifactGenerationService = {
   },
   /** Refine the structured generation brief before an artifact is produced. */
   get proposeArtifactBriefContract() {
-    return geminiService.proposeArtifactBriefContract.bind(geminiService);
+    return proposeArtifactBriefContract;
   },
 } as const;
 

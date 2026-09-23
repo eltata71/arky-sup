@@ -8,10 +8,16 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F5-01, corte 11** — revisión, mejoras y casos de
-  prueba salen del motor a `generation/artifactReview.ts`; imagen, voz y SVG,
-  sin un solo llamante, se borran. El motor baja a **2 145 líneas**. Evidencia
-  en `evidencias/f5-01-corte-11.md`.
+- **Tarea en curso:** **F5-01, corte 12** — el brief sale a
+  `generation/artifactBriefProposal.ts`, el deck de presentación a
+  `generation/presentationDeck.ts` y el deck mínimo, que no llama a ningún
+  modelo, a `services/presentation/presentationFallback.ts`. El motor baja a
+  **1 923 líneas** y ya sólo contiene la generación principal. Evidencia en
+  `evidencias/f5-01-corte-12.md`. Antes: **F5-01, corte 11** (PR #68) —
+  revisión, mejoras y casos de prueba salen del motor a
+  `generation/artifactReview.ts`; imagen, voz y SVG, sin un solo llamante, se
+  borran. El motor baja a 2 145 líneas. Evidencia en
+  `evidencias/f5-01-corte-11.md`.
 - **Última tarea integrada:** **F5-01, corte 10** (#67, `78b92ae`) — crítica y
   refinamiento antes de persistir salen a `generation/artifactQualityRefinement.ts`;
   el motor baja a 2 330 líneas y `any` de 13 a 11. Evidencia en
@@ -71,10 +77,8 @@
   fijados en lo medido).
 - **Siguiente paso exacto (reanudado por instrucción del propietario):**
   F5-01, la vertical de artefactos (`artifactGenerationService`), el último
-  importador del motor y el grueso de lo que queda en él (2 145 líneas según el
-  gate tras el corte 11). Quedan la generación principal, las presentaciones y
-  el contrato del brief; el corte 12 razonable son el brief y las
-  presentaciones. La generación
+  importador del motor y todo lo que queda en él (1 923 líneas según el gate
+  tras el corte 12): la generación principal. La generación
   de artefactos todavía
   compone personas de la Oficina (`buildOfficePersonaInstruction`,
   `resolveOfficeAgentMention`) y lee grafo de conocimiento, grafo de contexto,
@@ -82,11 +86,11 @@
   mover. Cuando salga, la arista `services/ai -> services (raíz)` y el SCC de
   catorce desaparecen. Las seis pantallas que siguen sobre el fan-out son de
   **F5-02**.
-- **Estado medido con el corte 11 (2026-09-23, sobre `78b92ae`):** 476
-  ficheros y 4 645 pruebas en verde; cobertura 66,98 % / 57,79 % / 60,01 % /
-  68,88 %; carga inicial 309,6 KB gz de 340; 4 ciclos directos, SCC de 3 + 14,
-  0 pares ascendentes, 54 pares con import profundo, 6 pantallas sobre el
-  fan-out; `any` 11; motor 2 145 líneas.
+- **Estado medido con el corte 12 (2026-09-23):** 477 ficheros y 4 656
+  pruebas en verde; cobertura 67,09 % / 57,90 % / 60,10 % / 69,00 %; carga
+  inicial 309,6 KB gz de 340; 4 ciclos directos, SCC de 3 + 14, 0 pares
+  ascendentes, 54 pares con import profundo, 6 pantallas sobre el fan-out;
+  `any` 11; motor 1 923 líneas.
 - **Estado medido tras #64 (2026-09-23, `d35b479`):** 473 ficheros y 4 626
   pruebas en verde; cobertura 66,83 % / 57,69 % / 59,86 % / 68,71 %
   (sentencias / ramas / funciones / líneas); carga inicial 309,6 KB gz de 340;
@@ -192,7 +196,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–11 hechos; quedan contenido, presentaciones y brief | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. Arreglo del proxy en el camino de texto (#62). Corte 7: el asistente sin persona a `generation/assistant/`; el motor baja a 2 631 líneas. Corte 8: el asistente con persona, partido entre IA, agente y Oficina, 2 → 1; el motor baja a 2 443 líneas y deja de importar `agent` y `chat`. Corte 9: nombres iniciales de artefactos a `generation/artifactTemplateSuggestions.ts`; 2 431 líneas. Corte 10: crítica y refinamiento a `generation/artifactQualityRefinement.ts`; 2 330 líneas, `any` 13 → 11. Corte 11: revisión, mejoras y casos de prueba a `generation/artifactReview.ts`, imagen/voz/SVG borrados sin llamantes; 2 145 líneas. |
+| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–12 hechos; queda la generación principal | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. Arreglo del proxy en el camino de texto (#62). Corte 7: el asistente sin persona a `generation/assistant/`; el motor baja a 2 631 líneas. Corte 8: el asistente con persona, partido entre IA, agente y Oficina, 2 → 1; el motor baja a 2 443 líneas y deja de importar `agent` y `chat`. Corte 9: nombres iniciales de artefactos a `generation/artifactTemplateSuggestions.ts`; 2 431 líneas. Corte 10: crítica y refinamiento a `generation/artifactQualityRefinement.ts`; 2 330 líneas, `any` 13 → 11. Corte 11: revisión, mejoras y casos de prueba a `generation/artifactReview.ts`, imagen/voz/SVG borrados sin llamantes; 2 145 líneas. Corte 12: brief a `generation/artifactBriefProposal.ts`, deck a `generation/presentationDeck.ts`, deck mínimo a `services/presentation`; 1 923 líneas; `services/ai` declara `presentation` y `quality`. |
 | **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible

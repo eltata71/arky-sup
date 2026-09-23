@@ -301,13 +301,17 @@ export const DEEP_IMPORT_BUDGET = {
   // importar `parseAiJson` (11 → 9, con el corte 3).
   // F5-01 (corte 11): el motor dejó de importar `activeProviderCapabilities`
   // al borrar imagen y voz, que nadie llamaba (8 → 7).
-  'services (raíz) -> services/ai': 7,
+  // F5-01 (corte 12): sube uno, a sabiendas (7 → 8). La generación principal
+  // llama ahora al deck de `generation/presentationDeck`, y a cambio el motor
+  // deja un import profundo a `services/presentation` y otro a
+  // `services/artifacts`: el total baja. Desaparece con el motor.
+  'services (raíz) -> services/ai': 8,
   'services (raíz) -> services/architectureOffice': 1,
-  'services (raíz) -> services/artifacts': 4,
+  'services (raíz) -> services/artifacts': 3, // F5-01 corte 12: el contrato del brief ya no se importa del motor
   // F5-01 (corte 6): la generación de diagramas salió del motor con sus
   // guardarraíles y su gate de calidad (6 → 3).
   'services (raíz) -> services/diagram': 3,
-  'services (raíz) -> services/presentation': 2,
+  'services (raíz) -> services/presentation': 1, // F5-01 corte 12: queda sólo el deck mínimo de respaldo
   'services (raíz) -> services/quality': 1,
   'services/agent -> services/diagram': 1,
   'services/agent -> services/memory': 3,
