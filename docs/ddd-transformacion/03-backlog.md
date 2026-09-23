@@ -612,8 +612,15 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   respuesta campo a campo (una nota que no es número no se pinta, se acota a
   0–100). `learningService` deja de importar el motor: **7 → 6**; `any`
   18 → 17; el motor baja a 5 081 líneas.
-- **Lo que queda.** Seis verticales de prompts de dominio: artefactos,
-  diagramas, documentos, asistente, recomendaciones y sugerencias. Dos métodos
+- **Corte 3 — sugerencias de mejora (2026-09-23).**
+  `suggestArtifactImprovements` sale a
+  `services/ai/generation/artifactSuggestions.ts`. El prompt y el esquema se
+  conservan; la inferencia pasa por `aiGateway`, y
+  `artifactSuggestionService` sigue validando el informe. Importadores directos
+  del motor **6 → 5**; el método de 131 líneas desaparece del motor. Las
+  pruebas focalizadas cubren la llamada al gateway, el esquema y JSON inválido.
+- **Lo que queda.** Cinco verticales de prompts de dominio: artefactos,
+  diagramas, documentos, asistente y recomendaciones; las sugerencias ya salieron. Dos métodos
   con la persona del tutor del LMS siguen en el motor detrás de fachadas que no
   son del LMS —`synthesizeSmartNote` (documentos) y `consultArchitecture`
   (asistente)— y saldrán con su vertical. La arista no desaparece hasta el

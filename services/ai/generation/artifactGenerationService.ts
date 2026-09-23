@@ -17,6 +17,7 @@
  */
 
 import { geminiService } from '../../geminiService';
+import { suggestArtifactImprovements } from './artifactSuggestions';
 
 export const artifactGenerationService = {
   /** Generate (or regenerate) the content for a catalog/on-demand artifact. */
@@ -41,7 +42,7 @@ export const artifactGenerationService = {
   },
   /** Propose targeted improvements without rewriting the artifact. */
   get suggestArtifactImprovements() {
-    return geminiService.suggestArtifactImprovements.bind(geminiService);
+    return suggestArtifactImprovements;
   },
   /** Critique artifact content against the quality rubric. */
   get critiqueArtifactContent() {

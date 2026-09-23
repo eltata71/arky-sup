@@ -49,6 +49,7 @@
     "services/architectureProjects/attentionTracking.ts",
     "services/artifacts/application/artifactWorkflow.ts",
     "services/ai/generation/legacyTransport.ts",
+    "services/ai/generation/artifactSuggestions.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",

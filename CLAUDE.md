@@ -1018,9 +1018,9 @@ four façades that only send their own prompt — assisted capture, the platform
 guide, the initiative assistant and diagram edit — reach the transport without
 loading the engine, which took five files off the edge
 `services/ai -> services (raíz)` that closes the nine-context component.
-`__tests__/services/ai/engineImporters.test.ts` lists the six that still
+`__tests__/services/ai/engineImporters.test.ts` lists the five that still
 import the engine (`learningService` left in the second cut, with
-`evaluateChallenge`); the list may only shrink, and each one leaves the way the LMS
+`evaluateChallenge`; `artifactSuggestionService` left in the third cut); the list may only shrink, and each one leaves the way the LMS
 did — as a vertical, its upward dependency cut first.
 
 
