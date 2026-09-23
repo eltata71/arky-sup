@@ -127,8 +127,8 @@ export class LegacyGenerationTransport {
      *  - Each Gemini model has its own per-key quota pool. If `gemini-2.5-pro`
      *    returns 429, `gemini-2.5-flash` usually still has budget; we MUST
      *    try the next model before surfacing an error.
-     *  - Transient 5xx/network errors retry inside one model via
-     *    {@link retryWithBackoff}; rate-limit/overload after retries fall
+     *  - Transient 5xx/network errors retry inside one model through the
+     *    executor's `AIRetryPolicy`; rate-limit/overload after retries fall
      *    through to the next model via {@link isModelFallbackCandidate}.
      *  - Aborts propagate so iOS Safari doesn't leak sockets.
      */

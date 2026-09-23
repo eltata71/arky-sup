@@ -3,8 +3,9 @@ import {
     classifyAIError,
     isTransientGeminiError,
     AIServiceError,
-    geminiService,
 } from '../../services/geminiService';
+import { LegacyGenerationTransport } from '../../services/ai/generation/legacyTransport';
+import type { Settings } from '../../types';
 
 describe('isTransientGeminiError', () => {
     it('treats 503 status as transient', () => {
@@ -171,13 +172,16 @@ describe('classifyAIError', () => {
     });
 });
 
-describe('retryWithBackoff (via private accessor)', () => {
-    // The retry helper is private; access it through a small bridge that
-    // mirrors how production code calls it.  This keeps the contract honest
-    // (we test the same code path callers go through) without hand-rolling
-    // an alternate implementation.
-    type RetryFn = <T>(fn: () => Promise<T>, retries?: number, delay?: number) => Promise<T>;
-    const retry = (geminiService as unknown as { retryWithBackoff: RetryFn }).retryWithBackoff.bind(geminiService);
+describe('retry decisions on the generation transport', () => {
+    // These assertions used to target the engine's private `retryWithBackoff`.
+    // Its last caller — the custom-artifact recommender — left the engine in
+    // F5-01 (corte 4) and now reaches a model through `aiGateway`, so the
+    // helper was deleted. The rules it pinned still hold, on the path every
+    // generation actually takes: the transport's retry loop.
+    const settings = { aiConfig: { model: 'gemini-2.5-flash', apiKeySource: 'global' } } as unknown as Settings;
+    const transport = new LegacyGenerationTransport({ getClient: () => ({}) as never });
+    const run = <T>(fn: () => Promise<T>, maxRetries: number) =>
+        transport.runWithModelFallback(settings, 'gemini-2.5-flash', () => fn(), { maxRetries, maxCandidates: 1, timeoutMs: 60_000 });
 
     beforeEach(() => {
         vi.useFakeTimers();
@@ -189,23 +193,18 @@ describe('retryWithBackoff (via private accessor)', () => {
 
     it('returns immediately on first success', async () => {
         const fn = vi.fn(async () => 42);
-        const promise = retry(fn);
+        const promise = run(fn, 2);
         await vi.runAllTimersAsync();
         await expect(promise).resolves.toBe(42);
         expect(fn).toHaveBeenCalledTimes(1);
     });
 
     it('retries on 503 and eventually succeeds', async () => {
-        let attempts = 0;
-        const fn = vi.fn(async () => {
-            attempts += 1;
-            if (attempts < 3) {
-                const e: { status: number; message: string } = { status: 503, message: 'overloaded' };
-                throw e;
-            }
-            return 'ok';
-        });
-        const promise = retry(fn, 4, 10);
+        const fn = vi.fn()
+            .mockRejectedValueOnce({ status: 503, message: 'overloaded' })
+            .mockRejectedValueOnce({ status: 503, message: 'overloaded' })
+            .mockResolvedValueOnce('ok');
+        const promise = run(fn, 4);
         await vi.runAllTimersAsync();
         await expect(promise).resolves.toBe('ok');
         expect(fn).toHaveBeenCalledTimes(3);
@@ -215,7 +214,7 @@ describe('retryWithBackoff (via private accessor)', () => {
         const fn = vi.fn()
             .mockRejectedValueOnce({ status: 429, message: 'rate' })
             .mockResolvedValueOnce('ok');
-        const promise = retry(fn, 2, 10).catch((e) => e);
+        const promise = run(fn, 2).catch((e) => e);
         await vi.runAllTimersAsync();
         const err = await promise;
         expect(err).toBeInstanceOf(AIServiceError);
@@ -225,7 +224,7 @@ describe('retryWithBackoff (via private accessor)', () => {
 
     it('does not retry on non-transient (401) and rewraps as AIServiceError', async () => {
         const fn = vi.fn().mockRejectedValue({ status: 401, message: 'bad key' });
-        const promise = retry(fn, 4, 10).catch((e) => e);
+        const promise = run(fn, 4).catch((e) => e);
         await vi.runAllTimersAsync();
         const err = await promise;
         expect(err).toBeInstanceOf(AIServiceError);
@@ -235,23 +234,12 @@ describe('retryWithBackoff (via private accessor)', () => {
 
     it('exhausts retries and rewraps the final transient error', async () => {
         const fn = vi.fn().mockRejectedValue({ status: 503, message: 'overloaded' });
-        const promise = retry(fn, 2, 10).catch((e) => e);
+        const promise = run(fn, 2).catch((e) => e);
         await vi.runAllTimersAsync();
         const err = await promise;
         expect(err).toBeInstanceOf(AIServiceError);
         expect((err as AIServiceError).category).toBe('overloaded');
         // initial call + 2 retries = 3 attempts
-        expect(fn).toHaveBeenCalledTimes(3);
-    });
-
-    it('applies exponential backoff between attempts', async () => {
-        const fn = vi.fn()
-            .mockRejectedValueOnce({ status: 503, message: 'overloaded' })
-            .mockRejectedValueOnce({ status: 503, message: 'overloaded' })
-            .mockResolvedValueOnce('done');
-        const promise = retry(fn, 4, 100);
-        await vi.runAllTimersAsync();
-        await expect(promise).resolves.toBe('done');
         expect(fn).toHaveBeenCalledTimes(3);
     });
 });

@@ -619,8 +619,23 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   `artifactSuggestionService` sigue validando el informe. Importadores directos
   del motor **6 → 5**; el método de 131 líneas desaparece del motor. Las
   pruebas focalizadas cubren la llamada al gateway, el esquema y JSON inválido.
-- **Lo que queda.** Cinco verticales de prompts de dominio: artefactos,
-  diagramas, documentos, asistente y recomendaciones; las sugerencias ya salieron. Dos métodos
+- **Corte 4 — la vertical de recomendaciones (2026-09-23).**
+  `recommendCustomArtifactTemplate` y `getSuggestedActions`, con el ranker
+  local, el análisis de intención, el normalizador de la respuesta y las
+  reglas de nombre y confianza, salen a `services/ai/generation/recommendation/`
+  (cinco ficheros, todos bajo 20 KB y en `typecheck:strict`).
+  `recommendationService` deja de importar el motor: **5 → 4**; el motor pierde
+  935 líneas (4 950 → 4 015). Dos cosas que no eran sólo mover:
+  la recomendación construía su propio cliente Gemini y se saltaba el proxy, el
+  guardarraíl de entrada y el enrutado —en producción, con las claves en el
+  servidor, nunca llegaba a un modelo—; ahora entra por `aiGateway` con su
+  presupuesto (35 s, dos reintentos, un solo modelo). Y `emitGenerationPhase`,
+  que el motor y la vertical comparten, baja a `lib/artifacts/generationPhase.ts`
+  junto a su evento: dejarlo en `services/ai` era un import profundo nuevo desde
+  el motor. Se declara la arista `services/ai -> constants.ts` (el catálogo de
+  plantillas), que no cierra ningún ciclo: `constants.ts` sólo importa `types.ts`.
+- **Lo que queda.** Cuatro verticales de prompts de dominio: artefactos,
+  diagramas, documentos y asistente; sugerencias y recomendaciones ya salieron. Dos métodos
   con la persona del tutor del LMS siguen en el motor detrás de fachadas que no
   son del LMS —`synthesizeSmartNote` (documentos) y `consultArchitecture`
   (asistente)— y saldrán con su vertical. La arista no desaparece hasta el
