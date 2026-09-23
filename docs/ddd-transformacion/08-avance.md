@@ -59,7 +59,7 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto (en pausa hasta nueva instrucción del propietario):**
+- **Siguiente paso exacto (reanudado por instrucción del propietario):**
   F5-01, la vertical de artefactos (`artifactGenerationService`), el último
   importador del motor y el grueso de lo que queda en él (2 442 líneas). Es
   previsible que lleve varios cortes: la generación de artefactos todavía
@@ -69,6 +69,11 @@
   mover. Cuando salga, la arista `services/ai -> services (raíz)` y el SCC de
   catorce desaparecen. Las seis pantallas que siguen sobre el fan-out son de
   **F5-02**.
+- **Corte 9 en preparación:** la propuesta de nombres iniciales para una
+  plantilla sale del motor a `generation/artifactTemplateSuggestions.ts` y
+  entra por `aiGateway`. Conserva el esquema JSON y la lista determinista de
+  respaldo; una respuesta JSON de forma incorrecta también usa ese respaldo.
+  Quedan en el motor los caminos de contenido, revisión y refinamiento.
 - **Estado medido tras #64 (2026-09-23, `d35b479`):** 473 ficheros y 4 626
   pruebas en verde; cobertura 66,83 % / 57,69 % / 59,86 % / 68,71 %
   (sentencias / ramas / funciones / líneas); carga inicial 309,6 KB gz de 340;
