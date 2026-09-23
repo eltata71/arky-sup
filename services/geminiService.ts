@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
 import { createGeminiAIClient } from "./ai/providers/gemini/geminiClient";
-import { Settings, ArtifactTemplate, ConsistencySuggestion, ChatModalPurpose, UploadedFile } from '../types';
+import { Settings, ArtifactTemplate } from '../types';
 import {
     buildDialectInstruction,
     buildMermaidQualityReinforcement,
@@ -20,7 +20,6 @@ import {
   buildBasePrompt as buildBasePromptUtil,
   buildArtifactsContext as buildArtifactsContextUtil,
   buildSiblingDiagramsPromptBlock as buildSiblingDiagramsPromptBlockUtil,
-  buildLMSTutorPersona as buildLMSTutorPersonaUtil,
   type BasePromptOptions,
   type ArtifactsContextOptions,
 } from './ai/prompts/projectPrompts';
@@ -447,10 +446,6 @@ ${request.content.slice(0, 24000)}
 
     private buildBasePrompt(project: Project, settings: Settings, opts?: BasePromptOptions): string {
         return buildBasePromptUtil(project, settings, opts);
-    }
-
-    private buildLMSTutorPersona(settings: Settings): string {
-        return buildLMSTutorPersonaUtil(settings);
     }
 
     private buildArtifactsContext(project: Project, opts?: ArtifactsContextOptions): string {
@@ -2379,137 +2374,6 @@ Return ONLY valid JSON compatible with this partial shape (no prose, omit unknow
         return lastFunctionCall ? { text: fullText, functionCall: lastFunctionCall } : { text: fullText };
     }
 
-    public async analyzeChatForContext(
-        history: ChatMessage[],
-        latestUserMessage: string,
-        latestAiResponse: string,
-        settings: Settings
-    ): Promise<string | null> {
-        const prompt = `Analyze conversation. Did user define a KEY constraint/tech choice? If yes, summarize in 1 sentence for context. If no, return "NO_CONTEXT".
-        
-        Last interaction:
-        User: ${latestUserMessage}
-        AI: ${latestAiResponse}`;
-
-        try {
-            // Honour the user's model preference and route through the model-
-            // fallback pipeline so a 429 on the preferred model degrades to the
-            // next model instead of silently dropping context extraction.
-            const { text: raw } = await this.generateContentWithFallback(
-                settings,
-                resolveModelForSettings('default', settings).id,
-                prompt,
-                {},
-                { maxRetries: 1 },
-            );
-            const text = raw?.trim();
-            return (text && text !== "NO_CONTEXT") ? text : null;
-        } catch { return null; }
-    }
-
-    public async runConsistencyCheck(project: Project, settings: Settings): Promise<ConsistencySuggestion[]> {
-        const prompt = `
-${this.buildBasePrompt(project, settings)}
-Analyze ALL artifacts for inconsistencies/contradictions.
-Artifacts: ${JSON.stringify(project.artifacts.map(a => ({id: a.id, name: a.name, content: a.content.substring(0, 1000)})))}
-
-Return JSON Array: [{ "id": "1", "inconsistency": "desc", "suggestion": "fix", "isApplied": false, "changes": [{ "artifactId": "id", "oldContentSnippet": "...", "newContent": "FULL NEW CONTENT" }] }]
-Return [] if none.
-`;
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        try {
-            const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-                temperature: 0.2,
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: 'array',
-                    items: {
-                        type: 'object',
-                        properties: {
-                            id: {type:'string'}, inconsistency:{type:'string'}, suggestion:{type:'string'}, isApplied:{type:'boolean'},
-                            changes: { type: 'array', items: { type: 'object', properties: { artifactId:{type:'string'}, oldContentSnippet:{type:'string'}, newContent:{type:'string'} } } }
-                        }
-                    }
-                }
-            }, { timeoutMs: 300000 });
-            const cleanJson = this.cleanJsonString(text || '');
-            return JSON.parse(cleanJson || '[]');
-        } catch (e) {
-            console.error("Consistency Check Error:", e);
-            return [];
-        }
-    }
-
-    public async processMultimodalChat(
-        purpose: ChatModalPurpose,
-        history: ChatMessage[],
-        question: string,
-        files: UploadedFile[],
-        settings: Settings,
-        projects?: Project[],
-        courses?: any[]
-    ): Promise<string> {
-        let instruction = "";
-        if (purpose === 'guided-creation') instruction = "Guide user to define project. Once clear (3-4 q's), return JSON: {\"action\": \"createProject\", \"data\": {\"name\": \"...\", \"description\": \"...\", \"projectContext\": [...], \"initialArtifacts\": [...]}}. Else, converse.";
-        else if (purpose === 'analyze-document') instruction = "Analyze docs. Return JSON: {\"action\": \"createProject\", \"data\": {\"name\": \"...\", \"description\": \"...\", \"projectContext\": [...], \"initialArtifacts\": [...]}}.";
-        else {
-            instruction = `You are an expert solution architect, acting as Arquitecto Agente.
-            
-CRITICAL INDUSTRY CONTEXT:
-This platform is a service provided to an Insurance Company that offers Life and Health products. 
-Whenever you are answering ANY question, you MUST take this into account. 
-You must adhere to the highest standards of the Life and Health Insurance industry, as well as the best standards in Technology.
-
-Global Context/Standards:
-${settings.globalContext.map(c => `- ${c}`).join('\n')}
-
-Review architecture and provide feedback. If the user asks specific information about a project or a course, you MUST use the provided context below to answer. If the user asks general questions, provide advice based on your knowledge as Arquitecto Agente.
-
-`;
-            if (projects && projects.length > 0) {
-                instruction += `\n\n--- EXISTING PROJECTS CONTEXT ---\n`;
-                projects.forEach(p => {
-                    instruction += `Project: ${p.name}\nDescription: ${p.description}\nArtifacts:\n${p.artifacts.map(a => `- ${a.name} (${a.type}): ${a.objective}`).join('\n')}\n\n`;
-                });
-            }
-            if (courses && courses.length > 0) {
-                instruction += `\n\n--- EXISTING COURSES CONTEXT ---\n`;
-                courses.forEach(c => {
-                    instruction += `Course: ${c.title}\nDescription: ${c.description}\nCategory: ${c.category}\nLevel: ${c.level}\nKnowledge Cards (Lessons):\n${c.modules?.map((m: any) => m.lessons?.map((l: any) => `- ${l.title}: ${l.description}`).join('\n')).join('\n')}\n\n`;
-                });
-            }
-        }
-
-        const tone = settings.aiConfig?.tone || 'Professional';
-        instruction += ` Tone: ${tone}.`;
-
-        const contents = history.map((message, index) => {
-            const isLastUserTurn = index === history.length - 1 && message.role === 'user';
-            return {
-                role: message.role,
-                parts: [
-                    { text: message.content },
-                    ...(isLastUserTurn ? files.map(f => ({ inlineData: { mimeType: f.type, data: f.base64Data } })) : []),
-                ],
-            };
-        });
-
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const result = await this.generateContentWithFallback(
-            settings,
-            modelName,
-            contents,
-            {
-                systemInstruction: instruction,
-                temperature: settings.aiConfig?.temperature ?? 0.7,
-            },
-            { maxRetries: 1 },
-        );
-        return result.text;
-    }
-
     public async generateImageForArtifact(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
         // Image generation is a Gemini capability, not a universal one. Checking
         // first turns "the button failed with an SDK error" into a stated limit
@@ -2757,52 +2621,9 @@ INSTRUCTIONS:
         return result.text;
     }
 
-    /**
-     * Practical lab (#3): generates a diagram-design challenge for a lesson.
-     * The student must respond with a Mermaid diagram, which is then evaluated
-     * by {@link evaluateDiagramChallenge} against the diagram-quality rubric.
-     */
-
-    /**
-     * Practical lab (#3): evaluates a student's Mermaid diagram against the
-     * canonical 10-dimension diagram-quality rubric and returns a structured,
-     * per-dimension assessment.
-     */
-
-    /**
-     * Adaptive learning (#2): generates a short multiple-choice skill diagnostic
-     * for an architect role, covering distinct competency areas.
-     */
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // SDD — Specification-Driven Development Functions
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public async consultArchitecture(challenge: string, settings: Settings): Promise<string> {
-        const prompt = `
-        ${this.buildLMSTutorPersona(settings)}
-
-        A client from the health and life insurance industry has presented the following architectural challenge:
-        "${challenge}"
-
-        As the Architect-Professor and Principal Architect Consultant, provide a strategic, structured solution proposal.
-        Every recommendation must justify the **¿Qué problema de negocio resuelve esta decisión arquitectónica?** question.
-
-        Structure your response in Markdown with these sections:
-        1. **Resumen Ejecutivo** — Strategic framing: the business problem, the architectural opportunity, and the expected outcome for the insurer
-        2. **Arquitectura Propuesta** — High-level architecture with key components, integration patterns, and data flows relevant to the insurance context
-        3. **Análisis de Trade-offs** — Honest evaluation: technical advantages, operational risks, business implications, and what you are explicitly NOT recommending and why
-        4. **Principios Arquitectónicos Clave** — 3-5 architectural principles derived from this solution that the architect should internalize
-        5. **Cursos y Temas Recomendados** — Specific learning topics to deepen expertise for implementing this solution
-        `;
-
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-            temperature: 0.7
-        });
-        return text;
-    }
+    // The assistant turns that need no persona — the consulting room, the
+    // chat-context note, the consistency check and the multimodal modal — are
+    // `services/ai/generation/assistant/` now (F5-01, corte 7).
 
 }
 

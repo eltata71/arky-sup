@@ -369,7 +369,12 @@ Reglas que no se negocian al trabajar aquí:
     `lib/artifacts/generationPhase.ts`) en vez de quedarse en el motor. El
     corte 5 sacó la vertical de documentos (`generation/documents/`) y el 6 la
     de diagramas (`generation/diagram/`); quedan dos importadores: asistente y
-    artefactos. Los **tres** caminos del transporte intentan primero el proxy:
+    artefactos. El 7 sacó del asistente sus cuatro turnos sin persona
+    (`generation/assistant/`, con puertos propios para la conversación y el
+    curso); los tres turnos con persona de la Oficina se quedan hasta que la
+    composición se les entregue en vez de buscarla, porque `agent` y
+    `architectureOffice` importan `services/ai` y moverlos tal cual crearía dos
+    ciclos. Los **tres** caminos del transporte intentan primero el proxy:
     el de texto (`generateTextWithFallback`) no lo hacía, y sin clave personal
     la generación de diagramas y de artefactos no llegaba a un modelo en
     producción. Un camino nuevo hacia un proveedor que no pase antes por el

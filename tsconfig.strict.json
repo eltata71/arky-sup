@@ -55,6 +55,7 @@
     "services/ai/generation/recommendationService.ts",
     "services/ai/generation/documentGenerationService.ts",
     "services/ai/generation/diagramGenerationService.ts",
+    "services/ai/generation/assistant/index.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",
