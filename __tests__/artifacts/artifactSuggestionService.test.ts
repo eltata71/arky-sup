@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
@@ -8,7 +8,8 @@ import {
   sortSuggestionsByPriority,
   type ArtifactSuggestion,
 } from '../../services/ai/artifactSuggestionTypes';
-import { buildArtifactSuggestionContext } from '../../services/ai/artifactSuggestionService';
+import { buildArtifactSuggestionContext, requestArtifactSuggestions } from '../../services/ai/artifactSuggestionService';
+import { aiGateway } from '../../services/ai/generation/aiGateway';
 
 const settings = { language: 'es' } as Settings;
 
@@ -172,5 +173,40 @@ describe('artifactSuggestionService — context assembly', () => {
     );
     expect(context.content.length).toBeLessThan(10_000);
     expect(context.content).toContain('contenido truncado');
+  });
+});
+
+describe('artifactSuggestionService — inference', () => {
+  it('uses the shared gateway and validates the JSON response', async () => {
+    const gateway = vi.spyOn(aiGateway, 'generateContent').mockResolvedValue({
+      text: '```json\n{"qualitySummary":"Falta contexto","insufficientContext":true,"suggestions":[]}\n```',
+    });
+    try {
+      const context = buildArtifactSuggestionContext(
+        { artifact, project, qualityScore: 68, qualitySummary: 'Mejorable', qualityIssues: ['Issue A'] },
+        settings,
+      );
+      const report = await requestArtifactSuggestions(context, settings);
+      expect(report.qualitySummary).toBe('Falta contexto');
+      expect(gateway).toHaveBeenCalledOnce();
+      expect(gateway.mock.calls[0][2]).toContain('Issue A');
+      expect(gateway.mock.calls[0][3]).toMatchObject({ responseMimeType: 'application/json', temperature: 0.4 });
+      expect(gateway.mock.calls[0][4]).toEqual({ maxRetries: 1, maxCandidates: 4 });
+    } finally {
+      gateway.mockRestore();
+    }
+  });
+
+  it('reports malformed JSON as an actionable suggestion error', async () => {
+    const gateway = vi.spyOn(aiGateway, 'generateContent').mockResolvedValue({ text: 'not JSON' });
+    try {
+      const context = buildArtifactSuggestionContext(
+        { artifact, project, qualityScore: null, qualitySummary: null, qualityIssues: [] },
+        settings,
+      );
+      await expect(requestArtifactSuggestions(context, settings)).rejects.toThrow(ArtifactSuggestionError);
+    } finally {
+      gateway.mockRestore();
+    }
   });
 });

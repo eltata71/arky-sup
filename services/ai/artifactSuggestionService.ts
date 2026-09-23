@@ -3,13 +3,13 @@
  *
  * The UI talks to this module — never directly to the Gemini SDK. It
  * assembles a provider-agnostic {@link ArtifactSuggestionContext}, delegates
- * the inference to `geminiService`, and validates the response into a safe
+ * inference to the artifact suggestion vertical, and validates the response into a safe
  * {@link ArtifactSuggestionReport}.
  */
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
-import { geminiService } from '../geminiService';
+import { suggestArtifactImprovements } from './generation/artifactSuggestions';
 import {
   ArtifactSuggestionError,
   parseArtifactSuggestionReport,
@@ -118,7 +118,7 @@ export const requestArtifactSuggestions = async (
 ): Promise<ArtifactSuggestionReport> => {
   let raw: unknown;
   try {
-    raw = await geminiService.suggestArtifactImprovements(context, settings);
+    raw = await suggestArtifactImprovements(context, settings);
   } catch (error) {
     const message =
       error instanceof Error

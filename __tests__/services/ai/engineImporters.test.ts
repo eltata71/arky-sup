@@ -40,7 +40,6 @@ const importsEngine = (file: string): boolean =>
 
 /** Los importadores que quedan. Sólo puede encoger. */
 const REMAINING_ENGINE_IMPORTERS = [
-  'services/ai/artifactSuggestionService.ts',
   'services/ai/generation/artifactGenerationService.ts',
   'services/ai/generation/assistantService.ts',
   'services/ai/generation/diagramGenerationService.ts',

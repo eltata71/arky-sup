@@ -358,7 +358,10 @@ Reglas que no se negocian al trabajar aquí:
     obliga a anotarlo. El código que sale del motor no se lleva sus `any`:
     `evaluateChallenge` (corte 2) salió a `learning/challengeEvaluation.ts`
     con la respuesta del modelo reducida campo a campo, y con él
-    `learningService` dejó de importar el motor.
+    `learningService` dejó de importar el motor. En el corte 3,
+    `suggestArtifactImprovements` pasó a `generation/artifactSuggestions.ts`,
+    y `artifactSuggestionService` dejó de importar el motor; el informe sigue
+    validándose en su servicio de dominio.
 25. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;

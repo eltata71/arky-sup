@@ -8,7 +8,10 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F4-05 y F4-06** — la coordinación de
+- **Última tarea completada:** **F5-01, corte 3** — las sugerencias de mejora de
+  artefactos salen del motor a `generation/artifactSuggestions.ts` y pasan por
+  `aiGateway`; `artifactSuggestionService` conserva la validación de la
+  respuesta. Evidencia en `evidencias/f5-01-corte-3.md`. Antes: **F4-05 y F4-06** — la coordinación de
   artefactos sale de React a `services/artifacts/application/` (el hook y cuatro
   pantallas dejan de decidir; fan-out 10 → 6) y `api.save_project_aggregate` se
   retira: el Proyecto tiene una sola ruta de escritura. Antes: **F4-07 y F4-04**
@@ -28,10 +31,12 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 3: la vertical de
-  dominio más pequeña de las seis que quedan en el motor. Los cortes 1 (el
-  transporte) y 2 (`evaluateChallenge`, el resto del LMS) están hechos:
-  importadores del motor en `services/ai` 12 → 6. Las seis pantallas que
+- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 4: elegir la siguiente
+  vertical de dominio entre las cinco que aún importan el motor. El corte 3
+  trasladó las sugerencias de mejora de artefactos a
+  `generation/artifactSuggestions.ts`, conservando el esquema de respuesta y
+  la validación del informe: importadores del motor en `services/ai` 12 → 5.
+  Las seis pantallas que
   siguen sobre el fan-out son de **F5-02**.
 - **Esquema de producción al día (2026-09-23).** Con la aprobación del
   propietario se aplicaron a `ArkyDB-US` las dos migraciones que faltaban —
@@ -133,7 +138,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1 y 2 hechos | Corte 1: el transporte sale del motor a `legacyTransport`; importadores 12 → 7; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, tipado; `learningService` deja el motor; importadores 7 → 6; `any` 18 → 17; motor 5 110 → 5 081 líneas. |
+| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–3 hechos | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. |
 | **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible
