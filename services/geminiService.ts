@@ -10,7 +10,7 @@ import {
     generateDiagramIRWithSelfHealing,
     THINKING_BUDGET,
 } from './ai/generation/diagram';
-import { emitGenerationPhase, type Artifact, type ArtifactGenerationPhaseEvent, type ArtifactGenerationPhaseListener } from '../lib/artifacts';
+import { emitGenerationPhase, type Artifact, type ArtifactGenerationOptions, type ArtifactGenerationPhaseEvent } from '../lib/artifacts';
 import type { Project } from './architectureProjects';
 import { cleanJsonString as cleanJsonStringUtil } from '../utils';
 import {
@@ -29,7 +29,7 @@ import {
     type LegacyGenerationResult,
 } from './ai/generation/legacyTransport';
 import { renderContextGraphReinforcement } from './contextGraph';
-import { assessDocumentArtifact, assessPresentationDeck } from './quality/documentAcceptability';
+import { assessDocumentArtifact } from './quality/documentAcceptability';
 import {
     buildArchitectureKnowledgeGraphForProject,
     buildArtifactGenerationGraphContext,
@@ -64,15 +64,13 @@ import {
 export { AIServiceError, C4SelfHealingError, classifyAIError, isTransientGeminiError };
 export type { AIErrorCategory, AIErrorSource } from './ai/core';
 import { isPresentationArtifactType } from '../lib/artifacts/artifactKind';
-import { buildPresentationPromptInstructions, PRESENTATION_RESPONSE_SCHEMA } from './presentation/presentationPrompt';
-import { parsePresentationDeck, PRESENTATION_SCHEMA_VERSION } from './presentation/presentationSchema';
+import { buildMinimalPresentationDeck } from './presentation/presentationFallback';
+import { generatePresentationDeck } from './ai/generation/presentationDeck';
 import { mermaidToIR } from './diagram/mermaidToIR';
 import { irToMermaid } from './diagram/irToMermaid';
 import { extractDiagramSignals, renderDiagramSignals } from './diagram/diagramSignalExtractor';
 import { selectArtifactGenerationContext, validateControlledContextForPrompt } from './artifacts/artifactContextSelectionService';
-import type { ArtifactGenerationContract, ArtifactGenerationContractProposal } from './artifacts/artifactGenerationContract';
 import { SKELETON_FALLBACK_MARKER } from './artifacts/artifactFallbackDetection';
-import { buildOfficePersonaInstruction, resolveOfficeAgentMention } from './architectureOffice/officeAgentPersonas';
 
 /** Returns true when an ArtifactTemplate.type requires diagram-flavoured generation. */
 function isDiagramArtifactType(type: string): boolean {
@@ -420,137 +418,6 @@ ${controlledContext}`
      * the output is a structured deck instead of long-form prose. Falls back
      * to a minimal deck when the model fails or the response is unparseable.
      */
-    private async generatePresentationDeck(
-        project: Project,
-        template: ArtifactTemplate,
-        settings: Settings,
-        architectureGraphPromptBlock?: string,
-    ): Promise<string> {
-        const modelName = resolveModelForSettings('default', settings).id;
-        const userTemp = settings.aiConfig?.temperature ?? 0.7;
-        const basePrompt = buildBasePromptUtil(project, settings);
-        // Presentations summarise the architecture: feeding real excerpts of
-        // the sibling artifacts keeps slide content consistent with the
-        // documents/diagrams it presents instead of re-inventing them.
-        const artifactsContext = buildArtifactsContextUtil(project, { includeExcerpts: true });
-        const contextBlock = architectureGraphPromptBlock && architectureGraphPromptBlock.trim().length > 0
-            ? architectureGraphPromptBlock
-            : artifactsContext;
-        const instructions = buildPresentationPromptInstructions(template, {
-            contextBlock,
-            language: settings.language,
-        });
-        const fullPrompt = `${basePrompt}\n\n${instructions}\n\nTASK: Create the deck for "${template.name}" matching the contract above. Return JSON only.`;
-        const modelConfig: Record<string, unknown> = {
-            temperature: Math.min(userTemp, 0.7),
-            topP: 0.9,
-            responseMimeType: 'application/json',
-            responseSchema: PRESENTATION_RESPONSE_SCHEMA,
-        };
-        const raw = await this.generateTextWithFallback(settings, modelName, fullPrompt, modelConfig, {
-            timeoutMs: 90000,
-            maxRetries: 2,
-        });
-        let parsed = parsePresentationDeck(raw, { artifactType: template.type, artifactName: template.name });
-        // Deck quality gate: structural assessment + ONE corrective retry.
-        // Catches decks that parse but are unusable (empty content slides,
-        // 1-slide decks) before they reach the viewer/exporters.
-        const firstDeckAssessment = assessPresentationDeck(JSON.stringify(parsed.deck));
-        if (!firstDeckAssessment.ok) {
-            console.warn(
-                `[geminiService] Presentation deck failed quality gate (${firstDeckAssessment.issues.map((i) => i.code).join(', ')}); corrective retry.`,
-            );
-            const correctivePrompt = `${fullPrompt}
-
-PREVIOUS ATTEMPT WAS REJECTED (${firstDeckAssessment.issues.map((i) => i.message).join(' · ')}).
-Regenerate the COMPLETE deck ensuring:
- - At least 5 slides, each with a title.
- - Every non-title slide has at least one substantive contentBlock (text, bullets, table, kpi or diagram).
- - JSON only, matching the contract exactly.`;
-            try {
-                const retryRaw = await this.generateTextWithFallback(settings, modelName, correctivePrompt, modelConfig, {
-                    timeoutMs: 90000,
-                    maxRetries: 1,
-                });
-                const retryParsed = parsePresentationDeck(retryRaw, { artifactType: template.type, artifactName: template.name });
-                const retryAssessment = assessPresentationDeck(JSON.stringify(retryParsed.deck));
-                if (retryAssessment.ok || retryAssessment.score > firstDeckAssessment.score) {
-                    parsed = retryParsed;
-                }
-            } catch (retryErr) {
-                console.warn('[geminiService] Deck corrective retry failed; keeping first attempt.', retryErr);
-            }
-        }
-        // Always re-stringify the parsed deck so the persisted content matches
-        // the canonical schema even if the model drifted slightly.
-        const deck = parsed.deck;
-        deck.metadata = {
-            ...(deck.metadata ?? {}),
-            templateId: template.type,
-            generatedAt: new Date().toISOString(),
-            projectId: project.id,
-            preferredExports: template.preferredExports ?? ['pptx', 'pdf'],
-        };
-        deck.version = deck.version || PRESENTATION_SCHEMA_VERSION;
-        return JSON.stringify(deck, null, 2);
-    }
-
-    /**
-     * Minimal deck used when presentation generation fails or returns empty
-     * content. Always produces a parseable PresentationDeck so the slide
-     * viewer never blanks out and the user gets a clear nudge to regenerate.
-     */
-    private buildMinimalPresentationDeck(project: Project, template: ArtifactTemplate): string {
-        const audience: 'executive' | 'technical' | 'mixed' = template.type === 'presentation-technical'
-            ? 'technical'
-            : (template.type === 'presentation-executive' || template.type === 'presentation-summary' ? 'executive' : 'mixed');
-        const deck = {
-            kind: 'presentation' as const,
-            version: PRESENTATION_SCHEMA_VERSION,
-            title: template.name,
-            audience,
-            theme: 'dark' as const,
-            slides: [
-                {
-                    id: 'slide-1',
-                    slideNumber: 1,
-                    title: template.name,
-                    subtitle: project.name,
-                    layout: 'titleSlide' as const,
-                    keyMessage: 'Deck mínimo generado tras fallo de IA. Regenera para obtener un deck completo.',
-                    contentBlocks: [],
-                    visualHints: [],
-                },
-                {
-                    id: 'slide-2',
-                    slideNumber: 2,
-                    title: 'Objetivo',
-                    layout: 'executiveSummary' as const,
-                    contentBlocks: [
-                        { type: 'text' as const, content: template.objective },
-                    ],
-                    speakerNotes: 'Slide derivada del objetivo del template.',
-                },
-                {
-                    id: 'slide-3',
-                    slideNumber: 3,
-                    title: 'Próximos pasos',
-                    layout: 'closingSlide' as const,
-                    contentBlocks: [
-                        { type: 'bullets' as const, content: ['Regenerar el deck con más contexto del proyecto', 'Validar audiencia objetivo', 'Definir mensajes clave'] },
-                    ],
-                },
-            ],
-            metadata: {
-                templateId: template.type,
-                generatedAt: new Date().toISOString(),
-                projectId: project.id,
-                preferredExports: template.preferredExports ?? ['pptx', 'pdf'],
-            },
-        };
-        return JSON.stringify(deck, null, 2);
-    }
-
     /**
      * Public entry point for artifact generation. Wraps the internal
      * generation pipeline so that **every** return value (success path,
@@ -613,7 +480,7 @@ Regenerate the COMPLETE deck ensuring:
         template: ArtifactTemplate,
         settings: Settings,
         previousArtifact?: Artifact,
-        opts: { onPhase?: ArtifactGenerationPhaseListener; architectureGraphPromptBlock?: string } = {}
+        opts: ArtifactGenerationOptions = {}
     ): Promise<string> {
         const { onPhase } = opts;
         const stageTimings = new Map<string, number>();
@@ -644,7 +511,7 @@ Regenerate the COMPLETE deck ensuring:
         template: ArtifactTemplate,
         settings: Settings,
         previousArtifact?: Artifact,
-        opts: { onPhase?: ArtifactGenerationPhaseListener; architectureGraphPromptBlock?: string } = {}
+        opts: ArtifactGenerationOptions = {}
     ): Promise<string> {
         const { onPhase } = opts;
         const stageTimings = new Map<string, number>();
@@ -737,7 +604,7 @@ Regenerate the COMPLETE deck ensuring:
                 meta: { path: 'presentation-deck', type: template.type },
             });
             try {
-                const deckJson = await this.generatePresentationDeck(project, template, settings, opts.architectureGraphPromptBlock);
+                const deckJson = await generatePresentationDeck(project, template, settings, opts.architectureGraphPromptBlock);
                 emit({
                     stage: 'ai-generation',
                     status: 'success',
@@ -754,16 +621,15 @@ Regenerate the COMPLETE deck ensuring:
                     detail,
                     meta: { fallback: 'minimal-deck' },
                 });
-                return this.buildMinimalPresentationDeck(project, template);
+                return buildMinimalPresentationDeck(project, template);
             }
         }
 
         const isDiagramTemplate = isDiagramArtifactType(template.type);
         const requestedBy = template.requestContext?.userRequest ?? template.objective;
-        const basePrompt = buildOfficePersonaInstruction(
-            buildBasePromptUtil(project, settings, isDiagramTemplate ? { mode: 'diagram' } : undefined),
-            resolveOfficeAgentMention(requestedBy),
-        );
+        // The persona is handed in, never looked up: the Office imports this layer (corte 13).
+        const baseInstruction = buildBasePromptUtil(project, settings, isDiagramTemplate ? { mode: 'diagram' } : undefined);
+        const basePrompt = opts.composePersonaInstruction?.(baseInstruction, requestedBy) ?? baseInstruction;
         // Documents embed excerpts of sibling artifacts so the generated
         // content stays consistent with what already exists (same entities,
         // requirement IDs, system names). Diagrams keep the compact list.
@@ -2025,102 +1891,12 @@ ${crossCuttingGuidance}`;
      * It never throws for an empty/malformed response: callers receive an
      * empty proposal and degrade to the deterministic contract.
      */
-    public async proposeArtifactBriefContract(
-        project: Project,
-        request: string,
-        deterministic: ArtifactGenerationContract,
-        settings: Settings,
-        opts: { timeoutMs?: number } = {},
-    ): Promise<{ proposal: ArtifactGenerationContractProposal; rawResponse: string }> {
-        const modelName = resolveModelForSettings('quick', settings).id;
-        const prompt = `${this.buildBasePrompt(project, settings, { mode: 'diagram', maxContextItems: 4, maxDescriptionChars: 600 })}
-
-You are refining a STRUCTURED ARTIFACT GENERATION BRIEF for a software architecture tool.
-A deterministic extractor already produced a trusted baseline contract. Return ONLY a
-partial proposal for fields you can make more precise; otherwise omit the field.
-
-ORIGINAL USER REQUEST:
-"""
-${request.trim().slice(0, 1600)}
-"""
-
-DETERMINISTIC BASELINE CONTRACT (JSON):
-${JSON.stringify({
-            normalizedIntent: deterministic.normalizedIntent,
-            audience: deterministic.audience,
-            artifactFamily: deterministic.artifactFamily,
-            purpose: deterministic.purpose,
-            detailLevel: deterministic.detailLevel,
-            acceptanceCriteria: deterministic.acceptanceCriteria,
-            exportTargets: deterministic.exportTargets,
-            qualityTarget: deterministic.qualityTarget,
-        })}
-
-RULES:
-- Do NOT change the meaning of the original request. normalizedIntent must still cover it.
-- Do NOT invent source artifacts. Do NOT reference excluded sources.
-- Do NOT lower qualityTarget below ${deterministic.qualityTarget}.
-- audience ∈ executive|technical|operations|business|mixed
-- artifactFamily ∈ auto|document|diagram|hybrid|table|matrix|presentation
-- purpose ∈ decision|explanation|design|implementation|analysis|governance|comparison|validation|communication
-- detailLevel ∈ executive|conceptual|logical|physical|technical|deep-technical
-- acceptanceCriteria: keep every baseline criterion, you may add sharper ones.
-
-Return ONLY valid JSON compatible with this partial shape (no prose, omit unknown fields):
-{
-  "normalizedIntent": "string",
-  "audience": "one enum value",
-  "artifactFamily": "one enum value",
-  "purpose": "one enum value",
-  "detailLevel": "one enum value",
-  "acceptanceCriteria": ["string"],
-  "exportTargets": ["string"],
-  "requiredContextItems": ["string"],
-  "excludedContextItems": ["string"],
-  "qualityTarget": ${deterministic.qualityTarget}
-}`;
-
-        let raw = '';
-        try {
-            const response = await this.generateContentWithFallback(
-                settings,
-                modelName,
-                prompt,
-                { temperature: 0.15, topP: 0.85, maxOutputTokens: 900 },
-                { timeoutMs: opts.timeoutMs ?? 30000, maxRetries: 1 },
-            );
-            raw = response.text ?? '';
-        } catch (error) {
-            console.warn('[geminiService] proposeArtifactBriefContract: AI proposal failed, degrading to deterministic.', error);
-            return { proposal: {}, rawResponse: raw };
-        }
-
-        const cleanJson = this.cleanJsonString(raw || '');
-        if (!cleanJson) return { proposal: {}, rawResponse: raw };
-        try {
-            const parsed = JSON.parse(cleanJson) as Record<string, unknown>;
-            const proposal: ArtifactGenerationContractProposal = {};
-            if (typeof parsed.normalizedIntent === 'string') proposal.normalizedIntent = parsed.normalizedIntent;
-            if (typeof parsed.audience === 'string') proposal.audience = parsed.audience as ArtifactGenerationContract['audience'];
-            if (typeof parsed.artifactFamily === 'string') proposal.artifactFamily = parsed.artifactFamily as ArtifactGenerationContract['artifactFamily'];
-            if (typeof parsed.purpose === 'string') proposal.purpose = parsed.purpose as ArtifactGenerationContract['purpose'];
-            if (typeof parsed.detailLevel === 'string') proposal.detailLevel = parsed.detailLevel as ArtifactGenerationContract['detailLevel'];
-            if (Array.isArray(parsed.acceptanceCriteria)) proposal.acceptanceCriteria = parsed.acceptanceCriteria.filter((item): item is string => typeof item === 'string');
-            if (Array.isArray(parsed.exportTargets)) proposal.exportTargets = parsed.exportTargets.filter((item): item is string => typeof item === 'string');
-            if (Array.isArray(parsed.requiredContextItems)) proposal.requiredContextItems = parsed.requiredContextItems.filter((item): item is string => typeof item === 'string');
-            if (Array.isArray(parsed.excludedContextItems)) proposal.excludedContextItems = parsed.excludedContextItems.filter((item): item is string => typeof item === 'string');
-            if (typeof parsed.qualityTarget === 'number' && Number.isFinite(parsed.qualityTarget)) proposal.qualityTarget = parsed.qualityTarget;
-            return { proposal, rawResponse: raw };
-        } catch (error) {
-            console.warn('[geminiService] proposeArtifactBriefContract: malformed JSON, degrading to deterministic.', error);
-            return { proposal: {}, rawResponse: raw };
-        }
-    }
-
-
     // Review, improvements and test cases are `generation/artifactReview.ts`
     // (F5-01, corte 11). Image, speech and SVG generation left with them:
-    // nothing in the repository called any of the three.
+    // nothing in the repository called any of the three. The brief proposal
+    // is `generation/artifactBriefProposal.ts` and the presentation deck
+    // `generation/presentationDeck.ts` (corte 12); the minimal fallback deck,
+    // which calls no model, is `services/presentation/presentationFallback.ts`.
 
     // ── LMS ───────────────────────────────────────────────────────────────
     //

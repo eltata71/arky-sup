@@ -4,6 +4,7 @@ import type { DiagramErrorRecord } from '../lib/diagram';
 import { artifactGenerationService, C4SelfHealingError } from '../services/ai';
 import { ARTIFACT_TEMPLATES } from '../constants';
 import { CheckCircleIcon, XCircleIcon } from './Icons';
+import { useArtifactPersona } from '../hooks/useArtifactPersona';
 
 interface ProjectCreationStatusProps {
     project: Project;
@@ -20,6 +21,7 @@ interface CreationLogEntry {
 
 const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, initialArtifactNames, onComplete }) => {
     const { settings, createArtifact } = useAppContext();
+    const composePersonaInstruction = useArtifactPersona();
     const [creationLog, setCreationLog] = useState<CreationLogEntry[]>([]);
     // Anti-reentry guard: ensures the generation loop runs exactly once for
     // this mount, even under React StrictMode double-invocation or unrelated
@@ -68,7 +70,7 @@ const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, 
                 const template = ARTIFACT_TEMPLATES.find(t => t.name === name);
                 if (template) {
                     try {
-                        const content = await artifactGenerationService.generateArtifactContent(currentProjectState, template, settings);
+                        const content = await artifactGenerationService.generateArtifactContent(currentProjectState, template, settings, undefined, { composePersonaInstruction });
                         createArtifact(project.id, {
                             name: template.name,
                             type: template.type,
@@ -129,7 +131,7 @@ const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, 
         };
 
         createAllArtifacts();
-    }, [uniqueArtifactNames, project, settings, createArtifact, onComplete]);
+    }, [uniqueArtifactNames, project, settings, createArtifact, onComplete, composePersonaInstruction]);
 
     const allDone = creationLog.length > 0 && creationLog.every(log => log.status === 'done' || log.status === 'failed' || log.status === 'skeleton');
 
