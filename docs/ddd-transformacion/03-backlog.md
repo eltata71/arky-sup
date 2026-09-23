@@ -588,10 +588,27 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ## Fase 5 — Oficina, IA y proyecciones
 
 ### F5-01 · Romper `services/ai -> services (raíz)`
-- **Prioridad** P0 · **Tamaño** XL · **Estado** `pendiente` · **Resuelve** H12, H03
-- **Nota.** 20 ficheros bajo `services/ai` importan `geminiService`. Es la arista
-  que cierra el SCC de nueve. La estrangulación va vertical por vertical, cortando
-  primero la dependencia ascendente de cada una (patrón `learningService`).
+- **Prioridad** P0 · **Tamaño** XL · **Estado** `en curso` · **Resuelve** H12, H03
+- **Nota.** Es la arista que cierra el SCC de nueve. La estrangulación va
+  vertical por vertical, cortando primero la dependencia ascendente de cada una
+  (patrón `learningService`). Medido al empezar: **12** ficheros bajo
+  `services/ai` importaban `geminiService` (la cifra de 20 era de antes de la
+  vertical del LMS).
+- **Corte 1 — el transporte (2026-09-23).** Proxy, reintentos, tope de tiempo y
+  cambio de modelo salen del motor a `services/ai/generation/legacyTransport.ts`,
+  tal cual y con el cliente inyectado; el motor delega. `aiGateway` y las cuatro
+  fachadas que sólo envían su propio prompt —captura asistida, guía de la
+  plataforma, asistente de iniciativas y edición de diagramas— dejan de
+  importar el motor: **12 → 7**. `engineImporters.test.ts` lista los siete
+  restantes y sólo deja encoger. De paso: el transporte sale tipado (`any`
+  23 → 18), entra en `typecheck:strict` con su cierre (dos `override` que
+  faltaban en `cause`), el motor baja a 5 110 líneas y
+  `services (raíz) -> services/ai` de 17 a 11 imports.
+- **Lo que queda.** Siete verticales de prompts de dominio: artefactos,
+  diagramas, documentos, asistente, recomendaciones, sugerencias y la
+  evaluación de retos del LMS (`learningService.evaluateChallenge`, el último
+  método que la vertical del LMS dejó atrás). La arista no desaparece hasta el
+  último; el SCC tampoco.
 
 ### F5-02 · Políticas de negocio a su contexto propietario
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F5-01

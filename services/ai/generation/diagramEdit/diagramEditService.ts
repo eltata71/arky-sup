@@ -47,7 +47,7 @@ import { resolveEffectiveModel } from '../../../../lib/ai/modelCatalog';
 // be a second set of invariants, and only one of them is the one the lint
 // rules check.
 import { applySemanticPatch } from '../../../diagram';
-import { geminiService } from '../../../geminiService';
+import { aiGateway } from '../aiGateway';
 import { defineSchema, parseStructured } from '../../structuredOutput';
 import type { Settings } from '../../../../types';
 
@@ -235,7 +235,7 @@ export const diagramEditService = {
 
         try {
             const model = resolveEffectiveModel('default', settings).id;
-            const response = await geminiService.generateContentWithFallback(
+            const response = await aiGateway.generateContent(
                 settings,
                 model,
                 buildPrompt(request),

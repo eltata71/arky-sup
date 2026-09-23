@@ -3,12 +3,13 @@
  *
  * `intentClassifierLLM`, `memoryExtractor` and `chatCompactor` used to call
  * `ai.models.generateContent` directly, which pinned them to Gemini and
- * ignored `aiConfig.provider`. They now go through
- * `geminiService.generateContentWithFallback`, the single seam that dispatches
- * to Gemini or OpenRouter.
+ * ignored `aiConfig.provider`. They now go through `aiGateway`, whose
+ * transport (`legacyTransport.generateContentWithFallback`) is the single seam
+ * that dispatches to Gemini or OpenRouter. Since F5-01 that transport no longer
+ * lives in the engine, so these call sites do not load it at all.
  *
  * These specs assert three things per call site:
- *  1. the seam is used (never `getAIClient`),
+ *  1. the seam is used (never the engine's `getAIClient`),
  *  2. the Gemini structured-output config (`responseMimeType` +
  *     `responseSchema`) is forwarded unchanged, and
  *  3. the existing failure fallback still holds (null / heuristic verdict).
@@ -26,8 +27,13 @@ const { generateContentWithFallback, getAIClient } = vi.hoisted(() => ({
   }),
 }));
 
+vi.mock('../../../services/ai/generation/legacyTransport', () => ({
+  legacyTransport: { generateContentWithFallback },
+}));
+// The engine is still mocked so that reaching it at all fails loudly: these
+// call sites compose their own prompt and have no business in it (F5-01).
 vi.mock('../../../services/geminiService', () => ({
-  geminiService: { generateContentWithFallback, getAIClient },
+  geminiService: { generateContentWithFallback: getAIClient, getAIClient },
 }));
 
 // Partial mock: only model resolution is pinned. The real module also supplies

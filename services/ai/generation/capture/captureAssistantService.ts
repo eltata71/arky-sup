@@ -38,7 +38,7 @@ import type {
 } from '../../../../lib/capture';
 import { CAPTURE_FIELDS, CAPTURE_GLOBAL_RULES, describeInsufficientContext } from '../../../../lib/capture';
 import { resolveEffectiveModel } from '../../../../lib/ai/modelCatalog';
-import { geminiService } from '../../../geminiService';
+import { aiGateway } from '../aiGateway';
 import { defineSchema, parseStructured } from '../../structuredOutput';
 import type { Settings } from '../../../../types';
 
@@ -193,7 +193,7 @@ export const captureAssistantService = {
 
     try {
       const model = resolveEffectiveModel(request.modelTier ?? 'default', settings).id;
-      const response = await geminiService.generateContentWithFallback(
+      const response = await aiGateway.generateContent(
         settings,
         model,
         buildPrompt({ ...request, fields }),

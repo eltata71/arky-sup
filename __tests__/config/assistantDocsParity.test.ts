@@ -35,6 +35,8 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'retiredRpcs', rule: 'una RPC retirada no vuelve' },
   { anchor: 'noRevisionCache', rule: 'la revisión viaja con el registro (F4-07)' },
   { anchor: 'artifactWorkflow', rule: 'la coordinación de artefactos no vive en React (F4-05)' },
+  { anchor: 'legacyTransport', rule: 'el transporte salió del motor y el motor se estrangula por verticales (F5-01)' },
+  { anchor: 'engineImporters', rule: 'la lista de importadores del motor sólo encoge' },
   { anchor: 'agentRegistry', rule: 'el registro es la única puerta a los agentes' },
   { anchor: 'wrapUntrustedContent', rule: 'lo externo se valla antes de llegar al modelo' },
   { anchor: 'docs/operacion/despliegue.json', rule: 'producción la publica un solo camino' },

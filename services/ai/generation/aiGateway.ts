@@ -19,7 +19,7 @@
  */
 
 import type { Settings } from '../../../types';
-import { geminiService } from '../../geminiService';
+import { legacyTransport } from './legacyTransport';
 
 /** Options shared by both gateway calls. */
 export interface AIGatewayOptions {
@@ -38,11 +38,12 @@ export interface AIGatewayResult {
 /**
  * The gateway is typed explicitly rather than inferred from the bound methods.
  *
- * `geminiService` sits on an import cycle with the agent and chat modules that
- * use this gateway, and TypeScript degrades inference across such a cycle —
- * callers silently received `unknown` and lost `.text`. Declaring the shape
- * here pins the contract independently of resolution order, which is also the
- * right thing for a published surface.
+ * It used to delegate to `geminiService`, which sat on an import cycle with the
+ * agent and chat modules that use this gateway, and TypeScript degrades
+ * inference across such a cycle — callers silently received `unknown` and lost
+ * `.text`. Since F5-01 it delegates to `legacyTransport` and no longer reaches
+ * the engine at all; the declared shape stays, because it is the right thing
+ * for a published surface.
  */
 export interface AIGateway {
   generateContent(
@@ -66,8 +67,8 @@ export interface AIGateway {
 export const aiGateway: AIGateway = {
   /** One-shot generation through the full provider/retry/fallback pipeline. */
   generateContent: (settings, preferredModel, contents, config, options) =>
-    geminiService.generateContentWithFallback(settings, preferredModel, contents, config, options),
+    legacyTransport.generateContentWithFallback(settings, preferredModel, contents, config, options),
   /** Streaming generation through the same pipeline. */
   generateContentStream: (settings, preferredModel, contents, config, options) =>
-    geminiService.generateContentStreamWithFallback(settings, preferredModel, contents, config, options),
+    legacyTransport.generateContentStreamWithFallback(settings, preferredModel, contents, config, options),
 };

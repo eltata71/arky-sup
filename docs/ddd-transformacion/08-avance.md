@@ -28,9 +28,11 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** fase 5 — **F5-01** (romper
-  `services/ai -> services (raíz)`, vertical a vertical, con el patrón de
-  `learningService`). Las seis pantallas que siguen sobre el fan-out son de
+- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 2. El corte 1 (el
+  transporte fuera del motor; importadores del motor en `services/ai` 12 → 7)
+  está hecho. El siguiente candidato es la evaluación de retos del LMS
+  (`learningService.evaluateChallenge`), el resto de la vertical ya extraída, y
+  después la vertical más pequeña de las seis de dominio. Las seis pantallas que siguen sobre el fan-out son de
   **F5-02**. Pendiente de decisión del propietario: aplicar la migración de
   F4-06 a `ArkyDB-US` (`supabase db push`).
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
@@ -120,6 +122,13 @@
 | **F4-05** coordinación de artefactos fuera de React | ✅ | `artifactWorkflow`, `artifactImprovement`, `generationFailure`. Fan-out 10 → 6; las seis restantes, a F5-02. |
 | **F4-06** ruta de escritura única | ✅ | `save_project_aggregate` retirada: `revoke` + `drop`, contratos reescritos, `retiredRpcs.test.ts`. |
 | **F4-07** mapa de revisiones de proyectos | ✅ | Sin `Map` ni exportación; la revisión viaja en `Project.revision`. Mismo defecto del actualizador que F4-03. |
+
+## Fase 5 — en curso
+
+| Tarea | Estado | Nota |
+|---|---|---|
+| **F5-01** romper `services/ai -> services (raíz)` | ⏳ corte 1 hecho | El transporte sale del motor a `legacyTransport`; importadores del motor en `services/ai` 12 → 7; `any` 23 → 18. |
+| **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible
 

@@ -19,24 +19,22 @@ import {
   type ArtifactsContextOptions,
 } from './ai/prompts/projectPrompts';
 import { buildAgentSystemInstruction, prepareChatHistoryForModel } from './agent/agentContextComposer';
-import { MODEL_FALLBACK_CHAIN, MODEL_TIERS, IMAGE_MODEL, TTS_MODEL, type ModelTier } from '../lib/ai/modelCatalog';
-import { proxyProviderFor, resolveModelForSettings, resolveProviderId } from './ai/catalog';
+import { MODEL_TIERS, IMAGE_MODEL, TTS_MODEL, type ModelTier } from '../lib/ai/modelCatalog';
+import { resolveModelForSettings, resolveProviderId } from './ai/catalog';
 import { activeProviderCapabilities } from './ai/capabilities';
-import { MODIFY_ARTIFACT_TOOL, toGeminiTools, type AIToolDefinition } from './ai/tools';
+import { MODIFY_ARTIFACT_TOOL } from './ai/tools';
 import { parseAiJson, isParseAiJsonFailure } from './ai/parseAiJson';
-import { toGeminiSchema } from './ai/schema';
 import {
-    buildCanonicalRequest,
-    routeLegacyRequest,
-    withGeminiHealth,
-} from './ai/generation/legacyGeminiBridge';
+    atGeminiBoundary,
+    effectiveGeminiApiKey,
+    INITIAL_BACKOFF_MS,
+    LegacyGenerationTransport,
+    MAX_BACKOFF_MS,
+    type LegacyGenerationOptions,
+    type LegacyGenerationResult,
+} from './ai/generation/legacyTransport';
 import type { ArtifactSuggestionContext } from './ai/artifactSuggestionTypes';
 import { renderContextGraphReinforcement } from './contextGraph';
-import { aiRequestExecutor } from './ai/core/AIRequestExecutor';
-import { callAiProxyDetailed, isAiProxyConfigured, streamAiProxyDetailed } from './ai/aiProxyClient';
-import { isProxySuccess } from './ai/aiProxyPolicy';
-import { assertDirectCallAllowed, assertDirectCallAllowedFor } from './ai/aiProxyEnforcement';
-import { AIRetryPolicy } from './ai/retry/AIRetryPolicy';
 import { assessDocumentArtifact, assessPresentationDeck } from './quality/documentAcceptability';
 import {
     buildArchitectureKnowledgeGraphForProject,
@@ -56,34 +54,6 @@ import {
     DIAGRAM_SYSTEM_INSTRUCTION,
 } from './ai/prompts/diagramPrompts';
 
-
-/**
- * Normalise a Gemini `config` at the SDK boundary.
- *
- * Schemas in this file are being migrated from Google's `Type` enum to the
- * neutral `AIJsonSchema` dialect, one definition site at a time. Applying the
- * translator here means a call site works the moment it is migrated and keeps
- * working before it is — the SDK always receives Google's dialect regardless of
- * which one the caller wrote. `toGeminiSchema` is idempotent, so this is safe
- * to apply unconditionally.
- */
-const atGeminiBoundary = (config: Record<string, any>): Record<string, any> => {
-    if (!config) return config;
-    let out = config;
-    if (config.responseSchema !== undefined && config.responseSchema !== null) {
-        out = { ...out, responseSchema: toGeminiSchema(config.responseSchema) };
-    }
-    // Tools are declared canonically by the call site and translated here, in
-    // the same place and for the same reason as schemas. They used to be
-    // assembled as Google `functionDeclarations` at the call site, which meant
-    // the neutral path could only recover them with `fromGeminiTools` — an
-    // adapter that read the vendor shape back into the canonical one, i.e. the
-    // arrow pointing the wrong way.
-    if (Array.isArray(config.tools) && config.tools.length > 0) {
-        out = { ...out, tools: toGeminiTools(config.tools as AIToolDefinition[]) };
-    }
-    return out;
-};
 
 /**
  * Refuse a non-text modality the active provider does not offer.
@@ -235,16 +205,10 @@ export { SKELETON_FALLBACK_MARKER };
 
 
 
-// Configuration
-const GENERATION_TIMEOUT_MS = 90000;
-// Generation now retries up to 2 times on transient network errors. Previously
-// this was 0, which meant a single mobile-Safari "Load failed" or 503 burst
-// would surface as a hard error in the UI even though Gemini almost always
-// recovers within a couple of seconds.
-const GENERATION_MAX_RETRIES = 2;
+// Configuration. The generation loop's own constants moved with the transport
+// (`services/ai/generation/legacyTransport.ts`, F5-01); this one is only for
+// `retryWithBackoff`, which the engine still uses directly.
 const MAX_RETRIES = 4;
-const INITIAL_BACKOFF_MS = 1200;
-const MAX_BACKOFF_MS = 16000;
 
 // ─── Error classification ─────────────────────────────────────────────────
 // ─── Error classification ─────────────────────────────────────────────────
@@ -865,30 +829,19 @@ class GeminiService {
     // Note: We no longer store `this.ai` or `this.apiKey` as static properties on the class
     // because we need to decide which key to use (global or user) at runtime based on settings.
 
-    constructor() {
-        // Constructor is now lightweight
-    }
-
     /**
-     * Helper: Determines which API Key to use based on settings.
+     * The generation transport, with this engine's own client factory so the
+     * public `getAIClient` stays the one seam tests replace (F5-01).
      */
-    private getEffectiveApiKey(settings?: Settings): string {
-        const apiKeySource = settings?.aiConfig?.apiKeySource || 'global';
-        const userKey = typeof localStorage !== 'undefined' ? localStorage.getItem('user_gemini_key') : null;
-
-        if (apiKeySource === 'user' && userKey && userKey.trim().length > 0) {
-            return userKey.trim();
-        }
-
-        throw new Error("No se encontró una API Key personal válida. Para una llamada directa, ve a Configuración > IA y agrega tu llave personal.");
-    }
+    private readonly transport = new LegacyGenerationTransport({
+        getClient: (settings) => this.getAIClient(settings),
+    });
 
     /**
      * Helper: Creates a new GoogleGenAI instance on demand.
      */
     public getAIClient(settings: Settings): GoogleGenAI {
-        const apiKey = this.getEffectiveApiKey(settings);
-        return createGeminiAIClient({ apiKey });
+        return createGeminiAIClient({ apiKey: effectiveGeminiApiKey(settings) });
     }
 
     /**
@@ -1005,35 +958,6 @@ class GeminiService {
         }
     }
 
-    private isModelFallbackCandidate(error: any): boolean {
-        // Original cases: model id not recognised by the API. These imply the
-        // request can never succeed against this model — a fallback to any
-        // other model id is the only way forward.
-        const message = String(error?.message || '').toLowerCase();
-        const status = Number(error?.status || 0);
-        if (
-            status === 400 ||
-            status === 404 ||
-            message.includes('not found') ||
-            message.includes('unsupported') ||
-            message.includes('invalid model') ||
-            message.includes('unknown model')
-        ) {
-            return true;
-        }
-
-        // Saturation / overload: the requested model returned 503 or 429 even
-        // after exhausting retryWithBackoff. Each model in the fallback chain
-        // has an independent capacity pool, so trying the next model is the
-        // single biggest stability win during peak hours — without it the
-        // user just sees "Modelo saturado" and gets stuck even though Pro or
-        // Flash-Lite would have answered.
-        if (error instanceof AIServiceError) {
-            return error.category === 'overloaded' || error.category === 'rate-limit';
-        }
-        return false;
-    }
-
     private isLocalGenerationFallbackCandidate(error: unknown): boolean {
         const friendly = classifyAIError(error);
         return friendly.category === 'timeout'
@@ -1043,205 +967,45 @@ class GeminiService {
     }
 
     /**
-     * Canonical retry/timeout/model-fallback loop shared by every text
-     * generation entry point (artifact-gen, chat, guided-creation, training).
-     *
-     * Why this is the standard:
-     *  - Each Gemini model has its own per-key quota pool. If `gemini-2.5-pro`
-     *    returns 429, `gemini-2.5-flash` usually still has budget; we MUST
-     *    try the next model before surfacing an error.
-     *  - Transient 5xx/network errors retry inside one model via
-     *    {@link retryWithBackoff}; rate-limit/overload after retries fall
-     *    through to the next model via {@link isModelFallbackCandidate}.
-     *  - Aborts propagate so iOS Safari doesn't leak sockets.
+     * The retry/timeout/model-fallback loop, now in the transport
+     * (`legacyTransport`, F5-01). Kept as a delegate because a dozen prompt
+     * methods below call it with their own SDK request.
      */
-    private async runWithModelFallback<T>(
+    private runWithModelFallback<T>(
         settings: Settings,
         preferredModel: string,
         runOne: (modelId: string, ai: GoogleGenAI, signal: AbortSignal) => Promise<T>,
-        options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
+        options: LegacyGenerationOptions = {}
     ): Promise<T> {
-        // Orchestration (retry + abortable timeout + model fallback) has been
-        // lifted into the provider-agnostic `AIRequestExecutor` so every AI
-        // path shares one battle-tested loop. GeminiService stays the Gemini
-        // façade: it injects the SDK call (`runOne`) and the Gemini-specific
-        // error predicates, so behaviour is byte-for-byte identical to the
-        // previous in-class loop.
-        const retryPolicy = new AIRetryPolicy({
-            maxRetries: options.maxRetries ?? GENERATION_MAX_RETRIES,
-            initialBackoffMs: INITIAL_BACKOFF_MS,
-            maxBackoffMs: MAX_BACKOFF_MS,
-        });
-        return aiRequestExecutor.runWithModelFallback<T>({
-            preferredModel,
-            fallbackChain: MODEL_FALLBACK_CHAIN,
-            // Health is recorded here too, not only on the canonical path.
-            // Gemini serves most traffic in this build, so a circuit that only
-            // ever saw the other two backends would report the portfolio as
-            // healthy through an outage of the one actually being used.
-            attempt: (modelId, signal) =>
-                // Health is recorded on this path too, not only on the canonical
-                // one. Gemini serves most traffic in this build, so a circuit
-                // that only ever saw the other two backends would report the
-                // portfolio as healthy through an outage of the one in use.
-                withGeminiHealth(() => runOne(modelId, this.getAIClient(settings), signal)),
-            retryPolicy,
-            timeoutMs: options.timeoutMs ?? GENERATION_TIMEOUT_MS,
-            shouldRetry: (error) =>
-                isTransientGeminiError(error) && classifyAIError(error).category !== 'rate-limit',
-            normalizeError: (error) => classifyAIError(error),
-            isModelFallbackCandidate: (error) => this.isModelFallbackCandidate(error),
-            maxCandidates: options.maxCandidates,
-            signal: options.signal,
-            timeoutMessage: 'Generation timed out.',
-            onModelSelected: (modelId, index) => {
-                if (index > 0) {
-                    console.warn(`GeminiService: Trying fallback model "${modelId}"...`);
-                }
-            },
-        });
+        return this.transport.runWithModelFallback(settings, preferredModel, runOne, options);
     }
 
-    /**
-     * Route a generation through the serverless proxy (`api/ai.ts`) when
-     * `VITE_AI_PROXY_URL` is configured, so the global API key never ships in
-     * the browser bundle.
-     *
-     * Returns `null` — meaning "caller should use the direct provider path" —
-     * when the proxy is not configured, when the request needs SDK features the
-     * proxy's text contract can't carry (tools/function calling), or when the
-     * proxy call fails. The direct path keeps its own retry + model-fallback
-     * pipeline, so a proxy outage degrades instead of breaking.
-     */
-    private async tryAiProxy(
-        settings: Settings,
-        preferredModel: string,
-        contents: unknown,
-        config: Record<string, any>,
-        options: { signal?: AbortSignal }
-    ): Promise<string | null> {
-        if (!isAiProxyConfigured()) {
-            assertDirectCallAllowedFor(settings, 'not-configured');
-            return null;
-        }
-        // Tool calling and providers the proxy cannot route have no proxied
-        // form at all. Under enforcement that is a refusal, not a silent
-        // downgrade: `assertDirectCallAllowedFor` throws, and with enforcement
-        // off it returns and the direct path runs exactly as before.
-        if (config.tools || config.toolConfig) {
-            assertDirectCallAllowedFor(settings, 'unsupported-request');
-            return null;
-        }
-        const proxyProvider = proxyProviderFor(settings);
-        if (!proxyProvider) {
-            assertDirectCallAllowedFor(settings, 'unsupported-request');
-            return null;
-        }
-
-        const outcome = await callAiProxyDetailed({
-            provider: proxyProvider,
-            model: preferredModel,
-            contents,
-            systemInstruction: typeof config.systemInstruction === 'string' ? config.systemInstruction : undefined,
-            temperature: typeof config.temperature === 'number' ? config.temperature : undefined,
-            maxOutputTokens: typeof config.maxOutputTokens === 'number' ? config.maxOutputTokens : undefined,
-            responseMimeType: typeof config.responseMimeType === 'string' ? config.responseMimeType : undefined,
-            responseSchema: config.responseSchema,
-            signal: options.signal,
-        });
-        if (isProxySuccess(outcome)) return outcome.value;
-        assertDirectCallAllowed(settings, outcome);
-        return null;
-    }
-
-    private async generateTextWithFallback(
+    private generateTextWithFallback(
         settings: Settings,
         preferredModel: string,
         contents: string,
         config: Record<string, any>,
-        options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
+        options: LegacyGenerationOptions = {}
     ): Promise<string> {
-        const textRequest = buildCanonicalRequest(preferredModel, contents, config, options, 'generation');
-        const textRoute = routeLegacyRequest(settings, textRequest);
-        if (textRoute.plan.primary.provider !== 'gemini') {
-            const response = await aiRequestExecutor.execute(textRoute.provider, textRequest, undefined, {
-                settings,
-                routePlan: textRoute.plan,
-                resolveProvider: textRoute.resolveProvider,
-            });
-            return response.text || '';
-        }
-        return this.runWithModelFallback(settings, preferredModel, async (model, ai, signal) => {
-            const response = await ai.models.generateContent({
-                model,
-                contents,
-                config: atGeminiBoundary({ ...config, abortSignal: signal }),
-            });
-            return response.text || '';
-        }, options);
+        return this.transport.generateTextWithFallback(settings, preferredModel, contents, config, options);
     }
 
     /**
      * Public entry point for arbitrary text/chat generation with the full
-     * model-fallback pipeline. Use this from any assistant (chat, guided
-     * creation, LMS, training) instead of calling `ai.models.generateContent`
-     * directly — that bypass is what caused guided-creation to surface a
-     * single 429 as a hard error while artifact generation silently fell
-     * back to Flash.
+     * model-fallback pipeline. The pipeline itself is the transport
+     * (`services/ai/generation/legacyTransport.ts`); a caller that composes its
+     * own prompt uses `aiGateway` and never loads this engine.
      */
-    public async generateContentWithFallback(
+    public generateContentWithFallback(
         settings: Settings,
         preferredModel: string,
         contents: unknown,
         config: Record<string, any> = {},
-        options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
-    ): Promise<{ text: string; functionCalls?: Array<{ name?: string; args?: Record<string, unknown> }> }> {
-        // Synchronous guard on purpose: when no proxy is configured this must
-        // not even introduce an extra microtask, so the direct path keeps its
-        // exact current timing and semantics.
-        if (isAiProxyConfigured()) {
-            const proxied = await this.tryAiProxy(settings, preferredModel, contents, config, options);
-            if (proxied !== null) return { text: proxied };
-        } else {
-            assertDirectCallAllowedFor(settings, 'not-configured');
-        }
-
-        const contentRequest = buildCanonicalRequest(preferredModel, contents, config, options, 'generation');
-        const contentRoute = routeLegacyRequest(settings, contentRequest);
-        if (contentRoute.plan.primary.provider !== 'gemini') {
-            const response = await aiRequestExecutor.execute(contentRoute.provider, contentRequest, undefined, {
-                settings,
-                routePlan: contentRoute.plan,
-                resolveProvider: contentRoute.resolveProvider,
-            });
-            // The canonical response carries `toolCalls`; this façade's own
-            // result shape still speaks `{ name, args }` because its callers
-            // do. The mapping is one line and it is here, at the boundary,
-            // rather than pushed into the contract as a legacy alias.
-            return {
-                text: response.text || '',
-                functionCalls: response.toolCalls?.map((call) => ({
-                    name: call.name,
-                    args: call.arguments,
-                })),
-            };
-        }
-        return this.runWithModelFallback(settings, preferredModel, async (model, ai, signal) => {
-            const response = await ai.models.generateContent({
-                model,
-                contents: contents as any,
-                config: atGeminiBoundary({ ...config, abortSignal: signal }),
-            });
-            const functionCalls = (response as { functionCalls?: Array<{ name?: string; args?: Record<string, unknown> }> }).functionCalls;
-            return { text: response.text || '', functionCalls };
-        }, options);
+        options: LegacyGenerationOptions = {}
+    ): Promise<LegacyGenerationResult> {
+        return this.transport.generateContentWithFallback(settings, preferredModel, contents, config, options);
     }
 
-    /**
-     * Produces a concise semantic critique for the pre-persistence artifact
-     * refinement gate. It deliberately goes through generateContentWithFallback
-     * so model fallback/retry behavior remains centralized in this service.
-     */
     public async critiqueArtifactContent(request: ArtifactContentCritiqueRequest): Promise<string> {
         const model = resolveModelForSettings('default', request.settings).id;
         const prompt = `Eres un revisor senior de arquitectura de software y calidad documental.
@@ -1332,69 +1096,15 @@ ${request.content.slice(0, 24000)}
         return result.text.trim();
     }
 
-    /**
-     * Streaming counterpart of {@link generateContentWithFallback}. Falls
-     * back through {@link MODEL_FALLBACK_CHAIN} only on stream-open errors
-     * (once chunks start flowing we don't retry, because partial output may
-     * already be on screen).
-     */
-    public async generateContentStreamWithFallback(
+    /** Streaming counterpart of {@link generateContentWithFallback}. */
+    public generateContentStreamWithFallback(
         settings: Settings,
         preferredModel: string,
         contents: unknown,
         config: Record<string, any> = {},
-        options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
+        options: LegacyGenerationOptions = {}
     ): Promise<AsyncIterable<unknown>> {
-        // The proxy is attempted first for *any* provider it can route, so the
-        // server-side key is used whenever one is configured. Previously this
-        // block sat behind the Gemini branch and hard-coded `provider: 'gemini'`,
-        // which meant a user on OpenRouter never reached the proxy at all and
-        // streamed against the browser-side key instead.
-        //
-        // Tools are still excluded: the proxy's text contract carries no
-        // `functionCalls`, so routing them through it would silently drop the
-        // model's ability to call a function.
-        const streamProxyProvider = proxyProviderFor(settings);
-        const streamProxyable = !config.tools && !config.toolConfig;
-        if (streamProxyProvider && streamProxyable && isAiProxyConfigured()) {
-            const outcome = await streamAiProxyDetailed({
-                provider: streamProxyProvider,
-                model: preferredModel,
-                contents,
-                systemInstruction: typeof config.systemInstruction === 'string' ? config.systemInstruction : undefined,
-                temperature: typeof config.temperature === 'number' ? config.temperature : undefined,
-                maxOutputTokens: typeof config.maxOutputTokens === 'number' ? config.maxOutputTokens : undefined,
-                responseMimeType: typeof config.responseMimeType === 'string' ? config.responseMimeType : undefined,
-                responseSchema: config.responseSchema,
-                signal: options.signal,
-            });
-            if (isProxySuccess(outcome)) return outcome.value;
-            assertDirectCallAllowed(settings, outcome);
-        } else {
-            // No proxy in the path at all: either unconfigured, or a request
-            // shape the proxy cannot carry. Same refusal rule as the buffered
-            // call, so streaming cannot become the quiet way around it.
-            assertDirectCallAllowedFor(settings, streamProxyable ? 'not-configured' : 'unsupported-request');
-        }
-
-        const streamRequest = buildCanonicalRequest(preferredModel, contents, config, options, 'generation-stream');
-        const streamRoute = routeLegacyRequest(settings, streamRequest, { streaming: true });
-        if (streamRoute.plan.primary.provider !== 'gemini') {
-            const result = await aiRequestExecutor.executeStream(streamRoute.provider, streamRequest, undefined, {
-                settings,
-                routePlan: streamRoute.plan,
-                resolveProvider: streamRoute.resolveProvider,
-            });
-            return result.stream;
-        }
-
-        return this.runWithModelFallback(settings, preferredModel, async (model, ai, signal) => {
-            return ai.models.generateContentStream({
-                model,
-                contents: contents as any,
-                config: atGeminiBoundary({ ...config, abortSignal: signal }),
-            });
-        }, options);
+        return this.transport.generateContentStreamWithFallback(settings, preferredModel, contents, config, options);
     }
 
     /**

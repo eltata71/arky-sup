@@ -177,7 +177,7 @@ Reglas que no se negocian al trabajar aquí:
    (`tsconfig.json` habilita la strictness de forma incremental; el `strict`
    completo sigue bloqueado por el split de `services/geminiService.ts`.
    `tsconfig.strict.json` lista los módulos que ya lo cumplen y sólo crece;
-   `npm run check:any-budget` sostiene el repositorio en 23 `any`. Al enrolar un
+   `npm run check:any-budget` sostiene el repositorio en 18 `any`. Al enrolar un
    módulo recuerda que `tsc` comprueba todo lo alcanzable: entran las reglas, no
    sus repositorios. Ver CLAUDE.md.)
 5. Aplicar cambios mínimos, trazables y testeables.
@@ -348,7 +348,15 @@ Reglas que no se negocian al trabajar aquí:
     actualización de un render, así que la segunda edición consecutiva no se
     guardaba—. Lee la instantánea antes (`projectsRef`/`getProject`) y aplica el
     mismo cambio puro dentro del actualizador.
-24. Antes de cerrar una tarea de código:
+24. **El motor se estrangula por verticales, y lo que sale, sale tipado**
+    (F5-01). El transporte —proxy, reintentos, tope de tiempo, cambio de
+    modelo— ya no vive en `services/geminiService.ts` sino en
+    `services/ai/generation/legacyTransport.ts`; una fachada que sólo envía su
+    propio prompt entra por `aiGateway` y no carga el motor. Las que todavía lo
+    importan están listadas en `__tests__/services/ai/engineImporters.test.ts`
+    y la lista sólo puede encoger: añadir un importador falla, y retirar uno
+    obliga a anotarlo. El código que sale del motor no se lleva sus `any`.
+25. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
      ESLint debe quedar en 0 errores y 0 avisos),
