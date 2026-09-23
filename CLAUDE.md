@@ -54,8 +54,8 @@ producto es una **prueba de concepto** (decisión de usuario, 2026-09-12): un
 único proyecto Supabase `ArkyDB-US` (`us-east-1`), sin datos productivos y sin
 multi-ambiente.
 
-`AGENTS.md` regla 1 dice lo mismo para Codex/Koder; mantenga los dos en el mismo
-cambio.
+`AGENTS.md` regla 1 dice lo mismo para Codex/Koder. **Todo cambio de este
+fichero actualiza `AGENTS.md` en el mismo commit** — ver *AI Assistant Resources*.
 
 **UI language is Spanish** (`<html lang="es">`). Source code, identifiers and most comments are English; user-facing copy is Spanish. The `en`/`es` dictionary lives in `lib/i18n/`; `AppContext` binds it to `settings.language` and exposes it as `t()`. Both languages carry the same 168 keys, and `__tests__/lib/i18n/translations.test.ts` fails the build if one gains a key the other lacks — a missing key renders as the key itself, in the middle of a toast.
 
@@ -2310,6 +2310,8 @@ Read the relevant doc before modifying a subsystem — they carry the rationale 
 This repository ships project-scoped agents and skills. Prefer them over ad-hoc reasoning.
 
 > **Cross-assistant compatibility:** `AGENTS.md` maps these same capabilities for OpenAI Codex/Koder and for the Hermes maintenance workflow. Keep `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/` and `AGENTS.md` in sync in the same change whenever agents or skills are added or modified.
+>
+> **And every change to this file updates `AGENTS.md` in the same commit** (owner's decision, 2026-09-23) — not only when "the base architecture changes". That narrower condition is how `AGENTS.md` went through phases 3 and 4 entire without learning any of their rules while this file described them. `AGENTS.md` summarises each rule and points back here; `__tests__/config/assistantDocsParity.test.ts` holds a list of anchors both files must name, and a rule worth sharing adds its anchor there.
 
 ### Sub-agents (`.claude/settings.json`)
 

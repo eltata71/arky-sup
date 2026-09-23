@@ -195,19 +195,36 @@ Reglas que no se negocian al trabajar aquí:
    a jsdom para que funcione un archivo: construir el DOM costaba 212,9 s
    frente a 50,6 s de ejecución real. Detalle en CLAUDE.md → *Testing
    Conventions*.
-8. **Un `Project` sólo se construye con `createArchitectureProject`**, que
-   rechaza una atención sin iniciativa y devuelve un rechazo tipado. Desde la
-   UI, `useCreateAttention()`. Cada contexto persiste por su repositorio sobre
-   `services/persistence`; el SDK está restringido por lint a un fichero.
+8. **Un proyecto sólo se construye con `createArchitectureProject`**, que
+   rechaza una atención sin iniciativa y devuelve un rechazo tipado; lo que
+   construye es un `ProjectRoot` (regla 21). Desde la UI, `useCreateAttention()`.
+   Cada contexto persiste por su repositorio sobre `services/persistence`; el
+   SDK está restringido por lint a un fichero.
 9. **Los módulos están declarados en `modules.json` y hay un gate que los
-   defiende.** No introduzcas un ciclo entre módulos, una importación que suba
-   por las capas (`lib`/`utils` no importan de `services`) ni una que entre a un
-   módulo saltándose su `index.ts`, ni una pantalla que importe **más de dos**
-   módulos de servicio. Cuando dos contextos necesitan el mismo tipo, ese tipo
-   baja a `lib/artifacts/`; cuando la dependencia debe ir en un solo sentido, se
-   declara un puerto en el que la recibe; cuando una pantalla necesita un tercer
-   servicio, esa orquestación pasa a un servicio de aplicación al que la
-   pantalla llama una vez. Detalle en CLAUDE.md → *Module boundaries*.
+   defiende** (`npm run check:module-boundaries`). No introduzcas un ciclo
+   entre módulos, **un grupo de módulos que pueda volver a sí mismo** aunque
+   ningún par se importe mutuamente (ADR-104), una importación que suba por las
+   capas (`lib`/`utils` no importan de `services`), una que entre a un módulo
+   saltándose sus **puertas declaradas** (`api` puede ser una lista: F3-06), ni
+   una pantalla que importe **más de dos** módulos de servicio. El grafo se
+   construye con `import`, `export … from`, `import type` **e `import('…')`**,
+   y sobre los ficheros de la raíz (`types.ts`, `utils.ts`, …) además de las
+   carpetas (ADR-105). Cada arista entre módulos está **declarada** en
+   `modules.json` → `allowedDependencies` (F3-03): una nueva es una decisión que
+   se revisa en la PR que la necesita. Cada presupuesto es monótono —puede bajar
+   y no subir sin la razón escrita al lado— y seis de ellos tienen objetivo y
+   fecha en `scripts/budgetTargets.mjs` (F3-04): antes de la fecha informan,
+   después fallan. Cuando dos contextos necesitan el mismo tipo, ese tipo baja
+   a `lib/`; cuando la dependencia debe ir en un solo sentido, se declara un
+   puerto en el que la recibe; cuando una pantalla necesita un tercer servicio,
+   esa orquestación pasa a un servicio de aplicación al que la pantalla llama
+   una vez. Detalle en CLAUDE.md → *Module boundaries*.
+10. **`types.ts` no importa nada, y no se le reexporta nada** (F3-07). `Artifact`
+    vive en `lib/artifacts/artifactModel.ts` —lo lee la capa de fundación, así
+    que es núcleo compartido—, y `Project` en `services/architectureProjects`
+    (las pantallas lo reciben de `context/AppContext`). Reexportar un tipo
+    «para que los imports existentes sigan funcionando» fue lo que creó cuatro
+    ciclos y tres imports ascendentes: importa del contexto dueño.
 11. **El barril de una capa no reexporta lo que la capa esconde.**
    `services/ai/index.ts` no puede importar `services/geminiService` — dentro de
    la capa el motor sí es una dependencia legítima, pero el barril es la API
@@ -288,7 +305,50 @@ Reglas que no se negocian al trabajar aquí:
    *Dependencias que no pueden subir*. Y **no fusiones una rama de Dependabot
    tal cual**: las de la cola nacieron de un `main` anterior y reintroducen
    `mirror-source.yml`; aplica la subida sobre `main` actual.
-14. Antes de cerrar una tarea de código:
+19. **Iniciativas es el contexto piloto: copia su forma** (F3-05,
+    `docs/ddd-transformacion/09-cierre-fase-3.md`). `domain/` guarda las reglas
+    sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);
+    `infrastructure/` guarda el adaptador y el repositorio, y ninguna pantalla lo
+    importa; `domainPurity.test.ts` escanea `domain/` porque el compilador no ve
+    ese acoplamiento. Los cambios son **operaciones con nombre** —una unión de
+    comandos y `applyInitiativeCommand`, que devuelve el agregado nuevo o un
+    rechazo tipado—, nunca `update(partial)`, y el proveedor de React sólo hace
+    lo que es de un proveedor: estado optimista, la escritura y revertir.
+20. **El Artefacto es la raíz de su propio agregado** (ADR-106). Se escribe con
+    **un comando por intención** —`create_artifact`, `create_artifact_version`,
+    `update_artifact`, `delete_artifact`, `revise_artifacts`—, compara la
+    revisión **del artefacto** y ningún comando recibe la lista del proyecto. El
+    contador y el índice del proyecto son una proyección que recalcula el
+    servidor; el versionado monótono por grupo (A-02) lo sostiene un índice
+    único en la base.
+21. **El Proyecto se escribe por una sola puerta, y lo que se escribe es la
+    raíz** (F4-04, F4-06). `ProjectRoot` es el agregado y **no tiene
+    artefactos**; `Project extends ProjectRoot` es el modelo de lectura que les
+    añade artefactos, índice, contador y grafo. La fábrica, la creación y el
+    repositorio sólo aceptan la raíz, y `toProjectDocument` es el único que
+    produce el documento persistido, sin campos derivados. `api.save_project`
+    crea (revisión esperada 0) y actualiza; la RPC compuesta
+    `save_project_aggregate` se retiró, y `__tests__/supabase/retiredRpcs.test.ts`
+    falla si una migración la recrea, si el cliente la llama o si el tipo
+    generado la ofrece. Retirar una RPC es `revoke` + `drop` más esa entrada.
+22. **La revisión viaja con el registro, nunca en un mapa** (F2-10, F4-07).
+    Proyectos, artefactos, iniciativas y encargos la leen de la lectura, la
+    envían como `expectedRevision` y guardan la que la base confirma. Un `Map`
+    de revisiones a nivel de módulo —y peor, exportado— es el defecto H10;
+    `__tests__/services/noRevisionCache.test.ts` lo impide.
+23. **La coordinación no vive en React** (F4-05). Lo que una pantalla o un hook
+    *decide* va a `services/<contexto>/application/`, como funciones puras que
+    se prueban sin montar nada; el hook sólo aplica el plan. Ejemplo de
+    referencia: `services/artifacts/application/artifactWorkflow` decide
+    versión, recompilación, comando, revisión y qué se revierte, y
+    `useArtifactsState` lo ejecuta; `artifactCoordinationOutOfReact.test.ts`
+    impide que vuelva. Y una trampa de React que ya costó dos defectos: **no
+    decidas qué persistir desde variables asignadas dentro del actualizador de
+    `setState`** —React sólo lo ejecuta en el acto para la primera
+    actualización de un render, así que la segunda edición consecutiva no se
+    guardaba—. Lee la instantánea antes (`projectsRef`/`getProject`) y aplica el
+    mismo cambio puro dentro del actualizador.
+24. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
      ESLint debe quedar en 0 errores y 0 avisos),
@@ -305,9 +365,15 @@ Para mantener paridad entre Claude Code y Codex/Koder:
 
 1. Si se agrega o modifica un agente en `.claude/settings.json`, actualizar este archivo (`AGENTS.md`) en la misma PR.
 2. Si se agrega o modifica una skill en `.claude/skills/`, actualizar la sección de skills y la matriz de enrutamiento.
-3. Si cambia la arquitectura base del proyecto, actualizar ambos archivos:
-   - `CLAUDE.md`
-   - `AGENTS.md`
+3. **Todo cambio de `CLAUDE.md` actualiza `AGENTS.md` en el mismo commit**, y
+   al revés (decisión del propietario, 2026-09-23). No sólo cuando «cambia la
+   arquitectura base»: esa condición es la que dejó a este archivo sin las
+   fases 3 y 4 enteras mientras `CLAUDE.md` las describía. `AGENTS.md` no
+   copia el detalle —lo resume como regla operativa y apunta a la sección de
+   `CLAUDE.md`—, pero una regla que está en uno y falta en el otro es una regla
+   que la mitad de los asistentes no conoce.
+   `__tests__/config/assistantDocsParity.test.ts` comprueba que los conceptos
+   anclados en los dos archivos sigan en los dos.
 
 ---
 
