@@ -10,7 +10,7 @@ import {
     generateDiagramIRWithSelfHealing,
     THINKING_BUDGET,
 } from './ai/generation/diagram';
-import { emitGenerationPhase, type Artifact, type ArtifactGenerationPhaseEvent, type ArtifactGenerationPhaseListener } from '../lib/artifacts';
+import { emitGenerationPhase, type Artifact, type ArtifactGenerationOptions, type ArtifactGenerationPhaseEvent } from '../lib/artifacts';
 import type { Project } from './architectureProjects';
 import { cleanJsonString as cleanJsonStringUtil } from '../utils';
 import {
@@ -71,7 +71,6 @@ import { irToMermaid } from './diagram/irToMermaid';
 import { extractDiagramSignals, renderDiagramSignals } from './diagram/diagramSignalExtractor';
 import { selectArtifactGenerationContext, validateControlledContextForPrompt } from './artifacts/artifactContextSelectionService';
 import { SKELETON_FALLBACK_MARKER } from './artifacts/artifactFallbackDetection';
-import { buildOfficePersonaInstruction, resolveOfficeAgentMention } from './architectureOffice/officeAgentPersonas';
 
 /** Returns true when an ArtifactTemplate.type requires diagram-flavoured generation. */
 function isDiagramArtifactType(type: string): boolean {
@@ -481,7 +480,7 @@ ${controlledContext}`
         template: ArtifactTemplate,
         settings: Settings,
         previousArtifact?: Artifact,
-        opts: { onPhase?: ArtifactGenerationPhaseListener; architectureGraphPromptBlock?: string } = {}
+        opts: ArtifactGenerationOptions = {}
     ): Promise<string> {
         const { onPhase } = opts;
         const stageTimings = new Map<string, number>();
@@ -512,7 +511,7 @@ ${controlledContext}`
         template: ArtifactTemplate,
         settings: Settings,
         previousArtifact?: Artifact,
-        opts: { onPhase?: ArtifactGenerationPhaseListener; architectureGraphPromptBlock?: string } = {}
+        opts: ArtifactGenerationOptions = {}
     ): Promise<string> {
         const { onPhase } = opts;
         const stageTimings = new Map<string, number>();
@@ -628,10 +627,9 @@ ${controlledContext}`
 
         const isDiagramTemplate = isDiagramArtifactType(template.type);
         const requestedBy = template.requestContext?.userRequest ?? template.objective;
-        const basePrompt = buildOfficePersonaInstruction(
-            buildBasePromptUtil(project, settings, isDiagramTemplate ? { mode: 'diagram' } : undefined),
-            resolveOfficeAgentMention(requestedBy),
-        );
+        // The persona is handed in, never looked up: the Office imports this layer (corte 13).
+        const baseInstruction = buildBasePromptUtil(project, settings, isDiagramTemplate ? { mode: 'diagram' } : undefined);
+        const basePrompt = opts.composePersonaInstruction?.(baseInstruction, requestedBy) ?? baseInstruction;
         // Documents embed excerpts of sibling artifacts so the generated
         // content stays consistent with what already exists (same entities,
         // requirement IDs, system names). Diagrams keep the compact list.

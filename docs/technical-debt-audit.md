@@ -2,11 +2,12 @@
 
 > **Estado actual de la deuda del motor (23 sep 2026):** F5-01 continúa por
 > cortes; en el corte 12, `services/geminiService.ts` baja a 1 923 líneas
-> según el gate y ya sólo contiene la generación principal.
+> según el gate y ya sólo contiene la generación principal; en el corte 13
+> deja de importar la Oficina (la persona llega por un puerto).
 > `artifactGenerationService` sigue siendo su único importador dentro de
 > `services/ai`. El riesgo pendiente es moverla sin introducir ciclos con
 > Oficina, grafos o calidad. Ver
-> [`f5-01-corte-12.md`](./ddd-transformacion/evidencias/f5-01-corte-12.md).
+> [`f5-01-corte-13.md`](./ddd-transformacion/evidencias/f5-01-corte-13.md).
 
 > **Revisión vigente (1 sep 2026):** el Top 10 de **monolito modular, DDD,
 > deuda técnica y CI/CD** — con el grafo de dependencias medido, las duraciones

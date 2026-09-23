@@ -306,7 +306,6 @@ export const DEEP_IMPORT_BUDGET = {
   // deja un import profundo a `services/presentation` y otro a
   // `services/artifacts`: el total baja. Desaparece con el motor.
   'services (raíz) -> services/ai': 8,
-  'services (raíz) -> services/architectureOffice': 1,
   'services (raíz) -> services/artifacts': 3, // F5-01 corte 12: el contrato del brief ya no se importa del motor
   // F5-01 (corte 6): la generación de diagramas salió del motor con sus
   // guardarraíles y su gate de calidad (6 → 3).

@@ -58,7 +58,7 @@ export const BYTE_CEILINGS = {
    * resolved model through `settings.aiConfig.model`, which would have made the
    * trace attribute a per-agent decision to the user's own preference.
    */
-  'services/geminiService.ts': 101971, // F5-01 corte 12: brief y presentaciones fuera del motor
+  'services/geminiService.ts': 101835, // F5-01 corte 13: la persona llega por un puerto, no desde la Oficina
   'components/ReactFlowCanvas.tsx': 109906,
   'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
@@ -71,7 +71,7 @@ export const BYTE_CEILINGS = {
   'components/artifacts/export/ArtifactExportModal.tsx': 42543, // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42400, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/CustomArtifactBriefWizard.tsx': 41919, // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'pages/SDDProcessView.tsx': 41451, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'pages/SDDProcessView.tsx': 41644, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   /**
    * +365 bytes while the line count fell 1005 → 1001. `executeAgentAction` now
    * refuses a high-impact plan that nobody confirmed — a flag three modules had
@@ -79,9 +79,9 @@ export const BYTE_CEILINGS = {
    * refusal live in `agentConfirmationGate`, which is why the file got shorter
    * while gaining a guarantee.
    */
-  'services/agent/agentExecutor.ts': 41032, // F5-01 corte 8: el turno del parche a `agentConversation`
+  'services/agent/agentExecutor.ts': 41241, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'components/AssistantPanel.tsx': 37765, // F5-01 corte 8: +77 B — el turno del agente llega por `useAssistantTurns`, que pone la persona de la Oficina sin un tercer módulo de servicio
-  'pages/Workspace.tsx': 36196, // F4-05: la coordinación salió a `services/artifacts/application`
+  'pages/Workspace.tsx': 36374, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/artifacts/artifactRefinementOrchestrator.ts': 36722, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35804,
@@ -122,7 +122,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
   'services/export/adapters/pptxExporter.ts': 21273,
-  'services/artifacts/artifactGenerationRun.ts': 21266, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'services/artifacts/artifactGenerationRun.ts': 21495, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'context/LMSContext.tsx': 21111,
   'services/observability/observabilityService.ts': 20937,
   /**
@@ -164,11 +164,11 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/geminiService.ts': 1923,
+  'services/geminiService.ts': 1921,
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 981,
-  'pages/Workspace.tsx': 728,
+  'pages/Workspace.tsx': 730, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/ai/prompts/diagramPrompts.ts': 1145,
   'services/export/adapters/pdfExporter.ts': 1125,
   'components/ProjectHub.tsx': 1063, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -178,7 +178,7 @@ export const CEILINGS = {
   // por debajo del techo y nadie fijó el número, así que la deuda seguía
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
-  'services/agent/agentExecutor.ts': 982, // F5-01 corte 8: el turno del parche a `agentConversation`
+  'services/agent/agentExecutor.ts': 983, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'pages/ProjectsPage.tsx': 925,
   'services/diagram/mermaidToIR.ts': 856,
   'components/artifacts/export/ArtifactExportModal.tsx': 844,

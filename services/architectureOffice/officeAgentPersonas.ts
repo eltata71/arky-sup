@@ -364,6 +364,16 @@ export const buildOfficePersonaInstruction = (
 ].join('\n');
 
 /**
+ * The persona composer artifact generation asks for (F5-01, corte 13): the
+ * persona the request names — Arky when it names none — composed over the
+ * base instruction. The AI layer declares the port
+ * (`ArtifactPersonaComposer`, `lib/artifacts`) because it cannot import the
+ * Office that imports it; this is the Office's side of it.
+ */
+export const composeArtifactPersonaInstruction = (baseInstruction: string, request: string): string =>
+  buildOfficePersonaInstruction(baseInstruction, resolveOfficeAgentMention(request));
+
+/**
  * Adapt an Office persona into the briefing the agent asks for.
  *
  * This is the adapter half of the port declared in

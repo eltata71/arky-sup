@@ -18,7 +18,7 @@
  */
 
 import type { ArtifactTemplate, Settings } from '../../types';
-import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTrace } from '../../lib/artifacts';
+import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
 import { artifactGenerationService } from '../ai';
@@ -70,6 +70,8 @@ export interface ArtifactGenerationRunInput {
     startedAt: string;
     startedMs: number;
     onPhase?: ArtifactGenerationPhaseListener;
+    /** Who speaks in the prompt; handed in because only the Office knows (corte 13). */
+    composePersonaInstruction?: ArtifactPersonaComposer;
     /**
      * Told when the run degraded to a fallback the user should know about.
      * A callback rather than a toast: this module has no screen.
@@ -100,6 +102,7 @@ export async function runArtifactGeneration({
     startedAt,
     startedMs,
     onPhase,
+    composePersonaInstruction,
     onWarning,
 }: ArtifactGenerationRunInput): Promise<ArtifactGenerationRunResult> {
     const log = createTraceLog([
@@ -161,7 +164,7 @@ export async function runArtifactGeneration({
         template,
         settings,
         existingArtifact,
-        { onPhase, architectureGraphPromptBlock: graphGenerationContext.promptBlock },
+        { onPhase, architectureGraphPromptBlock: graphGenerationContext.promptBlock, composePersonaInstruction },
     );
     const initialEnvelope = normalizeArtifactEnvelope({
         artifactId: existingArtifact?.id ?? operationId,
