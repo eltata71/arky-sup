@@ -20,6 +20,14 @@ const runAgentTurn = vi.fn(async (..._args: unknown[]) => ({
 }));
 const generateArtifactContent = vi.fn(async (..._args: unknown[]) => 'graph TD\n  A --> B\n  B --> C');
 
+// Since F5-01 corte 11 the improvement prompt lives in the review vertical,
+// not in the engine: that module is the door the executor's calls go through.
+vi.mock('../../ai/generation/artifactReview', () => ({
+  applyArtifactImprovements: (...args: unknown[]) => applyArtifactImprovements(...args),
+  reviewArtifact: vi.fn(async () => []),
+  generateTestCases: vi.fn(async () => ''),
+}));
+
 vi.mock('../../geminiService', () => {
   class AIServiceError extends Error {
     category = 'unknown';
@@ -32,7 +40,6 @@ vi.mock('../../geminiService', () => {
   }
   return {
     geminiService: {
-      applyArtifactImprovements: (...args: [unknown, unknown, unknown, unknown]) => applyArtifactImprovements(...args),
       generateArtifactContent: (...args: [unknown, unknown, unknown, unknown?]) => generateArtifactContent(...args),
     },
     AIServiceError,

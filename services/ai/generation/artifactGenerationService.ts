@@ -20,6 +20,7 @@ import { geminiService } from '../../geminiService';
 import { suggestArtifactImprovements } from './artifactSuggestions';
 import { getInitialArtifactsForTemplate } from './artifactTemplateSuggestions';
 import { critiqueArtifactContent, refineArtifactContent } from './artifactQualityRefinement';
+import { applyArtifactImprovements, generateTestCases, reviewArtifact } from './artifactReview';
 
 export const artifactGenerationService = {
   /** Generate (or regenerate) the content for a catalog/on-demand artifact. */
@@ -32,15 +33,15 @@ export const artifactGenerationService = {
   },
   /** Review an artifact and return improvement suggestions. */
   get reviewArtifact() {
-    return geminiService.reviewArtifact.bind(geminiService);
+    return reviewArtifact;
   },
   /** Apply a set of accepted improvements to an artifact. */
   get applyArtifactImprovements() {
-    return geminiService.applyArtifactImprovements.bind(geminiService);
+    return applyArtifactImprovements;
   },
   /** Generate test cases derived from an artifact. */
   get generateTestCases() {
-    return geminiService.generateTestCases.bind(geminiService);
+    return generateTestCases;
   },
   /** Propose targeted improvements without rewriting the artifact. */
   get suggestArtifactImprovements() {

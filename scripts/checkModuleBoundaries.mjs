@@ -299,7 +299,9 @@ export const DEEP_IMPORT_BUDGET = {
   // el motor hacía a piezas de esta capa sólo para llevar un prompt (17 → 11).
   // F5-01 (corte 4): la vertical de recomendaciones salió, y el motor dejó de
   // importar `parseAiJson` (11 → 9, con el corte 3).
-  'services (raíz) -> services/ai': 8,
+  // F5-01 (corte 11): el motor dejó de importar `activeProviderCapabilities`
+  // al borrar imagen y voz, que nadie llamaba (8 → 7).
+  'services (raíz) -> services/ai': 7,
   'services (raíz) -> services/architectureOffice': 1,
   'services (raíz) -> services/artifacts': 4,
   // F5-01 (corte 6): la generación de diagramas salió del motor con sus

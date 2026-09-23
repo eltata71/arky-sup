@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { createGeminiAIClient } from "./ai/providers/gemini/geminiClient";
 import { Settings, ArtifactTemplate } from '../types';
 import {
@@ -12,7 +12,6 @@ import {
 } from './ai/generation/diagram';
 import { emitGenerationPhase, type Artifact, type ArtifactGenerationPhaseEvent, type ArtifactGenerationPhaseListener } from '../lib/artifacts';
 import type { Project } from './architectureProjects';
-import type { ArtifactReviewSuggestion } from './review';
 import { cleanJsonString as cleanJsonStringUtil } from '../utils';
 import {
   buildGlobalPrompt as buildGlobalPromptUtil,
@@ -22,9 +21,7 @@ import {
   type BasePromptOptions,
   type ArtifactsContextOptions,
 } from './ai/prompts/projectPrompts';
-import { IMAGE_MODEL, TTS_MODEL } from '../lib/ai/modelCatalog';
 import { resolveModelForSettings, resolveProviderId } from './ai/catalog';
-import { activeProviderCapabilities } from './ai/capabilities';
 import {
     effectiveGeminiApiKey,
     LegacyGenerationTransport,
@@ -39,29 +36,6 @@ import {
     resolveProjectArchitectureGraphFreshness,
 } from './architectureKnowledgeGraph';
 
-
-/**
- * Refuse a non-text modality the active provider does not offer.
- *
- * Throws the canonical `AIServiceError` so the failure travels the same
- * path as any other AI error and surfaces a message a user can act on, rather
- * than a provider SDK exception about an unrecognised response modality.
- */
-const assertModalitySupported = (settings: Settings, modality: 'images' | 'audio'): void => {
-    const capabilities = activeProviderCapabilities(settings);
-    if (capabilities[modality]) return;
-    const what = modality === 'images' ? 'imágenes' : 'audio';
-    throw new AIServiceError(
-        'invalid-request',
-        undefined,
-        `Provider ${capabilities.provider} does not support ${modality} generation.`,
-        `El proveedor de IA activo no puede generar ${what}. Cambia a Gemini en Configuración > IA para usar esta función.`,
-        false,
-        undefined,
-        undefined,
-        { source: 'configuration', errorCode: 'modality_not_supported' },
-    );
-};
 
 /**
  * The error surface moved to `services/ai/errors/aiServiceError.ts`.
@@ -2144,168 +2118,9 @@ Return ONLY valid JSON compatible with this partial shape (no prose, omit unknow
     }
 
 
-    public async generateImageForArtifact(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
-        // Image generation is a Gemini capability, not a universal one. Checking
-        // first turns "the button failed with an SDK error" into a stated limit
-        // the UI can also read via `canGenerateImages(settings)` and disable
-        // ahead of time.
-        assertModalitySupported(settings, 'images');
-        const prompt = `Abstract, high-tech architectural visualization for: ${artifact.name}. Objective: ${artifact.objective}. No text.`;
-        const ai = this.getAIClient(settings);
-        const response = await ai.models.generateContent({
-            model: IMAGE_MODEL,
-            contents: { parts: [{ text: prompt }] },
-            config: { responseModalities: [Modality.IMAGE] }
-        });
-        const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (!data) throw new Error("No image generated");
-        return data;
-    }
-
-    public async generateSpeechForArtifact(artifact: Artifact, settings: Settings): Promise<string> {
-        assertModalitySupported(settings, 'audio');
-        const text = artifact.representation === 'document' 
-            ? `Reading ${artifact.name}. ${artifact.content.substring(0, 1000)}...`
-            : `Describing diagram ${artifact.name}. ${artifact.objective}. Content analysis: ${artifact.content.substring(0, 500)}...`;
-            
-        const ai = this.getAIClient(settings);
-        const response = await ai.models.generateContent({
-            model: TTS_MODEL,
-            contents: [{ parts: [{ text }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
-            }
-        });
-        const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (!data) throw new Error("No audio generated");
-        return data;
-    }
-
-    public async generateSvgForArtifact(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
-        const prompt = `Generate a clean, professional SVG for this architecture artifact. ONLY raw SVG code. No markdown blocks.\n\n${artifact.content}`;
-        const modelName = resolveModelForSettings('default', settings).id;
-        const { text: rawText } = await this.generateContentWithFallback(settings, modelName, prompt, {});
-
-        const text = rawText || '';
-        const match = text.match(/<svg[\s\S]*?>[\s\S]*?<\/svg>/);
-        return match ? match[0] : text.replace(/```svg|```/g, '').trim();
-    }
-
-    // --- Artifact Review & Improvement ---
-
-    public async reviewArtifact(artifact: Artifact, project: Project, settings: Settings): Promise<ArtifactReviewSuggestion[]> {
-        const basePrompt = this.buildBasePrompt(project, settings);
-        
-        const prompt = `
-${basePrompt}
-
-TASK: Review this specific artifact and suggest tangible improvements based on industry best practices, security, scalability, and clarity.
-Artifact Name: ${artifact.name}
-Type: ${artifact.type}
-Content:
-${artifact.content}
-
-Return a JSON Array of improvements: [{ "id": "uuid", "title": "short title", "description": "detailed explanation", "category": "Security" | "Performance" | "Scalability" | "Best Practices" | "Clarity" }]
-`;
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        try {
-            const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: 'array',
-                    items: {
-                        type: 'object',
-                        properties: {
-                            id: { type: 'string' },
-                            title: { type: 'string' },
-                            description: { type: 'string' },
-                            category: { type: 'string', enum: ['Security', 'Performance', 'Scalability', 'Best Practices', 'Clarity'] }
-                        },
-                        required: ['id', 'title', 'description', 'category']
-                    }
-                }
-            });
-            const cleanJson = this.cleanJsonString(text || '');
-            return JSON.parse(cleanJson || '[]');
-        } catch (e) {
-            console.error("Artifact Review Error:", e);
-            return [];
-        }
-    }
-
-    public async applyArtifactImprovements(
-        artifact: Artifact,
-        selectedImprovements: ArtifactReviewSuggestion[],
-        project: Project,
-        settings: Settings
-    ): Promise<string> {
-        const basePrompt = this.buildBasePrompt(project, settings);
-
-        const prompt = `
-${basePrompt}
-
-TASK: Rewrite the following artifact content to incorporate SPECIFIC improvements.
-Original Content:
-${artifact.content}
-
-Selected Improvements to Apply:
-${selectedImprovements.map(imp => `- [${imp.category}] ${imp.title}: ${imp.description}`).join('\n')}
-
-INSTRUCTIONS:
-1. Maintain the original format (Markdown, Mermaid, JSON, etc.).
-2. Apply ONLY the selected improvements.
-3. Return ONLY the full, updated content code. No explanations.
-`;
-        // Route through the shared model-fallback pipeline: a quota/rate-limit
-        // on the user's preferred model rotates to the next model in
-        // MODEL_FALLBACK_CHAIN instead of surfacing a hard error.
-        const preferredModel = resolveModelForSettings('default', settings).id;
-        const result = await this.generateContentWithFallback(
-            settings,
-            preferredModel,
-            prompt,
-            { temperature: 0.3 },
-            { maxRetries: 1, maxCandidates: 4 },
-        );
-        return result.text || artifact.content;
-    }
-
-    public async generateTestCases(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
-        const basePrompt = this.buildBasePrompt(project, settings);
-        const language = settings.language === 'es' ? 'Spanish' : 'English';
-
-        const prompt = `
-${basePrompt}
-
-TASK: Generate a comprehensive set of AUTOMATED TEST CASES for the following architectural artifact.
-Artifact Name: ${artifact.name}
-Type: ${artifact.type}
-Objective: ${artifact.objective}
-Content:
-${artifact.content}
-
-INSTRUCTIONS:
-1. Provide a mix of Unit, Integration, and E2E test cases where applicable.
-2. Use a structured format (e.g., Gherkin/Cucumber for behavior, or a technical test plan).
-3. Include:
-   - Test Case ID and Title
-   - Pre-conditions
-   - Test Steps
-   - Expected Result
-   - Automated Snippet (e.g., Jest, Playwright, or Gherkin)
-4. Focus on the architectural constraints and objectives defined in the artifact.
-5. Respond ONLY with the Markdown content.
-6. Language: ${language}.
-`;
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-            temperature: 0.7
-        });
-        return text || "Error generating test cases.";
-    }
+    // Review, improvements and test cases are `generation/artifactReview.ts`
+    // (F5-01, corte 11). Image, speech and SVG generation left with them:
+    // nothing in the repository called any of the three.
 
     // ── LMS ───────────────────────────────────────────────────────────────
     //
