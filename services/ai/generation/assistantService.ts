@@ -6,8 +6,11 @@
  * consultation and the analyses that read a conversation rather than an
  * artifact.
  *
- * Thin façade over the legacy engine; see `artifactGenerationService` for why
- * the indirection exists.
+ * Four members are the assistant vertical (`./assistant`, F5-01 corte 7) and
+ * no longer touch the engine. The three persona-bound turns still delegate to
+ * it: each composes an Office persona and, for the agent, the agent's system
+ * instruction, and both contexts import this layer back — so they leave once
+ * that composition is supplied from outside rather than looked up from here.
 
  * Delegation is lazy: each member is a getter, so importing this façade does
  * not bind the whole engine. Eager binding made reaching for one method
@@ -16,6 +19,12 @@
  */
 
 import { geminiService } from '../../geminiService';
+import {
+  analyzeChatForContext,
+  consultArchitecture,
+  processMultimodalChat,
+  runConsistencyCheck,
+} from './assistant';
 
 export const assistantService = {
   /** Project-scoped chat turn. */
@@ -31,21 +40,13 @@ export const assistantService = {
     return geminiService.processAssistantChatStream.bind(geminiService);
   },
   /** Assistant turn carrying uploaded files alongside the prompt. */
-  get processMultimodalChat() {
-    return geminiService.processMultimodalChat.bind(geminiService);
-  },
+  processMultimodalChat,
   /** Architecture consultation over the current project. */
-  get consultArchitecture() {
-    return geminiService.consultArchitecture.bind(geminiService);
-  },
+  consultArchitecture,
   /** Extract durable project context out of a conversation. */
-  get analyzeChatForContext() {
-    return geminiService.analyzeChatForContext.bind(geminiService);
-  },
+  analyzeChatForContext,
   /** Cross-artifact consistency check. */
-  get runConsistencyCheck() {
-    return geminiService.runConsistencyCheck.bind(geminiService);
-  },
+  runConsistencyCheck,
 } as const;
 
 export type AssistantService = typeof assistantService;

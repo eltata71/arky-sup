@@ -8,11 +8,17 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **el camino de texto del transporte pasa por el
-  proxy** — `generateTextWithFallback` intenta ahora el proxy antes que el SDK,
-  como ya hacían los caminos de contenido y de streaming. Arregla en producción
-  la generación de IR de diagramas (acababa siempre en el esqueleto) y la de
-  artefactos del motor, para quien no tiene clave personal. Antes: **F5-01,
+- **Última tarea completada:** **F5-01, corte 7** — el asistente sin persona
+  (consulta de arquitectura, nota de contexto del chat, chequeo de consistencia
+  y chat multimodal) sale del motor a `generation/assistant/`; el motor baja a
+  2 631 líneas y `any` a 14. `assistantService` sigue importando el motor por
+  sus tres turnos con persona, que necesitan antes un puerto (ver backlog).
+  Evidencia en `evidencias/f5-01-corte-7.md`. Antes: **el camino de texto del
+  transporte pasa por el proxy** (#62) — `generateTextWithFallback` intenta
+  ahora el proxy antes que el SDK, como ya hacían los caminos de contenido y de
+  streaming. Arregla en producción la generación de IR de diagramas (acababa
+  siempre en el esqueleto) y la de artefactos del motor, para quien no tiene
+  clave personal. Antes: **F5-01,
   corte 6** (#61) — la vertical de diagramas
   (generación de IR, autorreparación, crítica y refinado, conversiones a
   ReactFlow y Excalidraw, reparación de render) sale del motor a

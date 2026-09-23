@@ -658,10 +658,29 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   personal lanza y la IR acaba siempre en el esqueleto determinista. Afecta
   también a la generación de artefactos del motor. Se registra como tarea
   propia porque el corte es de movimiento.
-- **Lo que queda.** Dos verticales de prompts de dominio: asistente y
-  artefactos. `consultArchitecture` (asistente) sigue usando la persona del
-  tutor del LMS detrás de una fachada que no es del LMS, y saldrá con su vertical. La arista no desaparece hasta el
-  último importador; el SCC tampoco.
+- **Corte 7 — el asistente sin persona (2026-09-23).** `consultArchitecture`,
+  `analyzeChatForContext`, `runConsistencyCheck` y `processMultimodalChat`
+  salen a `services/ai/generation/assistant/` y entran por `aiGateway`, con los
+  mismos prompts, temperaturas y reintentos; el motor pierde 178 líneas
+  (2 809 → 2 631) y la persona del tutor del LMS sale con `consultArchitecture`.
+  La conversación y el curso se leen por **puertos declarados**
+  (`AssistantConversationTurn`, `AssistantCourseSummary`): `services/chat` y el
+  LMS importan `services/ai`, así que nombrar sus tipos desde aquí cerraría un
+  ciclo aunque el import fuera de tipo. El contexto de cursos deja de leerse por
+  `any` (15 → 14). `assistantService` **sigue importando el motor**, sólo por
+  sus tres turnos con persona.
+- **Lo que queda.** Los tres turnos del asistente con persona
+  (`chatWithProject`, `processAssistantChat` y su variante en streaming) y la
+  vertical de artefactos. Los tres turnos no pueden salir moviéndose: componen
+  la persona de la Oficina (`buildOfficePersonaInstruction`,
+  `buildOfficePersonaBriefing`) y, los dos del agente, su instrucción de sistema
+  (`buildAgentSystemInstruction`), y `services/agent` y
+  `services/architectureOffice` importan `services/ai`. El corte que les toca
+  (8) invierte esa dependencia: la vertical recibe la instrucción ya compuesta,
+  y la composición la aporta quien ya puede ver a la Oficina y al agente —el
+  patrón `AgentPersonaBriefing`—. `agentExecutor` es el caso delicado: no puede
+  importar la Oficina, así que la persona le tiene que llegar por su puerto.
+  La arista no desaparece hasta el último importador; el SCC tampoco.
 
 ### F5-02 · Políticas de negocio a su contexto propietario
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F5-01
