@@ -88,11 +88,9 @@ export const asCourseLevel = (
 /**
  * The verdict on a submitted challenge.
  *
- * `evaluateChallenge` is one of the two LMS methods still inside the legacy
- * engine, and it returns `Promise<any>` there. The shape is not a mystery —
- * the prompt asks for exactly these three fields — so the façade narrows it at
- * the boundary. That is the whole job of a façade: the monolith's looseness
- * stops here rather than reaching the screen that renders a grade.
+ * Every field is optional because a model's answer is not a contract:
+ * `toChallengeEvaluation` keeps only the fields that arrived with the right
+ * type, and the screen renders what is there rather than a grade of `NaN`.
  */
 export interface ChallengeEvaluation {
   readonly grade?: number;

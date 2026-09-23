@@ -604,11 +604,20 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   23 → 18), entra en `typecheck:strict` con su cierre (dos `override` que
   faltaban en `cause`), el motor baja a 5 110 líneas y
   `services (raíz) -> services/ai` de 17 a 11 imports.
-- **Lo que queda.** Siete verticales de prompts de dominio: artefactos,
-  diagramas, documentos, asistente, recomendaciones, sugerencias y la
-  evaluación de retos del LMS (`learningService.evaluateChallenge`, el último
-  método que la vertical del LMS dejó atrás). La arista no desaparece hasta el
-  último; el SCC tampoco.
+- **Corte 2 — el resto del LMS (2026-09-23).** `evaluateChallenge`, el último
+  método que la vertical del LMS había dejado en el motor, sale a
+  `services/ai/generation/learning/challengeEvaluation.ts` y entra por
+  `aiGateway`. Sale tipado: el motor devolvía `Promise<any>` y la fachada
+  afirmaba una forma sin comprobarla; `toChallengeEvaluation` reduce la
+  respuesta campo a campo (una nota que no es número no se pinta, se acota a
+  0–100). `learningService` deja de importar el motor: **7 → 6**; `any`
+  18 → 17; el motor baja a 5 081 líneas.
+- **Lo que queda.** Seis verticales de prompts de dominio: artefactos,
+  diagramas, documentos, asistente, recomendaciones y sugerencias. Dos métodos
+  con la persona del tutor del LMS siguen en el motor detrás de fachadas que no
+  son del LMS —`synthesizeSmartNote` (documentos) y `consultArchitecture`
+  (asistente)— y saldrán con su vertical. La arista no desaparece hasta el
+  último importador; el SCC tampoco.
 
 ### F5-02 · Políticas de negocio a su contexto propietario
 - **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F5-01
