@@ -8,7 +8,7 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F5-01, corte 8** — el asistente con persona
+- **Última tarea completada:** **F5-01, corte 8** (#64, `d35b479`) — el asistente con persona
   (chat del proyecto y los dos turnos del Arquitecto Agente) sale del motor
   partido en tres mitades: la IA pregunta sobre una instrucción compuesta, el
   agente compone su turno, la Oficina decide quién responde. `assistantService`
@@ -59,9 +59,21 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** F5-01 corte 7: la vertical del asistente (incluye `consultArchitecture`, con la persona del
-  tutor del LMS); el último importador será artefactos. Las seis pantallas que
-  siguen sobre el fan-out son de **F5-02**.
+- **Siguiente paso exacto (en pausa hasta nueva instrucción del propietario):**
+  F5-01, la vertical de artefactos (`artifactGenerationService`), el último
+  importador del motor y el grueso de lo que queda en él (2 442 líneas). Es
+  previsible que lleve varios cortes: la generación de artefactos todavía
+  compone personas de la Oficina (`buildOfficePersonaInstruction`,
+  `resolveOfficeAgentMention`) y lee grafo de conocimiento, grafo de contexto,
+  presentación y calidad, así que cada dependencia ascendente se corta antes de
+  mover. Cuando salga, la arista `services/ai -> services (raíz)` y el SCC de
+  catorce desaparecen. Las seis pantallas que siguen sobre el fan-out son de
+  **F5-02**.
+- **Estado medido tras #64 (2026-09-23, `d35b479`):** 473 ficheros y 4 626
+  pruebas en verde; cobertura 66,83 % / 57,69 % / 59,86 % / 68,71 %
+  (sentencias / ramas / funciones / líneas); carga inicial 309,6 KB gz de 340;
+  4 ciclos directos, SCC de 3 + 14 módulos, 0 pares ascendentes, 54 pares con
+  import profundo, 6 pantallas sobre el fan-out; `any` 13; motor 2 442 líneas.
 - **Esquema de producción al día (2026-09-23).** Con la aprobación del
   propietario se aplicaron a `ArkyDB-US` las dos migraciones que faltaban —
   `artifact_commands` (F4-03) y `retire_save_project_aggregate` (F4-06)—. La
@@ -162,7 +174,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–6 hechos | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. |
+| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–8 hechos; queda artefactos | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. Arreglo del proxy en el camino de texto (#62). Corte 7: el asistente sin persona a `generation/assistant/`; el motor baja a 2 631 líneas. Corte 8: el asistente con persona, partido entre IA, agente y Oficina, 2 → 1; el motor baja a 2 443 líneas y deja de importar `agent` y `chat`. |
 | **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible
