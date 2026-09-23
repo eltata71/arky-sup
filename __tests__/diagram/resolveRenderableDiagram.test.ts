@@ -101,7 +101,8 @@ describe('resolveRenderableDiagram — pharmacy claim BPMN fallback regression',
     // exists but the canvas can't materialise nodes.
     it('produces a ready render with visible ReactFlow nodes for the deterministic BPMN fallback for any audience', async () => {
         const { __test__ } = await import('../../services/geminiService');
-        const project: Parameters<typeof __test__.buildHeuristicCustomArtifactRecommendation>[0] = {
+        const { buildHeuristicCustomArtifactRecommendation } = await import('../../services/ai/generation/recommendation/customArtifactHeuristics');
+        const project: Parameters<typeof buildHeuristicCustomArtifactRecommendation>[0] = {
             id: 'test-project',
             name: 'Modernización del flujo de farmacia',
             description: 'Pipeline de pagos de reclamos de farmacia para una EPS regional.',
@@ -115,7 +116,7 @@ describe('resolveRenderableDiagram — pharmacy claim BPMN fallback regression',
             updatedAt: '2026-05-01T00:00:00.000Z',
         };
         const idea = 'Se requiere ilustrar mediante un diagrama el proceso de pago de reclamos de farmacia, desde el momento en que se dispensa la receta hasta cuando finalmente la farmacia recibe el pago por parte de la compañía de seguros.';
-        const recommendation = __test__.buildHeuristicCustomArtifactRecommendation(project, idea);
+        const recommendation = buildHeuristicCustomArtifactRecommendation(project, idea);
         const content = __test__.buildDeterministicArtifactFallback(project, recommendation.template);
 
         const audiences = ['executive', 'technical', 'operations'] as const;

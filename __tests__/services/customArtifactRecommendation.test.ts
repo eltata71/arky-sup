@@ -1,23 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
-import { __test__, geminiService } from '../../services/geminiService';
+import { __test__ } from '../../services/geminiService';
+import { aiGateway } from '../../services/ai/generation/aiGateway';
+import { emitGenerationPhase } from '../../lib/artifacts';
+import { recommendCustomArtifactTemplate } from '../../services/ai/generation/recommendation';
+import {
+    buildCustomArtifactRecommendationContext,
+    buildHeuristicCustomArtifactRecommendation,
+    buildOnDemandArtifactName,
+    calibrateRecommendationConfidence,
+    CUSTOM_RECOMMENDATION_MAX_RETRIES,
+    CUSTOM_RECOMMENDATION_TIMEOUT_MS,
+    deduplicateOnDemandArtifactName,
+    normalizeTemplateContract,
+} from '../../services/ai/generation/recommendation/customArtifactHeuristics';
+import { analyzeCustomArtifactIntent } from '../../services/ai/generation/recommendation/customArtifactIntent';
 import { Settings } from '../../types';
 import type { ArtifactGenerationPhaseEvent } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 
 const {
-    buildCustomArtifactRecommendationContext,
-    buildHeuristicCustomArtifactRecommendation,
     buildDeterministicArtifactFallback,
     buildHybridMarkdownFromMermaid,
-    analyzeCustomArtifactIntent,
-    normalizeTemplateContract,
-    buildOnDemandArtifactName,
-    calibrateRecommendationConfidence,
-    deduplicateOnDemandArtifactName,
-    emitGenerationPhase,
     buildOnDemandDocumentReinforcement,
-    CUSTOM_RECOMMENDATION_TIMEOUT_MS,
-    CUSTOM_RECOMMENDATION_MAX_RETRIES,
 } = __test__;
 
 const project: Project = {
@@ -349,14 +353,11 @@ describe('recommendCustomArtifactTemplate fallback behavior', () => {
     };
 
     it('uses local deterministic recommendation when Gemini returns invalid JSON', async () => {
-        const spy = vi.spyOn(geminiService, 'getAIClient').mockReturnValue({
-            models: {
-                generateContent: vi.fn().mockResolvedValue({ text: '{"matchedCatalogTemplateName":"Resumen de Arquitectura"' }),
-            },
-        } as unknown as ReturnType<typeof geminiService.getAIClient>);
+        const spy = vi.spyOn(aiGateway, 'generateContent')
+            .mockResolvedValue({ text: '{"matchedCatalogTemplateName":"Resumen de Arquitectura"' });
         const events: ArtifactGenerationPhaseEvent[] = [];
 
-        const result = await geminiService.recommendCustomArtifactTemplate(
+        const result = await recommendCustomArtifactTemplate(
             ambiguousProject,
             'Necesito ayuda para decidir qué producir',
             settings,
@@ -376,13 +377,10 @@ describe('recommendCustomArtifactTemplate fallback behavior', () => {
     });
 
     it('uses local deterministic recommendation when Gemini throws', async () => {
-        const spy = vi.spyOn(geminiService, 'getAIClient').mockReturnValue({
-            models: {
-                generateContent: vi.fn().mockRejectedValue({ status: 400, message: 'Invalid responseSchema field' }),
-            },
-        } as unknown as ReturnType<typeof geminiService.getAIClient>);
+        const spy = vi.spyOn(aiGateway, 'generateContent')
+            .mockRejectedValue({ status: 400, message: 'Invalid responseSchema field' });
 
-        const result = await geminiService.recommendCustomArtifactTemplate(
+        const result = await recommendCustomArtifactTemplate(
             ambiguousProject,
             'Necesito ayuda para decidir qué producir',
             settings,
@@ -390,6 +388,35 @@ describe('recommendCustomArtifactTemplate fallback behavior', () => {
 
         expect(result.template.requestContext?.rationale).toMatch(/Recomendación local de respaldo/i);
         expect(result.template.representation).toBeTruthy();
+        spy.mockRestore();
+    });
+
+    it('reaches the model through the gateway, one model, with the recommendation budget', async () => {
+        const spy = vi.spyOn(aiGateway, 'generateContent').mockResolvedValue({
+            text: JSON.stringify({
+                matchedCatalogTemplateName: 'Resumen de Arquitectura',
+                name: 'Resumen para decidir qué producir',
+                type: 'markdown',
+                representation: 'document',
+                confidence: 0.8,
+            }),
+        });
+
+        const result = await recommendCustomArtifactTemplate(
+            ambiguousProject,
+            'Necesito ayuda para decidir qué producir',
+            settings,
+        );
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        const [, , , config, options] = spy.mock.calls[0];
+        expect(config).toMatchObject({ responseMimeType: 'application/json' });
+        expect(options).toEqual({
+            timeoutMs: CUSTOM_RECOMMENDATION_TIMEOUT_MS,
+            maxRetries: CUSTOM_RECOMMENDATION_MAX_RETRIES,
+            maxCandidates: 1,
+        });
+        expect(result.template.name).toBe('Resumen para decidir qué producir');
         spy.mockRestore();
     });
 });

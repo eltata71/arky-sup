@@ -1,26 +1,18 @@
 /**
  * recommendationService — domain entry point for AI recommendations.
  *
- * Thin façade over the legacy engine; see `artifactGenerationService` for why
- * the indirection exists.
-
- * Delegation is lazy: each member is a getter, so importing this façade does
- * not bind the whole engine. Eager binding made reaching for one method
- * construct every other one — the hidden cost that a façade exists to remove,
- * and a needless coupling for callers and tests alike.
+ * The first façade to leave the engine whole (F5-01, corte 4): both methods
+ * live in `./recommendation/` and reach a model through `aiGateway`, so this
+ * file no longer imports `services/geminiService`.
  */
 
-import { geminiService } from '../../geminiService';
+import { getSuggestedActions, recommendCustomArtifactTemplate } from './recommendation';
 
 export const recommendationService = {
   /** Recommend a template for a free-text custom artifact request. */
-  get recommendCustomArtifactTemplate() {
-    return geminiService.recommendCustomArtifactTemplate.bind(geminiService);
-  },
+  recommendCustomArtifactTemplate,
   /** Suggest next actions for the current project state. */
-  get getSuggestedActions() {
-    return geminiService.getSuggestedActions.bind(geminiService);
-  },
+  getSuggestedActions,
 } as const;
 
 export type RecommendationService = typeof recommendationService;

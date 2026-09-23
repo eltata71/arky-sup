@@ -293,7 +293,9 @@ export const DEEP_IMPORT_BUDGET = {
    */
   // F5-01 (corte 1): el transporte salió del motor, y con él seis imports que
   // el motor hacía a piezas de esta capa sólo para llevar un prompt (17 → 11).
-  'services (raíz) -> services/ai': 10,
+  // F5-01 (corte 4): la vertical de recomendaciones salió, y el motor dejó de
+  // importar `parseAiJson` (11 → 9, con el corte 3).
+  'services (raíz) -> services/ai': 9,
   'services (raíz) -> services/architectureOffice': 2,
   'services (raíz) -> services/artifacts': 4,
   'services (raíz) -> services/diagram': 6,

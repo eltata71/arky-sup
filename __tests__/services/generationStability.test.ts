@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { __test__ } from '../../services/geminiService';
+import { buildHeuristicCustomArtifactRecommendation } from '../../services/ai/generation/recommendation/customArtifactHeuristics';
 import {
     buildDeterministicDiagramSkeleton,
     isSkeletonFallbackContent,
@@ -159,7 +160,7 @@ describe('buildDeterministicArtifactFallback — coverage', () => {
 
 describe('Recommendation high-confidence local bypass', () => {
     it('builds a heuristic recommendation that always returns a valid template', () => {
-        const rec = __test__.buildHeuristicCustomArtifactRecommendation(
+        const rec = buildHeuristicCustomArtifactRecommendation(
             baseProject(),
             'Necesito un diagrama de integración entre los módulos del sistema',
         );

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { __test__ } from '../../services/geminiService';
+import { buildHeuristicCustomArtifactRecommendation } from '../../services/ai/generation/recommendation/customArtifactHeuristics';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
 import type { ArtifactTemplate } from '../../types';
 import type { Project } from '../../services/architectureProjects';
@@ -58,7 +59,7 @@ describe('Logical Data Flow Diagram fallback', () => {
   });
 
   it('ranks an explicit DFD request toward the catalog DFD template instead of BPMN', () => {
-    const recommendation = __test__.buildHeuristicCustomArtifactRecommendation(
+    const recommendation = buildHeuristicCustomArtifactRecommendation(
       project,
       'Diagrama de Flujo de Datos Lógico del proceso de pago de reclamos farmacéuticos con almacenes de datos y actores externos',
     );

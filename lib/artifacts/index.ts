@@ -7,6 +7,7 @@
  * 2–4.
  */
 export * from './artifactModel';
+export { emitGenerationPhase } from './generationPhase';
 export * from './artifactCompilationSummary';
 export * from './contracts';
 export * from './exportContracts';
