@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { geminiService, AIServiceError } from '../../services/geminiService';
+import { AIServiceError } from '../../services/ai/errors';
+import { legacyTransport } from '../../services/ai/generation/legacyTransport';
 import { parseGuidedProjectCommand, sendGuidedProjectCreationMessage } from '../../services/ai/generation/guidedProjectCreationService';
 import { getAiBlockingCooldownRemainingMs, getAiCooldownRemainingMs, setAiCooldown, __test__ as aiCallControlTest } from '../../services/ai/callControl/aiCallControlService';
 import type { Settings } from '../../types';
@@ -44,7 +45,7 @@ describe('guidedProjectCreationService', () => {
     vi.stubEnv('VITE_GEMINI_PROXY_URL', '/api/gemini');
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ requestId: 'proxy-1', text: '¿Cuál es el objetivo?' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const directSpy = vi.spyOn(geminiService, 'getAIClient');
+    const directSpy = vi.spyOn(legacyTransport, 'getAIClient');
 
     await sendGuidedProjectCreationMessage(baseHistory('Banca móvil'), 'Banca móvil', settings);
 
@@ -62,7 +63,7 @@ describe('guidedProjectCreationService', () => {
       retryAfterMs: 30_000,
     }), { status: 429, headers: { 'Retry-After': '30' } })));
     const generateContent = vi.fn().mockResolvedValue({ text: 'Continuemos con el objetivo del proyecto.' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     const result = await sendGuidedProjectCreationMessage(baseHistory('Beneficios farmacia'), 'Beneficios farmacia', settings);
 
@@ -85,7 +86,7 @@ describe('guidedProjectCreationService', () => {
       retryAfterMs: 30_000,
     }), { status: 429, headers: { 'Retry-After': '30' } })));
     const generateContent = vi.fn().mockResolvedValue({ text: 'Continúa con el objetivo.' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     const result = await sendGuidedProjectCreationMessage(baseHistory('ERP'), 'ERP', settings);
 
@@ -111,7 +112,7 @@ describe('guidedProjectCreationService', () => {
       retryAfterMs: 30_000,
     }), { status: 429, headers: { 'Retry-After': '30' } })));
     const generateContent = vi.fn().mockResolvedValue({ text: 'Describe el alcance.' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     await sendGuidedProjectCreationMessage(baseHistory('CRM'), 'CRM', settings);
 
@@ -120,7 +121,7 @@ describe('guidedProjectCreationService', () => {
 
   it('normalizes the first model greeting into user-compatible contents and keeps the guided budget', async () => {
     const generateContent = vi.fn().mockResolvedValue({ text: '¿Cuál es el objetivo?' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
     const noisyHistory: ChatMessage[] = [
       { role: 'model', content: 'Hola, dime el nombre.' },
       { role: 'user', content: 'Proyecto A' },
@@ -137,7 +138,7 @@ describe('guidedProjectCreationService', () => {
 
   it('does not send projects, courses or artifact payloads on the first interaction', async () => {
     const generateContent = vi.fn().mockResolvedValue({ text: '{"message":"¿Cuál es el objetivo principal?"}' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     await sendGuidedProjectCreationMessage(baseHistory(), 'Portal de clientes', settings);
 
@@ -153,7 +154,7 @@ describe('guidedProjectCreationService', () => {
 
   it('generates exactly one Gemini call per user message', async () => {
     const generateContent = vi.fn().mockResolvedValue({ text: '{"message":"Describe el objetivo."}' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     await sendGuidedProjectCreationMessage(baseHistory('Sistema PBM'), 'Sistema PBM', settings);
 
@@ -163,7 +164,7 @@ describe('guidedProjectCreationService', () => {
   it('deduplicates double Enter or double click while the first call is in flight', async () => {
     let resolveCall: (value: { text: string }) => void = () => undefined;
     const generateContent = vi.fn(() => new Promise<{ text: string }>(resolve => { resolveCall = resolve; }));
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     const first = sendGuidedProjectCreationMessage(baseHistory('Cotizador'), 'Cotizador', settings);
     const second = sendGuidedProjectCreationMessage(baseHistory('Cotizador'), 'Cotizador', settings);
@@ -175,7 +176,7 @@ describe('guidedProjectCreationService', () => {
 
   it('classifies 429 as rate-limit and activates cooldown', async () => {
     const generateContent = vi.fn().mockRejectedValue({ status: 429, message: 'quota exceeded', retryAfter: 7 });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     await expect(sendGuidedProjectCreationMessage(baseHistory('CRM'), 'CRM', settings)).rejects.toMatchObject({ category: 'rate-limit' });
     expect(getAiCooldownRemainingMs('guided-creation')).toBeGreaterThan(0);
@@ -189,7 +190,7 @@ describe('guidedProjectCreationService', () => {
     const generateContent = vi.fn()
       .mockRejectedValueOnce({ status: 429, message: 'rate' })
       .mockResolvedValueOnce({ text: '¿Cuál es el objetivo?' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     const result = await sendGuidedProjectCreationMessage(baseHistory('ERP'), 'ERP', settings);
 
@@ -203,7 +204,7 @@ describe('guidedProjectCreationService', () => {
 
   it('surfaces a rate-limit error only when every fallback model also fails', async () => {
     const generateContent = vi.fn().mockRejectedValue({ status: 429, message: 'rate' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     await expect(sendGuidedProjectCreationMessage(baseHistory('ERP'), 'ERP', settings)).rejects.toBeInstanceOf(AIServiceError);
 
@@ -214,7 +215,7 @@ describe('guidedProjectCreationService', () => {
 
   it('classifies 503 as temporary saturation and allows controlled retry after failure', async () => {
     const generateContent = vi.fn().mockRejectedValue({ status: 503, message: 'overloaded' });
-    vi.spyOn(geminiService, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
+    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
 
     await expect(sendGuidedProjectCreationMessage(baseHistory('Pagos'), 'Pagos', settings)).rejects.toMatchObject({ category: 'overloaded' });
     expect(getAiCooldownRemainingMs('guided-creation')).toBeGreaterThan(0);

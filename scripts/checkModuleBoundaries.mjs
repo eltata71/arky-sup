@@ -291,7 +291,9 @@ export const DEEP_IMPORT_BUDGET = {
    * clase de violación que ninguna fase tiene planeado arreglar porque no
    * debería existir. Baja cuando F5-01 estrangule el monolito.
    */
-  'services (raíz) -> services/ai': 17,
+  // F5-01 (corte 1): el transporte salió del motor, y con él seis imports que
+  // el motor hacía a piezas de esta capa sólo para llevar un prompt (17 → 11).
+  'services (raíz) -> services/ai': 11,
   'services (raíz) -> services/architectureOffice': 2,
   'services (raíz) -> services/artifacts': 4,
   'services (raíz) -> services/diagram': 6,

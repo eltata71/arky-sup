@@ -13,8 +13,8 @@ const { generateContentWithFallback } = vi.hoisted(() => ({
   generateContentWithFallback: vi.fn(),
 }));
 
-vi.mock('../../services/geminiService', () => ({
-  geminiService: { generateContentWithFallback },
+vi.mock('../../services/ai/generation/aiGateway', () => ({
+  aiGateway: { generateContent: generateContentWithFallback },
 }));
 
 vi.mock('../../lib/ai/modelCatalog', async (importOriginal) => ({

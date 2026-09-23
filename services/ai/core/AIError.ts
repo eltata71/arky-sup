@@ -78,7 +78,7 @@ export class AIError extends Error {
   public readonly retryable: boolean;
   public readonly userMessage: string;
   public readonly retryAfterMs?: number;
-  public readonly cause?: unknown;
+  public override readonly cause?: unknown;
   public readonly errorCode?: string;
 
   constructor(init: AIErrorInit) {

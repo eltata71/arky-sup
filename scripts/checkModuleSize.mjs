@@ -58,7 +58,7 @@ export const BYTE_CEILINGS = {
    * resolved model through `settings.aiConfig.model`, which would have made the
    * trace attribute a per-agent decision to the user's own preference.
    */
-  'services/geminiService.ts': 271653,
+  'services/geminiService.ts': 256295, // F5-01: el transporte salió a services/ai/generation/legacyTransport.ts
   'components/ReactFlowCanvas.tsx': 109906,
   'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
@@ -164,7 +164,7 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/geminiService.ts': 5405,
+  'services/geminiService.ts': 5110,
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 981,

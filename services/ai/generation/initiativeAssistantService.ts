@@ -21,7 +21,7 @@
  * file: new capabilities belong in `services/ai/generation/`.
  */
 
-import { geminiService } from '../../geminiService';
+import { aiGateway } from './aiGateway';
 import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
 import { defineSchema, parseStructured } from '../structuredOutput';
 import type { Settings } from '../../../types';
@@ -251,7 +251,7 @@ export const initiativeAssistantService = {
 
     try {
       const model = resolveEffectiveModel('default', settings).id;
-      const response = await geminiService.generateContentWithFallback(
+      const response = await aiGateway.generateContent(
         settings,
         model,
         buildPrompt(input.title, need),

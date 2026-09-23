@@ -40,7 +40,7 @@ import {
   type PlatformGuideTopic,
 } from '../../../../lib/platformGuide/platformGuideContracts';
 import { resolveEffectiveModel } from '../../../../lib/ai/modelCatalog';
-import { geminiService } from '../../../geminiService';
+import { aiGateway } from '../aiGateway';
 import { AiProxyEnforcementError } from '../../aiProxyPolicy';
 import type { Settings } from '../../../../types';
 
@@ -114,7 +114,7 @@ export const platformGuideService = {
 
     try {
       const model = resolveEffectiveModel('quick', settings).id;
-      const response = await geminiService.generateContentWithFallback(
+      const response = await aiGateway.generateContent(
         settings,
         model,
         buildPrompt(request, options.agentBriefing ?? []),

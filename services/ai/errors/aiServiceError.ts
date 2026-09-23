@@ -53,7 +53,7 @@ export class AIServiceError extends Error {
     public readonly status?: number;
     public readonly retryable: boolean;
     public readonly userMessage: string;
-    public readonly cause?: unknown;
+    public override readonly cause?: unknown;
     public readonly retryAfterMs?: number;
     public readonly source: AIErrorSource;
     public readonly errorCode?: string;

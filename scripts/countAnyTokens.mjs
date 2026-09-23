@@ -30,16 +30,17 @@ import { execSync } from 'node:child_process';
  * What is left is concentrated rather than scattered, and each group has a
  * named reason:
  *
- * - 16 in `services/geminiService.ts` — the monolith the strangler migration
+ * - 11 in `services/geminiService.ts` — the monolith the strangler migration
  *   carries away one capability at a time. The LMS vertical took its share
- *   with it.
+ *   with it, and the transport took five more (F5-01): it left typed, with
+ *   `unknown` and the SDK's own parameter types, rather than carrying them.
  * - 6 in `components/ExcalidrawViewer.tsx` — the lazily-imported Excalidraw
  *   surface, which is genuinely untyped at the boundary we load it through.
  * - 1 in `components/routing/lazyWithRetry.ts` — `ComponentType<any>`, which
  *   is how React's own `lazy` is declared; narrowing it would reject valid
  *   components.
  */
-export const MAX_ANY_TOKENS = 23;
+export const MAX_ANY_TOKENS = 18;
 
 /**
  * Directories, not globs.
