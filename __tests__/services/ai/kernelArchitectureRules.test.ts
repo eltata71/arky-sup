@@ -151,7 +151,9 @@ describe('the tool contract points one way', () => {
   it('declares the assistant tool once, outside the legacy monolith', () => {
     const monolith = codeOf('services/geminiService.ts');
     expect(monolith).not.toMatch(/functionDeclarations/);
-    expect(monolith).toMatch(/MODIFY_ARTIFACT_TOOL/);
+    // The agent turn left the engine in F5-01 (corte 8) and took the tool
+    // with it: the assistant vertical names the one declaration.
+    expect(codeOf('services/ai/generation/assistant/agentTurn.ts')).toMatch(/MODIFY_ARTIFACT_TOOL/);
   });
 });
 

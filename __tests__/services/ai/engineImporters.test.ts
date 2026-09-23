@@ -12,7 +12,9 @@
  * Los que quedan son verticales de prompts de dominio que todavía viven en el
  * motor. Cada uno sale como salió el LMS (`learningVertical.test.ts`): se corta
  * primero su dependencia ascendente, y entonces se borra de esta lista. El
- * segundo corte sacó `learningService`: su último método, `evaluateChallenge`. Añadir
+ * segundo corte sacó `learningService`: su último método, `evaluateChallenge`. El
+ * octavo sacó `assistantService`, después de que el séptimo moviera sus turnos
+ * sin persona: los tres con persona dejaron de buscarla y la reciben. Añadir
  * uno falla; quitar uno sin borrarlo de aquí también, para que el avance quede
  * escrito.
  */
@@ -41,7 +43,6 @@ const importsEngine = (file: string): boolean =>
 /** Los importadores que quedan. Sólo puede encoger. */
 const REMAINING_ENGINE_IMPORTERS = [
   'services/ai/generation/artifactGenerationService.ts',
-  'services/ai/generation/assistantService.ts',
 ];
 
 describe('importadores del motor dentro de services/ai', () => {

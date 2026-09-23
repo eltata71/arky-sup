@@ -12,7 +12,7 @@ El **Arquitecto Agente** es el único agente de IA visible para el usuario en la
 
 | Capacidad | Descripción | Implementación |
 |---|---|---|
-| **Consultiva** | Responder preguntas, explicar, analizar, recomendar. | `geminiService.processAssistantChat*` |
+| **Consultiva** | Responder preguntas, explicar, analizar, recomendar. | `processAssistantChat*` (`services/agent/agentConversation`) |
 | **Agentic** | Modificar, regenerar, mejorar artefactos, aplicar sugerencias, guardar memoria. | `services/agent/agentExecutor.ts` + `agentPlanner` + `intentClassifier` |
 
 El agente decide cuál de las dos capacidades activar a partir del intent classifier (heurístico, refinable con LLM cuando la confianza es baja).
@@ -172,7 +172,7 @@ Persistencia: en `Settings.aiConfig` (per-user). UI en `pages/SettingsPage.tsx` 
 | `artifact.create` | Nuevo artefacto desde solicitud natural. | `geminiService.generateArtifactContent` + `templateMatcher` |
 | `artifact.regenerate` | Regenerar artefacto existente. | `geminiService.generateArtifactContent` |
 | `artifact.improve` | Aplicar mejoras a artefacto. | `geminiService.applyArtifactImprovements` |
-| `artifact.patch` | Cambio puntual via tool `modifyArtifact`. | `geminiService.processAssistantChat` |
+| `artifact.patch` | Cambio puntual via tool `modifyArtifact`. | `requestArtifactPatch` (`services/agent/agentConversation`) |
 | `artifact.createVersion` | Nueva versión sin sobrescribir. | `createArtifactVersion` |
 | `artifact.applySuggestion` | Aplicar sugerencias previamente cargadas. | `geminiService.applyArtifactImprovements` |
 | `artifact.explainOnly` | Asesoría sin ejecución. | (sólo chat) |

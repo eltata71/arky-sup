@@ -9,6 +9,7 @@ import { PlusCircleIcon, SparklesIcon, TrashIcon, ArrowUpTrayIcon, ArrowPathIcon
 import { ARTIFACT_TEMPLATES } from '../constants';
 import { AIArchitectAvatar } from './ui/AIArchitectIdentity';
 import { useAgentActions } from '../hooks/useAgentActions';
+import { useAssistantTurns } from '../hooks/useAssistantTurns';
 import { AgentActionCard, AgentResultCard, ProactiveAgentSuggestionCard } from './assistant/AgentActionCard';
 import { useAuth } from '../context/AuthContext';
 import type { AgentExecutionTarget, MemoryScope } from '../services/agent';
@@ -79,6 +80,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
   // duplicates the chat function-call path; this is purely an
   // intent-routed UX layer over `geminiService` + `createArtifactVersion`.
   const agent = useAgentActions();
+  const assistantTurns = useAssistantTurns();
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const isMounted = useRef(true);
@@ -162,12 +164,8 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
     setStreamingText('');
 
     try {
-      const { text: aiResponse, functionCall } = await assistantService.processAssistantChatStream(
-        project,
-        activeArtifact,
-        baseMessages,
-        text,
-        settings,
+      const { text: aiResponse, functionCall } = await assistantTurns.streamAgent(
+        { project, activeArtifact, history: baseMessages, question: text, settings },
         (full) => {
           if (isMounted.current) setStreamingText(full);
         },
@@ -259,7 +257,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         setStreamingText(null);
       }
     }
-  }, [agent, project, activeArtifact, settings, updateArtifact, createArtifactVersion, getArtifact, setActiveArtifactId, updateProjectContext]);
+  }, [agent, assistantTurns, project, activeArtifact, settings, updateArtifact, createArtifactVersion, getArtifact, setActiveArtifactId, updateProjectContext]);
 
   const memoryStore = useAgentMemoryStore({
     settings, updateSettings, getProject, updateProject,

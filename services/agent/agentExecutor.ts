@@ -4,7 +4,7 @@
  *
  * Reused capabilities (in this order of dependency):
  *  - `artifactGenerationService.applyArtifactImprovements`  → improve / applySuggestion
- *  - `assistantService.processAssistantChat`       → patch (re-uses the modifyArtifact tool)
+ *  - `requestArtifactPatch` (`agentConversation`)  → patch (re-uses the modifyArtifact tool)
  *  - `artifactGenerationService.generateArtifactContent`    → regenerate
  *  - `AppContext.createArtifactVersion`         → new version persistence
  *  - `AppContext.updateArtifact`                → "apply to current" persistence
@@ -21,7 +21,7 @@ import type { Project } from '../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../review';
 import type { ChatMessage } from '../chat';
 import { appendMemoryNotes } from '../memory/memoryEntries';
-import { artifactGenerationService, assistantService, classifyAIError, AIServiceError } from '../ai';
+import { artifactGenerationService, classifyAIError, AIServiceError } from '../ai';
 import { runDiagramQualityGate } from '../diagram/qualityGate';
 import { assessDocumentArtifact } from '../quality/documentAcceptability';
 import { validateArtifactReadiness } from '../../lib/artifacts/artifactGovernance';
@@ -41,6 +41,8 @@ import { logAgentEvent } from './agentLogger';
 import { matchTemplateFromInstruction, buildCustomTemplate } from './templateMatcher';
 import { reuseDeterministicArtifact } from './deterministicArtifactReuse';
 import type { AgentArtifactStore } from './agentExecutorContracts';
+import { requestArtifactPatch } from './agentConversation';
+import type { AgentPersonaBriefing } from './agentContextComposer';
 export type { AgentArtifactStore } from './agentExecutorContracts';
 
 /** Callback fired as the action moves through phases. */
@@ -99,6 +101,8 @@ export interface AgentExecutorInput {
   /** True when a human has seen this exact plan and approved it. See
    *  `agentConfirmationGate` for why the flag is enforced rather than trusted. */
   confirmedByUser?: boolean;
+  /** Who speaks in the patch turn, from its text — `officePersonaForMessage`; the agent cannot look the Office up. */
+  resolvePersona?: (message: string) => AgentPersonaBriefing;
 }
 
 /**
@@ -175,25 +179,13 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
       case 'artifact.patch': {
         emit('preparing', 'Preparando cambio puntual…');
         emit('generating', 'Solicitando a la IA el contenido modificado…');
-        // We reuse the existing function-calling tool: the system instruction
-        // forces the model to return a complete new content via modifyArtifact.
-        // This is the same code path the chat already uses today — no new
-        // pipeline introduced.
+        // The chat's own function-calling tool: the model must return the whole
+        // new content through modifyArtifact (see `requestArtifactPatch`).
         const patchPrompt = `Aplica el siguiente cambio puntual al artefacto y devuelve el contenido completo modificado mediante la herramienta modifyArtifact. Cambio solicitado: ${plan.intent.userInstruction}`;
-        const { functionCall } = await assistantService.processAssistantChat(
-          project,
-          artifact,
-          history,
-          patchPrompt,
-          settings,
-        );
-        if (!functionCall || functionCall.name !== 'modifyArtifact') {
-          throw new Error('La IA no propuso una modificación aplicable.');
-        }
-        const fc = functionCall.args as { newContent?: unknown };
-        const candidate = typeof fc.newContent === 'string' ? fc.newContent : '';
-        if (!candidate.trim()) throw new Error('La IA no devolvió contenido modificado.');
-        newContent = candidate;
+        newContent = await requestArtifactPatch({
+          project, activeArtifact: artifact, history, question: patchPrompt, settings,
+          persona: input.resolvePersona?.(patchPrompt),
+        });
         appliedChanges.push(`Cambio puntual: ${truncate(plan.intent.userInstruction, 140)}`);
         break;
       }

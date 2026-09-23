@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useLMS } from '../hooks/useLMS';
+import { useAssistantTurns } from '../hooks/useAssistantTurns';
 import { UploadedFile, ChatModalPurpose } from '../types';
 import type { ChatMessage } from '../services/chat';
 import { createChatMessage } from '../services/chat';
@@ -51,6 +52,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const { projects, settings, t, loadChatHistory, saveChatHistory, getProject } = useAppContext();
   const { courses } = useLMS();
+  const assistantTurns = useAssistantTurns();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -208,18 +210,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         } else if (purpose === 'project-chat' && projectContextObj) {
              if (contextData) {
                  // Usar método específico para asistente de proyecto con contexto de artefacto
-                 const result = await assistantService.processAssistantChat(
-                     projectContextObj, 
-                     null, 
-                     newMessages, 
-                     currentInput, 
-                     settings
-                 );
+                 const result = await assistantTurns.askAgent({ project: projectContextObj, activeArtifact: null, history: newMessages, question: currentInput, settings });
                  aiResponse = result.text;
              } else {
                  // Usar chat global del proyecto
                  const history = newMessages.map(m => ({ role: m.role as 'user' | 'model', parts: [{ text: m.content }] }));
-                 aiResponse = await assistantService.chatWithProject(
+                 aiResponse = await assistantTurns.chatWithProject(
                      projectContextObj,
                      currentInput,
                      history,

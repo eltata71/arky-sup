@@ -6,7 +6,7 @@
  * called. This module is the one adapter the React layer needs, and it exists
  * to solve exactly one mismatch.
  *
- * `geminiService.chatWithProject` is the only entry point that binds a persona
+ * `chatWithProject` (the Office's project chat) is the only entry point that binds a persona
  * explicitly (`personaOverride`) rather than inferring it from the message
  * text — which is what keeps a coordination brief containing an `@Alias` from
  * hijacking the specialist downstream. It takes a `Project`. But the assistant
@@ -66,7 +66,7 @@ export const carrierForScope = (scope: CoordinationScope, realProject?: Project)
 };
 
 export interface CoordinationInvokerDeps {
-  /** `geminiService.chatWithProject`, injected so this module stays testable. */
+  /** The Office's `chatWithProject`, injected so this module stays testable. */
   chat: (
     project: Project,
     message: string,

@@ -29,7 +29,7 @@ import { compileArtifact } from '../artifactCompiler';
 import { parseStructured } from '../ai/structuredOutput';
 import { validateOfficeArtifact } from './officeArtifactValidators';
 import { newPrefixedId } from '../../lib/ids';
-import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from './officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS, officePersonaForMessage, type OfficeAgentId } from './officeAgentPersonas';
 import { getOfficeArchitectureContext } from './officeArchitectureKnowledge';
 import type {
   OfficeConsolidateOutcome,
@@ -181,6 +181,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       settings: deps.getSettings(),
       history: [],
       store: deps.store,
+      resolvePersona: officePersonaForMessage,
       actor: {
         id: task.assigneeId,
         name: OFFICE_AGENT_PERSONAS[task.assigneeId].alias,

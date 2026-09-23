@@ -8,6 +8,7 @@ export { classifyAgentIntent } from './intentClassifier';
 export { refineIntentWithLLM, LLM_REFINEMENT_THRESHOLD, __resetIntentClassifierCache } from './intentClassifierLLM';
 export { planAgentAction } from './agentPlanner';
 export { executeAgentAction } from './agentExecutor';
+export { processAssistantChat, processAssistantChatStream, type AgentConversationTurn } from './agentConversation';
 export type { AgentExecutorInput, AgentArtifactStore, AgentMemoryStore, AgentPhaseListener } from './agentExecutor';
 export { extractMemoryBullets, fallbackBulletsFromInstruction, MEMORY_BULLET_LIMITS } from './memoryExtractor';
 export { logAgentEvent, getTrace, subscribeAgentTrace, newTraceId } from './agentLogger';

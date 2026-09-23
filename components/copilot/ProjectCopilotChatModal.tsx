@@ -32,7 +32,7 @@ import { useAppContext, type Project } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAgentActions } from '../../hooks/useAgentActions';
 import { createChatMessage, type ChatMessage } from '../../services/chat';
-import { assistantService, classifyAIError, AIServiceError } from '../../services/ai';
+import { classifyAIError, AIServiceError } from '../../services/ai';
 import {
   classifyAgentIntent,
   type AgentContext,
@@ -50,6 +50,7 @@ import {
   planOfficeWorkstreams,
 } from '../../services/architectureOffice/officeOrchestration';
 import { consultOffice } from '../../services/architectureOffice/application/assistantConsultation';
+import { chatWithProject } from '../../services/architectureOffice';
 import { useInitiatives } from '../../context/InitiativeContext';
 import { SafeRichText } from '../ui/SafeRichText';
 
@@ -172,7 +173,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
         initiatives,
         settings,
         chat: (carrier, message, history, currentSettings, personaOverride) =>
-          assistantService.chatWithProject(carrier, message, history, currentSettings, personaOverride as never),
+          chatWithProject(carrier, message, history, currentSettings, personaOverride as never),
       });
 
       if (isMounted.current) {
@@ -247,7 +248,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
           // prompt text: Lucía's brief is concatenated into every workstream
           // prompt, and an `@Alias` inside it would otherwise hijack the
           // specialist that mention resolution picks for the sub-call.
-          async (personaId, instruction) => assistantService.chatWithProject(
+          async (personaId, instruction) => chatWithProject(
             project,
             instruction,
             [],

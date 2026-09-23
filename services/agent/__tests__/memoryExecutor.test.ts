@@ -18,7 +18,6 @@ vi.mock('../../geminiService', () => {
   return {
     geminiService: {
       applyArtifactImprovements: vi.fn(),
-      processAssistantChat: vi.fn(),
       generateArtifactContent: vi.fn(),
     },
     AIServiceError,

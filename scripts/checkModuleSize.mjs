@@ -58,7 +58,7 @@ export const BYTE_CEILINGS = {
    * resolved model through `settings.aiConfig.model`, which would have made the
    * trace attribute a per-agent decision to the user's own preference.
    */
-  'services/geminiService.ts': 135769, // F5-01 corte 7: la vertical del asistente sin persona fuera del motor
+  'services/geminiService.ts': 126870, // F5-01 corte 8: el asistente entero fuera del motor
   'components/ReactFlowCanvas.tsx': 109906,
   'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
@@ -79,8 +79,8 @@ export const BYTE_CEILINGS = {
    * refusal live in `agentConfirmationGate`, which is why the file got shorter
    * while gaining a guarantee.
    */
-  'services/agent/agentExecutor.ts': 41265, // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/AssistantPanel.tsx': 37688,
+  'services/agent/agentExecutor.ts': 41032, // F5-01 corte 8: el turno del parche a `agentConversation`
+  'components/AssistantPanel.tsx': 37765, // F5-01 corte 8: +77 B — el turno del agente llega por `useAssistantTurns`, que pone la persona de la Oficina sin un tercer módulo de servicio
   'pages/Workspace.tsx': 36196, // F4-05: la coordinación salió a `services/artifacts/application`
   'services/artifacts/artifactRefinementOrchestrator.ts': 36722, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/Icons.tsx': 35946,
@@ -117,7 +117,7 @@ export const BYTE_CEILINGS = {
   // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
   'pages/EngagementRoom.tsx': 23347,
   'pages/LMS/LMSCatalog.tsx': 22897,
-  'components/ChatInterface.tsx': 22576,
+  'components/ChatInterface.tsx': 22465,
   'services/diagram/diagramTypeQualityGates.ts': 22356,
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
@@ -164,7 +164,7 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/geminiService.ts': 2631,
+  'services/geminiService.ts': 2443,
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 981,
@@ -178,7 +178,7 @@ export const CEILINGS = {
   // por debajo del techo y nadie fijó el número, así que la deuda seguía
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
-  'services/agent/agentExecutor.ts': 990, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'services/agent/agentExecutor.ts': 982, // F5-01 corte 8: el turno del parche a `agentConversation`
   'pages/ProjectsPage.tsx': 925,
   'services/diagram/mermaidToIR.ts': 856,
   'components/artifacts/export/ArtifactExportModal.tsx': 844,

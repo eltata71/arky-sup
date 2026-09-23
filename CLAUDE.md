@@ -353,7 +353,7 @@ The eleven one-off codegen/codemod scripts that used to sit in the root, and the
 
 A module's `index.ts` is the right door — and from code the **entry chunk**
 reaches, entering through it is what puts a whole module in the eager payload.
-This has now cost a build five times, each measured by `check:bundle-budget`:
+This has now cost a build six times, each measured by `check:bundle-budget`:
 
 | Entering | Eager payload |
 |---|---|
@@ -363,6 +363,7 @@ This has now cost a build five times, each measured by `check:bundle-budget`:
 | `deterministicArtifactFallbacks` through the `services/diagram` barrel | 660 → 1 098 KB gz |
 | `platformGuideService` through the `lib/platformGuide` barrel | entry 346,7 → 350,9 KB gz |
 | `chatHistoryRepository` through the `services/chat` barrel, **from boot code** | eager 430,4 → 586,9 KB gz (medido al revés: así es como se recuperaron 156) |
+| The Office's project chat through the `services/architectureOffice` barrel, loaded with `import()` from `OfficeContext` | eager 309,6 → 310,7 KB gz: a dynamic import of a barrel still pins every export of the modules the entry already shares with it (`agentDefinition` joined the entry) |
 
 **The rule: a barrel from lazy code, a file path from boot-path code**, with a
 comment saying which case it is. `check:bundle-budget` is what tells the two
@@ -591,7 +592,7 @@ bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, adviso
 | `npm run check:module-boundaries` | **Tras F3-07 (2026-09-22): 4 ciclos directos, 2 componentes fuertemente conexos (3 + 14 módulos), 0 pares ascendentes, 60 pares con import profundo.** `types.ts` no importa nada y ninguna pieza de la fundación está en el componente de dominio; lo que queda de él lo cierra `services/ai -> services (raíz)` (fase 5). Lo que sigue es la historia de cómo se llegó: **6 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**. El alcance completo (F3-02, ADR-105) hizo visibles 11 ciclos y 7 pares ascendentes el 2026-09-21; F3-07 y F3-08 retiraron cinco ciclos y cinco pares al día siguiente, y casi todo era andamio: `types.ts` reexportaba 19 declaraciones de diagrama **sin un solo consumidor**, y las de presentación, revisión y chat sólo las usaban los módulos dueños. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y le quedan **dos** aristas de salida, `Artifact` y `Project`, con las que cierra el grafo entero y arrastra dentro a `lib`. No se repuntan con un codemod: `services/artifacts` necesita el proyecto y `services/architectureProjects` necesita el artefacto, así que cambiar el ciclo contra `types.ts` por uno entre dos contextos de dominio sería peor — debajo está la frontera del agregado Proyecto–Artefacto (D-4, la decide F4-02 con los datos de F4-01). **2 upward pairs**, las dos de `types.ts`; `lib/` y `utils/` siguen en cero y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
 | `npm run check:module-size` | clean. Tres techos bajaron el 2026-09-22 al fijar lo que ya se había ganado y nadie había registrado: `services/geminiService.ts` a 5 405 líneas / 271 653 bytes y `services/agent/agentExecutor.ts` a 988 / 41 175 — este último figuraba como deuda abierta («1007 vs 1001») mientras el gate estaba en verde. Un presupuesto que no se baja cuando se gana permite volver a subir sin que se note. Sube uno, con su razón al lado: `pages/EngagementRoom.tsx`, nueve bytes, por preguntar si *este* actor puede firmar *este* encargo en vez de leer un booleano de permiso |
 | `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
-| `npm run check:any-budget` | **14** `any` types, budget 14 (eran 38; 23 hasta F5-01, cuyo corte 1 sacó el transporte tipado, el corte 2 `evaluateChallenge`, el corte 4 la vertical de recomendaciones con dos helpers muertos del motor y el corte 7 el contexto de cursos del chat multimodal) |
+| `npm run check:any-budget` | **13** `any` types, budget 13 (eran 38; 23 hasta F5-01, cuyo corte 1 sacó el transporte tipado, el corte 2 `evaluateChallenge`, el corte 4 la vertical de recomendaciones con dos helpers muertos del motor, el corte 7 el contexto de cursos del chat multimodal y el corte 8 la llamada de herramienta del agente) |
 | `npm run lint` | **clean — 0 errors, 0 warnings**, y volvió a serlo el 2026-09-22: `OfficeEngagementRunner.ts` importaba dos tipos que sólo reexportaba, así que arrastraba dos avisos que `eslint .` no hace fallar. Keep it that way: a warning is a finding nobody will read once there are ten of them |
 | `npm run test:ci` | **456 ficheros y 4 419 pruebas, todas pasando**, medido el 2026-09-22 sobre Node 24. Sube desde 4 359 con las de F3-02 (alcance del verificador), la elegibilidad del comité y el fixture E2E de dos identidades. **El entorno local también se arregló**: con Node 20 el SDK de Supabase no encuentra `WebSocket` nativo y `supabaseIdentityAdapter` fallaba una prueba que en CI pasaba — `.nvmrc` pide 24 y ahora eso es lo que hay instalado |
 | `npm run test:coverage` | 65,20 % statements / 56,53 branches / 57,64 functions / 67,03 lines — por encima de todos los suelos de `vite.config.ts`, y de los cuatro valores anteriores |
@@ -1018,28 +1019,39 @@ four façades that only send their own prompt — assisted capture, the platform
 guide, the initiative assistant and diagram edit — reach the transport without
 loading the engine, which took five files off the edge
 `services/ai -> services (raíz)` that closes the nine-context component.
-`__tests__/services/ai/engineImporters.test.ts` lists the two that still
-import the engine (`learningService` left in the second cut, with
-`evaluateChallenge`; `artifactSuggestionService` left in the third cut;
-`recommendationService` left whole in the fourth, into
+`__tests__/services/ai/engineImporters.test.ts` lists the one that still
+imports the engine, `artifactGenerationService` (`learningService` left in the
+second cut, with `evaluateChallenge`; `artifactSuggestionService` left in the
+third cut; `recommendationService` left whole in the fourth, into
 `services/ai/generation/recommendation/`; `documentGenerationService` in the
 fifth, into `services/ai/generation/documents/`; `diagramGenerationService` in
 the sixth, into `services/ai/generation/diagram/`, taking the diagram config
-builder and thinking budgets the engine's artifact generation still reads); the list may only shrink, and each one leaves the way the LMS
-did — as a vertical, its upward dependency cut first.
+builder and thinking budgets the engine's artifact generation still reads;
+`assistantService` in the seventh and eighth, into
+`services/ai/generation/assistant/`); the list may only shrink, and each one
+leaves the way the LMS did — as a vertical, its upward dependency cut first.
 
-**The seventh cut moved half a façade, and that is the rule working.**
-`assistantService` still imports the engine. Its four turns that carry no
-persona — the consulting room, the chat-context note, the consistency check,
-the multimodal modal — are `services/ai/generation/assistant/`, reading the
-conversation and the course through ports it declares
-(`AssistantConversationTurn`, `AssistantCourseSummary`), because `services/chat`
+**The assistant is the worked example of cutting that dependency first.** Its
+four turns without a persona moved in the seventh cut, reading the
+conversation and the course through ports the vertical declares
+(`AssistantConversationTurn`, `AssistantCourseSummary`) because `services/chat`
 and the LMS import this layer back and even a type import closes that cycle.
-The other three — `chatWithProject`, `processAssistantChat` and its stream —
-compose an Office persona and the agent's system instruction, and `agent` and
-`architectureOffice` both import `services/ai`. Moving them as they are would
-have added two cycles to take one importer off a list; they leave when the
-composition is handed in rather than looked up.
+The three that speak as an agent could not simply move: the engine composed
+their instruction out of the agent's composer and an Office persona, and
+`agent` and `architectureOffice` both import `services/ai`. The eighth cut split
+each turn where the dependency points:
+
+| Half | Lives in | Knows |
+|---|---|---|
+| Ask the model over a composed instruction | `services/ai/generation/assistant/` (`runAgentTurn`, `streamAgentTurn`, `generateProjectChatReply`) | the transport, the `modifyArtifact` tool, the project's own prompt |
+| Compose the agent's turn | `services/agent/agentConversation` | its system instruction and history budget — and a persona it is **handed** |
+| Decide who answers | `services/architectureOffice` (`chatWithProject`, `officePersonaForMessage`) | the personas and the Office's standards |
+
+Screens meet the three halves in `hooks/useAssistantTurns`, which is what kept
+`ChatInterface` and `AssistantPanel` under the UI fan-out, and the executor
+gets the persona through `resolvePersona` on its input — the agent still never
+learns the Office exists. The engine stopped importing `services/agent` and
+`services/chat` altogether.
 
 **A vertical that leaves stops calling the SDK itself.** The custom-artifact
 recommender built its own Gemini client inside the engine, so it skipped the
@@ -1550,7 +1562,7 @@ the only screen still linking to `/users` and `/settings`.
   `import.meta.env` is unknown and `dagre` (which ships no types) reads as an
   implicit `any` against our code.
 - **`@types/react` and `@types/react-dom` are installed.** They were not, which meant every JSX element, hook and prop in a React 18 app was silently `any`; `components/ErrorBoundary.tsx` even carried a hand-rolled `Component` cast with a comment explaining the absence. Installing them surfaced 34 errors, several of them live defects. Do not remove them.
-- **Avoid `any`.** ESLint's `no-explicit-any` is `off` globally only because the legacy monolith would produce thousands of violations; it is `error` for `lib/security.ts` and `lib/ids.ts`, and new modules should be written to that bar. Prefer precise types or `unknown` + type guards. `npm run check:any-budget` holds the repository to **14**, and what remains is named: 3 in `services/geminiService.ts`, 4 that left it with the diagram vertical, 6 in the untyped Excalidraw boundary, and React's own `ComponentType<any>` in `lazyWithRetry`. Code that leaves the engine leaves typed — the transport went out with `unknown` and the SDK's own parameter types rather than carrying its five `any` along (F5-01).
+- **Avoid `any`.** ESLint's `no-explicit-any` is `off` globally only because the legacy monolith would produce thousands of violations; it is `error` for `lib/security.ts` and `lib/ids.ts`, and new modules should be written to that bar. Prefer precise types or `unknown` + type guards. `npm run check:any-budget` holds the repository to **13**, and what remains is named: 2 in `services/geminiService.ts`, 4 that left it with the diagram vertical, 6 in the untyped Excalidraw boundary, and React's own `ComponentType<any>` in `lazyWithRetry`. Code that leaves the engine leaves typed — the transport went out with `unknown` and the SDK's own parameter types rather than carrying its five `any` along (F5-01).
 - **A generator's output is a shape, not `any`.** When a prompt prints the JSON it asks for, that shape is knowable: `services/ai/generation/learning/learningTypes.ts` is the worked example. It declares what the model *proposes* (`GeneratedCourse`, `GeneratedTopic`) separately from what the domain *records* (`Course`), because a proposal carries no ids and its `level` is whatever string came back — and it ships the two coercions (`asCourseCategory`, `asCourseLevel`) and the two guards (`isQuizQuestion`, `isRelatedConcept`) that bridge them. Typing those three LMS functions surfaced two live defects where a model's free text was written straight into a union.
 - Path alias `@/` resolves to the repo root. Both `@/`-prefixed and relative imports exist in the codebase — match the file you are editing.
 - Core domain types live in `types.ts`; LMS types in `types/lms.ts`; subsystem-local types next to their module (`agentTypes.ts`, `ArtifactCompilerTypes.ts`, `contextGraphTypes.ts`, …). Do not declare domain types inline in components.

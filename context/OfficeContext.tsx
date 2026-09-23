@@ -106,9 +106,13 @@ const OfficeContext = createContext<OfficeContextType | undefined>(undefined);
  *
  * Both call sites are inside async actions, so deferring costs nothing: the
  * module is fetched the first time a user actually runs an engagement, and the
- * dynamic import is cached by the module system from then on.
+ * dynamic import is cached by the module system from then on. What it loads is
+ * the Office's project chat (F5-01, corte 8): the persona is the Office's, so
+ * the turn is too, and the AI layer is reached through it. By file path, not
+ * the barrel — this provider is boot-path code, and the barrel's dynamic
+ * import cost the eager payload 1.1 KB gz.
  */
-const loadAssistant = () => import('../services/ai/generation/assistantService');
+const loadConversation = () => import('../services/architectureOffice/application/projectConversation');
 
 /**
  * The engagement runner is deferred for the same reason.
@@ -297,8 +301,8 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         // siendo diferido porque `OfficeProvider` vive en el árbol de
         // proveedores y uno estático metería el motor entero en el arranque.
         refineCharter: async (prompt: string) => {
-          const { assistantService } = await loadAssistant();
-          return assistantService.chatWithProject(project, prompt, [], settingsRef.current, 'lucia');
+          const { chatWithProject } = await loadConversation();
+          return chatWithProject(project, prompt, [], settingsRef.current, 'lucia');
         },
       },
       project,
@@ -337,8 +341,8 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         getSettings: () => settingsRef.current,
         store: { createArtifact, createArtifactVersion, updateArtifact },
         invokePersona: async (personaId: OfficeAgentId, prompt, project) => {
-          const { assistantService } = await loadAssistant();
-          return assistantService.chatWithProject(
+          const { chatWithProject } = await loadConversation();
+          return chatWithProject(
             project,
             prompt,
             [],

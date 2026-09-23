@@ -266,8 +266,13 @@ export const DEEP_IMPORT_BUDGET = {
   'components -> services/quality': 3,
   'components -> services/review': 1,
   'context -> services/agent': 1,
-  'context -> services/ai': 1,
-  'context -> services/architectureOffice': 10,
+  // F5-01 corte 8: 10 → 11, y `context -> services/ai` desaparece a cambio.
+  // `OfficeContext` carga el chat de proyecto de la Oficina en diferido por su
+  // fichero, no por el barril: el provider está en el arranque, y entrar por el
+  // barril subía la carga inicial de 309,6 a 310,7 KB gz (arrastraba
+  // `agentDefinition` al chunk de entrada). Es la regla del barril contra el
+  // bundle, medida por `check:bundle-budget`.
+  'context -> services/architectureOffice': 11,
   'context -> services/architectureProjects': 2,
   'context -> services/chat': 1,
   'hooks -> services/agent': 2,
@@ -278,7 +283,6 @@ export const DEEP_IMPORT_BUDGET = {
   'pages -> services/ai': 1,
   'pages -> services/architectureOffice': 9,
   'pages -> services/artifacts': 1,
-  'services (raíz) -> services/agent': 1,
   /**
    * 16 → 17 el 2026-09-22, y es el único número que F3-07/F3-08 suben.
    *
@@ -295,8 +299,8 @@ export const DEEP_IMPORT_BUDGET = {
   // el motor hacía a piezas de esta capa sólo para llevar un prompt (17 → 11).
   // F5-01 (corte 4): la vertical de recomendaciones salió, y el motor dejó de
   // importar `parseAiJson` (11 → 9, con el corte 3).
-  'services (raíz) -> services/ai': 9,
-  'services (raíz) -> services/architectureOffice': 2,
+  'services (raíz) -> services/ai': 8,
+  'services (raíz) -> services/architectureOffice': 1,
   'services (raíz) -> services/artifacts': 4,
   // F5-01 (corte 6): la generación de diagramas salió del motor con sus
   // guardarraíles y su gate de calidad (6 → 3).
