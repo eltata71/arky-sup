@@ -645,8 +645,21 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   temperatura, prompt y —para la extracción— qué sobrevive de la respuesta.
   Corrección: `synthesizeSmartNote` no usaba la persona del tutor del LMS; sólo
   `consultArchitecture` la usa.
-- **Lo que queda.** Tres verticales de prompts de dominio: diagramas, asistente
-  y artefactos. `consultArchitecture` (asistente) sigue usando la persona del
+- **Corte 6 — la vertical de diagramas (2026-09-23).** Los seis métodos de
+  `diagramGenerationService` y sus tres privados salen a
+  `services/ai/generation/diagram/` (seis ficheros), con el constructor de
+  configuración, los presupuestos de razonamiento y el tope de temperatura que
+  la generación de artefactos del motor sigue leyendo. Importadores **3 → 2**;
+  el motor pierde 852 líneas (3 661 → 2 809) y sus imports profundos hacia
+  `services/diagram` bajan 6 → 3: los guardarraíles y el gate de calidad los
+  toma la vertical por el barril de `services/diagram`.
+  **Hallazgo, no arreglado aquí:** `legacyTransport.generateTextWithFallback`
+  no intenta el proxy; con la clave de operador sólo en el servidor, sin clave
+  personal lanza y la IR acaba siempre en el esqueleto determinista. Afecta
+  también a la generación de artefactos del motor. Se registra como tarea
+  propia porque el corte es de movimiento.
+- **Lo que queda.** Dos verticales de prompts de dominio: asistente y
+  artefactos. `consultArchitecture` (asistente) sigue usando la persona del
   tutor del LMS detrás de una fachada que no es del LMS, y saldrá con su vertical. La arista no desaparece hasta el
   último importador; el SCC tampoco.
 

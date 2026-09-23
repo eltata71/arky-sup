@@ -298,7 +298,9 @@ export const DEEP_IMPORT_BUDGET = {
   'services (raíz) -> services/ai': 9,
   'services (raíz) -> services/architectureOffice': 2,
   'services (raíz) -> services/artifacts': 4,
-  'services (raíz) -> services/diagram': 6,
+  // F5-01 (corte 6): la generación de diagramas salió del motor con sus
+  // guardarraíles y su gate de calidad (6 → 3).
+  'services (raíz) -> services/diagram': 3,
   'services (raíz) -> services/presentation': 2,
   'services (raíz) -> services/quality': 1,
   'services/agent -> services/diagram': 1,
