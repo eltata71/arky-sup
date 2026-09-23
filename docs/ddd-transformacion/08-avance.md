@@ -8,7 +8,12 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F5-01, corte 6** — la vertical de diagramas
+- **Última tarea completada:** **el camino de texto del transporte pasa por el
+  proxy** — `generateTextWithFallback` intenta ahora el proxy antes que el SDK,
+  como ya hacían los caminos de contenido y de streaming. Arregla en producción
+  la generación de IR de diagramas (acababa siempre en el esqueleto) y la de
+  artefactos del motor, para quien no tiene clave personal. Antes: **F5-01,
+  corte 6** (#61) — la vertical de diagramas
   (generación de IR, autorreparación, crítica y refinado, conversiones a
   ReactFlow y Excalidraw, reparación de render) sale del motor a
   `generation/diagram/`; importadores del motor 3 → 2; el motor baja a 2 809
@@ -42,11 +47,7 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** **arreglar el camino de texto del transporte**
-  (`generateTextWithFallback` debe intentar el proxy como ya hace
-  `generateContentWithFallback`): sin eso, en producción la generación de
-  diagramas y de artefactos no llega a un modelo. Después, F5-01 corte 7: la
-  vertical del asistente (incluye `consultArchitecture`, con la persona del
+- **Siguiente paso exacto:** F5-01 corte 7: la vertical del asistente (incluye `consultArchitecture`, con la persona del
   tutor del LMS); el último importador será artefactos. Las seis pantallas que
   siguen sobre el fan-out son de **F5-02**.
 - **Esquema de producción al día (2026-09-23).** Con la aprobación del

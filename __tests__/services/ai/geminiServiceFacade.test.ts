@@ -25,6 +25,7 @@ vi.mock('../../../services/ai/providers/gemini/geminiClient', () => ({
 
 import { geminiService, AIServiceError } from '../../../services/geminiService';
 import { generateDiagramIR } from '../../../services/ai/generation/diagram';
+import { legacyTransport } from '../../../services/ai/generation/legacyTransport';
 import type { Settings } from '../../../types';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../../services/architectureProjects';
@@ -322,6 +323,47 @@ describe('geminiService façade — proxy streaming dispatch', () => {
     const sent = JSON.parse(String(init.body)) as Record<string, unknown>;
     expect(sent.stream).toBe(true);
     expect(sent.provider).toBe('gemini');
+  });
+
+  it('routes generateTextWithFallback through the proxy when configured (not the direct SDK)', async () => {
+    // The text path is the one diagram IR and artifact generation use. It
+    // skipped the proxy, so in production — operator key on the server, no
+    // personal key in the browser — every call was refused before reaching a
+    // model. It must behave like the content and streaming paths.
+    setProxyUrl('/api/ai');
+    localStorage.clear();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ requestId: 'r1', text: '{"nodes":[]}', provider: 'gemini', model: 'gemini-2.5-flash' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const text = await legacyTransport.generateTextWithFallback(
+      { ...settings, aiConfig: { ...settings.aiConfig!, apiKeySource: 'global' } },
+      'gemini-2.5-flash',
+      'describe el sistema',
+      { temperature: 0.2, responseMimeType: 'application/json' },
+    );
+
+    expect(text).toBe('{"nodes":[]}');
+    expect(generateContent).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [RequestInfo | URL, RequestInit];
+    expect(String(url)).toBe('/api/ai');
+    const sent = JSON.parse(String(init.body)) as Record<string, unknown>;
+    expect(sent.provider).toBe('gemini');
+    expect(sent.responseMimeType).toBe('application/json');
+  });
+
+  it('keeps generateTextWithFallback direct when the proxy is not configured', async () => {
+    generateContent.mockResolvedValue({ text: 'directo' });
+
+    const text = await legacyTransport.generateTextWithFallback(settings, 'gemini-2.5-flash', 'hola', {});
+
+    expect(text).toBe('directo');
+    expect(generateContent).toHaveBeenCalledTimes(1);
   });
 
   it('keeps streaming direct when the proxy is not configured', async () => {
