@@ -9,3 +9,4 @@ export * from './learningTypes';
 export * from './courseAuthoring';
 export * from './lessonDelivery';
 export * from './diagramChallenge';
+export * from './challengeEvaluation';

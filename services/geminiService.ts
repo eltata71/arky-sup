@@ -4794,35 +4794,6 @@ INSTRUCTIONS:
 
 
 
-    public async evaluateChallenge(challenge: string, responseText: string, settings: Settings): Promise<any> {
-        const prompt = `
-        ${this.buildLMSTutorPersona(settings)}
-
-        As the Architect-Professor, evaluate the following proposed solution to an architectural challenge in the health and life insurance domain.
-        Apply the three evaluation dimensions you teach: (1) Business Impact — does the solution create tangible value for the insurer?, (2) Technical Feasibility — is the architecture sound and implementable?, (3) Operational Sustainability — can it be maintained and evolved over time?
-        Solutions that are technically correct but ignore business context score lower. Vague or generic proposals are penalized.
-
-        Challenge: ${challenge}
-        Proposed Solution: ${responseText}
-
-        Return a JSON object with this structure:
-        {
-            "grade": 0-100,
-            "feedback": "Detailed professional feedback as the Architect-Professor: acknowledge strengths, challenge weaknesses, and connect to real insurance industry implications",
-            "improvements": ["Specific improvement 1 with architectural rationale", "Specific improvement 2 with business justification"]
-        }
-        `;
-
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-            temperature: 0.2,
-            responseMimeType: 'application/json'
-        });
-        const cleanJson = this.cleanJsonString(text || '');
-        return JSON.parse(cleanJson || '{}');
-    }
-
     public async synthesizeSmartNote(content: string, settings: Settings): Promise<string> {
         const prompt = `
         Synthesize the following content into an ultra-short mnemonic format (max 150 words).

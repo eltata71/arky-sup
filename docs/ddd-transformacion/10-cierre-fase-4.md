@@ -85,11 +85,22 @@ fan-out, y ése bajó.
   la Oficina, las iniciativas y el asistente, que es **F5-02**. Ejemplo de lo que
   hay debajo: el asistente de alta de un entregable calcula en la pantalla el
   espejo de códigos `NEG-YYYY-NNN`, que es una regla de la fábrica del encargo.
-- **La migración de F4-06 no está aplicada a `ArkyDB-US`.** El CI publica la
-  aplicación, no el esquema. No rompe nada mientras tanto —el código ya no llama
-  a la RPC retirada—, pero la puerta sigue concedida en la base hasta que se
-  haga `supabase db push`. Aplicarla es una acción sobre producción y queda a
-  decisión del propietario.
+- ~~**La migración de F4-06 no está aplicada a `ArkyDB-US`.**~~ **Aplicada el
+  2026-09-23 con la aprobación del propietario**, y lo que se encontró al ir a
+  aplicarla merece quedar escrito: a producción no le faltaba una migración
+  sino **dos**. `20260922180000_artifact_commands` (F4-03) tampoco estaba, así
+  que desde #50 la aplicación publicada llamaba a `save_project`,
+  `create_artifact` y compañía sobre una base que sólo tenía
+  `save_project_aggregate`: **toda escritura de proyecto o artefacto fallaba en
+  producción**. No perdió datos porque no había ninguno (0 proyectos, 0
+  artefactos, comprobado antes de aplicar). Se aplicaron las dos en orden, las
+  versiones del historial se alinearon con las del repositorio
+  (`20260922180000`, `20260923090000`) para que un `supabase db push` futuro no
+  intente repetirlas, y se comprobó que las ocho RPC del agregado existen, las
+  ejecuta `authenticated` y no `anon`, y que `save_project_aggregate` ya no
+  existe. **La lección es de proceso**: el CI publica la aplicación y no el
+  esquema, así que una PR que cambia RPC deja producción rota hasta que alguien
+  aplica su migración — ver *Lo que sigue abierto* en `08-avance.md`.
 - **D-2** (archivado y retención) sigue abierta; bloquea F6-08.
 
 ## Lo que no se pudo ejecutar aquí

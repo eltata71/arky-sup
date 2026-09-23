@@ -28,13 +28,19 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 2. El corte 1 (el
-  transporte fuera del motor; importadores del motor en `services/ai` 12 → 7)
-  está hecho. El siguiente candidato es la evaluación de retos del LMS
-  (`learningService.evaluateChallenge`), el resto de la vertical ya extraída, y
-  después la vertical más pequeña de las seis de dominio. Las seis pantallas que siguen sobre el fan-out son de
-  **F5-02**. Pendiente de decisión del propietario: aplicar la migración de
-  F4-06 a `ArkyDB-US` (`supabase db push`).
+- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 3: la vertical de
+  dominio más pequeña de las seis que quedan en el motor. Los cortes 1 (el
+  transporte) y 2 (`evaluateChallenge`, el resto del LMS) están hechos:
+  importadores del motor en `services/ai` 12 → 6. Las seis pantallas que
+  siguen sobre el fan-out son de **F5-02**.
+- **Esquema de producción al día (2026-09-23).** Con la aprobación del
+  propietario se aplicaron a `ArkyDB-US` las dos migraciones que faltaban —
+  `artifact_commands` (F4-03) y `retire_save_project_aggregate` (F4-06)—. La
+  primera no estaba pendiente «de decisión»: faltaba sin que nadie lo supiera, y
+  desde #50 toda escritura de proyecto o artefacto fallaba en producción (sin
+  datos que perder: 0 proyectos). **Abierto:** el CI publica la aplicación y no
+  el esquema; hace falta un gate que compare las migraciones del repositorio
+  con las aplicadas antes de publicar (propuesto para F6).
 - **Despliegue verificado:** CI publicó el commit `6f7c418` en `arky-sup`; usar el alias estable `https://arky-sup.vercel.app`.
 - **Verificaciones previas a la integración:**
   1. **Test focalizados de arquitectura Office y agente** — 75 pruebas en verde (OfficeEngagementRunner, agentExecutor, supabaseFileStorage, rpcSurface, OfficeContext).
@@ -127,7 +133,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F5-01** romper `services/ai -> services (raíz)` | ⏳ corte 1 hecho | El transporte sale del motor a `legacyTransport`; importadores del motor en `services/ai` 12 → 7; `any` 23 → 18. |
+| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1 y 2 hechos | Corte 1: el transporte sale del motor a `legacyTransport`; importadores 12 → 7; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, tipado; `learningService` deja el motor; importadores 7 → 6; `any` 18 → 17; motor 5 110 → 5 081 líneas. |
 | **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible

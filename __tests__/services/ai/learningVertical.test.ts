@@ -38,6 +38,8 @@ const MOVED_METHODS = [
   'chatWithLesson',
   'generateDiagramChallenge',
   'evaluateDiagramChallenge',
+  // F5-01, corte 2: the last LMS method the façade still took from the engine.
+  'evaluateChallenge',
 ];
 
 const monolith = () => readFileSync('services/geminiService.ts', 'utf8');
@@ -73,6 +75,7 @@ describe('the façade did not change shape', () => {
 
   it('serves them from the extracted modules, not the engine', () => {
     const source = facade();
+    expect(readCode('services/ai/generation/learningService.ts')).not.toContain('geminiService');
     for (const name of MOVED_METHODS) {
       expect(source).toContain(`return learning.${name};`);
     }
@@ -84,6 +87,7 @@ describe('the extracted modules stay independent of the engine', () => {
     'services/ai/generation/learning/courseAuthoring.ts',
     'services/ai/generation/learning/lessonDelivery.ts',
     'services/ai/generation/learning/diagramChallenge.ts',
+    'services/ai/generation/learning/challengeEvaluation.ts',
   ];
 
   it('never import the legacy monolith', () => {

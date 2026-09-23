@@ -93,3 +93,31 @@ describe('generateRoleDiagnostic (#2)', () => {
     expect(qs).toEqual([]);
   });
 });
+
+describe('evaluateChallenge (F5-01, corte 2)', () => {
+  beforeEach(() => {
+    generateContent.mockReset();
+    localStorage.setItem('user_gemini_key', 'test-key');
+  });
+
+  it('parses a full evaluation payload outside the engine', async () => {
+    generateContent.mockResolvedValue({
+      text: JSON.stringify({ grade: 82, feedback: 'Sólido.', improvements: ['Añadir idempotencia'] }),
+    });
+    const result = await learningService.evaluateChallenge('Reto', 'Respuesta', settings);
+    expect(result).toEqual({ grade: 82, feedback: 'Sólido.', improvements: ['Añadir idempotencia'] });
+  });
+
+  it('keeps only the fields that arrived with the right type', async () => {
+    generateContent.mockResolvedValue({
+      text: JSON.stringify({ grade: '90', feedback: '', improvements: ['Uno', 3, '  '] }),
+    });
+    const result = await learningService.evaluateChallenge('Reto', 'Respuesta', settings);
+    expect(result).toEqual({ improvements: ['Uno'] });
+  });
+
+  it('clamps a grade outside 0-100', async () => {
+    generateContent.mockResolvedValue({ text: JSON.stringify({ grade: 140 }) });
+    expect(await learningService.evaluateChallenge('Reto', 'Respuesta', settings)).toEqual({ grade: 100 });
+  });
+});

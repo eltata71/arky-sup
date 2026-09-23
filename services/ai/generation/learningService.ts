@@ -10,6 +10,8 @@
  * vertical of the strangler migration and now sits in `./learning`. The façade
  * did not change shape when that happened, which is the point of having one —
  * every call site kept working while 451 lines moved out of a 6.700-line file.
+ * `evaluateChallenge` was the last member served by the engine; it left in
+ * F5-01 (corte 2), and with it this façade's only import of the engine.
 
  * Delegation is lazy: each member is a getter, so importing this façade does
  * not bind the whole engine. Eager binding made reaching for one method
@@ -18,9 +20,6 @@
  */
 
 import * as learning from './learning';
-import type { ChallengeEvaluation } from './learning/learningTypes';
-import type { Settings } from '../../../types';
-import { geminiService } from '../../geminiService';
 
 export const learningService = {
   /** Tutor turn inside a lesson. */
@@ -63,20 +62,9 @@ export const learningService = {
   get evaluateDiagramChallenge() {
     return learning.evaluateDiagramChallenge;
   },
-  /**
-   * Evaluate a submitted generic challenge.
-   *
-   * Still served by the legacy engine, and the only member whose type is
-   * declared here rather than inherited: the engine's method returns
-   * `Promise<any>`, and letting that reach the caller would put the looseness
-   * in a screen instead of in the module that owns it.
-   */
-  get evaluateChallenge(): (
-    challenge: string,
-    responseText: string,
-    settings: Settings,
-  ) => Promise<ChallengeEvaluation> {
-    return geminiService.evaluateChallenge.bind(geminiService);
+  /** Evaluate a submitted open challenge. */
+  get evaluateChallenge() {
+    return learning.evaluateChallenge;
   },
 } as const;
 
