@@ -382,7 +382,12 @@ Reglas que no se negocian al trabajar aquí:
     compone el turno del agente con la persona que le entregan, y la Oficina
     decide quién responde (`chatWithProject`, `officePersonaForMessage`). Las
     pantallas los juntan en `hooks/useAssistantTurns`. Queda un importador:
-    artefactos, el grueso del motor (2 442 líneas tras el corte 8, desde unas
+    artefactos. Dentro de él ya salieron los nombres iniciales (corte 9), la
+    crítica y el refinamiento (10) y la revisión, las mejoras y los casos de
+    prueba (11, `generation/artifactReview.ts`, que declara su propio puerto
+    de sugerencia en vez de importar `services/review`); imagen, voz y SVG se
+    borraron porque nadie los llamaba. Quedan contenido, presentaciones y el
+    brief, el grueso del motor (2 145 líneas tras el corte 11, desde unas
     5 400); cuando salga, desaparecen la arista `services/ai -> services
     (raíz)` y el SCC de catorce. Los **tres** caminos del transporte intentan primero el proxy:
     el de texto (`generateTextWithFallback`) no lo hacía, y sin clave personal

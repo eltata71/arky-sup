@@ -1,12 +1,12 @@
 # Auditoría de deuda técnica — Arky 10 (`arkypro-1.0`)
 
 > **Estado actual de la deuda del motor (23 sep 2026):** F5-01 continúa por
-> cortes; en el corte 10, `services/geminiService.ts` baja a 2 330 líneas
+> cortes; en el corte 11, `services/geminiService.ts` baja a 2 145 líneas
 > según el gate y
 > `artifactGenerationService` sigue siendo su único importador dentro de
-> `services/ai`. El riesgo pendiente es mover contenido, revisión y mejoras
-> sin introducir ciclos con Oficina, grafos o calidad. Ver
-> [`f5-01-corte-10.md`](./ddd-transformacion/evidencias/f5-01-corte-10.md).
+> `services/ai`. El riesgo pendiente es mover contenido, presentaciones y el
+> contrato del brief sin introducir ciclos con Oficina, grafos o calidad. Ver
+> [`f5-01-corte-11.md`](./ddd-transformacion/evidencias/f5-01-corte-11.md).
 
 > **Revisión vigente (1 sep 2026):** el Top 10 de **monolito modular, DDD,
 > deuda técnica y CI/CD** — con el grafo de dependencias medido, las duraciones
