@@ -12,7 +12,7 @@ import { extractIRFromArtifact } from '../services/diagram';
 import { irToReactFlow } from '../services/diagram/irToReactFlow';
 import { buildArtifactQualityReport } from '../services/quality/artifactQualityService';
 import { buildArtifactExportabilityState } from '../services/quality/artifactQualityGateService';
-import { geminiService } from '../services/geminiService';
+import { artifactGenerationService } from '../services/ai/generation/artifactGenerationService';
 
 const settings: Settings = {
   globalContext: [],
@@ -147,8 +147,8 @@ describe('artifactRefinementOrchestrator — feature flags', () => {
 
   it('does not invoke Gemini when AI refinement is disabled', async () => {
     vi.stubEnv('VITE_ARTIFACT_REFINEMENT_AI_ENABLED', 'false');
-    const critiqueSpy = vi.spyOn(geminiService, 'critiqueArtifactContent');
-    const refineSpy = vi.spyOn(geminiService, 'refineArtifactContent');
+    const critiqueSpy = vi.spyOn(artifactGenerationService, 'critiqueArtifactContent');
+    const refineSpy = vi.spyOn(artifactGenerationService, 'refineArtifactContent');
     await refineArtifactBeforePersistence({ ...baseRequest(docTemplate, 'Texto breve.'), targetScore: 100 });
 
     expect(critiqueSpy).not.toHaveBeenCalled();
@@ -337,7 +337,7 @@ describe('artifactRefinementOrchestrator — fallback safety', () => {
 
   it('skips AI refinement when the artifact is a deterministic fallback', async () => {
     vi.stubEnv('VITE_ARTIFACT_REFINEMENT_AI_ENABLED', 'true');
-    const critiqueSpy = vi.spyOn(geminiService, 'critiqueArtifactContent');
+    const critiqueSpy = vi.spyOn(artifactGenerationService, 'critiqueArtifactContent');
     const skeleton = `flowchart LR\n${SKELETON_FALLBACK_MARKER}\n  A["Usuario"] --> B["Portal"]\n`;
     const result = await refineArtifactBeforePersistence({ ...baseRequest(diagramTemplate, skeleton), targetScore: 100 });
 
@@ -349,7 +349,7 @@ describe('artifactRefinementOrchestrator — fallback safety', () => {
 describe('artifactRefinementOrchestrator — AI refinement', () => {
   it('keeps generation non-blocking when AI refinement fails', async () => {
     vi.stubEnv('VITE_ARTIFACT_REFINEMENT_AI_ENABLED', 'true');
-    vi.spyOn(geminiService, 'critiqueArtifactContent').mockRejectedValue(new Error('quota exhausted'));
+    vi.spyOn(artifactGenerationService, 'critiqueArtifactContent').mockRejectedValue(new Error('quota exhausted'));
     const result = await refineArtifactBeforePersistence({ ...baseRequest(docTemplate, wellStructuredDoc), targetScore: 100, maxPasses: 3 });
 
     expect(result.content.trim().length).toBeGreaterThan(0);
@@ -359,8 +359,8 @@ describe('artifactRefinementOrchestrator — AI refinement', () => {
 
   it('rejects an empty AI candidate and stays safe', async () => {
     vi.stubEnv('VITE_ARTIFACT_REFINEMENT_AI_ENABLED', 'true');
-    vi.spyOn(geminiService, 'critiqueArtifactContent').mockResolvedValue('1. Reforzar métricas.');
-    vi.spyOn(geminiService, 'refineArtifactContent').mockResolvedValue('   ');
+    vi.spyOn(artifactGenerationService, 'critiqueArtifactContent').mockResolvedValue('1. Reforzar métricas.');
+    vi.spyOn(artifactGenerationService, 'refineArtifactContent').mockResolvedValue('   ');
     const result = await refineArtifactBeforePersistence({ ...baseRequest(docTemplate, wellStructuredDoc), targetScore: 100, maxPasses: 3 });
 
     expect(result.usedAI).toBe(true);
@@ -370,8 +370,8 @@ describe('artifactRefinementOrchestrator — AI refinement', () => {
 
   it('accepts an AI candidate only when it passes the safety gate', async () => {
     vi.stubEnv('VITE_ARTIFACT_REFINEMENT_AI_ENABLED', 'true');
-    vi.spyOn(geminiService, 'critiqueArtifactContent').mockResolvedValue('1. Añadir métricas medibles.');
-    vi.spyOn(geminiService, 'refineArtifactContent').mockImplementation(async (req) =>
+    vi.spyOn(artifactGenerationService, 'critiqueArtifactContent').mockResolvedValue('1. Añadir métricas medibles.');
+    vi.spyOn(artifactGenerationService, 'refineArtifactContent').mockImplementation(async (req) =>
       `${req.content}\n\n## Métricas de éxito\nIndicadores claros, medibles y trazables del avance del portal de seguros.`);
     const result = await refineArtifactBeforePersistence({ ...baseRequest(docTemplate, wellStructuredDoc), targetScore: 100, maxPasses: 3 });
 
