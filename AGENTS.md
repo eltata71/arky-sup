@@ -276,6 +276,12 @@ Reglas que no se negocian al trabajar aquí:
    llevan chunks separados, y los servicios de dominio sólo importan tipos de
    ReactFlow. `check:bundle-budget` prohíbe que `vendor-reactflow` vuelva al
    arranque. El gate es lo que distingue un caso del otro, no el criterio.
+   **Vale también para `import()`** (F5-01 corte 8): cargar en diferido el
+   barril de la Oficina desde `OfficeContext` subía la carga inicial de 309,6
+   a 310,7 KB gz, porque un `import()` de barril fija todas las exportaciones
+   de los módulos que la entrada ya comparte con él. Se carga por fichero, y
+   el import profundo queda registrado con su razón (ver la tabla del barril
+   en `CLAUDE.md`).
 16. **`context/AppContext.tsx` es composición y nada más.** Un `useState`, un
    `useEffect` o una importación de `services/` en ese archivo es un hallazgo:
    cada concern vive en un hook bajo `context/app/`, y `projects` tiene un solo
@@ -376,7 +382,9 @@ Reglas que no se negocian al trabajar aquí:
     compone el turno del agente con la persona que le entregan, y la Oficina
     decide quién responde (`chatWithProject`, `officePersonaForMessage`). Las
     pantallas los juntan en `hooks/useAssistantTurns`. Queda un importador:
-    artefactos. Los **tres** caminos del transporte intentan primero el proxy:
+    artefactos, el grueso del motor (2 442 líneas tras el corte 8, desde unas
+    5 400); cuando salga, desaparecen la arista `services/ai -> services
+    (raíz)` y el SCC de catorce. Los **tres** caminos del transporte intentan primero el proxy:
     el de texto (`generateTextWithFallback`) no lo hacía, y sin clave personal
     la generación de diagramas y de artefactos no llegaba a un modelo en
     producción. Un camino nuevo hacia un proveedor que no pase antes por el
