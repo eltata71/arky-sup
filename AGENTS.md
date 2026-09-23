@@ -366,7 +366,9 @@ Reglas que no se negocian al trabajar aquí:
     de construir su propio cliente del SDK y entra por `aiGateway` —proxy,
     guardarraíl y enrutado incluidos—, y lo que el motor y la vertical siguen
     compartiendo baja a una hoja (`emitGenerationPhase` →
-    `lib/artifacts/generationPhase.ts`) en vez de quedarse en el motor.
+    `lib/artifacts/generationPhase.ts`) en vez de quedarse en el motor. El
+    corte 5 sacó la vertical de documentos (`generation/documents/`); quedan
+    tres importadores: diagramas, asistente y artefactos.
 25. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;

@@ -43,7 +43,6 @@ const REMAINING_ENGINE_IMPORTERS = [
   'services/ai/generation/artifactGenerationService.ts',
   'services/ai/generation/assistantService.ts',
   'services/ai/generation/diagramGenerationService.ts',
-  'services/ai/generation/documentGenerationService.ts',
 ];
 
 describe('importadores del motor dentro de services/ai', () => {

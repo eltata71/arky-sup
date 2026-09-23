@@ -634,11 +634,20 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   junto a su evento: dejarlo en `services/ai` era un import profundo nuevo desde
   el motor. Se declara la arista `services/ai -> constants.ts` (el catálogo de
   plantillas), que no cierra ningún ciclo: `constants.ts` sólo importa `types.ts`.
-- **Lo que queda.** Cuatro verticales de prompts de dominio: artefactos,
-  diagramas, documentos y asistente; sugerencias y recomendaciones ya salieron. Dos métodos
-  con la persona del tutor del LMS siguen en el motor detrás de fachadas que no
-  son del LMS —`synthesizeSmartNote` (documentos) y `consultArchitecture`
-  (asistente)— y saldrán con su vertical. La arista no desaparece hasta el
+- **Corte 5 — la vertical de documentos (2026-09-23).**
+  `convertDiagramToDocument`, `synthesizeSmartNote`, `generateSDDProcessPlan`,
+  `generateSDDHealthReport` y `extractMemoryEntriesFromDocument` salen a
+  `services/ai/generation/documents/` (tres ficheros por lo que hacen: SDD,
+  conversiones y extracción de memoria) y entran por `aiGateway`, con los
+  mismos prompts, temperaturas y reintentos. `documentGenerationService` deja
+  de importar el motor: **4 → 3**; el motor pierde 243 líneas (3 904 → 3 661).
+  Ninguno de los cinco tenía prueba propia: `documentsVertical.test.ts` fija
+  temperatura, prompt y —para la extracción— qué sobrevive de la respuesta.
+  Corrección: `synthesizeSmartNote` no usaba la persona del tutor del LMS; sólo
+  `consultArchitecture` la usa.
+- **Lo que queda.** Tres verticales de prompts de dominio: diagramas, asistente
+  y artefactos. `consultArchitecture` (asistente) sigue usando la persona del
+  tutor del LMS detrás de una fachada que no es del LMS, y saldrá con su vertical. La arista no desaparece hasta el
   último importador; el SCC tampoco.
 
 ### F5-02 · Políticas de negocio a su contexto propietario

@@ -3292,15 +3292,6 @@ Review architecture and provide feedback. If the user asks specific information 
         return result.text;
     }
 
-    public async convertDiagramToDocument(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
-        const prompt = `${this.buildBasePrompt(project, settings)}\nConvert this diagram to a detailed Markdown document:\n${artifact.content}`;
-        const modelName = resolveModelForSettings('default', settings).id;
-        const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-            temperature: settings.aiConfig?.temperature ?? 0.7
-        });
-        return text;
-    }
-
     public async generateImageForArtifact(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
         // Image generation is a Gemini capability, not a universal one. Checking
         // first turns "the button failed with an SDK error" into a stated limit
@@ -3617,23 +3608,6 @@ INSTRUCTIONS:
 
 
 
-    public async synthesizeSmartNote(content: string, settings: Settings): Promise<string> {
-        const prompt = `
-        Synthesize the following content into an ultra-short mnemonic format (max 150 words).
-        Use bullet points, golden rules, and bold text for key concepts.
-        
-        Content:
-        ${content}
-        `;
-
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-            temperature: 0.3
-        });
-        return text;
-    }
-
     /**
      * Practical lab (#3): generates a diagram-design challenge for a lesson.
      * The student must respond with a Mermaid diagram, which is then evaluated
@@ -3654,152 +3628,6 @@ INSTRUCTIONS:
     // ─────────────────────────────────────────────────────────────────────────
     // SDD — Specification-Driven Development Functions
     // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Generates a full SDD process plan tailored to the project context.
-     * Returns a structured Markdown document describing all 5 SDD phases
-     * with artifact recommendations, priorities, and sequencing.
-     */
-    public async generateSDDProcessPlan(project: Project, settings: Settings): Promise<string> {
-        const basePrompt = this.buildBasePrompt(project, settings);
-        const artifactsContext = this.buildArtifactsContext(project);
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const prompt = `
-${basePrompt}
-${artifactsContext}
-
-You are a senior SDD (Specification-Driven Development) architect. Generate a tailored SDD process plan for this project.
-
-The plan must cover all 5 SDD phases with specific recommendations based on the project domain, existing artifacts, and gaps.
-
-Output a comprehensive Markdown document with this structure:
-
-# Plan SDD — ${project.name}
-
-## Executive Summary
-[2-3 sentences on why SDD is critical for this project and what the plan achieves]
-
-## SDD Maturity Assessment
-[Assess current state: what specifications exist, what is missing, overall SDD readiness score 0-100]
-
-## Phase 1: Requirements Specification
-### Status: [Complete/Partial/Missing]
-### Required Artifacts:
-- BRD (Business Requirements Document) — [status and priority]
-- Use Case Specifications — [status and priority]
-- User Story Map — [status and priority]
-### Recommended Next Steps:
-[Specific actions for this project]
-
-## Phase 2: Architecture Specification
-### Status: [Complete/Partial/Missing]
-### Required Artifacts:
-- Domain Model DDD — [status and priority]
-- Event Storming — [status and priority]
-- Ubiquitous Language Glossary — [status and priority]
-- Architecture Decision Records (ADR) — [status and priority]
-### Recommended Next Steps:
-
-## Phase 3: Component Specification
-### Status: [Complete/Partial/Missing]
-### Required Artifacts:
-- OpenAPI Contract — [status and priority]
-- Component Specifications — [status and priority]
-- Database Schema — [status and priority]
-### Recommended Next Steps:
-
-## Phase 4: Quality Specification
-### Status: [Complete/Partial/Missing]
-### Required Artifacts:
-- NFR Specification (ISO 25010) — [status and priority]
-- BDD Scenarios (Gherkin) — [status and priority]
-- Test Plan — [status and priority]
-### Recommended Next Steps:
-
-## Phase 5: Deployment Specification
-### Status: [Complete/Partial/Missing]
-### Required Artifacts:
-- Infrastructure Specification — [status and priority]
-- CI/CD Pipeline — [status and priority]
-### Recommended Next Steps:
-
-## Traceability Overview
-- Requirements Traceability Matrix status
-- Coverage gaps identified
-
-## Recommended Generation Order
-[Numbered list of which artifacts to generate first, with rationale based on dependencies]
-
-## SDD Compliance Checklist
-[Checkbox list of all SDD requirements for this project]
-
-Be specific to the project domain. Reference existing artifacts by name where applicable.
-`;
-
-        const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-            temperature: 0.5
-        });
-        return text;
-    }
-
-    /**
-     * Analyzes a set of SDD artifacts to assess their completeness and
-     * cross-artifact consistency from a specification perspective.
-     * Returns an SDD health report in Markdown.
-     */
-    public async generateSDDHealthReport(project: Project, settings: Settings): Promise<string> {
-        const basePrompt = this.buildBasePrompt(project, settings);
-        const artifactsContext = this.buildArtifactsContext(project);
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const sddArtifacts = project.artifacts.filter(a => a.type.startsWith('sdd-'));
-        const sddArtifactNames = sddArtifacts.map(a => a.name).join(', ') || 'None yet';
-
-        const prompt = `
-${basePrompt}
-${artifactsContext}
-
-You are an SDD Quality Auditor. Analyze the project's SDD artifacts and produce a health report.
-
-Current SDD artifacts: ${sddArtifactNames}
-
-Generate a Markdown health report:
-
-# SDD Health Report — ${project.name}
-
-## Overall SDD Score: [X/100]
-
-## Completeness Analysis
-| SDD Phase | Required Artifacts | Present | Missing | Score |
-|-----------|-------------------|---------|---------|-------|
-| Phase 1: Requirements | BRD, Use Cases, User Stories | X | X | X% |
-| Phase 2: Architecture | Domain Model, Event Storming, Glossary | X | X | X% |
-| Phase 3: Components | API Spec, DB Schema, Component Specs | X | X | X% |
-| Phase 4: Quality | NFR, BDD Scenarios, Test Plan | X | X | X% |
-| Phase 5: Deployment | Infra Spec, CI/CD | X | X | X% |
-
-## Cross-Artifact Consistency
-[Identify any conflicts, gaps, or inconsistencies between existing specifications]
-
-## Traceability Coverage
-[Assess how well requirements are traced through to architecture and tests]
-
-## Critical Missing Specifications
-[List top 3 most critical missing specs with business impact explanation]
-
-## Recommended Immediate Actions
-[3-5 concrete next steps prioritized by impact]
-
-## SDD Compliance Status
-[Pass/Fail for each SDD principle]
-`;
-
-        const { text } = await this.generateContentWithFallback(settings, modelName, prompt, {
-            temperature: 0.4
-        });
-        return text;
-    }
 
     public async consultArchitecture(challenge: string, settings: Settings): Promise<string> {
         const prompt = `
@@ -3827,77 +3655,6 @@ Generate a Markdown health report:
         return text;
     }
 
-    /**
-     * Extrae apuntes/notas relevantes desde un documento subido por el usuario
-     * para alimentar al Centro de Memoria. Devuelve una lista corta y depurada
-     * de bullets listos para añadirse como entradas de memoria en el ámbito
-     * solicitado (global, proyecto, agente, captura inicial, artefacto).
-     */
-    public async extractMemoryEntriesFromDocument(
-        file: { name: string; type: string; base64Data: string },
-        scope: 'global' | 'project' | 'agent' | 'initial-capture' | 'artifact',
-        contextHint: string,
-        settings: Settings,
-    ): Promise<string[]> {
-        const scopeGuidance: Record<typeof scope, string> = {
-            'global': 'estándares corporativos, tecnologías preferidas, principios técnicos aplicables a TODOS los proyectos',
-            'project': 'requisitos, restricciones, decisiones y supuestos específicos del proyecto actual',
-            'agent': 'preferencias del usuario, lecciones aprendidas y reglas que el agente debe recordar para este proyecto',
-            'initial-capture': 'información inicial relevante capturada al crear el proyecto: objetivos, alcance, stakeholders, riesgos iniciales',
-            'artifact': 'notas, requisitos o restricciones específicas para el artefacto indicado',
-        };
-
-        const prompt = `Eres un analista experto en arquitectura de software para una compañía de seguros de Vida y Salud.
-Analiza el documento adjunto y extrae únicamente los apuntes, hechos, decisiones y notas RELEVANTES para alimentar la memoria del agente en el ámbito: "${scope}".
-
-Foco del ámbito: ${scopeGuidance[scope]}.
-
-Contexto adicional del usuario:
-${contextHint || '(sin contexto adicional)'}
-
-Reglas estrictas:
-- NO copies texto literal del documento. Interpreta, resume y reescribe cada apunte en una sola línea clara.
-- Cada entrada debe ser autocontenida, accionable o informativa, NO ambigua, máximo 220 caracteres.
-- Evita redundancias; agrupa ideas equivalentes.
-- Descarta marketing, introducciones, índices, tablas de contenidos y agradecimientos.
-- Si el documento no aporta nada relevante para el ámbito, devuelve un array vacío.
-- Devuelve EXCLUSIVAMENTE JSON válido con la forma: {"entries": ["..."]}. Sin texto adicional, sin markdown.`;
-
-        const modelName = resolveModelForSettings('default', settings).id;
-
-        const result = await this.generateContentWithFallback(
-            settings,
-            modelName,
-            [
-                {
-                    role: 'user',
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType: file.type || 'application/octet-stream', data: file.base64Data } },
-                    ],
-                },
-            ],
-            {
-                temperature: 0.3,
-                responseMimeType: 'application/json',
-            },
-            { maxRetries: 1 },
-        );
-
-        const cleaned = this.cleanJsonString(result.text || '{"entries":[]}');
-        try {
-            const parsed = JSON.parse(cleaned) as { entries?: unknown };
-            const raw = Array.isArray(parsed.entries) ? parsed.entries : [];
-            return raw
-                .filter((item): item is string => typeof item === 'string')
-                .map(item => item.trim())
-                .filter(item => item.length > 0 && item.length <= 400)
-                .slice(0, 50);
-        } catch (error) {
-            console.error('extractMemoryEntriesFromDocument: failed to parse JSON', error);
-            return [];
-        }
-    }
 }
 
 export const geminiService = new GeminiService();
