@@ -6,7 +6,20 @@
  * "unknown" errors, recommendation timing out unnecessarily, etc.
  */
 import { describe, it, expect, vi } from 'vitest';
+
+// The engine calls the diagram vertical's self-healing as a module function
+// since F5-01 corte 6, so it is doubled at the module, passing through to the
+// real one unless a test overrides it.
+vi.mock('../../services/ai/generation/diagram', async (importOriginal) => {
+    const original = await importOriginal<typeof import('../../services/ai/generation/diagram')>();
+    return {
+        ...original,
+        generateDiagramIRWithSelfHealing: vi.fn(original.generateDiagramIRWithSelfHealing),
+    };
+});
+
 import { __test__ } from '../../services/geminiService';
+import { generateDiagramIRWithSelfHealing } from '../../services/ai/generation/diagram';
 import { buildHeuristicCustomArtifactRecommendation } from '../../services/ai/generation/recommendation/customArtifactHeuristics';
 import {
     buildDeterministicDiagramSkeleton,
@@ -80,16 +93,7 @@ describe('Renderability guarantees — deterministic skeleton', () => {
 
     it('C4 self-healing skeleton fallback returns renderable content instead of throwing', async () => {
         const { geminiService } = await import('../../services/geminiService');
-        const service = geminiService as unknown as {
-            generateDiagramIRWithSelfHealing: (...args: unknown[]) => Promise<{
-                ir: DiagramIR;
-                attempts: number;
-                fallback: 'none' | 'skeleton';
-                warnings: string[];
-                lastReason?: 'skeleton-fallback';
-            }>;
-            generateArtifactContent: typeof geminiService.generateArtifactContent;
-        };
+        const service = geminiService;
         const fallbackIR: DiagramIR = {
             nodes: [
                 { id: 'user', label: 'Usuario', kind: 'Person' },
@@ -99,7 +103,7 @@ describe('Renderability guarantees — deterministic skeleton', () => {
             groups: [],
             metadata: { fallback: 'skeleton', degradationReason: 'forced test fallback' },
         };
-        const spy = vi.spyOn(service, 'generateDiagramIRWithSelfHealing').mockResolvedValue({
+        const spy = vi.mocked(generateDiagramIRWithSelfHealing).mockResolvedValueOnce({
             ir: fallbackIR,
             attempts: 3,
             fallback: 'skeleton',
@@ -132,8 +136,9 @@ describe('Renderability guarantees — deterministic skeleton', () => {
             expect(isSkeletonFallbackContent(result)).toBe(true);
             expect(mermaidToIR(result).nodes.length).toBeGreaterThanOrEqual(2);
             expect(events.some(event => event.stage === 'ai-generation' && event.status === 'warning')).toBe(true);
+            expect(spy).toHaveBeenCalledTimes(1);
         } finally {
-            spy.mockRestore();
+            spy.mockClear();
         }
     });
 

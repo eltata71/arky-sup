@@ -8,7 +8,13 @@
 
 ## Punto de reanudación
 
-- **Última tarea completada:** **F5-01, corte 5** — la vertical de documentos
+- **Última tarea completada:** **F5-01, corte 6** — la vertical de diagramas
+  (generación de IR, autorreparación, crítica y refinado, conversiones a
+  ReactFlow y Excalidraw, reparación de render) sale del motor a
+  `generation/diagram/`; importadores del motor 3 → 2; el motor baja a 2 809
+  líneas. **Encontró un defecto de producción** que no arregla: el camino de
+  texto del transporte no pasa por el proxy (ver evidencia). Evidencia en
+  `evidencias/f5-01-corte-6.md`. Antes: **F5-01, corte 5** (#60) — la vertical de documentos
   (diagrama a documento, nota inteligente, plan y salud SDD, extracción de
   memoria) sale del motor a `generation/documents/` y entra por `aiGateway`;
   importadores del motor 4 → 3; el motor baja a 3 661 líneas. Evidencia en
@@ -36,11 +42,12 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** fase 5 — **F5-01**, corte 6: la vertical de
-  diagramas (`diagramGenerationService`, seis métodos). Quedan tres
-  importadores del motor en `services/ai`: diagramas, asistente (incluye
-  `consultArchitecture`, con la persona del tutor del LMS) y artefactos, en
-  ese orden de tamaño. Las seis pantallas que
+- **Siguiente paso exacto:** **arreglar el camino de texto del transporte**
+  (`generateTextWithFallback` debe intentar el proxy como ya hace
+  `generateContentWithFallback`): sin eso, en producción la generación de
+  diagramas y de artefactos no llega a un modelo. Después, F5-01 corte 7: la
+  vertical del asistente (incluye `consultArchitecture`, con la persona del
+  tutor del LMS); el último importador será artefactos. Las seis pantallas que
   siguen sobre el fan-out son de **F5-02**.
 - **Esquema de producción al día (2026-09-23).** Con la aprobación del
   propietario se aplicaron a `ArkyDB-US` las dos migraciones que faltaban —
@@ -142,7 +149,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–5 hechos | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. |
+| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–6 hechos | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. |
 | **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible

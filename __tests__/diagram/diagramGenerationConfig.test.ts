@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { __test__ } from '../../services/geminiService';
+import { buildDiagramGenerationConfig, THINKING_BUDGET } from '../../services/ai/generation/diagram';
 import { DIAGRAM_SYSTEM_INSTRUCTION } from '../../services/ai/prompts/diagramPrompts';
-
-const { buildDiagramGenerationConfig, THINKING_BUDGET } = __test__;
 
 describe('buildDiagramGenerationConfig', () => {
     it('attaches the canonical system instruction unchanged when no extras are given', () => {

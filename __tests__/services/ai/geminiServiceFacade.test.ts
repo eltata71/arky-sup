@@ -24,6 +24,7 @@ vi.mock('../../../services/ai/providers/gemini/geminiClient', () => ({
 }));
 
 import { geminiService, AIServiceError } from '../../../services/geminiService';
+import { generateDiagramIR } from '../../../services/ai/generation/diagram';
 import type { Settings } from '../../../types';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../../services/architectureProjects';
@@ -248,9 +249,9 @@ describe('geminiService façade — OpenRouter dispatch', () => {
       updatedAt: '2026-08-03T00:00:00.000Z',
     } as Project;
 
-    // generateTextWithFallback is private; generateDiagramIR is a public
-    // façade that routes through it.
-    const result = await geminiService.generateDiagramIR(artifact, project, openRouterSettings);
+    // generateDiagramIR (out of the engine since F5-01 corte 6) routes
+    // through the shared transport's generateTextWithFallback.
+    const result = await generateDiagramIR(artifact, project, openRouterSettings);
 
     // The IR must originate from the OpenRouter mock — the Gemini client mock
     // must never have been touched.

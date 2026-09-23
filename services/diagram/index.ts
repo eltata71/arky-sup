@@ -356,6 +356,11 @@ export {
   toDiagramIR,
 } from './quality/diagramQualityService';
 export type { DiagramPreflightReport, DiagramQualityReport } from './quality/diagramQualityService';
+// The architectural guardrails and the quality gate, for the diagram
+// generation vertical in `services/ai` (F5-01, corte 6), which used to reach
+// them by file path from inside the engine.
+export { detectArchitecturalViolations } from './guardrails';
+export { runDiagramQualityGate } from './qualityGate';
 
 /**
  * Deterministic signal extraction over a project's artifacts.

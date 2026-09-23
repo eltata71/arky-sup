@@ -1018,12 +1018,14 @@ four façades that only send their own prompt — assisted capture, the platform
 guide, the initiative assistant and diagram edit — reach the transport without
 loading the engine, which took five files off the edge
 `services/ai -> services (raíz)` that closes the nine-context component.
-`__tests__/services/ai/engineImporters.test.ts` lists the three that still
+`__tests__/services/ai/engineImporters.test.ts` lists the two that still
 import the engine (`learningService` left in the second cut, with
 `evaluateChallenge`; `artifactSuggestionService` left in the third cut;
 `recommendationService` left whole in the fourth, into
 `services/ai/generation/recommendation/`; `documentGenerationService` in the
-fifth, into `services/ai/generation/documents/`); the list may only shrink, and each one leaves the way the LMS
+fifth, into `services/ai/generation/documents/`; `diagramGenerationService` in
+the sixth, into `services/ai/generation/diagram/`, taking the diagram config
+builder and thinking budgets the engine's artifact generation still reads); the list may only shrink, and each one leaves the way the LMS
 did — as a vertical, its upward dependency cut first.
 
 **A vertical that leaves stops calling the SDK itself.** The custom-artifact
@@ -1035,6 +1037,14 @@ guardrail and provider routing too. Out of the engine it goes through
 sides still need does not stay in the engine and does not go deep into
 `services/ai` either: `emitGenerationPhase` moved down beside its event type,
 to `lib/artifacts/generationPhase.ts`.
+
+**Open defect found by the sixth cut, not fixed by it:** the text path of the
+transport (`generateTextWithFallback`) never tries the proxy. With the operator
+key server-side, it throws «No se encontró una API Key personal» for every user
+without a personal key — so in production diagram IR generation always ends in
+the deterministic skeleton, and the engine's artifact generation hits the same
+wall. The cut kept the behaviour on purpose; the fix is its own change
+(`docs/ddd-transformacion/evidencias/f5-01-corte-6.md`).
 
 
 **The LMS no longer lives here.** The Training Center's ten generation methods

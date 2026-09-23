@@ -367,8 +367,12 @@ Reglas que no se negocian al trabajar aquí:
     guardarraíl y enrutado incluidos—, y lo que el motor y la vertical siguen
     compartiendo baja a una hoja (`emitGenerationPhase` →
     `lib/artifacts/generationPhase.ts`) en vez de quedarse en el motor. El
-    corte 5 sacó la vertical de documentos (`generation/documents/`); quedan
-    tres importadores: diagramas, asistente y artefactos.
+    corte 5 sacó la vertical de documentos (`generation/documents/`) y el 6 la
+    de diagramas (`generation/diagram/`); quedan dos importadores: asistente y
+    artefactos. **Defecto abierto** que encontró el corte 6: el camino de texto
+    del transporte (`generateTextWithFallback`) no pasa por el proxy, así que
+    sin clave personal la generación de diagramas y de artefactos no llega a un
+    modelo en producción. Ver `CLAUDE.md` y la evidencia del corte.
 25. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
