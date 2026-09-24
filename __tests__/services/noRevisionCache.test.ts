@@ -13,15 +13,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Los dos que quedan, con nombre y fase. Cada uno tiene **una sola** instancia
- * memorizada —lectura y escritura comparten el mapa—, así que no son el defecto
- * vivo del grafo; sí son la forma que esta regla prohíbe, y se van en F6-03
- * («aplicar el patrón al resto de contextos»). La lista sólo encoge.
+ * Vacía desde F6-03: `settings` y `learning` tenían cada uno un mapa por
+ * instancia, registrado aquí al ampliar la búsqueda en F5-05. La revisión viaja
+ * ahora en `Settings.revision` y `Course.revision`.
  */
-const KNOWN_PER_INSTANCE_MAPS = [
-  join('services', 'learning', 'SupabaseLearningRepository.ts'),
-  join('services', 'settings', 'SupabaseSettingsRepository.ts'),
-];
+const KNOWN_PER_INSTANCE_MAPS: string[] = [];
 
 const serviceFiles = readdirSync('services', { recursive: true, encoding: 'utf8' })
   .filter((name) => name.endsWith('.ts') && !name.includes('__tests__'))

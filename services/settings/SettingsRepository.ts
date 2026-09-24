@@ -37,6 +37,16 @@ const cache = new MemoryCache();
 const cacheKey = (userId?: string): string => `settings_${userId || 'global'}`;
 const draftKeyFor = (userId?: string): string => (userId ? `${SETTINGS_COLLECTION}_${userId}` : SETTINGS_COLLECTION);
 
+/**
+ * La revisión que la base confirmó en una escritura, para que quien guarda la
+ * devuelva a su estado (F6-03). `undefined` si la escritura no la trae: un
+ * borrador local, o un fallo.
+ */
+export const confirmedSettingsRevision = (result: PersistenceResult<unknown>): number | undefined => {
+  const revision = (result.data as { revision?: unknown } | undefined)?.revision;
+  return typeof revision === 'number' ? revision : undefined;
+};
+
 export interface SettingsRepository {
   load(userId?: string): Promise<Settings | null>;
   save(settings: Settings, userId?: string): Promise<PersistenceResult<unknown>>;
@@ -96,7 +106,9 @@ export const settingsRepository: SettingsRepository = {
       // repositorio recibe siempre un sobre, nunca una excepción.
       result = createFailureResult('saveUserSettings', error);
     }
-    if (isWriteConfirmed(result)) cache.set(cacheKey(userId), settings);
+    if (isWriteConfirmed(result)) {
+      cache.set(cacheKey(userId), { ...settings, revision: confirmedSettingsRevision(result) ?? settings.revision });
+    }
     else if (result.status === 'offline') writeLocalDraft(draftKeyFor(userId), settings);
     return result;
   },

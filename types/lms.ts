@@ -17,6 +17,8 @@ export interface CourseModule {
 
 export interface Course {
   id: string;
+  /** Stored row revision (F6-03): travels with the course, never in a map nor in the document. */
+  revision?: number;
   title: string;
   description: string;
   icon: string;

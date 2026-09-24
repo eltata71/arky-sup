@@ -10,7 +10,7 @@
  * con la jerarquía de iniciativas y proyectos, y con su propia regla en
  * `firestore.rules`.
  */
-export { settingsRepository, type SettingsRepository } from './SettingsRepository';
+export { confirmedSettingsRevision, settingsRepository, type SettingsRepository } from './SettingsRepository';
 export {
   createSupabaseSettingsRepository,
   sanitizeSettingsForRemote,

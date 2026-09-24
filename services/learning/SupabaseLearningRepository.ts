@@ -117,12 +117,13 @@ export function sanitizeLearningForRemote<T>(value: T): T {
  * Firebase write or a successful result.
  */
 export function createSupabaseLearningRepository(client: SupabaseLearningClientLike): SupabaseLearningRepository {
-  const revisions = new Map<string, number>();
-
+  // La revisión viaja en `Course.revision` (F6-03): hasta aquí vivía en un
+  // `Map` de la instancia, la forma que H10 prohíbe y que en el grafo de
+  // conocimiento rechazaba en silencio toda escritura tras recargar.
   const saveCourse = async (
     course: Course,
     userId: string,
-    expectedRevision = revisions.get(course.id) ?? 0,
+    expectedRevision = course.revision ?? 0,
   ): Promise<PersistenceResult<Course>> => {
     const operationId = createOperationId('saveLearningCourse');
     if (course.userId !== undefined && course.userId !== userId) {
@@ -134,7 +135,8 @@ export function createSupabaseLearningRepository(client: SupabaseLearningClientL
         message: 'El curso no pertenece a la sesión que intenta guardarlo.',
       };
     }
-    const payload = sanitizeLearningForRemote({ ...course, userId });
+    const { revision: _revision, ...document } = course;
+    const payload = sanitizeLearningForRemote({ ...document, userId });
     const { data, error } = await client.rpc('save_course', {
       p_course: payload,
       p_expected_revision: expectedRevision,
@@ -148,8 +150,7 @@ export function createSupabaseLearningRepository(client: SupabaseLearningClientL
         message: 'Supabase confirmó una respuesta de curso inválida.',
       };
     }
-    revisions.set(saved.id, record.revision);
-    return { status: 'success', success: true, operationId, target: 'supabase', data: saved };
+    return { status: 'success', success: true, operationId, target: 'supabase', data: { ...saved, revision: record.revision } };
   };
 
   return {
@@ -162,8 +163,7 @@ export function createSupabaseLearningRepository(client: SupabaseLearningClientL
         const record = asRemoteRecord(row);
         const item = record ? asCourse(record.data, userId) : null;
         if (!record || !item) throw new Error('La respuesta remota de cursos contiene una fila inválida.');
-        revisions.set(item.id, record.revision);
-        courses.push(item);
+        courses.push({ ...item, revision: record.revision });
       }
       return courses;
     },
@@ -180,14 +180,13 @@ export function createSupabaseLearningRepository(client: SupabaseLearningClientL
           message: 'El curso que se intenta actualizar no existe en la sesión actual.',
         };
       }
-      return saveCourse({ ...existing, ...updates, id: courseId, userId }, userId, revisions.get(courseId) ?? 0);
+      return saveCourse({ ...existing, ...updates, id: courseId, userId }, userId, existing.revision ?? 0);
     },
 
     async deleteCourse(courseId, _userId) {
       const operationId = createOperationId('deleteLearningCourse');
       const { error } = await client.rpc('delete_course', { p_course_id: courseId });
       if (error) return failed<void>(operationId, error, 'No se pudo confirmar el borrado del curso en Supabase.');
-      revisions.delete(courseId);
       return { status: 'success', success: true, operationId, target: 'supabase' };
     },
 

@@ -180,6 +180,8 @@ export interface MemoryEntry {
 }
 
 export interface Settings {
+  /** Stored row revision (F6-03): travels with the settings, never in a map nor in the document. */
+  revision?: number;
   globalContext: string[];
   /** Metadatos estructurados (fecha, autor, prioridad) de `globalContext`. */
   globalContextEntries?: MemoryEntry[];

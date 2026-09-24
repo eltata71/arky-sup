@@ -724,14 +724,14 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 
 ### F6-01 · Retirar rutas antiguas y adaptadores sin consumidor · P1 · M · `pendiente`
 ### F6-02 · Dependencias no autorizadas entre contextos a cero · P0 · L · `hecha` (imports profundos 44 → 29; `evidencias/f6-02.md`)
-### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `pendiente`
+### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `en curso` (corte 1: revisiones de `settings` y `learning`)
 ### F6-04 · Pruebas integrales de los flujos críticos · P0 · L · `pendiente`
 ### F6-05 · Verificar rendimiento, descarga, concurrencia y recuperación · P0 · M · `pendiente`
 ### F6-06 · Documentación, ADR, instrucciones y runbooks · P1 · M · `pendiente`
 ### F6-07 · Comparación final contra la línea base · P0 · S · `pendiente`
 ### F6-08 · Deuda residual con responsable y justificación · P1 · S · `pendiente`
 ### F6-09 · Informe técnico y gerencial de cierre · P1 · M · `pendiente`
-### F6-10 · El despliegue comprueba el esquema de producción · P0 · M · `pendiente de decisión`
+### F6-10 · El despliegue comprueba el esquema de producción · P0 · M · `pospuesta` (decisión del propietario, 2026-09-25)
 - **Origen.** Fases 4 y 5: el CI publica la aplicación y no el esquema; tres
   migraciones dependieron de que alguien se acordara de aplicarlas, y una rompió
   producción (F4-06).
