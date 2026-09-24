@@ -69,6 +69,8 @@
     "lib/conversationDigest.ts",
     "services/chat/compactionDigest.ts",
     "services/ai/generation/chatCompaction.ts",
+    // F5-05: la recuperación de la proyección del grafo, pura por puertos.
+    "services/architectureProjects/graphProjectionRecovery.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",

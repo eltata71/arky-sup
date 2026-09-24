@@ -884,7 +884,8 @@ manipulado no gane nada: no hay superficie que atacar.
 | `api.artifact_review_decisions` | `list_artifact_review_decisions`, `record_artifact_review_decision` | Rastro **inmutable**: `on conflict do nothing`, nunca se reescribe |
 | `api.office_engagements` + `api.office_arb_decisions` | `load_engagements`, `save_engagement`, `delete_engagement`, `record_arb_decision` | Encargos de Oficina y decisiones del ARB |
 | `api.business_initiatives` | `list_business_initiatives`, `save_business_initiative`, `delete_business_initiative` | Iniciativas: lo alto de la jerarquía |
-| `api.architecture_knowledge_graphs` | `load_knowledge_graph`, `save_knowledge_graph` | Grafo de conocimiento: **derivado**, en su tabla porque crece con los artefactos |
+| `api.architecture_knowledge_graphs` | `load_knowledge_graph`, `save_knowledge_graph` | Grafo de conocimiento: **derivado**, en su tabla porque crece con los artefactos. La revisión viaja en `ArchitectureGraph.revision` (F5-05), nunca en un mapa del repositorio |
+| `api.projection_outbox` | `list_pending_projections`, `save_graph_projection`, `fail_projection` | **F5-04.** El trabajo de proyección pendiente, escrito por un disparador **en la transacción del artefacto** — sólo si el proyecto ya tiene grafo. `save_graph_projection` guarda y marca la generación a la vez: una ya procesada o anterior no se escribe. Lo procesa `recoverGraphProjections` (F5-05) al arrancar y tras el periodo de espera |
 | `api.user_settings` | `save_user_settings` | Preferencias por usuario |
 | `api.user_profiles` | `load_own_profile`, `list_user_profiles`, `provision_user_profile`, `set_user_role`, `set_user_status`, `delete_user_profile`, `update_own_display_name` | Perfil y rol. El correo se lee de `auth.users`, nunca se copia |
 | `api.agent_profiles` | `list_agent_profiles`, `save_agent_profile`, `delete_agent_profile` | La ficha configurada de cada agente, por usuario |
@@ -2397,6 +2398,15 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
   `useResizablePanel` is the worked example of the keyboard path.
 - Do not let a status be carried by hue alone. `StatusDot` gives each of the four
   severities its own silhouette, and every chart labels its marks in words.
+- Do not leave derived work that must happen in a browser timer. The graph
+  rebuild was a `setTimeout`, and closing the tab lost it without a trace (H11).
+  Durable work is a row in `api.projection_outbox`, written by the transaction
+  that causes it, processed with its generation so reprocessing does not
+  duplicate and an old event cannot overwrite a newer projection.
+- Do not keep a revision in a repository map — at any level. Module-level maps
+  were H10; a map *inside* a factory is the same defect with more indentation,
+  and with two instances of the graph repository it silently rejected every
+  rebuild after a reload. `noRevisionCache.test.ts` now scans for both.
 - Do not derive a project's health, or its progress, inside a component. Both
   are domain rules in `services/architectureProjects/attentionTracking.ts`, and
   an undeclared value stays `null` — never 0 %.

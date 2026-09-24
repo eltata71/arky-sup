@@ -72,3 +72,17 @@ export {
 } from './projectDocumentMapper';
 export { clearProjectCache, forgetProject } from './projectCache';
 export { getProject } from './projectReads';
+
+/**
+ * La recuperación de la proyección del grafo (F5-05): quien procesa los
+ * pendientes que la bitácora de la base (F5-04) guarda en la misma transacción
+ * que el artefacto. Una ruta para el arranque y para la reconstrucción tras un
+ * cambio.
+ */
+export {
+  recoverGraphProjections,
+  type GraphProjectionPorts,
+  type GraphProjectionReport,
+  type RecoveredGraphProjection,
+} from './graphProjectionRecovery';
+export { createGraphProjectionPorts } from './graphProjectionPorts';

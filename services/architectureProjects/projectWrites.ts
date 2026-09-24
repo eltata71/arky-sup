@@ -35,9 +35,11 @@ import { getProject } from './projectReads';
 import { supabaseProjectRepository } from './SupabaseProjectRepository';
 import { createSupabaseKnowledgeGraphRepository } from '../architectureKnowledgeGraph';
 import { loadSupabaseDataClient } from '../adapters';
+import { observabilityService } from '../observability';
 
 let graphRepository: ReturnType<typeof createSupabaseKnowledgeGraphRepository> | null = null;
-const getGraphRepository = async () => {
+/** El repositorio del grafo; la revisión viaja con cada grafo, así que compartirlo no comparte estado. */
+export const getGraphRepository = async () => {
     if (!graphRepository) {
         const client = await loadSupabaseDataClient();
         graphRepository = createSupabaseKnowledgeGraphRepository(
@@ -137,11 +139,39 @@ const saveKnowledgeGraph = async (
     graph: NonNullable<Project['architectureKnowledgeGraph']>,
 ): Promise<void> => {
     try {
-        await (await getGraphRepository()).save({ ...graph, projectId });
-    } catch {
+        const repository = await getGraphRepository();
+        let result = await repository.save({ ...graph, projectId });
+        // Una reconstrucción manual parte del estado actual, así que un conflicto
+        // sólo dice que la revisión que conocía esta pestaña envejeció: se relee
+        // la vigente y se intenta una vez. La ruta automática no pasa por aquí —
+        // va por la bitácora (F5-04), que no deja que un evento viejo pise uno
+        // nuevo.
+        if (result.status === 'conflict') {
+            const stored = await repository.load(projectId);
+            result = await repository.save({ ...graph, projectId, revision: stored?.revision ?? 0 });
+        }
+        if (!result.success) {
+            observabilityService.recordWarning({
+                source: 'operation',
+                title: 'Grafo de conocimiento sin guardar',
+                message: `No se confirmó el grafo del proyecto ${projectId}: ${result.message ?? result.status}.`,
+                operationId: result.operationId,
+                operationName: 'saveKnowledgeGraph',
+                metadata: { projectId, status: result.status, errorCode: result.errorCode },
+                recoverable: true,
+            });
+        }
+    } catch (error) {
         // El grafo es derivado: un fallo aquí no invalida la escritura del
-        // proyecto, y la próxima edición de un artefacto lo vuelve a construir.
-        // Informar de un proyecto no guardado por esto sería mentir al revés.
+        // proyecto. Lo que ya no se hace es callarlo — H11 era exactamente un
+        // trabajo derivado que se perdía sin dejar rastro.
+        observabilityService.reportError(error, {
+            source: 'operation',
+            severity: 'warning',
+            title: 'Grafo de conocimiento sin guardar',
+            operationName: 'saveKnowledgeGraph',
+            metadata: { projectId },
+        });
     }
 };
 

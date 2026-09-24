@@ -102,6 +102,9 @@ export { buildArchitectureGraphReportText } from './ArchitectureGraphReport';
 
 export {
   createSupabaseKnowledgeGraphRepository,
+  isMissingRpc,
+  type GraphProjectionOutcome,
+  type PendingGraphProjection,
   type SupabaseKnowledgeGraphClientLike,
   type SupabaseKnowledgeGraphRepository,
 } from './SupabaseKnowledgeGraphRepository';

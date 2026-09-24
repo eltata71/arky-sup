@@ -261,6 +261,8 @@ export interface ArchitectureGraph {
    * conservatively treated as stale.
    */
   sourceSignature?: string;
+  /** Stored row revision (F5-05): travels with the graph, never in a map nor in the document. */
+  revision?: number;
   entities: ArchitectureEntity[];
   relations: ArchitectureRelation[];
   quality: ArchitectureGraphQuality;
