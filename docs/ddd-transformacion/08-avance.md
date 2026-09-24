@@ -8,7 +8,11 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-03, primer corte**: las dos últimas revisiones en un
+- **Tarea en curso:** **F6-01, primer corte**: seis ficheros sin consumidor
+  retirados (entre ellos el marcador vacío de 0 líneas) y una guardia,
+  `noOrphanModules.test.ts`, que falla si vuelve a haber uno. Evidencia en
+  `evidencias/f6-01-sin-consumidor.md`.
+- **Antes:** **F6-03, primer corte**: las dos últimas revisiones en un
   mapa (`settings`, `learning`) pasan a viajar con su registro
   (`Settings.revision`, `Course.revision`); `noRevisionCache.test.ts` queda sin
   excepciones. Evidencia en `evidencias/f6-03-revisiones.md`. **F6-10 pospuesta
@@ -282,7 +286,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ⏳ | |
+| **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ⏳ en curso | Corte 1: seis ficheros muertos fuera y `noOrphanModules.test.ts`. Queda el proxy heredado `api/gemini.ts` y la superficie del motor que sólo usan las pruebas. |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
 | **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
 | **F6-04** pruebas integrales de los flujos críticos | ⏳ | |
