@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
-import { parsePresentationDeck } from '../../../services/presentation/presentationSchema';
+import { parsePresentationDeck } from '../../../services/presentation';
 import type { ArtifactType } from '../../../types';
 import type { PresentationCalloutContent, PresentationContentBlock, PresentationDeck, PresentationDiagramContent, PresentationKpiContent, PresentationSlide, PresentationTableContent } from '../../../services/presentation';
 

@@ -3,12 +3,12 @@ import { Button, Alert, Badge } from '../ui';
 import { ReviewStatusBadge, reviewStatusLabel } from './ReviewStatusBadge';
 import { ReviewSyncBadge } from './ReviewSyncBadge';
 import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, ArrowPathIcon } from '../Icons';
-import { artifactReviewService } from '../../services/review';
 import {
+    artifactReviewService,
     InvalidReviewTransitionError,
     canTransitionReviewStatus,
     describeInvalidTransition,
-} from '../../services/review/reviewTransitions';
+} from '../../services/review';
 import { useAriaAnnouncer } from '../../hooks/useAriaAnnouncer';
 import type { ArtifactCommentAuthor, ArtifactReviewDecision, ArtifactReviewStatus } from '../../services/review';
 

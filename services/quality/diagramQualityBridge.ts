@@ -8,6 +8,10 @@
  */
 
 import type { DiagramIR } from '../../lib/diagram';
+// Por fichero, no por el barril, y medido (F6-02): `services/quality` está en
+// el arranque —publicación y exportación lo alcanzan— y el barril de
+// `services/diagram` arrastra Mermaid. Por la puerta principal, la carga
+// inicial pasaba de 310,1 a 776,9 KB gz.
 import {
   analyzeDiagramQuality,
   type DiagramQualityReport,

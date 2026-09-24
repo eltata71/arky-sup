@@ -8,7 +8,17 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F5-04 y F5-05 — cierran la fase 5** (cierre en
+- **Tarea en curso:** **fase 6 abierta. F6-02 hecha**: pares con import
+  profundo 44 → **29** (objetivo 30 antes del 2027-06-30). Dieciséis imports
+  pasan a la puerta de su módulo —tipos y código diferido por el barril, código
+  de arranque por puertas pequeñas declaradas—, y uno vuelve porque por el
+  barril subía la carga inicial de 310 a 777 KB gz. Evidencia en
+  `evidencias/f6-02.md`.
+- **Decisión pendiente del propietario (para F6-10, el gate de esquema):** cómo
+  puede el despliegue saber qué migraciones tiene aplicadas `ArkyDB-US`. Hoy el
+  CI no tiene credenciales de Supabase y el rol anónimo no tiene acceso al
+  esquema `api`.
+- **Antes:** **F5-04 y F5-05 — cierran la fase 5** (cierre en
   `11-cierre-fase-5.md`). El trabajo de proyección pendiente es un hecho de la
   base: `api.projection_outbox`, escrita en la transacción del artefacto, con
   guardar-y-marcar atómico (`save_graph_projection`) y recuperación al arrancar.
@@ -115,7 +125,7 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** abrir la **fase 6**. Su primer objetivo con fecha es F6-02
+- **Siguiente paso exacto:** decidir F6-10 (ver arriba) y seguir con la fase 6: F6-01 (retirar rutas y adaptadores sin consumidor) y F6-03 (el patrón al resto de contextos, empezando por los dos mapas de revisiones que quedan en `settings` y `learning`). Su primer objetivo con fecha es F6-02
   (pares con import profundo 44 → 30 antes del 2027-06-30). Pasan a ella, de
   antes: el gate que compare las migraciones del repositorio con las aplicadas
   y la decisión D-2 (archivado y retención, bloquea F6-08).
@@ -261,6 +271,21 @@
 | **F4-05** coordinación de artefactos fuera de React | ✅ | `artifactWorkflow`, `artifactImprovement`, `generationFailure`. Fan-out 10 → 6; las seis restantes, a F5-02. |
 | **F4-06** ruta de escritura única | ✅ | `save_project_aggregate` retirada: `revoke` + `drop`, contratos reescritos, `retiredRpcs.test.ts`. |
 | **F4-07** mapa de revisiones de proyectos | ✅ | Sin `Map` ni exportación; la revisión viaja en `Project.revision`. Mismo defecto del actualizador que F4-03. |
+
+## Fase 6 — en curso
+
+| Tarea | Estado | Nota |
+|---|---|---|
+| **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ⏳ | |
+| **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
+| **F6-03** el patrón al resto de contextos | ⏳ | Primero: los mapas de revisiones por instancia de `settings` y `learning` (registrados en `noRevisionCache.test.ts`). |
+| **F6-04** pruebas integrales de los flujos críticos | ⏳ | |
+| **F6-05** rendimiento, descarga, concurrencia y recuperación | ⏳ | |
+| **F6-06** documentación, ADR, instrucciones y runbooks | ⏳ | |
+| **F6-07** comparación final contra la línea base | ⏳ | |
+| **F6-08** deuda residual con responsable | ⏳ bloqueada | Por D-2. |
+| **F6-09** informe técnico y gerencial | ⏳ | |
+| **F6-10** el despliegue comprueba el esquema de producción | ⏳ decisión | Heredada de las fases 4 y 5: tres veces una migración dependió de que alguien se acordara de aplicarla. Necesita una decisión sobre credenciales. |
 
 ## Fase 5 — cerrada (2026-09-24)
 

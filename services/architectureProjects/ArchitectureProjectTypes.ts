@@ -261,5 +261,5 @@ export interface Project extends ProjectRoot {
    * by the `architectureKnowledgeGraph` service. Additive and
    * backwards-compatible — absent on legacy projects until the first rebuild.
    */
-  architectureKnowledgeGraph?: import('../architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes').ArchitectureGraph;
+  architectureKnowledgeGraph?: import('../architectureKnowledgeGraph').ArchitectureGraph;
 }

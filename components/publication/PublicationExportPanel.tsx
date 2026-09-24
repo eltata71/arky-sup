@@ -7,7 +7,7 @@ import type {
   PublicationPackage,
   PublicationProfile,
 } from '../../services/publicationPipeline';
-import type { ExportFormat } from '../../services/export/exportTypes';
+import type { ExportFormat } from '../../services/export';
 
 interface PublicationExportPanelProps {
   pkg: PublicationPackage;

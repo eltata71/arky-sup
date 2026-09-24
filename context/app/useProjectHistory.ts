@@ -12,7 +12,9 @@
 
 import { useCallback } from 'react';
 import type { ChatMessage } from '../../services/chat';
-import { chatHistoryRepository } from '../../services/chat/ChatHistoryRepository';
+// Por el barril: desde F5-03 `services/chat` no importa IA, así que su puerta
+// principal ya no arrastra nada al arranque.
+import { chatHistoryRepository } from '../../services/chat';
 import { agentActionRepository } from '../../services/agent/AgentActionRepository';
 import type { AgentActionRecord } from '../../services/agent';
 import type { PersistenceReporter } from './usePersistenceReporter';
