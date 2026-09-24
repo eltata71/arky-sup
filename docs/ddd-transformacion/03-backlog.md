@@ -588,7 +588,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ## Fase 5 — Oficina, IA y proyecciones
 
 ### F5-01 · Romper `services/ai -> services (raíz)`
-- **Prioridad** P0 · **Tamaño** XL · **Estado** `en curso` · **Resuelve** H12, H03
+- **Prioridad** P0 · **Tamaño** XL · **Estado** `hecha` (#56–#70) · **Resuelve** H12, H03
 - **Nota.** Es la arista que cierra el SCC de nueve. La estrangulación va
   vertical por vertical, cortando primero la dependencia ascendente de cada una
   (patrón `learningService`). Medido al empezar: **12** ficheros bajo
@@ -699,7 +699,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   SCC de catorce no desaparecen hasta que salga.
 
 ### F5-02 · Políticas de negocio a su contexto propietario
-- **Prioridad** P1 · **Tamaño** L · **Estado** `pendiente` · **Depende de** F5-01
+- **Prioridad** P1 · **Tamaño** L · **Estado** `hecha` (#71) · **Depende de** F5-01
 - **Hereda de F4-05** las seis pantallas que siguen sobre el fan-out por
   defecto —`ProjectCopilotChatModal`, `InitiativesPage`,
   `EngagementIntakeWizard`, `OfficeCapabilitiesPanel`, `AssistantPanel`,
@@ -708,15 +708,15 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   `NEG-YYYY-NNN` en la pantalla, cuando es una regla de la fábrica del encargo.
 
 ### F5-03 · Eliminar las 22 aristas internas del SCC
-- **Prioridad** P0 · **Tamaño** XL · **Estado** `pendiente` · **Depende de** F5-01
+- **Prioridad** P0 · **Tamaño** XL · **Estado** `hecha` (#72) — bastaron tres imports; ver `evidencias/f5-03.md` · **Depende de** F5-01
 
 ### F5-04 · Outbox transaccional para trabajo durable
-- **Prioridad** P0 · **Tamaño** L · **Estado** `pendiente` · **Resuelve** H11
+- **Prioridad** P0 · **Tamaño** L · **Estado** `hecha` (migración por aplicar a `ArkyDB-US`) · **Resuelve** H11
 - **Aceptación.** Cerrar el navegador no pierde un trabajo declarado durable;
   reprocesar no duplica; un evento viejo no sobrescribe una proyección más nueva.
 
 ### F5-05 · Recuperación de la proyección del grafo de conocimiento
-- **Prioridad** P1 · **Tamaño** M · **Estado** `pendiente` · **Depende de** F5-04
+- **Prioridad** P1 · **Tamaño** M · **Estado** `hecha` · **Depende de** F5-04
 
 ---
 

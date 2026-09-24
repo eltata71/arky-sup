@@ -349,7 +349,17 @@ Reglas que no se negocian al trabajar aquí:
     Proyectos, artefactos, iniciativas y encargos la leen de la lectura, la
     envían como `expectedRevision` y guardan la que la base confirma. Un `Map`
     de revisiones a nivel de módulo —y peor, exportado— es el defecto H10;
-    `__tests__/services/noRevisionCache.test.ts` lo impide.
+    **uno dentro de una fábrica también** (F5-05): el del grafo, con lecturas
+    y escrituras en instancias distintas, rechazaba en silencio toda
+    reconstrucción tras recargar. `__tests__/services/noRevisionCache.test.ts`
+    busca a cualquier nivel; `settings` y `learning` quedan registrados hasta
+    F6-03.
+22b. **El trabajo derivado que tiene que ocurrir se escribe en la base, en la
+    transacción que lo causa** (F5-04). El grafo se reconstruía con un
+    temporizador del navegador y cerrar la pestaña lo perdía (H11). Ahora un
+    disparador lo deja en `api.projection_outbox`, `save_graph_projection`
+    guarda y marca la generación a la vez (reprocesar no duplica, lo viejo no
+    pisa lo nuevo) y `recoverGraphProjections` lo procesa al arrancar.
 23. **La coordinación no vive en React** (F4-05). Lo que una pantalla o un hook
     *decide* va a `services/<contexto>/application/`, como funciones puras que
     se prueban sin montar nada; el hook sólo aplica el plan. Ejemplo de

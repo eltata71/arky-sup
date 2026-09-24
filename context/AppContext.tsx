@@ -94,6 +94,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     globalContext: settings.globalContext,
     globalContextRef,
     updateProject,
+    setProjects,
   });
 
   /**

@@ -8,7 +8,22 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F5-03 — cerrada, y con ella la fase 5.** El
+- **Tarea en curso:** **F5-04 y F5-05 — cierran la fase 5** (cierre en
+  `11-cierre-fase-5.md`). El trabajo de proyección pendiente es un hecho de la
+  base: `api.projection_outbox`, escrita en la transacción del artefacto, con
+  guardar-y-marcar atómico (`save_graph_projection`) y recuperación al arrancar.
+  Cierra H11. De paso se corrige un defecto vivo: la revisión del grafo vivía
+  en un `Map` por instancia del repositorio y, tras recargar, toda
+  reconstrucción de un grafo existente se rechazaba en silencio. **Pendiente:
+  aplicar `20260924120000_projection_outbox` a `ArkyDB-US`** con la aprobación
+  del propietario; el cliente degrada sin ella. Evidencia en
+  `evidencias/f5-04-f5-05.md`.
+- **Corrección de este registro.** La entrada de F5-03 dijo que con ella se
+  cerraba la fase 5. No era cierto: faltaban F5-04 y F5-05, y el criterio de
+  cierre de la fase («proyecciones pendientes observables y recuperables;
+  reprocesar no duplica») no estaba cubierto. Los objetivos con fecha que se
+  cumplieron sólo medían F5-01 a F5-03.
+- **Antes:** **F5-03 — cerrada.** El
   componente de dominio pasa de **13 módulos a 0**: sólo tres aristas
   contradecían el orden de capas, un import cada una
   (`diagram -> architectureProjects`, `architectureKnowledgeGraph ->
@@ -99,11 +114,10 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** la fase 5 no tiene tareas pendientes. Queda
-  escribir su cierre (`11-cierre-fase-5.md`, como los de las fases 3 y 4) y
-  abrir la fase 6, cuyo primer objetivo con fecha es F6-02 (pares con import
-  profundo 44 → 30 antes del 2027-06-30). Sigue abierto, de antes: el gate que
-  compare las migraciones del repositorio con las aplicadas (propuesto para F6)
+- **Siguiente paso exacto:** aplicar la migración de F5-04 a `ArkyDB-US` (con
+  aprobación) y abrir la **fase 6**. Su primer objetivo con fecha es F6-02
+  (pares con import profundo 44 → 30 antes del 2027-06-30). Pasan a ella, de
+  antes: el gate que compare las migraciones del repositorio con las aplicadas
   y la decisión D-2 (archivado y retención, bloquea F6-08).
 - **Paso anterior, ya hecho (corte 14):** F5-01, la vertical de artefactos (`artifactGenerationService`), el último
   importador del motor y todo lo que queda en él (1 923 líneas según el gate
@@ -115,6 +129,12 @@
   mover. Cuando salga, la arista `services/ai -> services (raíz)` y el SCC de
   catorce desaparecen. Las seis pantallas que siguen sobre el fan-out son de
   **F5-02**.
+- **Estado medido con F5-04/F5-05 (2026-09-24):** 485 ficheros y 4 715 pruebas
+  en verde; cobertura 67,38 % / 58,30 % / 60,24 % / 69,32 %; carga inicial
+  **310,1 KB gz** de 340 (+1,0: el protocolo de la bitácora en el repositorio
+  del grafo, que está en el arranque); 3 ciclos, 0 módulos de dominio
+  mutuamente alcanzables, 44 pares con import profundo, 0 pantallas sobre el
+  fan-out, `any` 7; **16 contratos pgTAP**.
 - **Estado medido con F5-03 (2026-09-24):** 483 ficheros y 4 701 pruebas en
   verde; cobertura 67,33 % / 58,29 % / 60,17 % / 69,27 %; carga inicial
   309,1 KB gz de 340; 3 ciclos directos y **un solo componente fuertemente
@@ -247,6 +267,8 @@
 | Tarea | Estado | Nota |
 |---|---|---|
 | **F5-01** romper `services/ai -> services (raíz)` | ✅ cortes 1–14 (2026-09-24) | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. Arreglo del proxy en el camino de texto (#62). Corte 7: el asistente sin persona a `generation/assistant/`; el motor baja a 2 631 líneas. Corte 8: el asistente con persona, partido entre IA, agente y Oficina, 2 → 1; el motor baja a 2 443 líneas y deja de importar `agent` y `chat`. Corte 9: nombres iniciales de artefactos a `generation/artifactTemplateSuggestions.ts`; 2 431 líneas. Corte 10: crítica y refinamiento a `generation/artifactQualityRefinement.ts`; 2 330 líneas, `any` 13 → 11. Corte 11: revisión, mejoras y casos de prueba a `generation/artifactReview.ts`, imagen/voz/SVG borrados sin llamantes; 2 145 líneas. Corte 12: brief a `generation/artifactBriefProposal.ts`, deck a `generation/presentationDeck.ts`, deck mínimo a `services/presentation`; 1 923 líneas; `services/ai` declara `presentation` y `quality`. Corte 13: la persona llega por un puerto (`ArtifactPersonaComposer`); el motor deja de importar la Oficina; pares profundos 54 → 53. Corte 14: lo que tomaba de `services/artifacts` llega por `ArtifactGenerationSupport` (obligatorio) y el motor entra en `services/ai/generation/artifacts/`; ciclos 4 → 3, raíz de `services/` 1 → 0, SCC 14 → 13, pares profundos 53 → 48, `any` 11 → 7 (los cuatro de la vertical de diagramas tipados); 1 786 líneas. |
+| **F5-04** outbox transaccional | ✅ (2026-09-24; migración por aplicar) | `api.projection_outbox` + disparador en la transacción del artefacto + `list_pending_projections`, `save_graph_projection` (guardar y marcar atómico: reprocesar no duplica, lo viejo no pisa lo nuevo) y `fail_projection`. Contrato `projection_outbox.test.sql`. Cierra H11. |
+| **F5-05** recuperación de la proyección del grafo | ✅ (2026-09-24) | `recoverGraphProjections`: lectura fresca, guardado con generación, fallos anotados; al arrancar y tras el periodo de espera; degrada sin bitácora. Corrige la revisión del grafo en un `Map` por instancia (variante de H10). |
 | **F5-03** componente de dominio a cero | ✅ (2026-09-24) | 13 → 0 cortando tres imports: `DiagramSignalSource` en el extractor de señales, `includeOfficeContext` retirada del grafo de conocimiento (sólo la usaba una prueba), y la compactación con modelo de `services/chat` a `services/ai/generation/chatCompaction.ts` (`CompactionDigest` en `lib/conversationDigest.ts`). `projectWrites` vuelve a entrar al chat por su barril. Pares profundos 47 → 44. |
 | **F5-02** políticas a su contexto propietario | ✅ (2026-09-24) | Fan-out 6 → 0 y tabla vacía. Reglas a su dueño: `routeCopilotTurn`, `describeOfficeCapabilities`, `interpretArtifactModification`, `resolveAttentionInitiativeLinks`. Hooks: `useCopilotTurns`, `useInitiativeBoard`, `useInitiativeAssistant`, `useAttentionPortfolio`, `useAttentionInitiativeLinks`, y `useAssistantTurns` ampliado. Tipos desde su contexto. Pares profundos 48 → 47. |
 

@@ -586,6 +586,42 @@ export type Database = {
           },
         ]
       }
+      projection_outbox: {
+        Row: {
+          attempts: number
+          generation: number
+          last_error: string | null
+          owner_id: string
+          processed_at: string | null
+          processed_generation: number
+          project_id: string
+          projection: string
+          requested_at: string
+        }
+        Insert: {
+          attempts?: number
+          generation?: number
+          last_error?: string | null
+          owner_id: string
+          processed_at?: string | null
+          processed_generation?: number
+          project_id: string
+          projection: string
+          requested_at?: string
+        }
+        Update: {
+          attempts?: number
+          generation?: number
+          last_error?: string | null
+          owner_id?: string
+          processed_at?: string | null
+          processed_generation?: number
+          project_id?: string
+          projection?: string
+          requested_at?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string
@@ -706,6 +742,10 @@ export type Database = {
         Returns: Json
       }
       delete_user_profile: { Args: { target: string }; Returns: undefined }
+      fail_projection: {
+        Args: { p_error: string; p_generation: number; p_project_id: string }
+        Returns: Json
+      }
       list_agent_actions: {
         Args: { p_limit?: number; p_project_id: string }
         Returns: Json
@@ -745,6 +785,7 @@ export type Database = {
       }
       list_courses: { Args: { p_include_all?: boolean }; Returns: Json }
       list_notes: { Args: never; Returns: Json }
+      list_pending_projections: { Args: never; Returns: Json }
       list_project_aggregates: { Args: never; Returns: Json }
       list_user_profiles: { Args: never; Returns: Json }
       load_arb_engagements: { Args: never; Returns: Json }
@@ -912,6 +953,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      save_graph_projection: {
+        Args: { p_generation: number; p_graph: Json; p_project_id: string }
+        Returns: Json
       }
       save_knowledge_graph: {
         Args: {
