@@ -711,7 +711,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 - **Prioridad** P0 · **Tamaño** XL · **Estado** `hecha` (#72) — bastaron tres imports; ver `evidencias/f5-03.md` · **Depende de** F5-01
 
 ### F5-04 · Outbox transaccional para trabajo durable
-- **Prioridad** P0 · **Tamaño** L · **Estado** `hecha` (migración por aplicar a `ArkyDB-US`) · **Resuelve** H11
+- **Prioridad** P0 · **Tamaño** L · **Estado** `hecha` (#73; migración aplicada a `ArkyDB-US`) · **Resuelve** H11
 - **Aceptación.** Cerrar el navegador no pierde un trabajo declarado durable;
   reprocesar no duplica; un evento viejo no sobrescribe una proyección más nueva.
 

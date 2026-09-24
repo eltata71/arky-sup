@@ -1,7 +1,7 @@
 # Cierre de la fase 5 — Oficina, IA y proyecciones
 
-**Fecha** 2026-09-24 · **Estado** cerrada en el repositorio; la migración de
-F5-04 se aplica a `ArkyDB-US` con la aprobación del propietario ·
+**Fecha** 2026-09-24 · **Estado** cerrada, en el repositorio y en producción
+(migración de F5-04 aplicada a `ArkyDB-US` el 2026-09-24, con aprobación) ·
 **Plan** `02-plan-maestro.md` § Fase 5
 
 > **Objetivo de la fase.** Deshacer el componente conexo de nueve módulos y dar
@@ -24,8 +24,8 @@ F5-04 se aplica a `ArkyDB-US` con la aprobación del propietario ·
 | F5-01 romper `services/ai -> services (raíz)` | ✅ catorce cortes | #56–#70 (y #62, el proxy en el camino de texto) |
 | F5-02 políticas a su contexto propietario | ✅ | #71 |
 | F5-03 el componente de dominio a cero | ✅ | #72 |
-| F5-04 outbox transaccional | ✅ (migración pendiente de aplicar) | esta tanda |
-| F5-05 recuperación de la proyección del grafo | ✅ | esta tanda |
+| F5-04 outbox transaccional | ✅ | #73 (migración aplicada a `ArkyDB-US`) |
+| F5-05 recuperación de la proyección del grafo | ✅ | #73 |
 
 ## Hallazgos cerrados
 
@@ -97,10 +97,13 @@ todas las suyas, `chat -> ai`, `diagram -> architectureProjects` y
 
 ## Lo que la fase deja abierto, dicho como tal
 
-- **Aplicar `20260924120000_projection_outbox` a `ArkyDB-US`.** Es aditiva y el
-  cliente degrada sin ella, así que el orden de despliegue no rompe nada. Hasta
-  aplicarla, producción no tiene recuperación durable, aunque el defecto del
-  `Map` ya está corregido.
+- ~~**Aplicar `20260924120000_projection_outbox` a `ArkyDB-US`.**~~ **Aplicada
+  el 2026-09-24 con la aprobación del propietario**, antes de fusionar #73, que
+  es el orden que pide la regla. Antes se comprobó con `supabase migration list`
+  que las 43 anteriores estaban aplicadas y sólo faltaba ésta, y se hizo un
+  ensayo en seco (`db push --dry-run`). Después se verificó que la historia
+  remota la incluye y que las tres RPC existen en la API de producción y
+  rechazan a un anónimo con `42501`, no con `PGRST202`.
 - **El gate que compare las migraciones del repositorio con las aplicadas**
   (propuesto en la fase 4) sigue sin existir. Esta fase lo vuelve a necesitar:
   es la tercera migración que depende de que alguien se acuerde de aplicarla.
