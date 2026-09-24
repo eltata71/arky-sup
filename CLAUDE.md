@@ -2414,7 +2414,10 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 - Do not keep a revision in a repository map — at any level. Module-level maps
   were H10; a map *inside* a factory is the same defect with more indentation,
   and with two instances of the graph repository it silently rejected every
-  rebuild after a reload. `noRevisionCache.test.ts` now scans for both.
+  rebuild after a reload. `noRevisionCache.test.ts` now scans for both, with
+  no exceptions left: F6-03 moved the last two (`settings`, `learning`) onto
+  `Settings.revision` and `Course.revision`, the settings one written back into
+  React state after each confirmed save.
 - Do not derive a project's health, or its progress, inside a component. Both
   are domain rules in `services/architectureProjects/attentionTracking.ts`, and
   an undeclared value stays `null` — never 0 %.

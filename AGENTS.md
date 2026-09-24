@@ -356,8 +356,9 @@ Reglas que no se negocian al trabajar aquí:
     **uno dentro de una fábrica también** (F5-05): el del grafo, con lecturas
     y escrituras en instancias distintas, rechazaba en silencio toda
     reconstrucción tras recargar. `__tests__/services/noRevisionCache.test.ts`
-    busca a cualquier nivel; `settings` y `learning` quedan registrados hasta
-    F6-03.
+    busca a cualquier nivel y ya no admite excepciones: `settings` y
+    `learning` llevan la revisión en `Settings.revision` y `Course.revision`
+    desde F6-03.
 22b. **El trabajo derivado que tiene que ocurrir se escribe en la base, en la
     transacción que lo causa** (F5-04). El grafo se reconstruía con un
     temporizador del navegador y cerrar la pestaña lo perdía (H11). Ahora un

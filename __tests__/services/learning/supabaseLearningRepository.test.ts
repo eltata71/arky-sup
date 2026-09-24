@@ -58,13 +58,26 @@ function fakeClient(): { client: SupabaseLearningClientLike; rpc: ReturnType<typ
 }
 
 describe('SupabaseLearningRepository', () => {
-  it('lista cursos y memoriza su revisión sin exponerla al dominio', async () => {
+  it('lista cursos con su revisión, que viaja con cada curso (F6-03)', async () => {
     const { client, rpc } = fakeClient();
     rpc.mockResolvedValueOnce({ data: [row(course('course-1'), 2), row(course('course-2'), 1)], error: null });
     const repository = createSupabaseLearningRepository(client);
 
-    await expect(repository.listCourses(USER_ID, true)).resolves.toEqual([course('course-1'), course('course-2')]);
+    await expect(repository.listCourses(USER_ID, true)).resolves.toEqual([
+      { ...course('course-1'), revision: 2 },
+      { ...course('course-2'), revision: 1 },
+    ]);
     expect(rpc).toHaveBeenCalledWith('list_courses', { p_include_all: true });
+  });
+
+  it('guarda contra la revisión del curso y nunca la escribe en el documento', async () => {
+    const { client, rpc } = fakeClient();
+    rpc.mockResolvedValueOnce({ data: row(course(), 4), error: null });
+    // Otra instancia del repositorio: la revisión no depende de quién leyó.
+    const result = await createSupabaseLearningRepository(client).saveCourse({ ...course(), revision: 3 }, USER_ID);
+
+    expect(rpc).toHaveBeenCalledWith('save_course', { p_course: course(), p_expected_revision: 3 });
+    expect(result.data?.revision).toBe(4);
   });
 
   it('guarda un curso del autor con la revisión esperada y solo confirma una fila válida', async () => {

@@ -8,7 +8,13 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **fase 6 abierta. F6-02 hecha**: pares con import
+- **Tarea en curso:** **F6-03, primer corte**: las dos últimas revisiones en un
+  mapa (`settings`, `learning`) pasan a viajar con su registro
+  (`Settings.revision`, `Course.revision`); `noRevisionCache.test.ts` queda sin
+  excepciones. Evidencia en `evidencias/f6-03-revisiones.md`. **F6-10 pospuesta
+  por decisión del propietario** (2026-09-25): las migraciones siguen
+  aplicándose a mano, con su aprobación.
+- **Antes:** **fase 6 abierta. F6-02 hecha**: pares con import
   profundo 44 → **29** (objetivo 30 antes del 2027-06-30). Dieciséis imports
   pasan a la puerta de su módulo —tipos y código diferido por el barril, código
   de arranque por puertas pequeñas declaradas—, y uno vuelve porque por el
@@ -278,14 +284,14 @@
 |---|---|---|
 | **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ⏳ | |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
-| **F6-03** el patrón al resto de contextos | ⏳ | Primero: los mapas de revisiones por instancia de `settings` y `learning` (registrados en `noRevisionCache.test.ts`). |
+| **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
 | **F6-04** pruebas integrales de los flujos críticos | ⏳ | |
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ⏳ | |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ⏳ | |
 | **F6-07** comparación final contra la línea base | ⏳ | |
 | **F6-08** deuda residual con responsable | ⏳ bloqueada | Por D-2. |
 | **F6-09** informe técnico y gerencial | ⏳ | |
-| **F6-10** el despliegue comprueba el esquema de producción | ⏳ decisión | Heredada de las fases 4 y 5: tres veces una migración dependió de que alguien se acordara de aplicarla. Necesita una decisión sobre credenciales. |
+| **F6-10** el despliegue comprueba el esquema de producción | ⏸ pospuesta (propietario, 2026-09-25) | Heredada de las fases 4 y 5: tres veces una migración dependió de que alguien se acordara de aplicarla. Necesita una decisión sobre credenciales. |
 
 ## Fase 5 — cerrada (2026-09-24)
 

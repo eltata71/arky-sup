@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Settings } from '../../types';
-import { settingsRepository } from '../../services/settings';
+import { confirmedSettingsRevision, settingsRepository } from '../../services/settings';
 import { translate, translations } from '../../lib/i18n';
 import { useAuth } from '../AuthContext';
 import { mirrorThemeForBoot } from '../../hooks/useTheme';
@@ -64,7 +64,12 @@ export const useSettingsState = (reporter: PersistenceReporter): SettingsState =
     const result = await settingsRepository.save(newSettings, user?.uid);
     if (!handleWriteResult(result, 'Configuración guardada en base de datos.')) {
       setSettings(previous);
+      return;
     }
+    // La revisión confirmada vuelve al estado (F6-03): la próxima escritura
+    // compara contra ella, no contra un mapa del repositorio.
+    const revision = confirmedSettingsRevision(result);
+    if (revision !== undefined) setSettings((current) => ({ ...current, revision }));
   }, [settings, user, handleWriteResult, setPersistenceStatus]);
 
   return { settings, setSettings, globalContextRef, t, updateSettings };

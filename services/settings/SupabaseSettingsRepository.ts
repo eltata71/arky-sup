@@ -32,6 +32,8 @@ export function sanitizeSettingsForRemote(settings: Settings): Settings {
     aiConfig?: Record<string, unknown>;
   };
   if (clone.aiConfig) delete clone.aiConfig.apiKey;
+  // La revisión es de la fila, no del documento (F6-03).
+  delete (clone as Partial<Settings>).revision;
   return clone;
 }
 
@@ -53,8 +55,8 @@ const statusFor = (error: unknown): 'conflict' | 'permission-denied' | 'offline'
 };
 
 export function createSupabaseSettingsRepository(client: SupabaseSettingsClientLike): SupabaseSettingsRepository {
-  const revisions = new Map<string, number>();
-
+  // La revisión viaja en `Settings.revision` (F6-03), desde la lectura hasta el
+  // estado de React y de vuelta; hasta aquí vivía en un `Map` de la instancia.
   return {
     async load(userId) {
       const { data, error } = await client.from('user_settings').select('settings, revision').eq('id', userId).maybeSingle();
@@ -62,11 +64,10 @@ export function createSupabaseSettingsRepository(client: SupabaseSettingsClientL
       if (data === null) return null;
       const record = asRecord(data);
       if (!record) throw new Error('La respuesta de configuración remota no tiene la forma esperada.');
-      revisions.set(userId, record.revision);
-      return record.settings;
+      return { ...record.settings, revision: record.revision };
     },
 
-    async save(settings, userId, expectedRevision = revisions.get(userId) ?? 0) {
+    async save(settings, _userId, expectedRevision = settings.revision ?? 0) {
       const operationId = createOperationId('saveUserSettings');
       const { data, error } = await client.rpc('save_user_settings', {
         p_settings: sanitizeSettingsForRemote(settings),
@@ -93,8 +94,10 @@ export function createSupabaseSettingsRepository(client: SupabaseSettingsClientL
           message: 'Supabase confirmó una respuesta de configuración inválida.',
         };
       }
-      revisions.set(userId, record.revision);
-      return { status: 'success', success: true, operationId, target: 'supabase', data: record };
+      return {
+        status: 'success', success: true, operationId, target: 'supabase',
+        data: { settings: { ...record.settings, revision: record.revision }, revision: record.revision },
+      };
     },
   };
 }

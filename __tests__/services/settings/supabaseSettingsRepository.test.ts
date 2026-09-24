@@ -61,7 +61,17 @@ describe('SupabaseSettingsRepository', () => {
     const client = fakeClient({ row: { settings, revision: 7 } });
     const repository = createSupabaseSettingsRepository(client);
 
-    await expect(repository.load('00000000-0000-4000-8000-000000000001')).resolves.toEqual(settings);
+    // La revisión viaja con las preferencias (F6-03), no en el repositorio.
+    await expect(repository.load('00000000-0000-4000-8000-000000000001')).resolves.toEqual({ ...settings, revision: 7 });
+  });
+
+  it('guarda contra la revisión que traen las preferencias y no la persiste dentro', async () => {
+    const client = fakeClient({ row: { settings, revision: 8 } });
+    const result = await createSupabaseSettingsRepository(client).save({ ...settings, revision: 7 }, '00000000-0000-4000-8000-000000000001');
+
+    expect(client.calls).toEqual([{ name: 'save_user_settings', args: { p_settings: settings, p_expected_revision: 7 } }]);
+    expect(result.data?.revision).toBe(8);
+    expect(result.data?.settings.revision).toBe(8);
   });
 
   it('guarda mediante RPC con revisión esperada y confirma solo al recibir la fila', async () => {
