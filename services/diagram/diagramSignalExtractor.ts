@@ -32,7 +32,20 @@
  */
 
 import type { ArtifactType } from '../../types';
-import type { Project } from '../architectureProjects';
+
+/**
+ * What the extractor reads from a project — and all it reads (F5-03).
+ *
+ * It used to take the whole `Project`, which made `services/diagram` import
+ * `services/architectureProjects`: the one edge by which the diagram pipeline,
+ * the lowest domain module, could reach back up into the aggregate and close
+ * the thirteen-module component. Any `Project` satisfies this shape.
+ */
+export interface DiagramSignalSource {
+    readonly description?: string;
+    readonly projectContext?: readonly string[];
+    readonly artifacts?: readonly { readonly name?: string; readonly objective?: string }[];
+}
 
 export interface DiagramSignal {
     /** Short label suitable for inline display (e.g. node label). */
@@ -211,9 +224,9 @@ function mergeBuckets(...buckets: ExtractedDiagramContext[]): ExtractedDiagramCo
  * pre-prompt for diagram generation. It is intentionally cheap so it can run
  * on every diagram call without latency concerns.
  */
-export function extractDiagramSignals(project: Project): ExtractedDiagramContext {
+export function extractDiagramSignals(project: DiagramSignalSource): ExtractedDiagramContext {
     const description = (project?.description ?? '').trim();
-    const contextItems = (project?.projectContext ?? []).filter(Boolean) as string[];
+    const contextItems = (project?.projectContext ?? []).filter(Boolean);
     const artifactSignal = (project?.artifacts ?? [])
         .map(a => `${a.name ?? ''} ${a.objective ?? ''}`)
         .join(' ');

@@ -17,15 +17,17 @@
  * ## Lo que este fichero puede y no puede importar
  *
  * Está en el camino de arranque —`AppContext` → `useProjectsState` →
- * `ArchitectureProjectRepository` → aquí—, así que entra a `services/chat` por
- * **ruta de fichero** y no por su barril. El barril exporta `chatCompactor`,
- * que alcanza `services/ai` y con él el motor de 5 400 líneas: entrar por la
- * puerta principal ponía toda la capa de IA en la carga inicial para obtener un
- * objeto que sólo habla con la base de datos.
+ * `ArchitectureProjectRepository` → aquí—. Durante un tiempo entró a
+ * `services/chat` por **ruta de fichero**, porque el barril exportaba
+ * `chatCompactor`, que alcanzaba `services/ai` y con él el motor: la puerta
+ * principal ponía toda la capa de IA en la carga inicial para obtener un objeto
+ * que sólo habla con la base de datos. Desde F5-03 la compactación con modelo
+ * vive en `services/ai` y `services/chat` no importa IA, así que la puerta vuelve
+ * a ser la correcta; `bootPathStaysLight.test.ts` lo vigila.
  */
 
 import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
-import { chatHistoryRepository } from '../chat/ChatHistoryRepository';
+import { chatHistoryRepository } from '../chat';
 import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../persistence';
 import { toProjectDocument, type PersistedProjectDocument } from './projectDocumentMapper';
 import { forgetProject } from './projectCache';

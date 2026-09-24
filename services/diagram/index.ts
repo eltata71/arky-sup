@@ -372,6 +372,7 @@ export { runDiagramQualityGate } from './qualityGate';
 export {
   extractDiagramSignals,
   renderDiagramSignals,
+  type DiagramSignalSource,
   type ExtractedDiagramContext,
 } from './diagramSignalExtractor';
 

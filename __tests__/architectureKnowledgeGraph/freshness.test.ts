@@ -22,6 +22,7 @@ import {
   type ArchitectureGraphBuildInput,
 } from '../../services/architectureKnowledgeGraph';
 import { NOW, fullBuildInput, makeArtifact } from './fixtures';
+import { getOfficeArchitectureContext } from '../../services/architectureOffice/officeArchitectureKnowledge';
 
 /** A build input cloned from the full fixture, deeply enough for mutation. */
 const cloneInput = (): ArchitectureGraphBuildInput => ({
@@ -179,10 +180,12 @@ describe('resolveProjectArchitectureGraphFreshness', () => {
     expect(graph.sourceSignature).toBe(legacyCompatible.sourceSignature);
   });
 
-  it('includes Office standards in the signature only when explicitly requested', () => {
+  it('includes Office standards in the signature only when the caller passes them (F5-03)', () => {
     const project = makeProject([makeFullArtifact({ id: 'a1', name: 'BRD', type: 'sdd-brd', content: 'RF-001: pagos.' })]);
     const baseline = buildArchitectureKnowledgeGraphForProject(project);
-    const officeGraph = buildArchitectureKnowledgeGraphForProject(project, { includeOfficeContext: true });
+    const officeGraph = buildArchitectureKnowledgeGraphForProject(project, {
+      globalContext: getOfficeArchitectureContext().promptContext,
+    });
     expect(officeGraph.sourceSignature).not.toBe(baseline.sourceSignature);
   });
 

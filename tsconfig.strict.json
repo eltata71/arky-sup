@@ -65,6 +65,10 @@
     // tres que salieron de pantallas no pueden entrar todavía: `portfolioGraph`
     // lee los tipos de la Oficina, y la Oficina alcanza el motor.
     "services/agent/artifactModificationCall.ts",
+    // F5-03: el resumen de conversación y su mitad sin modelo.
+    "lib/conversationDigest.ts",
+    "services/chat/compactionDigest.ts",
+    "services/ai/generation/chatCompaction.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",

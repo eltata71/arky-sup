@@ -61,6 +61,7 @@ export {
   asCourseLevel,
   assistantService,
   captureAssistantService,
+  compactChatMessages,
   documentGenerationService,
   diagramEditService,
   initiativeAssistantService,

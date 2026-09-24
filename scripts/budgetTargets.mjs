@@ -26,6 +26,9 @@ export const BUDGET_TARGETS = Object.freeze([
     label: 'módulos de dominio mutuamente alcanzables',
     target: 0,
     due: '2027-03-31',
+    // Cumplido el 2026-09-24: de 13 a 0. Sólo tres aristas contradecían el
+    // orden de capas del dominio, una import cada una (ver
+    // `docs/ddd-transformacion/evidencias/f5-03.md`).
     phase: 'F5-03 — eliminar las aristas internas del componente',
   },
   {

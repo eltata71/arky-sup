@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppContext, type Project } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
-import { type ChatMessage, groupMessagesIntoSessions, filterSessions, getSessionTitle, removeMessagesById, spliceCompactionMarker, createChatMessage, type ChatSession, type ChatHistoryFilters } from '../../services/chat';
+import { type ChatMessage, groupMessagesIntoSessions, filterSessions, getSessionTitle, removeMessagesById, spliceCompactionMarker, createChatMessage, deterministicCompactionDigest, type ChatSession, type ChatHistoryFilters } from '../../services/chat';
 import {
     MagnifyingGlassIcon,
     TrashIcon,
@@ -11,7 +11,7 @@ import {
     EyeIcon,
     XMarkIcon,
 } from '../Icons';
-import { compactChatMessages, deterministicCompactionDigest } from '../../services/chat/chatCompactor';
+import { compactChatMessages } from '../../services/ai';
 import { ConfirmDialog } from '../ConfirmDialog';
 
 interface ChatHistoryPanelProps {
