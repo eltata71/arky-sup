@@ -722,7 +722,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 
 ## Fase 6 — Consolidación y cierre
 
-### F6-01 · Retirar rutas antiguas y adaptadores sin consumidor · P1 · M · `pendiente`
+### F6-01 · Retirar rutas antiguas y adaptadores sin consumidor · P1 · M · `en curso` (corte 1: ficheros sin consumidor y su guardia)
 ### F6-02 · Dependencias no autorizadas entre contextos a cero · P0 · L · `hecha` (imports profundos 44 → 29; `evidencias/f6-02.md`)
 ### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `en curso` (corte 1: revisiones de `settings` y `learning`)
 ### F6-04 · Pruebas integrales de los flujos críticos · P0 · L · `pendiente`

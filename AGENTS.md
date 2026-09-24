@@ -359,6 +359,10 @@ Reglas que no se negocian al trabajar aquí:
     busca a cualquier nivel y ya no admite excepciones: `settings` y
     `learning` llevan la revisión en `Settings.revision` y `Course.revision`
     desde F6-03.
+22c. **Un fichero que nadie importa no se queda** (F6-01).
+    `__tests__/architecture/noOrphanModules.test.ts` falla si aparece uno; sus
+    excepciones (barriles publicados, arranques de Vitest, tipos generados)
+    tienen nombre y la lista no puede acumular restos.
 22b. **El trabajo derivado que tiene que ocurrir se escribe en la base, en la
     transacción que lo causa** (F5-04). El grafo se reconstruía con un
     temporizador del navegador y cerrar la pestaña lo perdía (H11). Ahora un

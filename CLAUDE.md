@@ -1717,7 +1717,7 @@ the only screen still linking to `/users` and `/settings`.
 
 ## Known Issues / Incomplete Areas
 
-- `components/ReviewArchitectureModal.tsx` is still an **empty placeholder (0 lines)** — do not import or reference it. The working review UI is `components/artifacts/ReviewPanel.tsx`.
+- `components/ReviewArchitectureModal.tsx`, the empty placeholder this list used to warn about, is gone (F6-01), with four other components nothing imported — `AddArtifactModal`, `BoardView`, `InteractiveGraph`, `VersionHistoryPanel` — and a one-line re-export. The working review UI is `components/artifacts/ReviewPanel.tsx`.
 - The engine (`services/ai/generation/artifacts/artifactGenerationEngine.ts`, ~1,790 lines after F5-01's fourteen cuts, down from ~5,400 as `services/geminiService.ts`) is still one of the largest modules, but it is a private dependency of one façade, inside its layer, loaded lazily. Splitting `_generateArtifactContentInternal` (~900 lines) is what is left, and it is ordinary decomposition now, not a migration.
 - Supabase Auth is behind `services/identity`; `context/AuthContext.tsx` imports no SDK, and `no-restricted-imports` plus `__tests__/authz/noSdkInUiLayers.test.ts` keep every SDK out of `components/`, `pages/`, `context/` and `hooks/`. La prueba conserva Firebase en su lista de prohibidos como sonda de regresión: una que sólo busca el SDK actual no impide que vuelva el anterior.
 - `@google/genai` still appears in the engine (the `GoogleGenAI` its transport receives) as well as `providers/gemini/` and `api/`. The client factory *has* moved: it is `services/ai/providers/gemini/geminiClient.ts` now.
@@ -2406,6 +2406,9 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
   `useResizablePanel` is the worked example of the keyboard path.
 - Do not let a status be carried by hue alone. `StatusDot` gives each of the four
   severities its own silhouette, and every chart labels its marks in words.
+- Do not leave a source file nothing imports. `noOrphanModules.test.ts`
+  (F6-01) fails on one; its exceptions — published barrels, Vitest set-up
+  files, generated types — are named, and the list may not collect leftovers.
 - Do not leave derived work that must happen in a browser timer. The graph
   rebuild was a `setTimeout`, and closing the tab lost it without a trace (H11).
   Durable work is a row in `api.projection_outbox`, written by the transaction
