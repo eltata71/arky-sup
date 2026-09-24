@@ -13,8 +13,14 @@
  * un tercer módulo de servicio para saber a quién sirve lo que muestra.
  */
 
-import { useMemo } from 'react';
-import { resolvePortfolioGraph } from '../services/portfolioGraph';
+import { useCallback, useMemo } from 'react';
+import {
+  initiativeLinksFor,
+  resolveAttentionInitiativeLinks,
+  resolvePortfolioGraph,
+  withoutInitiativeCode,
+  type InitiativeLinks,
+} from '../services/portfolioGraph';
 import type { BusinessInitiative } from '../services/businessInitiatives';
 import type { Project } from '../services/architectureProjects';
 
@@ -32,3 +38,36 @@ export const useAttentionInitiatives = (
     .map((id) => byId.get(id))
     .filter((entry): entry is BusinessInitiative => entry !== undefined);
 }, [project, initiatives]);
+
+export interface AttentionInitiativeLinkEditor {
+  readonly linkedIds: string[];
+  readonly unresolvedCodes: string[];
+  /** Replaces the selection; ids and codes move together. */
+  applyLinks(initiativeIds: string[]): void;
+  /** Drops a code that resolves to no initiative. */
+  dropUnresolvedCode(code: string): void;
+}
+
+/**
+ * The picker's side of the same rule (F5-02): what is selected, what is broken,
+ * and the two edits — resolved by `services/portfolioGraph`, never in a panel.
+ */
+export const useAttentionInitiativeLinks = (
+  project: Project,
+  initiatives: readonly BusinessInitiative[],
+  onChange: (links: InitiativeLinks) => void,
+): AttentionInitiativeLinkEditor => {
+  const { linkedIds, unresolvedCodes } = useMemo(
+    () => resolveAttentionInitiativeLinks(project, initiatives),
+    [project, initiatives],
+  );
+  const applyLinks = useCallback(
+    (initiativeIds: string[]) => onChange(initiativeLinksFor(initiativeIds, initiatives)),
+    [initiatives, onChange],
+  );
+  const dropUnresolvedCode = useCallback(
+    (code: string) => onChange(withoutInitiativeCode(project, linkedIds, code)),
+    [project, linkedIds, onChange],
+  );
+  return { linkedIds, unresolvedCodes, applyLinks, dropUnresolvedCode };
+};

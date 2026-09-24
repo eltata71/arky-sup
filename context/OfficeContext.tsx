@@ -57,6 +57,8 @@ import type { OfficeAgentId } from '../services/architectureOffice/officeAgentPe
  */
 export type CreateEngagementInput = CreateEngagementCommand;
 export type { OfficeOperationResult };
+/** The engagement this context hands to screens (F5-02; see `InitiativeContext`). */
+export type { OfficeEngagement };
 
 interface OfficeContextType {
   /** Engagements for the projects loaded so far, newest first. */

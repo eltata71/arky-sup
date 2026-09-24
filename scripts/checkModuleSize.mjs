@@ -67,7 +67,7 @@ export const BYTE_CEILINGS = {
   'components/MemoryCenterModal.tsx': 55475, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/ArtifactCanvas.tsx': 43291, // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 49197,
-  'pages/ProjectsPage.tsx': 45101,
+  'pages/ProjectsPage.tsx': 43863, // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
   'services/export/adapters/pdfExporter.ts': 43514,
   'components/artifacts/export/ArtifactExportModal.tsx': 42543, // F4-05: la coordinación salió a `services/artifacts/application`
@@ -82,7 +82,7 @@ export const BYTE_CEILINGS = {
    * while gaining a guarantee.
    */
   'services/agent/agentExecutor.ts': 41241, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
-  'components/AssistantPanel.tsx': 37765, // F5-01 corte 8: +77 B — el turno del agente llega por `useAssistantTurns`, que pone la persona de la Oficina sin un tercer módulo de servicio
+  'components/AssistantPanel.tsx': 36431, // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   'pages/Workspace.tsx': 36374, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/artifacts/artifactRefinementOrchestrator.ts': 36722, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/Icons.tsx': 35946,
@@ -91,7 +91,7 @@ export const BYTE_CEILINGS = {
   'pages/LMS/LMSDashboard.tsx': 34123,
   'services/diagram/suggestionActionExecutors.ts': 33643,
   'components/memory/ChatHistoryPanel.tsx': 32783,
-  'components/copilot/ProjectCopilotChatModal.tsx': 28652,
+  'components/copilot/ProjectCopilotChatModal.tsx': 24441, // F5-02: el enrutado del turno salió a `routeCopilotTurn`
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
   'components/CustomEdge.tsx': 32023,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
@@ -181,18 +181,18 @@ export const CEILINGS = {
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
   'services/agent/agentExecutor.ts': 983, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
-  'pages/ProjectsPage.tsx': 925,
+  'pages/ProjectsPage.tsx': 890, // F5-02
   'services/diagram/mermaidToIR.ts': 856,
   'components/artifacts/export/ArtifactExportModal.tsx': 844,
   'components/CustomArtifactBriefWizard.tsx': 845,
   'components/CustomArtifactRequestModal.tsx': 845,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
   'constants.ts': 805,
-  'components/AssistantPanel.tsx': 749,
+  'components/AssistantPanel.tsx': 731, // F5-02
   'components/artifacts/fable/FableDiagramCanvas.tsx': 790,
   'pages/SDDProcessView.tsx': 785,
   'services/artifacts/artifactRefinementOrchestrator.ts': 785,
-  'components/copilot/ProjectCopilotChatModal.tsx': 675,
+  'components/copilot/ProjectCopilotChatModal.tsx': 582, // F5-02
   'services/diagram/suggestionActionExecutors.ts': 760,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,

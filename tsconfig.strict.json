@@ -61,6 +61,10 @@
     // el SDK de Gemini y la mitad del grafo de dominio.
     "services/ai/generation/artifacts/artifactGenerationSupport.ts",
     "services/ai/generation/artifacts/artifactPromptReinforcements.ts",
+    // F5-02: la regla del `modifyArtifact`, el día que se escribe. Las otras
+    // tres que salieron de pantallas no pueden entrar todavía: `portfolioGraph`
+    // lee los tipos de la Oficina, y la Oficina alcanza el motor.
+    "services/agent/artifactModificationCall.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",

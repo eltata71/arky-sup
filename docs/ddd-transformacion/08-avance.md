@@ -8,7 +8,14 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F5-01, corte 14 — cierra F5-01.** Lo que el motor
+- **Tarea en curso:** **F5-02 — cerrada.** Las seis pantallas sobre el
+  fan-out bajan a **cero** y `UI_SERVICE_FANOUT_BUDGET` queda vacío. Cuatro
+  reglas que vivían en pantallas pasan a su contexto (`routeCopilotTurn` y
+  `describeOfficeCapabilities` en la Oficina, `interpretArtifactModification`
+  en el agente, `resolveAttentionInitiativeLinks` en el grafo del portafolio),
+  seis hooks juntan lo que cada pantalla necesitaba a la vez, y los contextos
+  entregan los tipos de su estado. Pares con import profundo 48 → 47.
+  Evidencia en `evidencias/f5-02.md`. Antes: **F5-01, corte 14 — cierra F5-01** (PR #70). Lo que el motor
   tomaba de `services/artifacts` (selección controlada de fuentes y fallbacks
   deterministas) llega por un puerto obligatorio, `ArtifactGenerationSupport`,
   y el motor entra en `services/ai` como
@@ -86,12 +93,10 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto:** **F5-02** — las seis pantallas sobre el fan-out
-  (`ProjectCopilotChatModal`, `InitiativesPage`, `EngagementIntakeWizard`,
-  `OfficeCapabilitiesPanel`, `AssistantPanel`, `ProjectsPage`) llevan su
-  política a su contexto propietario. Después **F5-03**: el componente de
-  dominio de trece módulos, que F5-01 no disolvió porque `services/ai ->
-  architectureProjects -> chat -> services/ai` lo cierra por su cuenta.
+- **Siguiente paso exacto:** **F5-03** — el componente de dominio de trece
+  módulos, que F5-01 no disolvió porque `services/ai -> architectureProjects ->
+  chat -> services/ai` lo cierra por su cuenta. Objetivo en `budgetTargets.mjs`:
+  14 → 0 antes del 2027-03-31.
 - **Paso anterior, ya hecho (corte 14):** F5-01, la vertical de artefactos (`artifactGenerationService`), el último
   importador del motor y todo lo que queda en él (1 923 líneas según el gate
   tras el corte 12): la generación principal. La generación
@@ -102,6 +107,13 @@
   mover. Cuando salga, la arista `services/ai -> services (raíz)` y el SCC de
   catorce desaparecen. Las seis pantallas que siguen sobre el fan-out son de
   **F5-02**.
+- **Estado medido con F5-02 (2026-09-24):** 483 ficheros y 4 697 pruebas en
+  verde; cobertura 67,33 % / 58,29 % / 60,17 % / 69,27 %; carga inicial
+  309,5 KB gz de 340; 3 ciclos directos, SCC de 3 + 13, 0 pares ascendentes,
+  **47 pares con import profundo**, **0 pantallas sobre el fan-out**; `any` 7;
+  0 ficheros sueltos. `npm run quality` completo pasó con
+  `NODE_OPTIONS=--max-old-space-size=3072`, que es lo que en este equipo evita
+  el OOM de `tsc` (deuda 3).
 - **Estado medido con el corte 14 (2026-09-24):** 479 ficheros y 4 674
   pruebas en verde; cobertura 67,27 % / 58,20 % / 60,18 % / 69,21 %; carga
   inicial 309,5 KB gz de 340; **3 ciclos directos**, SCC de 3 + 13, 0 pares
@@ -221,7 +233,7 @@
 | Tarea | Estado | Nota |
 |---|---|---|
 | **F5-01** romper `services/ai -> services (raíz)` | ✅ cortes 1–14 (2026-09-24) | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. Arreglo del proxy en el camino de texto (#62). Corte 7: el asistente sin persona a `generation/assistant/`; el motor baja a 2 631 líneas. Corte 8: el asistente con persona, partido entre IA, agente y Oficina, 2 → 1; el motor baja a 2 443 líneas y deja de importar `agent` y `chat`. Corte 9: nombres iniciales de artefactos a `generation/artifactTemplateSuggestions.ts`; 2 431 líneas. Corte 10: crítica y refinamiento a `generation/artifactQualityRefinement.ts`; 2 330 líneas, `any` 13 → 11. Corte 11: revisión, mejoras y casos de prueba a `generation/artifactReview.ts`, imagen/voz/SVG borrados sin llamantes; 2 145 líneas. Corte 12: brief a `generation/artifactBriefProposal.ts`, deck a `generation/presentationDeck.ts`, deck mínimo a `services/presentation`; 1 923 líneas; `services/ai` declara `presentation` y `quality`. Corte 13: la persona llega por un puerto (`ArtifactPersonaComposer`); el motor deja de importar la Oficina; pares profundos 54 → 53. Corte 14: lo que tomaba de `services/artifacts` llega por `ArtifactGenerationSupport` (obligatorio) y el motor entra en `services/ai/generation/artifacts/`; ciclos 4 → 3, raíz de `services/` 1 → 0, SCC 14 → 13, pares profundos 53 → 48, `any` 11 → 7 (los cuatro de la vertical de diagramas tipados); 1 786 líneas. |
-| **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
+| **F5-02** políticas a su contexto propietario | ✅ (2026-09-24) | Fan-out 6 → 0 y tabla vacía. Reglas a su dueño: `routeCopilotTurn`, `describeOfficeCapabilities`, `interpretArtifactModification`, `resolveAttentionInitiativeLinks`. Hooks: `useCopilotTurns`, `useInitiativeBoard`, `useInitiativeAssistant`, `useAttentionPortfolio`, `useAttentionInitiativeLinks`, y `useAssistantTurns` ampliado. Tipos desde su contexto. Pares profundos 48 → 47. |
 
 ### Lo que F3-02 hizo visible
 

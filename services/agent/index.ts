@@ -5,6 +5,7 @@
  */
 export * from './agentTypes';
 export { classifyAgentIntent } from './intentClassifier';
+export { resolveArtifactReference, type ArtifactReferenceResolution } from './artifactReferenceResolver';
 export { refineIntentWithLLM, LLM_REFINEMENT_THRESHOLD, __resetIntentClassifierCache } from './intentClassifierLLM';
 export { planAgentAction } from './agentPlanner';
 export { executeAgentAction } from './agentExecutor';
@@ -32,3 +33,9 @@ export type {
   SelectRelevantMemoryOptions,
 } from './agentContextComposer';
 export { agentActionRepository, type AgentActionRepository } from './AgentActionRepository';
+export {
+  interpretArtifactModification,
+  MODIFICATION_NOTES,
+  type ArtifactModification,
+  type ModelFunctionCall,
+} from './artifactModificationCall';

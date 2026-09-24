@@ -32,6 +32,14 @@ import {
   type InitiativeCommand,
 } from '../services/businessInitiatives';
 
+/**
+ * The shapes this context hands to screens, re-exported from where it hands
+ * them (F5-02) — the pattern `AppContext` follows for `Project`. A screen that
+ * lists initiatives reads the type from the provider that gives it the list,
+ * instead of opening one more service module for a declaration.
+ */
+export type { BusinessInitiative, InitiativeStatus } from '../services/businessInitiatives';
+
 export interface InitiativeOperationResult {
   ok: boolean;
   initiative?: BusinessInitiative;

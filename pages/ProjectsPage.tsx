@@ -34,15 +34,13 @@ import {
     AttentionInitiativeGate,
     AttentionKpiRow,
     LinkInitiativeModal,
-    type AttentionInitiativeRef,
 } from '../components/attentions';
 import { PortfolioPulse } from '../components/architectureOffice/dashboard';
 import {
     EngagementIntakeWizard,
     type EngagementIntakeSubmit,
 } from '../components/architectureOffice/EngagementIntakeWizard';
-import { buildOfficePortfolio } from '../services/architectureOffice/officePortfolio';
-import { resolvePortfolioGraph } from '../services/portfolioGraph';
+import { useAttentionPortfolio } from '../hooks/useAttentionPortfolio';
 import { EA_LEVELS } from '../lib/eaTerminology';
 
 interface ProjectsPageProps {
@@ -322,45 +320,14 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
     for (const project of projects) void loadEngagements(project.id);
   }, [projects, loadEngagements]);
 
-  const graph = useMemo(
-    () => resolvePortfolioGraph(initiatives, projects, engagements),
-    [initiatives, projects, engagements],
-  );
-
-  const portfolio = useMemo(
-    () => buildOfficePortfolio(projects, engagements, { initiatives }),
-    [projects, engagements, initiatives],
-  );
+  // The portrait and each attention's initiatives, resolved by key in
+  // `useAttentionPortfolio` — ids win over the code mirror.
+  const { portfolio, initiativesFor, servedInitiatives, unlinkedCount } =
+    useAttentionPortfolio(initiatives, projects, engagements);
 
   const projectsById = useMemo(
     () => new Map(projects.map((project) => [project.id, project])),
     [projects],
-  );
-
-  /**
-   * The relation is read from the resolved graph, not from the code mirror on
-   * the project: ids win, and a legacy record that only carries codes has
-   * already been migrated in memory by the resolver.
-   */
-  const initiativesByAttention = useMemo(() => {
-    const map = new Map<string, AttentionInitiativeRef[]>();
-    for (const attention of graph.attentions) {
-      map.set(attention.id, attention.initiativeIds
-        .map((id) => graph.initiatives.find((node) => node.id === id))
-        .filter((node): node is NonNullable<typeof node> => Boolean(node))
-        .map((node) => ({ id: node.id, code: node.initiative.code, title: node.initiative.title })));
-    }
-    return map;
-  }, [graph]);
-
-  const initiativesFor = useCallback(
-    (projectId: string): AttentionInitiativeRef[] => initiativesByAttention.get(projectId) ?? [],
-    [initiativesByAttention],
-  );
-
-  const servedInitiatives = useMemo(
-    () => graph.initiatives.filter((node) => node.attentions.length > 0).length,
-    [graph],
   );
 
   const visibleNodes = useMemo(() => {
@@ -692,7 +659,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                     {/* Sección 2 · Los números del nivel */}
                     <AttentionKpiRow
                         portfolio={portfolio}
-                        unlinkedCount={graph.unlinkedAttentions.length}
+                        unlinkedCount={unlinkedCount}
                         servedInitiatives={servedInitiatives}
                         onFocusUnlinked={() => { setView('listado'); setLinkFilter('unlinked'); }}
                         onFocusDecisions={() => navigate('/office')}

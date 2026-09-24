@@ -219,7 +219,13 @@ Reglas que no se negocian al trabajar aquí:
    a `lib/`; cuando la dependencia debe ir en un solo sentido, se declara un
    puerto en el que la recibe; cuando una pantalla necesita un tercer servicio,
    esa orquestación pasa a un servicio de aplicación al que la pantalla llama
-   una vez. Detalle en CLAUDE.md → *Module boundaries*.
+   una vez. **Desde F5-02 no hay presupuesto de fan-out** (la tabla está vacía):
+   una regla escrita en una pantalla va a su contexto dueño (`routeCopilotTurn`,
+   `interpretArtifactModification`, `resolveAttentionInitiativeLinks`), dos
+   contextos que se necesitan a la vez se juntan en un hook (`useCopilotTurns`,
+   `useAttentionPortfolio`…), y el tipo del estado que entrega un contexto lo
+   entrega ese contexto (`BusinessInitiative` desde `InitiativeContext`, como
+   `Project` desde `AppContext`). Detalle en CLAUDE.md → *Module boundaries*.
 10. **`types.ts` no importa nada, y no se le reexporta nada** (F3-07). `Artifact`
     vive en `lib/artifacts/artifactModel.ts` —lo lee la capa de fundación, así
     que es núcleo compartido—, y `Project` en `services/architectureProjects`
