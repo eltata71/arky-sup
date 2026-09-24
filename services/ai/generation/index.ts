@@ -7,6 +7,7 @@
  */
 
 export { artifactGenerationService } from './artifactGenerationService';
+export { compactChatMessages, type CompactableTurn } from './chatCompaction';
 export type { ArtifactGenerationService } from './artifactGenerationService';
 export type {
   ArtifactContentGenerationOptions,

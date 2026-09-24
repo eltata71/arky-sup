@@ -1,36 +1,35 @@
 /**
- * Chat compaction service.
+ * Chat compaction: a model turns a slice of conversation into a digest (F5-03).
  *
- * Given a contiguous slice of chat history, asks Gemini to produce a
- * structured digest that the Memory Center can persist as a single
- * "compaction marker" message in place of the originals. The marker keeps
- * the key concepts, decisions and open questions so future AI turns can
- * still rely on the conversational context — just with a fraction of the
- * token / storage footprint.
+ * Given a contiguous slice of chat history, asks the model for a structured
+ * digest the Memory Center persists as a single "compaction marker" in place
+ * of the originals, keeping decisions and open questions at a fraction of the
+ * token and storage footprint.
+ *
+ * It lived in `services/chat` until F5-03 and was that module's only import of
+ * the AI layer — which put chat *above* AI, while the project aggregate, below
+ * AI, writes chat history. That was the edge that kept thirteen domain modules
+ * mutually reachable. Compaction is a generation, so it lives with the others,
+ * and reads the conversation through the shape it needs (`CompactableTurn`)
+ * rather than importing the chat module back.
  *
  * Design:
  *  - Strict JSON schema so the UI never has to parse free-form output.
  *  - 12s timeout, single attempt. Never throws — returns `null` on failure
- *    and the caller falls back to a deterministic, AI-less digest.
- *  - The deterministic fallback is good enough to keep the feature useful
- *    when the API is down (it still saves storage; it just won't paraphrase).
+ *    and the caller falls back to `deterministicCompactionDigest`
+ *    (`services/chat`), which needs no model.
  */
 
-import type { Settings } from '../../types';
-import type { ChatMessage } from './ChatTypes';
-import { aiGateway } from '../ai';
-import { deterministicCompactionDigest, type CompactionDigest } from './compactionDigest';
-import { resolveEffectiveModel } from '../../lib/ai/modelCatalog';
+import type { Settings } from '../../../types';
+import type { CompactionDigest } from '../../../lib/conversationDigest';
+import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
+import { aiGateway } from './aiGateway';
 
-/**
- * Re-exported so this module's published surface is unchanged.
- *
- * `services/chat` still exports both names from the same place it always did;
- * the split exists to keep the AI-less half reachable without the AI-calling
- * half, not to make callers learn a second import path.
- */
-export { deterministicCompactionDigest };
-export type { CompactionDigest };
+/** What compaction reads from a chat message. */
+export interface CompactableTurn {
+  readonly role: string;
+  readonly content: string;
+}
 
 const COMPACTION_TIMEOUT_MS = 12000;
 const MAX_MESSAGES_PER_COMPACTION = 200;
@@ -61,7 +60,7 @@ const SCHEMA = {
   required: ['title', 'summary'],
 } as const;
 
-const buildPrompt = (messages: ChatMessage[]): string => {
+const buildPrompt = (messages: readonly CompactableTurn[]): string => {
   const trimmed = messages.slice(0, MAX_MESSAGES_PER_COMPACTION);
   const transcript = trimmed
     .map((m) => `${m.role === 'user' ? 'Usuario' : 'Arquitecto Agente'}: ${m.content}`)
@@ -130,7 +129,7 @@ const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
  * on any failure — callers should fall back to `deterministicCompactionDigest`
  * so the feature remains useful when the API is down or quota-limited.
  */
-export async function compactChatMessages(messages: ChatMessage[], settings: Settings): Promise<CompactionDigest | null> {
+export async function compactChatMessages(messages: readonly CompactableTurn[], settings: Settings): Promise<CompactionDigest | null> {
   if (messages.length === 0) return null;
   try {
     const modelId = resolveEffectiveModel('default', settings).id;

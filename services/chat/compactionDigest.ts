@@ -14,23 +14,17 @@
  * It is the same rule the repository already applies to the deterministic
  * artifact fallbacks, which are `services/artifacts` and not `services/ai`:
  * **a pure function that never calls a model does not live behind a door that
- * does.** Splitting the file is what lets the compactor stay where it is.
+ * does.** Splitting the file is what let the compactor stay where it was — and
+ * F5-03 finished the thought: the half that calls a model is
+ * `services/ai/generation/chatCompaction.ts` now, so `services/chat` imports no
+ * AI at all. The digest's shape is `lib/conversationDigest.ts`.
  */
 
 import type { ChatMessage } from './ChatTypes';
 
-export interface CompactionDigest {
-  /** Title summarising the compacted range. */
-  title: string;
-  /** Key decisions / conclusions worth preserving. */
-  decisions: string[];
-  /** Open questions or follow-ups discussed in the range. */
-  openQuestions: string[];
-  /** Topics covered — used both for the marker preview and for future search. */
-  topics: string[];
-  /** Free-form summary paragraph (≤ ~600 chars). */
-  summary: string;
-}
+import type { CompactionDigest } from '../../lib/conversationDigest';
+
+export type { CompactionDigest };
 
 /**
  * Deterministic, AI-less fallback. Builds a usable digest from the raw

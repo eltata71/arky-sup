@@ -39,6 +39,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'engineImporters', rule: 'la lista de importadores del motor sólo encoge' },
   { anchor: 'ArtifactGenerationSupport', rule: 'el motor vive en services/ai y recibe por puerto lo que no puede buscar (F5-01 corte 14)' },
   { anchor: 'SERVICES_ROOT_BUDGET', rule: 'la raíz de services/ no tiene ficheros sueltos' },
+  { anchor: 'DiagramSignalSource', rule: 'ningún módulo de dominio es mutuamente alcanzable (F5-03)' },
   { anchor: 'routeCopilotTurn', rule: 'ninguna pantalla supera el fan-out: la regla va a su contexto dueño (F5-02)' },
   { anchor: 'agentRegistry', rule: 'el registro es la única puerta a los agentes' },
   { anchor: 'wrapUntrustedContent', rule: 'lo externo se valla antes de llegar al modelo' },

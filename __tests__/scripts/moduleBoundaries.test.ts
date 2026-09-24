@@ -305,38 +305,34 @@ describe('the strongly connected components are a budget that only falls', () =>
       .toEqual(ALLOWED_SCCS.map((component: string[]) => [...component].sort()));
   });
 
-  it('sigue llevando dentro el núcleo de dominio — el objetivo de F5-03', () => {
-    // Nombrado en vez de contado, para que el día que encoja el test diga qué
-    // módulo salió. Hasta F5-01 lo cerraba también `services/ai -> services
-    // (raíz)`, los imports del motor desde la capa construida para ocultarlo;
-    // el corte 14 metió el motor en esa capa y la raíz salió (14 → 13). No se
-    // disolvió porque no era la única arista: la IA lee el proyecto, el
-    // proyecto guarda el historial de chat y el chat compacta con un modelo.
+  it('no deja ningún módulo de dominio mutuamente alcanzable (F5-03)', () => {
+    // Fue de nueve (ADR-104), de veintisiete al abrir la raíz (ADR-105), de
+    // catorce tras F3-07 y de trece tras F5-01. F5-03 cortó las tres aristas
+    // que apuntaban hacia arriba —el extractor de señales pedía el proyecto
+    // entero, el grafo de conocimiento buscaba los estándares de la Oficina, y
+    // el chat compactaba con un modelo— y el componente desapareció. Lo que
+    // queda es el de React. Uno que contenga un solo módulo de `services/` es
+    // una regresión, se llame como se llame.
     const { sccs } = analyse();
-    const domain = sccs.find((component: string[]) => component.includes('services/ai'));
-    expect(domain).not.toContain('services (raíz)');
-    expect(domain).toContain('services/architectureOffice');
-    expect(domain).toContain('services/architectureProjects');
+    const withDomain = sccs.filter((component: string[]) =>
+      component.some((name) => name.startsWith('services')));
+    expect(withDomain).toEqual([]);
   });
 
-  it('deja fuera del componente a `types.ts` y a toda la fundación (F3-07)', () => {
-    // De nueve módulos a veintisiete el 2026-09-21 sin escribir una línea
-    // (F3-02, ADR-105): el verificador aprendió a abrir los ficheros de la raíz.
-    // `types.ts` los importan 25 de los 34 módulos y él importa seis, así que
-    // cierra el grafo entero — y arrastra dentro a `lib` y `utils`, que son la
-    // capa de fundación y no deberían poder volver.
-    //
-    // Esto se afirma aparte del tamaño porque son dos trabajos distintos:
-    // deshacer el reexportador es mover declaraciones, y romper el núcleo de
-    // nueve es estrangular un motor de 5 400 líneas. El primero es el barato,
-    // y F3-07 lo terminó: de 27 a 14. Que ninguna pieza de la fundación vuelva
-    // a entrar es lo que este test impide.
+  it('mantiene abiertas las tres aristas que F5-03 cortó', () => {
+    const { edges } = analyse();
+    expect(edges.has('services/diagram -> services/architectureProjects')).toBe(false);
+    expect(edges.has('services/architectureKnowledgeGraph -> services/architectureOffice')).toBe(false);
+    expect(edges.has('services/chat -> services/ai')).toBe(false);
+  });
+
+  it('deja fuera de todo componente a `types.ts` y a toda la fundación (F3-07)', () => {
     const { sccs } = analyse();
-    const domain = sccs.find((component: string[]) => component.includes('services/ai'));
-    for (const foundation of ['types.ts', 'lib', 'utils', 'utils.ts', 'constants.ts']) {
-      expect(domain).not.toContain(foundation);
+    for (const component of sccs as string[][]) {
+      for (const foundation of ['types.ts', 'lib', 'utils', 'utils.ts', 'constants.ts']) {
+        expect(component).not.toContain(foundation);
+      }
     }
-    expect(domain!.length).toBeLessThanOrEqual(14);
   });
 
   it('keeps the UI component at three — React ordinaria, no un defecto', () => {

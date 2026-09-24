@@ -44,7 +44,6 @@ import {
   resolveArchitectureGraphFreshness,
   type ArchitectureGraphFreshness,
 } from './ArchitectureGraphFreshness';
-import { getOfficeArchitectureContext } from '../architectureOffice/officeArchitectureKnowledge';
 
 const nowOr = (value?: string): string => value ?? new Date().toISOString();
 
@@ -304,15 +303,20 @@ export const buildArchitectureKnowledgeGraph = (
   }
 };
 
-/** Convenience: builds the graph straight from a `Project`. */
+/**
+ * Convenience: builds the graph straight from a `Project`.
+ *
+ * It used to take `includeOfficeContext` and fetch the Office's standards
+ * itself — the one import by which the knowledge graph reached up into
+ * `services/architectureOffice` and closed the domain component. No production
+ * caller ever set it (F5-03); a caller that wants the standards in the
+ * signature passes them in `globalContext`, which is what the option did.
+ */
 export const buildArchitectureKnowledgeGraphForProject = (
   project: ArchitectureGraphProjectSource,
-  options: { globalContext?: string[]; now?: string; previousGraph?: ArchitectureGraph; includeOfficeContext?: boolean } = {},
+  options: { globalContext?: string[]; now?: string; previousGraph?: ArchitectureGraph } = {},
 ): ArchitectureGraph => {
-  const globalContext = Array.from(new Set([
-    ...(options.includeOfficeContext ? getOfficeArchitectureContext().promptContext : []),
-    ...(options.globalContext ?? []),
-  ]));
+  const globalContext = Array.from(new Set(options.globalContext ?? []));
   return buildArchitectureKnowledgeGraph(buildGraphInputFromProject(project, {
     ...options,
     globalContext,
@@ -326,12 +330,9 @@ export const buildArchitectureKnowledgeGraphForProject = (
  */
 export const resolveProjectArchitectureGraphFreshness = (
   project: ArchitectureGraphProjectSource & { readonly architectureKnowledgeGraph?: ArchitectureGraph },
-  options: { globalContext?: string[]; includeOfficeContext?: boolean } = {},
+  options: { globalContext?: string[] } = {},
 ): ArchitectureGraphFreshness => {
-  const globalContext = Array.from(new Set([
-    ...(options.includeOfficeContext ? getOfficeArchitectureContext().promptContext : []),
-    ...(options.globalContext ?? []),
-  ]));
+  const globalContext = Array.from(new Set(options.globalContext ?? []));
   return resolveArchitectureGraphFreshness(
     project.architectureKnowledgeGraph,
     computeArchitectureGraphSignature(buildGraphInputFromProject(project, {

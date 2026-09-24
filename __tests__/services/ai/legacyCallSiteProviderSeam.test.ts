@@ -47,7 +47,7 @@ vi.mock('../../../lib/ai/modelCatalog', async (importOriginal) => ({
 
 import { refineIntentWithLLM, __resetIntentClassifierCache } from '../../../services/agent/intentClassifierLLM';
 import { extractMemoryBullets, fallbackBulletsFromInstruction, type ExtractMemoryBulletsInput } from '../../../services/agent/memoryExtractor';
-import { compactChatMessages } from '../../../services/chat/chatCompactor';
+import { compactChatMessages } from '../../../services/ai/generation/chatCompaction';
 import type { AgentContext, AgentIntent } from '../../../services/agent/agentTypes';
 
 const settingsFor = (provider: 'gemini' | 'openrouter'): Settings => ({

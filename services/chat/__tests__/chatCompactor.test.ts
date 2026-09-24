@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deterministicCompactionDigest } from '../chatCompactor';
+import { deterministicCompactionDigest } from '../compactionDigest';
 import type { ChatMessage } from '../ChatTypes';
 
 describe('deterministicCompactionDigest', () => {

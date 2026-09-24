@@ -407,9 +407,13 @@ Reglas que no se negocian al trabajar aquí:
     `generation/artifacts/artifactGenerationEngine.ts` (1 786 líneas, desde unas
     5 400). La raíz de `services/` queda vacía (`SERVICES_ROOT_BUDGET` 0) y
     `services (raíz) <-> services/ai` sale de los ciclos (4 → 3). El SCC de
-    dominio **no** desaparece —baja de 14 a 13—: `services/ai ->
-    architectureProjects -> chat -> services/ai` lo cierra por su cuenta, y
-    eso es F5-03. No dejes un fichero suelto en la raíz de `services/`, y no
+    dominio bajó a 13 y **F5-03 lo llevó a cero** cortando tres imports que
+    contradecían el orden de capas: el extractor de señales declara
+    `DiagramSignalSource` en vez de pedir el `Project`, el grafo de
+    conocimiento ya no busca los estándares de la Oficina, y la compactación
+    con modelo pasó de `services/chat` a `services/ai`
+    (`chatCompaction.ts`, con `CompactionDigest` en `lib/conversationDigest.ts`).
+    `ALLOWED_SCCS` sólo registra el trío de React. No dejes un fichero suelto en la raíz de `services/`, y no
     busques nada desde el motor en un contexto que importe `services/ai`:
     declara el puerto. Los **tres** caminos del transporte intentan primero el proxy:
     el de texto (`generateTextWithFallback`) no lo hacía, y sin clave personal

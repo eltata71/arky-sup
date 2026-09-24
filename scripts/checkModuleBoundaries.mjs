@@ -144,6 +144,17 @@ export const ALLOWED_CYCLES = [
  * guarda el historial de chat, y el chat compacta con un modelo—, y hay más
  * caminos así. Deshacerlos es F5-03, que es donde `budgetTargets.mjs` pone el
  * objetivo de cero.
+ *
+ * **De trece a cero el 2026-09-24 (F5-03).** Con el orden natural —diagrama,
+ * calidad, compilador, exportación, grafo de conocimiento, publicación,
+ * proyecto, grafo de contexto, IA, chat, artefactos, agente, Oficina— sólo tres
+ * aristas apuntaban hacia arriba, y cada una era un import:
+ * `services/diagram -> architectureProjects` (el extractor de señales pedía el
+ * proyecto entero para leer tres campos), `architectureKnowledgeGraph ->
+ * architectureOffice` (una opción que ningún llamante de producción activaba) y
+ * `chat -> ai` (la compactación con modelo, que es una generación). Queda el
+ * componente de React, que es la forma ordinaria de la UI y no es objetivo de
+ * nadie. Uno de dominio que vuelva a aparecer falla sin presupuesto.
  */
 export const ALLOWED_SCCS = [
   [
@@ -151,22 +162,7 @@ export const ALLOWED_SCCS = [
     'context',
     'hooks',
   ],
-  [
-    'services/agent',
-    'services/ai',
-    'services/architectureKnowledgeGraph',
-    'services/architectureOffice',
-    'services/architectureProjects',
-    'services/artifactCompiler',
-    'services/artifacts',
-    'services/chat',
-    'services/contextGraph',
-    'services/diagram',
-    'services/export',
-    'services/publicationPipeline',
-    'services/quality',
-  ],
-];
+]
 
 /**
  * Imports that point upward through the layers, measured 2026-09-01,
@@ -271,7 +267,6 @@ export const DEEP_IMPORT_BUDGET = {
   'components -> services/ai': 2,
   'components -> services/architectureOffice': 37, // F5-02: capacidades y copiloto, por la puerta
   'components -> services/artifacts': 11,
-  'components -> services/chat': 1,
   'components -> services/diagram': 16,
   'components -> services/export': 1,
   'components -> services/presentation': 1,
@@ -302,12 +297,10 @@ export const DEEP_IMPORT_BUDGET = {
   'services/agent -> services/memory': 3,
   'services/agent -> services/quality': 1,
   'services/ai -> services/diagram': 1,
-  'services/architectureKnowledgeGraph -> services/architectureOffice': 1,
   'services/architectureOffice -> services/ai': 2,
   'services/architectureOffice -> services/diagram': 1,
   'services/architectureOffice -> services/publicationPipeline': 1,
   'services/architectureProjects -> services/architectureKnowledgeGraph': 1,
-  'services/architectureProjects -> services/chat': 1,
   'services/architectureProjects -> services/memory': 2,
   'services/architectureProjects -> services/publicationPipeline': 4,
   'services/artifactCompiler -> services/quality': 3,
