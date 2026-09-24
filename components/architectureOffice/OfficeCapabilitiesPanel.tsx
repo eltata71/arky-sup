@@ -2,13 +2,9 @@ import React, { useMemo } from 'react';
 import type { Project } from '../../context/AppContext';
 import { Badge } from '../ui';
 import { InitiativePicker } from '../businessInitiatives/InitiativePicker';
-import { codesForInitiativeIds } from '../../services/portfolioGraph';
-import type { BusinessInitiative } from '../../services/businessInitiatives/domain';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
-import { OFFICE_VALIDATORS } from '../../services/architectureOffice/officeArtifactValidators';
-import { evaluateOfficeQualityGates, OFFICE_GATE_LABELS } from '../../services/architectureOffice/officeQualityGates';
-import { getOfficeArchitectureContext } from '../../services/architectureOffice/officeArchitectureKnowledge';
-import { isInitiativeCode } from '../../lib/eaTerminology';
+import type { BusinessInitiative } from '../../context/InitiativeContext';
+import { describeOfficeCapabilities } from '../../services/architectureOffice';
+import { useAttentionInitiativeLinks } from '../../hooks/useAttentionInitiatives';
 
 interface OfficeCapabilitiesPanelProps {
   project: Project;
@@ -30,44 +26,11 @@ export const OfficeCapabilitiesPanel: React.FC<OfficeCapabilitiesPanelProps> = (
   initiatives,
   onChangeInitiativeLinks,
 }) => {
-  const assessment = useMemo(() => evaluateOfficeQualityGates(project), [project]);
-  const officeContext = getOfficeArchitectureContext();
-
-  /**
-   * Ids win; a legacy code is honoured only while nothing has migrated it yet,
-   * exactly as `portfolioGraph` resolves them. Doing it here too keeps the
-   * picker showing what the rest of the app already believes.
-   */
-  const linkedIds = useMemo(() => {
-    const stored = project.initiativeIds ?? [];
-    if (stored.length > 0) return stored;
-    const byCode = new Map<string, string>(initiatives.filter((item) => item.code).map((item) => [item.code, item.id]));
-    return (project.linkedBusinessProjects ?? [])
-      .map((code) => byCode.get(code))
-      .filter((id): id is string => Boolean(id));
-  }, [project.initiativeIds, project.linkedBusinessProjects, initiatives]);
-
-  const unresolvedCodes = useMemo(() => {
-    const known = new Set(initiatives.map((item) => item.code).filter(Boolean));
-    return (project.linkedBusinessProjects ?? [])
-      .filter((code) => isInitiativeCode(code) && !known.has(code));
-  }, [project.linkedBusinessProjects, initiatives]);
-
-  const applyLinks = (initiativeIds: string[]): void => {
-    // Both halves move together: the ids are the relation, the codes are the
-    // label people read. Writing one without the other is how they drift.
-    onChangeInitiativeLinks({
-      initiativeIds,
-      codes: codesForInitiativeIds(initiativeIds, initiatives),
-    });
-  };
-
-  const dropUnresolvedCode = (code: string): void => {
-    onChangeInitiativeLinks({
-      initiativeIds: linkedIds,
-      codes: (project.linkedBusinessProjects ?? []).filter((current) => current !== code),
-    });
-  };
+  const capabilities = useMemo(() => describeOfficeCapabilities(project), [project]);
+  // Ids win; a legacy code is honoured only while nothing has migrated it —
+  // `services/portfolioGraph` decides, so the picker shows what the rest of
+  // the app already believes.
+  const links = useAttentionInitiativeLinks(project, initiatives, onChangeInitiativeLinks);
 
   return (
     <section
@@ -79,16 +42,16 @@ export const OfficeCapabilitiesPanel: React.FC<OfficeCapabilitiesPanelProps> = (
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-600 dark:text-primary-300">Capacidades integradas</p>
           <h2 id="office-capabilities-title" className="mt-1 text-base font-black text-slate-950 dark:text-white">Oficina de Arquitectura</h2>
         </div>
-        <Badge tone={toneFor(assessment.overallStatus)} size="xs" dot>
-          {assessment.overallStatus.toUpperCase()}
+        <Badge tone={toneFor(capabilities.overallStatus)} size="xs" dot>
+          {capabilities.overallStatus.toUpperCase()}
         </Badge>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Cobertura de capacidades">
-        <Badge tone="ai" size="xs">{Object.keys(OFFICE_AGENT_PERSONAS).length} personas</Badge>
-        <Badge tone="info" size="xs">{OFFICE_VALIDATORS.length} validadores</Badge>
-        <Badge tone="primary" size="xs">{assessment.gates.length} quality gates</Badge>
-        <Badge tone="gray" size="xs">{officeContext.standards.length} estándares</Badge>
+        <Badge tone="ai" size="xs">{capabilities.counts.personas} personas</Badge>
+        <Badge tone="info" size="xs">{capabilities.counts.validators} validadores</Badge>
+        <Badge tone="primary" size="xs">{capabilities.counts.gates} quality gates</Badge>
+        <Badge tone="gray" size="xs">{capabilities.counts.standards} estándares</Badge>
       </div>
 
       <details className="mt-4 rounded-2xl bg-white/80 p-3 dark:bg-black/20">
@@ -99,10 +62,10 @@ export const OfficeCapabilitiesPanel: React.FC<OfficeCapabilitiesPanelProps> = (
           reviewer with a colour and no reason, so the reasons are shown here.
         */}
         <ul className="mt-3 space-y-2">
-          {assessment.gates.map((gate) => (
+          {capabilities.gates.map((gate) => (
             <li key={gate.id} className="space-y-1 text-xs">
               <div className="flex items-center justify-between gap-3">
-                <span className="font-medium text-slate-700 dark:text-slate-200">{OFFICE_GATE_LABELS[gate.id]}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-200">{gate.label}</span>
                 <Badge tone={toneFor(gate.status)} size="xs">{gate.status.toUpperCase()}</Badge>
               </div>
               {gate.blockers.map((blocker) => (
@@ -124,10 +87,10 @@ export const OfficeCapabilitiesPanel: React.FC<OfficeCapabilitiesPanelProps> = (
       <div className="mt-4">
         <InitiativePicker
           initiatives={initiatives}
-          value={linkedIds}
-          onChange={applyLinks}
-          unresolvedCodes={unresolvedCodes}
-          onDropUnresolvedCode={dropUnresolvedCode}
+          value={links.linkedIds}
+          onChange={links.applyLinks}
+          unresolvedCodes={links.unresolvedCodes}
+          onDropUnresolvedCode={links.dropUnresolvedCode}
         />
       </div>
     </section>

@@ -65,6 +65,13 @@ export * from './officePortfolio';
  * el reparto real de agentes, que por eso no puede desfasarse de este registro.
  */
 export * from './application/captureAssistance';
+export * from './application/copilotTurn';
+// F5-02: la consulta al equipo y el alcance de cada nivel. Ya estaba en el
+// cierre del barril —`captureAssistance` la importa—; publicarla es lo que deja
+// a las pantallas entrar por la puerta en lugar de por la ruta.
+export * from './application/assistantConsultation';
+export type { CoordinationScope, CoordinationScopeLevel } from './officeCoordination';
+export * from './application/officeCapabilities';
 export * from './application/platformGuidance';
 export * from './application/portfolioCommandCenter';
 export * from './application/projectConversation';

@@ -9,14 +9,13 @@
  * generation, persistence or quality validation — it orchestrates the
  * existing services and the `useAgentActions` hook.
  *
- * Flow on each user turn:
- *  1. Classify intent against the entire project (no active artifact).
- *  2. If intent type is `artifact.create`, propose a creation plan.
- *  3. If intent type is a modification (regenerate/improve/patch/…), resolve
- *     the artifact reference. Single match → propose plan; multiple matches
- *     → render the selector card; nothing → conversational fallback.
- *  4. If intent type is `memory.save.*`, run the existing memory flow.
- *  5. Otherwise, hit `chatWithProject` for a consultative reply.
+ * Flow on each user turn — decided by `routeCopilotTurn` in the Office's
+ * application layer (F5-02), reached through `hooks/useCopilotTurns`:
+ *  1. An explicit «Lucía, coordina…» runs the Office orchestration.
+ *  2. `artifact.create` / `memory.save.*` propose a plan with no anchor.
+ *  3. A modification resolves the artifact it names: one match → plan;
+ *     several close ones → the selector card.
+ *  4. Anything else is answered by the Office team (`consultCopilot`).
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -30,27 +29,17 @@ import { ArrowUpTrayIcon, ExclamationTriangleIcon, ArrowPathIcon, SparklesIcon }
 import { Copy, Check } from 'lucide-react';
 import { useAppContext, type Project } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { useAgentActions } from '../../hooks/useAgentActions';
-import { createChatMessage, type ChatMessage } from '../../services/chat';
-import { classifyAIError, AIServiceError } from '../../services/ai';
 import {
-  classifyAgentIntent,
-  type AgentContext,
+  useAgentActions,
   type AgentExecutionTarget,
   type AgentIntent,
   type MemoryScope,
-} from '../../services/agent';
-import { resolveArtifactReference } from '../../services/agent/artifactReferenceResolver';
+} from '../../hooks/useAgentActions';
+import { useCopilotTurns } from '../../hooks/useCopilotTurns';
+import { createChatMessage, type ChatMessage } from '../../services/chat';
 import type { Artifact } from '../../lib/artifacts';
 import { useAgentLessonStore, useAgentMemoryStore } from '../../hooks/useAgentMemoryStore';
 import { OfficeAgentPicker } from '../architectureOffice/OfficeAgentPicker';
-import {
-  executeOfficeOrchestration,
-  isOfficeOrchestrationRequest,
-  planOfficeWorkstreams,
-} from '../../services/architectureOffice/officeOrchestration';
-import { consultOffice } from '../../services/architectureOffice/application/assistantConsultation';
-import { chatWithProject } from '../../services/architectureOffice';
 import { useInitiatives } from '../../context/InitiativeContext';
 import { SafeRichText } from '../ui/SafeRichText';
 
@@ -109,6 +98,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
   const isMounted = useRef(true);
 
   const agent = useAgentActions();
+  const turns = useCopilotTurns();
 
   useEffect(() => {
     isMounted.current = true;
@@ -167,20 +157,13 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     setIsLoading(true);
     setLastError(null);
     try {
-      const answer = await consultOffice({
-        request: question,
-        project,
-        initiatives,
-        settings,
-        chat: (carrier, message, history, currentSettings, personaOverride) =>
-          chatWithProject(carrier, message, history, currentSettings, personaOverride as never),
-      });
+      const answer = await turns.consult(question, project, initiatives, settings);
 
       if (isMounted.current) {
         setMessages((prev) => [...prev, createChatMessage('model', answer)]);
       }
     } catch (error) {
-      const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
+      const friendly = turns.describeFailure(error);
       console.error('[ProjectCopilotChatModal] chat failed', { category: friendly.category, message: friendly.message });
       if (isMounted.current) {
         setLastError({
@@ -193,7 +176,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     } finally {
       if (isMounted.current) setIsLoading(false);
     }
-  }, [project, settings, initiatives]);
+  }, [turns, project, settings, initiatives]);
 
   /**
    * Drive a plan for a known anchor artifact (set explicitly by the user via
@@ -234,39 +217,19 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     // Clear any stale disambiguation prompt — a new turn supersedes it.
     setPendingDisambiguation(null);
 
-    // Explicit Lucía commands use the Office orchestration engine: relevant
-    // specialists run independently, then Alejandro receives every result and
-    // produces the single user-facing consolidation.
-    if (isOfficeOrchestrationRequest(text)) {
+    // Where the turn goes is `routeCopilotTurn`'s decision (Office
+    // application layer): an explicit «Lucía, coordina…» runs the
+    // orchestration, an executable intent becomes a plan, an ambiguous
+    // modification asks the person to pick, and the rest is consulted.
+    const route = turns.route(text, project, newMessages);
+    if (route.kind === 'office-orchestration') {
       setIsLoading(true);
       setLastError(null);
       try {
-        const plan = planOfficeWorkstreams(text);
-        const result = await executeOfficeOrchestration(
-          plan,
-          // The persona travels through the signature, never inside the
-          // prompt text: Lucía's brief is concatenated into every workstream
-          // prompt, and an `@Alias` inside it would otherwise hijack the
-          // specialist that mention resolution picks for the sub-call.
-          async (personaId, instruction) => chatWithProject(
-            project,
-            instruction,
-            [],
-            settings,
-            personaId,
-          ),
-        );
-        if (isMounted.current) {
-          const completed = result.workstreamResults.filter((item) => item.status === 'completed').length;
-          const summary = [
-            `**Operación ${result.operationId} — ${result.status.toUpperCase()}**`,
-            `Workstreams completados: ${completed}/${result.workstreamResults.length}.`,
-            result.consolidation,
-          ].join('\n\n');
-          setMessages((prev) => [...prev, createChatMessage('model', summary)]);
-        }
+        const summary = await turns.orchestrate(text, project, settings);
+        if (isMounted.current) setMessages((prev) => [...prev, createChatMessage('model', summary)]);
       } catch (error) {
-        const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
+        const friendly = turns.describeFailure(error);
         if (isMounted.current) {
           setLastError({
             category: friendly.category,
@@ -280,59 +243,18 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
       }
       return;
     }
-
-    // STEP 1: classify intent against the project as a whole. The Global
-    // Copilot never has an active artifact in scope, so the classifier sees
-    // `artifact: null`. Creation / memory intents will fire; modification
-    // intents need the reference resolver below.
-    const ctx: AgentContext = {
-      artifact: null,
-      viewMode: null,
-      history: newMessages,
-      hasPendingSuggestions: false,
-    };
-    const intent = classifyAgentIntent(text, ctx);
-
-    // STEP 2: artifact.create / memory.save.* run without an active artifact.
-    if (intent.type === 'artifact.create' || intent.type.startsWith('memory.save.')) {
-      proposeAnchoredPlan({ userInput: text, baseMessages: newMessages, anchor: null });
+    if (route.kind === 'plan') {
+      proposeAnchoredPlan({ userInput: text, baseMessages: newMessages, anchor: route.anchor });
+      return;
+    }
+    if (route.kind === 'disambiguate') {
+      setPendingDisambiguation({ intent: route.intent, candidates: route.candidates, selectedId: null });
       return;
     }
 
-    // STEP 3: modification intents need an artifact. The classifier returned
-    // `unknown` because there's no active artifact in ctx, but the user might
-    // still have referenced one by name ("mejora el diagrama de contexto").
-    // We rerun the classifier against each candidate identified by the
-    // reference resolver — when one wins clearly we use it; when more than
-    // one is close we surface the selector card.
-    const reference = resolveArtifactReference(project, text);
-    if (reference.unambiguous && reference.resolved) {
-      const anchoredCtx: AgentContext = { ...ctx, artifact: reference.resolved };
-      const anchoredIntent = classifyAgentIntent(text, anchoredCtx);
-      if (anchoredIntent.type !== 'unknown' && anchoredIntent.type !== 'artifact.explainOnly') {
-        proposeAnchoredPlan({ userInput: text, baseMessages: newMessages, anchor: reference.resolved });
-        return;
-      }
-    } else if (reference.candidates.length > 1) {
-      // Build a "best-guess intent" so the disambiguation card knows what to
-      // do after the user picks an artifact. We pin the first candidate to
-      // get a valid type and confidence — the artifact will be swapped in
-      // when the user confirms.
-      const probeCtx: AgentContext = { ...ctx, artifact: reference.candidates[0] };
-      const probeIntent = classifyAgentIntent(text, probeCtx);
-      if (probeIntent.type !== 'unknown' && probeIntent.type !== 'artifact.explainOnly') {
-        setPendingDisambiguation({
-          intent: probeIntent,
-          candidates: reference.candidates,
-          selectedId: null,
-        });
-        return;
-      }
-    }
-
-    // STEP 4: nothing actionable detected → consultative fallback.
+    // Nothing actionable → the Office team answers.
     await conversationalReply(text);
-  }, [userInput, isLoading, messages, project, settings, proposeAnchoredPlan, conversationalReply]);
+  }, [turns, userInput, isLoading, messages, project, settings, proposeAnchoredPlan, conversationalReply]);
 
   /**
    * Promote a disambiguation choice into a real plan. We re-classify the
@@ -364,27 +286,11 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
       if (!plan) return;
       const isCreate = plan.actionType === 'artifact.create';
       const isMemory = plan.actionType.startsWith('memory.save.');
-      const anchorArtifact: Artifact = (() => {
-        if (isCreate || isMemory) {
-          return {
-            id: 'copilot-anchor',
-            versionGroupId: 'copilot-anchor',
-            version: 1,
-            createdAt: new Date().toISOString(),
-            name: project.name,
-            type: 'markdown',
-            phase: '—',
-            architecturalView: 'Vista de Gestión y Soporte',
-            content: '',
-            objective: 'Anclaje sintético para acciones globales del Arquitecto Agente.',
-            keyConcepts: [],
-            representation: 'document',
-          };
-        }
-        // Modify-style action: the plan's artifactId points at the real target.
-        const target = getArtifact(project.id, plan.artifactId);
-        return target ?? ({} as Artifact);
-      })();
+      // Creation and memory run against a synthetic anchor the executor
+      // ignores; a modification runs against the artifact the plan names.
+      const anchorArtifact: Artifact = isCreate || isMemory
+        ? turns.anchorFor(project)
+        : getArtifact(project.id, plan.artifactId) ?? ({} as Artifact);
 
       const result = await agent.confirmAndExecute({
         artifact: anchorArtifact,
@@ -430,6 +336,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     },
     [
       agent,
+      turns,
       project,
       settings,
       messages,

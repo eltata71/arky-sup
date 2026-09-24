@@ -28,18 +28,10 @@ import {
   type InitiativeIntakeSubmit,
 } from '../components/businessInitiatives';
 import { EA_LEVELS } from '../lib/eaTerminology';
-import { resolvePortfolioGraph } from '../services/portfolioGraph';
 import { AssistantDock } from '../components/architectureOffice/AssistantDock';
-import {
-  briefInitiative,
-  buildInitiativeScope,
-} from '../services/architectureOffice/application/assistantConsultation';
-import { initiativeAssistantService } from '../services/ai/generation';
-import {
-  rollupInitiatives,
-  type BusinessInitiative,
-  type InitiativeStatus,
-} from '../services/businessInitiatives';
+import { useInitiativeBoard } from '../hooks/useInitiativeBoard';
+import { useInitiativeAssistant } from '../hooks/useInitiativeAssistant';
+import type { BusinessInitiative, InitiativeStatus } from '../context/InitiativeContext';
 
 type ViewId = 'resumen' | 'listado';
 
@@ -67,29 +59,12 @@ const InitiativesPage: React.FC = () => {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<InitiativeStatus | 'all'>('all');
 
-  const rollup = useMemo(() => rollupInitiatives(initiatives), [initiatives]);
-
   /**
-   * How many architecture attentions serve each initiative — resolved by key.
-   * Counting the `NEG-YYYY-NNN` mirror instead would miss every attention that
-   * was linked by id without the code being written back, and the mirror is
-   * explicitly not a second source of truth.
+   * The rollup and how many attentions serve each initiative, resolved by key
+   * in `useInitiativeBoard` — never by the `NEG-YYYY-NNN` mirror.
    */
-  const graph = useMemo(
-    () => resolvePortfolioGraph(initiatives, projects, []),
-    [initiatives, projects],
-  );
-
-  const attentionsById = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const node of graph.initiatives) counts.set(node.id, node.attentions.length);
-    return counts;
-  }, [graph]);
-
-  const attentionCount = useMemo(
-    () => graph.attentions.length - graph.unlinkedAttentions.length,
-    [graph],
-  );
+  const { rollup, attentionsById, attentionCount } = useInitiativeBoard(initiatives, projects);
+  const assistant = useInitiativeAssistant(settings);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -104,14 +79,6 @@ const InitiativesPage: React.FC = () => {
       );
     });
   }, [initiatives, query, statusFilter]);
-
-  const draftWithAssistant = useCallback(
-    (input: { title: string; need: string }) =>
-      initiativeAssistantService
-        .draftInitiative(input, settings)
-        .then((result) => ({ draft: result.draft, reason: result.reason })),
-    [settings],
-  );
 
   /**
    * Creating and then enriching is two writes rather than one, on purpose: the
@@ -166,16 +133,6 @@ const InitiativesPage: React.FC = () => {
       result.ok ? 'success' : 'error',
     );
   }, [pendingDelete, deleteInitiative, addToast]);
-
-  /**
-   * What the office is told when the team is summoned from a card. The room
-   * builds a richer briefing; here the essentials are enough to frame the
-   * request, and the team can ask for the rest.
-   */
-  const scopeFor = useCallback(
-    (initiative: BusinessInitiative) => buildInitiativeScope(initiative, briefInitiative(initiative)),
-    [],
-  );
 
   useEffect(() => {
     // A filter that hides everything reads as "no data" — reset it instead.
@@ -337,7 +294,7 @@ const InitiativesPage: React.FC = () => {
         <AssistantDock
           open
           onClose={() => setAssistantFor(null)}
-          scope={scopeFor(assistantFor)}
+          scope={assistant.scopeFor(assistantFor)}
           settings={settings}
           suggestions={[
             'Evalúa si los indicadores miden de verdad el resultado esperado',
@@ -379,7 +336,7 @@ const InitiativesPage: React.FC = () => {
       <InitiativeIntakeWizard
         open={intakeOpen}
         usedCodes={usedCodes}
-        onDraft={draftWithAssistant}
+        onDraft={assistant.draft}
         onSubmit={handleSubmit}
         onClose={() => setIntakeOpen(false)}
       />

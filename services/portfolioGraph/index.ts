@@ -12,5 +12,15 @@ export {
   codesForInitiativeIds,
 } from './portfolioResolver';
 export type { ResolveOptions } from './portfolioResolver';
+export {
+  initiativeLinksFor,
+  resolveAttentionInitiativeLinks,
+  withoutInitiativeCode,
+} from './attentionInitiativeLinks';
+export type {
+  AttentionInitiativeLinkSource,
+  AttentionInitiativeLinkState,
+  InitiativeLinks,
+} from './attentionInitiativeLinks';
 export { searchPortfolio, relatedTo } from './portfolioSearch';
 export type { PortfolioSearchHit, PortfolioSearchOptions } from './portfolioSearch';

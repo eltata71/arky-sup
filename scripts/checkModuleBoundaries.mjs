@@ -267,9 +267,9 @@ export const LAYER_VIOLATION_BUDGET = {
  */
 export const DEEP_IMPORT_BUDGET = {
   'api -> services/ai': 1,
-  'components -> services/agent': 2,
+  'components -> services/agent': 1, // F5-02: el copiloto entra por `useCopilotTurns`
   'components -> services/ai': 2,
-  'components -> services/architectureOffice': 44,
+  'components -> services/architectureOffice': 37, // F5-02: capacidades y copiloto, por la puerta
   'components -> services/artifacts': 11,
   'components -> services/chat': 1,
   'components -> services/diagram': 16,
@@ -292,8 +292,7 @@ export const DEEP_IMPORT_BUDGET = {
   'hooks -> services/artifacts': 3,
   'hooks -> services/diagram': 5,
   'hooks -> services/export': 2,
-  'pages -> services/ai': 1,
-  'pages -> services/architectureOffice': 9,
+  'pages -> services/architectureOffice': 7, // F5-02: `InitiativesPage` y `ProjectsPage` salen por hooks
   'pages -> services/artifacts': 1,
   // `services (raíz) -> …` — cinco pares, 16 imports profundos — se fueron con
   // el motor el 2026-09-24 (F5-01, corte 14). Dentro de `services/ai` entra por
@@ -352,14 +351,20 @@ export const DEEP_IMPORT_BUDGET = {
  * hace `hooks/usePortfolioCommandCenter`, con la regla de salud en
  * `services/architectureOffice/application/portfolioCommandCenter`, y la
  * pantalla alcanza un solo módulo de servicio — por debajo del defecto.
+ *
+ * **La tabla está vacía desde el 2026-09-24 (F5-02).** Las seis que quedaban
+ * salieron por el mismo camino: lo que decidían pasó a su contexto dueño
+ * —`routeCopilotTurn` y `describeOfficeCapabilities` a la Oficina,
+ * `interpretArtifactModification` al agente, `resolveAttentionInitiativeLinks`
+ * al grafo del portafolio— y un hook junta los módulos que una pantalla
+ * necesitaba a la vez (`useCopilotTurns`, `useAssistantTurns`,
+ * `useInitiativeBoard`, `useInitiativeAssistant`, `useAttentionPortfolio`,
+ * `useAttentionInitiativeLinks`). Los tipos del estado que da un contexto los
+ * da el contexto (`BusinessInitiative`, `OfficeEngagement`, `ChatMessage`),
+ * como ya hacía `AppContext` con `Project`. Una pantalla nueva que alcance un
+ * tercer módulo falla: ya no hay presupuesto que la absorba.
  */
 export const UI_SERVICE_FANOUT_BUDGET = {
-  'components/copilot/ProjectCopilotChatModal.tsx': 4,
-  'pages/InitiativesPage.tsx': 4,
-  'components/architectureOffice/EngagementIntakeWizard.tsx': 3,
-  'components/architectureOffice/OfficeCapabilitiesPanel.tsx': 3,
-  'components/AssistantPanel.tsx': 3,
-  'pages/ProjectsPage.tsx': 3,
 };
 
 /** The rule new screens live under: at most this many service modules. */

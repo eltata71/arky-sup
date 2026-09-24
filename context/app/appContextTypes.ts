@@ -28,6 +28,8 @@ import type { PublicationPackage } from '../../services/publicationPipeline';
  * fundación al dominio; ésta baja de la capa de interfaz a él.
  */
 export type { Project, ProjectAttentionTracking } from '../../services/architectureProjects';
+/** The chat turn the context loads and saves; screens receive it from here (F5-02). */
+export type { ChatMessage } from '../../services/chat';
 import type {
   ArchitectureGraph,
   ArchitectureGraphFreshness,

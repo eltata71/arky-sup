@@ -454,6 +454,14 @@ export function useAgentActions(): UseAgentActionsResult {
 export { MIN_EXECUTION_CONFIDENCE };
 
 /**
+ * The vocabulary of this hook's own API — what a screen passes back to
+ * `confirmAndExecute`, the scope it picks for a memory — handed over with the
+ * hook (F5-02), so a chat screen does not import the agent module for three
+ * declarations it only uses to talk to this hook.
+ */
+export type { AgentExecutionTarget, AgentIntent, MemoryScope } from '../services/agent';
+
+/**
  * Synthetic anchor artifact used to satisfy the planner signature on
  * memory-save actions when no artifact is active. The planner only reads
  * `id`, `versionGroupId` and `name` from the anchor — nothing is persisted

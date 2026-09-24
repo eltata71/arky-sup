@@ -63,6 +63,7 @@ export {
   captureAssistantService,
   documentGenerationService,
   diagramEditService,
+  initiativeAssistantService,
   diagramGenerationService,
   isQuizQuestion,
   isRelatedConcept,

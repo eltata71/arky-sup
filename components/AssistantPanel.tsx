@@ -4,15 +4,14 @@ import { ArtifactTemplate } from '../types';
 import type { Artifact } from '../lib/artifacts';
 import { type ChatMessage, createChatMessage } from '../services/chat';
 import { useAgentLessonStore, useAgentMemoryStore } from '../hooks/useAgentMemoryStore';
-import { assistantService, recommendationService, classifyAIError, AIServiceError, type ArtifactTemplateSuggestion } from '../services/ai';
+import type { ArtifactTemplateSuggestion } from '../lib/artifacts/artifactSuggestions';
 import { PlusCircleIcon, SparklesIcon, TrashIcon, ArrowUpTrayIcon, ArrowPathIcon, ExclamationTriangleIcon } from './Icons';
 import { ARTIFACT_TEMPLATES } from '../constants';
 import { AIArchitectAvatar } from './ui/AIArchitectIdentity';
-import { useAgentActions } from '../hooks/useAgentActions';
-import { useAssistantTurns } from '../hooks/useAssistantTurns';
+import { useAgentActions, type AgentExecutionTarget, type MemoryScope } from '../hooks/useAgentActions';
+import { MODIFICATION_NOTES, useAssistantTurns } from '../hooks/useAssistantTurns';
 import { AgentActionCard, AgentResultCard, ProactiveAgentSuggestionCard } from './assistant/AgentActionCard';
 import { useAuth } from '../context/AuthContext';
-import type { AgentExecutionTarget, MemoryScope } from '../services/agent';
 import { SafeRichText } from './ui/SafeRichText';
 
 interface AssistantPanelProps {
@@ -146,7 +145,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         }
 
         try {
-            const results = await recommendationService.getSuggestedActions(project, settings);
+            const results = await assistantTurns.suggestNextArtifacts(project, settings);
             if (isMounted.current) setSuggestions(results);
         } catch (e) {
             console.error("Failed to fetch suggestions:", e);
@@ -156,7 +155,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         }
     };
     fetchSuggestions();
-  }, [project.artifacts.length, project.id, settings]);
+  }, [assistantTurns, project.artifacts.length, project.id, settings]);
 
   const sendMessageWithText = useCallback(async (text: string, baseMessages: ChatMessage[]) => {
     setIsLoading(true);
@@ -174,46 +173,32 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
       if (isMounted.current) {
         let finalResponse = aiResponse;
 
-        if (functionCall && functionCall.name === 'modifyArtifact' && activeArtifact) {
-            const newContent = String(functionCall.args.newContent ?? '').trim();
-            const target = String(functionCall.args.target ?? '');
-            // Guardrail: never declare success when the model returned empty
-            // content or repeated the exact same content already on disk. The
-            // user expects a real change; a vacuous "He modificado…" message
-            // is what made the assistant feel dishonest.
-            if (!newContent) {
-                finalResponse += "\n\n*No apliqué cambios: la IA no devolvió contenido válido para modificar el artefacto.*";
-            } else if (newContent === activeArtifact.content.trim()) {
-                finalResponse += "\n\n*Sin cambios aplicados: la IA devolvió el mismo contenido que ya tenía el artefacto.*";
-            } else if (target === 'current') {
-                updateArtifact(project.id, activeArtifact.id, { content: newContent });
-                // updateArtifact resolves synchronously via the optimistic
-                // setProjects branch in AppContext, so reading the artifact
-                // back through getArtifact gives us the persisted snapshot we
-                // can use to verify the change actually landed.
-                const persisted = getArtifact(project.id, activeArtifact.id);
-                if (persisted?.content.trim() === newContent) {
-                    finalResponse += "\n\n*He modificado el artefacto actual según tus instrucciones.*";
-                } else {
-                    finalResponse += "\n\n*No pude confirmar la actualización del artefacto. Vuelve a intentarlo en unos segundos.*";
-                }
-            } else if (target === 'new_version') {
-                const newVersion = createArtifactVersion(project.id, activeArtifact.versionGroupId, {
-                    ...activeArtifact,
-                    content: newContent
-                });
-                if (newVersion?.id) {
-                    setActiveArtifactId(newVersion.id);
-                    finalResponse += `\n\n*He creado una nueva versión del artefacto (v${newVersion.version}) con las modificaciones solicitadas.*`;
-                } else {
-                    finalResponse += "\n\n*No pude crear la nueva versión del artefacto. Vuelve a intentarlo en unos segundos.*";
-                }
+        // What the call means — empty, unchanged, which target — is decided by
+        // `interpretArtifactModification`; the write is the context's.
+        const modification = assistantTurns.interpretModification(functionCall, activeArtifact);
+        if (modification.kind === 'not-applied') {
+            finalResponse += `\n\n${modification.note}`;
+        } else if (modification.kind === 'update-current' && activeArtifact) {
+            updateArtifact(project.id, activeArtifact.id, { content: modification.content });
+            // updateArtifact resolves synchronously via the optimistic
+            // setProjects branch in AppContext, so reading the artifact
+            // back through getArtifact gives us the persisted snapshot we
+            // can use to verify the change actually landed.
+            const persisted = getArtifact(project.id, activeArtifact.id);
+            finalResponse += `\n\n${persisted?.content.trim() === modification.content
+                ? MODIFICATION_NOTES.updated
+                : MODIFICATION_NOTES.updateUnconfirmed}`;
+        } else if (modification.kind === 'new-version' && activeArtifact) {
+            const newVersion = createArtifactVersion(project.id, activeArtifact.versionGroupId, {
+                ...activeArtifact,
+                content: modification.content,
+            });
+            if (newVersion?.id) {
+                setActiveArtifactId(newVersion.id);
+                finalResponse += `\n\n${MODIFICATION_NOTES.versionCreated(newVersion.version)}`;
+            } else {
+                finalResponse += `\n\n${MODIFICATION_NOTES.versionFailed}`;
             }
-        } else if (functionCall && functionCall.name === 'modifyArtifact' && !activeArtifact) {
-            // The model proposed a modification but there is no artifact to
-            // modify (rare, e.g. the user closed the artifact mid-stream).
-            // Surface this as a recommendation, never as a completed action.
-            finalResponse += "\n\n*Recomendación lista: abre el artefacto que quieras modificar para que pueda aplicar el cambio.*";
         }
 
         const updatedMessages: ChatMessage[] = [...baseMessages, createChatMessage('model', finalResponse)];
@@ -227,7 +212,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
           agent.scanForProactiveSuggestion(finalResponse);
         }
 
-        assistantService.analyzeChatForContext(baseMessages, text, finalResponse, settings)
+        assistantTurns.extractContextNote(baseMessages, text, finalResponse, settings)
             .then(newContextNote => {
                 if (newContextNote && isMounted.current) {
                     const updatedContext = [...project.projectContext, newContextNote];
@@ -241,7 +226,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
       // We never persist the failed assistant turn — instead we show a
       // retry banner so the user keeps their question in the input and can
       // try again with a single click.
-      const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
+      const friendly = assistantTurns.describeFailure(error);
       console.error('[AssistantPanel] chat failed', { category: friendly.category, status: friendly.status, message: friendly.message });
       if (isMounted.current) {
         setLastError({
