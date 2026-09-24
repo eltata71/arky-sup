@@ -8,6 +8,11 @@
 
 export { artifactGenerationService } from './artifactGenerationService';
 export type { ArtifactGenerationService } from './artifactGenerationService';
+export type {
+  ArtifactContentGenerationOptions,
+  ArtifactGenerationSupport,
+  ControlledGenerationContext,
+} from './artifacts/artifactGenerationSupport';
 export { documentGenerationService } from './documentGenerationService';
 export type { DocumentGenerationService } from './documentGenerationService';
 export { diagramGenerationService } from './diagramGenerationService';

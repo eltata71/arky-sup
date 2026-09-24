@@ -73,6 +73,9 @@ export {
 } from './generation';
 export type {
   AgentFunctionCall,
+  ArtifactContentGenerationOptions,
+  ArtifactGenerationSupport,
+  ControlledGenerationContext,
   AgentTurnResult,
   AIModelOption,
   CaptureAssistantService,

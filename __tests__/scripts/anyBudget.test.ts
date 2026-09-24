@@ -44,7 +44,7 @@ describe('which files it looks at', () => {
   it('includes files at the root of a source directory', () => {
     // The regression: a recursive-glob pathspec matched only nested paths, so
     // the scanner reported 19 while the real figure was three times that.
-    expect(files).toContain('services/geminiService.ts');
+    expect(files).toContain('hooks/useTheme.ts');
     expect(files).toContain('context/AppContext.tsx');
     expect(files).toContain('types.ts');
   });

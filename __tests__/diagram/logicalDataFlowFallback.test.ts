@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { __test__ } from '../../services/geminiService';
+import { buildDeterministicArtifactFallback } from '../../services/artifacts/deterministicArtifactFallbacks';
 import { buildHeuristicCustomArtifactRecommendation } from '../../services/ai/generation/recommendation/customArtifactHeuristics';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
 import type { ArtifactTemplate } from '../../types';
@@ -38,7 +38,7 @@ const dfdTemplate: ArtifactTemplate = {
 
 describe('Logical Data Flow Diagram fallback', () => {
   it('builds a hybrid DFD with a Mermaid block and a visible ReactFlow render', () => {
-    const content = __test__.buildDeterministicArtifactFallback(project, dfdTemplate);
+    const content = buildDeterministicArtifactFallback(project, dfdTemplate);
 
     expect(content).toContain('Contrato del DFD lógico');
     expect(content).toContain('```mermaid');

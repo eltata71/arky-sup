@@ -14,7 +14,10 @@
  * primero su dependencia ascendente, y entonces se borra de esta lista. El
  * segundo corte sacó `learningService`: su último método, `evaluateChallenge`. El
  * octavo sacó `assistantService`, después de que el séptimo moviera sus turnos
- * sin persona: los tres con persona dejaron de buscarla y la reciben. Añadir
+ * sin persona: los tres con persona dejaron de buscarla y la reciben. El
+ * decimocuarto metió el motor en esta capa —`generation/artifacts/`— una vez
+ * que la persona (corte 13) y el soporte de artefactos (corte 14) le llegaban
+ * por puertos; su único importador es la fachada que existe para ocultarlo. Añadir
  * uno falla; quitar uno sin borrarlo de aquí también, para que el avance quede
  * escrito.
  */
@@ -37,8 +40,13 @@ const readCode = (file: string): string =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
+/**
+ * Since corte 14 the engine is `generation/artifacts/artifactGenerationEngine.ts`,
+ * inside this layer. The old name is still refused: a file that recreated it at
+ * the root of `services/` would be the loose file this migration removed.
+ */
 const importsEngine = (file: string): boolean =>
-  /(?:from|import\()\s*['"](?:\.\.\/)+geminiService['"]/.test(readCode(file));
+  /(?:from|import\()\s*['"](?:\.\.?\/)+(?:[\w/]*\/)?(?:geminiService|artifactGenerationEngine)['"]/.test(readCode(file));
 
 /** Los importadores que quedan. Sólo puede encoger. */
 const REMAINING_ENGINE_IMPORTERS = [

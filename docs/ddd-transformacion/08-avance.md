@@ -1,6 +1,6 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-23
+**Última actualización:** 2026-09-24
 **Estado integrado:** Fase 2 completa, **fases 3 y 4 cerradas** (`09-cierre-fase-3.md`, `10-cierre-fase-4.md`) y **fase 5 en curso**, todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
@@ -8,7 +8,14 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F5-01, corte 13** — la persona de la Oficina llega
+- **Tarea en curso:** **F5-01, corte 14 — cierra F5-01.** Lo que el motor
+  tomaba de `services/artifacts` (selección controlada de fuentes y fallbacks
+  deterministas) llega por un puerto obligatorio, `ArtifactGenerationSupport`,
+  y el motor entra en `services/ai` como
+  `generation/artifacts/artifactGenerationEngine.ts` (1 786 líneas). Los tres
+  objetivos de F5-01 en `budgetTargets.mjs` quedan cumplidos: ciclos directos
+  4 → 3, ficheros sueltos en la raíz de `services/` 1 → 0, `any` 11 → 7.
+  Evidencia en `evidencias/f5-01-corte-14.md`. Antes: **F5-01, corte 13** — la persona de la Oficina llega
   a la generación por un puerto (`ArtifactPersonaComposer`, `lib/artifacts`):
   el motor deja de importar `services/architectureOffice`; los cinco llamantes
   entregan el compositor. Pares con import profundo 54 → 53. Evidencia en
@@ -79,8 +86,13 @@
   de dos identidades), **#44** (F3-02, alcance del verificador), **#45** (F3-07
   parcial, F3-08 y la elegibilidad del comité) y **#46** (tres presupuestos
   fijados en lo medido).
-- **Siguiente paso exacto (reanudado por instrucción del propietario):**
-  F5-01, la vertical de artefactos (`artifactGenerationService`), el último
+- **Siguiente paso exacto:** **F5-02** — las seis pantallas sobre el fan-out
+  (`ProjectCopilotChatModal`, `InitiativesPage`, `EngagementIntakeWizard`,
+  `OfficeCapabilitiesPanel`, `AssistantPanel`, `ProjectsPage`) llevan su
+  política a su contexto propietario. Después **F5-03**: el componente de
+  dominio de trece módulos, que F5-01 no disolvió porque `services/ai ->
+  architectureProjects -> chat -> services/ai` lo cierra por su cuenta.
+- **Paso anterior, ya hecho (corte 14):** F5-01, la vertical de artefactos (`artifactGenerationService`), el último
   importador del motor y todo lo que queda en él (1 923 líneas según el gate
   tras el corte 12): la generación principal. La generación
   de artefactos todavía
@@ -90,6 +102,13 @@
   mover. Cuando salga, la arista `services/ai -> services (raíz)` y el SCC de
   catorce desaparecen. Las seis pantallas que siguen sobre el fan-out son de
   **F5-02**.
+- **Estado medido con el corte 14 (2026-09-24):** 479 ficheros y 4 674
+  pruebas en verde; cobertura 67,27 % / 58,20 % / 60,18 % / 69,21 %; carga
+  inicial 309,5 KB gz de 340; **3 ciclos directos**, SCC de 3 + 13, 0 pares
+  ascendentes, **48 pares con import profundo**, 6 pantallas sobre el fan-out;
+  **`any` 7**; **0 ficheros sueltos** en la raíz de `services/`; motor 1 786
+  líneas dentro de `services/ai`. `tsc --noEmit` completo pasó aislado; dentro
+  de `npm run quality` volvió a quedarse sin heap en este equipo (deuda 3).
 - **Estado medido con el corte 13 (2026-09-23):** 478 ficheros y 4 661
   pruebas en verde; cobertura 67,19 % / 58,11 % / 60,14 % / 69,11 %; carga
   inicial 309,6 KB gz de 340; 4 ciclos directos, SCC de 3 + 14, 0 pares
@@ -201,7 +220,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F5-01** romper `services/ai -> services (raíz)` | ⏳ cortes 1–13 hechos; queda mover la generación principal | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. Arreglo del proxy en el camino de texto (#62). Corte 7: el asistente sin persona a `generation/assistant/`; el motor baja a 2 631 líneas. Corte 8: el asistente con persona, partido entre IA, agente y Oficina, 2 → 1; el motor baja a 2 443 líneas y deja de importar `agent` y `chat`. Corte 9: nombres iniciales de artefactos a `generation/artifactTemplateSuggestions.ts`; 2 431 líneas. Corte 10: crítica y refinamiento a `generation/artifactQualityRefinement.ts`; 2 330 líneas, `any` 13 → 11. Corte 11: revisión, mejoras y casos de prueba a `generation/artifactReview.ts`, imagen/voz/SVG borrados sin llamantes; 2 145 líneas. Corte 12: brief a `generation/artifactBriefProposal.ts`, deck a `generation/presentationDeck.ts`, deck mínimo a `services/presentation`; 1 923 líneas; `services/ai` declara `presentation` y `quality`. Corte 13: la persona llega por un puerto (`ArtifactPersonaComposer`); el motor deja de importar la Oficina; pares profundos 54 → 53. |
+| **F5-01** romper `services/ai -> services (raíz)` | ✅ cortes 1–14 (2026-09-24) | Corte 1: transporte a `legacyTransport`, 12 → 7 importadores; `any` 23 → 18. Corte 2: `evaluateChallenge` a `learning/challengeEvaluation.ts`, 7 → 6; `any` 18 → 17. Corte 3: sugerencias de artefactos a `generation/artifactSuggestions.ts`, 6 → 5; el motor pierde 131 líneas. Corte 4: la vertical de recomendaciones a `generation/recommendation/`, 5 → 4; el motor baja a 4 015 líneas. Corte 5: la vertical de documentos a `generation/documents/`, 4 → 3; el motor baja a 3 661 líneas. Corte 6: la vertical de diagramas a `generation/diagram/`, 3 → 2; el motor baja a 2 809 líneas. Arreglo del proxy en el camino de texto (#62). Corte 7: el asistente sin persona a `generation/assistant/`; el motor baja a 2 631 líneas. Corte 8: el asistente con persona, partido entre IA, agente y Oficina, 2 → 1; el motor baja a 2 443 líneas y deja de importar `agent` y `chat`. Corte 9: nombres iniciales de artefactos a `generation/artifactTemplateSuggestions.ts`; 2 431 líneas. Corte 10: crítica y refinamiento a `generation/artifactQualityRefinement.ts`; 2 330 líneas, `any` 13 → 11. Corte 11: revisión, mejoras y casos de prueba a `generation/artifactReview.ts`, imagen/voz/SVG borrados sin llamantes; 2 145 líneas. Corte 12: brief a `generation/artifactBriefProposal.ts`, deck a `generation/presentationDeck.ts`, deck mínimo a `services/presentation`; 1 923 líneas; `services/ai` declara `presentation` y `quality`. Corte 13: la persona llega por un puerto (`ArtifactPersonaComposer`); el motor deja de importar la Oficina; pares profundos 54 → 53. Corte 14: lo que tomaba de `services/artifacts` llega por `ArtifactGenerationSupport` (obligatorio) y el motor entra en `services/ai/generation/artifacts/`; ciclos 4 → 3, raíz de `services/` 1 → 0, SCC 14 → 13, pares profundos 53 → 48, `any` 11 → 7 (los cuatro de la vertical de diagramas tipados); 1 786 líneas. |
 | **F5-02** políticas a su contexto propietario | ⏳ | Hereda de F4-05 las seis pantallas sobre el fan-out. |
 
 ### Lo que F3-02 hizo visible

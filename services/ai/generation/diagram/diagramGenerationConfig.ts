@@ -46,7 +46,22 @@ export interface DiagramConfigOptions {
     extraSystemInstruction?: string;
 }
 
-export function buildDiagramGenerationConfig(opts: DiagramConfigOptions = {}): Record<string, any> {
+/**
+ * The config a diagram call sends. Typed since F5-01 corte 14 — it was the last
+ * `Record<string, any>` the vertical carried out of the engine. The index
+ * signature stays because callers add provider-specific keys on top.
+ */
+export interface DiagramGenerationConfig {
+    [key: string]: unknown;
+    systemInstruction: string;
+    temperature: number;
+    topP: number;
+    thinkingConfig: { thinkingBudget: number };
+    responseSchema?: unknown;
+    responseMimeType?: string;
+}
+
+export function buildDiagramGenerationConfig(opts: DiagramConfigOptions = {}): DiagramGenerationConfig {
     const {
         temperature = 0.3,
         topP = 0.9,
@@ -56,7 +71,7 @@ export function buildDiagramGenerationConfig(opts: DiagramConfigOptions = {}): R
         extraSystemInstruction,
     } = opts;
 
-    const config: Record<string, any> = {
+    const config: DiagramGenerationConfig = {
         systemInstruction: extraSystemInstruction
             ? `${DIAGRAM_SYSTEM_INSTRUCTION}\n\n${extraSystemInstruction}`
             : DIAGRAM_SYSTEM_INSTRUCTION,

@@ -32,8 +32,8 @@ vi.mock('../../../services/ai/generation/legacyTransport', () => ({
 }));
 // The engine is still mocked so that reaching it at all fails loudly: these
 // call sites compose their own prompt and have no business in it (F5-01).
-vi.mock('../../../services/geminiService', () => ({
-  geminiService: { generateContentWithFallback: getAIClient, getAIClient },
+vi.mock('../../../services/ai/generation/artifacts/artifactGenerationEngine', () => ({
+  artifactGenerationEngine: { generateContentWithFallback: getAIClient, getAIClient },
 }));
 
 // Partial mock: only model resolution is pinned. The real module also supplies

@@ -18,13 +18,14 @@ vi.mock('../../services/ai/generation/diagram', async (importOriginal) => {
     };
 });
 
-import { __test__ } from '../../services/geminiService';
 import { generateDiagramIRWithSelfHealing } from '../../services/ai/generation/diagram';
 import { buildHeuristicCustomArtifactRecommendation } from '../../services/ai/generation/recommendation/customArtifactHeuristics';
 import {
+    buildDeterministicArtifactFallback,
     buildDeterministicDiagramSkeleton,
     isSkeletonFallbackContent,
 } from '../../services/artifacts/deterministicArtifactFallbacks';
+import { artifactGenerationSupport } from '../../services/artifacts/artifactGenerationSupport';
 import { SKELETON_FALLBACK_MARKER } from '../../services/artifacts/artifactFallbackDetection';
 import { mermaidToIR } from '../../services/diagram/mermaidToIR';
 import type { ArtifactTemplate, Settings } from '../../types';
@@ -92,8 +93,7 @@ describe('Renderability guarantees — deterministic skeleton', () => {
     });
 
     it('C4 self-healing skeleton fallback returns renderable content instead of throwing', async () => {
-        const { geminiService } = await import('../../services/geminiService');
-        const service = geminiService;
+        const { artifactGenerationEngine: service } = await import('../../services/ai/generation/artifacts/artifactGenerationEngine');
         const fallbackIR: DiagramIR = {
             nodes: [
                 { id: 'user', label: 'Usuario', kind: 'Person' },
@@ -130,7 +130,7 @@ describe('Renderability guarantees — deterministic skeleton', () => {
                 template('mermaid-c4-context', 'C4 Context'),
                 settings,
                 undefined,
-                { onPhase: event => events.push(event) },
+                { onPhase: event => events.push(event), support: artifactGenerationSupport },
             );
             expect(result).toContain(SKELETON_FALLBACK_MARKER);
             expect(isSkeletonFallbackContent(result)).toBe(true);
@@ -146,7 +146,7 @@ describe('Renderability guarantees — deterministic skeleton', () => {
 
 describe('buildDeterministicArtifactFallback — coverage', () => {
     it('returns Mermaid for diagram types', () => {
-        const result = __test__.buildDeterministicArtifactFallback(
+        const result = buildDeterministicArtifactFallback(
             baseProject(),
             template('mermaid-graph', 'Test'),
         );
@@ -155,7 +155,7 @@ describe('buildDeterministicArtifactFallback — coverage', () => {
     });
 
     it('returns Markdown for document types and never empty content', () => {
-        const result = __test__.buildDeterministicArtifactFallback(
+        const result = buildDeterministicArtifactFallback(
             baseProject(),
             { ...template('markdown' as ArtifactTemplate['type'], 'Test'), representation: 'document' } as ArtifactTemplate,
         );
@@ -184,8 +184,8 @@ describe('Renderability gate — universal wrapper contract', () => {
      * by adding a new internal early-return that bypasses the gate.
      */
     it('public generateArtifactContent applies gate to every return value', async () => {
-        const { geminiService } = await import('../../services/geminiService');
-        const internal = (geminiService as unknown as {
+        const { artifactGenerationEngine } = await import('../../services/ai/generation/artifacts/artifactGenerationEngine');
+        const internal = (artifactGenerationEngine as unknown as {
             _generateArtifactContentInternal?: (...args: unknown[]) => Promise<string>;
             gateRenderableDiagramContent?: (...args: unknown[]) => string;
         });
@@ -194,6 +194,6 @@ describe('Renderability gate — universal wrapper contract', () => {
         // The gate exists.
         expect(typeof internal.gateRenderableDiagramContent).toBe('function');
         // The public method is the wrapper (not the same function as internal).
-        expect(geminiService.generateArtifactContent).not.toBe(internal._generateArtifactContentInternal);
+        expect(artifactGenerationEngine.generateArtifactContent).not.toBe(internal._generateArtifactContentInternal);
     });
 });

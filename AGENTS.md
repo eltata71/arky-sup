@@ -175,9 +175,10 @@ Reglas que no se negocian al trabajar aquí:
    administrador.
 4. Escribir código nuevo como si `strict: true` estuviera activo y sin `any`.
    (`tsconfig.json` habilita la strictness de forma incremental; el `strict`
-   completo sigue bloqueado por el split de `services/geminiService.ts`.
+   completo sigue bloqueado por el motor de artefactos,
+   `services/ai/generation/artifacts/artifactGenerationEngine.ts`.
    `tsconfig.strict.json` lista los módulos que ya lo cumplen y sólo crece;
-   `npm run check:any-budget` sostiene el repositorio en 11 `any`. Al enrolar un
+   `npm run check:any-budget` sostiene el repositorio en 7 `any` (objetivo de F5-01, cumplido). Al enrolar un
    módulo recuerda que `tsc` comprueba todo lo alcanzable: entran las reglas, no
    sus repositorios. Ver CLAUDE.md.)
 5. Aplicar cambios mínimos, trazables y testeables.
@@ -226,7 +227,8 @@ Reglas que no se negocian al trabajar aquí:
     «para que los imports existentes sigan funcionando» fue lo que creó cuatro
     ciclos y tres imports ascendentes: importa del contexto dueño.
 11. **El barril de una capa no reexporta lo que la capa esconde.**
-   `services/ai/index.ts` no puede importar `services/geminiService` — dentro de
+   `services/ai/index.ts` no puede importar el motor (`artifactGenerationEngine`,
+   antes `services/geminiService`) — dentro de
    la capa el motor sí es una dependencia legítima, pero el barril es la API
    pública. Si un símbolo pertenece a esa API, dale casa en `services/ai/errors`,
    `services/ai/core` o `services/ai/generation`, o en `lib/artifacts` si es un
@@ -391,9 +393,19 @@ Reglas que no se negocian al trabajar aquí:
     `services/presentation`. En el corte 13 la persona de la Oficina llega a
     la generación por un puerto (`ArtifactPersonaComposer` en `lib/artifacts`;
     la Oficina, el agente y `hooks/useArtifactPersona` lo entregan): el motor
-    ya no importa la Oficina. Queda la generación principal, todo el motor
-    (1 921 líneas tras el corte 13, desde unas 5 400); cuando salga, desaparecen la arista `services/ai -> services
-    (raíz)` y el SCC de catorce. Los **tres** caminos del transporte intentan primero el proxy:
+    ya no importa la Oficina. En el corte 14 lo que tomaba de
+    `services/artifacts` —la selección controlada de fuentes y los fallbacks
+    deterministas— llega por otro puerto, `ArtifactGenerationSupport`, que es
+    **obligatorio** en cada llamada (sin él un fallo del proveedor dejaría el
+    lienzo vacío); y el motor **entró en `services/ai`** como
+    `generation/artifacts/artifactGenerationEngine.ts` (1 786 líneas, desde unas
+    5 400). La raíz de `services/` queda vacía (`SERVICES_ROOT_BUDGET` 0) y
+    `services (raíz) <-> services/ai` sale de los ciclos (4 → 3). El SCC de
+    dominio **no** desaparece —baja de 14 a 13—: `services/ai ->
+    architectureProjects -> chat -> services/ai` lo cierra por su cuenta, y
+    eso es F5-03. No dejes un fichero suelto en la raíz de `services/`, y no
+    busques nada desde el motor en un contexto que importe `services/ai`:
+    declara el puerto. Los **tres** caminos del transporte intentan primero el proxy:
     el de texto (`generateTextWithFallback`) no lo hacía, y sin clave personal
     la generación de diagramas y de artefactos no llegaba a un modelo en
     producción. Un camino nuevo hacia un proveedor que no pase antes por el

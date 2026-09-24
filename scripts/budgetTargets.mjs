@@ -64,8 +64,10 @@ export const BUDGET_TARGETS = Object.freeze([
   {
     id: 'any-tokens',
     label: 'tipos `any`',
-    // Los 16 de `geminiService.ts` desaparecen con él; quedan el borde sin
-    // tipos de Excalidraw y el `ComponentType<any>` de React.
+    // Los 16 de `geminiService.ts` desaparecieron con él, y F5-01 (corte 14)
+    // tipó los cuatro que se llevó la vertical de diagramas: cumplido el
+    // 2026-09-24. Quedan el borde sin tipos de Excalidraw y el
+    // `ComponentType<any>` de React.
     target: 7,
     due: '2027-06-30',
     phase: 'F5-01 y F6-01 — el motor estrangulado',

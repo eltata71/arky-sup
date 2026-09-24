@@ -43,7 +43,7 @@ import { reuseDeterministicArtifact } from './deterministicArtifactReuse';
 import type { AgentArtifactStore } from './agentExecutorContracts';
 import { requestArtifactPatch } from './agentConversation';
 import type { AgentPersonaBriefing } from './agentContextComposer';
-import { personaComposer } from './agentPersonaComposer';
+import { agentGenerationOptions } from './agentPersonaComposer';
 export type { AgentArtifactStore } from './agentExecutorContracts';
 
 /** Callback fired as the action moves through phases. */
@@ -204,7 +204,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
           objective: `${template.objective}\n\nInstrucciones adicionales del Arquitecto: ${plan.intent.userInstruction}`,
         };
         emit('generating', 'Regenerando artefacto con la IA…');
-        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, { composePersonaInstruction: personaComposer(input.resolvePersona) });
+        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, agentGenerationOptions(input.resolvePersona));
         appliedChanges.push(`Regenerado a partir de: "${truncate(plan.intent.userInstruction, 140)}"`);
         break;
       }
@@ -590,7 +590,7 @@ async function executeArtifactCreate(
     generatedContent = await artifactGenerationService.generateArtifactContent(
       project,
       generationTemplate,
-      settings, undefined, { composePersonaInstruction: personaComposer(input.resolvePersona) },
+      settings, undefined, agentGenerationOptions(input.resolvePersona),
     );
   } catch (err) {
     const friendly = err instanceof AIServiceError ? err : classifyAIError(err);

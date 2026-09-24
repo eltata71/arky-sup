@@ -10,7 +10,8 @@
  */
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { geminiService } from '../../../services/geminiService';
+import { artifactGenerationEngine } from '../../../services/ai/generation/artifacts/artifactGenerationEngine';
+import { artifactGenerationSupport } from '../../../services/artifacts/artifactGenerationSupport';
 import {
   buildOfficePersonaInstruction,
   composeArtifactPersonaInstruction,
@@ -52,11 +53,11 @@ type TextPath = { generateTextWithFallback: (...args: unknown[]) => Promise<stri
 const capturePrompts = (): string[] => {
   const prompts: string[] = [];
   const answer = '# Decisiones\n\n## Contexto\nContenido del documento con detalle suficiente.';
-  vi.spyOn(geminiService, 'generateContentWithFallback').mockImplementation(async (_s, _m, contents) => {
+  vi.spyOn(artifactGenerationEngine, 'generateContentWithFallback').mockImplementation(async (_s, _m, contents) => {
     prompts.push(String(contents));
     return { text: answer };
   });
-  vi.spyOn(geminiService as unknown as TextPath, 'generateTextWithFallback').mockImplementation(async (...args) => {
+  vi.spyOn(artifactGenerationEngine as unknown as TextPath, 'generateTextWithFallback').mockImplementation(async (...args) => {
     prompts.push(String(args[2]));
     return answer;
   });
@@ -67,8 +68,8 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('the persona reaches generation through a port (F5-01 corte 13)', () => {
   it('the engine no longer imports the Office', () => {
-    const engine = readFileSync('services/geminiService.ts', 'utf8');
-    expect(engine).not.toMatch(/from ['"]\.\/architectureOffice/);
+    const engine = readFileSync('services/ai/generation/artifacts/artifactGenerationEngine.ts', 'utf8');
+    expect(engine).not.toMatch(/from ['"](?:\.\.\/)+architectureOffice/);
   });
 
   it('the Office composer is the instruction the engine used to build', () => {
@@ -89,8 +90,9 @@ describe('the persona reaches generation through a port (F5-01 corte 13)', () =>
     const prompts = capturePrompts();
     const composer = vi.fn((base: string, request: string) => `${base}\n[PERSONA para: ${request}]`);
 
-    await geminiService.generateArtifactContent(project, template, settings, undefined, {
+    await artifactGenerationEngine.generateArtifactContent(project, template, settings, undefined, {
       architectureGraphPromptBlock: '',
+      support: artifactGenerationSupport,
       composePersonaInstruction: composer,
     });
 
@@ -101,8 +103,9 @@ describe('the persona reaches generation through a port (F5-01 corte 13)', () =>
   it('without a composer the base instruction goes as it is', async () => {
     const prompts = capturePrompts();
 
-    await geminiService.generateArtifactContent(project, template, settings, undefined, {
+    await artifactGenerationEngine.generateArtifactContent(project, template, settings, undefined, {
       architectureGraphPromptBlock: '',
+      support: artifactGenerationSupport,
     });
 
     expect(prompts.length).toBeGreaterThan(0);

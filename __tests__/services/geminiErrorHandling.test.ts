@@ -3,7 +3,7 @@ import {
     classifyAIError,
     isTransientGeminiError,
     AIServiceError,
-} from '../../services/geminiService';
+} from '../../services/ai/errors';
 import { LegacyGenerationTransport } from '../../services/ai/generation/legacyTransport';
 import type { Settings } from '../../types';
 

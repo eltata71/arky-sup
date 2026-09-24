@@ -21,7 +21,7 @@ import type { Project } from '../../architectureProjects';
 
 const generateArtifactContent = vi.fn(async (..._args: unknown[]) => `C4Context\n    Person(asegurado, "Asegurado", "Cliente del seguro")\n    System(core, "Core de Pólizas", "Backend")\n    Rel(asegurado, core, "Compra póliza")`);
 
-vi.mock('../../geminiService', () => {
+vi.mock('../../ai/generation/artifacts/artifactGenerationEngine', () => {
   class AIServiceError extends Error {
     category = 'unknown';
     status = 0;
@@ -30,7 +30,7 @@ vi.mock('../../geminiService', () => {
     constructor(message: string) { super(message); }
   }
   return {
-    geminiService: {
+    artifactGenerationEngine: {
       generateArtifactContent: (...args: unknown[]) => generateArtifactContent(...args),
     },
     AIServiceError,

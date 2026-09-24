@@ -56,6 +56,11 @@
     "services/ai/generation/documentGenerationService.ts",
     "services/ai/generation/diagramGenerationService.ts",
     "services/ai/generation/assistant/index.ts",
+    // F5-01 corte 14: el puerto que deja al motor vivir en `services/ai`, y los
+    // ayudantes de prompt que salieron con él. El motor no entra: aún arrastra
+    // el SDK de Gemini y la mitad del grafo de dominio.
+    "services/ai/generation/artifacts/artifactGenerationSupport.ts",
+    "services/ai/generation/artifacts/artifactPromptReinforcements.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",

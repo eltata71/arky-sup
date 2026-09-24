@@ -9,7 +9,7 @@ import { artifactGenerationService, documentGenerationService, classifyAIError, 
 import { motion, AnimatePresence } from 'motion/react';
 import { SafeRichText } from '../components/ui/SafeRichText';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
-import { useArtifactPersona } from '../hooks/useArtifactPersona';
+import { useArtifactGenerationPorts } from '../hooks/useArtifactPersona';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -143,7 +143,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
   // Reads artifact content to assess SDD coverage, so it needs the documents.
   useProjectArtifacts(projectId);
   const { projects, settings, createArtifact } = useAppContext();
-  const composePersonaInstruction = useArtifactPersona();
+  const generationPorts = useArtifactGenerationPorts();
   const navigate = useNavigate();
 
   const project = projects.find(p => p.id === projectId);
@@ -234,7 +234,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
     setGeneratingArtifact(templateName);
 
     try {
-      const content = await artifactGenerationService.generateArtifactContent(project, template as ArtifactTemplate, settings, undefined, { composePersonaInstruction });
+      const content = await artifactGenerationService.generateArtifactContent(project, template as ArtifactTemplate, settings, undefined, generationPorts);
       const newArtifact = createArtifact(project.id, {
         name: template.name,
         type: template.type,
@@ -256,7 +256,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
     } finally {
       setGeneratingArtifact(null);
     }
-  }, [project, settings, createArtifact, navigate, composePersonaInstruction]);
+  }, [project, settings, createArtifact, navigate, generationPorts]);
 
   const handleCopyContent = useCallback(async (artifact: Artifact, templateName: string) => {
     await navigator.clipboard.writeText(artifact.content);

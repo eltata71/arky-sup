@@ -21,8 +21,8 @@ import { readFileSync } from 'node:fs';
 const BARREL = readFileSync('services/ai/index.ts', 'utf8');
 
 describe('the barrel does not re-export the engine', () => {
-  it('names `geminiService` nowhere', () => {
-    expect(BARREL).not.toMatch(/geminiService/);
+  it('names the engine nowhere, under its old name or its new one', () => {
+    expect(BARREL).not.toMatch(/geminiService|artifactGenerationEngine/);
   });
 
   it('sources the error surface from `./errors`', () => {

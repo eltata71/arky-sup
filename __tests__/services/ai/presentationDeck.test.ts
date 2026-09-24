@@ -48,7 +48,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('presentation deck outside the engine (F5-01 corte 12)', () => {
   it('the engine owns neither the deck prompt nor the minimal fallback', () => {
-    const engine = readFileSync('services/geminiService.ts', 'utf8');
+    const engine = readFileSync('services/ai/generation/artifacts/artifactGenerationEngine.ts', 'utf8');
     expect(engine).not.toMatch(/private async generatePresentationDeck\(/);
     expect(engine).not.toMatch(/private buildMinimalPresentationDeck\(/);
   });

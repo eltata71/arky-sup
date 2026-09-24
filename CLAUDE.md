@@ -219,11 +219,12 @@ arkypro-1.0/
 │   ├── CommandPaletteContext.tsx # Cmd+K command registry
 │   └── ObservabilityContext.tsx  # Runtime error capture + boot session telemetry
 │
-├── services/                # One loose file left at the root — see `SERVICES_ROOT_BUDGET`
+├── services/                # No loose file at the root since F5-01 corte 14 — `SERVICES_ROOT_BUDGET` is 0
 │   ├── ai/                   # ★ Provider-agnostic AI architecture (see "AI Layer")
 │   │   ├── core/             # AIProvider/AIRequest/AIResponse/AIStream contracts + executor
 │   │   ├── providers/        # GeminiProvider, OpenRouterProvider, AIProviderFactory
 │   │   ├── generation/       # Domain façades (artifact/document/diagram/recommendation)
+│   │   │   └── artifacts/    # The engine (`artifactGenerationEngine`) + its `ArtifactGenerationSupport` port
 │   │   ├── callControl/      # Global AI call gating/budget + per-call context budget
 │   │   ├── guardrails/       # ★ What may not leave and what may not come back, with severities
 │   │   ├── capabilities/     # What a request needs vs what the backend offers
@@ -237,7 +238,6 @@ arkypro-1.0/
 │   │   ├── prompts/          # diagramPrompts.ts, promptComposer.ts
 │   │   ├── structuredOutput/ # Schema-checked JSON parsing
 │   │   └── aiProxyClient.ts  # Client for `api/ai.ts`; returns null → caller falls back
-│   ├── geminiService.ts      # ⚠ Legacy ~2.4k-line monolith: artifact generation prompts + `geminiService` singleton
 │   ├── persistence.ts        # Persistence result envelope + degradation status
 │   ├── observabilityService.ts   # Global error handlers, boot session, runtime reports
 │   ├── identity/             # ★ Session, user profile + role, admin account provisioning
@@ -472,9 +472,10 @@ the decisions live, and the UI's own total fell from 168 to 157.
 to: it held **20 files and 9 923 lines**, and was the single largest cause of
 the census — nine of the fourteen cycles, all three upward pairs and sixty deep
 imports. Seventeen of them have moved to the module whose language they already
-spoke. **One remains**: `geminiService.ts`. Moving it into `services/ai` was
-tried in Ola 5 and reverted — see *Known Issues* for why the relocation makes
-the cycle census worse rather than better.
+spoke. The last one, `geminiService.ts`, **entered `services/ai` in F5-01's
+fourteenth cut** (2026-09-24) as `generation/artifacts/artifactGenerationEngine.ts`,
+and the budget is **zero**. Moving it had been tried in Ola 5 and reverted —
+see *Known Issues* for why that failed and what made it work thirteen cuts later.
 
 `runtimeValidation.ts` was the other holdout and it is gone: once
 the persistence monolith was split, its only two callers turned out to be
@@ -549,9 +550,10 @@ Two patterns did the breaking, and they are the ones to reach for next time:
   `buildOfficePersonaBriefing` in `services/architectureOffice` supplies one.
   The office drives the agent; the agent does not look the office up.
 
-What is left in the budget is honest: the **loose files still at the root of
-`services/`**, which belong to no module and form cycles with eleven of them.
-Each one that moves into a module lowers the number.
+What was left in that budget is gone: the root of `services/` holds no file,
+`SERVICES_ROOT_BUDGET` is 0, and `services (raíz) <-> services/ai` has left
+`ALLOWED_CYCLES`. The pseudo-module stays declared, empty, so the next file
+dropped there is measured and refused instead of vanishing from the graph.
 
 ---
 
@@ -596,13 +598,13 @@ motor en 1 921 líneas. El registro de cada paso está en
 | Check | Result |
 |---|---|
 | `npm run typecheck` | clean |
-| `npm run check:module-boundaries` | **Hoy (2026-09-23): 4 ciclos directos, SCC de 3 + 14, 0 pares ascendentes, 53 pares con import profundo, 6 pantallas sobre el fan-out**; el motor dejó de importar `agent` y `chat` en el corte 8, y `architectureOffice` en el 13. **Tras F3-07 (2026-09-22): 4 ciclos directos, 2 componentes fuertemente conexos (3 + 14 módulos), 0 pares ascendentes, 60 pares con import profundo.** `types.ts` no importa nada y ninguna pieza de la fundación está en el componente de dominio; lo que queda de él lo cierra `services/ai -> services (raíz)` (fase 5). Lo que sigue es la historia de cómo se llegó: **6 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**. El alcance completo (F3-02, ADR-105) hizo visibles 11 ciclos y 7 pares ascendentes el 2026-09-21; F3-07 y F3-08 retiraron cinco ciclos y cinco pares al día siguiente, y casi todo era andamio: `types.ts` reexportaba 19 declaraciones de diagrama **sin un solo consumidor**, y las de presentación, revisión y chat sólo las usaban los módulos dueños. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y le quedan **dos** aristas de salida, `Artifact` y `Project`, con las que cierra el grafo entero y arrastra dentro a `lib`. No se repuntan con un codemod: `services/artifacts` necesita el proyecto y `services/architectureProjects` necesita el artefacto, así que cambiar el ciclo contra `types.ts` por uno entre dos contextos de dominio sería peor — debajo está la frontera del agregado Proyecto–Artefacto (D-4, la decide F4-02 con los datos de F4-01). **2 upward pairs**, las dos de `types.ts`; `lib/` y `utils/` siguen en cero y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
-| `npm run check:module-size` | clean. **Hoy el motor tiene techo de 1 921 líneas / 101 835 bytes** (corte 13) y `agentExecutor.ts` de 982 / 41 032, cada uno bajado al ganar. Tres techos bajaron el 2026-09-22 al fijar lo que ya se había ganado y nadie había registrado: `services/geminiService.ts` a 5 405 líneas / 271 653 bytes y `services/agent/agentExecutor.ts` a 988 / 41 175 — este último figuraba como deuda abierta («1007 vs 1001») mientras el gate estaba en verde. Un presupuesto que no se baja cuando se gana permite volver a subir sin que se note. Sube uno, con su razón al lado: `pages/EngagementRoom.tsx`, nueve bytes, por preguntar si *este* actor puede firmar *este* encargo en vez de leer un booleano de permiso |
+| `npm run check:module-boundaries` | **Hoy (2026-09-24, F5-01 cerrada): 3 ciclos directos —los de React—, SCC de 3 + 13, 0 pares ascendentes, 48 pares con import profundo, 6 pantallas sobre el fan-out, 0 ficheros sueltos en la raíz de `services/`**; el motor entró en `services/ai` en el corte 14. Antes (2026-09-23): 4 ciclos directos, SCC de 3 + 14, 53 pares con import profundo; el motor dejó de importar `agent` y `chat` en el corte 8, y `architectureOffice` en el 13. **Tras F3-07 (2026-09-22): 4 ciclos directos, 2 componentes fuertemente conexos (3 + 14 módulos), 0 pares ascendentes, 60 pares con import profundo.** `types.ts` no importa nada y ninguna pieza de la fundación está en el componente de dominio; lo que queda de él lo cierra `services/ai -> services (raíz)` (fase 5). Lo que sigue es la historia de cómo se llegó: **6 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**. El alcance completo (F3-02, ADR-105) hizo visibles 11 ciclos y 7 pares ascendentes el 2026-09-21; F3-07 y F3-08 retiraron cinco ciclos y cinco pares al día siguiente, y casi todo era andamio: `types.ts` reexportaba 19 declaraciones de diagrama **sin un solo consumidor**, y las de presentación, revisión y chat sólo las usaban los módulos dueños. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y le quedan **dos** aristas de salida, `Artifact` y `Project`, con las que cierra el grafo entero y arrastra dentro a `lib`. No se repuntan con un codemod: `services/artifacts` necesita el proyecto y `services/architectureProjects` necesita el artefacto, así que cambiar el ciclo contra `types.ts` por uno entre dos contextos de dominio sería peor — debajo está la frontera del agregado Proyecto–Artefacto (D-4, la decide F4-02 con los datos de F4-01). **2 upward pairs**, las dos de `types.ts`; `lib/` y `utils/` siguen en cero y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
+| `npm run check:module-size` | clean. **Hoy el motor tiene techo de 1 786 líneas / 94 962 bytes** en su nueva ruta, `services/ai/generation/artifacts/artifactGenerationEngine.ts` (corte 14; 1 921 / 101 835 en el 13) y `agentExecutor.ts` de 982 / 41 032, cada uno bajado al ganar. Tres techos bajaron el 2026-09-22 al fijar lo que ya se había ganado y nadie había registrado: `services/geminiService.ts` a 5 405 líneas / 271 653 bytes y `services/agent/agentExecutor.ts` a 988 / 41 175 — este último figuraba como deuda abierta («1007 vs 1001») mientras el gate estaba en verde. Un presupuesto que no se baja cuando se gana permite volver a subir sin que se note. Sube uno, con su razón al lado: `pages/EngagementRoom.tsx`, nueve bytes, por preguntar si *este* actor puede firmar *este* encargo en vez de leer un booleano de permiso |
 | `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
-| `npm run check:any-budget` | **11** `any` types, budget 11 tras F5-01 corte 10 (eran 13 tras el corte 8 y 38 antes de la estrangulación); el motor ya no contiene tipos `any` |
+| `npm run check:any-budget` | **7** `any` types, budget 7 tras F5-01 corte 14 —objetivo cumplido— (11 tras el corte 10, 13 tras el corte 8 y 38 antes de la estrangulación); el motor ya no contiene tipos `any` |
 | `npm run lint` | **clean — 0 errors, 0 warnings**, y volvió a serlo el 2026-09-22: `OfficeEngagementRunner.ts` importaba dos tipos que sólo reexportaba, así que arrastraba dos avisos que `eslint .` no hace fallar. Keep it that way: a warning is a finding nobody will read once there are ten of them |
 | `npm run test:ci` | **Hoy: 478 ficheros y 4 661 pruebas, todas pasando** (2026-09-23, corte 13). Antes, **456 ficheros y 4 419 pruebas**, medido el 2026-09-22 sobre Node 24. Sube desde 4 359 con las de F3-02 (alcance del verificador), la elegibilidad del comité y el fixture E2E de dos identidades. **El entorno local también se arregló**: con Node 20 el SDK de Supabase no encuentra `WebSocket` nativo y `supabaseIdentityAdapter` fallaba una prueba que en CI pasaba — `.nvmrc` pide 24 y ahora eso es lo que hay instalado |
-| `npm run test:coverage` | **Hoy 67,19 % / 58,11 / 60,14 / 69,11** (2026-09-23, corte 13). Antes 65,20 % statements / 56,53 branches / 57,64 functions / 67,03 lines — por encima de todos los suelos de `vite.config.ts`, y de los cuatro valores anteriores |
+| `npm run test:coverage` | **Hoy 67,27 % / 58,20 / 60,18 / 69,21** (2026-09-24, corte 14; 479 ficheros, 4 674 pruebas). Con el corte 13, 67,19 / 58,11 / 60,14 / 69,11. Antes 65,20 % statements / 56,53 branches / 57,64 functions / 67,03 lines — por encima de todos los suelos de `vite.config.ts`, y de los cuatro valores anteriores |
 | `npm run check:bundle-budget` | **Hoy: eager 309,6 KB gz de 340** (2026-09-23). Lo que sigue es la medición de 2026-09-19: **eager 439,1 KB gz de 450; entrada 200,3** — sube 7,5 desde los 431,6 de la ola anterior, repartidos entre las subidas de dependencia y las hojas del guardrail. El margen es de **10,9 KB gz**, y conviene leerlo como lo que es: dos de las subidas que Dependabot propone como «minor» se lo comen entero (ver *Dependencias que no pueden subir*) |
 | `npm run check:bundle-secrets` | clean — y ahora conoce `sk-ant-`, que faltaba mientras Anthropic ya era un proveedor embarcado: una clave suya en el bundle se reportaba como «OpenAI-style» o, con sufijo corto, no se reportaba |
 
@@ -941,7 +943,8 @@ their work is saved.
 ## AI Layer
 
 `services/ai/` is the canonical layer, and it is canonical in fact: **no module
-outside it may import `services/geminiService`**, and ESLint enforces that. The
+outside it may import the engine** —`services/ai/generation/artifacts/artifactGenerationEngine`,
+once `services/geminiService`; ESLint refuses both names. The
 engine is an implementation detail of this layer.
 
 ### 1. `services/ai/` — the provider-agnostic architecture
@@ -1014,7 +1017,22 @@ each of them was broken while the docblock above them said otherwise:
   `providerHealth` is a circuit breaker per backend: three consecutive failures open it, sixty seconds later one probe decides. An open circuit **deprioritises rather than excludes** — a degraded backend that is the only one able to serve a required capability still beats a certain failure — and only transport-level failures count, so a 400 this app produced never opens a circuit against a vendor.
 - `generation/` holds the domain façades — `artifactGenerationService`, `diagramGenerationService`, `documentGenerationService`, `recommendationService`, `assistantService`, `learningService` — plus `aiGateway` for layers that compose their own prompts. **These are the import surface for the rest of the app.**
 
-### 2. `services/geminiService.ts` — legacy monolith (~1,900 lines)
+### 2. The engine — `services/ai/generation/artifacts/artifactGenerationEngine.ts` (~1,790 lines)
+
+**It was `services/geminiService.ts` until F5-01's fourteenth cut, and it
+lives inside this layer now.** What made the move possible is the last port:
+the engine took the controlled source selection and the deterministic
+fallbacks from `services/artifacts`, which imports this layer to run a
+generation. It now declares `ArtifactGenerationSupport`
+(`generation/artifacts/artifactGenerationSupport.ts`), `services/artifacts`
+supplies `artifactGenerationSupport`, and every caller of
+`generateArtifactContent` hands it over — **required, not optional**: a
+generation without its fallbacks would return an empty canvas where it used to
+return a skeleton. The agent passes it through `agentGenerationOptions`, screens
+through `hooks/useArtifactPersona`'s `useArtifactGenerationPorts`. The pure prompt
+pieces (the hybrid wrapper and the two document quality bars) left with it to
+`artifactPromptReinforcements.ts`. The historical record of how it got there
+follows.
 
 **The transport no longer lives here either** (F5-01, first cut). The engine did
 two jobs in one class: composing domain prompts, and carrying any prompt to a
@@ -1101,7 +1119,7 @@ straggler, `evaluateChallenge`, left in F5-01's second cut
 `toChallengeEvaluation` now keeps only the fields that arrived with the right
 type, so a screen never renders a grade of `NaN`.
 
-Still the home of the `geminiService` singleton and of one thing only: the main artifact generation (`generateArtifactContent`, with its renderability gate, the C4 path, the knowledge-graph block and the document and Mermaid paths). Inside `artifactGenerationService` the rest has already left, by cuts: the initial artifact names (9, `generation/artifactTemplateSuggestions.ts`), critique and refinement before persisting (10, `generation/artifactQualityRefinement.ts`), review, improvements and test cases (11, `generation/artifactReview.ts`), and the brief proposal and the presentation deck (12, `generation/artifactBriefProposal.ts` and `generation/presentationDeck.ts`). The eleventh also deleted image, speech and SVG generation, which nothing in the repository called; the twelfth moved the minimal fallback deck — no model call in it — to `services/presentation/presentationFallback.ts`. The LMS, recommendations, documents, diagrams and the assistant have all left. It delegates `generateContentWithFallback` to the transport, which tries the serverless proxy first and degrades to a direct provider call.
+Still the home of the `artifactGenerationEngine` singleton (the `geminiService` of old) and of one thing only: the main artifact generation (`generateArtifactContent`, with its renderability gate, the C4 path, the knowledge-graph block and the document and Mermaid paths). Inside `artifactGenerationService` the rest has already left, by cuts: the initial artifact names (9, `generation/artifactTemplateSuggestions.ts`), critique and refinement before persisting (10, `generation/artifactQualityRefinement.ts`), review, improvements and test cases (11, `generation/artifactReview.ts`), and the brief proposal and the presentation deck (12, `generation/artifactBriefProposal.ts` and `generation/presentationDeck.ts`). The eleventh also deleted image, speech and SVG generation, which nothing in the repository called; the twelfth moved the minimal fallback deck — no model call in it — to `services/presentation/presentationFallback.ts`. The LMS, recommendations, documents, diagrams and the assistant have all left. It delegates `generateContentWithFallback` to the transport, which tries the serverless proxy first and degrades to a direct provider call.
 
 Rules when touching it:
 
@@ -1109,7 +1127,8 @@ Rules when touching it:
 - Reuse the existing streaming, retry (503/429 exponential backoff) and 180s-timeout helpers; do not re-implement them.
 - Never hardcode a model name — the model comes from `settings.aiConfig.model`.
 - Do not duplicate key resolution; the shared helper already handles the user's `localStorage` key.
-- **Do not grow this file, and do not import it.** It is reachable only from inside `services/ai/`; a lint rule enforces that. New capabilities belong in `services/ai/generation/`.
+- **Do not grow this file, and do not import it.** It is reachable only from `artifactGenerationService`; a lint rule refuses it outside `services/ai/` under either name, and `engineImporters.test.ts` lists its one importer. New capabilities belong in `services/ai/generation/`.
+- **Do not look anything up from a context that imports this layer.** The persona arrives through `ArtifactPersonaComposer`, the artifacts context through `ArtifactGenerationSupport`; `artifactGenerationSupport.test.ts` fails if the engine imports `artifacts`, `architectureOffice`, `agent` or `chat` again.
 - **And the `services/ai` barrel may not re-export it.** A second, narrower rule on `services/ai/index.ts` alone: inside the layer the engine is a legitimate internal dependency — a façade delegating to it *is* the strangler pattern — but the barrel is the published surface. It used to re-export `AIServiceError`, `classifyAIError`, `C4SelfHealingError` and four deterministic fallbacks straight out of the monolith, so seven screens caught the engine's symbols through the door built to hide them. The errors now live in `services/ai/errors/aiServiceError.ts` and the fallbacks in `services/artifacts/deterministicArtifactFallbacks.ts`; ESLint and `__tests__/services/ai/publicApiSurface.test.ts` both hold the line.
 - It is no longer in the eager entry chunk — `OfficeContext` loads the AI surface on demand. Keep it that way: a static import from a module in the root provider tree puts a ~600 kB chunk back into app startup.
 
@@ -1577,7 +1596,7 @@ the only screen still linking to `/users` and `/settings`.
   `import.meta.env` is unknown and `dagre` (which ships no types) reads as an
   implicit `any` against our code.
 - **`@types/react` and `@types/react-dom` are installed.** They were not, which meant every JSX element, hook and prop in a React 18 app was silently `any`; `components/ErrorBoundary.tsx` even carried a hand-rolled `Component` cast with a comment explaining the absence. Installing them surfaced 34 errors, several of them live defects. Do not remove them.
-- **Avoid `any`.** ESLint's `no-explicit-any` is `off` globally only because the legacy monolith would produce thousands of violations; it is `error` for `lib/security.ts` and `lib/ids.ts`, and new modules should be written to that bar. Prefer precise types or `unknown` + type guards. `npm run check:any-budget` holds the repository to **11**, and what remains is named: 4 that left the engine with the diagram vertical, 6 in the untyped Excalidraw boundary, and React's own `ComponentType<any>` in `lazyWithRetry`. The engine has none after F5-01 corte 10. Code that leaves the engine leaves typed — the transport went out with `unknown` and the SDK's own parameter types rather than carrying its five `any` along (F5-01).
+- **Avoid `any`.** ESLint's `no-explicit-any` is `off` globally only because the legacy monolith would produce thousands of violations; it is `error` for `lib/security.ts` and `lib/ids.ts`, and new modules should be written to that bar. Prefer precise types or `unknown` + type guards. `npm run check:any-budget` holds the repository to **7** — the target `budgetTargets.mjs` set for F5-01, met on 2026-09-24 — and what remains is named: 6 in the untyped Excalidraw boundary, and React's own `ComponentType<any>` in `lazyWithRetry`. The engine has none after F5-01 corte 10, and the 4 the diagram vertical carried out of it were typed in corte 14 (`DiagramGenerationConfig`, and a `ModelFlowGraph` checked before use). Code that leaves the engine leaves typed — the transport went out with `unknown` and the SDK's own parameter types rather than carrying its five `any` along (F5-01).
 - **A generator's output is a shape, not `any`.** When a prompt prints the JSON it asks for, that shape is knowable: `services/ai/generation/learning/learningTypes.ts` is the worked example. It declares what the model *proposes* (`GeneratedCourse`, `GeneratedTopic`) separately from what the domain *records* (`Course`), because a proposal carries no ids and its `level` is whatever string came back — and it ships the two coercions (`asCourseCategory`, `asCourseLevel`) and the two guards (`isQuizQuestion`, `isRelatedConcept`) that bridge them. Typing those three LMS functions surfaced two live defects where a model's free text was written straight into a union.
 - Path alias `@/` resolves to the repo root. Both `@/`-prefixed and relative imports exist in the codebase — match the file you are editing.
 - Core domain types live in `types.ts`; LMS types in `types/lms.ts`; subsystem-local types next to their module (`agentTypes.ts`, `ArtifactCompilerTypes.ts`, `contextGraphTypes.ts`, …). Do not declare domain types inline in components.
@@ -1665,9 +1684,9 @@ the only screen still linking to `/users` and `/settings`.
 ## Known Issues / Incomplete Areas
 
 - `components/ReviewArchitectureModal.tsx` is still an **empty placeholder (0 lines)** — do not import or reference it. The working review UI is `components/artifacts/ReviewPanel.tsx`.
-- `services/geminiService.ts` (~1,900 lines after F5-01's twelve cuts, down from ~5,400) is still the largest single module, but it is no longer a public dependency: nothing outside `services/ai/` imports it, only `artifactGenerationService` still does inside it, and it loads lazily. What remains is artifact generation, and it is the next vertical.
+- The engine (`services/ai/generation/artifacts/artifactGenerationEngine.ts`, ~1,790 lines after F5-01's fourteen cuts, down from ~5,400 as `services/geminiService.ts`) is still one of the largest modules, but it is a private dependency of one façade, inside its layer, loaded lazily. Splitting `_generateArtifactContentInternal` (~900 lines) is what is left, and it is ordinary decomposition now, not a migration.
 - Supabase Auth is behind `services/identity`; `context/AuthContext.tsx` imports no SDK, and `no-restricted-imports` plus `__tests__/authz/noSdkInUiLayers.test.ts` keep every SDK out of `components/`, `pages/`, `context/` and `hooks/`. La prueba conserva Firebase en su lista de prohibidos como sonda de regresión: una que sólo busca el SDK actual no impide que vuelva el anterior.
-- `@google/genai` still appears in `services/geminiService.ts` as well as `providers/gemini/` and `api/`. The client factory *has* moved: it is `services/ai/providers/gemini/geminiClient.ts` now.
+- `@google/genai` still appears in the engine (the `GoogleGenAI` its transport receives) as well as `providers/gemini/` and `api/`. The client factory *has* moved: it is `services/ai/providers/gemini/geminiClient.ts` now.
 
   **Moving the engine into `services/ai/` was tried in Ola 5 and reverted, and
   the reason is worth keeping.** Relocating the file does not remove its
@@ -1679,11 +1698,15 @@ the only screen still linking to `/users` and `/settings`.
   between real domain contexts**, which is exactly what Olas 1–2 spent their
   effort removing and what `moduleBoundaries.test.ts` asserts by name.
 
-  The engine's home is not a move; it is the strangler migration continuing
-  vertical by vertical, cutting each upward dependency first. `learningService`
-  is the worked example of one vertical done. Until then it stays at the root,
-  where its cycles are attributed to the pseudo-module that exists to hold
-  exactly this.
+  The engine's home was not a move; it was the strangler migration continuing
+  vertical by vertical, cutting each upward dependency first. Thirteen cuts
+  later the only context left that it reached and that imports `services/ai`
+  was `services/artifacts`, and the fourteenth cut made that one a port
+  (`ArtifactGenerationSupport`). Then the move added **no** cycle: direct
+  cycles went 4 → 3 (the three of React), the domain component 14 → 13, deep
+  pairs 53 → 48. The component did **not** dissolve, and that prediction was
+  wrong: `services/ai -> services/architectureProjects -> services/chat ->
+  services/ai` closes it on its own. That is F5-03.
 - `README.md` still carries the original AI Studio banner/intro above the accurate sections.
 - There is no Prettier config — formatting follows the surrounding file.
 
@@ -1715,7 +1738,7 @@ Go through `services/learning` (`courses` collection). Validate `Lesson[]` again
 
 ### Modifying AI Prompts
 
-Diagram prompts: `services/ai/prompts/diagramPrompts.ts` (keep the 10-dimension rubric intact). Everything else: the relevant method inside `services/geminiService.ts`, reached through its domain façade. Prompts never live in components. Preserve the output contract the renderer expects (valid Mermaid, valid ReactFlow JSON, or Markdown), and prefer `services/ai/structuredOutput/` when the response is JSON.
+Diagram prompts: `services/ai/prompts/diagramPrompts.ts` (keep the 10-dimension rubric intact). Everything else: the relevant module under `services/ai/generation/` (main artifact generation is `artifacts/artifactGenerationEngine.ts`), reached through its domain façade. Prompts never live in components. Preserve the output contract the renderer expects (valid Mermaid, valid ReactFlow JSON, or Markdown), and prefer `services/ai/structuredOutput/` when the response is JSON.
 
 ### Charts with nothing to plot
 
@@ -2265,10 +2288,11 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 - Do not deploy from a workstation. Un artefacto que no se puede reconstruir desde `main` no es un despliegue: producción sirvió durante días un commit que no existía en el repositorio. El despliegue cuelga del trabajo `deploy` de `ci.yml`, detrás de los gates — ver `docs/ci-cd-pipeline.md`.
 - Do not call the database **or Auth** directly from a page, component, context or hook — always go through your context's repository and `services/identity` (lint-enforced).
 - Do not import `@google/genai` outside `services/ai/providers/gemini/` (lint-enforced). Describe output shape with `AIJsonSchema` from `services/ai/schema`; each provider translates it at its own boundary.
-- Do not import `services/geminiService` outside `services/ai/` (lint-enforced). Use a domain façade, or `aiGateway` when you compose your own prompt.
+- Do not import the engine (`artifactGenerationEngine`, formerly `services/geminiService`) outside `services/ai/` (lint-enforced), and do not call `generateArtifactContent` without `support` — the compiler refuses it. Use a domain façade, or `aiGateway` when you compose your own prompt.
+- Do not drop a file at the root of `services/`. `SERVICES_ROOT_BUDGET` is 0; a file belongs to the module whose language it speaks.
 - Do not name a concrete model outside a provider. Resolve tiers with `resolveModelForSettings`.
 - Do not introduce a cycle between modules, **a group of modules that can reach itself through others**, an import that points up through the layers, an import that reaches past a module's `index.ts`, or a screen that imports a third service module — **`npm run check:module-boundaries` enforces all five** against `modules.json`. El segundo es el que faltaba: durante una ola entera el gate estuvo verde con nueve contextos de dominio mutuamente alcanzables. Ver *Module boundaries* y `docs/ddd-transformacion/`.
-- Do not grow `services/geminiService.ts` or `components/ArtifactCanvas.tsx` — **`npm run check:module-size` enforces this**, along with a 500-line **and 20 KB** default for every other module. Each oversized file carries both numbers it has today; a change may lower one and may not raise it without a reason in the commit message. The weight is the half that catches data: the `en`/`es` dictionary inside `AppContext` was 17 lines and 20 KB, under every line budget the repository had.
+- Do not grow the engine (`services/ai/generation/artifacts/artifactGenerationEngine.ts`) or `components/ArtifactCanvas.tsx` — **`npm run check:module-size` enforces this**, along with a 500-line **and 20 KB** default for every other module. Each oversized file carries both numbers it has today; a change may lower one and may not raise it without a reason in the commit message. The weight is the half that catches data: the `en`/`es` dictionary inside `AppContext` was 17 lines and 20 KB, under every line budget the repository had.
 - Do not introduce a state management library (Redux, Zustand, …) without explicit approval.
 - Do not reintroduce runtime CDN `<script>`/`<link>` tags in `index.html`.
 - Do not add CSS files, CSS modules, or rules to `src/index.css` — Tailwind classes only.

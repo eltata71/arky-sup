@@ -305,14 +305,16 @@ describe('the strongly connected components are a budget that only falls', () =>
       .toEqual(ALLOWED_SCCS.map((component: string[]) => [...component].sort()));
   });
 
-  it('sigue llevando dentro el núcleo de nueve — el objetivo de la fase 5', () => {
+  it('sigue llevando dentro el núcleo de dominio — el objetivo de F5-03', () => {
     // Nombrado en vez de contado, para que el día que encoja el test diga qué
-    // módulo salió. `services/ai -> services (raíz)` es la arista que lo cierra:
-    // 16 imports de `services/geminiService` desde dentro de la capa construida
-    // para ocultarlo.
+    // módulo salió. Hasta F5-01 lo cerraba también `services/ai -> services
+    // (raíz)`, los imports del motor desde la capa construida para ocultarlo;
+    // el corte 14 metió el motor en esa capa y la raíz salió (14 → 13). No se
+    // disolvió porque no era la única arista: la IA lee el proyecto, el
+    // proyecto guarda el historial de chat y el chat compacta con un modelo.
     const { sccs } = analyse();
     const domain = sccs.find((component: string[]) => component.includes('services/ai'));
-    expect(domain).toContain('services (raíz)');
+    expect(domain).not.toContain('services (raíz)');
     expect(domain).toContain('services/architectureOffice');
     expect(domain).toContain('services/architectureProjects');
   });

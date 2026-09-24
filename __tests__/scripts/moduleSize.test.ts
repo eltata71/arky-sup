@@ -97,7 +97,7 @@ describe('the ceilings are records, not aspirations', () => {
     // into `context/app/`. It is under the default now, so a recorded ceiling
     // would be headroom rather than a record — which the assertion above
     // rejects. An entry leaving this table is the intended end state.
-    for (const file of ['services/geminiService.ts', 'components/ArtifactCanvas.tsx']) {
+    for (const file of ['services/ai/generation/artifacts/artifactGenerationEngine.ts', 'components/ArtifactCanvas.tsx']) {
       expect(CEILINGS).toHaveProperty(file);
     }
   });

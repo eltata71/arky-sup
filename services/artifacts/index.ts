@@ -52,6 +52,12 @@ export {
 } from './deterministicArtifactFallbacks';
 
 /**
+ * What generation needs from this context, handed over on every call
+ * (F5-01, corte 14): `services/ai` declares the port, and this is its supplier.
+ */
+export { artifactGenerationSupport } from './artifactGenerationSupport';
+
+/**
  * La puerta del agregado Artefacto: identidad, versionado y compilación.
  *
  * Estaba dentro de `context/app/useArtifactsState.ts`, mezclado con el estado
