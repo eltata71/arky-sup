@@ -364,9 +364,17 @@ This has now cost a build six times, each measured by `check:bundle-budget`:
 | `platformGuideService` through the `lib/platformGuide` barrel | entry 346,7 → 350,9 KB gz |
 | `chatHistoryRepository` through the `services/chat` barrel, **from boot code** | eager 430,4 → 586,9 KB gz (medido al revés: así es como se recuperaron 156) |
 | The Office's project chat through the `services/architectureOffice` barrel, loaded with `import()` from `OfficeContext` | eager 309,6 → 310,7 KB gz: a dynamic import of a barrel still pins every export of the modules the entry already shares with it (`agentDefinition` joined the entry) |
+| `analyzeDiagramQuality` through the `services/diagram` barrel, from `services/quality/diagramQualityBridge` (F6-02) | eager 310,1 → **776,9** KB gz: `quality` is on the boot path through publication and export, and the diagram barrel carries Mermaid. The largest of the seven, from one import line |
 
 **The rule: a barrel from lazy code, a file path from boot-path code**, with a
-comment saying which case it is. `check:bundle-budget` is what tells the two
+comment saying which case it is. **F6-02 applied it the other way round** —
+sixteen deep imports moved to their module's door, taking the census from 44
+pairs to 29 — and the one that could not move is the row above. Three kinds of
+import could: a type-only import goes through the barrel at any depth (it is
+erased at build), lazy code goes through the barrel, and boot code that needs
+one file gets that file **declared as a small door** in `modules.json`
+(`services/agent/AgentActionRepository.ts`,
+`services/artifacts/artifactGenerationRun.ts`), which is F3-06's pattern. `check:bundle-budget` is what tells the two
 apart — not judgement — and `check:module-boundaries` records the resulting deep
 import as what it is.
 

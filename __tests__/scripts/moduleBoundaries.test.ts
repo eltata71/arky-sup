@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  localImports,
   ALLOWED_CYCLES,
   ALLOWED_SCCS,
   DEEP_IMPORT_BUDGET,
@@ -84,8 +85,13 @@ describe('el verificador ve lo que dice ver', () => {
     // según cómo se escribió. (El ejemplo anterior, `ArtifactTypes` nombrando
     // al compilador, desapareció con F3-07: el resumen de compilación bajó a
     // `lib/artifacts` junto con el Artefacto.)
-    const { deepImports } = analyse();
-    expect(deepImports.get('services/architectureProjects -> services/architectureKnowledgeGraph')).toBe(1);
+    //
+    // F6-02 hizo que ese `import()` entre por la puerta del módulo, así que ya
+    // no es un import profundo, y la prueba mira la propiedad directamente: el
+    // verificador lo lee, sea profundo o no.
+    const imports = localImports('services/architectureProjects/ArchitectureProjectTypes.ts');
+    expect(imports).toContain('services/architectureKnowledgeGraph');
+    expect(imports).toContain('services/publicationPipeline/PublicationPipelineTypes');
   });
 
   it('abre los ficheros de la raíz, que no son carpeta de nadie', () => {

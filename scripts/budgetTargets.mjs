@@ -62,6 +62,10 @@ export const BUDGET_TARGETS = Object.freeze([
     label: 'pares con import profundo',
     target: 30,
     due: '2027-06-30',
+    // Cumplido el 2026-09-24: 44 → 29. Las dependencias no declaradas ya
+    // estaban en cero —`allowedDependencies` las rechaza desde F3-03—; lo que
+    // quedaba eran imports profundos, y los que siguen están registrados uno a
+    // uno con su razón en `DEEP_IMPORT_BUDGET`.
     phase: 'F6-02 — dependencias no autorizadas a cero',
   },
   {

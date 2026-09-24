@@ -3,7 +3,7 @@ import { EXPORT_DEFINITIONS } from '../exportRegistry';
 import { createStoredZip, type ZipEntryInput } from '../utils/zip';
 import { escapeHtml } from '../utils/text';
 import { buildFile } from './shared';
-import { parsePresentationDeck } from '../../presentation/presentationSchema';
+import { parsePresentationDeck } from '../../presentation';
 import { rasterizeMermaidToPng, type RasterizedDiagram } from '../utils/mermaidRaster';
 import type { PresentationCalloutContent, PresentationContentBlock, PresentationDeck, PresentationDiagramContent, PresentationKpiContent, PresentationSlide, PresentationTableContent } from '../../presentation';
 

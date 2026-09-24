@@ -15,7 +15,7 @@
 
 import type { Artifact } from '../../lib/artifacts';
 import { compileArtifact, buildCompilerSummary, getCompilationFreshness } from '../artifactCompiler';
-import type { ArtifactCompilerSummary } from '../artifactCompiler/ArtifactCompilerTypes';
+import type { ArtifactCompilerSummary } from '../artifactCompiler';
 import {
   analyzeArchitectureConsistency,
   analyzeArchitectureTraceability,

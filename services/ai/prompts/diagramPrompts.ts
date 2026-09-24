@@ -17,7 +17,7 @@ import type { ArtifactType, Settings } from '../../../types';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
-import { extractDiagramSignals, renderDiagramSignals } from '../../diagram/diagramSignalExtractor';
+import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
 import { METADATA_CONTRACT, METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
 
 /**

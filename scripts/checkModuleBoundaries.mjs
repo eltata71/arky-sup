@@ -263,16 +263,11 @@ export const LAYER_VIOLATION_BUDGET = {
  */
 export const DEEP_IMPORT_BUDGET = {
   'api -> services/ai': 1,
-  'components -> services/agent': 1, // F5-02: el copiloto entra por `useCopilotTurns`
   'components -> services/ai': 2,
   'components -> services/architectureOffice': 37, // F5-02: capacidades y copiloto, por la puerta
   'components -> services/artifacts': 11,
   'components -> services/diagram': 16,
-  'components -> services/export': 1,
-  'components -> services/presentation': 1,
   'components -> services/quality': 3,
-  'components -> services/review': 1,
-  'context -> services/agent': 1,
   // F5-01 corte 8: 10 → 11, y `context -> services/ai` desaparece a cambio.
   // `OfficeContext` carga el chat de proyecto de la Oficina en diferido por su
   // fichero, no por el barril: el provider está en el arranque, y entrar por el
@@ -281,26 +276,19 @@ export const DEEP_IMPORT_BUDGET = {
   // bundle, medida por `check:bundle-budget`.
   'context -> services/architectureOffice': 11,
   'context -> services/architectureProjects': 2,
-  'context -> services/chat': 1,
   'hooks -> services/agent': 2,
   'hooks -> services/ai': 2,
   'hooks -> services/artifacts': 3,
   'hooks -> services/diagram': 5,
   'hooks -> services/export': 2,
   'pages -> services/architectureOffice': 7, // F5-02: `InitiativesPage` y `ProjectsPage` salen por hooks
-  'pages -> services/artifacts': 1,
   // `services (raíz) -> …` — cinco pares, 16 imports profundos — se fueron con
   // el motor el 2026-09-24 (F5-01, corte 14). Dentro de `services/ai` entra por
   // los barriles de cada contexto: es código perezoso, y la regla del barril
   // contra el bundle lo permite.
-  'services/agent -> services/diagram': 1,
   'services/agent -> services/memory': 3,
-  'services/agent -> services/quality': 1,
-  'services/ai -> services/diagram': 1,
   'services/architectureOffice -> services/ai': 2,
   'services/architectureOffice -> services/diagram': 1,
-  'services/architectureOffice -> services/publicationPipeline': 1,
-  'services/architectureProjects -> services/architectureKnowledgeGraph': 1,
   'services/architectureProjects -> services/memory': 2,
   'services/architectureProjects -> services/publicationPipeline': 4,
   'services/artifactCompiler -> services/quality': 3,
@@ -315,13 +303,13 @@ export const DEEP_IMPORT_BUDGET = {
   'services/artifacts -> services/diagram': 17,
   'services/artifacts -> services/export': 3,
   'services/artifacts -> services/quality': 3,
-  'services/export -> services/diagram': 1,
-  'services/export -> services/presentation': 1,
   'services/export -> services/quality': 11,
   'services/portfolioGraph -> services/architectureOffice': 3,
   'services/publicationPipeline -> services/architectureKnowledgeGraph': 7,
-  'services/publicationPipeline -> services/artifactCompiler': 1,
   'services/publicationPipeline -> services/export': 7,
+  // F6-02: se intentó por el barril y la carga inicial pasó de 310,1 a
+  // 776,9 KB gz — `quality` está en el arranque y el barril de `diagram` trae
+  // Mermaid. Es la regla del barril contra el bundle; se queda por fichero.
   'services/quality -> services/diagram': 1,
 };
 
@@ -460,7 +448,7 @@ const IMPORT_RE = /(?:^|[\s;}])(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\sfrom\
 const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 /** Every relative or `@/`-aliased specifier in the file, as repo-relative paths. */
-function localImports(file) {
+export function localImports(file) {
   const source = readFileSync(file, 'utf8');
   const out = [];
   for (const pattern of [IMPORT_RE, DYNAMIC_IMPORT_RE]) {

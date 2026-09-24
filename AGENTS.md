@@ -206,7 +206,11 @@ Reglas que no se negocian al trabajar aquí:
    entre módulos, **un grupo de módulos que pueda volver a sí mismo** aunque
    ningún par se importe mutuamente (ADR-104), una importación que suba por las
    capas (`lib`/`utils` no importan de `services`), una que entre a un módulo
-   saltándose sus **puertas declaradas** (`api` puede ser una lista: F3-06), ni
+   saltándose sus **puertas declaradas** (`api` puede ser una lista: F3-06;
+   F6-02 bajó los pares profundos de 44 a 29: un `import type` entra por el
+   barril siempre, el código diferido también, y el de arranque que necesita un
+   fichero lo declara como puerta pequeña — por el barril, `quality -> diagram`
+   subía la carga inicial de 310 a 777 KB gz), ni
    una pantalla que importe **más de dos** módulos de servicio. El grafo se
    construye con `import`, `export … from`, `import type` **e `import('…')`**,
    y sobre los ficheros de la raíz (`types.ts`, `utils.ts`, …) además de las

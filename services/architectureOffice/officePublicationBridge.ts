@@ -19,7 +19,7 @@ import type {
   PublicationPreflightFinding,
   PublicationSeverity,
   PublicationVerdict,
-} from '../publicationPipeline/PublicationPipelineTypes';
+} from '../publicationPipeline';
 import type {
   OfficeQualityAssessment,
   OfficeQualityGateId,

@@ -22,10 +22,9 @@ import type { ArtifactReviewSuggestion } from '../review';
 import type { ChatMessage } from '../chat';
 import { appendMemoryNotes } from '../memory/memoryEntries';
 import { artifactGenerationService, classifyAIError, AIServiceError } from '../ai';
-import { runDiagramQualityGate } from '../diagram/qualityGate';
-import { assessDocumentArtifact } from '../quality/documentAcceptability';
+import { assessDocumentArtifact } from '../quality';
 import { validateArtifactReadiness } from '../../lib/artifacts/artifactGovernance';
-import { extractIRFromArtifact } from '../diagram';
+import { extractIRFromArtifact, runDiagramQualityGate } from '../diagram';
 import { repairDiagramIRSemantics } from '../../lib/semanticRoleResolver';
 import { ARTIFACT_TEMPLATES } from '../../constants';
 import type {
