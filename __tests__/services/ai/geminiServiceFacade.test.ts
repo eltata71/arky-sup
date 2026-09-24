@@ -6,7 +6,8 @@
  * `vite.config.ts` — and this is the exception, declared where it is read.
  */
 /**
- * geminiService façade compatibility — proves the legacy public surface still
+ * Engine façade compatibility (the engine is `artifactGenerationEngine` since
+ * F5-01 corte 14) — proves the legacy public surface still
  * works after its retry/timeout/model-fallback loop was migrated onto the
  * provider-agnostic `AIRequestExecutor`.
  */
@@ -23,7 +24,8 @@ vi.mock('../../../services/ai/providers/gemini/geminiClient', () => ({
   isGeminiProxyConfigured: () => false,
 }));
 
-import { geminiService, AIServiceError } from '../../../services/geminiService';
+import { artifactGenerationEngine as geminiService } from '../../../services/ai/generation/artifacts/artifactGenerationEngine';
+import { AIServiceError } from '../../../services/ai/errors';
 import { generateDiagramIR } from '../../../services/ai/generation/diagram';
 import { legacyTransport } from '../../../services/ai/generation/legacyTransport';
 import type { Settings } from '../../../types';

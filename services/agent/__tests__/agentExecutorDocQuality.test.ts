@@ -23,7 +23,7 @@ vi.mock('../../ai/generation/artifactReview', () => ({
   generateTestCases: vi.fn(async () => ''),
 }));
 
-vi.mock('../../geminiService', () => {
+vi.mock('../../ai/generation/artifacts/artifactGenerationEngine', () => {
   class AIServiceError extends Error {
     category = 'unknown';
     status = 0;
@@ -32,7 +32,7 @@ vi.mock('../../geminiService', () => {
     constructor(message: string) { super(message); }
   }
   return {
-    geminiService: {
+    artifactGenerationEngine: {
       generateArtifactContent: vi.fn(),
     },
     AIServiceError,

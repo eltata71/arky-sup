@@ -2,7 +2,8 @@
 /**
  * checkModuleSize — the large modules get smaller, never larger.
  *
- * CLAUDE.md has said "do not grow `services/geminiService.ts`,
+ * CLAUDE.md has said "do not grow `services/geminiService.ts` (the engine,
+ * `services/ai/generation/artifacts/artifactGenerationEngine.ts` since F5-01),
  * `context/AppContext.tsx`, `components/ArtifactCanvas.tsx`" for a long time,
  * and nothing checked it. That is how all of them got here: nobody ever added
  * a thousand lines, everyone added forty.
@@ -58,7 +59,8 @@ export const BYTE_CEILINGS = {
    * resolved model through `settings.aiConfig.model`, which would have made the
    * trace attribute a per-agent decision to the user's own preference.
    */
-  'services/geminiService.ts': 101835, // F5-01 corte 13: la persona llega por un puerto, no desde la Oficina
+  // F5-01 corte 14: el motor entró en `services/ai` y dejó fuera los ayudantes de prompt (101 835 → 94 962)
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 94962,
   'components/ReactFlowCanvas.tsx': 109906,
   'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
@@ -122,7 +124,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
   'services/export/adapters/pptxExporter.ts': 21273,
-  'services/artifacts/artifactGenerationRun.ts': 21495, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
+  'services/artifacts/artifactGenerationRun.ts': 21604, // F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona)
   'context/LMSContext.tsx': 21111,
   'services/observability/observabilityService.ts': 20937,
   /**
@@ -151,7 +153,7 @@ export const BYTE_CEILINGS = {
  * Recorded ceilings, measured 2026-08-30. Lower one when a file shrinks;
  * raising one needs a reason in the commit message, not a passing build.
  *
- * `geminiService` is the strangler's subject and should fall vertical by
+ * The engine (`geminiService`, now `artifactGenerationEngine`) is the strangler's subject and should fall vertical by
  * vertical — it lost 442 lines when the LMS moved out. The four modules item 9
  * left open have been decomposed: `ReactFlowCanvas` into
  * `components/reactFlowCanvas/`, `diagramQualityService` into
@@ -164,7 +166,7 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/geminiService.ts': 1921,
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1786, // F5-01 corte 14: era `services/geminiService.ts`, 1 921
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 981,

@@ -149,7 +149,7 @@ describe('the tool contract points one way', () => {
   });
 
   it('declares the assistant tool once, outside the legacy monolith', () => {
-    const monolith = codeOf('services/geminiService.ts');
+    const monolith = codeOf('services/ai/generation/artifacts/artifactGenerationEngine.ts');
     expect(monolith).not.toMatch(/functionDeclarations/);
     // The agent turn left the engine in F5-01 (corte 8) and took the tool
     // with it: the assistant vertical names the one declaration.

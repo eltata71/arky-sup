@@ -39,7 +39,7 @@ describe('proposeArtifactBriefContract fuera del motor (F5-01 corte 12)', () => 
   });
 
   it('el motor ya no la contiene y la fachada sirve la vertical', () => {
-    const engine = readFileSync('services/geminiService.ts', 'utf8');
+    const engine = readFileSync('services/ai/generation/artifacts/artifactGenerationEngine.ts', 'utf8');
     expect(engine).not.toMatch(/public async proposeArtifactBriefContract\(/);
     expect(artifactGenerationService.proposeArtifactBriefContract).toBe(proposeArtifactBriefContract);
   });

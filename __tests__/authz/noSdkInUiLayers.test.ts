@@ -61,7 +61,7 @@ describe('no model SDK in the UI layers', () => {
 
   it('nothing imports the legacy engine', () => {
     const offenders = sourceFiles()
-      .filter((file) => /from\s+['"][^'"]*geminiService['"]/.test(readCode(file)));
+      .filter((file) => /from\s+['"][^'"]*(?:geminiService|artifactGenerationEngine)['"]/.test(readCode(file)));
     expect(offenders, 'Use a domain façade from services/ai, or aiGateway').toEqual([]);
   });
 });

@@ -42,7 +42,7 @@ const MOVED_METHODS = [
   'evaluateChallenge',
 ];
 
-const monolith = () => readFileSync('services/geminiService.ts', 'utf8');
+const monolith = () => readFileSync('services/ai/generation/artifacts/artifactGenerationEngine.ts', 'utf8');
 const facade = () => readFileSync('services/ai/generation/learningService.ts', 'utf8');
 
 describe('the capability left the monolith', () => {
@@ -75,7 +75,7 @@ describe('the façade did not change shape', () => {
 
   it('serves them from the extracted modules, not the engine', () => {
     const source = facade();
-    expect(readCode('services/ai/generation/learningService.ts')).not.toContain('geminiService');
+    expect(readCode('services/ai/generation/learningService.ts')).not.toMatch(/geminiService|artifactGenerationEngine/);
     for (const name of MOVED_METHODS) {
       expect(source).toContain(`return learning.${name};`);
     }
@@ -94,7 +94,7 @@ describe('the extracted modules stay independent of the engine', () => {
     // The whole point: they reach the model through `aiGateway`, which is the
     // supported surface for a layer that composes its own prompts.
     for (const file of modules) {
-      expect(readCode(file), file).not.toContain('geminiService');
+      expect(readCode(file), file).not.toMatch(/geminiService|artifactGenerationEngine/);
     }
   });
 

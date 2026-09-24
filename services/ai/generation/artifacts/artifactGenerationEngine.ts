@@ -1,7 +1,24 @@
-
+/**
+ * The artifact generation engine — what is left of `services/geminiService`
+ * (F5-01, corte 14).
+ *
+ * For its whole life this file sat loose at the root of `services/`, reached
+ * *up* into eight domain contexts to compose its prompts, and four of them
+ * imported `services/ai` back. Moving it was tried in Ola 5 and reverted for
+ * exactly that reason. Thirteen cuts took everything else out — the transport,
+ * the LMS, recommendations, documents, diagrams, the assistant, critique,
+ * review, the brief and the deck — and cut each upward dependency first: the
+ * Office persona arrives through `ArtifactPersonaComposer`, and what it needed
+ * from `services/artifacts` (the controlled source selection and the
+ * deterministic fallbacks) arrives through `ArtifactGenerationSupport`, which
+ * every caller hands over.
+ *
+ * What remains is one capability, the main artifact generation path, and it
+ * is reached only through `artifactGenerationService`.
+ */
 import { GoogleGenAI } from "@google/genai";
-import { createGeminiAIClient } from "./ai/providers/gemini/geminiClient";
-import { Settings, ArtifactTemplate } from '../types';
+import { createGeminiAIClient } from "../../providers/gemini/geminiClient";
+import { Settings, ArtifactTemplate } from '../../../../types';
 import {
     buildDialectInstruction,
     buildMermaidQualityReinforcement,
@@ -9,10 +26,11 @@ import {
     diagramTemperature,
     generateDiagramIRWithSelfHealing,
     THINKING_BUDGET,
-} from './ai/generation/diagram';
-import { emitGenerationPhase, type Artifact, type ArtifactGenerationOptions, type ArtifactGenerationPhaseEvent } from '../lib/artifacts';
-import type { Project } from './architectureProjects';
-import { cleanJsonString as cleanJsonStringUtil } from '../utils';
+} from '../diagram';
+import { emitGenerationPhase, type Artifact, type ArtifactGenerationPhaseEvent } from '../../../../lib/artifacts';
+import { isPresentationArtifactType } from '../../../../lib/artifacts/artifactKind';
+import type { Project } from '../../../architectureProjects';
+import { cleanJsonString as cleanJsonStringUtil } from '../../../../utils';
 import {
   buildGlobalPrompt as buildGlobalPromptUtil,
   buildBasePrompt as buildBasePromptUtil,
@@ -20,193 +38,34 @@ import {
   buildSiblingDiagramsPromptBlock as buildSiblingDiagramsPromptBlockUtil,
   type BasePromptOptions,
   type ArtifactsContextOptions,
-} from './ai/prompts/projectPrompts';
-import { resolveModelForSettings, resolveProviderId } from './ai/catalog';
+} from '../../prompts/projectPrompts';
+import { resolveModelForSettings, resolveProviderId } from '../../catalog';
 import {
     effectiveGeminiApiKey,
     LegacyGenerationTransport,
     type LegacyGenerationOptions,
     type LegacyGenerationResult,
-} from './ai/generation/legacyTransport';
-import { renderContextGraphReinforcement } from './contextGraph';
-import { assessDocumentArtifact } from './quality/documentAcceptability';
+} from '../legacyTransport';
+import { C4SelfHealingError, classifyAIError } from '../../errors';
+import { generatePresentationDeck } from '../presentationDeck';
+import { renderContextGraphReinforcement } from '../../../contextGraph';
+import { assessDocumentArtifact } from '../../../quality';
+import { buildMinimalPresentationDeck } from '../../../presentation';
+import { extractDiagramSignals, irToMermaid, mermaidToIR, renderDiagramSignals } from '../../../diagram';
 import {
     buildArchitectureKnowledgeGraphForProject,
     buildArtifactGenerationGraphContext,
     resolveProjectArchitectureGraphFreshness,
-} from './architectureKnowledgeGraph';
-
-
-/**
- * The error surface moved to `services/ai/errors/aiServiceError.ts`.
- *
- * `services/ai/index.ts` used to re-export these three from here, which meant
- * the provider-agnostic layer's public API resolved to the engine it exists to
- * hide. They are imported back for this file's own use and re-exported for the
- * call sites that still name the engine's surface directly.
- */
+} from '../../../architectureKnowledgeGraph';
+import type { ArtifactContentGenerationOptions, ArtifactGenerationSupport } from './artifactGenerationSupport';
 import {
-    AIServiceError,
-    C4SelfHealingError,
-    classifyAIError,
-    isTransientGeminiError,
-} from './ai/errors';
-/**
- * The deterministic fallbacks moved to `services/artifacts`. They are pure
- * functions over a project and a template — no model call anywhere in them —
- * and the engine is a *caller* of that path, not its owner.
- */
-import {
-    buildDeterministicArtifactFallback,
-    buildDeterministicDiagramSkeleton,
-    markMermaidAsSkeletonFallback,
-} from './artifacts/deterministicArtifactFallbacks';
-export { AIServiceError, C4SelfHealingError, classifyAIError, isTransientGeminiError };
-export type { AIErrorCategory, AIErrorSource } from './ai/core';
-import { isPresentationArtifactType } from '../lib/artifacts/artifactKind';
-import { buildMinimalPresentationDeck } from './presentation/presentationFallback';
-import { generatePresentationDeck } from './ai/generation/presentationDeck';
-import { mermaidToIR } from './diagram/mermaidToIR';
-import { irToMermaid } from './diagram/irToMermaid';
-import { extractDiagramSignals, renderDiagramSignals } from './diagram/diagramSignalExtractor';
-import { selectArtifactGenerationContext, validateControlledContextForPrompt } from './artifacts/artifactContextSelectionService';
-import { SKELETON_FALLBACK_MARKER } from './artifacts/artifactFallbackDetection';
-
-/** Returns true when an ArtifactTemplate.type requires diagram-flavoured generation. */
-function isDiagramArtifactType(type: string): boolean {
-    return type.startsWith('mermaid') || type === 'react-flow-graph' || type === 'hybrid-text-diagram';
-}
-
-
-
-
-
-/**
- * Marker prepended to every deterministic skeleton body so downstream
- * consumers (renderer, badges, audits) can identify content that was NOT
- * authored by Gemini. The marker is a Mermaid comment, so it is stripped
- * cleanly by `mermaidToIR` while staying detectable by a simple `String#
- * includes` check on `artifact.content`.
- *
- * The canonical literal lives in `artifactFallbackDetection.ts` (the central
- * fallback-detection module); it is re-exported here so existing importers
- * stay stable.
- */
-export { SKELETON_FALLBACK_MARKER };
-
-
-
-
-
-// Configuration. The generation loop's own constants moved with the transport
-// (`services/ai/generation/legacyTransport.ts`, F5-01), and the engine's own
-// `retryWithBackoff` went with the last caller that used it (corte 4).
-
-// ─── Error classification ─────────────────────────────────────────────────
-// ─── Error classification ─────────────────────────────────────────────────
-//
-// `AIServiceError`, `classifyAIError` and `isTransientGeminiError` are now
-// `services/ai/errors/aiServiceError.ts`; they are imported at the top of this
-// file and re-exported there.
-
-export function buildHybridMarkdownFromMermaid(template: ArtifactTemplate, mermaid: string): string {
-    const trimmed = mermaid.trim().replace(/^```(?:mermaid)?\s*/i, '').replace(/```\s*$/i, '').trim();
-    const request = template.requestContext?.userRequest ?? template.objective;
-    const plan = template.requestContext?.constructionPlan?.length
-        ? `\n\n## Plan de construcción\n${template.requestContext.constructionPlan.map((step, index) => `${index + 1}. ${step}`).join('\n')}`
-        : '';
-    const rationale = template.requestContext?.rationale
-        ? `\n\n## Justificación arquitectónica\n${template.requestContext.rationale}`
-        : '';
-    const actors = /farmacia|receta|reclamo|asegur/i.test(request)
-        ? ['Paciente / Afiliado', 'Farmacia', 'Switch / PBM', 'Aseguradora', 'Banco / Pagos']
-        : ['Solicitante', 'Equipo responsable', 'Sistema de soporte', 'Control / aprobación'];
-    return `# ${template.name}
-
-## Resumen
-${template.objective}
-
-## Alcance del proceso
-Artefacto híbrido generado para cubrir la solicitud original con explicación textual y diagrama Mermaid renderizable.
-
-## Actores / lanes
-${actors.map(actor => `- ${actor}`).join('\n')}
-
-## Solicitud original
-${request}${rationale}
-
-## Diagrama renderizable
-\`\`\`mermaid
-${trimmed}
-\`\`\`${plan}
-
-## Notas de lectura y supuestos
-- El diagrama usa sintaxis Mermaid compatible con el parser local.
-- Si la salida provino de fallback, el contenido queda editable y trazable desde el canvas.
-- Validar nombres de actores y reglas de negocio con el dueño del proceso.`;
-}
-
-
-
-/**
- * Reinforcement block appended to non-diagram on-demand artifacts so document
- * generations carry the same level of structural rigor as their diagram
- * counterparts. The block is intentionally short — Gemini's implicit cache
- * keeps system instruction cost low; this tail just nudges the model toward
- * a richer, sectioned, decision-grade output that matches the architect's
- * approved construction plan.
- */
-export function buildOnDemandDocumentReinforcement(template: ArtifactTemplate): string {
-    if (!template.requestContext) return '';
-    const audience = template.requestContext.audience ?? 'mixed';
-    const audienceHint = audience === 'executive'
-        ? 'Audiencia ejecutiva: estructura tipo memo (TL;DR, decisiones, riesgos, próximos pasos); evita jerga técnica innecesaria.'
-        : audience === 'technical'
-            ? 'Audiencia técnica: profundiza en arquitectura, contratos, integraciones, NFRs, supuestos y validaciones.'
-            : 'Audiencia mixta: combina visión ejecutiva al inicio y profundidad técnica en secciones posteriores claramente separadas.';
-    return `
-
-ON-DEMAND DOCUMENT QUALITY BAR (mandatory):
-- Cubre TODA la solicitud original del arquitecto sin truncar; si una sección requiere extensión, déjala completa antes de pasar a la siguiente.
-- Estructura el documento con encabezados claros (## / ###) y listas accionables; nunca devuelvas un único párrafo monolítico.
-- Cada sección debe contener contenido específico al proyecto y a la solicitud — prohibido el placeholder genérico "Ejemplo de cliente".
-- Cierra con un bloque "Validaciones recomendadas" enumerando supuestos a confirmar con stakeholders y dependencias activas.
-- ${audienceHint}
-- Cita explícitamente qué señales del contexto del proyecto influyeron cada decisión clave (ej: "Basado en la integración con WeeCompany PBM declarada en el contexto…").`;
-}
-
-/**
- * Quality reinforcement applied to ALL non-diagram catalog artefacts.
- *
- * Documents historically had inconsistent quality vs. on-demand documents
- * because the on-demand path got a tailored "QUALITY BAR" suffix while the
- * catalog path relied on the per-template format instructions only. This
- * reinforcement closes that gap with a stable, project-grounded output
- * standard that complements (does not duplicate) the per-template SDD/BRD
- * structures already in place.
- */
-export function buildCatalogDocumentReinforcement(template: ArtifactTemplate): string {
-    return `
-
-CATALOG DOCUMENT QUALITY BAR (mandatory — apply on top of the per-template structure above):
-- Personaliza CADA sección con detalles concretos del proyecto: nombres reales, integraciones declaradas, fases registradas, restricciones del contexto. Prohibido contenido genérico ("Empresa X", "Sistema legacy").
-- Mantén títulos en jerarquía consistente (# > ## > ###); nunca devuelvas un único párrafo monolítico.
-- Toda lista numerada o con viñetas debe contener al menos 3 elementos cuando aplique.
-- Si el artefacto es ${template.type}, respeta exactamente la plantilla declarada arriba — no remueves secciones, no las renombras.
-- Cuando referencias trazabilidad (BR-, UC-, NFR-, TC-), usa identificadores monotónicos y consistentes a lo largo del documento.
-- Cierra con un breve bloque "Próximos pasos" con 2-4 acciones recomendadas.
-- Idioma: español por defecto (el contexto global del proyecto manda); evita anglicismos cuando exista término establecido en la industria aseguradora.`;
-}
-
-export const __test__ = {
-    buildDeterministicArtifactFallback,
-    buildHybridMarkdownFromMermaid,
-    markMermaidAsSkeletonFallback,
-    buildOnDemandDocumentReinforcement,
     buildCatalogDocumentReinforcement,
-};
+    buildHybridMarkdownFromMermaid,
+    buildOnDemandDocumentReinforcement,
+    isDiagramArtifactType,
+} from './artifactPromptReinforcements';
 
-class GeminiService {
+class ArtifactGenerationEngine {
     // Note: We no longer store `this.ai` or `this.apiKey` as static properties on the class
     // because we need to decide which key to use (global or user) at runtime based on settings.
 
@@ -338,14 +197,18 @@ class GeminiService {
      * `generateArtifactContent`, where the template has not yet been turned
      * into a persisted artifact.
      */
-    private artifactStubFromTemplate(template: ArtifactTemplate, project: Project, previousArtifact?: Artifact): Artifact {
+    private artifactStubFromTemplate(
+        template: ArtifactTemplate,
+        project: Project,
+        support: ArtifactGenerationSupport,
+        previousArtifact?: Artifact,
+    ): Artifact {
         const now = new Date().toISOString();
         const contract = template.requestContext?.generationContract;
         let controlledContext = '';
         if (contract) {
-            const selection = selectArtifactGenerationContext(project, contract, { maxOptionalSources: 3, maxContextItems: 5, sourceSummaryChars: 700 });
-            const validation = validateControlledContextForPrompt(selection);
-            controlledContext = validation.ok ? selection.promptBlock : `
+            const validation = support.controlledContext(project, contract, 700);
+            controlledContext = validation.ok ? validation.promptBlock : `
 ## Selección controlada de fuentes/contexto
 - Omitida por validación de seguridad: ${validation.errors.join(' · ')}
 `;
@@ -386,12 +249,13 @@ ${controlledContext}`
         project: Project,
         template: ArtifactTemplate,
         settings: Settings,
+        support: ArtifactGenerationSupport,
         previousArtifact?: Artifact,
     ): Promise<string> {
-        const stub = this.artifactStubFromTemplate(template, project, previousArtifact);
+        const stub = this.artifactStubFromTemplate(template, project, support, previousArtifact);
         const result = await generateDiagramIRWithSelfHealing(stub, project, settings);
         const mermaid = result.fallback === 'skeleton'
-            ? markMermaidAsSkeletonFallback(irToMermaid(result.ir))
+            ? support.markSkeleton(irToMermaid(result.ir))
             : irToMermaid(result.ir);
         if (result.fallback === 'skeleton') {
             // Surface the failure to the caller without losing the rendered
@@ -470,7 +334,7 @@ ${controlledContext}`
             });
             return context.promptBlock;
         } catch (err) {
-            console.warn('[geminiService] No se pudo resolver el grafo de conocimiento para la generación; se continúa sin él.', err);
+            console.warn('[artifactGenerationEngine] No se pudo resolver el grafo de conocimiento para la generación; se continúa sin él.', err);
             return '';
         }
     }
@@ -479,23 +343,23 @@ ${controlledContext}`
         project: Project,
         template: ArtifactTemplate,
         settings: Settings,
-        previousArtifact?: Artifact,
-        opts: ArtifactGenerationOptions = {}
+        previousArtifact: Artifact | undefined,
+        opts: ArtifactContentGenerationOptions,
     ): Promise<string> {
-        const { onPhase } = opts;
+        const { onPhase, support } = opts;
         const stageTimings = new Map<string, number>();
         const emit = (event: Omit<ArtifactGenerationPhaseEvent, 'at'>) =>
             emitGenerationPhase(onPhase, event, stageTimings);
         const raw = await this._generateArtifactContentInternal(project, template, settings, previousArtifact, opts);
         try {
-            return this.gateRenderableDiagramContent(raw, project, template, emit);
+            return this.gateRenderableDiagramContent(raw, project, template, support, emit);
         } catch (gateErr) {
             // The gate must NEVER block persistence. If something throws
             // unexpectedly inside it, log and return the raw content so the
             // user at least sees what the model produced — the canvas
             // placeholder will then surface the rendering issue with a clear
             // retry CTA.
-            console.warn('[geminiService] Renderability gate threw — returning raw content as last resort.', gateErr);
+            console.warn('[artifactGenerationEngine] Renderability gate threw — returning raw content as last resort.', gateErr);
             return raw;
         }
     }
@@ -510,10 +374,10 @@ ${controlledContext}`
         project: Project,
         template: ArtifactTemplate,
         settings: Settings,
-        previousArtifact?: Artifact,
-        opts: ArtifactGenerationOptions = {}
+        previousArtifact: Artifact | undefined,
+        opts: ArtifactContentGenerationOptions,
     ): Promise<string> {
-        const { onPhase } = opts;
+        const { onPhase, support } = opts;
         const stageTimings = new Map<string, number>();
         const emit = (event: Omit<ArtifactGenerationPhaseEvent, 'at'>) =>
             emitGenerationPhase(onPhase, event, stageTimings);
@@ -548,7 +412,7 @@ ${controlledContext}`
                 meta: { path: 'c4-self-healing', type: template.type },
             });
             try {
-                const mermaid = await this.generateC4ArtifactViaSelfHealing(project, template, settings, previousArtifact);
+                const mermaid = await this.generateC4ArtifactViaSelfHealing(project, template, settings, support, previousArtifact);
                 emit({
                     stage: 'ai-generation',
                     status: 'success',
@@ -574,7 +438,7 @@ ${controlledContext}`
                 if (err instanceof C4SelfHealingError && err.sampleMermaid.trim().length > 0) {
                     return err.sampleMermaid;
                 }
-                return buildDeterministicDiagramSkeleton(project, template);
+                return support.deterministicDiagramSkeleton(project, template);
             }
         }
 
@@ -1049,8 +913,8 @@ ${previousArtifact.content}
 ` : `*** NEW ARTIFACT *** Create a detailed first version.`;
 
         const generationContract = template.requestContext?.generationContract;
-        const controlledContextSelection = generationContract
-            ? selectArtifactGenerationContext(project, generationContract, { maxOptionalSources: 3, maxContextItems: 5, sourceSummaryChars: 900 })
+        const controlledContext = generationContract
+            ? support.controlledContext(project, generationContract, 900)
             : null;
         const requestContextInstructions = template.requestContext ? `
 *** ON-DEMAND ARTIFACT REQUEST CONTEXT ***
@@ -1158,9 +1022,9 @@ ${!isDiagramArtifact ? buildOnDemandDocumentReinforcement(template) : ''}
         // Last-line guard: never let an excluded source leak into the prompt
         // as usable evidence. This is non-blocking — it corrects/observes but
         // removes the controlled block if a critical leak is detected.
-        let controlledContextPromptBlock = controlledContextSelection?.promptBlock ?? '';
-        if (controlledContextSelection) {
-            const contextValidation = validateControlledContextForPrompt(controlledContextSelection);
+        let controlledContextPromptBlock = controlledContext?.promptBlock ?? '';
+        if (controlledContext) {
+            const contextValidation = controlledContext;
             if (!contextValidation.ok) controlledContextPromptBlock = `
 ## Selección controlada de fuentes/contexto
 - Omitida por validación de seguridad: ${contextValidation.errors.join(' · ')}
@@ -1266,13 +1130,13 @@ ${catalogDocumentReinforcement}
                 maxRetries: 2,
             });
             if (!raw || raw.trim().length === 0) {
-                console.warn(`[geminiService] Empty generation for "${template.name}"; using deterministic fallback.`);
+                console.warn(`[artifactGenerationEngine] Empty generation for "${template.name}"; using deterministic fallback.`);
                 emit({
                     stage: 'ai-generation',
                     status: 'warning',
                     message: 'Gemini devolvió contenido vacío; aplicando fallback determinístico.',
                 });
-                return buildDeterministicArtifactFallback(project, template);
+                return support.deterministicArtifact(project, template);
             }
             emit({
                 stage: 'ai-generation',
@@ -1284,7 +1148,7 @@ ${catalogDocumentReinforcement}
             if (this.isLocalGenerationFallbackCandidate(error)) {
                 const friendly = classifyAIError(error);
                 console.warn(
-                    `[geminiService] Artifact generation used local fallback for "${template.name}" (${friendly.category}).`,
+                    `[artifactGenerationEngine] Artifact generation used local fallback for "${template.name}" (${friendly.category}).`,
                     friendly.message,
                 );
                 const rawMessage = friendly.message?.toString().slice(0, 320) ?? '';
@@ -1301,7 +1165,7 @@ ${catalogDocumentReinforcement}
                         rawMessage,
                     },
                 });
-                return buildDeterministicArtifactFallback(project, template);
+                return support.deterministicArtifact(project, template);
             }
             const fallbackRaw = error instanceof Error ? error.message : String(error);
             emit({
@@ -1323,7 +1187,7 @@ ${catalogDocumentReinforcement}
             if (firstAssessment.ok) return raw;
 
             console.warn(
-                `[geminiService] Diagram artifact "${template.name}" failed post-LLM validation:`,
+                `[artifactGenerationEngine] Diagram artifact "${template.name}" failed post-LLM validation:`,
                 firstAssessment.reason,
             );
 
@@ -1341,7 +1205,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                 const retryAssessment = this.assessMermaidArtifact(retry, template.type);
                 if (retryAssessment.ok) return retry;
                 console.warn(
-                    `[geminiService] Diagram retry still invalid (${retryAssessment.reason}); attempting flowchart fallback.`,
+                    `[artifactGenerationEngine] Diagram retry still invalid (${retryAssessment.reason}); attempting flowchart fallback.`,
                 );
 
                 // Attempt 2: degrade to the most permissive dialect (flowchart)
@@ -1360,16 +1224,16 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                         const fallbackAssessment = this.assessMermaidArtifact(normalizedFallback, template.type === 'hybrid-text-diagram' ? 'hybrid-text-diagram' : 'mermaid-graph');
                         if (fallbackAssessment.ok) {
                             console.warn(
-                                `[geminiService] Returned flowchart fallback for "${template.name}" — original dialect failed twice.`,
+                                `[artifactGenerationEngine] Returned flowchart fallback for "${template.name}" — original dialect failed twice.`,
                             );
                             return normalizedFallback;
                         }
                         console.warn(
-                            `[geminiService] Flowchart fallback for "${template.name}" also failed:`,
+                            `[artifactGenerationEngine] Flowchart fallback for "${template.name}" also failed:`,
                             fallbackAssessment.reason,
                         );
                     } catch (fallbackErr) {
-                        console.warn('[geminiService] Flowchart fallback threw:', fallbackErr);
+                        console.warn('[artifactGenerationEngine] Flowchart fallback threw:', fallbackErr);
                     }
                 }
 
@@ -1384,19 +1248,19 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                 // a deterministic skeleton so the canvas never stays blank.
                 if (bestAssessment.nodeCount === 0 && (template.type.startsWith('mermaid') || template.type === 'hybrid-text-diagram')) {
                     console.warn(
-                        `[geminiService] All AI attempts produced zero nodes for "${template.name}"; emitting deterministic skeleton.`,
+                        `[artifactGenerationEngine] All AI attempts produced zero nodes for "${template.name}"; emitting deterministic skeleton.`,
                     );
-                    return buildDeterministicDiagramSkeleton(project, template);
+                    return support.deterministicDiagramSkeleton(project, template);
                 }
                 return best;
             } catch (retryErr) {
-                console.warn('[geminiService] Diagram retry failed entirely:', retryErr);
+                console.warn('[artifactGenerationEngine] Diagram retry failed entirely:', retryErr);
                 // The retry threw before we could measure it. Use the raw
                 // first-attempt output if it has any content; otherwise drop
                 // back to the deterministic skeleton.
                 if (firstAssessment.nodeCount > 0) return raw;
                 if (template.type.startsWith('mermaid') || template.type === 'hybrid-text-diagram') {
-                    return buildDeterministicDiagramSkeleton(project, template);
+                    return support.deterministicDiagramSkeleton(project, template);
                 }
                 return raw;
             }
@@ -1449,7 +1313,7 @@ Regenerate the COMPLETE artifact ensuring:
                 });
                 return useRetry ? retryDoc : raw;
             } catch (retryErr) {
-                console.warn('[geminiService] Document corrective retry failed; keeping first attempt.', retryErr);
+                console.warn('[artifactGenerationEngine] Document corrective retry failed; keeping first attempt.', retryErr);
                 return raw;
             }
         }
@@ -1480,6 +1344,7 @@ Regenerate the COMPLETE artifact ensuring:
         raw: string,
         project: Project,
         template: ArtifactTemplate,
+        support: ArtifactGenerationSupport,
         emit: (event: Omit<ArtifactGenerationPhaseEvent, 'at'>) => ArtifactGenerationPhaseEvent,
     ): string {
         const isDiagramArtifact = isDiagramArtifactType(template.type);
@@ -1492,7 +1357,7 @@ Regenerate the COMPLETE artifact ensuring:
             return raw;
         }
         if (!raw || raw.trim().length === 0) {
-            const skeleton = buildDeterministicDiagramSkeleton(project, template);
+            const skeleton = support.deterministicDiagramSkeleton(project, template);
             emit({
                 stage: 'validation',
                 status: 'warning',
@@ -1513,7 +1378,7 @@ Regenerate the COMPLETE artifact ensuring:
             // Treat <2 nodes as unrenderable. Even a system-context diagram
             // needs at least an actor + system to be meaningful.
             if (nodeCount < 2) {
-                const skeleton = buildDeterministicDiagramSkeleton(project, template);
+                const skeleton = support.deterministicDiagramSkeleton(project, template);
                 emit({
                     stage: 'validation',
                     status: 'warning',
@@ -1531,7 +1396,7 @@ Regenerate the COMPLETE artifact ensuring:
             });
             return raw;
         } catch (err) {
-            const skeleton = buildDeterministicDiagramSkeleton(project, template);
+            const skeleton = support.deterministicDiagramSkeleton(project, template);
             emit({
                 stage: 'validation',
                 status: 'warning',
@@ -1917,4 +1782,4 @@ ${crossCuttingGuidance}`;
 
 }
 
-export const geminiService = new GeminiService();
+export const artifactGenerationEngine = new ArtifactGenerationEngine();

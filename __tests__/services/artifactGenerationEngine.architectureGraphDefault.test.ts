@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { geminiService } from '../../services/geminiService';
+import { artifactGenerationEngine } from '../../services/ai/generation/artifacts/artifactGenerationEngine';
 import { buildArchitectureKnowledgeGraphForProject } from '../../services/architectureKnowledgeGraph';
 import type { ArtifactTemplate, Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
@@ -70,9 +70,9 @@ type GraphResolver = {
 };
 
 const resolveBlock = (p: Project) =>
-  (geminiService as unknown as GraphResolver).resolveDefaultArchitectureGraphBlock(p, template, settings);
+  (artifactGenerationEngine as unknown as GraphResolver).resolveDefaultArchitectureGraphBlock(p, template, settings);
 
-describe('geminiService.resolveDefaultArchitectureGraphBlock', () => {
+describe('artifactGenerationEngine.resolveDefaultArchitectureGraphBlock', () => {
   it('rebuilds a missing graph in-memory and returns a prompt block', () => {
     const block = resolveBlock(project); // no persisted graph
     expect(block.length).toBeGreaterThan(0);

@@ -37,6 +37,8 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'artifactWorkflow', rule: 'la coordinación de artefactos no vive en React (F4-05)' },
   { anchor: 'legacyTransport', rule: 'el transporte salió del motor y el motor se estrangula por verticales (F5-01)' },
   { anchor: 'engineImporters', rule: 'la lista de importadores del motor sólo encoge' },
+  { anchor: 'ArtifactGenerationSupport', rule: 'el motor vive en services/ai y recibe por puerto lo que no puede buscar (F5-01 corte 14)' },
+  { anchor: 'SERVICES_ROOT_BUDGET', rule: 'la raíz de services/ no tiene ficheros sueltos' },
   { anchor: 'agentRegistry', rule: 'el registro es la única puerta a los agentes' },
   { anchor: 'wrapUntrustedContent', rule: 'lo externo se valla antes de llegar al modelo' },
   { anchor: 'docs/operacion/despliegue.json', rule: 'producción la publica un solo camino' },

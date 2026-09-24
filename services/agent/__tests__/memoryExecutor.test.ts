@@ -8,7 +8,7 @@ import type { Project } from '../../architectureProjects';
 
 // We never call the real Gemini service from these tests — memory.save.*
 // never enters the artifact-generation pipeline.
-vi.mock('../../geminiService', () => {
+vi.mock('../../ai/generation/artifacts/artifactGenerationEngine', () => {
   class AIServiceError extends Error {
     category = 'unknown';
     status = 0;
@@ -16,7 +16,7 @@ vi.mock('../../geminiService', () => {
     userMessage = 'Test error';
   }
   return {
-    geminiService: {
+    artifactGenerationEngine: {
       generateArtifactContent: vi.fn(),
     },
     AIServiceError,

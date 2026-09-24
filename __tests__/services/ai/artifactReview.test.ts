@@ -44,7 +44,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('review, improvements and test cases outside the engine (F5-01 corte 11)', () => {
   it('the engine owns none of the three prompts, nor the three uncalled media methods', () => {
-    const engine = readFileSync('services/geminiService.ts', 'utf8');
+    const engine = readFileSync('services/ai/generation/artifacts/artifactGenerationEngine.ts', 'utf8');
     for (const method of [
       'reviewArtifact',
       'applyArtifactImprovements',

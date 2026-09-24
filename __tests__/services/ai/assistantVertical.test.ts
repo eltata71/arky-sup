@@ -58,7 +58,7 @@ describe('the assistant vertical outside the engine', () => {
   ];
 
   it('the engine no longer declares any of the seven turns', () => {
-    const engine = readCode('services/geminiService.ts');
+    const engine = readCode('services/ai/generation/artifacts/artifactGenerationEngine.ts');
     for (const method of moved) {
       expect(engine, method).not.toMatch(new RegExp(`\\b${method}\\s*\\(`));
     }
@@ -67,13 +67,13 @@ describe('the assistant vertical outside the engine', () => {
   it('the vertical reaches neither the engine nor the contexts that import this layer back', () => {
     for (const file of ['assistantPorts', 'architectureConsultation', 'conversationAnalysis', 'multimodalChat', 'agentTurn', 'projectChat', 'index']) {
       const code = readCode(`services/ai/generation/assistant/${file}.ts`);
-      expect(code, file).not.toMatch(/geminiService['"]/);
+      expect(code, file).not.toMatch(/(?:geminiService|artifactGenerationEngine)['"]/);
       expect(code, file).not.toMatch(/services\/(chat|agent|architectureOffice)|\.\.\/\.\.\/\.\.\/(chat|agent|architectureOffice)/);
     }
   });
 
   it('the façade no longer imports the engine at all', () => {
-    expect(readCode('services/ai/generation/assistantService.ts')).not.toMatch(/geminiService/);
+    expect(readCode('services/ai/generation/assistantService.ts')).not.toMatch(/geminiService|artifactGenerationEngine/);
   });
 });
 

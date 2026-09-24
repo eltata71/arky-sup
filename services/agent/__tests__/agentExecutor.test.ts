@@ -7,7 +7,7 @@ import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
-// The executor reuses `geminiService` — we mock its surface so the tests stay
+// The executor reuses the artifact generation engine — we mock its surface so the tests stay
 // fast and offline. The contract we exercise:
 //   - applyArtifactImprovements   → improve / applySuggestion paths
 //   - runAgentTurn (AI boundary)  → patch path (function-calling), composed
@@ -28,7 +28,7 @@ vi.mock('../../ai/generation/artifactReview', () => ({
   generateTestCases: vi.fn(async () => ''),
 }));
 
-vi.mock('../../geminiService', () => {
+vi.mock('../../ai/generation/artifacts/artifactGenerationEngine', () => {
   class AIServiceError extends Error {
     category = 'unknown';
     status = 0;
@@ -39,7 +39,7 @@ vi.mock('../../geminiService', () => {
     }
   }
   return {
-    geminiService: {
+    artifactGenerationEngine: {
       generateArtifactContent: (...args: [unknown, unknown, unknown, unknown?]) => generateArtifactContent(...args),
     },
     AIServiceError,

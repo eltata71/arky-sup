@@ -2,16 +2,29 @@
  * Convert Mermaid source into a ReactFlow graph through a model. Moved out of
  * the engine in F5-01 (corte 6); a failure returns `null`.
  */
+import type { Edge, Node } from 'reactflow';
 import type { Settings } from '../../../../types';
 import { MODEL_TIERS } from '../../../../lib/ai/modelCatalog';
 import { cleanJsonString } from '../../../../utils';
 import { aiGateway } from '../aiGateway';
 import { buildDiagramGenerationConfig } from './diagramGenerationConfig';
 
+/** A ReactFlow graph as the model returns it: two arrays, checked before use. */
+export interface ModelFlowGraph {
+    nodes: Node[];
+    edges: Edge[];
+}
+
+const isModelFlowGraph = (value: unknown): value is ModelFlowGraph => {
+    if (!value || typeof value !== 'object') return false;
+    const candidate = value as { nodes?: unknown; edges?: unknown };
+    return Array.isArray(candidate.nodes) && Array.isArray(candidate.edges);
+};
+
 export async function parseMermaidToReactFlow(
     mermaidSyntax: string,
     settings: Settings
-): Promise<{ nodes: any[], edges: any[] } | null> {
+): Promise<ModelFlowGraph | null> {
     const prompt = `Convert this Mermaid syntax to ReactFlow JSON. Mechanical mapping only — preserve every node and edge.
 
 NODES: type='custom', data must include:
@@ -86,7 +99,8 @@ ${mermaidSyntax}`;
             responseSchema,
         }));
         const cleanJson = cleanJsonString(text || '');
-        return JSON.parse(cleanJson || '{"nodes":[], "edges":[]}');
+        const parsed: unknown = JSON.parse(cleanJson || '{"nodes":[], "edges":[]}');
+        return isModelFlowGraph(parsed) ? parsed : null;
     } catch (error) {
         console.error("Mermaid Parse Error:", error);
         // Return null so UI handles it gracefully instead of crashing

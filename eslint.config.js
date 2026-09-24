@@ -139,7 +139,9 @@ export default [
     // enum is a schema no other provider can honour, and the degradation is
     // invisible because the call still succeeds.
     //
-    // Reaching for the engine (`services/geminiService`) outside `services/ai`
+    // Reaching for the engine outside `services/ai` — `services/geminiService`
+    // until F5-01 corte 14, `services/ai/generation/artifacts/artifactGenerationEngine`
+    // since; both names stay refused
     // is how the canonical layer became ornamental: the façades existed and
     // every call site went around them. It also pulled a 600 kB module into
     // whichever chunk did the importing, which is how the entry bundle reached
@@ -160,7 +162,7 @@ export default [
             'Describe la salida con `AIJsonSchema` de services/ai/schema. Cada proveedor traduce el esquema en su propia frontera; importar el SDK aquí vuelve a atar el dominio a un solo modelo.',
         }],
         patterns: [{
-          group: ['**/services/geminiService', '**/geminiService'],
+          group: ['**/services/geminiService', '**/geminiService', '**/artifactGenerationEngine'],
           message:
             'Importa la fachada de dominio desde `services/ai` (artifactGenerationService, assistantService, diagramGenerationService, learningService, documentGenerationService, recommendationService) o `aiGateway` si compones tu propio prompt. El motor es un detalle interno de services/ai.',
         }],
@@ -197,7 +199,7 @@ export default [
               'La UI no habla con un SDK. Usa `services/identity` para autenticación y el repositorio de tu contexto para datos: así las reglas de sesión se pueden probar sin montar un árbol de React. Firebase se retiró en F9 y no vuelve.',
           },
           {
-            group: ['**/services/geminiService', '**/geminiService'],
+            group: ['**/services/geminiService', '**/geminiService', '**/artifactGenerationEngine'],
             message:
               'Importa la fachada de dominio desde `services/ai` o `aiGateway` si compones tu propio prompt.',
           },
@@ -246,7 +248,7 @@ export default [
               'El SDK vive en `services/adapters`: la persistencia entra por `callRpc` o por el repositorio de tu contexto, y la sesión por `services/identity`. Cuatro caminos distintos al SDK es como el Centro de Formación acabó degradando a localStorage con un console.warn sin decírselo a nadie.',
           },
           {
-            group: ['**/services/geminiService', '**/geminiService'],
+            group: ['**/services/geminiService', '**/geminiService', '**/artifactGenerationEngine'],
             message:
               'Importa la fachada de dominio desde `services/ai` o `aiGateway` si compones tu propio prompt.',
           },
@@ -290,7 +292,7 @@ export default [
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          group: ['**/services/geminiService', '**/geminiService', '../geminiService'],
+          group: ['**/services/geminiService', '**/geminiService', '../geminiService', '**/artifactGenerationEngine'],
           message:
             'El barril es la API pública de la capa: no puede reexportar el motor. Dale casa al símbolo en `services/ai/errors`, `services/ai/core` o `services/ai/generation`, o en `lib/artifacts` si es un contrato sin comportamiento.',
         }],
@@ -315,14 +317,13 @@ export default [
   },
 
   {
-    // The Gemini adapter and the legacy client factory are where the SDK is
-    // meant to live; the engine is the module the rule protects. The list is
-    // expected to shrink: `services/aiProvider.ts` loses its exemption when
-    // client construction moves fully behind the provider layer.
+    // The Gemini adapter is where the SDK is meant to live; the engine still
+    // names `GoogleGenAI` for the client its transport receives. The list only
+    // shrinks: `services/aiProvider.ts` left it when the file was deleted, and
+    // the engine leaves it when its transport stops taking a Gemini client.
     files: [
       'services/ai/providers/gemini/**/*.ts',
-      'services/geminiService.ts',
-      'services/aiProvider.ts',
+      'services/ai/generation/artifacts/artifactGenerationEngine.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',

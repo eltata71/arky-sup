@@ -21,7 +21,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('quality refinement outside the engine', () => {
   it('the engine no longer owns either prompt', () => {
-    const engine = readFileSync('services/geminiService.ts', 'utf8');
+    const engine = readFileSync('services/ai/generation/artifacts/artifactGenerationEngine.ts', 'utf8');
     expect(engine).not.toMatch(/public async critiqueArtifactContent\(/);
     expect(engine).not.toMatch(/public async refineArtifactContent\(/);
   });

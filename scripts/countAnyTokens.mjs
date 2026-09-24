@@ -30,7 +30,8 @@ import { execSync } from 'node:child_process';
  * What is left is concentrated rather than scattered, and each group has a
  * named reason:
  *
- * - 0 in `services/geminiService.ts` — the corte 10 cleanup typed its remaining
+ * - 0 in the engine (`services/geminiService.ts`, now
+ *   `services/ai/generation/artifacts/artifactGenerationEngine.ts`) — the corte 10 cleanup typed its remaining
  *   transport config and artifact model config after the prompt move exposed
  *   two tokens hidden by this lexical scanner. The LMS vertical took its share
  *   with it, and the transport took five more (F5-01): it left typed, with
@@ -40,16 +41,18 @@ import { execSync } from 'node:child_process';
  *   and took the dead `withTimeout` helper's `any` with it, and the assistant
  *   vertical (corte 7) left with a declared course port instead of `any[]`,
  *   and its agent turn (corte 8) with a typed `functionCall`.
- * - 4 in `services/ai/generation/diagram/` — they left the engine with the
- *   diagram vertical (corte 6), unchanged: the diagram config and the
- *   ReactFlow conversion still hand SDK-shaped objects through.
+ * - 0 in `services/ai/generation/diagram/` — the 4 that left the engine with
+ *   the diagram vertical (corte 6) were typed in corte 14: the config is a
+ *   `DiagramGenerationConfig`, and the model's ReactFlow graph is checked into
+ *   a `ModelFlowGraph` instead of trusted. That was F5-01's share of the
+ *   11 → 7 target; the 7 below are the ones no phase plans to remove.
  * - 6 in `components/ExcalidrawViewer.tsx` — the lazily-imported Excalidraw
  *   surface, which is genuinely untyped at the boundary we load it through.
  * - 1 in `components/routing/lazyWithRetry.ts` — `ComponentType<any>`, which
  *   is how React's own `lazy` is declared; narrowing it would reject valid
  *   components.
  */
-export const MAX_ANY_TOKENS = 11;
+export const MAX_ANY_TOKENS = 7;
 
 /**
  * Directories, not globs.

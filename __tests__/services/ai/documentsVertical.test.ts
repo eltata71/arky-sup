@@ -48,14 +48,14 @@ afterEach(() => {
 
 describe('the documents vertical outside the engine', () => {
   it('the engine no longer declares any of the five methods', () => {
-    const engine = readCode('services/geminiService.ts');
+    const engine = readCode('services/ai/generation/artifacts/artifactGenerationEngine.ts');
     for (const method of ['convertDiagramToDocument', 'synthesizeSmartNote', 'generateSDDProcessPlan', 'generateSDDHealthReport', 'extractMemoryEntriesFromDocument']) {
       expect(engine, method).not.toMatch(new RegExp(`\\b${method}\\s*\\(`));
     }
   });
 
   it('the façade does not import the engine', () => {
-    expect(readCode('services/ai/generation/documentGenerationService.ts')).not.toMatch(/geminiService['"]/);
+    expect(readCode('services/ai/generation/documentGenerationService.ts')).not.toMatch(/(?:geminiService|artifactGenerationEngine)['"]/);
   });
 });
 

@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { __test__ } from '../../services/geminiService';
+import {
+    buildHybridMarkdownFromMermaid,
+    buildOnDemandDocumentReinforcement,
+} from '../../services/ai/generation/artifacts/artifactPromptReinforcements';
+import { buildDeterministicArtifactFallback } from '../../services/artifacts/deterministicArtifactFallbacks';
 import { aiGateway } from '../../services/ai/generation/aiGateway';
 import { emitGenerationPhase } from '../../lib/artifacts';
 import { recommendCustomArtifactTemplate } from '../../services/ai/generation/recommendation';
@@ -18,11 +22,6 @@ import { Settings } from '../../types';
 import type { ArtifactGenerationPhaseEvent } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 
-const {
-    buildDeterministicArtifactFallback,
-    buildHybridMarkdownFromMermaid,
-    buildOnDemandDocumentReinforcement,
-} = __test__;
 
 const project: Project = {
     id: 'health-001',

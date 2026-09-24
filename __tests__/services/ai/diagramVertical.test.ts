@@ -49,7 +49,7 @@ afterEach(() => {
 
 describe('the diagram vertical outside the engine', () => {
   it('the engine no longer declares any of the moved methods', () => {
-    const engine = readCode('services/geminiService.ts');
+    const engine = readCode('services/ai/generation/artifacts/artifactGenerationEngine.ts');
     for (const method of [
       'parseMermaidToReactFlow', 'generateDiagramIR', 'generateDiagramIRCorrective',
       'generateAndRefineDiagramIR', 'runCritiqueAndRefine', 'convertToExcalidrawJSON', 'fixDiagramError',
@@ -59,7 +59,7 @@ describe('the diagram vertical outside the engine', () => {
   });
 
   it('the façade does not import the engine', () => {
-    expect(readCode('services/ai/generation/diagramGenerationService.ts')).not.toMatch(/geminiService['"]/);
+    expect(readCode('services/ai/generation/diagramGenerationService.ts')).not.toMatch(/(?:geminiService|artifactGenerationEngine)['"]/);
   });
 });
 

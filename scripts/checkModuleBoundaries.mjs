@@ -84,7 +84,10 @@ export const ALLOWED_CYCLES = [
   'components <-> context',
   'components <-> hooks',
   'context <-> hooks',
-  'services (raíz) <-> services/ai',
+  // `services (raíz) <-> services/ai` salió el 2026-09-24 (F5-01, corte 14):
+  // el motor entró en `services/ai/generation/artifacts/` después de que la
+  // persona (corte 13) y el soporte de artefactos (corte 14) le llegaran por
+  // puertos. Lo que queda son los tres de React, que no son objetivo de nadie.
 ];
 
 /**
@@ -131,6 +134,16 @@ export const ALLOWED_CYCLES = [
  * (`architectureProjects` con la Oficina, el grafo y la publicación) se
  * cerraron con puertos, no con presupuesto. Lo que queda es el núcleo de
  * dominio que cierra `services/ai -> services (raíz)`: la fase 5.
+ *
+ * **De catorce a trece el 2026-09-24 (F5-01, corte 14).** Salió la raíz de
+ * `services/`, porque ya no queda nada en ella. El componente **no se
+ * disuelve**, y conviene decir por qué, porque la frase anterior prometía que
+ * sí: `services/ai -> services (raíz)` era una arista que lo cerraba, no la
+ * única. `services/ai -> services/architectureProjects -> services/chat ->
+ * services/ai` lo cierra por su cuenta —la IA lee el proyecto, el proyecto
+ * guarda el historial de chat, y el chat compacta con un modelo—, y hay más
+ * caminos así. Deshacerlos es F5-03, que es donde `budgetTargets.mjs` pone el
+ * objetivo de cero.
  */
 export const ALLOWED_SCCS = [
   [
@@ -139,7 +152,6 @@ export const ALLOWED_SCCS = [
     'hooks',
   ],
   [
-    'services (raíz)',
     'services/agent',
     'services/ai',
     'services/architectureKnowledgeGraph',
@@ -283,35 +295,10 @@ export const DEEP_IMPORT_BUDGET = {
   'pages -> services/ai': 1,
   'pages -> services/architectureOffice': 9,
   'pages -> services/artifacts': 1,
-  /**
-   * 16 → 17 el 2026-09-22, y es el único número que F3-07/F3-08 suben.
-   *
-   * No es acoplamiento nuevo: `services/geminiService.ts` ya importaba la
-   * composición de prompts, sólo que desde `utils.ts` —la raíz del
-   * repositorio— y ahora desde `services/ai/prompts/projectPrompts.ts`, que es
-   * donde vive. El intercambio es deliberado: se cambia **un import dentro de
-   * un ciclo ya registrado** (`services (raíz) <-> services/ai`, que F5-01
-   * disuelve) por **dos imports ascendentes de fundación a dominio**, que es la
-   * clase de violación que ninguna fase tiene planeado arreglar porque no
-   * debería existir. Baja cuando F5-01 estrangule el monolito.
-   */
-  // F5-01 (corte 1): el transporte salió del motor, y con él seis imports que
-  // el motor hacía a piezas de esta capa sólo para llevar un prompt (17 → 11).
-  // F5-01 (corte 4): la vertical de recomendaciones salió, y el motor dejó de
-  // importar `parseAiJson` (11 → 9, con el corte 3).
-  // F5-01 (corte 11): el motor dejó de importar `activeProviderCapabilities`
-  // al borrar imagen y voz, que nadie llamaba (8 → 7).
-  // F5-01 (corte 12): sube uno, a sabiendas (7 → 8). La generación principal
-  // llama ahora al deck de `generation/presentationDeck`, y a cambio el motor
-  // deja un import profundo a `services/presentation` y otro a
-  // `services/artifacts`: el total baja. Desaparece con el motor.
-  'services (raíz) -> services/ai': 8,
-  'services (raíz) -> services/artifacts': 3, // F5-01 corte 12: el contrato del brief ya no se importa del motor
-  // F5-01 (corte 6): la generación de diagramas salió del motor con sus
-  // guardarraíles y su gate de calidad (6 → 3).
-  'services (raíz) -> services/diagram': 3,
-  'services (raíz) -> services/presentation': 1, // F5-01 corte 12: queda sólo el deck mínimo de respaldo
-  'services (raíz) -> services/quality': 1,
+  // `services (raíz) -> …` — cinco pares, 16 imports profundos — se fueron con
+  // el motor el 2026-09-24 (F5-01, corte 14). Dentro de `services/ai` entra por
+  // los barriles de cada contexto: es código perezoso, y la regla del barril
+  // contra el bundle lo permite.
   'services/agent -> services/diagram': 1,
   'services/agent -> services/memory': 3,
   'services/agent -> services/quality': 1,
@@ -387,7 +374,9 @@ export const UI_SERVICE_FANOUT_DEFAULT = 2;
  * 20 ficheros, 9 923 líneas— y la causa de nueve de los catorce ciclos, de los
  * tres imports ascendentes y de sesenta imports profundos.
  *
- * Los diecinueve que tenían dueño ya se han ido. Queda **uno**:
+ * Los diecinueve que tenían dueño se fueron primero. El vigésimo, el motor,
+ * se fue el 2026-09-24 (F5-01, corte 14), y el presupuesto es **cero**. Lo que
+ * sigue es cómo era, porque explica por qué costó trece cortes:
  *
  *   - `geminiService.ts` — el motor de Gemini, 5 498 líneas y 16 de los 23
  *     `any` del repositorio. La Ola 5 intentó moverlo a `services/ai` y el gate
@@ -402,7 +391,7 @@ export const UI_SERVICE_FANOUT_DEFAULT = 2;
  * Este número sólo puede bajar. Subirlo es volver a tener un cajón de sastre,
  * que es exactamente de lo que se ha tardado cuatro olas en salir.
  */
-export const SERVICES_ROOT_BUDGET = 1;
+export const SERVICES_ROOT_BUDGET = 0;
 
 /* ------------------------------------------------------------ the analysis */
 

@@ -107,7 +107,7 @@ describe('the boot path', () => {
   });
 
   it('does not reach the legacy engine', () => {
-    expect(reachableUnder('services/geminiService.ts')).toEqual([]);
+    expect(reachableUnder('services/ai/generation/artifacts/artifactGenerationEngine.ts')).toEqual([]);
   });
 
   it('does not reach the AI generation façades or the provider adapters', () => {

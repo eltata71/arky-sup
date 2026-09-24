@@ -37,6 +37,7 @@ import {
     resolveProjectArchitectureGraphFreshness,
 } from '../architectureKnowledgeGraph';
 import { refineArtifactBeforePersistence } from './artifactRefinementOrchestrator';
+import { artifactGenerationSupport } from './artifactGenerationSupport';
 import {
     buildGenerationTrace,
     createTraceLog,
@@ -164,7 +165,7 @@ export async function runArtifactGeneration({
         template,
         settings,
         existingArtifact,
-        { onPhase, architectureGraphPromptBlock: graphGenerationContext.promptBlock, composePersonaInstruction },
+        { onPhase, architectureGraphPromptBlock: graphGenerationContext.promptBlock, composePersonaInstruction, support: artifactGenerationSupport },
     );
     const initialEnvelope = normalizeArtifactEnvelope({
         artifactId: existingArtifact?.id ?? operationId,

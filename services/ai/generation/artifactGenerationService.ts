@@ -16,7 +16,7 @@
  * and a needless coupling for callers and tests alike.
  */
 
-import { geminiService } from '../../geminiService';
+import { artifactGenerationEngine } from './artifacts/artifactGenerationEngine';
 import { suggestArtifactImprovements } from './artifactSuggestions';
 import { getInitialArtifactsForTemplate } from './artifactTemplateSuggestions';
 import { critiqueArtifactContent, refineArtifactContent } from './artifactQualityRefinement';
@@ -24,9 +24,13 @@ import { applyArtifactImprovements, generateTestCases, reviewArtifact } from './
 import { proposeArtifactBriefContract } from './artifactBriefProposal';
 
 export const artifactGenerationService = {
-  /** Generate (or regenerate) the content for a catalog/on-demand artifact. */
+  /**
+   * Generate (or regenerate) the content for a catalog/on-demand artifact.
+   * The options carry `support` — `artifactGenerationSupport` from
+   * `services/artifacts` — which the compiler requires on every call.
+   */
   get generateArtifactContent() {
-    return geminiService.generateArtifactContent.bind(geminiService);
+    return artifactGenerationEngine.generateArtifactContent.bind(artifactGenerationEngine);
   },
   /** Resolve the initial artifact set proposed for a project template. */
   get getInitialArtifactsForTemplate() {
