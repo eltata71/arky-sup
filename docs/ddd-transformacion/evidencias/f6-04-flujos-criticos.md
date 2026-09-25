@@ -1,6 +1,6 @@
 # F6-04 — pruebas integrales de los flujos críticos
 
-**Fecha:** 2026-09-25 · **Base:** F6-01 cerrada (#79). **Migración a aplicar en `ArkyDB-US`:** `20260925090000_initiative_code_allocation`.
+**Fecha:** 2026-09-25 · **Base:** F6-01 cerrada (#79). **Migración** `20260925090000_initiative_code_allocation` **aplicada a `ArkyDB-US`** el 2026-09-25 con la aprobación del propietario, antes de fusionar: historia remota alineada y la RPC verificada en la API de producción.
 
 ## Lo que ya estaba cubierto
 

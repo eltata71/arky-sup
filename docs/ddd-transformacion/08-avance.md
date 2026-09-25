@@ -15,8 +15,9 @@
   real**: el código `NEG-AAAA-NNN` se calculaba en el cliente con las
   iniciativas propias, pero es único en toda la base — un segundo usuario no
   podía crear ninguna iniciativa. Lo asigna ahora el servidor
-  (`20260925090000_initiative_code_allocation`, **pendiente de aplicar a
-  `ArkyDB-US` con aprobación**). Evidencia en
+  (`20260925090000_initiative_code_allocation`, **aplicada a `ArkyDB-US`** el
+  2026-09-25 con aprobación, antes de fusionar). También corrigió la sala de
+  un entregable, que decía «no encontrado» mientras cargaba. Evidencia en
   `evidencias/f6-04-flujos-criticos.md`.
 - **Antes:** **F6-01 cerrada con el tercer corte**: el motor sólo
   publica `generateArtifactContent`, usa el transporte compartido y deja de
