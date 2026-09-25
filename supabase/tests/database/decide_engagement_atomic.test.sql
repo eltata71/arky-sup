@@ -44,7 +44,7 @@ select is((select (api.save_engagement('proj_arb_001', $json${
   "charter":{"kind":"new-solution","objectives":[],"scope":[],"outOfScope":[],"constraints":[],
     "regulatoryDrivers":[],"deliverables":[],"participantIds":[],"coordinatorId":"lucia",
     "consolidatorId":"alejandro","provenance":"deterministic",
-    "proposedAt":"2026-09-20T00:00:00.000Z","approvedAt":"2026-09-20T01:00:00.000Z"},
+    "proposedAt":"2026-09-20T00:00:00.000Z"},
   "tasks":[], "arbDecisions":[], "budget":{"maxAiCalls":40,"consumedAiCalls":0},
   "auditTrail":[], "createdBy":{"id":"65000000-0000-4000-8000-000000000001","name":"Ana","role":"admin"},
   "createdAt":"2026-09-20T00:00:00.000Z", "updatedAt":"2026-09-20T00:00:00.000Z"
@@ -61,7 +61,7 @@ select is((select (api.save_engagement('proj_arb_002', $json${
   "charter":{"kind":"new-solution","objectives":[],"scope":[],"outOfScope":[],"constraints":[],
     "regulatoryDrivers":[],"deliverables":[],"participantIds":[],"coordinatorId":"lucia",
     "consolidatorId":"alejandro","provenance":"deterministic",
-    "proposedAt":"2026-09-20T00:00:00.000Z","approvedAt":"2026-09-20T01:00:00.000Z"},
+    "proposedAt":"2026-09-20T00:00:00.000Z"},
   "tasks":[], "arbDecisions":[], "budget":{"maxAiCalls":40,"consumedAiCalls":0},
   "auditTrail":[], "createdBy":{"id":"65000000-0000-4000-8000-000000000001","name":"Ana","role":"admin"},
   "createdAt":"2026-09-20T00:00:00.000Z", "updatedAt":"2026-09-20T00:00:00.000Z"

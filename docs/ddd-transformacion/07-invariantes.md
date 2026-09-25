@@ -44,7 +44,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | # | Invariante | Autoridad | ¿Basta? | Desde |
 |---|---|---|---|---|
 | E-01 | Un encargo tiene título, atención e iniciativa | `TS` (`officeEngagementFactory`) + `RPC` (título, brief y proyecto) | ⚠️ la RPC no exige iniciativa | — |
-| E-02 | **Nadie ejecuta un charter sin aprobar** | `TS` en el runner (`canRunEngagement`, que ya no depende de la `UI`) | ⚠️ **H06** a medias: el runner lo aplica y el servidor no lo conoce | fase 2 |
+| E-02 | **Nadie ejecuta un charter sin aprobar** | `TS` en el runner (`canRunEngagement`) + `RPC` (`save_engagement`: `in-progress` exige charter aprobado; la aprobación es inmutable y la firma la sesión) + contrato `charter_approval_guard` | ✅ cierra **H06** | fase 2, F6-08 |
 | E-03 | El estado sigue transiciones legales | `RPC` (`office_engagement_transition_allowed`) | ✅ cierra **H02** (transiciones) | fase 2 |
 | E-04 | Un cambio de estado deja su rastro de auditoría | `TS` (`transitionEngagement`) + gate de pruebas | ⚠️ sólido en TS, invisible al servidor | — |
 | E-05 | Productor y revisor de un entregable son distintos | `TS` (planificador y enrutador) | ⚠️ | — |
@@ -96,7 +96,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | Autoridad suficiente | Insuficiente | Total |
 |---|---|---|
-| **35 ✅** | 1 ❌ + 7 ⚠️ | 43 |
+| **36 ✅** | 1 ❌ + 6 ⚠️ | 43 |
 
 En la línea base eran 17 ✅, 8 ❌ y 8 ⚠️ sobre 33. **De las ocho sin autoridad
 efectiva, siete tienen hoy servidor detrás.** H02 se cerró en sus tres partes
@@ -105,16 +105,11 @@ A-02 ya estaba marcada ✅ en el catálogo anterior.
 
 **Lo que queda, y por qué:**
 
-- **E-02**, el charter aprobado: el runner lo aplica y el servidor no lo sabe.
-  Un cliente manipulado podría escribir `in-progress` sobre un charter sin
-  aprobar. La transición `awaiting-charter → in-progress` es legal en
-  `office_engagement_transition_allowed`, así que la regla falta en el
-  servidor.
 - **E-01, E-04, E-05, E-14** y **T-01**: reglas que hoy sólo aplica
   TypeScript o la revisión de código.
 - **T-06**: el único ❌, encontrado en F6-05.
 
-Todas pasan al registro de deuda residual de F6-08, con responsable.
+Todas están en el registro de deuda residual (`13-deuda-residual.md`), con responsable y condición de revisión. E-02 se cerró en F6-08.
 
 **Los dos patrones que funcionan siguen siendo los de siempre:** E-15, un
 `check` declarativo que ninguna ruta puede saltarse, y U-06, una prueba que

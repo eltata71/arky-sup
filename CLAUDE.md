@@ -1398,6 +1398,15 @@ Office's one governance rule — *nobody runs a charter that has not been
 approved*. Running before approving turns the approval into paperwork filed
 after the fact, which is the thing an Architecture Office exists to prevent.
 
+**Since F6-08 the server knows it too** (H06, migration
+`20260926090000_charter_approval_guard`): `save_engagement` refuses
+`in-progress` without an approved charter, an approval once recorded cannot be
+removed or rewritten, and its signer must be the session writing it. It does
+**not** decide *who* may approve — today the engagement's owner, by design;
+`charter:approve` exists in the matrix and nothing requires it, a product
+decision recorded as R-02 in `docs/ddd-transformacion/13-deuda-residual.md`,
+the register of every debt the transformation left on purpose.
+
 **And a state change carries its own reason.** `transitionEngagement` changes
 `status` *and* appends the audit entry in one operation, because these used to
 be two adjacent steps:

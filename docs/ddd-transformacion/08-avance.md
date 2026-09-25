@@ -8,7 +8,15 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-07**, la comparación final contra la línea base
+- **Tarea en curso:** **F6-08**, la deuda residual (`13-deuda-residual.md`).
+  El propietario decidió D-2 el 2026-09-26: opción A, conservar todo
+  mientras sea PoC. Aprobó también llevar E-02 al servidor: con la migración
+  `20260926090000_charter_approval_guard`, ejecutar exige un charter
+  aprobado, la aprobación es inmutable y la firma la sesión. Eso cierra H06
+  e invariantes 36 de 43. Doce deudas quedan con responsable y condición de
+  revisión. Dos son nuevas: `charter:approve` no lo exige nadie (R-02), y el
+  historial de chat, que el propietario aún no ha decidido (R-03).
+- **Antes:** **F6-07**, la comparación final contra la línea base
   (`12-comparacion-linea-base.md`). Se repitieron los mismos comandos sobre
   `87172fd`, ya en Node 24, que era el pendiente de la línea base:
   - `any` 23 → 7; 4 312 → 4 739 pruebas.
@@ -363,7 +371,7 @@
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ✅ (2026-09-25) | Presupuesto por ruta; Dashboard 617,6 → 48,9 KB gz; cada chunk se evalúa en E2E; inventario de concurrencia con un contrato nuevo. Abierto: `save_chat_history` sin revisión. |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ✅ (2026-09-25) | ADR-107…109; cuatro runbooks; matriz de propiedad e invariantes al día, con prueba; tabla de estado de CLAUDE.md con una sola fecha. |
 | **F6-07** comparación final contra la línea base | ✅ (2026-09-25) | `12-comparacion-linea-base.md`: 10 de 12 hallazgos cerrados; H04 y H06 parciales; el chunk compartido más grande, peor. |
-| **F6-08** deuda residual con responsable | ⏳ bloqueada | Por D-2. |
+| **F6-08** deuda residual con responsable | ✅ (2026-09-26) | `13-deuda-residual.md`: D-2 → A; E-02/H06 al servidor (migración aprobada); doce deudas con responsable y condición de revisión. |
 | **F6-09** informe técnico y gerencial | ⏳ | |
 | **F6-10** el despliegue comprueba el esquema de producción | ⏸ pospuesta (propietario, 2026-09-25) | Heredada de las fases 4 y 5: tres veces una migración dependió de que alguien se acordara de aplicarla. Necesita una decisión sobre credenciales. |
 
@@ -441,7 +449,7 @@ fuera, para que la próxima ampliación empiece por leerlo.
 | # | Pregunta | Quién decide | Bloquea |
 |---|---|---|---|
 | D-1 | ¿Quién debe poder ver y firmar un encargo ajeno? | **negocio** | **Resuelta 2026-09-20: opción C** |
-| D-2 | ¿Hay política de archivado y retención? | negocio | F6-08 |
+| D-2 | ¿Hay política de archivado y retención? | negocio | **Resuelta 2026-09-26: opción A** (conservar todo mientras sea PoC; decidir antes de datos productivos) |
 | D-3 | ¿«Revisión» se renombra a «versión de fila» en la UI? | producto | **Ya no bloquea**: ninguna pantalla muestra el contador (2026-09-22) |
 | D-4 | ¿`Artefacto` pasa a raíz de agregado? | arquitectura, con datos de F4-01 | **Resuelta 2026-09-22: sí, ADR-106** |
 
