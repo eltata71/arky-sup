@@ -11,7 +11,12 @@
 - **Tarea en curso:** **F6-04**: tres recorridos E2E que escriben, recargan y
   releen contra Supabase (iniciativa; proyecto desde la iniciativa; preferencias
   encadenadas, la regresión de F6-03), sin llamar a ningún modelo. Una tercera
-  cuenta sembrada, `viewer`, para el de preferencias. Evidencia en
+  cuenta sembrada, `viewer`, para el de preferencias. **Encontró un defecto
+  real**: el código `NEG-AAAA-NNN` se calculaba en el cliente con las
+  iniciativas propias, pero es único en toda la base — un segundo usuario no
+  podía crear ninguna iniciativa. Lo asigna ahora el servidor
+  (`20260925090000_initiative_code_allocation`, **pendiente de aplicar a
+  `ArkyDB-US` con aprobación**). Evidencia en
   `evidencias/f6-04-flujos-criticos.md`.
 - **Antes:** **F6-01 cerrada con el tercer corte**: el motor sólo
   publica `generateArtifactContent`, usa el transporte compartido y deja de

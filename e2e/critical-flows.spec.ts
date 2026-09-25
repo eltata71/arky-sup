@@ -91,28 +91,34 @@ test.describe('Flujos críticos — preferencias', () => {
 
   test('dos cambios seguidos se guardan los dos, y el último sobrevive a la recarga', async ({ page }) => {
     const heading = (name: string) => page.getByRole('heading', { level: 1, name });
-    const choose = async (option: 'English' | 'Español', save: 'Guardar' | 'Save') => {
-      await page.getByText(option, { exact: true }).first().click();
+    // Las etiquetas están en el idioma de la interfaz: en español se ofrece
+    // «English» y se guarda con «Guardar»; en inglés, «Spanish» y «Save».
+    const toEnglish = async () => {
+      await page.getByText('English', { exact: true }).first().click();
       // `exact`: «Guardar Llave Localmente» también es un botón de esta página.
-      await page.getByRole('button', { name: save, exact: true }).click();
+      await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+    };
+    const toSpanish = async () => {
+      await page.getByText('Spanish', { exact: true }).first().click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
     };
 
     await page.goto('/settings');
     await expect(heading('Configuración').or(heading('Settings'))).toBeVisible({ timeout: 15_000 });
     // Un reintento puede empezar donde el intento anterior se quedó.
     if (await heading('Settings').isVisible()) {
-      await choose('Español', 'Save');
+      await toSpanish();
       await expect(heading('Configuración')).toBeVisible({ timeout: 15_000 });
     }
 
     // Tres escrituras seguidas. Cada una sólo se queda si la base la confirma:
     // una rechazada revierte la pantalla al valor anterior, y la espera de
     // abajo lo convierte en fallo.
-    await choose('English', 'Guardar');
+    await toEnglish();
     await expect(heading('Settings')).toBeVisible({ timeout: 15_000 });
-    await choose('Español', 'Save');
+    await toSpanish();
     await expect(heading('Configuración')).toBeVisible({ timeout: 15_000 });
-    await choose('English', 'Guardar');
+    await toEnglish();
     await expect(heading('Settings')).toBeVisible({ timeout: 15_000 });
 
     // Por defecto la interfaz está en español, así que ver inglés tras recargar
@@ -121,7 +127,7 @@ test.describe('Flujos críticos — preferencias', () => {
     await expect(heading('Settings')).toBeVisible({ timeout: 15_000 });
 
     // Deja la cuenta como la encontró.
-    await choose('Español', 'Save');
+    await toSpanish();
     await expect(heading('Configuración')).toBeVisible({ timeout: 15_000 });
   });
 });

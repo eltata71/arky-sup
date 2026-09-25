@@ -1,6 +1,6 @@
 # F6-04 — pruebas integrales de los flujos críticos
 
-**Fecha:** 2026-09-25 · **Base:** F6-01 cerrada (#79).
+**Fecha:** 2026-09-25 · **Base:** F6-01 cerrada (#79). **Migración a aplicar en `ArkyDB-US`:** `20260925090000_initiative_code_allocation`.
 
 ## Lo que ya estaba cubierto
 
@@ -30,6 +30,39 @@ de la pestaña que la hizo no es una escritura.
 crítico que sólo funciona con uno no es crítico, sino frágil. Cada paso elegido
 tiene en el producto su camino sin IA: el alta de iniciativa «sin asistente»,
 la plantilla de proyecto con su lista fija de artefactos y las preferencias.
+
+## Lo que encontró: el código de iniciativa, calculado en el cliente
+
+En su primera ejecución en CI, el recorrido de iniciativa falló con una alerta
+en pantalla: *«duplicate key value violates unique constraint
+"business_initiatives_code_key"»*. Dos recorridos en paralelo crearon a la vez
+una iniciativa con la misma cuenta, y los dos calcularon `NEG-2026-002`.
+
+La causa es más ancha que la concurrencia, y el caso grave es otro:
+
+- `code` es único en **toda** la base (`code text not null unique`);
+- el cliente calcula el siguiente `NEG-AAAA-NNN` a partir de
+  `list_business_initiatives`, que sólo devuelve **las del propio usuario**;
+- el servidor sólo validaba el código, no lo asignaba.
+
+Así, **un segundo usuario de la organización calculaba siempre `NEG-AAAA-001`**,
+chocaba con el del primero y, como su lista seguía vacía, volvía a calcular lo
+mismo: no podía crear ninguna iniciativa. Y en los dos casos la persona veía el
+mensaje de PostgreSQL, en inglés.
+
+**Arreglo** (`20260925090000_initiative_code_allocation.sql`): el servidor, que
+ve todas las filas, es la autoridad al crear. Si el código propuesto está libre,
+lo respeta; es el caso normal y el que el asistente anuncia. Si no, asigna el
+siguiente libre del mismo año, bajo un candado de transacción. El documento
+guardado lleva el código asignado, y el cliente, que ya adoptaba lo que el
+servidor confirma, lo muestra sin cambios. Una actualización no reasigna nada.
+Su contrato `initiative_code_allocation.test.sql` prueba el caso entre usuarios,
+el simultáneo, que la actualización conserva el código y que cada año lleva su
+propia secuencia.
+
+Es exactamente el tipo de defecto que una prueba integral existe para
+encontrar: ninguna prueba unitaria podía verlo, porque cada mitad —el cálculo
+en el cliente y la unicidad en la base— era correcta por separado.
 
 ## Una cuenta más
 
