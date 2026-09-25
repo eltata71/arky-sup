@@ -15,10 +15,21 @@
  * reads twice, and because the interesting assertion is the second one: the
  * symbols still exist. Moving them was not allowed to remove them.
  */
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 const BARREL = readFileSync('services/ai/index.ts', 'utf8');
+
+/**
+ * El barril de la IA en frío tarda ~10 s en transformarse; con la suite
+ * completa en un equipo cargado pasaba de los 20 s de límite y la primera
+ * aserción que lo importaba fallaba por tiempo, no por lo que comprueba. Se
+ * paga aquí, una vez y con su propio límite (F6-01; mismo caso que
+ * `OfficeContext.test.tsx`).
+ */
+beforeAll(async () => {
+  await import('../../../services/ai');
+}, 120_000);
 
 describe('the barrel does not re-export the engine', () => {
   it('names the engine nowhere, under its old name or its new one', () => {

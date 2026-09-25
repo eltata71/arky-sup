@@ -16,8 +16,6 @@
  * What remains is one capability, the main artifact generation path, and it
  * is reached only through `artifactGenerationService`.
  */
-import { GoogleGenAI } from "@google/genai";
-import { createGeminiAIClient } from "../../providers/gemini/geminiClient";
 import { Settings, ArtifactTemplate } from '../../../../types';
 import {
     buildDialectInstruction,
@@ -39,13 +37,8 @@ import {
   type BasePromptOptions,
   type ArtifactsContextOptions,
 } from '../../prompts/projectPrompts';
-import { resolveModelForSettings, resolveProviderId } from '../../catalog';
-import {
-    effectiveGeminiApiKey,
-    LegacyGenerationTransport,
-    type LegacyGenerationOptions,
-    type LegacyGenerationResult,
-} from '../legacyTransport';
+import { resolveModelForSettings } from '../../catalog';
+import { legacyTransport, type LegacyGenerationOptions } from '../legacyTransport';
 import { C4SelfHealingError, classifyAIError } from '../../errors';
 import { generatePresentationDeck } from '../presentationDeck';
 import { renderContextGraphReinforcement } from '../../../contextGraph';
@@ -70,28 +63,13 @@ class ArtifactGenerationEngine {
     // because we need to decide which key to use (global or user) at runtime based on settings.
 
     /**
-     * The generation transport, with this engine's own client factory so the
-     * public `getAIClient` stays the one seam tests replace (F5-01).
+     * The shared generation transport (F6-01). The engine used to build its own
+     * instance with its own client factory and publish `getAIClient`,
+     * `generateContentWithFallback`, `generateContentStreamWithFallback` and
+     * `isOpenRouterConfigured` — surface that, once every other capability had
+     * left, only tests read. The seam tests replace is `legacyTransport.getAIClient`.
      */
-    private readonly transport = new LegacyGenerationTransport({
-        getClient: (settings) => this.getAIClient(settings),
-    });
-
-    /**
-     * Helper: Creates a new GoogleGenAI instance on demand.
-     */
-    public getAIClient(settings: Settings): GoogleGenAI {
-        return createGeminiAIClient({ apiKey: effectiveGeminiApiKey(settings) });
-    }
-
-    /**
-     * True when the user has selected OpenRouter as the active AI provider.
-     * Callers use this to gate provider-specific behaviour without importing
-     * provider internals.
-     */
-    public isOpenRouterConfigured(settings: Settings): boolean {
-        return resolveProviderId(settings) === 'openrouter';
-    }
+    private readonly transport = legacyTransport;
 
     private isLocalGenerationFallbackCandidate(error: unknown): boolean {
         const friendly = classifyAIError(error);
@@ -99,20 +77,6 @@ class ArtifactGenerationEngine {
             || friendly.category === 'network'
             || friendly.category === 'overloaded'
             || friendly.category === 'rate-limit';
-    }
-
-    /**
-     * The retry/timeout/model-fallback loop, now in the transport
-     * (`legacyTransport`, F5-01). Kept as a delegate because a dozen prompt
-     * methods below call it with their own SDK request.
-     */
-    private runWithModelFallback<T>(
-        settings: Settings,
-        preferredModel: string,
-        runOne: (modelId: string, ai: GoogleGenAI, signal: AbortSignal) => Promise<T>,
-        options: LegacyGenerationOptions = {}
-    ): Promise<T> {
-        return this.transport.runWithModelFallback(settings, preferredModel, runOne, options);
     }
 
     private generateTextWithFallback(
@@ -123,33 +87,6 @@ class ArtifactGenerationEngine {
         options: LegacyGenerationOptions = {}
     ): Promise<string> {
         return this.transport.generateTextWithFallback(settings, preferredModel, contents, config, options);
-    }
-
-    /**
-     * Public entry point for arbitrary text/chat generation with the full
-     * model-fallback pipeline. The pipeline itself is the transport
-     * (`services/ai/generation/legacyTransport.ts`); a caller that composes its
-     * own prompt uses `aiGateway` and never loads this engine.
-     */
-    public generateContentWithFallback(
-        settings: Settings,
-        preferredModel: string,
-        contents: unknown,
-        config: Record<string, unknown> = {},
-        options: LegacyGenerationOptions = {}
-    ): Promise<LegacyGenerationResult> {
-        return this.transport.generateContentWithFallback(settings, preferredModel, contents, config, options);
-    }
-
-    /** Streaming counterpart of {@link generateContentWithFallback}. */
-    public generateContentStreamWithFallback(
-        settings: Settings,
-        preferredModel: string,
-        contents: unknown,
-        config: Record<string, unknown> = {},
-        options: LegacyGenerationOptions = {}
-    ): Promise<AsyncIterable<unknown>> {
-        return this.transport.generateContentStreamWithFallback(settings, preferredModel, contents, config, options);
     }
 
     /**

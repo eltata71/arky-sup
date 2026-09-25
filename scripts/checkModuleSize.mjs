@@ -59,8 +59,8 @@ export const BYTE_CEILINGS = {
    * resolved model through `settings.aiConfig.model`, which would have made the
    * trace attribute a per-agent decision to the user's own preference.
    */
-  // F5-01 corte 14: el motor entró en `services/ai` y dejó fuera los ayudantes de prompt (101 835 → 94 962)
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 94962,
+  // F6-01: fuera sus delegados públicos y su fábrica de cliente, que sólo leían las pruebas (94 962 → 92638)
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 92638,
   'components/ReactFlowCanvas.tsx': 109906,
   'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
@@ -166,7 +166,7 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1786, // F5-01 corte 14: era `services/geminiService.ts`, 1 921
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1723, // F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 981,

@@ -68,7 +68,6 @@ type TextPath = { generateTextWithFallback: (...args: unknown[]) => Promise<stri
 /** Makes every model path fail the way a provider outage does. */
 const failEveryModelCall = () => {
   const outage = Object.assign(new Error('Service Unavailable'), { status: 503 });
-  vi.spyOn(artifactGenerationEngine, 'generateContentWithFallback').mockRejectedValue(outage);
   vi.spyOn(artifactGenerationEngine as unknown as TextPath, 'generateTextWithFallback').mockRejectedValue(outage);
 };
 

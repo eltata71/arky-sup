@@ -317,13 +317,11 @@ export default [
   },
 
   {
-    // The Gemini adapter is where the SDK is meant to live; the engine still
-    // names `GoogleGenAI` for the client its transport receives. The list only
-    // shrinks: `services/aiProvider.ts` left it when the file was deleted, and
-    // the engine leaves it when its transport stops taking a Gemini client.
+    // The Gemini adapter is where the SDK is meant to live, and now the only
+    // place: `services/aiProvider.ts` left this list when it was deleted, and
+    // the engine left it in F6-01, when it stopped building its own client.
     files: [
       'services/ai/providers/gemini/**/*.ts',
-      'services/ai/generation/artifacts/artifactGenerationEngine.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',

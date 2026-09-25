@@ -53,10 +53,6 @@ type TextPath = { generateTextWithFallback: (...args: unknown[]) => Promise<stri
 const capturePrompts = (): string[] => {
   const prompts: string[] = [];
   const answer = '# Decisiones\n\n## Contexto\nContenido del documento con detalle suficiente.';
-  vi.spyOn(artifactGenerationEngine, 'generateContentWithFallback').mockImplementation(async (_s, _m, contents) => {
-    prompts.push(String(contents));
-    return { text: answer };
-  });
   vi.spyOn(artifactGenerationEngine as unknown as TextPath, 'generateTextWithFallback').mockImplementation(async (...args) => {
     prompts.push(String(args[2]));
     return answer;
