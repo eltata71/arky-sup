@@ -26,7 +26,7 @@ import {
   getOfficeArchitectureContext,
   inheritedProfileEntries,
   type OfficeAgentProfile,
-} from '../../../services/architectureOffice';
+} from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import { AgentProfileAvatar } from './AgentProfileAvatar';
 
 const TIER_LABELS: Record<OfficeAgentProfile['modelTier'], string> = {

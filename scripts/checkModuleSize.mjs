@@ -96,7 +96,9 @@ export const BYTE_CEILINGS = {
   'components/CustomEdge.tsx': 32023,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
   'services/agent/agentContextComposer.ts': 31444, // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'pages/SettingsPage.tsx': 30955,
+  // F6-05: +18 bytes, the import path to the model-directory door instead of
+  // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
+  'pages/SettingsPage.tsx': 30973,
   'hooks/artifacts/useDiagramRendering.ts': 29282, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
   'services/diagram/qualityRepair.ts': 28460,

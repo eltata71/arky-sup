@@ -24,7 +24,7 @@ import {
   type OfficeAgentProfile,
   type OfficeAgentProfileInput,
   type OfficeAgentProfileOverride,
-} from '../../../services/architectureOffice';
+} from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 
 const TIER_OPTIONS: { value: ModelTier; label: string; hint: string }[] = [

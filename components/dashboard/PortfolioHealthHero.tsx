@@ -31,7 +31,7 @@ import {
   PORTFOLIO_BAND_LABELS,
   type PortfolioCommandCenter,
   type PortfolioHealthBand,
-} from '../../services/architectureOffice';
+} from '../../services/architectureOffice/portfolio';
 
 /**
  * La franja, vestida.

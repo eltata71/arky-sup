@@ -8,7 +8,18 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-04, segundo corte**: `e2e/artifact-and-graph.spec.ts`
+- **Tarea en curso:** **F6-05**: rendimiento, descarga, concurrencia y
+  recuperación, medidos. Cada ruta tiene ahora su presupuesto de descarga
+  (`ROUTE_BUDGETS_GZIP_KB`). Tras iniciar sesión, el Dashboard descargaba
+  617,6 KB gz de IA y ELK por entrar por el barril de la Oficina; ahora
+  descarga 48,9. Agentes pasa de 610,6 a 42,1 y Configuración de 569,3 a
+  20,5. `e2e/chunks.spec.ts` evalúa cada chunk del build, y falla con el
+  defecto de F6-04. El inventario de concurrencia encontró la única
+  escritura con revisión sin contrato de conflicto
+  (`delete_project_aggregate`, ahora con uno) y un hallazgo que queda
+  abierto: `save_chat_history` reescribe la lista entera sin revisión.
+  Evidencia en `evidencias/f6-05-rendimiento-concurrencia.md`.
+- **Antes:** **F6-04, segundo corte**: `e2e/artifact-and-graph.spec.ts`
   cubre lo que el primero dejó fuera. El primero es generar un artefacto desde
   el catálogo, con el proveedor sustituido detrás de `/api/ai` y el resultado
   releído de la base. El segundo es la bitácora de proyecciones: un artefacto
@@ -319,8 +330,8 @@
 | **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ✅ (2026-09-25) | Tres cortes: ficheros sin consumidor y su guardia (#77); el proxy heredado `api/gemini.ts` y el fallo de la creación guiada en producción (#78); la superficie pública del motor que sólo leían las pruebas. |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
 | **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
-| **F6-04** pruebas integrales de los flujos críticos | ⏳ en curso | `e2e/critical-flows.spec.ts` (#80): iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. `e2e/artifact-and-graph.spec.ts`: generar un artefacto y recuperar la proyección del grafo. |
-| **F6-05** rendimiento, descarga, concurrencia y recuperación | ⏳ | |
+| **F6-04** pruebas integrales de los flujos críticos | ✅ (2026-09-25) | `e2e/critical-flows.spec.ts` (#80): iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. `e2e/artifact-and-graph.spec.ts`: generar un artefacto y recuperar la proyección del grafo. |
+| **F6-05** rendimiento, descarga, concurrencia y recuperación | ✅ (2026-09-25) | Presupuesto por ruta; Dashboard 617,6 → 48,9 KB gz; cada chunk se evalúa en E2E; inventario de concurrencia con un contrato nuevo. Abierto: `save_chat_history` sin revisión. |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ⏳ | |
 | **F6-07** comparación final contra la línea base | ⏳ | |
 | **F6-08** deuda residual con responsable | ⏳ bloqueada | Por D-2. |

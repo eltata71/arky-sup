@@ -363,6 +363,13 @@ Reglas que no se negocian al trabajar aquí:
     El cliente calculaba el código `NEG-AAAA-NNN` con *sus* iniciativas; como
     la unicidad es global, un segundo usuario nunca podía crear una. Lo
     encontró un E2E, porque cada mitad era correcta por separado.
+22f. **Una ruta diferida también paga un barril, y cada ruta tiene presupuesto**
+    (F6-05). El Dashboard descargaba 617,6 KB gz extra (ELK, el SDK de Gemini
+    y el núcleo de IA) porque su hook entraba por el barril de la Oficina.
+    Puertas pequeñas declaradas (`services/architectureOffice/portfolio.ts`,
+    `…/agents.ts`, `services/ai/generation/providerModelDirectory.ts`) lo
+    bajaron a 48,9. `ROUTE_BUDGETS_GZIP_KB` en `check:bundle-budget` fija un
+    techo por ruta, y `e2e/chunks.spec.ts` evalúa cada chunk en el navegador.
 22e. **Un fichero no importa el barril que lo reexporta** (F6-04).
     `artifactReviewService` importaba su fábrica desde `./index` mientras
     `./index` lo reexportaba. En producción el bundle eleva `import.meta.env` a
