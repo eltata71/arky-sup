@@ -87,6 +87,7 @@ El correo **no se copia**: se lee de `auth.users`. Dueño único de la identidad
 | `file_objects` + 2 cubos privados | `register_file_object`, `mark_file_object_ready`, `mark_file_object_deleted` | autoritativo |
 | `platform_reference_parameters` | `load_platform_reference_parameters`, `save_platform_reference_parameters` | autoritativo |
 | `platform_probes` | — | diagnóstico |
+| — (esquema `deploy_status`) | `deploy_status.migration_applied` — **la única función fuera de `api` expuesta a anónimos**; lee `supabase_migrations.schema_migrations` y responde sí o no | operación: la sonda del despliegue (F6-10) |
 
 ---
 

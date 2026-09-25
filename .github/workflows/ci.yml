@@ -338,6 +338,14 @@ jobs:
       - name: Verify resolved Vercel production target
         run: node scripts/deploy/assertDeploymentTarget.mjs
 
+      # F6-10. Las migraciones se aplican a mano, con aprobación; el código que
+      # las usa llega por aquí. Antes de construir se pregunta a producción, con
+      # la clave publicable que `vercel pull` acaba de traer, si cada migración
+      # del repositorio está aplicada. Si falta una, o no se puede preguntar, no
+      # se publica: fallar cerrado aquí es lo que evita repetir F4-06.
+      - name: Production has every migration of this commit
+        run: node scripts/deploy/assertProductionMigrations.mjs
+
       - name: Build production artefact
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

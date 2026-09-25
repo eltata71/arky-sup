@@ -328,7 +328,12 @@ Reglas que no se negocian al trabajar aquí:
     `docs/ddd-transformacion/adr/ADR-107…109`.
     **Toda RPC y toda tabla de `api` tiene dueño en
     `docs/ddd-transformacion/06-propiedad-datos.md`**, y
-    `dataOwnershipMatrix.test.ts` falla si falta una. Una migración que crea
+    `dataOwnershipMatrix.test.ts` falla si falta una.
+    **El despliegue no publica un commit cuyo esquema producción no tiene**
+    (F6-10): `scripts/deploy/assertProductionMigrations.mjs` pregunta, con la
+    clave publicable, a `deploy_status.migration_applied` —un esquema que sólo
+    contiene esa función— y falla cerrado. No aplica migraciones; eso sigue
+    siendo manual y con aprobación. Una migración que crea
     una actualiza la matriz, y `07-invariantes.md` si cambia una regla, en el
     mismo commit.
 18. **Cinco dependencias no pueden subir, y las cinco pasan la suite entera.**
