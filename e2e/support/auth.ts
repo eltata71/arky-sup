@@ -24,7 +24,17 @@ export const E2E_REVIEWER = {
   displayName: 'Revisora E2E',
 } as const;
 
-type E2EAccount = typeof E2E_ARCHITECT | typeof E2E_REVIEWER;
+/**
+ * Sólo para el recorrido de preferencias (F6-04): cambia el idioma, y con las
+ * pruebas en paralelo una cuenta compartida vería la interfaz en inglés.
+ */
+export const E2E_PREFERENCES = {
+  email: 'preferences@arky.e2e',
+  password: E2E_PASSWORD,
+  displayName: 'Preferencias E2E',
+} as const;
+
+type E2EAccount = typeof E2E_ARCHITECT | typeof E2E_REVIEWER | typeof E2E_PREFERENCES;
 
 /**
  * Lo que la pantalla y el navegador dijeron mientras se intentaba entrar.

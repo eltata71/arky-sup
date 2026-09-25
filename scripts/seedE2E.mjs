@@ -49,6 +49,17 @@ const ACCOUNTS = [
     role: 'reviewer',
     ownsFixtures: false,
   },
+  // F6-04: la tercera, sólo para el recorrido de preferencias. Ese recorrido
+  // cambia el idioma de la interfaz, y las pruebas corren en paralelo: con una
+  // cuenta compartida, las demás verían la aplicación en inglés a mitad de su
+  // recorrido. `viewer` a propósito — `settings:manage` es universal, y el
+  // recorrido lo prueba con el rol mínimo.
+  {
+    email: process.env.E2E_PREFERENCES_EMAIL ?? 'preferences@arky.e2e',
+    displayName: 'Preferencias E2E',
+    role: 'viewer',
+    ownsFixtures: false,
+  },
 ];
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
