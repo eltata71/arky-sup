@@ -281,7 +281,6 @@ arkypro-1.0/
 │   ├── security.ts, ids.ts   # ← held to stricter lint rules
 │   ├── capture/             # ★ Assisted capture: the field catalogue and its contract
 │   ├── platformGuide/       # ★ The platform guide: its contract, its search and its topics
-│   ├── lazyWithRetry.ts     # Chunk-load retry for lazy routes (iPad/Safari resilience)
 │   └── jsonSafe.ts, colorContrast.ts, textDiff.ts, printDocument.ts, chartSvg.ts…
 │
 ├── utils/
@@ -632,27 +631,28 @@ bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, adviso
 
 `Makefile` and `run.sh` wrap the same targets (`./run.sh quality`, `./run.sh ci-check`, `./run.sh health`, `./run.sh status`). `run.sh` exists because `make` is usually absent on Windows/git-bash. `make health` runs `.hermes/bin/health.sh`.
 
-### Quality gate — current state (medido 2026-09-23, con F5-01 corte 13)
+### Quality gate — current state (medido 2026-09-25, tras F6-05)
 
-Las cifras de esta tabla se midieron en fechas distintas y cada fila dice la
-suya. Las de **2026-09-23** son las vigentes: 478 ficheros y 4 661 pruebas,
-cobertura 67,19 / 58,11 / 60,14 / 69,11, carga inicial 309,6 KB gz de 340,
-4 ciclos directos, SCC de 3 + 14, 53 pares con import profundo, `any` 11 y el
-motor en 1 921 líneas. El registro de cada paso está en
-`docs/ddd-transformacion/08-avance.md`.
+Una sola fecha para toda la tabla, a propósito: la versión anterior mezclaba
+cifras de cuatro mediciones y una fila decía «hoy» sobre un número de dos días
+antes. La historia de cada cifra —cómo bajó y qué la bajó— está en
+`docs/ddd-transformacion/08-avance.md` y en los cierres de fase; aquí va sólo el
+estado.
 
 | Check | Result |
 |---|---|
-| `npm run typecheck` | clean |
-| `npm run check:module-boundaries` | **Hoy (2026-09-24, fase 5 cerrada: F5-01, F5-02 y F5-03): 3 ciclos directos y un solo componente fuertemente conexo —los de React—, 0 módulos de dominio mutuamente alcanzables, 0 pares ascendentes, 44 pares con import profundo, 0 pantallas sobre el fan-out (tabla vacía), 0 ficheros sueltos en la raíz de `services/`**; F5-02 vació la tabla del fan-out (6 → 0); el motor entró en `services/ai` en el corte 14. Antes (2026-09-23): 4 ciclos directos, SCC de 3 + 14, 53 pares con import profundo; el motor dejó de importar `agent` y `chat` en el corte 8, y `architectureOffice` en el 13. **Tras F3-07 (2026-09-22): 4 ciclos directos, 2 componentes fuertemente conexos (3 + 14 módulos), 0 pares ascendentes, 60 pares con import profundo.** `types.ts` no importa nada y ninguna pieza de la fundación está en el componente de dominio; lo que queda de él lo cierra `services/ai -> services (raíz)` (fase 5). Lo que sigue es la historia de cómo se llegó: **6 ciclos directos registrados y 2 componentes fuertemente conexos (3 + 27 módulos)**. El alcance completo (F3-02, ADR-105) hizo visibles 11 ciclos y 7 pares ascendentes el 2026-09-21; F3-07 y F3-08 retiraron cinco ciclos y cinco pares al día siguiente, y casi todo era andamio: `types.ts` reexportaba 19 declaraciones de diagrama **sin un solo consumidor**, y las de presentación, revisión y chat sólo las usaban los módulos dueños. La frase anterior —«0 ciclos entre contextos de dominio»— era cierta sólo para ciclos de longitud 2: el gate no medía alcanzabilidad. Desde ADR-104 sí, y lo que ve es un componente de **nueve** contextos de dominio unidos por 22 aristas, con `services/ai -> services (raíz)` cerrándolo. `ALLOWED_SCCS` lo registra y sólo puede bajar. **Ese componente es hoy de 27** porque `types.ts` entró en el grafo: lo importan 25 de los 34 módulos y le quedan **dos** aristas de salida, `Artifact` y `Project`, con las que cierra el grafo entero y arrastra dentro a `lib`. No se repuntan con un codemod: `services/artifacts` necesita el proyecto y `services/architectureProjects` necesita el artefacto, así que cambiar el ciclo contra `types.ts` por uno entre dos contextos de dominio sería peor — debajo está la frontera del agregado Proyecto–Artefacto (D-4, la decide F4-02 con los datos de F4-01). **2 upward pairs**, las dos de `types.ts`; `lib/` y `utils/` siguen en cero y la prueba lo afirma por separado; **1 loose file** at the root of `services/`. `services (raíz) -> services/ai` bajó y se fijó: 18 → 16, al mudar la traducción legacy→canónica a `services/ai/generation/legacyGeminiBridge.ts`. Hay **una entrada nueva y deliberada**, `services/architectureProjects -> services/chat`: es la regla del barril contra el bundle, y su comentario en `scripts/checkModuleBoundaries.mjs` dice cuánto costaba la puerta principal |
-| `npm run check:module-size` | clean. **Hoy el motor tiene techo de 1 786 líneas / 94 962 bytes** en su nueva ruta, `services/ai/generation/artifacts/artifactGenerationEngine.ts` (corte 14; 1 921 / 101 835 en el 13) y `agentExecutor.ts` de 982 / 41 032, cada uno bajado al ganar. Tres techos bajaron el 2026-09-22 al fijar lo que ya se había ganado y nadie había registrado: `services/geminiService.ts` a 5 405 líneas / 271 653 bytes y `services/agent/agentExecutor.ts` a 988 / 41 175 — este último figuraba como deuda abierta («1007 vs 1001») mientras el gate estaba en verde. Un presupuesto que no se baja cuando se gana permite volver a subir sin que se note. Sube uno, con su razón al lado: `pages/EngagementRoom.tsx`, nueve bytes, por preguntar si *este* actor puede firmar *este* encargo en vez de leer un booleano de permiso |
-| `npm run typecheck:strict` | clean over 31 entries — `lib/capture`, `lib/platformGuide`, `attentionTracking` and `initiativeDelivery` join the day they are written — plus `lib/authz`, `lib/diagram`, `services/observability`, `services/memory`, the review rules, the initiative model, the `architectureProjects` factory and its document mappers, and all of `services/persistence` and `services/settings` |
-| `npm run check:any-budget` | **7** `any` types, budget 7 tras F5-01 corte 14 —objetivo cumplido— (11 tras el corte 10, 13 tras el corte 8 y 38 antes de la estrangulación); el motor ya no contiene tipos `any` |
-| `npm run lint` | **clean — 0 errors, 0 warnings**, y volvió a serlo el 2026-09-22: `OfficeEngagementRunner.ts` importaba dos tipos que sólo reexportaba, así que arrastraba dos avisos que `eslint .` no hace fallar. Keep it that way: a warning is a finding nobody will read once there are ten of them |
-| `npm run test:ci` | **Hoy: 478 ficheros y 4 661 pruebas, todas pasando** (2026-09-23, corte 13). Antes, **456 ficheros y 4 419 pruebas**, medido el 2026-09-22 sobre Node 24. Sube desde 4 359 con las de F3-02 (alcance del verificador), la elegibilidad del comité y el fixture E2E de dos identidades. **El entorno local también se arregló**: con Node 20 el SDK de Supabase no encuentra `WebSocket` nativo y `supabaseIdentityAdapter` fallaba una prueba que en CI pasaba — `.nvmrc` pide 24 y ahora eso es lo que hay instalado |
-| `npm run test:coverage` | **Hoy 67,27 % / 58,20 / 60,18 / 69,21** (2026-09-24, corte 14; 479 ficheros, 4 674 pruebas). Con el corte 13, 67,19 / 58,11 / 60,14 / 69,11. Antes 65,20 % statements / 56,53 branches / 57,64 functions / 67,03 lines — por encima de todos los suelos de `vite.config.ts`, y de los cuatro valores anteriores |
-| `npm run check:bundle-budget` | **Hoy: eager 309,6 KB gz de 340** (2026-09-23). Lo que sigue es la medición de 2026-09-19: **eager 439,1 KB gz de 450; entrada 200,3** — sube 7,5 desde los 431,6 de la ola anterior, repartidos entre las subidas de dependencia y las hojas del guardrail. El margen es de **10,9 KB gz**, y conviene leerlo como lo que es: dos de las subidas que Dependabot propone como «minor» se lo comen entero (ver *Dependencias que no pueden subir*) |
-| `npm run check:bundle-secrets` | clean — y ahora conoce `sk-ant-`, que faltaba mientras Anthropic ya era un proveedor embarcado: una clave suya en el bundle se reportaba como «OpenAI-style» o, con sufijo corto, no se reportaba |
+| `npm run typecheck` | limpio |
+| `npm run typecheck:strict` | limpio sobre la lista de `tsconfig.strict.json`, que sólo crece (`strictBoundary.test.ts`) |
+| `npm run lint` | **0 errores, 0 avisos**. Un aviso es un hallazgo que nadie leerá cuando haya diez |
+| `npm run check:module-boundaries` | **3 ciclos directos y un solo componente fuertemente conexo, los dos de React; 0 módulos de dominio mutuamente alcanzables; 0 pares ascendentes; 29 pares con import profundo; 0 pantallas sobre el fan-out; 0 ficheros sueltos en la raíz de `services/`**. Cada presupuesto sólo puede bajar |
+| `npm run check:module-size` | limpio. Cada fichero grande tiene su techo de líneas **y** de bytes; subir uno lleva la razón al lado (el último: `SettingsPage`, +18 bytes, F6-05) |
+| `npm run check:any-budget` | **7** `any`, todos con nombre: 6 en la frontera sin tipos de Excalidraw y el `ComponentType<any>` de `lazyWithRetry` |
+| `npm run test:ci` | **488 ficheros, 4 733 pruebas**, todas pasando |
+| `npm run test:coverage` | **67,66 % statements / 58,51 branches / 60,56 functions / 69,63 lines**, por encima de todos los suelos de `vite.config.ts` |
+| `npm run check:bundle-budget` | **carga inicial 310,1 KB gz de 340**, y desde F6-05 **cada ruta con su techo** (`ROUTE_BUDGETS_GZIP_KB`): Dashboard 48,8 de 60, Configuración 20,4 de 30, Agentes 42,0 de 50; las ocho rutas que cargan IA al abrirse, en su cifra de hoy (~600) |
+| `npm run check:bundle-secrets` | limpio, con la forma `sk-ant-` incluida |
+| `e2e/` (sólo CI) | **36 casos, 19 se ejecutan**: los recorridos autenticados y `chunks.spec.ts` —que evalúa los 151 chunks del build— corren sólo en Chromium de escritorio, a propósito; contra `dist/` y Supabase local |
+| `supabase.yml` (sólo CI) | **18 contratos pgTAP** sobre 45 migraciones, contra una base real |
 
 ### CI
 
@@ -1561,7 +1561,7 @@ builds and its `superadmin` role exists only in React state.
 
 ## Routing
 
-`App.tsx` defines every route. All route components are loaded through `lib/lazyWithRetry.ts`, which retries a failed chunk fetch instead of stranding the user on a blank screen (an actual iPad/Safari failure mode after deploys).
+`App.tsx` defines every route. All route components are loaded through `components/routing/lazyWithRetry.ts`, which retries a failed chunk fetch instead of stranding the user on a blank screen (an actual iPad/Safari failure mode after deploys).
 
 ```
 /auth                   → AuthPage
@@ -1831,6 +1831,13 @@ manejo en `services/persistence` y cualquier migración de forma en
 Una tabla nueva sin `revoke` es una tabla que la Data API expone: el gate que lo
 detecta es `supabase db advisors`, y corre en `supabase.yml`.
 
+**Y la matriz de propiedad cambia en el mismo commit.** Toda RPC y toda tabla de
+`api` figura en `docs/ddd-transformacion/06-propiedad-datos.md` con su contexto
+dueño, y `__tests__/architecture/dataOwnershipMatrix.test.ts` falla si una
+falta. Esa matriz pasó cuatro fases sin conocer diez RPC y la tabla de la
+bitácora (F6-06). Si la migración cambia una regla, el catálogo de invariantes
+(`07-invariantes.md`) se actualiza con ella.
+
 ---
 
 ## A project is tracked, and its initiative knows what it moves
@@ -1869,7 +1876,7 @@ Four rules the derivations hold to, all of them about honesty:
 - **Weights are declared or shared evenly, and the rollup says which.** An
   invented weight looks like a distribution somebody thought about.
 
-**The two contexts do not import each other.** `services/businessInitiatives/initiativeDelivery.ts`
+**The two contexts do not import each other.** `services/businessInitiatives/domain/initiativeDelivery.ts`
 declares the *port* — what it needs to know about a contributing project — and
 `services/architectureProjects/attentionTracking.ts` supplies one with
 `describeAttentionDelivery`. It is the pattern `services/agent` already uses to
@@ -2495,6 +2502,8 @@ Read the relevant doc before modifying a subsystem — they carry the rationale 
 | `docs/arquitecto-agente.md` | The agent (planner/executor/memory) |
 | `docs/ui-ux-world-class-plan.md` | UI/UX upgrade plan |
 | `docs/technical-debt-audit.md` | Prioritised debt — **record new debt here** |
+| `docs/ddd-transformacion/` | **The canonical record of the DDD transformation**: baseline, findings, master plan, backlog, progress log (`08-avance.md`), phase closures and evidence. `adr/` holds ADR-100…109 — the last three are the projection outbox (107), the engine strangled through ports (108), and small doors with per-route budgets (109) |
+| `docs/operacion/` | Operations: the deployment contract, and three runbooks — **applying a migration to `ArkyDB-US`** (`runbook-migraciones.md`), **a route that shows «Error en la aplicación»** (`runbook-ruta-no-carga.md`), and **a knowledge graph that does not update** (`runbook-proyecciones.md`). Read the first before any `supabase db push`
 | `docs/aws-migration-plan.md` | **Propuesta, sin ejecutar, y hoy histórica**: se escribió contra la infraestructura Firebase/Vercel, que F9 sustituyó. Plan por fases para migrar a AWS dentro de la capa gratuita: Cognito, DynamoDB en tabla única, Lambda + API Gateway, S3 + CloudFront, CI/CD por OIDC, y los cuatro riesgos estructurales medidos sobre este código |
 | `docs/top-10-monolito-modular-ddd-2026-09-01.md` | Open review: modular-monolith boundaries, DDD, tech debt and CI/CD — measured dependency graph, cycle census and the root cause of the 8m49s test step |
 | `specs/00-index.md` | SDD artifacts: BRD, use cases, ADRs, domain model, NFR, BDD, traceability matrix |
