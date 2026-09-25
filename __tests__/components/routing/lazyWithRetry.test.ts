@@ -49,6 +49,30 @@ describe('importWithRetry', () => {
     expect(factory).toHaveBeenCalledTimes(3);
   });
 
+  it('retries an import that resolved without a module — a preload failure Vite swallowed', async () => {
+    // With `vite:preloadError` prevented, Vite resolves the import to
+    // `undefined` instead of rejecting it. Returning that to React.lazy crashed
+    // the route reading `.default` (F6-04).
+    let calls = 0;
+    const factory = vi.fn(async () => {
+      calls += 1;
+      return (calls < 2 ? undefined : fakeModule) as unknown as typeof fakeModule;
+    });
+    const result = await importWithRetry(factory, { retries: 2, sleep: instantSleep });
+    expect(result).toBe(fakeModule);
+    expect(factory).toHaveBeenCalledTimes(2);
+  });
+
+  it('never hands React a module without `default`, even when every attempt resolves empty', async () => {
+    const factory = vi.fn(async () => undefined as unknown as typeof fakeModule);
+    await expect(importWithRetry(factory, {
+      retries: 1,
+      sleep: instantSleep,
+      isReloadGuarded: () => true,
+    })).rejects.toThrowError(/resolved without a module/);
+    expect(factory).toHaveBeenCalledTimes(2);
+  });
+
   it('surfaces a genuine module-evaluation error immediately without retrying', async () => {
     const factory = vi.fn(async () => {
       throw new ReferenceError('broken module');

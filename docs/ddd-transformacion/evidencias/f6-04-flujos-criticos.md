@@ -115,6 +115,20 @@ Artefacto» en *Visión de la Arquitectura* y **afirma sobre la base**: consulta
 proveedor. También afirma que la generación pasó por `/api/ai`, y que tras
 recargar el artefacto sigue en «Mis artefactos».
 
+**Encontró un defecto real en la carga de rutas.** En su primera vuelta de CI
+el Workspace cayó en «Error en la aplicación» con `Cannot read properties of
+undefined (reading 'default')`. La causa está en la carga de rutas, no en la
+prueba. Una precarga de chunk se abortó (estado −1), y el servicio de
+observabilidad hace `preventDefault()` sobre `vite:preloadError` a propósito,
+para que `lazyWithRetry` reintente. Pero con el evento prevenido Vite **no
+rechaza** el `import()`: lo resuelve a `undefined`. El reintento nunca vio un
+fallo y React recibió un módulo sin `default`. Es justo el desenlace que
+`lazyWithRetry` existe para evitar, y el mismo que una rotación de chunks tras
+un despliegue produce en iPad. **Arreglo:** `importWithRetry` trata una
+resolución sin módulo como un fallo de chunk, así que reintenta y, agotados
+los reintentos, recarga una vez. Lo fijan dos pruebas nuevas en
+`lazyWithRetry.test.ts`.
+
 ### La bitácora de proyecciones (F5-04/F5-05)
 
 Éste es el caso que el `setTimeout` de antes perdía: un artefacto cambia
