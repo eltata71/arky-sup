@@ -55,7 +55,7 @@ cada comando escribe un artefacto y ninguno recibe la lista del proyecto.
 
 | Tabla | RPC | Naturaleza | Consumidores | Desde |
 |---|---|---|---|---|
-| `office_engagements` | `load_engagements`, `save_engagement` (con transiciones legales; no puede entregar), `delete_engagement` (una sola firma, con revisión) | autoritativo | `services/architectureOffice`, `OfficeContext` | fase 2 (H02, H09) |
+| `office_engagements` | `load_engagements`, `save_engagement` (con transiciones legales; no puede entregar; no ejecuta sin charter aprobado), `delete_engagement` (una sola firma, con revisión) | autoritativo | `services/architectureOffice`, `OfficeContext` | fase 2 (H02, H09), F6-08 (H06) |
 | `office_engagements.data->'arbDecisions'` | reconstruido **por el servidor** desde el registro, dentro de `decide_engagement` | **espejo** que no decide | `EngagementRoom` | fase 2 (H01) |
 | `office_arb_decisions` | `decide_engagement` (decisión + transición en una transacción; el autor no firma lo suyo), `record_arb_decision`, `load_arb_engagements` (la bandeja del comité) | autoritativo, **inmutable** | `ArbDecisionPanel`, `OfficeContext` | fase 2 (ADR-101, ADR-102) |
 | `agent_profiles` | `list_agent_profiles`, `save_agent_profile`, `delete_agent_profile` | autoritativo, por usuario | `services/architectureOffice` (`agents.ts`), `useAgentProfiles` | — |
@@ -111,6 +111,7 @@ El correo **no se copia**: se lee de `auth.users`. Dueño único de la identidad
 | Auditoría de autorización | append-only | — | permanente |
 | Artefacto | `delete_artifact`, con su revisión | versiones | sin política |
 
-> **Decisión pendiente (negocio), D-2.** No hay ninguna política de archivado
-> ni de retención escrita. Un encargo cancelado y uno de hace tres años pesan
-> igual. Bloquea F6-08. Se registra como pendiente, no como supuesto.
+> **D-2, decidida el 2026-09-26: opción A.** Mientras sea una prueba de
+> concepto se conserva todo y el borrado sigue siendo manual. La política se
+> elige antes de cargar datos productivos, entre archivado lógico, retención
+> con plazos o ambos (`13-deuda-residual.md`, R-01).

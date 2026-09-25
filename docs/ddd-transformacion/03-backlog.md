@@ -729,7 +729,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ### F6-05 · Verificar rendimiento, descarga, concurrencia y recuperación · P0 · M · `hecha` (`evidencias/f6-05-rendimiento-concurrencia.md`)
 ### F6-06 · Documentación, ADR, instrucciones y runbooks · P1 · M · `hecha` (ADR-107…109, `docs/operacion/runbook-*.md`, `06` y `07` revisados)
 ### F6-07 · Comparación final contra la línea base · P0 · S · `hecha` (`12-comparacion-linea-base.md`, `evidencias/f6-07-mediciones.md`)
-### F6-08 · Deuda residual con responsable y justificación · P1 · S · `pendiente` — entra ya: `save_chat_history` sin revisión y la IA cargada al abrir ocho rutas (F6-05); E-02, E-01, E-04, E-05, E-14 y T-01 de `07-invariantes.md` (F6-06); H04, barriles que exportan implementaciones de Supabase (F6-07)
+### F6-08 · Deuda residual con responsable y justificación · P1 · S · `hecha` (`13-deuda-residual.md`; D-2 → opción A; E-02/H06 al servidor con `20260926090000_charter_approval_guard`)
 ### F6-09 · Informe técnico y gerencial de cierre · P1 · M · `pendiente`
 ### F6-10 · El despliegue comprueba el esquema de producción · P0 · M · `pospuesta` (decisión del propietario, 2026-09-25)
 - **Origen.** Fases 4 y 5: el CI publica la aplicación y no el esquema; tres

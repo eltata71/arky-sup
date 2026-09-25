@@ -115,6 +115,12 @@ Reglas que no se negocian al trabajar aquí:
 2. El refinamiento de IA del charter **debe** superar `validateCharter` y la
    detección de ciclos; si no, se descarta entero y queda el plan determinista.
 3. Productor y revisor de un entregable son **siempre** personas distintas.
+   **Nadie ejecuta un charter sin aprobar, y desde F6-08 lo aplica también el
+   servidor**: `save_engagement` rechaza `in-progress` sin aprobación, la
+   aprobación es inmutable y la firma la sesión. Quién puede aprobar no cambió
+   (el dueño); `charter:approve` sin exigir es la deuda R-02 de
+   `docs/ddd-transformacion/13-deuda-residual.md`, el registro de la deuda
+   residual con responsable.
 4. La evidencia determinista (validadores + compilador) manda sobre el veredicto
    del modelo: un validador bloqueante es `changes-requested`.
 5. El ejecutor no importa React ni ningún SDK; todo entra por puertos inyectados.
