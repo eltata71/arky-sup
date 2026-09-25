@@ -93,12 +93,19 @@ test.describe('Flujos críticos — preferencias', () => {
     const heading = (name: string) => page.getByRole('heading', { level: 1, name });
     // Las etiquetas están en el idioma de la interfaz: en español se ofrece
     // «English» y se guarda con «Guardar»; en inglés, «Spanish» y «Save».
+    // El idioma está en la pestaña «Apariencia»; la página abre en la de IA y
+    // vuelve a ella tras recargar.
+    const openAppearance = async () => {
+      await page.getByRole('button', { name: /^(Apariencia|Appearance)$/ }).click();
+    };
     const toEnglish = async () => {
+      await openAppearance();
       await page.getByText('English', { exact: true }).first().click();
       // `exact`: «Guardar Llave Localmente» también es un botón de esta página.
       await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     };
     const toSpanish = async () => {
+      await openAppearance();
       await page.getByText('Spanish', { exact: true }).first().click();
       await page.getByRole('button', { name: 'Save', exact: true }).click();
     };

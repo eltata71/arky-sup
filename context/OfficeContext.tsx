@@ -66,6 +66,8 @@ interface OfficeContextType {
   /** Engagement ids currently being executed by the runner. */
   runningEngagementIds: string[];
   isLoading: boolean;
+  /** Whether an engagement's absence is still undecided (see `EngagementRoomFallback`). */
+  isResolving: boolean;
   /** True when the signed-in user may sit on the review board. */
   canApprove: boolean;
   /**
@@ -143,9 +145,10 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     createArtifactVersion,
     updateArtifact,
   } = useAppContext();
-  const { user, profile } = useAuth();
+  const { user, profile, isLoading: authLoading } = useAuth();
 
   const [engagements, setEngagements] = useState<OfficeEngagement[]>([]);
+  const [arbInboxSettled, setArbInboxSettled] = useState(false);
   const [runningEngagementIds, setRunningEngagementIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const loadedProjectIds = useRef(new Set<string>());
@@ -277,9 +280,18 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           ...loaded,
         ].sort(byRecency));
       })
-      .finally(() => { if (!cancelled) setIsLoading(false); });
+      .finally(() => {
+        if (cancelled) return;
+        setIsLoading(false);
+        setArbInboxSettled(true);
+      });
     return () => { cancelled = true; };
   }, [canApprove, commit]);
+
+  const isResolving = authLoading
+    || isLoading
+    || (canApprove && !arbInboxSettled)
+    || projects.some((project) => !loadedProjectIds.current.has(project.id));
 
   const getEngagement = useCallback(
     (engagementId: string) => engagements.find((item) => item.id === engagementId),
@@ -424,6 +436,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     engagements,
     runningEngagementIds,
     isLoading,
+    isResolving,
     canApprove,
     arbEligibility,
     loadEngagements,
@@ -437,7 +450,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     decideEngagement,
     deleteEngagement,
   }), [
-    engagements, runningEngagementIds, isLoading, canApprove, arbEligibility,
+    engagements, runningEngagementIds, isLoading, isResolving, canApprove, arbEligibility,
     loadEngagements, getEngagement, listEngagementsForProject,
     createEngagement, approveCharter, runEngagementNow, cancelRun,
     evaluateGates, decideEngagement, deleteEngagement,

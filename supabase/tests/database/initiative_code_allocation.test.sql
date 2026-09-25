@@ -40,6 +40,9 @@ returns jsonb language sql as $$
     'userId', p_user, 'createdAt', '2026-09-25T00:00:00.000Z', 'updatedAt', '2026-09-25T00:00:00.000Z'
   );
 $$;
+-- La base revoca los privilegios por defecto de las funciones; la auxiliar la
+-- ejecuta el rol de la sesión simulada.
+grant execute on function pg_temp.initiative(text, text, text, text) to authenticated;
 
 set local role authenticated;
 

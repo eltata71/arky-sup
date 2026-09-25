@@ -64,6 +64,23 @@ Es exactamente el tipo de defecto que una prueba integral existe para
 encontrar: ninguna prueba unitaria podía verlo, porque cada mitad —el cálculo
 en el cliente y la unicidad en la base— era correcta por separado.
 
+## Lo que encontró después: «cargando» dicho como «no existe»
+
+Con más recorridos en paralelo, el E2E del comité, que ya existía, falló: la
+autora veía su encargo todavía «En comité». La revisora no había firmado. Su
+sala había mostrado un instante **«Entregable no encontrado — no existe o
+todavía no se ha cargado»**, y el recorrido, que acepta esa salida para el caso
+de un reintento ya firmado, la tomó por «ya firmado» y no firmó.
+
+La causa es de la interfaz. Para una revisora, el encargo llega por la bandeja
+del comité, que sólo se pide cuando se conoce su perfil; hasta entonces la sala
+no tenía forma de distinguir «todavía no lo sé» de «no existe», y lo decía en
+una sola frase. **Arreglo:** `OfficeContext.isResolving` es verdadero mientras
+carga la sesión, hay una lectura en curso, falta la bandeja del comité o hay
+proyectos cuyos encargos no se han leído. La sala (`EngagementRoomFallback`)
+muestra la carga hasta entonces, y «no encontrado» sólo cuando se ha resuelto,
+ya sin la coletilla. Lo prueba `engagementRoomResolving.test.tsx`.
+
 ## Una cuenta más
 
 El recorrido de preferencias cambia el idioma de la interfaz, y las pruebas

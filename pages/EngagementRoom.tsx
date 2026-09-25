@@ -20,6 +20,7 @@ import { useInitiatives } from '../context/InitiativeContext';
 import { useToast } from '../context/ToastContext';
 import { useAriaAnnouncer } from '../hooks/useAriaAnnouncer';
 import { Alert, Badge, Button, Card, CardTitle, Spinner, StatTile, cn } from '../components/ui';
+import { EngagementRoomFallback } from '../components/architectureOffice/EngagementRoomFallback';
 import { FilePlus2, Layers, ListChecks, Play, ScrollText, Sparkles, Square } from 'lucide-react';
 import { EngagementTaskBoard } from '../components/architectureOffice/EngagementTaskBoard';
 import { OfficeTimeline } from '../components/architectureOffice/OfficeTimeline';
@@ -64,9 +65,10 @@ const SECTIONS = [
 const EngagementRoom: React.FC = () => {
   const { engagementId } = useParams<{ engagementId: string }>();
   const navigate = useNavigate();
-  const { projects, settings } = useAppContext();
+  const { projects, settings, isLoading: projectsLoading } = useAppContext();
   const {
     engagements,
+    isResolving,
     runningEngagementIds,
     arbEligibility,
     loadEngagements,
@@ -233,16 +235,10 @@ const EngagementRoom: React.FC = () => {
 
   if (!engagement) {
     return (
-      <div className="min-h-[100dvh] px-4 py-6 md:pl-20 md:pr-8">
-        <div className="mx-auto max-w-3xl">
-          <Alert tone="warning" title="Entregable no encontrado">
-            El entregable que buscas no existe o todavía no se ha cargado.
-          </Alert>
-          <Button className="mt-4" variant="secondary" onClick={() => navigate('/office')}>
-            Volver al panel de la Oficina
-          </Button>
-        </div>
-      </div>
+      <EngagementRoomFallback
+        resolving={projectsLoading || isResolving}
+        onBack={() => navigate('/office')}
+      />
     );
   }
 
