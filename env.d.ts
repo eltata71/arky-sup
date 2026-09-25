@@ -2,7 +2,6 @@
 
 interface ImportMetaEnv {
 
-  readonly VITE_GEMINI_PROXY_URL?: string;
   readonly VITE_AI_PROXY_URL?: string;
   /**
    * `'true'` makes the AI proxy mandatory: a proxy failure raises a typed,

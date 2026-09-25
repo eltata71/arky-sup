@@ -28,8 +28,6 @@ vi.mock('../../../services/ai/providers/gemini/geminiClient', () => ({
   createGeminiAIClient: vi.fn(() => ({
     models: { generateContent, generateContentStream },
   })),
-  getGeminiProxyUrl: () => null,
-  isGeminiProxyConfigured: () => false,
 }));
 
 // No proxy in these specs: the point is which provider the direct path picks.

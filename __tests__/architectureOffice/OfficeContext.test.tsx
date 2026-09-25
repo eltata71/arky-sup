@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // El contexto llega a la base por el repositorio y al modelo por geminiService.
 // Los dos están doblados: una prueba no toca ninguno.
@@ -92,6 +92,25 @@ const Harness: React.FC<{ onReady: (office: ReturnType<typeof useOffice>) => voi
     </div>
   );
 };
+
+/**
+ * Calienta lo que `OfficeContext` carga con `import()`.
+ *
+ * El provider trae la conversación, el runner y la configuración de agentes en
+ * diferido, y la primera prueba que los alcanza pagaba su transformación: 10 s
+ * con cobertura en un equipo libre, más de 20 en la suite completa, y entonces
+ * agotaba su límite y las catorce siguientes caían en cascada con la lista
+ * vacía. Ese coste es de la herramienta, no de la regla que se comprueba, así
+ * que se paga aquí, con su propio límite, una vez por fichero.
+ */
+beforeAll(async () => {
+  await Promise.all([
+    import('../../services/architectureOffice/application/projectConversation'),
+    import('../../services/architectureOffice/OfficeRunnerAdapters'),
+    import('../../services/architectureOffice/OfficeEngagementRunner'),
+    import('../../services/architectureOffice/application/agentConfiguration'),
+  ]);
+}, 120_000);
 
 describe('OfficeContext', () => {
   let office: ReturnType<typeof useOffice>;

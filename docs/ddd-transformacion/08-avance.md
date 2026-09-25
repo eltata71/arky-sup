@@ -8,7 +8,14 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-01, primer corte**: seis ficheros sin consumidor
+- **Tarea en curso:** **F6-01, segundo corte — el proxy heredado.**
+  `api/gemini.ts` se retira, y con él un **defecto vivo**:
+  `VITE_GEMINI_PROXY_URL` está vacía en producción, así que la creación guiada
+  se negaba a llamar al modelo a quien no tuviera clave personal, mientras
+  `/api/ai` habría respondido. Ahora va solo por `aiGateway`. Una prueba
+  reproduce el fallo con el código anterior. Evidencia en
+  `evidencias/f6-01-proxy-heredado.md`.
+- **Antes:** **F6-01, primer corte**: seis ficheros sin consumidor
   retirados (entre ellos el marcador vacío de 0 líneas) y una guardia,
   `noOrphanModules.test.ts`, que falla si vuelve a haber uno. Evidencia en
   `evidencias/f6-01-sin-consumidor.md`.
@@ -286,7 +293,7 @@
 
 | Tarea | Estado | Nota |
 |---|---|---|
-| **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ⏳ en curso | Corte 1: seis ficheros muertos fuera y `noOrphanModules.test.ts`. Queda el proxy heredado `api/gemini.ts` y la superficie del motor que sólo usan las pruebas. |
+| **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ⏳ en curso | Corte 1: seis ficheros muertos fuera y `noOrphanModules.test.ts`. Corte 2: el proxy heredado `api/gemini.ts` fuera (y el defecto de la creación guiada en producción). Queda la superficie del motor que sólo usan las pruebas. |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
 | **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
 | **F6-04** pruebas integrales de los flujos críticos | ⏳ | |

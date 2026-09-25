@@ -14,8 +14,6 @@ vi.mock('../../../../services/ai/providers/gemini/geminiClient', () => ({
   createGeminiAIClient: vi.fn(() => ({
     models: { generateContent, generateContentStream },
   })),
-  getGeminiProxyUrl: () => null,
-  isGeminiProxyConfigured: () => false,
 }));
 
 import { GeminiProvider } from '../../../../services/ai/providers/gemini/GeminiProvider';

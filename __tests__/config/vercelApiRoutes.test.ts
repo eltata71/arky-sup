@@ -23,7 +23,6 @@ describe('Vercel API routes are not shadowed by the SPA fallback', () => {
       if (rewrite.destination !== '/') continue;
       expect(rewrite.source).toBeDefined();
       expect(matchesSource(rewrite.source!, '/api/ai')).toBe(false);
-      expect(matchesSource(rewrite.source!, '/api/gemini')).toBe(false);
       // El fallback SPA debe seguir capturando rutas de la app.
       expect(matchesSource(rewrite.source!, '/dashboard')).toBe(true);
     }

@@ -359,6 +359,11 @@ Reglas que no se negocian al trabajar aquí:
     busca a cualquier nivel y ya no admite excepciones: `settings` y
     `learning` llevan la revisión en `Settings.revision` y `Course.revision`
     desde F6-03.
+22d. **Ninguna funcionalidad tiene su propia ruta a un modelo** (F6-01). La
+    creación guiada llamaba al proxy heredado `api/gemini.ts`; con
+    `VITE_GEMINI_PROXY_URL` vacía en producción, se negaba a atender a quien
+    no tuviera clave personal mientras `/api/ai` habría respondido. El
+    endpoint se retiró: todo va por `aiGateway` o una fachada.
 22c. **Un fichero que nadie importa no se queda** (F6-01).
     `__tests__/architecture/noOrphanModules.test.ts` falla si aparece uno; sus
     excepciones (barriles publicados, arranques de Vitest, tipos generados)

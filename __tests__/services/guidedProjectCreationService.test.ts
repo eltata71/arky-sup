@@ -41,57 +41,49 @@ describe('guidedProjectCreationService', () => {
 
 
 
-  it('uses the configured proxy for guided creation requests', async () => {
-    vi.stubEnv('VITE_GEMINI_PROXY_URL', '/api/gemini');
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ requestId: 'proxy-1', text: '¿Cuál es el objetivo?' }), { status: 200 }));
+  /**
+   * F6-01: guided creation used its own route to the legacy Gemini-only proxy
+   * (`api/gemini.ts`). In production `VITE_GEMINI_PROXY_URL` was empty, so it
+   * asserted `not-configured` against the strict policy and refused anyone
+   * without a personal key — before reaching `aiGateway`, whose `/api/ai` would
+   * have answered. It now has one route, the gateway's, proxy first.
+   */
+  const setAiProxyUrl = (value: string | undefined) => {
+    if (value === undefined) delete (import.meta.env as Record<string, unknown>).VITE_AI_PROXY_URL;
+    else (import.meta.env as Record<string, unknown>).VITE_AI_PROXY_URL = value;
+  };
+  const proxyAnswer = (text: string) => vi.fn().mockResolvedValue(
+    new Response(JSON.stringify({ requestId: 'proxy-1', text, provider: 'gemini', model: 'gemini-2.5-flash' }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    }),
+  );
+
+  it('goes through the provider-agnostic proxy first, never the direct client', async () => {
+    setAiProxyUrl('/api/ai');
+    const fetchMock = proxyAnswer('¿Cuál es el objetivo?');
     vi.stubGlobal('fetch', fetchMock);
     const directSpy = vi.spyOn(legacyTransport, 'getAIClient');
-
-    await sendGuidedProjectCreationMessage(baseHistory('Banca móvil'), 'Banca móvil', settings);
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/gemini');
-    expect(directSpy).not.toHaveBeenCalled();
+    try {
+      const result = await sendGuidedProjectCreationMessage(baseHistory('Banca móvil'), 'Banca móvil', settings);
+      expect(result.text).toBe('¿Cuál es el objetivo?');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(String(fetchMock.mock.calls[0][0])).toContain('/api/ai');
+      expect(directSpy).not.toHaveBeenCalled();
+    } finally {
+      setAiProxyUrl(undefined);
+    }
   });
 
-  it('falls back to the direct Gemini client only when the proxy local rate limit is hit', async () => {
-    vi.stubEnv('VITE_GEMINI_PROXY_URL', '/api/gemini');
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      requestId: 'proxy-limit',
-      error: 'proxy_rate_limited',
-      source: 'proxy',
-      retryAfterMs: 30_000,
-    }), { status: 429, headers: { 'Retry-After': '30' } })));
-    const generateContent = vi.fn().mockResolvedValue({ text: 'Continuemos con el objetivo del proyecto.' });
-    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
-
-    const result = await sendGuidedProjectCreationMessage(baseHistory('Beneficios farmacia'), 'Beneficios farmacia', settings);
-
-    expect(result.text).toBe('Continuemos con el objetivo del proyecto.');
-    expect(generateContent).toHaveBeenCalledTimes(1);
-    expect(getAiCooldownRemainingMs('guided-creation')).toBe(0);
-  });
-
-  it('falls back to the direct Gemini client (with the full model fallback chain) when the proxy reports a provider rate limit', async () => {
-    // Standardised behaviour: ANY proxy failure — including a forwarded
-    // provider 429 — must trigger the same direct path used by artifact
-    // generation, which carries the MODEL_FALLBACK_CHAIN. Without this the
-    // user sees a hard rate-limit on the preferred model even though Flash
-    // would have answered.
-    vi.stubEnv('VITE_GEMINI_PROXY_URL', '/api/gemini');
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      requestId: 'provider-limit',
-      error: 'provider_rate_limited',
-      source: 'gemini',
-      retryAfterMs: 30_000,
-    }), { status: 429, headers: { 'Retry-After': '30' } })));
-    const generateContent = vi.fn().mockResolvedValue({ text: 'Continúa con el objetivo.' });
-    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
-
-    const result = await sendGuidedProjectCreationMessage(baseHistory('ERP'), 'ERP', settings);
-
-    expect(result.text).toBe('Continúa con el objetivo.');
-    expect(generateContent).toHaveBeenCalled();
+  it('under the strict policy and without a personal key it answers through the proxy instead of refusing', async () => {
+    vi.stubEnv('VITE_AI_STRICT_PROXY', 'true');
+    setAiProxyUrl('/api/ai');
+    vi.stubGlobal('fetch', proxyAnswer('Describe el alcance.'));
+    try {
+      const result = await sendGuidedProjectCreationMessage(baseHistory('CRM'), 'CRM', settings);
+      expect(result.text).toBe('Describe el alcance.');
+    } finally {
+      setAiProxyUrl(undefined);
+    }
   });
 
   it('does not treat proxy-local cooldown as a UI-blocking Gemini cooldown', () => {
@@ -99,24 +91,6 @@ describe('guidedProjectCreationService', () => {
 
     expect(getAiCooldownRemainingMs('guided-creation', 'proxy-local-rate-limit')).toBeGreaterThan(0);
     expect(getAiBlockingCooldownRemainingMs('guided-creation')).toBe(0);
-  });
-
-  it('clears a proxy-local cooldown after a successful fallback-guided call', async () => {
-    setAiCooldown('guided-creation', 30_000, 'proxy-local-rate-limit');
-    expect(getAiCooldownRemainingMs('guided-creation', 'proxy-local-rate-limit')).toBeGreaterThan(0);
-    vi.stubEnv('VITE_GEMINI_PROXY_URL', '/api/gemini');
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      requestId: 'proxy-limit',
-      error: 'proxy_rate_limited',
-      source: 'proxy',
-      retryAfterMs: 30_000,
-    }), { status: 429, headers: { 'Retry-After': '30' } })));
-    const generateContent = vi.fn().mockResolvedValue({ text: 'Describe el alcance.' });
-    vi.spyOn(legacyTransport, 'getAIClient').mockReturnValue({ models: { generateContent } } as never);
-
-    await sendGuidedProjectCreationMessage(baseHistory('CRM'), 'CRM', settings);
-
-    expect(getAiCooldownRemainingMs('guided-creation', 'proxy-local-rate-limit')).toBe(0);
   });
 
   it('normalizes the first model greeting into user-compatible contents and keeps the guided budget', async () => {

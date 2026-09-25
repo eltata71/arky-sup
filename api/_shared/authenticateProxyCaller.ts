@@ -1,10 +1,10 @@
 /**
- * authenticateProxyCaller — the shared identity gate for both proxy endpoints.
+ * authenticateProxyCaller — the identity gate of the AI proxy.
  *
- * `api/ai.ts` and `api/gemini.ts` hold the same provider keys, so they need the
- * same lock. Keeping the decision here means a change to the posture — a new
- * claim to check, a different escape hatch — cannot be applied to one endpoint
- * and forgotten on the other.
+ * It was shared by `api/ai.ts` and the legacy `api/gemini.ts`, which held the
+ * same provider keys and so needed the same lock. The legacy endpoint was
+ * retired in F6-01; the gate stays in `_shared` because a posture decision —
+ * a new claim to check, a different escape hatch — belongs in one place.
  *
  * Desde F9 hay un solo emisor aceptado: Supabase Auth. El verificador de tokens
  * de Firebase se retiró con el proveedor, y con él la ruta por `iss` que elegía

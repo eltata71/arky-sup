@@ -10,7 +10,6 @@ describe('Vercel API ESM imports', () => {
   it('uses explicit .js extensions for runtime-relative imports', () => {
     const imports = [
       ...relativeImports('../../api/ai.ts').filter((specifier) => specifier.startsWith('./')),
-      ...relativeImports('../../api/gemini.ts'),
       ...relativeImports('../../api/_shared/authenticateProxyCaller.ts'),
       ...relativeImports('../../api/_shared/proxyRuntime.ts'),
       ...relativeImports('../../services/ai/schema/index.ts'),

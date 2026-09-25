@@ -2,15 +2,9 @@ import { Settings } from '../../../types';
 import type { AIConversationTurn } from '../core/AIContent';
 import { cleanJsonString } from '../../../utils';
 import { aiGateway } from './aiGateway';
-import { AIServiceError, classifyAIError } from '../errors';
 import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
 import { budgetChatHistory } from '../callControl/contextBudget';
-import { clearAiCooldown, executeAiCall, estimatePayloadSize } from '../callControl/aiCallControlService';
-import { getGeminiProxyUrl } from '../providers/gemini/geminiClient';
-import { buildProxyAuthHeaders } from '../proxyAuthHeaders';
-import { observabilityService } from '../../observability';
-import { assertDirectCallAllowed, assertDirectCallAllowedFor } from '../aiProxyEnforcement';
-import { proxyFailure } from '../aiProxyPolicy';
+import { executeAiCall, estimatePayloadSize } from '../callControl/aiCallControlService';
 
 export interface GuidedProjectData {
   name: string;
@@ -55,119 +49,6 @@ Reglas obligatorias:
     "initialArtifacts": ["Diagrama de Contexto (C4-N1)", "Visión de la Arquitectura", "Requisitos No Funcionales"]
   }
 }`;
-
-interface GeminiProxyErrorResponse {
-  requestId?: unknown;
-  error?: unknown;
-  source?: unknown;
-  retryAfterMs?: unknown;
-}
-
-interface GeminiProxySuccessResponse {
-  requestId?: unknown;
-  text?: unknown;
-}
-
-const GUIDED_SESSION_STORAGE_KEY = 'arky.guidedCreation.sessionId.v1';
-
-function readJsonObject(value: string): GeminiProxyErrorResponse | GeminiProxySuccessResponse | null {
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    return parsed && typeof parsed === 'object' ? parsed as GeminiProxyErrorResponse | GeminiProxySuccessResponse : null;
-  } catch {
-    return null;
-  }
-}
-
-function normalizeRetryAfterMs(data: GeminiProxyErrorResponse, retryAfterHeader: string | null): number | undefined {
-  if (typeof data.retryAfterMs === 'number' && Number.isFinite(data.retryAfterMs)) return data.retryAfterMs;
-  if (typeof retryAfterHeader === 'string' && retryAfterHeader.trim().length > 0) {
-    const seconds = Number(retryAfterHeader);
-    if (Number.isFinite(seconds)) return seconds * 1000;
-    const dateMs = Date.parse(retryAfterHeader);
-    if (Number.isFinite(dateMs)) return Math.max(0, dateMs - Date.now());
-  }
-  return undefined;
-}
-
-function getGuidedSessionId(): string {
-  if (typeof window === 'undefined') return `server-${Date.now()}`;
-  try {
-    const existing = window.sessionStorage.getItem(GUIDED_SESSION_STORAGE_KEY) || window.localStorage.getItem(GUIDED_SESSION_STORAGE_KEY);
-    if (existing) return existing;
-    const generated = `guided-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    window.sessionStorage.setItem(GUIDED_SESSION_STORAGE_KEY, generated);
-    return generated;
-  } catch {
-    return `guided-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  }
-}
-
-/**
- * Headers for the proxy call, through the shared builder.
- *
- * This used to send the uid as a bare header, which the proxy no longer
- * accepts. Because any proxy failure degrades to the direct path, the symptom
- * would not have been an outage — it would have been guided creation silently
- * abandoning the server-side key and using the browser's, which is the exact
- * thing the proxy exists to prevent.
- */
-const buildProxyHeaders = (): Promise<Record<string, string>> =>
-  buildProxyAuthHeaders(getGuidedSessionId());
-
-function createProxyError(response: Response, data: GeminiProxyErrorResponse, retryAfterHeader: string | null): AIServiceError {
-  const errorCode = typeof data.error === 'string' ? data.error : 'proxy_error';
-  const retryAfterMs = normalizeRetryAfterMs(data, retryAfterHeader);
-  if (errorCode === 'proxy_rate_limited') {
-    return new AIServiceError(
-      'rate-limit',
-      response.status,
-      'Gemini proxy local rate limit exceeded',
-      'El canal de IA de la aplicación está temporalmente limitado. Espera unos segundos y vuelve a intentar; no es un agotamiento confirmado de cuota de Gemini.',
-      true,
-      data,
-      retryAfterMs,
-      { source: 'proxy-local-rate-limit', errorCode },
-    );
-  }
-  if (errorCode === 'provider_rate_limited') {
-    return new AIServiceError(
-      'rate-limit',
-      response.status,
-      'Gemini provider rate limit exceeded',
-      'Gemini devolvió un límite real de cuota o peticiones. Espera unos segundos antes de reintentar.',
-      true,
-      data,
-      retryAfterMs,
-      { source: 'provider-rate-limit', errorCode },
-    );
-  }
-  if (errorCode === 'missing_gemini_api_key') {
-    return new AIServiceError(
-      'auth',
-      response.status,
-      'Gemini API key missing in proxy',
-      'El proxy de IA no tiene configurada una API key de Gemini. Revisa la configuración del despliegue.',
-      false,
-      data,
-      undefined,
-      { source: 'auth', errorCode },
-    );
-  }
-  if (errorCode === 'gemini_unavailable') {
-    return new AIServiceError(
-      'overloaded',
-      response.status,
-      'Gemini provider unavailable',
-      'El modelo de IA está saturado o temporalmente no disponible. Reintenta en unos segundos.',
-      true,
-      data,
-      retryAfterMs,
-      { source: 'overloaded', errorCode },
-    );
-  }
-  return classifyAIError({ status: response.status, message: JSON.stringify(data), retryAfterMs });
-}
 
 function normalizeGuidedMessages(history: readonly AIConversationTurn[]): AIConversationTurn[] {
   const budgeted = budgetChatHistory(history, GUIDED_HISTORY_BUDGET).messages;
@@ -227,43 +108,18 @@ export function parseGuidedProjectCommand(text: string): GuidedProjectCommand | 
   return undefined;
 }
 
-async function callProxy(endpoint: string, payload: { model: string; systemInstruction: string; contents: unknown[]; temperature: number }, signal?: AbortSignal): Promise<string> {
-  let response: Response;
-  try {
-    response = await fetch(endpoint, {
-      method: 'POST',
-      headers: await buildProxyHeaders(),
-      body: JSON.stringify(payload),
-      signal,
-    });
-  } catch (error) {
-    throw new AIServiceError(
-      'network',
-      undefined,
-      error instanceof Error ? error.message : 'Network error while calling Gemini proxy',
-      'No se pudo contactar el proxy de IA. Verifica tu conexión y reintenta.',
-      true,
-      error,
-      undefined,
-      { source: 'network', errorCode: 'proxy_network_error' },
-    );
-  }
-
-  const raw = await response.text().catch(() => '');
-  const data = readJsonObject(raw);
-  if (!response.ok) {
-    const retryAfter = response.headers.get('Retry-After');
-    if (data) throw createProxyError(response, data, retryAfter);
-    throw classifyAIError({ status: response.status, message: raw || response.statusText, retryAfter });
-  }
-  const text = data && (data as GeminiProxySuccessResponse).text;
-  if (typeof text !== 'string') {
-    throw new AIServiceError('malformed-response', response.status, 'Proxy response missing text', 'La respuesta de IA llegó incompleta. Reintenta en unos segundos.', true, data);
-  }
-  return text;
-}
-
-async function callDirectGemini(modelId: string, contents: { role: string; parts: { text: string }[] }[], settings: Settings, signal?: AbortSignal): Promise<string> {
+/**
+ * One model call through `aiGateway`, which tries the serverless proxy
+ * (`/api/ai`) first and applies the strict-proxy policy itself (F6-01).
+ *
+ * Guided creation used to have a second, private route to a model: the legacy
+ * Gemini-only proxy (`api/gemini.ts`, `VITE_GEMINI_PROXY_URL`), with its own
+ * fetch, error mapping and fallback. In production that variable was empty, so
+ * the service skipped the proxy, asserted `not-configured` against the strict
+ * policy, and **refused to call a model for anyone without a personal key** —
+ * before ever reaching `aiGateway`, which would have gone through `/api/ai`.
+ */
+async function callModel(modelId: string, contents: { role: string; parts: { text: string }[] }[], settings: Settings, signal?: AbortSignal): Promise<string> {
   // Interactive flow: rely on MODEL_FALLBACK_CHAIN as the safety net rather
   // than on multi-second in-model backoff. Each candidate gets ONE attempt
   // before falling through, which keeps total recovery time low for a chat
@@ -300,68 +156,7 @@ export async function sendGuidedProjectCreationMessage(history: readonly AIConve
     messageCount: contents.length,
     dedupeKey,
     signal,
-  }, async () => {
-    const proxyUrl = getGeminiProxyUrl();
-    if (proxyUrl) {
-      try {
-        return await callProxy(proxyUrl, {
-          model: model.id,
-          systemInstruction: GUIDED_SYSTEM_INSTRUCTION,
-          contents,
-          temperature: settings.aiConfig?.temperature ?? 0.4,
-        }, signal);
-      } catch (error) {
-        const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
-        // Standardise with artifact generation: ANY proxy failure (local
-        // bucket limit, upstream 429, 5xx, network blip) is retried via the
-        // direct path, which carries the full MODEL_FALLBACK_CHAIN and
-        // retryWithBackoff guarantees. The proxy stays as an optimisation
-        // for hiding the API key when it is healthy, but it can never be a
-        // single point of failure for guided creation again.
-        try {
-          // Under `VITE_AI_STRICT_PROXY` this refuses instead of degrading:
-          // guided creation is precisely the path that once drifted onto the
-          // browser-side key without anyone noticing, because a proxy failure
-          // here has always been silent by design.
-          assertDirectCallAllowed(settings, proxyFailure('provider-error', {
-            detail: friendly.errorCode,
-            retryAfterMs: friendly.retryAfterMs,
-          }));
-          const directText = await callDirectGemini(model.id, contents, settings, signal);
-          if (friendly.errorCode === 'proxy_rate_limited') {
-            clearAiCooldown('guided-creation', 'proxy-local-rate-limit');
-          }
-          observabilityService.trackEvent({
-            severity: 'warning',
-            source: 'operation',
-            status: 'observed',
-            title: 'Proxy IA degradado; fallback directo aplicado',
-            message: 'La creación guiada evitó una falla del proxy reutilizando el proveedor directo (mismo camino que la generación de artefactos).',
-            operationName: 'guided-creation',
-            recoverable: true,
-            userVisible: false,
-            metadata: {
-              purpose: 'guided-creation',
-              model: model.id,
-              proxyFallbackApplied: true,
-              errorSource: friendly.source,
-              errorCode: friendly.errorCode,
-              retryAfterMs: friendly.retryAfterMs,
-            },
-          });
-          return directText;
-        } catch (directError) {
-          // Both proxy AND every fallback model failed — surface the real
-          // (final) error so the cooldown UI and observability reflect the
-          // genuine quota state rather than the proxy's local bucket.
-          throw directError instanceof AIServiceError ? directError : classifyAIError(directError);
-        }
-      }
-    }
-
-    assertDirectCallAllowedFor(settings, 'not-configured');
-    return callDirectGemini(model.id, contents, settings, signal);
-  });
+  }, async () => callModel(model.id, contents, settings, signal));
 
   return {
     text: value,
