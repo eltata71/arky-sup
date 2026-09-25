@@ -145,6 +145,16 @@ describe('continuous deployment gates on the quality suite', () => {
     expect(targetCheckAt, 'la comprobación sucede antes de vercel deploy').toBeLessThan(deployAt);
   });
 
+  it('refuses to build a commit whose migrations production does not have (F6-10)', () => {
+    const deploy = ci.slice(ci.indexOf('\n  deploy:'));
+    const pullAt = deploy.indexOf('vercel@latest pull');
+    const migrationsAt = deploy.indexOf('scripts/deploy/assertProductionMigrations.mjs');
+    const buildAt = deploy.indexOf('vercel@latest build');
+    expect(migrationsAt, 'deploy debe comprobar el esquema de producción').toBeGreaterThan(-1);
+    expect(migrationsAt, 'después de vercel pull, que trae la URL y la clave publicable').toBeGreaterThan(pullAt);
+    expect(migrationsAt, 'antes de construir: un commit sin su esquema no se construye').toBeLessThan(buildAt);
+  });
+
   it('re-scans the artefact it publishes, which the placeholder build cannot cover', () => {
     const deploy = ci.slice(ci.indexOf('\n  deploy:'));
     expect(deploy).toContain('scripts/checkBundleSecrets.mjs .vercel/output/static');

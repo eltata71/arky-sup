@@ -731,7 +731,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 ### F6-07 · Comparación final contra la línea base · P0 · S · `hecha` (`12-comparacion-linea-base.md`, `evidencias/f6-07-mediciones.md`)
 ### F6-08 · Deuda residual con responsable y justificación · P1 · S · `hecha` (`13-deuda-residual.md`; D-2 → opción A; E-02/H06 al servidor con `20260926090000_charter_approval_guard`)
 ### F6-09 · Informe técnico y gerencial de cierre · P1 · M · `pendiente`
-### F6-10 · El despliegue comprueba el esquema de producción · P0 · M · `pospuesta` (decisión del propietario, 2026-09-25)
+### F6-10 · El despliegue comprueba el esquema de producción · P0 · M · `hecha` (opción B del propietario, 2026-09-26: `deploy_status.migration_applied` + `scripts/deploy/assertProductionMigrations.mjs`)
 - **Origen.** Fases 4 y 5: el CI publica la aplicación y no el esquema; tres
   migraciones dependieron de que alguien se acordara de aplicarlas, y una rompió
   producción (F4-06).

@@ -5,9 +5,19 @@
 (`btbhkmckrazoayaoorys`), **con la aprobación explícita del propietario para esa
 migración**. La aprobación no se hereda de una migración anterior.
 
-El despliegue de `ci.yml` publica la aplicación, **no el esquema** (F6-10, pospuesta).
-Una migración sin aplicar no rompe el build: rompe producción cuando el código
+El despliegue de `ci.yml` publica la aplicación, **no el esquema**. Una
+migración sin aplicar no rompe el build: rompe producción cuando el código
 nuevo llama a una RPC que no existe. Pasó en F4-06.
+
+**Desde F6-10 el despliegue lo comprueba.** Antes de construir, el paso
+*Production has every migration of this commit*
+(`scripts/deploy/assertProductionMigrations.mjs`) pregunta a producción, por
+cada fichero de `supabase/migrations/`, si está aplicado
+(`deploy_status.migration_applied`, con la clave publicable). Si falta alguno,
+o no puede preguntar, **no publica** y nombra la migración. Se aplica
+siguiendo este runbook y se relanza el trabajo `deploy`
+(`gh run rerun <id> --failed`). La comprobación no aplica nada: la aprobación
+sigue siendo humana.
 
 ## Orden
 

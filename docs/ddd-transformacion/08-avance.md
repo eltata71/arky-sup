@@ -8,7 +8,15 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-08**, la deuda residual (`13-deuda-residual.md`).
+- **Tarea en curso:** **F6-10**, el despliegue comprueba el esquema de
+  producción. Es la opción B del propietario, del 2026-09-26. Antes de
+  construir, el trabajo `deploy` pregunta a producción, con la clave
+  publicable, si cada migración del repositorio está aplicada, y no publica si
+  falta una o si no puede preguntar. Responde `deploy_status.migration_applied`,
+  un esquema propio con esa única función. `api` y `public` siguen cerrados a
+  anónimos, y el contrato `deploy_migration_probe` lo afirma. Las migraciones
+  se siguen aplicando a mano, con aprobación.
+- **Antes:** **F6-08**, la deuda residual (`13-deuda-residual.md`).
   El propietario decidió D-2 el 2026-09-26: opción A, conservar todo
   mientras sea PoC. Aprobó también llevar E-02 al servidor: con la migración
   `20260926090000_charter_approval_guard`, ejecutar exige un charter
@@ -373,7 +381,7 @@
 | **F6-07** comparación final contra la línea base | ✅ (2026-09-25) | `12-comparacion-linea-base.md`: 10 de 12 hallazgos cerrados; H04 y H06 parciales; el chunk compartido más grande, peor. |
 | **F6-08** deuda residual con responsable | ✅ (2026-09-26) | `13-deuda-residual.md`: D-2 → A; E-02/H06 al servidor (migración aprobada); doce deudas con responsable y condición de revisión. |
 | **F6-09** informe técnico y gerencial | ⏳ | |
-| **F6-10** el despliegue comprueba el esquema de producción | ⏸ pospuesta (propietario, 2026-09-25) | Heredada de las fases 4 y 5: tres veces una migración dependió de que alguien se acordara de aplicarla. Necesita una decisión sobre credenciales. |
+| **F6-10** el despliegue comprueba el esquema de producción | ✅ (2026-09-26) | Opción B: sonda `deploy_status.migration_applied` y paso de `ci.yml` que falla cerrado antes de construir. |
 
 ## Fase 5 — cerrada (2026-09-24)
 

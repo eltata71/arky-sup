@@ -38,11 +38,11 @@ Las decisiones que desbloquearon esta tarea son del propietario, del
 |---|---|---|---|---|
 | **R-09** | **La IA se descarga al abrir ocho pantallas** (≈600 KB gz cada una) aunque nadie pulse el botón de captura asistida o del asistente | Medido y con techo por ruta (ADR-109), así que sólo puede bajar | Cargar la capa de IA con `import()` en el primer uso de la captura asistida y del asistente | Si la carga de esas pantallas se nota en los dispositivos reales (iPad), o al retomar rendimiento |
 | **R-10** | **H04 parcial: barriles que publican infraestructura.** `settings`, `architectureKnowledgeGraph`, `learning`, `architectureOffice` y `review` exportan implementaciones concretas de Supabase o instancias de repositorio | Sólo un caso cruza de contexto: `services/architectureProjects` (`projectReads`, `projectWrites`) construye el repositorio del grafo con `createSupabaseKnowledgeGraphRepository`. El resto sólo lo usa su propio módulo. El gate de fronteras vigila los imports profundos | Dejar en el barril el contrato y la fábrica, no la implementación. Lo que la necesite, que entre por una puerta declarada, como `commands` en iniciativas | Al tocar cada uno de esos módulos |
-| **R-11** | **El despliegue no comprueba el esquema de producción (F6-10, pospuesta).** Una migración sin aplicar rompió producción una vez (F4-06) | Se aplica a mano con aprobación y con `runbook-migraciones.md` | Dar al CI una forma de leer las versiones aplicadas | Si una migración vuelve a llegar tarde, o antes de tener más de una persona desplegando |
 | **R-12** | **`_generateArtifactContentInternal`, unas 900 líneas dentro del motor** | Una sola función con el camino C4, documentos y Mermaid; sin `any` y con techo de tamaño | Descomposición ordinaria por tipo de salida; ya no es migración (ADR-108) | Al añadir el próximo tipo de artefacto |
 
 ## 4. Cerrado en esta tarea
 
 | # | Qué | Cómo |
 |---|---|---|
+| **R-11 / F6-10** | El despliegue no comprobaba el esquema de producción | Migración `20260926140000_deploy_migration_probe` y el paso *Production has every migration of this commit* de `ci.yml`, que falla cerrado. **Opción B del propietario, 2026-09-26** |
 | **E-02 / H06** | Nadie ejecuta un charter sin aprobar: ahora lo sabe el servidor | Migración `20260926090000_charter_approval_guard`. Ejecutar exige un charter aprobado, la aprobación es inmutable y la firma la sesión que la escribe. Contrato `charter_approval_guard.test.sql` con un caso negativo por regla. **Decisión del propietario, 2026-09-26** |

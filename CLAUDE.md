@@ -827,6 +827,20 @@ pgrst.db_schemas`, pero **cambiar «Exposed schemas» desde el panel reescribe l
 configuración del contenedor** y puede volver a dejarlo fuera. Si un día todas
 las RPC devuelven 404, ese es el primer sitio donde mirar.
 
+**El despliegue no publica un commit cuyo esquema producción no tiene** (F6-10,
+opción B del propietario). Tras `vercel pull` y antes de construir,
+`scripts/deploy/assertProductionMigrations.mjs` pregunta a producción, con la
+clave publicable, si cada migración del repositorio está aplicada, y falla
+cerrado si falta una o si no puede preguntar. La pregunta la responde
+`deploy_status.migration_applied(version)`: un esquema propio, expuesto por la
+misma vía que `api`, que contiene **sólo** esa función y responde sí o no.
+`api` y `public` siguen cerrados a anónimos, y
+`deploy_migration_probe.test.sql` afirma las dos cosas junto con que ninguna
+función ni tabla de `api` se vuelve alcanzable. No aplica nada: las
+migraciones siguen aplicándose a mano, con aprobación, según
+`docs/operacion/runbook-migraciones.md`. Por eso `deploy_status` tiene que
+seguir en «Exposed schemas» si alguien toca esa lista desde el panel.
+
 Verificación local completa —esquema reconstruido desde cero, contratos pgTAP,
 lint de SQL, advisors y comprobación de tipos generados— con
 `bash scripts/supabase/local.sh verify`. Necesita Docker; es lo mismo que corre
