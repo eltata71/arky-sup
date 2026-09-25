@@ -19,7 +19,7 @@ como antecedente, no como estado.
 | `10-cierre-fase-4.md` | Cierre de la fase 4: la frontera Proyecto–Artefacto ejecutada, una sola ruta de escritura y la coordinación fuera de React. |
 | `11-cierre-fase-5.md` | Cierre de la fase 5: el componente de dominio a cero, el motor dentro de `services/ai` y la bitácora de proyecciones. |
 | `adr/` | Decisiones arquitectónicas de esta transformación: ADR-100…109. |
-| `../operacion/` | Runbooks: migraciones a `ArkyDB-US`, una ruta que no carga, un grafo que no se actualiza. |
+| `../operacion/` | Runbooks: migraciones a `ArkyDB-US`, una ruta que no carga, un grafo que no se actualiza y las pruebas E2E. |
 | `evidencias/` | Salidas de comandos, censos y capturas de medición. |
 
 ## Antecedentes (histórico, no estado)

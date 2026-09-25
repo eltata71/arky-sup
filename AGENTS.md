@@ -313,11 +313,12 @@ Reglas que no se negocian al trabajar aquí:
     panel a propósito: un interruptor del dashboard no se revisa en una PR. No
     despliegues desde una estación de trabajo ni vuelvas a encender el
     disparador automático. Detalle en `docs/ci-cd-pipeline.md`.
-    **Operación** (F6-06): `docs/operacion/` tiene tres runbooks —aplicar una
-    migración a `ArkyDB-US` (`runbook-migraciones.md`, obligatorio antes de
-    cualquier `supabase db push`), una ruta que no carga
-    (`runbook-ruta-no-carga.md`) y un grafo que no se actualiza
-    (`runbook-proyecciones.md`)—. Las decisiones de las fases 5 y 6 están en
+    **Operación** (F6-06): `docs/operacion/` tiene cuatro runbooks —aplicar
+    una migración a `ArkyDB-US` (`runbook-migraciones.md`, obligatorio antes
+    de cualquier `supabase db push`), una ruta que no carga
+    (`runbook-ruta-no-carga.md`), un grafo que no se actualiza
+    (`runbook-proyecciones.md`) y cómo corren y se leen las pruebas E2E
+    (`runbook-e2e.md`)—. Las decisiones de las fases 5 y 6 están en
     `docs/ddd-transformacion/adr/ADR-107…109`.
     **Toda RPC y toda tabla de `api` tiene dueño en
     `docs/ddd-transformacion/06-propiedad-datos.md`**, y
