@@ -365,6 +365,20 @@ This has now cost a build six times, each measured by `check:bundle-budget`:
 | The Office's project chat through the `services/architectureOffice` barrel, loaded with `import()` from `OfficeContext` | eager 309,6 → 310,7 KB gz: a dynamic import of a barrel still pins every export of the modules the entry already shares with it (`agentDefinition` joined the entry) |
 | `analyzeDiagramQuality` through the `services/diagram` barrel, from `services/quality/diagramQualityBridge` (F6-02) | eager 310,1 → **776,9** KB gz: `quality` is on the boot path through publication and export, and the diagram barrel carries Mermaid. The largest of the seven, from one import line |
 
+**And a lazy route pays for a barrel too — F6-05 measured it.** The eager
+budget sees only boot, so nothing saw that the Dashboard, the page everyone
+lands on after signing in, downloaded **617,6 KB gz** more when it opened: its
+hook entered `services/architectureOffice` through the barrel, which republishes
+the Office's orchestration, with side effects tree-shaking cannot drop, and
+through it the agent executor, ELK and the Gemini SDK in one 517 KB gz chunk.
+`/agents` (610,6) and `/settings` (569,3) paid the same for screens that never
+call a model. Small declared doors —`services/architectureOffice/portfolio.ts`,
+`…/agents.ts`, `services/ai/generation/providerModelDirectory.ts`— took them to
+48,9, 42,1 and 20,5. **`ROUTE_BUDGETS_GZIP_KB`** in `check:bundle-budget` now
+holds every route to a ceiling, and `e2e/chunks.spec.ts` imports every built
+chunk in a browser, so a chunk that downloads and then throws while
+evaluating —the F6-04 outage— fails a PR instead of production.
+
 **The rule: a barrel from lazy code, a file path from boot-path code**, with a
 comment saying which case it is. **F6-02 applied it the other way round** —
 sixteen deep imports moved to their module's door, taking the census from 44

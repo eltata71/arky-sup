@@ -40,6 +40,8 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'ArtifactGenerationSupport', rule: 'el motor vive en services/ai y recibe por puerto lo que no puede buscar (F5-01 corte 14)' },
   { anchor: 'SERVICES_ROOT_BUDGET', rule: 'la raíz de services/ no tiene ficheros sueltos' },
   { anchor: 'noOrphanModules', rule: 'un fichero que nadie importa no se queda (F6-01)' },
+  { anchor: 'ROUTE_BUDGETS_GZIP_KB', rule: 'cada ruta diferida tiene techo de descarga (F6-05)' },
+  { anchor: 'noBarrelSelfImport', rule: 'un fichero no importa el barril que lo reexporta (F6-04)' },
   { anchor: 'projection_outbox', rule: 'el trabajo derivado durable vive en la base, en la transacción que lo causa (F5-04)' },
   { anchor: 'DiagramSignalSource', rule: 'ningún módulo de dominio es mutuamente alcanzable (F5-03)' },
   { anchor: 'routeCopilotTurn', rule: 'ninguna pantalla supera el fan-out: la regla va a su contexto dueño (F5-02)' },

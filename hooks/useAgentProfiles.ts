@@ -24,7 +24,7 @@ import {
   type OfficeAgentProfileCreation,
   type OfficeAgentProfileInput,
   type OfficeAgentProfileOverride,
-} from '../services/architectureOffice';
+} from '../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 
 export interface AgentProfilesApi {
   /** Las trece fichas, con lo configurado ya aplicado. */

@@ -95,9 +95,9 @@
     { "name": "api", "path": "api", "layer": "domain" },
 
     { "name": "services/agent", "path": "services/agent", "layer": "domain", "api": ["services/agent/index.ts", "services/agent/AgentActionRepository.ts"] },
-    { "name": "services/ai", "path": "services/ai", "layer": "domain", "api": "services/ai/index.ts" },
+    { "name": "services/ai", "path": "services/ai", "layer": "domain", "api": ["services/ai/index.ts", "services/ai/generation/providerModelDirectory.ts"] },
     { "name": "services/architectureKnowledgeGraph", "path": "services/architectureKnowledgeGraph", "layer": "domain", "api": "services/architectureKnowledgeGraph/index.ts" },
-    { "name": "services/architectureOffice", "path": "services/architectureOffice", "layer": "domain", "api": "services/architectureOffice/index.ts" },
+    { "name": "services/architectureOffice", "path": "services/architectureOffice", "layer": "domain", "api": ["services/architectureOffice/index.ts", "services/architectureOffice/portfolio.ts", "services/architectureOffice/agents.ts"] },
     { "name": "services/architectureProjects", "path": "services/architectureProjects", "layer": "domain", "api": ["services/architectureProjects/index.ts", "services/architectureProjects/graphProjection.ts"] },
     { "name": "services/artifactCompiler", "path": "services/artifactCompiler", "layer": "domain", "api": "services/artifactCompiler/index.ts" },
     { "name": "services/artifacts", "path": "services/artifacts", "layer": "domain", "api": ["services/artifacts/index.ts", "services/artifacts/ArtifactRepository.ts", "services/artifacts/application/artifactWorkflow.ts", "services/artifacts/application/artifactAssessment.ts", "services/artifacts/application/artifactImprovement.ts", "services/artifacts/application/generationFailure.ts", "services/artifacts/artifactGenerationRun.ts"] },

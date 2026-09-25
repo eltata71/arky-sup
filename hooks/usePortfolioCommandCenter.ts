@@ -19,7 +19,10 @@
 import { useEffect, useMemo } from 'react';
 import type { Project } from '../services/architectureProjects';
 import { type BusinessInitiative, rollupInitiatives } from '../services/businessInitiatives';
-import { type OfficeEngagement, buildOfficePortfolio, buildPortfolioCommandCenter, windowedDelta, type OfficeActivityPoint, type OfficePortfolio, type PortfolioCommandCenter, type WindowedDelta } from '../services/architectureOffice';
+import type { OfficeEngagement } from '../services/architectureOffice';
+// The portfolio door, not the barrel: this is the landing page, and the barrel
+// pulls the AI layer and ELK into it (F6-05).
+import { buildOfficePortfolio, buildPortfolioCommandCenter, windowedDelta, type OfficeActivityPoint, type OfficePortfolio, type PortfolioCommandCenter, type WindowedDelta } from '../services/architectureOffice/portfolio';
 import { resolvePortfolioGraph, type PortfolioGraph } from '../services/portfolioGraph';
 
 /**

@@ -28,7 +28,6 @@ const KNOWN_UNIMPORTED = new Set([
   // Barriles publicados: puertas de su módulo o carpeta.
   'components/architectureOffice/index.ts',
   'hooks/artifacts/index.ts',
-  'lib/ai/index.ts',
   'services/ai/providers/anthropic/index.ts',
   'services/ai/providers/gemini/index.ts',
 ]);

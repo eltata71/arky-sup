@@ -8,16 +8,18 @@
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   BUDGETS,
+  ROUTE_BUDGETS_GZIP_KB,
   allChunks,
   eagerAssets,
   forbiddenEagerAssets,
   measure,
+  routeDownloads,
 } from '../../scripts/checkBundleBudget.mjs';
 
 let dist: string;
@@ -114,5 +116,34 @@ describe('lazy-route boundaries', () => {
 
     expect(forbiddenEagerAssets(measure(dist).eager).map(({ name }: { name: string }) => name))
       .toEqual(['vendor-reactflow-abc.js']);
+  });
+});
+
+describe('what each route downloads beyond the eager payload (F6-05)', () => {
+  it('counts the route chunk and what it statically imports, minus what boot already loaded', () => {
+    write('assets/DashboardPage-abc.js', 'import{a}from"./shared-abc.js";import{b}from"./vendor-react-abc.js";' + incompressible(4));
+    write('assets/shared-abc.js', 'import"./heavy-abc.js";' + incompressible(8));
+    write('assets/heavy-abc.js', incompressible(30));
+    const kb = routeDownloads(dist, ['DashboardPage']).DashboardPage as number;
+    const expected = ['DashboardPage-abc.js', 'shared-abc.js', 'heavy-abc.js']
+      .map((name) => gzipSync(readFileSync(join(dist, 'assets', name)), { level: 9 }).length / 1024)
+      .reduce((sum, value) => sum + value, 0);
+    expect(kb).toBeCloseTo(expected, 5);
+  });
+
+  it('does not follow dynamic imports: a lazy dependency is not the route\'s cost', () => {
+    write('assets/AgentsPage-abc.js', 'const m=()=>import("./ai-abc.js");' + incompressible(2));
+    write('assets/ai-abc.js', incompressible(40));
+    expect(routeDownloads(dist, ['AgentsPage']).AgentsPage as number).toBeLessThan(10);
+  });
+
+  it('reports a route with no chunk as missing, never as zero', () => {
+    expect(routeDownloads(dist, ['RenamedPage']).RenamedPage).toBeNull();
+  });
+
+  it('holds the landing page and the model-free screens to tight budgets', () => {
+    expect(ROUTE_BUDGETS_GZIP_KB.DashboardPage).toBeLessThanOrEqual(60);
+    expect(ROUTE_BUDGETS_GZIP_KB.AgentsPage).toBeLessThanOrEqual(50);
+    expect(ROUTE_BUDGETS_GZIP_KB.SettingsPage).toBeLessThanOrEqual(30);
   });
 });

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { Settings, AIConfig } from '../types';
 import { DocumentTextIcon, PaintBrushIcon, LanguageIcon, SunIcon, MoonIcon, PlusCircleIcon, TrashIcon, CpuChipIcon, ArrowLeftIcon } from '../components/Icons';
-import { DEFAULT_TEXT_MODEL, listCurrentGeminiModels, listModelsForProvider } from '../services/ai';
-import type { AIModelOption, GeminiModelOption } from '../services/ai';
+import { DEFAULT_TEXT_MODEL, listCurrentGeminiModels, type GeminiModelOption } from '../lib/ai';
+import { listModelsForProvider, type AIModelOption } from '../services/ai/generation/providerModelDirectory';
 import { Button, Card, Input, Badge, CardEyebrow } from '../components/ui';
 import { AccountPanel } from '../components/account/AccountPanel';
 

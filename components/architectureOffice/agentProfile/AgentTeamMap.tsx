@@ -40,7 +40,7 @@ import { cn } from '../../ui';
 import {
   DEFAULT_MAX_SPECIALISTS,
   type OfficeAgentProfile,
-} from '../../../services/architectureOffice';
+} from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import { AgentProfileAvatar } from './AgentProfileAvatar';
 
 export interface AgentTeamMapProps {

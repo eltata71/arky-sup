@@ -80,6 +80,43 @@ export const BUDGETS = {
   largestChunkRawKb: 2500,
 };
 
+/**
+ * What each route downloads **on top of** the eager payload, gzipped (F6-05).
+ *
+ * The eager budget measured the one thing every visitor pays and was blind to
+ * the rest. Measured on 2026-09-25: the dashboard — the page everyone lands on
+ * after signing in — downloaded **617.6 KB gz** more, because its hook entered
+ * `services/architectureOffice` through the barrel. The barrel republishes the
+ * Office's orchestration, which reaches the agent executor, ELK and the Gemini
+ * SDK; those carry top-level side effects, so tree-shaking cannot drop them,
+ * and Rollup put them in one 517 KB gz chunk. `/agents` (610.6) and
+ * `/settings` (569.3) paid the same for screens that never call a model.
+ *
+ * Small doors (`services/architectureOffice/portfolio.ts`, `…/agents.ts`,
+ * `services/ai/generation/providerModelDirectory.ts`) took them to 48.9, 42.1
+ * and 20.5. The routes that still pay ~600 are the ones whose screens do call
+ * a model (assisted capture, the assistant); loading that on first use is the
+ * next step, and their ceilings record today's figure so they can only fall.
+ *
+ * A route is measured as the static-import closure of the chunks named after
+ * its page, minus everything the eager set already loaded.
+ */
+export const ROUTE_BUDGETS_GZIP_KB = {
+  AuthPage: 10,
+  DashboardPage: 60,
+  SettingsPage: 30,
+  AgentsPage: 50,
+  UserManagementPage: 15,
+  ProjectsPage: 740,
+  InitiativesPage: 660,
+  InitiativeRoom: 670,
+  OfficePage: 650,
+  EngagementRoom: 650,
+  TrainingCenterPage: 630,
+  SDDProcessView: 665,
+  Workspace: 1105,
+};
+
 /** Route-only runtimes that must never be preloaded by the application shell. */
 export const FORBIDDEN_EAGER_ASSET_PREFIXES = ['vendor-reactflow-'];
 
@@ -123,6 +160,47 @@ export function measure(distDir) {
   };
 }
 
+const STATIC_IMPORT = /(?:import|export)\s*(?:[^'"]*?from\s*)?["']\.\/([\w.-]+\.js)["']/g;
+
+/**
+ * Extra gzip KB each route downloads beyond the eager set. Exported for tests.
+ * A route with no chunk in the build is reported as `null`, never as zero: a
+ * renamed page must fail loudly rather than pass with a budget it never met.
+ */
+export function routeDownloads(distDir, routes = Object.keys(ROUTE_BUDGETS_GZIP_KB)) {
+  const assets = join(distDir, 'assets');
+  const names = readdirSync(assets).filter((name) => name.endsWith('.js'));
+  const deps = new Map(names.map((name) => {
+    const source = readFileSync(join(assets, name), 'utf8');
+    return [name, [...new Set([...source.matchAll(STATIC_IMPORT)].map((m) => m[1]))]];
+  }));
+  const closure = (start, seen) => {
+    const stack = [start];
+    while (stack.length > 0) {
+      const name = stack.pop();
+      if (seen.has(name) || !deps.has(name)) continue;
+      seen.add(name);
+      stack.push(...deps.get(name));
+    }
+    return seen;
+  };
+  const eager = new Set();
+  for (const path of eagerAssets(distDir)) if (path.endsWith('.js')) closure(basename(path), eager);
+  const sizes = new Map();
+  const size = (name) => {
+    if (!sizes.has(name)) sizes.set(name, gzipKb(join(assets, name)));
+    return sizes.get(name);
+  };
+  return Object.fromEntries(routes.map((route) => {
+    const own = names.filter((name) => name.startsWith(`${route}-`));
+    if (own.length === 0) return [route, null];
+    const reached = new Set();
+    for (const name of own) closure(name, reached);
+    const extra = [...reached].filter((name) => !eager.has(name));
+    return [route, extra.reduce((sum, name) => sum + size(name), 0)];
+  }));
+}
+
 /** Assets whose presence in `index.html` would break a lazy-route boundary. */
 export function forbiddenEagerAssets(eager) {
   return eager.filter(({ name }) =>
@@ -159,6 +237,14 @@ function main() {
   if (largestChunk.rawKb > BUDGETS.largestChunkRawKb) {
     failures.push(`chunk ${largestChunk.name} ${fmt(largestChunk.rawKb)} raw exceeds ${fmt(BUDGETS.largestChunkRawKb)}`);
   }
+  const routes = routeDownloads(distDir);
+  console.log('\nPer route — downloaded on top of the eager payload:');
+  for (const [route, kb] of Object.entries(routes)) {
+    const budget = ROUTE_BUDGETS_GZIP_KB[route];
+    console.log(`  ${(kb === null ? 'missing' : fmt(kb)).padStart(10)} gz  of ${fmt(budget).padStart(10)}  ${route}`);
+    if (kb === null) failures.push(`route ${route} has no chunk in the build — renamed? update ROUTE_BUDGETS_GZIP_KB`);
+    else if (kb > budget) failures.push(`route ${route} downloads ${fmt(kb)} gz beyond the eager payload, over ${fmt(budget)}`);
+  }
   const forbiddenEager = forbiddenEagerAssets(eager);
   if (forbiddenEager.length > 0) {
     failures.push(`route-only asset(s) loaded eagerly: ${forbiddenEager.map(({ name }) => name).join(', ')}`);
@@ -170,7 +256,8 @@ function main() {
     console.error(
       '\nBefore raising a budget, check whether the growth belongs on the critical\n'
       + 'path at all: a route-level `lazyWithRetry` import keeps a feature out of the\n'
-      + 'eager set entirely. Raising a number is a review decision, not a build fix.',
+      + 'eager set entirely, and a small door keeps a route off a module\'s barrel.\n'
+      + 'Raising a number is a review decision, not a build fix.',
     );
     process.exit(1);
   }
