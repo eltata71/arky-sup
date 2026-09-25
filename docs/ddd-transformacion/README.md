@@ -18,6 +18,7 @@ como antecedente, no como estado.
 | `09-cierre-fase-3.md` | Cierre de la fase 3: criterios contrastados, cifras y el patrón del contexto piloto. |
 | `10-cierre-fase-4.md` | Cierre de la fase 4: la frontera Proyecto–Artefacto ejecutada, una sola ruta de escritura y la coordinación fuera de React. |
 | `11-cierre-fase-5.md` | Cierre de la fase 5: el componente de dominio a cero, el motor dentro de `services/ai` y la bitácora de proyecciones. |
+| `12-comparacion-linea-base.md` | La línea base medida otra vez con los mismos comandos, al final de la fase 6: qué mejoró, qué empeoró y qué no se puede comparar. |
 | `adr/` | Decisiones arquitectónicas de esta transformación: ADR-100…109. |
 | `../operacion/` | Runbooks: migraciones a `ArkyDB-US`, una ruta que no carga, un grafo que no se actualiza y las pruebas E2E. |
 | `evidencias/` | Salidas de comandos, censos y capturas de medición. |
