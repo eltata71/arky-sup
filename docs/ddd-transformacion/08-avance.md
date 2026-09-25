@@ -8,7 +8,23 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-05**: rendimiento, descarga, concurrencia y
+- **Tarea en curso:** **F6-06**, documentación y runbooks:
+  - **Tres ADR** que faltaban para las decisiones de las fases 5 y 6:
+    ADR-107 (la bitácora de proyecciones), ADR-108 (el motor, estrangulado
+    por verticales y alimentado por puertos) y ADR-109 (puertas pequeñas y
+    presupuesto por ruta).
+  - **Cuatro runbooks** en `docs/operacion/`: aplicar una migración a
+    `ArkyDB-US`, una ruta que no carga, un grafo que no se actualiza y las
+    pruebas E2E.
+  - **La matriz de propiedad y el catálogo de invariantes**, revisados contra
+    el esquema vigente. Eran la foto de la línea base. La matriz no conocía
+    10 RPC ni la tabla de la bitácora, y ahora una prueba lo impide
+    (`dataOwnershipMatrix.test.ts`). El catálogo pasa de 17 a **35 ✅ sobre
+    43**. Quedan abiertos E-02 (el servidor no conoce la aprobación del
+    charter) y T-06 (el historial de chat).
+  - **La tabla de estado de CLAUDE.md**, con una sola fecha, y dos rutas
+    citadas que ya no existían.
+- **Antes:** **F6-05**: rendimiento, descarga, concurrencia y
   recuperación, medidos. Cada ruta tiene ahora su presupuesto de descarga
   (`ROUTE_BUDGETS_GZIP_KB`). Tras iniciar sesión, el Dashboard descargaba
   617,6 KB gz de IA y ELK por entrar por el barril de la Oficina; ahora
@@ -332,7 +348,7 @@
 | **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
 | **F6-04** pruebas integrales de los flujos críticos | ✅ (2026-09-25) | `e2e/critical-flows.spec.ts` (#80): iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. `e2e/artifact-and-graph.spec.ts`: generar un artefacto y recuperar la proyección del grafo. |
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ✅ (2026-09-25) | Presupuesto por ruta; Dashboard 617,6 → 48,9 KB gz; cada chunk se evalúa en E2E; inventario de concurrencia con un contrato nuevo. Abierto: `save_chat_history` sin revisión. |
-| **F6-06** documentación, ADR, instrucciones y runbooks | ⏳ | |
+| **F6-06** documentación, ADR, instrucciones y runbooks | ✅ (2026-09-25) | ADR-107…109; cuatro runbooks; matriz de propiedad e invariantes al día, con prueba; tabla de estado de CLAUDE.md con una sola fecha. |
 | **F6-07** comparación final contra la línea base | ⏳ | |
 | **F6-08** deuda residual con responsable | ⏳ bloqueada | Por D-2. |
 | **F6-09** informe técnico y gerencial | ⏳ | |
