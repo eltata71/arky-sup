@@ -2410,6 +2410,13 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
   refused every user without a personal key, while `aiGateway`'s `/api/ai` would
   have answered. F6-01 retired the endpoint; every feature reaches a model
   through `aiGateway` or a façade.
+- Do not import your own module's barrel from a file that barrel re-exports.
+  `services/review/artifactReviewService.ts` imported its repository factory
+  from `./index` while `./index` re-exported the service; the production bundle
+  hoists `import.meta.env` to a module-level constant, the service's singleton
+  read it before it existed, and **the Workspace route failed to load in
+  production** (F6-04) while every unit test passed. Import the file that
+  defines what you need; `noBarrelSelfImport.test.ts` holds the line.
 - Do not leave a source file nothing imports. `noOrphanModules.test.ts`
   (F6-01) fails on one; its exceptions — published barrels, Vitest set-up
   files, generated types — are named, and the list may not collect leftovers.

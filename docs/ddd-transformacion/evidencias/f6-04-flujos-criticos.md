@@ -91,12 +91,95 @@ una tercera cuenta, `preferences@arky.e2e`, con rol **`viewer`**. Como
 funcionan con el rol mínimo. La aserción usa el idioma porque el valor por
 defecto es español: ver inglés tras recargar sólo puede venir de la base.
 
-## Lo que queda fuera, y por qué
+## Segundo corte — lo que el primero dejó fuera
 
-- **Generar un artefacto** necesita un proveedor de IA. Su lógica está cubierta
-  por pruebas unitarias con el transporte doblado, y por el fallback
-  determinista cuando el proveedor falla.
-- **La recuperación de la proyección del grafo** (F5-05) necesita artefactos, y
-  los artefactos necesitan generarse. El servidor está cubierto por
-  `projection_outbox.test.sql` contra una base real y el cliente por pruebas
-  unitarias.
+El primer corte dejó dos flujos sin cubrir, y dio razones que resultaron más
+débiles de lo que parecían: los dos se pueden recorrer sin un proveedor real.
+`e2e/artifact-and-graph.spec.ts` los cubre, con el apoyo de
+`e2e/support/backend.ts`.
+
+### Generar un artefacto
+
+El navegador sólo llega a un modelo por `/api/ai` (el build de E2E lo fija en
+modo estricto), así que interceptar esa ruta con `page.route` **sustituye al
+proveedor y a nada más**. Siguen siendo los reales el hub y su preflight, el
+motor, el transporte, las guardas de entrada, la escritura por
+`create_artifact` y la relectura. El proveedor simulado responde un documento
+con una marca, un JSON vacío a las peticiones que piden JSON (la crítica y el
+refinamiento degradan con él, como prometen hacerlo sin modelo) y SSE cuando se
+pide streaming.
+
+El recorrido crea la iniciativa y el proyecto, abre el catálogo, pulsa «Crear
+Artefacto» en *Visión de la Arquitectura* y **afirma sobre la base**: consulta
+`load_project_aggregate` hasta encontrar el artefacto con la marca del
+proveedor. También afirma que la generación pasó por `/api/ai`, y que tras
+recargar el artefacto sigue en «Mis artefactos».
+
+**Encontró un defecto real en la carga de rutas.** En su primera vuelta de CI
+el Workspace cayó en «Error en la aplicación» con `Cannot read properties of
+undefined (reading 'default')`. La causa está en la carga de rutas, no en la
+prueba. Una precarga de chunk se abortó (estado −1), y el servicio de
+observabilidad hace `preventDefault()` sobre `vite:preloadError` a propósito,
+para que `lazyWithRetry` reintente. Pero con el evento prevenido Vite **no
+rechaza** el `import()`: lo resuelve a `undefined`. El reintento nunca vio un
+fallo y React recibió un módulo sin `default`. Es justo el desenlace que
+`lazyWithRetry` existe para evitar, y el mismo que una rotación de chunks tras
+un despliegue produce en iPad. **Arreglo:** `importWithRetry` trata una
+resolución sin módulo como un fallo de chunk, así que reintenta y, agotados
+los reintentos, recarga una vez. Lo fijan dos pruebas nuevas en
+`lazyWithRetry.test.ts`.
+
+**Y detrás de ése, un defecto que tenía producción caída.** Con el reintento
+arreglado, el Workspace seguía sin cargar, ahora con un error claro: el chunk
+fallaba igual en cada intento, también tras recargar. No era la red. Todos
+los recursos respondían 200. Importando el chunk directamente en el build de
+producción apareció la causa real: `ReferenceError: Cannot access 'Tk' before
+initialization`.
+
+- **Causa.** Un ciclo dentro de `services/review`. `artifactReviewService.ts`
+  importaba `createDefaultReviewRepository` desde `./index`, y `./index`
+  reexportaba el servicio. El bundle de producción eleva `import.meta.env` a
+  una constante de módulo. El singleton `new ArtifactReviewService()`, que se
+  construye mientras el barril aún se evalúa, leía esa constante antes de que
+  existiera.
+- **Por qué no se vio antes.** Vitest evalúa cada fichero por separado, así
+  que ninguna prueba unitaria podía verlo. Hasta este recorrido, ninguna prueba
+  E2E abría el Workspace.
+- **Alcance.** Se comprobó contra `https://arky-sup.vercel.app` y el chunk
+  publicado falla igual (`Cannot access 'Pk' before initialization`): **nadie
+  podía abrir un proyecto en producción**. El ciclo es antiguo. Lo volvió
+  mortal un cambio en la forma del bundle, probablemente la reorganización de
+  imports de F6-02.
+- **Arreglo.** La fábrica pasa a `services/review/defaultReviewRepository.ts`
+  y ya no hay ciclo. `noBarrelSelfImport.test.ts` impide la forma: ningún
+  fichero importa el barril que lo reexporta. Queda una excepción con nombre y
+  razón.
+- **Diagnóstico.** Vite pone el error en `payload`, no en `detail`, y
+  observabilidad sólo registraba «vite:preloadError». Ahora registra el error
+  real, y una prueba lo fija.
+- **Comprobación.** Con el arreglo, los 150 chunks del build de producción se
+  importan en un navegador sin un solo error de evaluación.
+
+### La bitácora de proyecciones (F5-04/F5-05)
+
+Éste es el caso que el `setTimeout` de antes perdía: un artefacto cambia
+mientras nadie tiene la aplicación abierta. El recorrido lo reproduce así:
+
+1. Cierra la aplicación (`about:blank`). Desde ahí ningún temporizador corre.
+2. Siembra el grafo si todavía no existía, porque la bitácora sólo mantiene
+   proyectos que ya tienen uno.
+3. Hace de «otro dispositivo»: con el token del usuario y la clave publicable,
+   crea un artefacto y lo corrige por RPC.
+4. **Afirma que el pendiente existe** en `list_pending_projections`. Nadie lo
+   escribió desde un navegador: lo escribió la transacción del artefacto.
+5. Vuelve a abrir la aplicación y espera a que el pendiente desaparezca. El
+   grafo guardado tiene entonces una revisión mayor y un `buildId` distinto.
+
+El paso 4 obligó a una **cuarta cuenta**, `projections@arky.e2e`
+(`architect`). Con las pruebas en paralelo, cualquier otra pestaña de la misma
+cuenta procesaría el pendiente al arrancar, y afirmar que existe sería una
+carrera.
+
+Las llamadas RPC usan la clave publicable y la sesión del usuario, con los
+mismos permisos que la aplicación: nada de `service_role`. Fuera del workflow
+de E2E faltan `SUPABASE_URL` y la clave, y el spec se salta en lugar de fallar.

@@ -26,7 +26,7 @@ import type {
     ArtifactReviewDecision,
     ArtifactReviewStatus,
 } from './ReviewTypes';
-import { createDefaultReviewRepository } from './index';
+import { createDefaultReviewRepository } from './defaultReviewRepository';
 import type {
     AddCommentInput,
     RecordDecisionInput,

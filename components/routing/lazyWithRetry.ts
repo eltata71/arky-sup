@@ -129,7 +129,16 @@ export async function importWithRetry<T>(
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      return await factory();
+      const loaded: unknown = await factory();
+      if (loaded && typeof loaded === 'object' && 'default' in loaded) return loaded as { default: T };
+      // Vite resolves the import to `undefined` instead of rejecting when a
+      // `vite:preloadError` listener calls `preventDefault()` — and the
+      // observability service does, so that this loop can retry. Without this
+      // check the swallowed failure reached React as a module with no
+      // `default` and the route crashed with «Cannot read properties of
+      // undefined (reading 'default')», the one outcome the retry exists to
+      // prevent (F6-04, found by the artifact-generation journey).
+      throw new Error(`Failed to fetch dynamically imported module "${chunkName}": the import resolved without a module.`);
     } catch (error) {
       lastError = error;
       // A genuine module-evaluation error is a real bug — never retry it.

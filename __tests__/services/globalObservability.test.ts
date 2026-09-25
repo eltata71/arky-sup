@@ -129,4 +129,17 @@ describe('global observability service', () => {
     expect(dispatchResult).toBe(false);
     expect(preloadError.defaultPrevented).toBe(true);
   });
+
+  it('records the error Vite carries in `payload`, not just the event name', () => {
+    observabilityService.installGlobalErrorHandlers();
+    // Vite dispatches a plain Event with the failure on `payload`. In F6-04 that
+    // failure was a module-evaluation ReferenceError, and it was lost.
+    const preloadError = Object.assign(new Event('vite:preloadError', { cancelable: true }), {
+      payload: new ReferenceError("Cannot access 'Tk' before initialization"),
+    });
+    window.dispatchEvent(preloadError);
+
+    const recorded = observabilityService.getSnapshot().map((entry) => entry.message).join('\n');
+    expect(recorded).toContain("Cannot access 'Tk' before initialization");
+  });
 });

@@ -548,8 +548,11 @@ export const observabilityService = {
       // transient WebKit cancellations; reloading here races every retry and
       // leaves navigation at the bootstrap spinner.
       event.preventDefault();
-      const custom = event as CustomEvent<unknown>;
-      this.reportError(custom.detail ?? 'vite:preloadError', {
+      // Vite puts the failure in `payload`, not `detail`. Reading only
+      // `detail` recorded «vite:preloadError» and lost the error — which, in
+      // F6-04, was a module-evaluation ReferenceError and not a network one.
+      const custom = event as CustomEvent<unknown> & { payload?: unknown };
+      this.reportError(custom.detail ?? custom.payload ?? 'vite:preloadError', {
         source: 'runtime',
         title: 'Precarga de módulo interrumpida; reintentando',
         severity: 'warning',
