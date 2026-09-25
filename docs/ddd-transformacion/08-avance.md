@@ -1,6 +1,6 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-24
+**Última actualización:** 2026-09-25
 **Estado integrado:** Fase 2 completa, **fases 3 y 4 cerradas** (`09-cierre-fase-3.md`, `10-cierre-fase-4.md`) y **fase 5 en curso**, todo en `main` y publicado por CI en el destino canónico `arky-sup`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
@@ -8,7 +8,15 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-04**: tres recorridos E2E que escriben, recargan y
+- **Tarea en curso:** **F6-04, segundo corte**: `e2e/artifact-and-graph.spec.ts`
+  cubre lo que el primero dejó fuera. El primero es generar un artefacto desde
+  el catálogo, con el proveedor sustituido detrás de `/api/ai` y el resultado
+  releído de la base. El segundo es la bitácora de proyecciones: un artefacto
+  que cambia con la aplicación cerrada deja un pendiente sin intervención del
+  navegador, y el siguiente arranque reconstruye el grafo. Hay una cuarta
+  cuenta sembrada, `projections@arky.e2e`, para que ninguna otra pestaña
+  procese el pendiente antes del aserto.
+- **Antes:** **F6-04, primer corte** (#80): tres recorridos E2E que escriben, recargan y
   releen contra Supabase (iniciativa; proyecto desde la iniciativa; preferencias
   encadenadas, la regresión de F6-03), sin llamar a ningún modelo. Una tercera
   cuenta sembrada, `viewer`, para el de preferencias. **Encontró un defecto
@@ -311,7 +319,7 @@
 | **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ✅ (2026-09-25) | Tres cortes: ficheros sin consumidor y su guardia (#77); el proxy heredado `api/gemini.ts` y el fallo de la creación guiada en producción (#78); la superficie pública del motor que sólo leían las pruebas. |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
 | **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
-| **F6-04** pruebas integrales de los flujos críticos | ⏳ en curso | `e2e/critical-flows.spec.ts`: iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. |
+| **F6-04** pruebas integrales de los flujos críticos | ⏳ en curso | `e2e/critical-flows.spec.ts` (#80): iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. `e2e/artifact-and-graph.spec.ts`: generar un artefacto y recuperar la proyección del grafo. |
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ⏳ | |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ⏳ | |
 | **F6-07** comparación final contra la línea base | ⏳ | |

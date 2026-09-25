@@ -29,7 +29,8 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 const PASSWORD = process.env.E2E_PASSWORD ?? 'Arky-E2E-Only-2026!';
 
 /**
- * Las dos identidades del recorrido, en el orden en que el gobierno las usa.
+ * Las identidades de los recorridos; las dos primeras, en el orden en que el
+ * gobierno las usa.
  *
  * El rol de cada una es el mínimo que su mitad necesita y se declara aquí, no
  * se hereda: la revisora es `reviewer` —el rol cuyo propósito entero es
@@ -58,6 +59,17 @@ const ACCOUNTS = [
     email: process.env.E2E_PREFERENCES_EMAIL ?? 'preferences@arky.e2e',
     displayName: 'Preferencias E2E',
     role: 'viewer',
+    ownsFixtures: false,
+  },
+  // F6-04: la cuarta, sólo para el recorrido de la bitácora de proyecciones.
+  // Ese recorrido comprueba que un pendiente **existe** antes de que un
+  // arranque lo procese, y cualquier otra pestaña de la misma cuenta lo
+  // procesaría al abrirse: con las pruebas en paralelo, compartir cuenta haría
+  // del aserto una carrera. `architect`: escribe artefactos y grafos, nada más.
+  {
+    email: process.env.E2E_PROJECTIONS_EMAIL ?? 'projections@arky.e2e',
+    displayName: 'Proyecciones E2E',
+    role: 'architect',
     ownsFixtures: false,
   },
 ];

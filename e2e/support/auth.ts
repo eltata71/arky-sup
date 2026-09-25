@@ -34,7 +34,22 @@ export const E2E_PREFERENCES = {
   displayName: 'Preferencias E2E',
 } as const;
 
-type E2EAccount = typeof E2E_ARCHITECT | typeof E2E_REVIEWER | typeof E2E_PREFERENCES;
+/**
+ * Sólo para el recorrido de la bitácora de proyecciones (F6-04): comprueba que
+ * un pendiente existe antes de que un arranque lo procese, y otra pestaña de la
+ * misma cuenta lo procesaría al abrirse.
+ */
+export const E2E_PROJECTIONS = {
+  email: 'projections@arky.e2e',
+  password: E2E_PASSWORD,
+  displayName: 'Proyecciones E2E',
+} as const;
+
+type E2EAccount =
+  | typeof E2E_ARCHITECT
+  | typeof E2E_REVIEWER
+  | typeof E2E_PREFERENCES
+  | typeof E2E_PROJECTIONS;
 
 /**
  * Lo que la pantalla y el navegador dijeron mientras se intentaba entrar.
