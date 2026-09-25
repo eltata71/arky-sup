@@ -8,7 +8,20 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-06**, documentación y runbooks:
+- **Tarea en curso:** **F6-07**, la comparación final contra la línea base
+  (`12-comparacion-linea-base.md`). Se repitieron los mismos comandos sobre
+  `87172fd`, ya en Node 24, que era el pendiente de la línea base:
+  - `any` 23 → 7; 4 312 → 4 739 pruebas.
+  - Módulos de dominio mutuamente alcanzables 9 → **0**; pares profundos
+    59 → 29; pantallas sobre el fan-out 10 → 0.
+  - Carga inicial 323,9 → 310,1 KB gz.
+  - pgTAP 11 sin ejecutar → **18 ejecutados**, con 501 aserciones.
+  - Invariantes con autoridad 17 → 35.
+  - Diez de los doce hallazgos cerrados. Siguen **parciales H04** (los
+    barriles aún exportan implementaciones de Supabase) y **H06** (el
+    servidor no conoce la aprobación del charter).
+  - Empeoró el chunk compartido más grande, el que junta IA y ELK.
+- **Antes:** **F6-06**, documentación y runbooks:
   - **Tres ADR** que faltaban para las decisiones de las fases 5 y 6:
     ADR-107 (la bitácora de proyecciones), ADR-108 (el motor, estrangulado
     por verticales y alimentado por puertos) y ADR-109 (puertas pequeñas y
@@ -349,7 +362,7 @@
 | **F6-04** pruebas integrales de los flujos críticos | ✅ (2026-09-25) | `e2e/critical-flows.spec.ts` (#80): iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. `e2e/artifact-and-graph.spec.ts`: generar un artefacto y recuperar la proyección del grafo. |
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ✅ (2026-09-25) | Presupuesto por ruta; Dashboard 617,6 → 48,9 KB gz; cada chunk se evalúa en E2E; inventario de concurrencia con un contrato nuevo. Abierto: `save_chat_history` sin revisión. |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ✅ (2026-09-25) | ADR-107…109; cuatro runbooks; matriz de propiedad e invariantes al día, con prueba; tabla de estado de CLAUDE.md con una sola fecha. |
-| **F6-07** comparación final contra la línea base | ⏳ | |
+| **F6-07** comparación final contra la línea base | ✅ (2026-09-25) | `12-comparacion-linea-base.md`: 10 de 12 hallazgos cerrados; H04 y H06 parciales; el chunk compartido más grande, peor. |
 | **F6-08** deuda residual con responsable | ⏳ bloqueada | Por D-2. |
 | **F6-09** informe técnico y gerencial | ⏳ | |
 | **F6-10** el despliegue comprueba el esquema de producción | ⏸ pospuesta (propietario, 2026-09-25) | Heredada de las fases 4 y 5: tres veces una migración dependió de que alguien se acordara de aplicarla. Necesita una decisión sobre credenciales. |
