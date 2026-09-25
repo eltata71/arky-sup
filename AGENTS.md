@@ -359,6 +359,10 @@ Reglas que no se negocian al trabajar aquí:
     busca a cualquier nivel y ya no admite excepciones: `settings` y
     `learning` llevan la revisión en `Settings.revision` y `Course.revision`
     desde F6-03.
+22e. **Un identificador único en toda la base lo asigna el servidor** (F6-04).
+    El cliente calculaba el código `NEG-AAAA-NNN` con *sus* iniciativas; como
+    la unicidad es global, un segundo usuario nunca podía crear una. Lo
+    encontró un E2E, porque cada mitad era correcta por separado.
 22d. **Ninguna funcionalidad tiene su propia ruta a un modelo** (F6-01). La
     creación guiada llamaba al proxy heredado `api/gemini.ts`; con
     `VITE_GEMINI_PROXY_URL` vacía en producción, se negaba a atender a quien

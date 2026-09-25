@@ -8,7 +8,18 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-01 cerrada con el tercer corte**: el motor sólo
+- **Tarea en curso:** **F6-04**: tres recorridos E2E que escriben, recargan y
+  releen contra Supabase (iniciativa; proyecto desde la iniciativa; preferencias
+  encadenadas, la regresión de F6-03), sin llamar a ningún modelo. Una tercera
+  cuenta sembrada, `viewer`, para el de preferencias. **Encontró un defecto
+  real**: el código `NEG-AAAA-NNN` se calculaba en el cliente con las
+  iniciativas propias, pero es único en toda la base — un segundo usuario no
+  podía crear ninguna iniciativa. Lo asigna ahora el servidor
+  (`20260925090000_initiative_code_allocation`, **aplicada a `ArkyDB-US`** el
+  2026-09-25 con aprobación, antes de fusionar). También corrigió la sala de
+  un entregable, que decía «no encontrado» mientras cargaba. Evidencia en
+  `evidencias/f6-04-flujos-criticos.md`.
+- **Antes:** **F6-01 cerrada con el tercer corte**: el motor sólo
   publica `generateArtifactContent`, usa el transporte compartido y deja de
   importar `@google/genai`. Evidencia en `evidencias/f6-01-superficie-motor.md`.
   Siguiente: **F6-04**.
@@ -300,7 +311,7 @@
 | **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ✅ (2026-09-25) | Tres cortes: ficheros sin consumidor y su guardia (#77); el proxy heredado `api/gemini.ts` y el fallo de la creación guiada en producción (#78); la superficie pública del motor que sólo leían las pruebas. |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
 | **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
-| **F6-04** pruebas integrales de los flujos críticos | ⏳ | |
+| **F6-04** pruebas integrales de los flujos críticos | ⏳ en curso | `e2e/critical-flows.spec.ts`: iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. |
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ⏳ | |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ⏳ | |
 | **F6-07** comparación final contra la línea base | ⏳ | |
