@@ -129,6 +129,37 @@ resolución sin módulo como un fallo de chunk, así que reintenta y, agotados
 los reintentos, recarga una vez. Lo fijan dos pruebas nuevas en
 `lazyWithRetry.test.ts`.
 
+**Y detrás de ése, un defecto que tenía producción caída.** Con el reintento
+arreglado, el Workspace seguía sin cargar, ahora con un error claro: el chunk
+fallaba igual en cada intento, también tras recargar. No era la red. Todos
+los recursos respondían 200. Importando el chunk directamente en el build de
+producción apareció la causa real: `ReferenceError: Cannot access 'Tk' before
+initialization`.
+
+- **Causa.** Un ciclo dentro de `services/review`. `artifactReviewService.ts`
+  importaba `createDefaultReviewRepository` desde `./index`, y `./index`
+  reexportaba el servicio. El bundle de producción eleva `import.meta.env` a
+  una constante de módulo. El singleton `new ArtifactReviewService()`, que se
+  construye mientras el barril aún se evalúa, leía esa constante antes de que
+  existiera.
+- **Por qué no se vio antes.** Vitest evalúa cada fichero por separado, así
+  que ninguna prueba unitaria podía verlo. Hasta este recorrido, ninguna prueba
+  E2E abría el Workspace.
+- **Alcance.** Se comprobó contra `https://arky-sup.vercel.app` y el chunk
+  publicado falla igual (`Cannot access 'Pk' before initialization`): **nadie
+  podía abrir un proyecto en producción**. El ciclo es antiguo. Lo volvió
+  mortal un cambio en la forma del bundle, probablemente la reorganización de
+  imports de F6-02.
+- **Arreglo.** La fábrica pasa a `services/review/defaultReviewRepository.ts`
+  y ya no hay ciclo. `noBarrelSelfImport.test.ts` impide la forma: ningún
+  fichero importa el barril que lo reexporta. Queda una excepción con nombre y
+  razón.
+- **Diagnóstico.** Vite pone el error en `payload`, no en `detail`, y
+  observabilidad sólo registraba «vite:preloadError». Ahora registra el error
+  real, y una prueba lo fija.
+- **Comprobación.** Con el arreglo, los 150 chunks del build de producción se
+  importan en un navegador sin un solo error de evaluación.
+
 ### La bitácora de proyecciones (F5-04/F5-05)
 
 Éste es el caso que el `setTimeout` de antes perdía: un artefacto cambia
