@@ -22,10 +22,17 @@ vi.mock('../../../services/ai/providers/gemini/geminiClient', () => ({
   })),
 }));
 
-import { artifactGenerationEngine as geminiService } from '../../../services/ai/generation/artifacts/artifactGenerationEngine';
 import { AIServiceError } from '../../../services/ai/errors';
 import { generateDiagramIR } from '../../../services/ai/generation/diagram';
 import { legacyTransport } from '../../../services/ai/generation/legacyTransport';
+import { resolveProviderId } from '../../../services/ai/catalog';
+
+/**
+ * The transport's public surface. These cases used to reach it through the
+ * engine's delegates, which F6-01 removed because only tests read them; the
+ * behaviour they pin always lived in `legacyTransport`.
+ */
+const geminiService = legacyTransport;
 import type { Settings } from '../../../types';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../../services/architectureProjects';
@@ -169,9 +176,9 @@ describe('geminiService façade — OpenRouter dispatch', () => {
     expect(sentBody.model).toBe('openrouter/deepseek/deepseek-chat');
   });
 
-  it('isOpenRouterConfigured reflects the provider selection', () => {
-    expect(geminiService.isOpenRouterConfigured(openRouterSettings)).toBe(true);
-    expect(geminiService.isOpenRouterConfigured(settings)).toBe(false);
+  it('the provider selection resolves to OpenRouter when chosen', () => {
+    expect(resolveProviderId(openRouterSettings)).toBe('openrouter');
+    expect(resolveProviderId(settings)).not.toBe('openrouter');
   });
 
   it('streams through OpenRouter (not Gemini) when provider is openrouter', async () => {
