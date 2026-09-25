@@ -17,11 +17,3 @@ export function createGeminiAIClient({ apiKey }: GeminiAIProviderOptions): Googl
   return new GoogleGenAI({ apiKey });
 }
 
-export function getGeminiProxyUrl(): string | null {
-  const endpoint = (import.meta.env.VITE_GEMINI_PROXY_URL ?? '').toString().trim();
-  return endpoint.length > 0 ? endpoint : null;
-}
-
-export function isGeminiProxyConfigured(): boolean {
-  return getGeminiProxyUrl() !== null;
-}

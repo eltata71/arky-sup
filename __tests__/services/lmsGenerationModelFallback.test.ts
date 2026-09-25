@@ -29,8 +29,6 @@ vi.mock('../../services/ai/providers/gemini/geminiClient', () => ({
   createGeminiAIClient: vi.fn(() => ({
     models: { generateContent, generateContentStream },
   })),
-  getGeminiProxyUrl: () => null,
-  isGeminiProxyConfigured: () => false,
 }));
 
 // The LMS moved out of the monolith; `learningService` is its façade and

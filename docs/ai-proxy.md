@@ -15,10 +15,9 @@ sin estado que reenvía la petición al proveedor con la llave del servidor.
 | Archivo | Rol |
 |---|---|
 | `api/ai.ts` | Función serverless agnóstica de proveedor (Gemini u OpenRouter). |
-| `api/gemini.ts` | Proxy legacy sólo-Gemini (`VITE_GEMINI_PROXY_URL`). Se conserva para despliegues que ya lo apuntan. |
 | `api/_shared/proxyRuntime.ts` | Runtime común: lectura de body, identidad del cliente, rate limit en memoria, sobre de error JSON. Vercel no enruta archivos con prefijo `_`. |
 | `services/ai/aiProxyClient.ts` | Cliente del proxy. Resuelve el endpoint (`VITE_AI_PROXY_URL`, o `/api/ai` por defecto en un build de producción), clasifica el resultado y degrada a `null` ante cualquier fallo. |
-| `services/geminiService.ts` | `generateContentWithFallback` intenta el proxy primero (`tryAiProxy`) y cae al camino directo si devuelve `null`. |
+| `services/ai/generation/legacyTransport.ts` | Sus tres caminos (contenido, texto, streaming) intentan el proxy primero (`tryAiProxy`) y aplican la política estricta antes de un camino directo. Toda funcionalidad llega a un modelo por aquí, vía `aiGateway` o una fachada: desde F6-01 ninguna tiene ruta propia. |
 
 ---
 
@@ -29,7 +28,6 @@ sin estado que reenvía la petición al proveedor con la llave del servidor.
 | Variable | Descripción |
 |---|---|
 | `VITE_AI_PROXY_URL` | URL del proxy agnóstico. Ej.: `/api/ai`. **Opcional en producción**: un build de producción que no la define usa `/api/ai`, la función que este repo despliega junto al bundle (`DEFAULT_AI_PROXY_PATH`). Se rellena sólo si el proxy vive en otro dominio o en otra ruta. En `npm run dev` vacía significa «sin proxy»: no hay función serverless que servir y la llamada va directa. |
-| `VITE_GEMINI_PROXY_URL` | Legacy, sólo usado por la creación guiada. Ej.: `/api/gemini`. |
 
 ### Servidor (Vercel → Settings → Environment Variables)
 
@@ -41,7 +39,6 @@ bundle.
 | `GEMINI_API_KEY` | Llave de Google Gemini usada por el proxy. |
 | `OPENROUTER_API_KEY` | Llave de OpenRouter usada por el proxy. |
 | `AI_PROXY_MAX_REQUESTS_PER_WINDOW` | Peticiones por ventana de 60 s en `api/ai.ts` (default: 60). |
-| `GEMINI_PROXY_MAX_REQUESTS_PER_WINDOW` | Equivalente para `api/gemini.ts` (default: 60). |
 
 > El proxy **no** acepta `VITE_GEMINI_API_KEY` / `VITE_OPENROUTER_API_KEY`.
 > Vite inyecta toda variable `VITE_*` en el bundle, así que honrarlas aquí

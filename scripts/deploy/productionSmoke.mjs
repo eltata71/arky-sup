@@ -129,7 +129,7 @@ async function checkProxyContract(path) {
 
 await checkSpa();
 await checkProxyContract('/api/ai');
-await checkProxyContract('/api/gemini');
+// `/api/gemini` se retiró en F6-01: un solo proxy, el agnóstico.
 
 if (failures.length > 0) {
   console.error(`[deploy-smoke] ${failures.length} comprobación(es) fallida(s) sobre ${base}.`);

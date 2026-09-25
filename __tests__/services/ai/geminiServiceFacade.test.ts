@@ -20,8 +20,6 @@ vi.mock('../../../services/ai/providers/gemini/geminiClient', () => ({
   createGeminiAIClient: vi.fn(() => ({
     models: { generateContent, generateContentStream },
   })),
-  getGeminiProxyUrl: () => null,
-  isGeminiProxyConfigured: () => false,
 }));
 
 import { artifactGenerationEngine as geminiService } from '../../../services/ai/generation/artifacts/artifactGenerationEngine';

@@ -84,7 +84,7 @@ proyecto falla cerrada.
 | `vercel build --prod` | El build de producción compila con esas variables reales |
 | `checkBundleSecrets.mjs .vercel/output/static` | Ninguna clave de proveedor entró en el bundle. Es la **primera** vez en el pipeline que esto se comprueba sobre el build real: el job `quality` construye con placeholders, así que una clave mal puesta como `VITE_*` en el dashboard de Vercel solo aparece aquí |
 | `vercel deploy --prebuilt --prod` | Se publica exactamente el binario que se acaba de validar |
-| `scripts/deploy/productionSmoke.mjs` | La SPA sirve HTML y `/api/ai` + `/api/gemini` contestan `401 unauthenticated` en vez del HTML del SPA. Ese fallo de rewrite ya ocurrió una vez (F5) y costó una sesión entera de diagnóstico |
+| `scripts/deploy/productionSmoke.mjs` | La SPA sirve HTML y `/api/ai` contesta `401 unauthenticated` (`/api/gemini` se retiró en F6-01) en vez del HTML del SPA. Ese fallo de rewrite ya ocurrió una vez (F5) y costó una sesión entera de diagnóstico |
 
 ---
 

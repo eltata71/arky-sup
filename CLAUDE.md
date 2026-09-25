@@ -20,7 +20,7 @@ Last audited against the repository: **2026-09-19**, tras F9: Firebase retirado 
 
 The app is **frontend-first**: there is no custom domain backend. Persistence goes through Supabase (PostgreSQL with RLS + `SECURITY DEFINER` RPC, Auth, and private Storage), and AI inference goes through the provider layer in `services/ai/`.
 
-The single exception to "frontend-only" is `api/` — two **stateless** Vercel serverless functions that exist purely to keep provider API keys off the client. They hold no domain logic and the app degrades to a direct provider call when they are unset or fail. Do not add domain endpoints there.
+The single exception to "frontend-only" is `api/` — one **stateless** Vercel serverless function (`api/ai.ts`; the legacy Gemini-only `api/gemini.ts` was retired in F6-01) that exist purely to keep provider API keys off the client. They hold no domain logic and the app degrades to a direct provider call when they are unset or fail. Do not add domain endpoints there.
 
 ### El backend es Supabase, y Firebase ya no existe (F9)
 
@@ -196,7 +196,6 @@ arkypro-1.0/
 │
 ├── api/                    # Vercel serverless AI proxies (stateless, no domain logic)
 │   ├── ai.ts               # Provider-agnostic proxy (gemini | openrouter), SSE-capable
-│   ├── gemini.ts           # Legacy Gemini-only proxy (`VITE_GEMINI_PROXY_URL`)
 │   └── _shared/proxyRuntime.ts  # Body read, client id, rate limit, JSON error envelope
 │                                # (`_`-prefixed → Vercel never routes it)
 │
@@ -724,7 +723,6 @@ All client variables use the `VITE_` prefix and are read via `import.meta.env`. 
 | `VITE_GEMINI_API_KEY` | Gemini key (users may also supply their own in Settings → IA) |
 | `VITE_OPENROUTER_API_KEY` | Optional OpenRouter key |
 | `VITE_AI_PROXY_URL` | Provider-agnostic proxy endpoint, e.g. `/api/ai`. **Optional**: a production build with it unset uses the `/api/ai` this repo deploys beside the bundle (`DEFAULT_AI_PROXY_PATH`); set it only when the proxy lives elsewhere. Unset in `npm run dev` means no proxy |
-| `VITE_GEMINI_PROXY_URL` | Legacy Gemini-only proxy, e.g. `/api/gemini` |
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` | **Obligatorias.** El proyecto Supabase: identidad, datos y archivos. La clave publicable es pública por diseño; la `service_role` nunca lleva prefijo `VITE_` |
 | `VITE_LUCID_API_KEY` | Global Lucidchart token (users can paste their own) |
 | `VITE_DIAGRAM_PIPELINE` | `canonical` (default) or `ai` fallback |
@@ -732,7 +730,7 @@ All client variables use the `VITE_` prefix and are read via `import.meta.env`. 
 | `VITE_STRUCTURED_ARTIFACT_BRIEF_ENABLED`, `VITE_AI_BRIEF_EXTRACTION_ENABLED`, `VITE_TOP3_ARTIFACT_RECOMMENDATIONS_ENABLED` | On-demand artifact brief flags |
 | `VITE_ENABLE_DEV_LOGIN` | Dev-only admin bypass button — ignored in production builds |
 
-**Server-only** variables (no `VITE_` prefix → never bundled), set in Vercel → Settings → Environment Variables: `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `AI_PROXY_MAX_REQUESTS_PER_WINDOW`, `GEMINI_PROXY_MAX_REQUESTS_PER_WINDOW`.
+**Server-only** variables (no `VITE_` prefix → never bundled), set in Vercel → Settings → Environment Variables: `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `AI_PROXY_MAX_REQUESTS_PER_WINDOW`.
 
 User-supplied keys live in `localStorage`: `user_gemini_key`, `user_openrouter_key`.
 
@@ -2406,6 +2404,12 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
   `useResizablePanel` is the worked example of the keyboard path.
 - Do not let a status be carried by hue alone. `StatusDot` gives each of the four
   severities its own silhouette, and every chart labels its marks in words.
+- Do not give a feature its own route to a model. Guided creation had one — the
+  legacy `api/gemini.ts` behind `VITE_GEMINI_PROXY_URL` — and with that variable
+  empty in production it asserted `not-configured` against the strict policy and
+  refused every user without a personal key, while `aiGateway`'s `/api/ai` would
+  have answered. F6-01 retired the endpoint; every feature reaches a model
+  through `aiGateway` or a façade.
 - Do not leave a source file nothing imports. `noOrphanModules.test.ts`
   (F6-01) fails on one; its exceptions — published barrels, Vitest set-up
   files, generated types — are named, and the list may not collect leftovers.

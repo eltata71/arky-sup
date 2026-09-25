@@ -1,6 +1,6 @@
 /**
- * Shared runtime for the Vercel serverless AI proxies (`api/gemini.ts`,
- * `api/ai.ts`).
+ * Shared runtime for the Vercel serverless AI proxy (`api/ai.ts`; the legacy
+ * Gemini-only `api/gemini.ts` it also served was retired in F6-01).
  *
  * Files/directories prefixed with `_` inside `api/` are NOT turned into
  * routes by Vercel, so this module is safe to keep next to the handlers.
