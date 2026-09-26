@@ -179,7 +179,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
     onBack,
     onOpenSDD
 }) => {
-    const { updateProject, settings } = useAppContext();
+    const { runProjectCommand, settings } = useAppContext();
     const { initiatives } = useInitiatives();
     const { createEngagement, approveCharter, runEngagementNow } = useOffice();
     const { addToast } = useToast();
@@ -489,17 +489,14 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                         <AttentionDetailsPanel
                             project={project}
                             initiatives={initiatives}
-                            onPatch={(patch) => updateProject(project.id, patch)}
+                            onCommand={(command) => runProjectCommand(project.id, command)}
                         />
 
                         <OfficeCapabilitiesPanel
                             project={project}
                             initiatives={initiatives}
                             onChangeInitiativeLinks={({ initiativeIds, codes }) =>
-                                updateProject(project.id, {
-                                    initiativeIds,
-                                    linkedBusinessProjects: codes,
-                                })
+                                runProjectCommand(project.id, { kind: 'link-initiatives', initiativeIds, codes })
                             }
                         />
 

@@ -278,7 +278,7 @@ const CREATION_INTENT: Record<string, string> = {
 };
 
 const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
-  const { projects, deleteProject, updateProject, t, settings } = useAppContext();
+  const { projects, deleteProject, runProjectCommand, t, settings } = useAppContext();
   const { initiatives } = useInitiatives();
   const { engagements, loadEngagements, createEngagement, approveCharter, runEngagementNow } = useOffice();
   const { addToast } = useToast();
@@ -856,9 +856,8 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
         project={linkProject}
         initiatives={initiatives}
         onClose={() => setLinkProject(null)}
-        onSave={(projectId, links) => updateProject(projectId, {
-          initiativeIds: links.initiativeIds,
-          linkedBusinessProjects: links.codes,
+        onSave={(projectId, links) => runProjectCommand(projectId, {
+          kind: 'link-initiatives', initiativeIds: links.initiativeIds, codes: links.codes,
         })}
         onCreateInitiative={() => navigate('/initiatives')}
       />

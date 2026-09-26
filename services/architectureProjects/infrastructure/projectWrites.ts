@@ -27,6 +27,7 @@
  */
 
 import type { Project, ProjectRoot } from '../domain/ArchitectureProjectTypes';
+import type { ProjectRootChanges } from '../domain/projectCommands';
 import { chatHistoryRepository } from '../../chat';
 import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../../persistence';
 import { toProjectDocument, type PersistedProjectDocument } from '../domain/projectDocumentMapper';
@@ -134,10 +135,21 @@ export const createProject = async (project: ProjectRoot & { userId?: string }):
 };
 
 
-const saveKnowledgeGraph = async (
+/**
+ * Guarda el grafo de conocimiento de un proyecto, **sin tocar la raíz**
+ * (F6-03, corte 2b).
+ *
+ * El grafo es una proyección derivada con su tabla y su revisión. Antes se
+ * guardaba como efecto de `updateProject`: primero se reescribía la raíz del
+ * proyecto —subiendo su revisión aunque nada hubiera cambiado— y después el
+ * grafo. Cada reconstrucción podía así chocar con una edición real del
+ * proyecto hecha en otra pestaña. Devuelve la revisión confirmada del grafo, o
+ * `undefined` si no se confirmó (el fallo queda registrado, como siempre).
+ */
+export const saveProjectGraph = async (
     projectId: string,
     graph: NonNullable<Project['architectureKnowledgeGraph']>,
-): Promise<void> => {
+): Promise<{ readonly revision: number } | undefined> => {
     try {
         const repository = await getGraphRepository();
         let result = await repository.save({ ...graph, projectId });
@@ -150,6 +162,7 @@ const saveKnowledgeGraph = async (
             const stored = await repository.load(projectId);
             result = await repository.save({ ...graph, projectId, revision: stored?.revision ?? 0 });
         }
+        if (result.success) return { revision: result.data?.revision ?? (graph.revision ?? 0) + 1 };
         if (!result.success) {
             observabilityService.recordWarning({
                 source: 'operation',
@@ -173,6 +186,7 @@ const saveKnowledgeGraph = async (
             metadata: { projectId },
         });
     }
+    return undefined;
 };
 
 
@@ -186,10 +200,10 @@ const saveKnowledgeGraph = async (
  */
 export const updateProject = async (
     projectId: string,
-    updates: Partial<Project>,
+    changes: ProjectRootChanges,
     options: { userId?: string; expectedRevision?: number } = {},
 ): Promise<PersistenceResult<ProjectWriteConfirmation>> => {
-    const updatedAt = typeof updates.updatedAt === 'string' ? updates.updatedAt : new Date().toISOString();
+    const updatedAt = typeof changes.updatedAt === 'string' ? changes.updatedAt : new Date().toISOString();
     const current = await getProject(projectId);
     if (!current) {
         return {
@@ -202,12 +216,12 @@ export const updateProject = async (
         };
     }
 
-    // `artifacts` se descarta a propósito: desde ADR-106 los artefactos se
-    // escriben con sus comandos, y la raíz no tiene forma de enviarlos.
-    const { architectureKnowledgeGraph, artifacts: _artifacts, revision: _revision, ...rest } = updates;
+    // Los cambios son de la raíz y nada más (`ProjectRootChanges`): ni los
+    // artefactos, que desde ADR-106 se escriben con sus comandos, ni el grafo,
+    // que tiene su propia ruta (`saveProjectGraph`).
     const next: Project & { userId?: string } = {
         ...current,
-        ...rest,
+        ...changes,
         id: projectId,
         updatedAt,
         userId: options.userId ?? (current as Project & { userId?: string }).userId,
@@ -215,11 +229,7 @@ export const updateProject = async (
     // Sin revisión conocida se envía 0, que la base sólo acepta para crear: una
     // escritura que no sabe contra qué fila va se rechaza, no pisa a nadie.
     const expectedRevision = options.expectedRevision ?? current.revision ?? 0;
-    const result = await persistProjectRoot(next, { operationName: 'updateProject', expectedRevision });
-    if (isWriteConfirmed(result) && architectureKnowledgeGraph !== undefined) {
-        await saveKnowledgeGraph(projectId, architectureKnowledgeGraph);
-    }
-    return result;
+    return persistProjectRoot(next, { operationName: 'updateProject', expectedRevision });
 };
 
 

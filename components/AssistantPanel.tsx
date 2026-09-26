@@ -38,7 +38,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
     settings,
     t,
     updateProjectContext,
-    updateProject,
+    runProjectCommand,
     updateSettings,
     saveChatHistory,
     loadChatHistory,
@@ -245,10 +245,10 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
   }, [agent, assistantTurns, project, activeArtifact, settings, updateArtifact, createArtifactVersion, getArtifact, setActiveArtifactId, updateProjectContext]);
 
   const memoryStore = useAgentMemoryStore({
-    settings, updateSettings, getProject, updateProject,
+    settings, updateSettings, getProject, runProjectCommand,
     updateProjectContext, getArtifact, updateArtifact,
   });
-  const lessonStore = useAgentLessonStore({ getProject, updateProject });
+  const lessonStore = useAgentLessonStore({ getProject, runProjectCommand });
 
   const handleSendMessage = async () => {
     const trimmed = userInput.trim();

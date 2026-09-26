@@ -112,7 +112,7 @@ const deriveInitialCaptureFallback = (project: Project): string[] => {
 };
 
 export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, onClose, project }) => {
-    const { settings, updateSettings, updateProject, updateArtifact } = useAppContext();
+    const { settings, updateSettings, runProjectCommand, updateArtifact } = useAppContext();
     const { profile } = useAuth();
     const { addToast } = useToast();
 
@@ -222,13 +222,13 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                     await updateSettings({ agentMemory: texts, agentMemoryEntries: nextRecords });
                     return true;
                 case 'project':
-                    updateProject(project.id, { projectContext: texts, projectContextEntries: nextRecords });
+                    runProjectCommand(project.id, { kind: 'replace-memory', area: 'projectContext', texts, entries: nextRecords });
                     return true;
                 case 'agent':
-                    updateProject(project.id, { agentMemory: texts, agentMemoryEntries: nextRecords });
+                    runProjectCommand(project.id, { kind: 'replace-memory', area: 'agentMemory', texts, entries: nextRecords });
                     return true;
                 case 'initial-capture':
-                    updateProject(project.id, { initialCapture: texts, initialCaptureEntries: nextRecords });
+                    runProjectCommand(project.id, { kind: 'replace-memory', area: 'initialCapture', texts, entries: nextRecords });
                     return true;
                 case 'artifact':
                     if (!currentArtifact) {
@@ -247,7 +247,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         } finally {
             setIsSaving(false);
         }
-    }, [activeScope, currentArtifact, project.id, addToast, updateArtifact, updateProject, updateSettings]);
+    }, [activeScope, currentArtifact, project.id, addToast, updateArtifact, runProjectCommand, updateSettings]);
 
     const author = useMemo(() => ({
         authorId: profile?.uid ?? null,

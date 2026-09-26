@@ -9,7 +9,7 @@
  * una.
  *
  * Es un hook y no un servicio porque lo que hace es cerrar sobre los
- * `updateProject`/`updateArtifact` del contexto de React: la *política* de
+ * `runProjectCommand`/`updateArtifact` del contexto de React: la *política* de
  * memoria —qué es una entrada, cómo se reconcilian textos y metadatos— vive en
  * `services/memory`; esto sólo la conecta con dónde se guarda.
  */
@@ -17,7 +17,7 @@
 import { useMemo } from 'react';
 import type { MemoryEntry, Settings } from '../types';
 import type { Artifact } from '../lib/artifacts';
-import type { Project } from '../services/architectureProjects';
+import type { Project, ProjectCommand } from '../services/architectureProjects';
 import type { AgentMemoryStore } from '../services/agent';
 import { reconcileMemoryEntries } from '../services/memory';
 
@@ -25,7 +25,8 @@ export interface AgentMemoryStorePorts {
   settings: Settings;
   updateSettings: (patch: Partial<Settings>) => void;
   getProject: (projectId: string) => Project | undefined;
-  updateProject: (projectId: string, patch: Partial<Project>) => void;
+  /** A named operation on the project (F6-03, corte 2b): memory is replaced, never patched. */
+  runProjectCommand: (projectId: string, command: ProjectCommand) => unknown;
   updateProjectContext: (projectId: string, next: string[]) => void;
   getArtifact: (projectId: string, artifactId: string) => Artifact | undefined;
   updateArtifact: (projectId: string, artifactId: string, patch: Partial<Artifact>) => void;
@@ -34,7 +35,7 @@ export interface AgentMemoryStorePorts {
 /** El almacén de memoria que consume la capa del agente. */
 export function useAgentMemoryStore(ports: AgentMemoryStorePorts): AgentMemoryStore {
   const {
-    settings, updateSettings, getProject, updateProject,
+    settings, updateSettings, getProject, runProjectCommand,
     updateProjectContext, getArtifact, updateArtifact,
   } = ports;
 
@@ -55,7 +56,7 @@ export function useAgentMemoryStore(ports: AgentMemoryStorePorts): AgentMemorySt
       return reconcileMemoryEntries(project?.projectContext, project?.projectContextEntries);
     },
     updateProjectContext: (projectId: string, next: string[], nextEntries?: MemoryEntry[]) => {
-      if (nextEntries) updateProject(projectId, { projectContext: next, projectContextEntries: nextEntries });
+      if (nextEntries) runProjectCommand(projectId, { kind: 'replace-memory', area: 'projectContext', texts: next, entries: nextEntries });
       else updateProjectContext(projectId, next);
     },
 
@@ -74,7 +75,7 @@ export function useAgentMemoryStore(ports: AgentMemoryStorePorts): AgentMemorySt
     },
   }), [
     settings.globalContext, settings.globalContextEntries, updateSettings,
-    getProject, updateProject, updateProjectContext, getArtifact, updateArtifact,
+    getProject, runProjectCommand, updateProjectContext, getArtifact, updateArtifact,
   ]);
 }
 
@@ -83,8 +84,8 @@ export function useAgentMemoryStore(ports: AgentMemoryStorePorts): AgentMemorySt
  * deterministas en la memoria del proyecto después de cada acción ejecutada.
  * También estaba duplicado.
  */
-export function useAgentLessonStore(ports: Pick<AgentMemoryStorePorts, 'getProject' | 'updateProject'>) {
-  const { getProject, updateProject } = ports;
+export function useAgentLessonStore(ports: Pick<AgentMemoryStorePorts, 'getProject' | 'runProjectCommand'>) {
+  const { getProject, runProjectCommand } = ports;
   return useMemo(() => ({
     getProjectAgentMemory: (projectId: string) => {
       const project = getProject(projectId);
@@ -94,7 +95,7 @@ export function useAgentLessonStore(ports: Pick<AgentMemoryStorePorts, 'getProje
       };
     },
     updateProjectAgentMemory: (projectId: string, texts: string[], entries: MemoryEntry[]) => {
-      updateProject(projectId, { agentMemory: texts, agentMemoryEntries: entries });
+      runProjectCommand(projectId, { kind: 'replace-memory', area: 'agentMemory', texts, entries });
     },
-  }), [getProject, updateProject]);
+  }), [getProject, runProjectCommand]);
 }

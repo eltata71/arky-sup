@@ -354,7 +354,12 @@ Reglas que no se negocian al trabajar aquí:
     ese acoplamiento. **F6-03 copia la forma contexto a contexto** (Proyectos
     desde el segundo corte), y `contextDomainPurity.test.ts` sigue el cierre de
     imports de valor de cada dominio: ningún camino puede llegar a E/S, React,
-    una pantalla o la propia `infrastructure/`. Su lista sólo crece. Los cambios son **operaciones con nombre** —una unión de
+    una pantalla o la propia `infrastructure/`. Su lista sólo crece.
+    **Proyectos cambia por comandos** (corte 2b): no hay `updateProject(parcial)`,
+    las pantallas emiten un `ProjectCommand` y `runProjectCommand` aplica
+    `applyProjectCommand`. Quitar la última iniciativa se rechaza, un comando
+    que no cambia nada no escribe, y el grafo va por `saveProjectGraph` sin tocar
+    la raíz. `namedOperations.test.ts` impide que vuelvan los parches. Los cambios son **operaciones con nombre** —una unión de
     comandos y `applyInitiativeCommand`, que devuelve el agregado nuevo o un
     rechazo tipado—, nunca `update(partial)`, y el proveedor de React sólo hace
     lo que es de un proveedor: estado optimista, la escritura y revertir.
