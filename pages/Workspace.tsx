@@ -20,7 +20,7 @@ import { validateArtifactReadiness, type ReadinessResult } from '../lib/artifact
 import { observabilityService } from '../services/observability';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { useArtifactPersona } from '../hooks/useArtifactPersona';
-import { runArtifactGeneration } from '../services/artifacts/artifactGenerationRun';
+import { runArtifactGeneration } from '../services/artifacts/application/artifactGenerationRun';
 import { describeGenerationFailure } from '../services/artifacts/application/generationFailure';
 
 interface WorkspaceProps {

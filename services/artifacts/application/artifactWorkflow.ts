@@ -32,9 +32,19 @@ import {
   createArtifact as createArtifactAggregate,
   createArtifactVersion as createArtifactVersionAggregate,
   reviseArtifact,
+  type ArtifactCompilePort,
   type NewArtifactDraft,
-} from '../artifactFactory';
-import type { ArtifactRepository, ArtifactRevisionChange } from '../ArtifactRepository';
+} from '../domain/artifactFactory';
+import type { ArtifactRepository, ArtifactRevisionChange } from '../infrastructure/ArtifactRepository';
+
+/**
+ * The factory is pure and compiles with the pure core by default; this is the
+ * persisting side, so it hands the factory the compiler that reports a degraded
+ * compilation to observability (F6-03, corte 4). Same behaviour as before the
+ * factory became domain.
+ */
+const reportingCompile: ArtifactCompilePort = (artifact, options) =>
+  recompileArtifactBeforePersist(artifact, options).artifact;
 
 // ─────────────────────────────────────────────────────────── intenciones
 
@@ -110,12 +120,12 @@ export const planArtifactIntent = (
       // tarea debe reencontrar el artefacto, no crear un segundo.
       const artifact = createArtifactAggregate(
         intent.draft,
-        intent.deterministicId ? { id: intent.deterministicId } : undefined,
+        intent.deterministicId ? { id: intent.deterministicId, compile: reportingCompile } : { compile: reportingCompile },
       );
       return { operation, change: (list) => [...list, artifact], write: { kind: 'create', artifact }, produced: artifact };
     }
     case 'create-version': {
-      const artifact = createArtifactVersionAggregate(intent.versionGroupId, intent.draft, [...artifacts]);
+      const artifact = createArtifactVersionAggregate(intent.versionGroupId, intent.draft, [...artifacts], { compile: reportingCompile });
       return { operation, change: (list) => [...list, artifact], write: { kind: 'create-version', artifact }, produced: artifact };
     }
     case 'update': {
@@ -160,7 +170,7 @@ export const planArtifactIntent = (
         // Una sugerencia de consistencia reemplaza el contenido, así que se
         // recompila: heredar la compilación anterior haría que el artefacto
         // dijera estar puntuado sobre un texto que ya no tiene.
-        const version = reviseArtifact(latest, latest.version, { content: change.newContent });
+        const version = reviseArtifact(latest, latest.version, { content: change.newContent }, { compile: reportingCompile });
         working.push(version);
         versions.push(version);
       }
@@ -176,7 +186,7 @@ export const planArtifactIntent = (
     case 'restore-version': {
       // Restaurar clona un artefacto cuyo contenido puede diferir del que se
       // puntuó; `reviseArtifact` recompila por eso.
-      const artifact = reviseArtifact(intent.version, latestVersionOf(artifacts, intent.version.versionGroupId));
+      const artifact = reviseArtifact(intent.version, latestVersionOf(artifacts, intent.version.versionGroupId), {}, { compile: reportingCompile });
       return { operation, change: (list) => [...list, artifact], write: { kind: 'create-version', artifact }, produced: artifact };
     }
     case 'remove-corrupt': {

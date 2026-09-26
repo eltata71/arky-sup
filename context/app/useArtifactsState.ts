@@ -20,7 +20,7 @@ import React, { useCallback } from 'react';
 import type { ConsistencySuggestion } from '../../types';
 import type { Artifact, GroupedArtifacts } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
-import { artifactRepository } from '../../services/artifacts/ArtifactRepository';
+import { artifactRepository } from '../../services/artifacts/infrastructure/ArtifactRepository';
 import { observabilityService } from '../../services/observability';
 // Ruta de fichero, no barril: este hook está en el camino de arranque
 // (`AppContext`), y el barril de `services/artifacts` alcanza el motor de IA.

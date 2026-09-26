@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Artifact } from '../lib/artifacts';
 import type { Project } from '../context/AppContext';
-import { type ArtifactGenerationContract, type ArtifactAudience, type ArtifactDetailLevel, type ArtifactFamilyPreference, type ArtifactPurpose, validateArtifactGenerationContract } from '../services/artifacts/artifactGenerationContract';
-import type { ArtifactRecommendationCandidate } from '../services/artifacts/artifactRecommendationService';
-import { updateArtifactBriefFromForm } from '../services/artifacts/artifactBriefService';
-import { selectArtifactGenerationContext } from '../services/artifacts/artifactContextSelectionService';
+import { type ArtifactGenerationContract, type ArtifactAudience, type ArtifactDetailLevel, type ArtifactFamilyPreference, type ArtifactPurpose, validateArtifactGenerationContract } from '../services/artifacts/domain/artifactGenerationContract';
+import type { ArtifactRecommendationCandidate } from '../services/artifacts/domain/artifactRecommendationService';
+import { updateArtifactBriefFromForm } from '../services/artifacts/domain/artifactBriefService';
+import { selectArtifactGenerationContext } from '../services/artifacts/domain/artifactContextSelectionService';
 import { ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, InformationCircleIcon, MagnifyingGlassIcon, SparklesIcon, XCircleIcon } from './Icons';
 import {
   CollapsibleSection,

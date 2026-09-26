@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Settings } from '../../types';
 import type { Project } from '../../services/architectureProjects';
-import { extractArtifactBriefWithAI, type BriefAiProposer } from '../../services/artifacts/artifactBriefExtractionService';
+import { extractArtifactBriefWithAI, type BriefAiProposer } from '../../services/artifacts/application/artifactBriefExtractionService';
 
 const project: Project = {
   id: 'p1',

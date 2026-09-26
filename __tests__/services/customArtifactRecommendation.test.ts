@@ -3,7 +3,7 @@ import {
     buildHybridMarkdownFromMermaid,
     buildOnDemandDocumentReinforcement,
 } from '../../services/ai/generation/artifacts/artifactPromptReinforcements';
-import { buildDeterministicArtifactFallback } from '../../services/artifacts/deterministicArtifactFallbacks';
+import { buildDeterministicArtifactFallback } from '../../services/artifacts/domain/deterministicArtifactFallbacks';
 import { aiGateway } from '../../services/ai/generation/aiGateway';
 import { emitGenerationPhase } from '../../lib/artifacts';
 import { recommendCustomArtifactTemplate } from '../../services/ai/generation/recommendation';

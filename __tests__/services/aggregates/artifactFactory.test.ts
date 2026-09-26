@@ -13,7 +13,7 @@ import {
   createArtifact,
   createArtifactVersion,
   reviseArtifact,
-} from '../../../services/artifacts/artifactFactory';
+} from '../../../services/artifacts/domain/artifactFactory';
 import type { Artifact } from '../../../lib/artifacts';
 
 const draft = {

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 import type { ArchitectureGraph } from '../../services/architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes';
-import { buildDeterministicArtifactBrief, updateArtifactBriefFromForm } from '../../services/artifacts/artifactBriefService';
+import { buildDeterministicArtifactBrief, updateArtifactBriefFromForm } from '../../services/artifacts/domain/artifactBriefService';
 import {
   buildArtifactRecommendationCandidates,
   totalRecommendationScore,
-} from '../../services/artifacts/artifactRecommendationService';
+} from '../../services/artifacts/domain/artifactRecommendationService';
 
 const NOW = '2026-05-18T00:00:00.000Z';
 

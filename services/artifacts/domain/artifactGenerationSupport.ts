@@ -10,7 +10,9 @@
  * Nothing here calls a model: the port exists so a pure function does not
  * have to live behind the door that does.
  */
-import type { ArtifactGenerationSupport } from '../ai';
+// The port's declaration file, not the AI barrel: even as a type, the barrel
+// drags the engine into type checking (F6-03, corte 4).
+import type { ArtifactGenerationSupport } from '../../ai/generation/artifacts/artifactGenerationSupport';
 import {
   selectArtifactGenerationContext,
   validateControlledContextForPrompt,

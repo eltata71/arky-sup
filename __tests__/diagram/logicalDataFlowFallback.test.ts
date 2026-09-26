@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDeterministicArtifactFallback } from '../../services/artifacts/deterministicArtifactFallbacks';
+import { buildDeterministicArtifactFallback } from '../../services/artifacts/domain/deterministicArtifactFallbacks';
 import { buildHeuristicCustomArtifactRecommendation } from '../../services/ai/generation/recommendation/customArtifactHeuristics';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
 import type { ArtifactTemplate } from '../../types';

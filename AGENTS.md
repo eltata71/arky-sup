@@ -364,7 +364,12 @@ Reglas que no se negocian al trabajar aquí:
     (runner y coordinación) e `infrastructure/`. Cinco reglas llegaban a la
     base por un solo import —`withAuditEntry` vivía en el repositorio—, y el
     puerto `AgentPersonaBriefing` bajó a su hoja para que el dominio entre en
-    `strict` sin arrastrar el motor. Los cambios son **operaciones con nombre** —una unión de
+    `strict` sin arrastrar el motor. **Y Artefactos** (corte 4): los cuatro
+    agregados tienen ya la forma. La fábrica recibe el compilador como puerto
+    (puro por defecto; `recompileCore.ts` describe la degradación en vez de
+    registrarla) y `artifactWorkflow` le pasa el que registra. La prueba de
+    pureza añade una regla de dirección: `domain/` no importa de su
+    `application/` ni de su `infrastructure/`, ni siquiera un tipo. Los cambios son **operaciones con nombre** —una unión de
     comandos y `applyInitiativeCommand`, que devuelve el agregado nuevo o un
     rechazo tipado—, nunca `update(partial)`, y el proveedor de React sólo hace
     lo que es de un proveedor: estado optimista, la escritura y revertir.

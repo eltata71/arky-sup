@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     buildArtifactDiagnosticReport,
     buildRenderDiagnosticsSummary,
-} from '../../services/artifacts/diagnostics';
+} from '../../services/artifacts/domain/diagnostics';
 import type { Artifact } from '../../lib/artifacts';
 import type { RenderableDiagramResolution } from '../../services/diagram/resolveRenderableDiagram';
 

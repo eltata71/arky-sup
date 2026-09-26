@@ -7,9 +7,9 @@
  *  - Phase 3 (AI/context) can extend the report with model+context metadata
  *    without touching UI code.
  */
-import type { Artifact } from '../../lib/artifacts';
-import type { RenderableDiagramResolution } from '../diagram/resolveRenderableDiagram';
-import { extractMermaid } from '../../utils/diagram/extractMermaid';
+import type { Artifact } from '../../../lib/artifacts';
+import type { RenderableDiagramResolution } from '../../diagram/resolveRenderableDiagram';
+import { extractMermaid } from '../../../utils/diagram/extractMermaid';
 
 export interface BuildDiagnosticReportInput {
   projectId: string;

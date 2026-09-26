@@ -1,14 +1,14 @@
-import type { Settings } from '../../types';
-import type { ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../../lib/artifacts';
-import type { Project } from '../architectureProjects';
-import { buildDeterministicArtifactBrief } from './artifactBriefService';
+import type { Settings } from '../../../types';
+import type { ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
+import { buildDeterministicArtifactBrief } from '../domain/artifactBriefService';
 import {
   mergeArtifactGenerationContracts,
   validateArtifactGenerationContract,
   type ArtifactGenerationContract,
   type ArtifactGenerationContractProposal,
-} from './artifactGenerationContract';
-import { getArtifactGenerationFeatureFlags } from './artifactGenerationFlags';
+} from '../domain/artifactGenerationContract';
+import { getArtifactGenerationFeatureFlags } from '../domain/artifactGenerationFlags';
 
 /** Input handed to a brief AI proposer (typically Gemini-backed). */
 export interface BriefAiProposerInput {
@@ -68,7 +68,7 @@ const DEFAULT_AI_TIMEOUT_MS = 40000;
  * silencio.
  */
 const defaultGeminiBriefProposer: BriefAiProposer = async (input) => {
-  const { artifactGenerationService } = await import('../ai');
+  const { artifactGenerationService } = await import('../../ai');
   return artifactGenerationService.proposeArtifactBriefContract(
     input.project,
     input.request,

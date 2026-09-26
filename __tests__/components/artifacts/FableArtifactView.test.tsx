@@ -6,7 +6,7 @@ import { FableArtifactView } from '../../../components/artifacts/fable/FableArti
 import {
   getArtifactViewCapabilities,
   resolveSafeArtifactView,
-} from '../../../services/artifacts/viewController';
+} from '../../../services/artifacts/application/viewController';
 import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramIR } from '../../../lib/diagram';
 

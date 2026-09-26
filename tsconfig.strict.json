@@ -46,6 +46,7 @@
     "services/chat/chatHistory.ts",
     "services/architectureProjects/domain/**/*.ts",
     "services/architectureOffice/domain/**/*.ts",
+    "services/artifacts/domain/**/*.ts",
     "services/artifacts/application/artifactWorkflow.ts",
     "services/ai/generation/legacyTransport.ts",
     "services/ai/generation/artifactSuggestions.ts",

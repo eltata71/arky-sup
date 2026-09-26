@@ -14,6 +14,7 @@ import {
   buildConsolidationRefinementPrompt,
   evaluateConsolidation,
   type ConsolidationReview,
+  type OfficeWorkstreamResult,
 } from '../domain/officeConsolidationReview';
 
 export interface OfficeWorkstream {
@@ -47,13 +48,7 @@ export interface RejectedHandoff {
   rejections: HandoffRejection[];
 }
 
-export interface OfficeWorkstreamResult {
-  workstreamId: string;
-  personaId: OfficeAgentId;
-  status: 'completed' | 'failed';
-  output: string;
-  error?: string;
-}
+export type { OfficeWorkstreamResult } from '../domain/officeConsolidationReview';
 
 export interface OfficeOrchestrationResult {
   operationId: string;

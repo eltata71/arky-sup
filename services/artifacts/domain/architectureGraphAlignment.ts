@@ -1,5 +1,5 @@
-import type { ArtifactTemplate } from '../../types';
-import type { Project } from '../architectureProjects';
+import type { ArtifactTemplate } from '../../../types';
+import type { Project } from '../../architectureProjects';
 import type { ArtifactGenerationContract } from './artifactGenerationContract';
 
 export interface ArchitectureGraphAlignmentInput {

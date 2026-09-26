@@ -1,4 +1,4 @@
-import type { Project } from '../architectureProjects';
+import type { Project } from '../../architectureProjects';
 
 import type {
   ArtifactAudience,
@@ -7,7 +7,7 @@ import type {
   ArtifactGenerationContract,
   ArtifactPurpose,
   ArtifactVisualPreferences,
-} from '../../types';
+} from '../../../types';
 
 // Las declaraciones viven en `types.ts` (F3-07): `ArtifactTemplate` ya las
 // transporta en `requestContext`, y `types.ts` no puede importar de un contexto

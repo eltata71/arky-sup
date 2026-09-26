@@ -71,8 +71,8 @@ export const BYTE_CEILINGS = {
   'pages/LMS/LessonModal.tsx': 43207,
   'services/export/adapters/pdfExporter.ts': 43514,
   'components/artifacts/export/ArtifactExportModal.tsx': 42543, // F4-05: la coordinación salió a `services/artifacts/application`
-  'components/CustomArtifactRequestModal.tsx': 42400, // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/CustomArtifactBriefWizard.tsx': 41919, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/CustomArtifactRequestModal.tsx': 42447, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
+  'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'pages/SDDProcessView.tsx': 41644, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   /**
    * +365 bytes while the line count fell 1005 → 1001. `executeAgentAction` now
@@ -83,8 +83,8 @@ export const BYTE_CEILINGS = {
    */
   'services/agent/agentExecutor.ts': 41241, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'components/AssistantPanel.tsx': 36443, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
-  'pages/Workspace.tsx': 36374, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
-  'services/artifacts/artifactRefinementOrchestrator.ts': 36722, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'pages/Workspace.tsx': 36386, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina · F6-03 corte 4: rutas de `domain/`/`application/`
+  'services/artifacts/application/artifactRefinementOrchestrator.ts': 36854, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35804,
   'services/diagram/mermaidToIR.ts': 34295,
@@ -126,7 +126,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
   'services/export/adapters/pptxExporter.ts': 21273,
-  'services/artifacts/artifactGenerationRun.ts': 21604, // F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona)
+  'services/artifacts/application/artifactGenerationRun.ts': 21661, // F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona) · F6-03 corte 4: rutas de `domain/`/`application/`
   'context/LMSContext.tsx': 21111,
   'services/observability/observabilityService.ts': 20937,
   /**
@@ -193,7 +193,7 @@ export const CEILINGS = {
   'components/AssistantPanel.tsx': 731, // F5-02
   'components/artifacts/fable/FableDiagramCanvas.tsx': 790,
   'pages/SDDProcessView.tsx': 785,
-  'services/artifacts/artifactRefinementOrchestrator.ts': 785,
+  'services/artifacts/application/artifactRefinementOrchestrator.ts': 785,
   'components/copilot/ProjectCopilotChatModal.tsx': 582, // F5-02
   'services/diagram/suggestionActionExecutors.ts': 760,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands

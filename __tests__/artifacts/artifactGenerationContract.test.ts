@@ -6,7 +6,7 @@ import {
   normalizeArtifactGenerationContract,
   validateArtifactGenerationContract,
   type ArtifactGenerationContract,
-} from '../../services/artifacts/artifactGenerationContract';
+} from '../../services/artifacts/domain/artifactGenerationContract';
 
 const makeArtifact = (over: Partial<Artifact>): Artifact => ({
   id: 'a1',

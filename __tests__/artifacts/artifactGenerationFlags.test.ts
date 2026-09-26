@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getArtifactGenerationFeatureFlags,
   __test__parseArtifactGenerationFlag as parseFlag,
-} from '../../services/artifacts/artifactGenerationFlags';
+} from '../../services/artifacts/domain/artifactGenerationFlags';
 
 describe('artifactGenerationFlags', () => {
   it('interpreta valores habilitados', () => {

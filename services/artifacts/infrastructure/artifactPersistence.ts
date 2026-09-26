@@ -30,9 +30,9 @@
  * así que escribir un artefacto lo deja obsoleto. La dirección es una sola.
  */
 
-import type { Artifact } from '../../lib/artifacts';
-import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../persistence';
-import { forgetProject, getProject } from '../architectureProjects';
+import type { Artifact } from '../../../lib/artifacts';
+import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../../persistence';
+import { forgetProject, getProject } from '../../architectureProjects';
 import { supabaseArtifactCommands, type ArtifactRevisionChange } from './SupabaseArtifactCommands';
 
 export type { ArtifactRevisionChange } from './SupabaseArtifactCommands';

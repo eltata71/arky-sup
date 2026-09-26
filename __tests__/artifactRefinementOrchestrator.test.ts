@@ -2,12 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ArtifactTemplate, Settings } from '../types';
 import type { ArtifactGenerationStage } from '../lib/artifacts';
 import type { Project } from '../services/architectureProjects';
-import { normalizeArtifactEnvelope } from '../services/artifacts/artifactGenerationPipeline';
+import { normalizeArtifactEnvelope } from '../services/artifacts/application/artifactGenerationPipeline';
 import {
   refineArtifactBeforePersistence,
   isRefinedCandidateSafe,
-} from '../services/artifacts/artifactRefinementOrchestrator';
-import { SKELETON_FALLBACK_MARKER } from '../services/artifacts/artifactFallbackDetection';
+} from '../services/artifacts/application/artifactRefinementOrchestrator';
+import { SKELETON_FALLBACK_MARKER } from '../services/artifacts/domain/artifactFallbackDetection';
 import { extractIRFromArtifact } from '../services/diagram';
 import { irToReactFlow } from '../services/diagram/irToReactFlow';
 import { buildArtifactQualityReport } from '../services/quality/artifactQualityService';

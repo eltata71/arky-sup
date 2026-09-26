@@ -17,8 +17,8 @@
  * having to ask who produced the content.
  */
 
-import type { ArtifactTemplate } from '../../types';
-import type { Project } from '../architectureProjects';
+import type { ArtifactTemplate } from '../../../types';
+import type { Project } from '../../architectureProjects';
 import {
     DETERMINISTIC_DOCUMENT_FALLBACK_MARKER,
     SKELETON_FALLBACK_MARKER,
@@ -32,7 +32,7 @@ import {
 // Third and fourth time this trade-off has come up, and the rule has not
 // changed: a barrel is the right door from lazy code; from code the entry chunk
 // reaches, you name the file. The bundle budget is what tells the two apart.
-import { extractDiagramSignals } from '../diagram/diagramSignalExtractor';
+import { extractDiagramSignals } from '../../diagram/diagramSignalExtractor';
 import { safeMermaidLabel } from './deterministicMermaidLabels';
 import {
     buildBusinessProcessHybridFallback,

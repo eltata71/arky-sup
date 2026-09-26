@@ -1,5 +1,5 @@
-import type { Artifact } from '../../lib/artifacts';
-import type { ArtifactPresentationModel, ArtifactPresentationQuality } from '../../lib/artifacts/artifactPresentationModel';
+import type { Artifact } from '../../../lib/artifacts';
+import type { ArtifactPresentationModel, ArtifactPresentationQuality } from '../../../lib/artifacts/artifactPresentationModel';
 import { detectArtifactFallbackContent } from './artifactFallbackDetection';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, Math.round(value)));

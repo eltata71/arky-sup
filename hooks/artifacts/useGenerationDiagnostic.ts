@@ -4,7 +4,7 @@ import type { RenderableDiagramResolution } from '../../services/diagram/resolve
 import {
   buildArtifactDiagnosticReport,
   buildRenderDiagnosticsSummary,
-} from '../../services/artifacts/diagnostics';
+} from '../../services/artifacts/domain/diagnostics';
 
 export interface UseGenerationDiagnosticInput {
   projectId: string;

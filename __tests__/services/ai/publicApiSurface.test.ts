@@ -84,7 +84,7 @@ describe('what the barrel promised is still there', () => {
 describe('the deterministic fallbacks kept working from their new home', () => {
   it('stamps the skeleton marker the canvas looks for', async () => {
     const { buildDeterministicDiagramSkeleton, isSkeletonFallbackContent } = await import(
-      '../../../services/artifacts/deterministicArtifactFallbacks'
+      '../../../services/artifacts/domain/deterministicArtifactFallbacks'
     );
     const content = buildDeterministicDiagramSkeleton(
       { id: 'p1', name: 'Siniestros', description: 'Core de siniestros', artifacts: [] } as never,

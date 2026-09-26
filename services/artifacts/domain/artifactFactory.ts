@@ -25,18 +25,35 @@
  * retroceso optimista.
  */
 
-import type { Artifact } from '../../lib/artifacts';
-import { newArtifactId } from '../../lib/ids';
-import { attachCompilerSummary, recompileArtifactBeforePersist } from '../artifactCompiler';
+import type { Artifact } from '../../../lib/artifacts';
+import { newArtifactId } from '../../../lib/ids';
+// The compiler's pure door, not its barrel: the barrel's recompile reports to
+// observability, and a factory is domain (F6-03, corte 4).
+import { recompileArtifact, type RecompileOptions } from '../../artifactCompiler/recompileCore';
 
 /** Lo que el llamador aporta: todo menos la identidad y el versionado. */
 export type NewArtifactDraft = Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>;
+
+/**
+ * Cómo compila la fábrica lo que construye. Puro por defecto
+ * (`recompileArtifact`, de `recompileCore`). Quien persiste pasa la versión que
+ * registra una compilación degradada —lo hace `artifactWorkflow`—, así la regla
+ * sigue siendo pura y el aviso no se pierde (F6-03, corte 4).
+ */
+export type ArtifactCompilePort = (artifact: Artifact, options: RecompileOptions) => Artifact;
+
+const pureCompile: ArtifactCompilePort = (artifact, options) => recompileArtifact(artifact, options).artifact;
+
+/** Lo que hacía `attachCompilerSummary`: un resumen al día, sin tocar el contenido. */
+const SUMMARY: RecompileOptions = { source: 'persistence', mode: 'safe', force: true };
 
 export interface ArtifactFactoryOptions {
   /** Costura para pruebas y para quien asigne su propio id. */
   readonly id?: string;
   /** Costura para pruebas. Por defecto, ahora. */
   readonly now?: () => string;
+  /** El compilador; puro si no se da. */
+  readonly compile?: ArtifactCompilePort;
 }
 
 /**
@@ -51,13 +68,13 @@ export function createArtifact(
 ): Artifact {
   const sharedId = options.id ?? newArtifactId();
   const now = options.now ?? (() => new Date().toISOString());
-  return attachCompilerSummary({
+  return (options.compile ?? pureCompile)({
     ...draft,
     id: sharedId,
     versionGroupId: sharedId,
     version: 1,
     createdAt: now(),
-  });
+  }, SUMMARY);
 }
 
 /**
@@ -77,13 +94,13 @@ export function createArtifactVersion(
   const now = options.now ?? (() => new Date().toISOString());
   const versions = siblings.filter((item) => item.versionGroupId === versionGroupId);
   const latest = versions.length > 0 ? Math.max(...versions.map((item) => item.version)) : 0;
-  return attachCompilerSummary({
+  return (options.compile ?? pureCompile)({
     ...draft,
     id: options.id ?? newArtifactId(),
     versionGroupId,
     version: latest + 1,
     createdAt: now(),
-  });
+  }, SUMMARY);
 }
 
 /**
@@ -112,11 +129,11 @@ export function reviseArtifact(
   // (ADR-106). Heredarla haría que la primera edición de la versión recién
   // creada comparara la revisión de otra fila.
   const { revision: _revision, ...origin } = source;
-  return recompileArtifactBeforePersist({
+  return (options.compile ?? pureCompile)({
     ...origin,
     ...overrides,
     id: options.id ?? newArtifactId(),
     version: latestVersion + 1,
     createdAt: now(),
-  }, { source: 'manual' }).artifact;
+  }, { source: 'manual' });
 }

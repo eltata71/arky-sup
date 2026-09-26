@@ -1,4 +1,4 @@
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact } from '../../../lib/artifacts';
 import {
   ARTIFACT_PRESENTATION_COMPILER_VERSION,
   type ArtifactPresentationCompileOptions,
@@ -7,7 +7,7 @@ import {
   type ArtifactPresentationTraceEvent,
   type PresentationAudience,
   type PresentationMode,
-} from '../../lib/artifacts/artifactPresentationModel';
+} from '../../../lib/artifacts/artifactPresentationModel';
 import { isPresentationCompilerEnabled } from './artifactPresentationFlags';
 import { compileMarkdownPresentation } from './markdownPresentationCompiler';
 import { compileDiagramPresentation } from './diagramPresentationCompiler';

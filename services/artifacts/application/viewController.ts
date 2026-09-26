@@ -12,20 +12,20 @@
  *   - share the same "safe view" semantics across ArtifactCanvas, command
  *     palette routing, and Phase 4 workspace shells.
  */
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact } from '../../../lib/artifacts';
 import type {
   ArtifactDiagramRenderStatus,
   ArtifactDocumentRenderStatus,
   ArtifactRenderState,
   ArtifactViewMode,
   ArtifactViewModel,
-} from '../../lib/artifacts/contracts';
+} from '../../../lib/artifacts/contracts';
 import {
   getArtifactViewCapabilities as pipelineGetCapabilities,
   resolveSafeArtifactView as pipelineResolveSafeView,
   type ArtifactViewCapabilities,
 } from './artifactGenerationPipeline';
-import { extractMermaid } from '../../utils/diagram/extractMermaid';
+import { extractMermaid } from '../../../utils/diagram/extractMermaid';
 
 export type { ArtifactViewCapabilities };
 

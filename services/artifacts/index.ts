@@ -13,30 +13,30 @@ export {
   deriveDocumentRenderStatus,
   getArtifactViewCapabilities,
   resolveSafeArtifactView,
-} from './viewController';
+} from './application/viewController';
 
 export type {
   BuildArtifactRenderStateInput,
   DeriveDiagramRenderStateInput,
   DeriveDocumentRenderStateInput,
   ArtifactViewCapabilities,
-} from './viewController';
+} from './application/viewController';
 
 export {
   buildArtifactDiagnosticReport,
   buildRenderDiagnosticsSummary,
-} from './diagnostics';
+} from './domain';
 
 export {
   performArtifactExport,
-} from './exportFacade';
+} from './application/exportFacade';
 
 export type {
   PerformExportInput,
   PerformExportOutput,
-} from './exportFacade';
+} from './application/exportFacade';
 
-export { artifactRepository, type ArtifactRepository } from './ArtifactRepository';
+export { artifactRepository, type ArtifactRepository } from './infrastructure/ArtifactRepository';
 
 /**
  * The deterministic fallbacks: what the product renders when generation fails.
@@ -49,13 +49,13 @@ export {
   buildDeterministicDiagramSkeleton,
   isSkeletonFallbackContent,
   markMermaidAsSkeletonFallback,
-} from './deterministicArtifactFallbacks';
+} from './domain';
 
 /**
  * What generation needs from this context, handed over on every call
  * (F5-01, corte 14): `services/ai` declares the port, and this is its supplier.
  */
-export { artifactGenerationSupport } from './artifactGenerationSupport';
+export { artifactGenerationSupport } from './domain';
 
 /**
  * La puerta del agregado Artefacto: identidad, versionado y compilación.
@@ -70,7 +70,7 @@ export {
   reviseArtifact,
   type ArtifactFactoryOptions,
   type NewArtifactDraft,
-} from './artifactFactory';
+} from './domain';
 
 /**
  * Compilación de presentaciones y sus flags (F3.3).
@@ -85,9 +85,9 @@ export {
   clearArtifactPresentationCache,
   compileArtifactPresentation,
   getArtifactPresentationStatus,
-} from './artifactPresentationCompiler';
+} from './domain';
 export {
   isPresentationCompilerEnabled,
   isPresentationExportEnabled,
   isPublicationViewEnabled,
-} from './artifactPresentationFlags';
+} from './domain';

@@ -24,7 +24,7 @@ import { artifactGenerationService, documentGenerationService } from '../../ai';
 import type { ArtifactSuggestionGapType } from '../../ai/artifactSuggestionService';
 import { irToMermaid } from '../../diagram';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
-import type { NewArtifactDraft } from '../artifactFactory';
+import type { NewArtifactDraft } from '../domain/artifactFactory';
 
 // ─────────────────────────────────────── auto-mejora determinista de un diagrama
 

@@ -6,7 +6,7 @@ import {
     deriveDocumentRenderStatus,
     getArtifactViewCapabilities,
     resolveSafeArtifactView,
-} from '../../services/artifacts/viewController';
+} from '../../services/artifacts/application/viewController';
 import type { Artifact } from '../../lib/artifacts';
 
 const baseDocumentArtifact: Artifact = {

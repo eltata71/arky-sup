@@ -12,11 +12,11 @@ vi.mock('../../../services/ai', async importOriginal => {
         artifactGenerationService: { ...actual.artifactGenerationService, generateArtifactContent },
     };
 });
-vi.mock('../../../services/artifacts/artifactRefinementOrchestrator', () => ({
+vi.mock('../../../services/artifacts/application/artifactRefinementOrchestrator', () => ({
     refineArtifactBeforePersistence,
 }));
 
-const { runArtifactGeneration } = await import('../../../services/artifacts/artifactGenerationRun');
+const { runArtifactGeneration } = await import('../../../services/artifacts/application/artifactGenerationRun');
 
 const project: Project = {
     id: 'p1',

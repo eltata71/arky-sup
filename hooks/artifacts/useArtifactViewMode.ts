@@ -5,7 +5,7 @@ import {
   getArtifactViewCapabilities,
   resolveSafeArtifactView,
   type ArtifactViewCapabilities,
-} from '../../services/artifacts/viewController';
+} from '../../services/artifacts/application/viewController';
 
 export interface UseArtifactViewModeOptions {
   /** Whether the host is in a narrow (mobile) viewport. */

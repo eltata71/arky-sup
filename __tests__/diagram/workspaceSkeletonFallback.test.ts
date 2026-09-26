@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDeterministicDiagramSkeleton } from '../../services/artifacts/deterministicArtifactFallbacks';
+import { buildDeterministicDiagramSkeleton } from '../../services/artifacts/domain/deterministicArtifactFallbacks';
 import { extractIRFromArtifact } from '../../services/diagram';
 import type { ArtifactTemplate } from '../../types';
 import type { Project } from '../../services/architectureProjects';

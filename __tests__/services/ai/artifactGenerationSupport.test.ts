@@ -15,11 +15,11 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { artifactGenerationEngine } from '../../../services/ai/generation/artifacts/artifactGenerationEngine';
 import type { ArtifactGenerationSupport } from '../../../services/ai';
-import { artifactGenerationSupport } from '../../../services/artifacts/artifactGenerationSupport';
+import { artifactGenerationSupport } from '../../../services/artifacts/domain/artifactGenerationSupport';
 import {
   selectArtifactGenerationContext,
   validateControlledContextForPrompt,
-} from '../../../services/artifacts/artifactContextSelectionService';
+} from '../../../services/artifacts/domain/artifactContextSelectionService';
 import type { ArtifactGenerationContract, ArtifactTemplate, Settings } from '../../../types';
 import type { Project } from '../../../services/architectureProjects';
 

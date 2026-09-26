@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../../services/architectureProjects';
-import { buildDeterministicArtifactBrief } from '../../../services/artifacts/artifactBriefService';
-import { selectArtifactGenerationContext } from '../../../services/artifacts/artifactContextSelectionService';
+import { buildDeterministicArtifactBrief } from '../../../services/artifacts/domain/artifactBriefService';
+import { selectArtifactGenerationContext } from '../../../services/artifacts/domain/artifactContextSelectionService';
 
 const artifact = (id: string, name: string, content: string, version = 1): Artifact => ({
   id,
