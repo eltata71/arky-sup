@@ -1,14 +1,27 @@
 # Registro de avance y punto de reanudación
 
 **Última actualización:** 2026-09-26
-**Estado integrado:** fases 1 a 5 cerradas; fase 6 con ocho de diez tareas hechas. Pendientes **F6-03** (el patrón piloto en el resto de contextos, sólo el primer corte) y **F6-09** (informe de cierre). Todo en `main` y publicado por CI en `arky-sup`. Verificación final: `evidencias/verificacion-final.md`.
+**Estado integrado:** fases 1 a 5 cerradas; fase 6 con nueve de diez tareas hechas. Pendiente **F6-09** (informe de cierre). Todo en `main` y publicado por CI en `arky-sup`. Verificación final: `evidencias/verificacion-final.md`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-03, corte 3 — la Oficina con la forma del
+- **Tarea en curso:** **F6-03, corte 4 — Artefactos, y con él los cuatro
+  agregados con la forma del piloto.** 31 ficheros repartidos: 21 a
+  `domain/`, 7 a `application/` y 3 a `infrastructure/`.
+  - La fábrica recibe el compilador como puerto. El núcleo puro
+    (`recompileCore.ts`) describe la degradación y `artifactWorkflow` pasa el
+    que registra.
+  - La prueba de pureza gana la regla de dirección, y encontró un tipo
+    invertido en Artefactos y otro en la Oficina.
+  - Los dominios de Proyectos, Oficina y Artefactos, enteros en `strict`.
+  - 4 802 pruebas; carga inicial 310,9 KB gz.
+
+  **F6-03 hecha para los cuatro agregados.** Los módulos de apoyo pasan a la
+  deuda residual (R-15).
+- **Antes:** **F6-03, corte 3 — la Oficina con la forma del
   piloto.** 34 ficheros repartidos: 20 a `domain/`, 9 a `application/` y 5 a
   `infrastructure/`.
   - Cinco reglas llegaban a la base por un solo import: `withAuditEntry` y los
@@ -409,7 +422,7 @@
 |---|---|---|
 | **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ✅ (2026-09-25) | Tres cortes: ficheros sin consumidor y su guardia (#77); el proxy heredado `api/gemini.ts` y el fallo de la creación guiada en producción (#78); la superficie pública del motor que sólo leían las pruebas. |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
-| **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1: revisiones. Cortes 2a y 2b: Proyectos. Corte 3: Oficina (dominio puro y en `strict`). Falta el 4 (Artefactos). |
+| **F6-03** el patrón al resto de contextos | ✅ (2026-09-26) | Los cuatro agregados con `domain/`/`application/`/`infrastructure/`, pureza por cierre con regla de dirección y dominios en `strict`. Módulos de apoyo: R-15. |
 | **F6-04** pruebas integrales de los flujos críticos | ✅ (2026-09-25) | `e2e/critical-flows.spec.ts` (#80): iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. `e2e/artifact-and-graph.spec.ts`: generar un artefacto y recuperar la proyección del grafo. |
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ✅ (2026-09-25) | Presupuesto por ruta; Dashboard 617,6 → 48,9 KB gz; cada chunk se evalúa en E2E; inventario de concurrencia con un contrato nuevo. Abierto: `save_chat_history` sin revisión. |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ✅ (2026-09-25) | ADR-107…109; cuatro runbooks; matriz de propiedad e invariantes al día, con prueba; tabla de estado de CLAUDE.md con una sola fecha. |

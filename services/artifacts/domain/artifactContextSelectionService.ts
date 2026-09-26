@@ -1,5 +1,5 @@
-import type { Artifact } from '../../lib/artifacts';
-import type { Project } from '../architectureProjects';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
 import type { ArtifactGenerationContract } from './artifactGenerationContract';
 
 export interface ArtifactSourceSummary {

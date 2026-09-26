@@ -1,29 +1,30 @@
-import type { ArtifactTemplate, Settings } from '../../types';
-import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from '../../lib/artifacts';
-import type { Project } from '../architectureProjects';
-import type { DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
+import type { ArtifactTemplate, Settings } from '../../../types';
+import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
+import type { DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import {
   normalizeArtifactEnvelope,
   validateArtifactEnvelope,
   type ArtifactEnvelope,
 } from './artifactGenerationPipeline';
-import { buildArtifactQualityReport } from '../quality/artifactQualityService';
-import type { ArtifactQualityDimension, ArtifactQualityReport } from '../quality/artifactQualityModel';
-import { buildArtifactExportabilityState } from '../quality/artifactQualityGateService';
-import { extractIRFromArtifact } from '../diagram';
-import { runDiagramQualityGate } from '../diagram/qualityGate';
-import { irToMermaid } from '../diagram/irToMermaid';
-import { irToReactFlow } from '../diagram/irToReactFlow';
-import { artifactGenerationService } from '../ai';
-import { markMermaidAsSkeletonFallback } from './deterministicArtifactFallbacks';
+import { buildArtifactQualityReport } from '../../quality/artifactQualityService';
+import type { ArtifactQualityDimension, ArtifactQualityReport } from '../../quality/artifactQualityModel';
+import { buildArtifactExportabilityState } from '../../quality/artifactQualityGateService';
+import { extractIRFromArtifact } from '../../diagram';
+import { runDiagramQualityGate } from '../../diagram/qualityGate';
+import { irToMermaid } from '../../diagram/irToMermaid';
+import { irToReactFlow } from '../../diagram/irToReactFlow';
+import { artifactGenerationService } from '../../ai';
+import { markMermaidAsSkeletonFallback } from '../domain/deterministicArtifactFallbacks';
 import {
   detectArtifactFallbackContent,
   markDocumentAsDeterministicFallback,
   markHybridAsDeterministicFallback,
   type ArtifactFallbackDetectionResult,
-} from './artifactFallbackDetection';
+} from '../domain/artifactFallbackDetection';
 
-export type ArtifactRefinementMode = 'document' | 'diagram' | 'hybrid' | 'table';
+import type { ArtifactRefinementMode } from '../domain/artifactGenerationTrace';
+export type { ArtifactRefinementMode } from '../domain/artifactGenerationTrace';
 
 export interface ArtifactRefinementRequest {
   project: Project;

@@ -1,7 +1,7 @@
-import type { Artifact } from '../../lib/artifacts';
-import type { DiagramIR } from '../../lib/diagram';
-import { extractMermaid } from '../../utils/diagram/extractMermaid';
-import type { ArtifactPresentationCallout, ArtifactPresentationDiagram } from '../../lib/artifacts/artifactPresentationModel';
+import type { Artifact } from '../../../lib/artifacts';
+import type { DiagramIR } from '../../../lib/diagram';
+import { extractMermaid } from '../../../utils/diagram/extractMermaid';
+import type { ArtifactPresentationCallout, ArtifactPresentationDiagram } from '../../../lib/artifacts/artifactPresentationModel';
 
 export interface DiagramPresentationParts {
   diagrams: ArtifactPresentationDiagram[];

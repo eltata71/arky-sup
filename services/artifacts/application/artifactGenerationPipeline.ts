@@ -1,5 +1,5 @@
-import type { ArtifactType } from '../../types';
-import type { Artifact, ArtifactGenerationTraceStep } from '../../lib/artifacts';
+import type { ArtifactType } from '../../../types';
+import type { Artifact, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
 import type {
   ArtifactDiagnostic,
   ArtifactEnvelope,
@@ -9,7 +9,7 @@ import type {
   ArtifactPipelineStage,
   ArtifactValidationResult,
   ArtifactViewMode,
-} from '../../lib/artifacts/artifactPipelineContracts';
+} from '../../../lib/artifacts/artifactPipelineContracts';
 
 // El vocabulario se declara en la hoja y se republica desde aquí: los
 // llamadores que ya lo pedían a este módulo no tienen que cambiar de puerta.
@@ -23,10 +23,10 @@ export type {
   ArtifactValidationResult,
   ArtifactViewMode,
 };
-import type { DiagramAudience } from '../../lib/diagram';
-import { extractIRDiagnostic } from '../diagram';
-import { extractMermaid } from '../../utils/diagram/extractMermaid';
-import { isPublicationViewEnabled } from './artifactPresentationFlags';
+import type { DiagramAudience } from '../../../lib/diagram';
+import { extractIRDiagnostic } from '../../diagram';
+import { extractMermaid } from '../../../utils/diagram/extractMermaid';
+import { isPublicationViewEnabled } from '../domain/artifactPresentationFlags';
 
 const now = () => new Date().toISOString();
 

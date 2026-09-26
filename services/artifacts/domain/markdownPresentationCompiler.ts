@@ -1,9 +1,9 @@
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact } from '../../../lib/artifacts';
 import type {
   ArtifactPresentationCallout,
   ArtifactPresentationSection,
   ArtifactPresentationTable,
-} from '../../lib/artifacts/artifactPresentationModel';
+} from '../../../lib/artifacts/artifactPresentationModel';
 
 export interface MarkdownPresentationParts {
   title?: string;

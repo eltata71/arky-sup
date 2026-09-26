@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../../services/architectureProjects';
-import { buildDeterministicArtifactBrief } from '../../../services/artifacts/artifactBriefService';
-import { buildArtifactRecommendationCandidates, candidateToLegacyRecommendation } from '../../../services/artifacts/artifactRecommendationService';
+import { buildDeterministicArtifactBrief } from '../../../services/artifacts/domain/artifactBriefService';
+import { buildArtifactRecommendationCandidates, candidateToLegacyRecommendation } from '../../../services/artifacts/domain/artifactRecommendationService';
 
 const baseProject: Project = {
   id: 'p1',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Project } from '../../../services/architectureProjects';
-import { buildDeterministicArtifactBrief, updateArtifactBriefFromForm } from '../../../services/artifacts/artifactBriefService';
-import { __test__parseArtifactGenerationFlag } from '../../../services/artifacts/artifactGenerationFlags';
+import { buildDeterministicArtifactBrief, updateArtifactBriefFromForm } from '../../../services/artifacts/domain/artifactBriefService';
+import { __test__parseArtifactGenerationFlag } from '../../../services/artifacts/domain/artifactGenerationFlags';
 
 const project: Project = {
   id: 'p1',

@@ -6,7 +6,7 @@ import type {
   ArtifactView,
   ExportFormat,
 } from '../../services/export';
-import { performArtifactExport } from '../../services/artifacts/exportFacade';
+import { performArtifactExport } from '../../services/artifacts/application/exportFacade';
 
 export interface UseArtifactExportInput {
   artifact: Artifact;

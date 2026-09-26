@@ -17,16 +17,16 @@
  * comes back is everything needed to perform that write.
  */
 
-import type { ArtifactTemplate, Settings } from '../../types';
-import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../lib/artifacts';
-import type { Project } from '../architectureProjects';
-import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
-import { artifactGenerationService } from '../ai';
-import { resolveEffectiveModel } from '../../lib/ai/modelCatalog';
-import { extractIRFromArtifact } from '../diagram';
-import { runDiagramQualityGate } from '../diagram/qualityGate';
-import { irToMermaid } from '../diagram/irToMermaid';
-import { irToReactFlow } from '../diagram/irToReactFlow';
+import type { ArtifactTemplate, Settings } from '../../../types';
+import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
+import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
+import { artifactGenerationService } from '../../ai';
+import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
+import { extractIRFromArtifact } from '../../diagram';
+import { runDiagramQualityGate } from '../../diagram/qualityGate';
+import { irToMermaid } from '../../diagram/irToMermaid';
+import { irToReactFlow } from '../../diagram/irToReactFlow';
 import {
     buildArtifactPipelineTraceSteps,
     normalizeArtifactEnvelope,
@@ -35,9 +35,9 @@ import {
 import {
     buildArtifactGenerationGraphContext,
     resolveProjectArchitectureGraphFreshness,
-} from '../architectureKnowledgeGraph';
+} from '../../architectureKnowledgeGraph';
 import { refineArtifactBeforePersistence } from './artifactRefinementOrchestrator';
-import { artifactGenerationSupport } from './artifactGenerationSupport';
+import { artifactGenerationSupport } from '../domain/artifactGenerationSupport';
 import {
     buildGenerationTrace,
     createTraceLog,
@@ -46,7 +46,7 @@ import {
     replaceMermaidBlock,
     resolveRefinementMode,
     type ArtifactGenerationAction,
-} from './artifactGenerationTrace';
+} from '../domain/artifactGenerationTrace';
 import {
     ensureRenderableDiagram,
     measureRenderCounters,
@@ -55,7 +55,7 @@ import {
     type DiagramFallbackContext,
 } from './artifactGenerationFallbacks';
 
-export type { ArtifactGenerationAction } from './artifactGenerationTrace';
+export type { ArtifactGenerationAction } from '../domain/artifactGenerationTrace';
 
 
 

@@ -6,7 +6,7 @@ import {
   detectArtifactFallbackContent,
   markDocumentAsDeterministicFallback,
   markHybridAsDeterministicFallback,
-} from '../../services/artifacts/artifactFallbackDetection';
+} from '../../services/artifacts/domain/artifactFallbackDetection';
 
 const diagram = `flowchart LR
   A["Usuario"] --> B["Portal"]

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mermaidToIR } from '../../services/diagram/mermaidToIR';
-import { buildDeterministicDiagramSkeleton } from '../../services/artifacts/deterministicArtifactFallbacks';
+import { buildDeterministicDiagramSkeleton } from '../../services/artifacts/domain/deterministicArtifactFallbacks';
 import { extractIRFromArtifact } from '../../services/diagram';
 import { resolveRenderableDiagram } from '../../services/diagram/resolveRenderableDiagram';
 import type { ArtifactTemplate } from '../../types';

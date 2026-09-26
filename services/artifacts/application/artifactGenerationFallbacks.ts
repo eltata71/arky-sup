@@ -13,18 +13,18 @@
  * is the failure mode this module exists to prevent.
  */
 
-import type { ArtifactTemplate } from '../../types';
-import type { ArtifactGenerationPhaseListener } from '../../lib/artifacts';
-import type { Project } from '../architectureProjects';
-import type { DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
+import type { ArtifactTemplate } from '../../../types';
+import type { ArtifactGenerationPhaseListener } from '../../../lib/artifacts';
+import type { Project } from '../../architectureProjects';
+import type { DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import {
     buildDeterministicArtifactFallback,
     buildDeterministicDiagramSkeleton,
     isSkeletonFallbackContent,
-} from './deterministicArtifactFallbacks';
-import { extractIRFromArtifact } from '../diagram';
-import { irToReactFlow } from '../diagram/irToReactFlow';
-import { makeTraceStep, type TraceLog } from './artifactGenerationTrace';
+} from '../domain/deterministicArtifactFallbacks';
+import { extractIRFromArtifact } from '../../diagram';
+import { irToReactFlow } from '../../diagram/irToReactFlow';
+import { makeTraceStep, type TraceLog } from '../domain/artifactGenerationTrace';
 
 export interface DiagramFallbackContext {
     project: Project;

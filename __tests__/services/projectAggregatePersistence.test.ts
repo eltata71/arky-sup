@@ -97,7 +97,7 @@ const projectRow = (artifacts: Artifact[], overrides: Record<string, unknown> = 
 const load = async () => {
   const reads = await import('../../services/architectureProjects/infrastructure/projectReads');
   const writes = await import('../../services/architectureProjects/infrastructure/projectWrites');
-  const artifacts = await import('../../services/artifacts/artifactPersistence');
+  const artifacts = await import('../../services/artifacts/infrastructure/artifactPersistence');
   return { ...reads, ...writes, ...artifacts };
 };
 

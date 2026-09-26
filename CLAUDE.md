@@ -258,8 +258,9 @@ arkypro-1.0/
 │   │                        # application/ (runner, coordination), infrastructure/ (repos, adapters)
 │   ├── architectureKnowledgeGraph/  # Entity/relation extraction, consistency, impact, traceability
 │   ├── artifactCompiler/     # Contracts, validators, repair, scoring, recompile
-│   ├── artifacts/            # View controller, brief, presentation compilers, export facade,
-│   │                        # and the deterministic fallbacks (no model call in them)
+│   ├── artifacts/            # In the pilot's shape (F6-03 corte 4): domain/ (factory, brief, presentation
+│   │                        # compilers, deterministic fallbacks), application/ (generation, refinement,
+│   │                        # pipeline, export), infrastructure/ (repository, Supabase commands)
 │   ├── contextGraph/         # Project-wide context graph (builder, ranker, serializer)
 │   ├── diagram/              # ★ Canonical diagram pipeline (see "Diagram Pipeline")
 │   ├── export/               # Export registry + adapters (md/html/pdf/docx/pptx/xlsx/csv/json/txt)
@@ -388,7 +389,7 @@ import could: a type-only import goes through the barrel at any depth (it is
 erased at build), lazy code goes through the barrel, and boot code that needs
 one file gets that file **declared as a small door** in `modules.json`
 (`services/agent/AgentActionRepository.ts`,
-`services/artifacts/artifactGenerationRun.ts`), which is F3-06's pattern. `check:bundle-budget` is what tells the two
+`services/artifacts/application/artifactGenerationRun.ts`), which is F3-06's pattern. `check:bundle-budget` is what tells the two
 apart — not judgement — and `check:module-boundaries` records the resulting deep
 import as what it is.
 
@@ -1191,7 +1192,7 @@ Rules when touching it:
 - Do not duplicate key resolution; the shared helper already handles the user's `localStorage` key.
 - **Do not grow this file, and do not import it.** It is reachable only from `artifactGenerationService`; a lint rule refuses it outside `services/ai/` under either name, and `engineImporters.test.ts` lists its one importer. New capabilities belong in `services/ai/generation/`.
 - **Do not look anything up from a context that imports this layer.** The persona arrives through `ArtifactPersonaComposer`, the artifacts context through `ArtifactGenerationSupport`; `artifactGenerationSupport.test.ts` fails if the engine imports `artifacts`, `architectureOffice`, `agent` or `chat` again.
-- **And the `services/ai` barrel may not re-export it.** A second, narrower rule on `services/ai/index.ts` alone: inside the layer the engine is a legitimate internal dependency — a façade delegating to it *is* the strangler pattern — but the barrel is the published surface. It used to re-export `AIServiceError`, `classifyAIError`, `C4SelfHealingError` and four deterministic fallbacks straight out of the monolith, so seven screens caught the engine's symbols through the door built to hide them. The errors now live in `services/ai/errors/aiServiceError.ts` and the fallbacks in `services/artifacts/deterministicArtifactFallbacks.ts`; ESLint and `__tests__/services/ai/publicApiSurface.test.ts` both hold the line.
+- **And the `services/ai` barrel may not re-export it.** A second, narrower rule on `services/ai/index.ts` alone: inside the layer the engine is a legitimate internal dependency — a façade delegating to it *is* the strangler pattern — but the barrel is the published surface. It used to re-export `AIServiceError`, `classifyAIError`, `C4SelfHealingError` and four deterministic fallbacks straight out of the monolith, so seven screens caught the engine's symbols through the door built to hide them. The errors now live in `services/ai/errors/aiServiceError.ts` and the fallbacks in `services/artifacts/domain/deterministicArtifactFallbacks.ts`; ESLint and `__tests__/services/ai/publicApiSurface.test.ts` both hold the line.
 - It is no longer in the eager entry chunk — `OfficeContext` loads the AI surface on demand. Keep it that way: a static import from a module in the root provider tree puts a ~600 kB chunk back into app startup.
 
 ### 3. Serverless proxy (`api/`)
@@ -1313,7 +1314,7 @@ and `docs/diagram-story-and-patches.md`.
 
 | Subsystem | Location | What it does | Doc |
 |---|---|---|---|
-| Generation pipeline | `services/artifacts/artifactGenerationPipeline.ts` (vocabulario en `lib/artifacts/artifactPipelineContracts.ts`) | Stage/diagnostic model (`request → ai-generation → raw-response → parsing → normalization → validation → rendering → persistence → export`) | `docs/artifact-generation-hardening.md` |
+| Generation pipeline | `services/artifacts/application/artifactGenerationPipeline.ts` (vocabulario en `lib/artifacts/artifactPipelineContracts.ts`) | Stage/diagnostic model (`request → ai-generation → raw-response → parsing → normalization → validation → rendering → persistence → export`) | `docs/artifact-generation-hardening.md` |
 | Artifact compiler | `services/artifactCompiler/` | Contract registry, section/contract validators, document repair, unified scoring, recompile | `docs/artifact-compiler.md` |
 | Quality | `services/quality/` | Artifact + document quality models, gates, auto-repair, report rendering | `docs/diagram-quality-gate.md` |
 | Presentation | `services/artifacts/*PresentationCompiler.ts` | Markdown/table/diagram/hybrid → presentation model | — |
@@ -1393,6 +1394,19 @@ And the whole domain enters `typecheck:strict` because the port
 named through the agent barrel, even as a type, it dragged the agent, the AI
 layer and the engine into type checking.
 
+**And so do Artefactos** (corte 4) — which makes the four aggregates of the
+product (initiative, project, engagement, artifact) all share the shape. The
+factory was the one impure rule: it recompiled through the compiler's function
+that reports to observability. The compiler now has a pure core
+(`services/artifactCompiler/recompileCore.ts`, a declared door) that
+*describes* a degraded compilation instead of reporting it; the factory takes
+the compiler as a port (`ArtifactCompilePort`, pure by default) and
+`artifactWorkflow` —which persists— hands it the reporting one, so the warning
+is not lost. The purity check also gained a **direction rule**: a `domain/` file
+imports nothing from its own `application/` or `infrastructure/`, not even a
+type. It found one in each of the last two cuts (`ArtifactRefinementMode`,
+`OfficeWorkstreamResult`); both types moved down to the domain.
+
 ## Aggregates: one factory each, and a gate
 
 Four aggregates, four factories, and none of them is a React component any more:
@@ -1402,7 +1416,7 @@ Four aggregates, four factories, and none of them is a React component any more:
 | `ProjectRoot` (atención) | `services/architectureProjects/architectureProjectFactory` | no name, no initiative |
 | `OfficeEngagement` (entregable) | `services/architectureOffice/officeEngagementFactory` | no title, no attention, no initiative link |
 | `BusinessInitiative` | `services/businessInitiatives/businessInitiativeFactory` | no title, no stated need, no owner |
-| `Artifact` | `services/artifacts/artifactFactory` | — it enforces identity and versioning rather than refusing |
+| `Artifact` | `services/artifacts/domain/artifactFactory` | — it enforces identity and versioning rather than refusing |
 
 **The project's aggregate is `ProjectRoot`, and `Project` is its read model**
 (F4-04, ADR-106 §6). The root is what `api.save_project` writes and its revision
@@ -1841,7 +1855,7 @@ the only screen still linking to `/users` and `/settings`.
 2. Add a template entry in `constants.ts` (`ARTIFACT_TEMPLATES`) and map it to an `ArchitecturalView`.
 3. Add the generation prompt/method behind a `services/ai/generation/` façade, and describe any structured output with `defineSchema` from `services/ai/schema`.
 4. Register a contract in `services/artifactCompiler/profiles/contractDefinitions.ts` if the artifact is validated/scored.
-5. Handle the type in the `switch`/map sites: `services/artifacts/artifactGenerationPipeline.ts`, `services/artifacts/viewController.ts`, `components/ArtifactCanvas.tsx`, `components/ProjectHub.tsx`.
+5. Handle the type in the `switch`/map sites: `services/artifacts/application/artifactGenerationPipeline.ts`, `services/artifacts/application/viewController.ts`, `components/ArtifactCanvas.tsx`, `components/ProjectHub.tsx`.
 6. Add tests under `__tests__/`.
 
 The project skill `/add-artifact-type` automates this flow.

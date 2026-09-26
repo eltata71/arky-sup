@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getArtifactViewCapabilities, normalizeArtifactEnvelope, resolveSafeArtifactView, validateArtifactEnvelope, parseArtifactRawResponse } from '../../services/artifacts/artifactGenerationPipeline';
+import { getArtifactViewCapabilities, normalizeArtifactEnvelope, resolveSafeArtifactView, validateArtifactEnvelope, parseArtifactRawResponse } from '../../services/artifacts/application/artifactGenerationPipeline';
 import { sanitizeGeneratedHtml } from '../../lib/security';
 import { buildGenerationObservabilityAlert } from '../../components/artifactCanvasObservability';
 import { validateArtifactForExport } from '../../services/export/artifactExportValidation';

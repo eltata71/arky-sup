@@ -733,7 +733,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 
 ### F6-01 · Retirar rutas antiguas y adaptadores sin consumidor · P1 · M · `hecha` (#77, #78 y el corte 3)
 ### F6-02 · Dependencias no autorizadas entre contextos a cero · P0 · L · `hecha` (imports profundos 44 → 29; `evidencias/f6-02.md`)
-### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `en curso` — corte 1 (revisiones de `settings` y `learning`); cortes 2a y 2b (Proyectos: forma del piloto y operaciones con nombre); **corte 3: la Oficina con `domain/` + `application/` + `infrastructure/`, dominio puro y en `strict`** — evidencias `f6-03-corte-2a-proyectos.md`, `f6-03-corte-2b-proyectos.md`, `f6-03-corte-3-oficina.md`. Falta: 4 (Artefactos)
+### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `hecha` para los cuatro agregados del producto — corte 1 (revisiones de `settings` y `learning`), 2a y 2b (Proyectos: forma y operaciones con nombre), 3 (Oficina) y 4 (Artefactos); evidencias `f6-03-corte-*.md`. Los módulos de apoyo sin agregado propio quedan en la deuda residual (R-15)
 ### F6-04 · Pruebas integrales de los flujos críticos · P0 · L · `hecha` (#80, #81; `evidencias/f6-04-flujos-criticos.md`)
 ### F6-05 · Verificar rendimiento, descarga, concurrencia y recuperación · P0 · M · `hecha` (`evidencias/f6-05-rendimiento-concurrencia.md`)
 ### F6-06 · Documentación, ADR, instrucciones y runbooks · P1 · M · `hecha` (ADR-107…109, `docs/operacion/runbook-*.md`, `06` y `07` revisados)

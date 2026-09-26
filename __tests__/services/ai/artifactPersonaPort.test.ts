@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { artifactGenerationEngine } from '../../../services/ai/generation/artifacts/artifactGenerationEngine';
-import { artifactGenerationSupport } from '../../../services/artifacts/artifactGenerationSupport';
+import { artifactGenerationSupport } from '../../../services/artifacts/domain/artifactGenerationSupport';
 import {
   buildOfficePersonaInstruction,
   composeArtifactPersonaInstruction,

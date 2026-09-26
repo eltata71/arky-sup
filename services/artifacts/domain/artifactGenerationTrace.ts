@@ -9,12 +9,19 @@
  * when it is a placeholder.
  */
 
-import type { ArtifactTemplate } from '../../types';
-import type { ArtifactGenerationTrace, ArtifactGenerationTraceStep } from '../../lib/artifacts';
-import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../lib/diagram';
-import type { resolveEffectiveModel } from '../../lib/ai/modelCatalog';
-import type { buildArtifactGenerationGraphContext } from '../architectureKnowledgeGraph';
-import type { ArtifactRefinementMode } from './artifactRefinementOrchestrator';
+import type { ArtifactTemplate } from '../../../types';
+import type { ArtifactGenerationTrace, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
+import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
+import type { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
+import type { buildArtifactGenerationGraphContext } from '../../architectureKnowledgeGraph';
+
+/**
+ * Qué clase de artefacto se refina. Vivía en el orquestador del refinamiento
+ * (`application/`), y el rastro de la generación —dominio— lo importaba de ahí:
+ * el dominio dependía de la aplicación. Un tipo sin comportamiento baja a
+ * donde lo necesitan los dos (F6-03, corte 4).
+ */
+export type ArtifactRefinementMode = 'document' | 'diagram' | 'hybrid' | 'table';
 
 export type ArtifactGenerationAction = 'create' | 'replace' | 'new_version';
 

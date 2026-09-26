@@ -100,7 +100,7 @@ describe('resolveRenderableDiagram — pharmacy claim BPMN fallback regression',
     // the canvas uses to make sure we never ship a state where the artifact
     // exists but the canvas can't materialise nodes.
     it('produces a ready render with visible ReactFlow nodes for the deterministic BPMN fallback for any audience', async () => {
-        const { buildDeterministicArtifactFallback } = await import('../../services/artifacts/deterministicArtifactFallbacks');
+        const { buildDeterministicArtifactFallback } = await import('../../services/artifacts/domain/deterministicArtifactFallbacks');
         const { buildHeuristicCustomArtifactRecommendation } = await import('../../services/ai/generation/recommendation/customArtifactHeuristics');
         const project: Parameters<typeof buildHeuristicCustomArtifactRecommendation>[0] = {
             id: 'test-project',

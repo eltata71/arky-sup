@@ -22,7 +22,7 @@ const repository = vi.hoisted(() => ({
   removeMany: vi.fn(),
 }));
 
-vi.mock('../../services/artifacts/ArtifactRepository', () => ({ artifactRepository: repository }));
+vi.mock('../../services/artifacts/infrastructure/ArtifactRepository', () => ({ artifactRepository: repository }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { uid: 'u1' } }) }));
 vi.mock('../../services/observability', () => ({
   observabilityService: { reportError: vi.fn(), recordWarning: vi.fn(), trackEvent: vi.fn() },

@@ -6,7 +6,7 @@ import {
     mapRequestAudienceToDiagramAudience,
     replaceMermaidBlock,
     resolveRefinementMode,
-} from '../../../services/artifacts/artifactGenerationTrace';
+} from '../../../services/artifacts/domain/artifactGenerationTrace';
 import type { ArtifactTemplate } from '../../../types';
 
 const template = (overrides: Partial<ArtifactTemplate> = {}): ArtifactTemplate => ({

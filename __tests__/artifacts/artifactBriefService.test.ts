@@ -5,8 +5,8 @@ import {
   inferArtifactFamilyFromRequest,
   inferAudienceFromRequest,
   updateArtifactBriefFromForm,
-} from '../../services/artifacts/artifactBriefService';
-import { validateArtifactGenerationContract } from '../../services/artifacts/artifactGenerationContract';
+} from '../../services/artifacts/domain/artifactBriefService';
+import { validateArtifactGenerationContract } from '../../services/artifacts/domain/artifactGenerationContract';
 
 const project: Project = {
   id: 'p1',

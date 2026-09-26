@@ -76,9 +76,9 @@ import {
 } from '../../architectureKnowledgeGraph';
 import { getCompilationFreshness } from '../../artifactCompiler';
 import { buildArtifactSuggestionContext } from '../../ai/artifactSuggestionService';
-import { compileArtifactPresentation } from '../artifactPresentationCompiler';
+import { compileArtifactPresentation } from '../domain/artifactPresentationCompiler';
 import { deriveHardBlockContext, evaluateGateGuard, gateGuardTone } from '../../diagram/visualGateGuard';
-import { isPresentationExportEnabled } from '../artifactPresentationFlags';
+import { isPresentationExportEnabled } from '../domain/artifactPresentationFlags';
 
 /** Lo que el lienzo mide cuando ReactFlow ya ha pintado. */
 export interface CanvasLayoutSnapshot {

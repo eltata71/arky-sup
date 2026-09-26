@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import type { Artifact } from '../../../lib/artifacts';
-import type { ArtifactRepository } from '../../../services/artifacts/ArtifactRepository';
+import type { ArtifactRepository } from '../../../services/artifacts/infrastructure/ArtifactRepository';
 import {
   changedArtifactIds,
   executeArtifactWrite,

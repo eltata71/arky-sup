@@ -5,8 +5,8 @@ import {
     substituteEmptyContent,
     type DiagramDraft,
     type DiagramFallbackContext,
-} from '../../../services/artifacts/artifactGenerationFallbacks';
-import { createTraceLog } from '../../../services/artifacts/artifactGenerationTrace';
+} from '../../../services/artifacts/application/artifactGenerationFallbacks';
+import { createTraceLog } from '../../../services/artifacts/domain/artifactGenerationTrace';
 import type { ArtifactTemplate } from '../../../types';
 import type { Project } from '../../../services/architectureProjects';
 

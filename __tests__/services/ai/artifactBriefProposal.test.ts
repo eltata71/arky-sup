@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { aiGateway } from '../../../services/ai/generation/aiGateway';
 import { proposeArtifactBriefContract } from '../../../services/ai/generation/artifactBriefProposal';
 import { artifactGenerationService } from '../../../services/ai/generation/artifactGenerationService';
-import { buildDeterministicArtifactBrief } from '../../../services/artifacts/artifactBriefService';
+import { buildDeterministicArtifactBrief } from '../../../services/artifacts/domain/artifactBriefService';
 import type { Settings } from '../../../types';
 import type { Project } from '../../../services/architectureProjects';
 

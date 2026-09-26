@@ -28,7 +28,21 @@
  */
 
 import { OFFICE_AGENT_PERSONAS } from './officeAgentPersonas';
-import type { OfficeWorkstreamResult } from '../application/officeOrchestration';
+import type { OfficeAgentId } from './agentDefinition';
+
+/**
+ * Lo que devuelve un especialista de la orquestación. Vivía en
+ * `application/officeOrchestration.ts` y esta revisión —dominio— lo importaba
+ * de ahí: el dominio dependía de la aplicación (F6-03, corte 4, al añadir la
+ * regla de dirección a `contextDomainPurity`).
+ */
+export interface OfficeWorkstreamResult {
+  workstreamId: string;
+  personaId: OfficeAgentId;
+  status: 'completed' | 'failed';
+  output: string;
+  error?: string;
+}
 
 /** Longitud por debajo de la cual el texto no puede estar consolidando nada. */
 export const MIN_CONSOLIDATION_LENGTH = 200;

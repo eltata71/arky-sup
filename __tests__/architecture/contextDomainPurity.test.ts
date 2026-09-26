@@ -26,6 +26,7 @@ const CONTEXTS = [
   'services/businessInitiatives',
   'services/architectureProjects',
   'services/architectureOffice',
+  'services/artifacts',
 ] as const;
 
 /** Lo que hace E/S, o pinta: nada de esto puede alcanzarse desde un dominio. */
@@ -127,6 +128,27 @@ describe.each(CONTEXTS)('el dominio de %s', (context) => {
   it('sólo carga paquetes que no hacen E/S', () => {
     const { packages } = closureOf(context);
     expect([...packages].filter((name) => !ALLOWED_PACKAGES.has(name))).toEqual([]);
+  });
+
+  it('no depende de su propia aplicación ni de su infraestructura, ni siquiera por un tipo', () => {
+    // La dirección es dominio ← aplicación ← infraestructura. Un tipo que el
+    // dominio importa de `application/` no ejecuta nada, pero invierte la
+    // dependencia, y en F6-03 corte 4 arrastraba el motor de IA a la
+    // comprobación de tipos del dominio de Artefactos.
+    const offending: string[] = [];
+    for (const file of filesUnder(join(ROOT, context, 'domain'))) {
+      const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+      source.forEachChild((node) => {
+        const specifier = (ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
+          && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : null;
+        if (!specifier || !specifier.startsWith('.')) return;
+        const target = relative(ROOT, resolve(dirname(file), specifier));
+        if (target.startsWith(`${context}/application`) || target.startsWith(`${context}/infrastructure`)) {
+          offending.push(`${relative(ROOT, file)} → ${specifier}`);
+        }
+      });
+    }
+    expect(offending).toEqual([]);
   });
 
   it('ni siquiera nombra React ni Supabase, ni como tipo', () => {

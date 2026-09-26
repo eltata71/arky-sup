@@ -14,8 +14,8 @@
  * so it can be consumed by services, components and tests without pulling in
  * the heavy generation pipeline.
  */
-import type { ArtifactGenerationTraceStatus } from '../../lib/artifacts';
-import type { DiagramErrorRecord } from '../../lib/diagram';
+import type { ArtifactGenerationTraceStatus } from '../../../lib/artifacts';
+import type { DiagramErrorRecord } from '../../../lib/diagram';
 
 /**
  * Marker prepended (as a Mermaid `%%` comment) to every deterministic diagram

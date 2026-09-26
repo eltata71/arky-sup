@@ -23,8 +23,8 @@ import {
   type ArtifactRevisionChange,
   type ArtifactWriteConfirmation,
 } from './artifactPersistence';
-import type { PersistenceResult } from '../persistence';
-import type { Artifact } from '../../lib/artifacts';
+import type { PersistenceResult } from '../../persistence';
+import type { Artifact } from '../../../lib/artifacts';
 
 export type { ArtifactRevisionChange, ArtifactWriteConfirmation } from './artifactPersistence';
 

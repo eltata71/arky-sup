@@ -3,7 +3,7 @@ import type { Artifact } from '../../../lib/artifacts';
 import {
   getArtifactViewCapabilities,
   resolveSafeArtifactView,
-} from '../../../services/artifacts/viewController';
+} from '../../../services/artifacts/application/viewController';
 
 const documentArtifact: Artifact = {
   id: 'doc',

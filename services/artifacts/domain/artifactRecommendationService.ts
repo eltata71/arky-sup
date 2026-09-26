@@ -1,11 +1,11 @@
-import { ARTIFACT_TEMPLATES } from '../../constants';
-import type { ArchitecturalView, ArtifactTemplate, ArtifactType, ArtifactRecommendationScoreBreakdown } from '../../types';
-import type { Project } from '../architectureProjects';
+import { ARTIFACT_TEMPLATES } from '../../../constants';
+import type { ArchitecturalView, ArtifactTemplate, ArtifactType, ArtifactRecommendationScoreBreakdown } from '../../../types';
+import type { Project } from '../../architectureProjects';
 import type { ArtifactGenerationContract } from './artifactGenerationContract';
 import { selectArtifactGenerationContext, type ArtifactContextSelectionResult } from './artifactContextSelectionService';
 import { scoreArchitectureGraphAlignment } from './architectureGraphAlignment';
 
-export type { ArtifactRecommendationScoreBreakdown } from '../../types';
+export type { ArtifactRecommendationScoreBreakdown } from '../../../types';
 
 export interface ArtifactRecommendationCandidate {
   id: string;

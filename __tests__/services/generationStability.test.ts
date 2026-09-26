@@ -24,9 +24,9 @@ import {
     buildDeterministicArtifactFallback,
     buildDeterministicDiagramSkeleton,
     isSkeletonFallbackContent,
-} from '../../services/artifacts/deterministicArtifactFallbacks';
-import { artifactGenerationSupport } from '../../services/artifacts/artifactGenerationSupport';
-import { SKELETON_FALLBACK_MARKER } from '../../services/artifacts/artifactFallbackDetection';
+} from '../../services/artifacts/domain/deterministicArtifactFallbacks';
+import { artifactGenerationSupport } from '../../services/artifacts/domain/artifactGenerationSupport';
+import { SKELETON_FALLBACK_MARKER } from '../../services/artifacts/domain/artifactFallbackDetection';
 import { mermaidToIR } from '../../services/diagram/mermaidToIR';
 import type { ArtifactTemplate, Settings } from '../../types';
 import type { ArtifactGenerationPhaseEvent } from '../../lib/artifacts';

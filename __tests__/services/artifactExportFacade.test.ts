@@ -19,7 +19,7 @@ vi.mock('../../services/export/artifactExportValidation', async () => {
     };
 });
 
-const { performArtifactExport } = await import('../../services/artifacts/exportFacade');
+const { performArtifactExport } = await import('../../services/artifacts/application/exportFacade');
 
 const baseArtifact: Artifact = {
     id: 'a-1',

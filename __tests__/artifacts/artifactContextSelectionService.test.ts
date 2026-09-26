@@ -4,11 +4,11 @@ import type { Project } from '../../services/architectureProjects';
 import {
   normalizeArtifactGenerationContract,
   type ArtifactGenerationContract,
-} from '../../services/artifacts/artifactGenerationContract';
+} from '../../services/artifacts/domain/artifactGenerationContract';
 import {
   selectArtifactGenerationContext,
   validateControlledContextForPrompt,
-} from '../../services/artifacts/artifactContextSelectionService';
+} from '../../services/artifacts/domain/artifactContextSelectionService';
 
 const makeArtifact = (over: Partial<Artifact>): Artifact => ({
   id: 'a',
