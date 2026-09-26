@@ -351,7 +351,10 @@ Reglas que no se negocian al trabajar aquí:
     sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);
     `infrastructure/` guarda el adaptador y el repositorio, y ninguna pantalla lo
     importa; `domainPurity.test.ts` escanea `domain/` porque el compilador no ve
-    ese acoplamiento. Los cambios son **operaciones con nombre** —una unión de
+    ese acoplamiento. **F6-03 copia la forma contexto a contexto** (Proyectos
+    desde el segundo corte), y `contextDomainPurity.test.ts` sigue el cierre de
+    imports de valor de cada dominio: ningún camino puede llegar a E/S, React,
+    una pantalla o la propia `infrastructure/`. Su lista sólo crece. Los cambios son **operaciones con nombre** —una unión de
     comandos y `applyInitiativeCommand`, que devuelve el agregado nuevo o un
     rechazo tipado—, nunca `update(partial)`, y el proveedor de React sólo hace
     lo que es de un proveedor: estado optimista, la escritura y revertir.

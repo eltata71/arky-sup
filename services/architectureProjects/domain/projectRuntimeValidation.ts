@@ -42,11 +42,11 @@
 
  */
 
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact } from '../../../lib/artifacts';
 import type { Project, ProjectAttentionTracking, AttentionContribution, AttentionMilestone, AttentionRisk } from './ArchitectureProjectTypes';
-import { validatePublicationPackages } from '../publicationPipeline/PublicationRuntimeValidation';
-import { sanitizeMemoryEntryList } from '../memory/memoryEntries';
-import { toInitiativeCodes as normalizeBusinessProjectIds } from '../../lib/eaTerminology';
+import { validatePublicationPackages } from '../../publicationPipeline/PublicationRuntimeValidation';
+import { sanitizeMemoryEntryList } from '../../memory/memoryEntries';
+import { toInitiativeCodes as normalizeBusinessProjectIds } from '../../../lib/eaTerminology';
 
 export interface ValidationIssue {
   path: string;

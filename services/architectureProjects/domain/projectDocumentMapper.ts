@@ -17,14 +17,14 @@
  * Firestore.
  */
 
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact } from '../../../lib/artifacts';
 import type { Project, ProjectRoot, ArtifactSummary } from './ArchitectureProjectTypes';
-import { sanitizeMemoryEntryList } from '../memory/memoryEntries';
-import { toInitiativeCodes as normalizeBusinessProjectIds } from '../../lib/eaTerminology';
+import { sanitizeMemoryEntryList } from '../../memory/memoryEntries';
+import { toInitiativeCodes as normalizeBusinessProjectIds } from '../../../lib/eaTerminology';
 import { normalizeAttentionTracking } from './projectRuntimeValidation';
-import type { ArchitectureGraph } from '../architectureKnowledgeGraph';
-import type { PublicationPackage } from '../publicationPipeline/PublicationPipelineTypes';
-import { stripUndefined as sanitize } from '../../lib/jsonSafe';
+import type { ArchitectureGraph } from '../../architectureKnowledgeGraph';
+import type { PublicationPackage } from '../../publicationPipeline/PublicationPipelineTypes';
+import { stripUndefined as sanitize } from '../../../lib/jsonSafe';
 
 /**
  * Documento remoto **leído**: lo que la RPC devuelve dentro de `data`. Sin

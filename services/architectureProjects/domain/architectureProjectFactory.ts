@@ -20,9 +20,9 @@
  * has to handle rather than a project that looks fine.
  */
 
-import { newPrefixedId } from '../../lib/ids';
-import { createMemoryEntry } from '../memory';
-import type { MemoryEntry } from '../../types';
+import { newPrefixedId } from '../../../lib/ids';
+import { createMemoryEntry } from '../../memory';
+import type { MemoryEntry } from '../../../types';
 import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
 import { toProjectView } from './projectDocumentMapper';
 

@@ -45,6 +45,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'dataOwnershipMatrix', rule: 'toda RPC y tabla tiene dueño declarado (F6-06)' },
   { anchor: '13-deuda-residual.md', rule: 'la deuda residual tiene responsable y condición de revisión (F6-08)' },
   { anchor: 'assertProductionMigrations', rule: 'el despliegue comprueba el esquema de producción (F6-10)' },
+  { anchor: 'contextDomainPurity', rule: 'el dominio de cada contexto es puro, por cierre de imports (F6-03)' },
   { anchor: 'noBarrelSelfImport', rule: 'un fichero no importa el barril que lo reexporta (F6-04)' },
   { anchor: 'projection_outbox', rule: 'el trabajo derivado durable vive en la base, en la transacción que lo causa (F5-04)' },
   { anchor: 'DiagramSignalSource', rule: 'ningún módulo de dominio es mutuamente alcanzable (F5-03)' },

@@ -42,7 +42,7 @@ describe('revision caches', () => {
   });
 
   it('the scan sees the repositories it is meant to guard', () => {
-    expect(serviceFiles).toContain(join('services', 'architectureProjects', 'SupabaseProjectRepository.ts'));
+    expect(serviceFiles).toContain(join('services', 'architectureProjects', 'infrastructure', 'SupabaseProjectRepository.ts'));
     expect(serviceFiles).toContain(join('services', 'architectureKnowledgeGraph', 'SupabaseKnowledgeGraphRepository.ts'));
   });
 });

@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { normalizeAttentionTracking } from '../../services/architectureProjects/projectRuntimeValidation';
+import { normalizeAttentionTracking } from '../../services/architectureProjects/domain/projectRuntimeValidation';
 
 describe('normalizeAttentionTracking', () => {
   it('un valor que no es objeto no produce seguimiento', () => {

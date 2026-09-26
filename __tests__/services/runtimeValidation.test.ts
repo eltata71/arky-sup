@@ -3,7 +3,7 @@ import {
   validateArtifact,
   validateProject,
   validateProjects,
-} from '../../services/architectureProjects/projectRuntimeValidation';
+} from '../../services/architectureProjects/domain/projectRuntimeValidation';
 
 describe('services/architectureProjects/projectRuntimeValidation — artifact', () => {
   it('rejects non-objects', () => {

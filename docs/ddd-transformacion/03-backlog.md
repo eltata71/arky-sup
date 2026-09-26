@@ -733,7 +733,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 
 ### F6-01 · Retirar rutas antiguas y adaptadores sin consumidor · P1 · M · `hecha` (#77, #78 y el corte 3)
 ### F6-02 · Dependencias no autorizadas entre contextos a cero · P0 · L · `hecha` (imports profundos 44 → 29; `evidencias/f6-02.md`)
-### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `en curso` — corte 1 hecho (revisiones de `settings` y `learning`). **Falta el grueso** (verificación final, 2026-09-26): sólo `businessInitiatives` tiene `domain/` + `infrastructure/` + prueba de pureza + comandos con nombre; `architectureProjects`, `architectureOffice` y `artifacts` tienen reglas puras (fábricas, transiciones, servicios de aplicación) sin esa forma ni su prueba de pureza
+### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `en curso` — corte 1 (revisiones de `settings` y `learning`); **corte 2a: Proyectos con `domain/` + `infrastructure/` + `application/` y la prueba de pureza por cierre** (`evidencias/f6-03-corte-2a-proyectos.md`). Faltan: 2b (operaciones con nombre en Proyectos), 3 (Oficina) y 4 (Artefactos)
 ### F6-04 · Pruebas integrales de los flujos críticos · P0 · L · `hecha` (#80, #81; `evidencias/f6-04-flujos-criticos.md`)
 ### F6-05 · Verificar rendimiento, descarga, concurrencia y recuperación · P0 · M · `hecha` (`evidencias/f6-05-rendimiento-concurrencia.md`)
 ### F6-06 · Documentación, ADR, instrucciones y runbooks · P1 · M · `hecha` (ADR-107…109, `docs/operacion/runbook-*.md`, `06` y `07` revisados)

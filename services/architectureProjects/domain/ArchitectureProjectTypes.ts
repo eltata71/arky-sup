@@ -12,12 +12,12 @@
  * build one, and it is what enforces the invariant.
  */
 
-import type { MemoryEntry } from '../../types';
-import type { Artifact, ArtifactSummary } from '../../lib/artifacts';
+import type { MemoryEntry } from '../../../types';
+import type { Artifact, ArtifactSummary } from '../../../lib/artifacts';
 
 // El resumen del índice es un contrato sin comportamiento que leen el
 // portafolio y el proyecto: vive en `lib/artifacts` (ADR-106 §6).
-export type { ArtifactSummary } from '../../lib/artifacts';
+export type { ArtifactSummary } from '../../../lib/artifacts';
 
 export type AttentionStatus =
   | 'discovery'
@@ -205,7 +205,7 @@ export interface ProjectRoot {
    * `publicationPipeline` service. Additive and backwards-compatible — absent
    * on legacy projects until the first package is created.
    */
-  publicationPackages?: import('../publicationPipeline/PublicationPipelineTypes').PublicationPackage[];
+  publicationPackages?: import('../../publicationPipeline/PublicationPipelineTypes').PublicationPackage[];
 }
 
 /**
@@ -261,5 +261,5 @@ export interface Project extends ProjectRoot {
    * by the `architectureKnowledgeGraph` service. Additive and
    * backwards-compatible — absent on legacy projects until the first rebuild.
    */
-  architectureKnowledgeGraph?: import('../architectureKnowledgeGraph').ArchitectureGraph;
+  architectureKnowledgeGraph?: import('../../architectureKnowledgeGraph').ArchitectureGraph;
 }
