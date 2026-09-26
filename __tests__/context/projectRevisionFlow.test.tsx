@@ -19,7 +19,7 @@ const repository = vi.hoisted(() => ({
   loadArtifacts: vi.fn(),
 }));
 
-vi.mock('../../services/architectureProjects/ArchitectureProjectRepository', () => ({
+vi.mock('../../services/architectureProjects/infrastructure/ArchitectureProjectRepository', () => ({
   architectureProjectRepository: repository,
 }));
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { uid: 'u1' } }) }));

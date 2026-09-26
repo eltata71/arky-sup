@@ -14,13 +14,13 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import type { Project } from '../../services/architectureProjects';
-import { architectureProjectRepository } from '../../services/architectureProjects/ArchitectureProjectRepository';
+import { architectureProjectRepository } from '../../services/architectureProjects/infrastructure/ArchitectureProjectRepository';
 import {
   createArchitectureProject,
   newProjectView,
   type CreateArchitectureProjectInput,
   type CreateArchitectureProjectResult,
-} from '../../services/architectureProjects/architectureProjectFactory';
+} from '../../services/architectureProjects/domain/architectureProjectFactory';
 import { observabilityService } from '../../services/observability';
 import { useAuth } from '../AuthContext';
 import type { PersistenceReporter } from './usePersistenceReporter';

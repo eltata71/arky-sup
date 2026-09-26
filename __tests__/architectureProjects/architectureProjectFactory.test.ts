@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createArchitectureProject, newProjectView } from '../../services/architectureProjects';
-import { toProjectDocument } from '../../services/architectureProjects/projectDocumentMapper';
+import { toProjectDocument } from '../../services/architectureProjects/domain/projectDocumentMapper';
 
 const validInput = {
   name: 'Modernización de siniestros',

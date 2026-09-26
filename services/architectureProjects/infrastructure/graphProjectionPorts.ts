@@ -5,7 +5,7 @@
 import { forgetProject } from './projectCache';
 import { getProject } from './projectReads';
 import { getGraphRepository } from './projectWrites';
-import type { GraphProjectionPorts } from './graphProjectionRecovery';
+import type { GraphProjectionPorts } from '../application/graphProjectionRecovery';
 
 export const createGraphProjectionPorts = (globalContext: readonly string[]): GraphProjectionPorts => ({
   listPending: async () => (await getGraphRepository()).listPendingProjections(),

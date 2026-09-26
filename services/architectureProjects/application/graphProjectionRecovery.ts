@@ -27,9 +27,9 @@ import {
   type ArchitectureGraph,
   type GraphProjectionOutcome,
   type PendingGraphProjection,
-} from '../architectureKnowledgeGraph';
-import type { PersistenceResult } from '../persistence';
-import type { Project } from './ArchitectureProjectTypes';
+} from '../../architectureKnowledgeGraph';
+import type { PersistenceResult } from '../../persistence';
+import type { Project } from '../domain/ArchitectureProjectTypes';
 
 export interface GraphProjectionPorts {
   /** Los pendientes; `null` si la bitácora no existe en esta base todavía. */

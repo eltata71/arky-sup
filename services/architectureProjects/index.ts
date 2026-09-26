@@ -20,7 +20,7 @@ export type {
   Project,
   ProjectAttentionTracking,
   ProjectRoot,
-} from './ArchitectureProjectTypes';
+} from './domain';
 
 /**
  * El seguimiento de la atención, como reglas y no como pantallas.
@@ -44,18 +44,18 @@ export {
   type AttentionHealth,
   type AttentionMilestoneSummary,
   type AttentionProgress,
-} from './attentionTracking';
+} from './domain';
 export {
   createArchitectureProject,
   newProjectView,
   type ArchitectureProjectRejection,
   type CreateArchitectureProjectInput,
   type CreateArchitectureProjectResult,
-} from './architectureProjectFactory';
+} from './domain';
 export {
   architectureProjectRepository,
   type ArchitectureProjectRepository,
-} from './ArchitectureProjectRepository';
+} from './infrastructure/ArchitectureProjectRepository';
 
 /**
  * Lo que `services/artifacts` necesita de este agregado.
@@ -69,9 +69,9 @@ export {
   toArtifactSummary,
   type PersistedProjectDocument,
   type ProjectDocument,
-} from './projectDocumentMapper';
-export { clearProjectCache, forgetProject } from './projectCache';
-export { getProject } from './projectReads';
+} from './domain';
+export { clearProjectCache, forgetProject } from './infrastructure/projectCache';
+export { getProject } from './infrastructure/projectReads';
 
 /**
  * La recuperación de la proyección del grafo (F5-05): quien procesa los
@@ -84,5 +84,5 @@ export {
   type GraphProjectionPorts,
   type GraphProjectionReport,
   type RecoveredGraphProjection,
-} from './graphProjectionRecovery';
-export { createGraphProjectionPorts } from './graphProjectionPorts';
+} from './application/graphProjectionRecovery';
+export { createGraphProjectionPorts } from './infrastructure/graphProjectionPorts';

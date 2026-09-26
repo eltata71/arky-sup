@@ -23,15 +23,15 @@
  *    lo que el producto quería y no podía.
  */
 
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact } from '../../../lib/artifacts';
 import {
   createOperationId,
   supabaseErrorCode,
   supabaseFailure,
   type PersistenceResult,
-} from '../persistence';
-import { callRpc } from '../adapters';
-import type { PersistedProjectDocument } from './projectDocumentMapper';
+} from '../../persistence';
+import { callRpc } from '../../adapters';
+import type { PersistedProjectDocument } from '../domain/projectDocumentMapper';
 
 /** El proyecto tal y como lo devuelve `load_project_aggregate`. */
 export interface RemoteProjectAggregate {

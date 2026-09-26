@@ -27,21 +27,21 @@
  * mal negocio.
  */
 
-import type { Artifact } from '../../lib/artifacts';
-import type { Project, ArtifactSummary } from './ArchitectureProjectTypes';
-import { observabilityService } from '../observability';
-import { validateProject, validateProjects } from './projectRuntimeValidation';
-import { createSupabaseKnowledgeGraphRepository, type ArchitectureGraph } from '../architectureKnowledgeGraph';
-import { deserializePublicationPackages } from '../publicationPipeline/PublicationPersistenceAdapter';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project, ArtifactSummary } from '../domain/ArchitectureProjectTypes';
+import { observabilityService } from '../../observability';
+import { validateProject, validateProjects } from '../domain/projectRuntimeValidation';
+import { createSupabaseKnowledgeGraphRepository, type ArchitectureGraph } from '../../architectureKnowledgeGraph';
+import { deserializePublicationPackages } from '../../publicationPipeline/PublicationPersistenceAdapter';
 import {
     classifyPersistenceError,
     getErrorCode,
     readLocal,
-} from '../persistence';
-import { fromProjectSnapshot, toArtifactSummary } from './projectDocumentMapper';
+} from '../../persistence';
+import { fromProjectSnapshot, toArtifactSummary } from '../domain/projectDocumentMapper';
 import { projectCache as cache } from './projectCache';
 import { supabaseProjectRepository } from './SupabaseProjectRepository';
-import { loadSupabaseDataClient } from '../adapters';
+import { loadSupabaseDataClient } from '../../adapters';
 
 /** La clave del espejo local de la lista completa. */
 export const PROJECTS_MIRROR_KEY = 'projects';

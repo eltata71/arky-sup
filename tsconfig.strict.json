@@ -44,9 +44,7 @@
     "services/memory/**/*.ts",
     "services/chat/ChatTypes.ts",
     "services/chat/chatHistory.ts",
-    "services/architectureProjects/ArchitectureProjectTypes.ts",
-    "services/architectureProjects/architectureProjectFactory.ts",
-    "services/architectureProjects/attentionTracking.ts",
+    "services/architectureProjects/domain/**/*.ts",
     "services/artifacts/application/artifactWorkflow.ts",
     "services/ai/generation/legacyTransport.ts",
     "services/ai/generation/artifactSuggestions.ts",
@@ -70,7 +68,7 @@
     "services/chat/compactionDigest.ts",
     "services/ai/generation/chatCompaction.ts",
     // F5-05: la recuperación de la proyección del grafo, pura por puertos.
-    "services/architectureProjects/graphProjectionRecovery.ts",
+    "services/architectureProjects/application/graphProjectionRecovery.ts",
     "services/businessInitiatives/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",
@@ -110,9 +108,7 @@
     // F3.1-F3.2. Puertos y adaptadores: nacen en strict (sin SDK, funciones puras).
     "services/ports/**/*.ts",
     "services/adapters/**/*.ts",
-    "services/architectureProjects/projectCache.ts",
-    "services/architectureProjects/projectDocumentMapper.ts",
-    "services/architectureProjects/artifactDocumentMapper.ts",
+    "services/architectureProjects/infrastructure/projectCache.ts",
     "services/settings/**/*.ts"
   ]
 }

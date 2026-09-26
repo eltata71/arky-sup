@@ -89,7 +89,7 @@ describe('el verificador ve lo que dice ver', () => {
     // F6-02 hizo que ese `import()` entre por la puerta del módulo, así que ya
     // no es un import profundo, y la prueba mira la propiedad directamente: el
     // verificador lo lee, sea profundo o no.
-    const imports = localImports('services/architectureProjects/ArchitectureProjectTypes.ts');
+    const imports = localImports('services/architectureProjects/domain/ArchitectureProjectTypes.ts');
     expect(imports).toContain('services/architectureKnowledgeGraph');
     expect(imports).toContain('services/publicationPipeline/PublicationPipelineTypes');
   });

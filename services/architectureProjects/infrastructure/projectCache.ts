@@ -13,7 +13,7 @@
  * borrar un proyecto invalidaba a mano la clave del chat.
  */
 
-import { MemoryCache } from '../../utils';
+import { MemoryCache } from '../../../utils';
 
 export const projectCache = new MemoryCache();
 

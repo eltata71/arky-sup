@@ -22,9 +22,9 @@
 
 import { getAllProjects, getProject } from './projectReads';
 import { createProject, deleteProject, updateProject, type ProjectWriteConfirmation } from './projectWrites';
-import type { PersistenceResult } from '../persistence';
-import type { Artifact } from '../../lib/artifacts';
-import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
+import type { PersistenceResult } from '../../persistence';
+import type { Artifact } from '../../../lib/artifacts';
+import type { Project, ProjectRoot } from '../domain/ArchitectureProjectTypes';
 
 export interface ArchitectureProjectRepository {
   list(userId?: string, isAdmin?: boolean): Promise<Project[]>;

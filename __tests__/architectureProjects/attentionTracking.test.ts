@@ -16,7 +16,7 @@ import {
   isClosedAttention,
   summarizeAttentionMilestones,
   summarizeAttentionRisks,
-} from '../../services/architectureProjects/attentionTracking';
+} from '../../services/architectureProjects/domain/attentionTracking';
 import type { Project, ProjectAttentionTracking } from '../../services/architectureProjects';
 
 const NOW = Date.parse('2026-09-05T00:00:00.000Z');

@@ -26,16 +26,16 @@
  * a ser la correcta; `bootPathStaysLight.test.ts` lo vigila.
  */
 
-import type { Project, ProjectRoot } from './ArchitectureProjectTypes';
-import { chatHistoryRepository } from '../chat';
-import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../persistence';
-import { toProjectDocument, type PersistedProjectDocument } from './projectDocumentMapper';
+import type { Project, ProjectRoot } from '../domain/ArchitectureProjectTypes';
+import { chatHistoryRepository } from '../../chat';
+import { createFailureResult, executeRemoteWrite, isWriteConfirmed, writeLocalDraft, type PersistenceResult } from '../../persistence';
+import { toProjectDocument, type PersistedProjectDocument } from '../domain/projectDocumentMapper';
 import { forgetProject } from './projectCache';
 import { getProject } from './projectReads';
 import { supabaseProjectRepository } from './SupabaseProjectRepository';
-import { createSupabaseKnowledgeGraphRepository } from '../architectureKnowledgeGraph';
-import { loadSupabaseDataClient } from '../adapters';
-import { observabilityService } from '../observability';
+import { createSupabaseKnowledgeGraphRepository } from '../../architectureKnowledgeGraph';
+import { loadSupabaseDataClient } from '../../adapters';
+import { observabilityService } from '../../observability';
 
 let graphRepository: ReturnType<typeof createSupabaseKnowledgeGraphRepository> | null = null;
 /** El repositorio del grafo; la revisión viaja con cada grafo, así que compartirlo no comparte estado. */

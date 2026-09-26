@@ -17,7 +17,7 @@ import {
   type PublicationProjectInput,
 } from '../../services/publicationPipeline';
 import { buildArchitectureKnowledgeGraphForProject } from '../../services/architectureKnowledgeGraph';
-import { validateProject } from '../../services/architectureProjects/projectRuntimeValidation';
+import { validateProject } from '../../services/architectureProjects/domain/projectRuntimeValidation';
 import {
   worldClassDocument,
   c4ContextDiagram,

@@ -7,6 +7,6 @@
  * hay proyectos, así que el hook la carga con `import()` por esta puerta, que
  * `modules.json` declara, igual que `businessInitiatives/commands.ts`.
  */
-export { recoverGraphProjections } from './graphProjectionRecovery';
-export type { GraphProjectionReport } from './graphProjectionRecovery';
-export { createGraphProjectionPorts } from './graphProjectionPorts';
+export { recoverGraphProjections } from './application/graphProjectionRecovery';
+export type { GraphProjectionReport } from './application/graphProjectionRecovery';
+export { createGraphProjectionPorts } from './infrastructure/graphProjectionPorts';

@@ -29,16 +29,16 @@ import { readFileSync } from 'node:fs';
 const AGGREGATES = [
   {
     type: 'Project',
-    factory: 'services/architectureProjects/architectureProjectFactory.ts',
+    factory: 'services/architectureProjects/domain/architectureProjectFactory.ts',
     /**
      * `runtimeValidation` reconstruye un proyecto a partir de lo que hay en la
      * base de datos: no está creando uno nuevo, está saneando uno que ya
      * existe. `portfolioResolver` hace lo mismo para dibujar el grafo.
      */
     alsoAllowed: [
-      'services/architectureProjects/projectRuntimeValidation.ts',
+      'services/architectureProjects/domain/projectRuntimeValidation.ts',
       'services/portfolioGraph/portfolioResolver.ts',
-      'services/architectureProjects/projectDocumentMapper.ts',
+      'services/architectureProjects/domain/projectDocumentMapper.ts',
     ],
   },
   {

@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { validateProject } from '../../services/architectureProjects/projectRuntimeValidation';
+import { validateProject } from '../../services/architectureProjects/domain/projectRuntimeValidation';
 import {
   buildArchitectureKnowledgeGraph,
   createEmptyArchitectureGraph,

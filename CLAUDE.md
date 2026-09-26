@@ -246,8 +246,9 @@ arkypro-1.0/
 │   ├── businessInitiatives/  # ★ The pilot context (F3-05): domain/ (pure rules, named operations)
 │   │                        # + infrastructure/ (Supabase, mirror); three declared doors
 │   ├── portfolioGraph/       # ★ The four levels as a keyed graph: resolution, integrity, search
-│   ├── architectureProjects/ # ★ The Proyecto de Arquitectura aggregate: type, factory, repository,
-│   │                        # and `attentionTracking` — its progress, health and contributions
+│   ├── architectureProjects/ # ★ The Proyecto de Arquitectura aggregate, in the pilot's shape (F6-03):
+│   │                        # domain/ (type, factory, stored-record reading, `attentionTracking`),
+│   │                        # infrastructure/ (Supabase, cache, repository), application/ (graph recovery)
 │   ├── persistence/          # ★ The write gateway: PersistenceResult, local drafts, classification,
 │   │                        # collection paths, the cache+local-mirror primitive
 │   ├── settings/             # ★ Per-user preferences: theme, language, AI config
@@ -1353,6 +1354,17 @@ purpose, so the next ones copy it rather than rediscover it
 
 Do not add `updateInitiative(partial)` back, and do not mint an entity id in a
 screen: both put a rule of the model in the one place it cannot be tested.
+
+**The shape is being copied context by context (F6-03).** Proyectos has it
+since the second cut: `domain/`, `infrastructure/` and `application/`, with the
+module's barrel entering through `domain/index.ts`. The purity check grew with
+it: `__tests__/architecture/contextDomainPurity.test.ts` follows each domain's
+**value-import closure** (type imports are erased and do not count) and fails
+if any path reaches persistence, adapters, observability, identity, React, a
+screen or the context's own `infrastructure/`. A domain may read another
+context's vocabulary — the project's read model contains the knowledge graph
+and publication packages — but no rule may do I/O. Its `CONTEXTS` list only
+grows; a context joins the day it has the shape.
 
 ## Aggregates: one factory each, and a gate
 

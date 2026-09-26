@@ -8,7 +8,17 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-10**, el despliegue comprueba el esquema de
+- **Tarea en curso:** **F6-03, corte 2a — Proyectos con la forma del piloto.**
+  Se movieron doce ficheros (git los ve como renombrados) a `domain/`,
+  `infrastructure/` y `application/`, y el barril entra por
+  `domain/index.ts`. La prueba de pureza se generalizó:
+  `contextDomainPurity.test.ts` sigue el cierre de imports de valor de cada
+  dominio con el analizador de TypeScript. Se comprobó con un caso negativo
+  real. Todo el dominio de Proyectos entra en `strict`. Sin cambio de
+  comportamiento: carga inicial 310,1 KB gz, 4 764 pruebas. Siguen: 2b
+  (operaciones con nombre en lugar de `updateProject(parcial)`), 3 (Oficina)
+  y 4 (Artefactos).
+- **Antes:** **F6-10**, el despliegue comprueba el esquema de
   producción. Es la opción B del propietario, del 2026-09-26. Antes de
   construir, el trabajo `deploy` pregunta a producción, con la clave
   publicable, si cada migración del repositorio está aplicada, y no publica si
@@ -374,7 +384,7 @@
 |---|---|---|
 | **F6-01** retirar rutas antiguas y adaptadores sin consumidor | ✅ (2026-09-25) | Tres cortes: ficheros sin consumidor y su guardia (#77); el proxy heredado `api/gemini.ts` y el fallo de la creación guiada en producción (#78); la superficie pública del motor que sólo leían las pruebas. |
 | **F6-02** dependencias no autorizadas a cero | ✅ (2026-09-24) | No declaradas: 0 (desde F3-03). Imports profundos 44 → 29, cada uno de los que quedan con su razón. `quality -> diagram` no puede ir por el barril: 310 → 777 KB gz. |
-| **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1 hecho: `settings` y `learning` llevan la revisión con el registro; ninguna excepción queda en `noRevisionCache.test.ts`. |
+| **F6-03** el patrón al resto de contextos | ⏳ en curso | Corte 1: revisiones de `settings` y `learning`. Corte 2a: Proyectos con `domain/`/`infrastructure/`/`application/` y pureza por cierre. Faltan 2b, 3 y 4. |
 | **F6-04** pruebas integrales de los flujos críticos | ✅ (2026-09-25) | `e2e/critical-flows.spec.ts` (#80): iniciativa, proyecto desde la iniciativa y preferencias encadenadas, con recarga. `e2e/artifact-and-graph.spec.ts`: generar un artefacto y recuperar la proyección del grafo. |
 | **F6-05** rendimiento, descarga, concurrencia y recuperación | ✅ (2026-09-25) | Presupuesto por ruta; Dashboard 617,6 → 48,9 KB gz; cada chunk se evalúa en E2E; inventario de concurrencia con un contrato nuevo. Abierto: `save_chat_history` sin revisión. |
 | **F6-06** documentación, ADR, instrucciones y runbooks | ✅ (2026-09-25) | ADR-107…109; cuatro runbooks; matriz de propiedad e invariantes al día, con prueba; tabla de estado de CLAUDE.md con una sola fecha. |
