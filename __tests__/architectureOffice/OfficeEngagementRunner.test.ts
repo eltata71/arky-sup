@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   runEngagement,
   type OfficeRunnerPorts,
-} from '../../services/architectureOffice/OfficeEngagementRunner';
+} from '../../services/architectureOffice/application/OfficeEngagementRunner';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
@@ -10,8 +10,8 @@ import {
   type OfficeEngagement,
   type OfficeTask,
   type OfficeTaskReview,
-} from '../../services/architectureOffice/OfficeTypes';
-import type { OfficeAgentId } from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import type { PersistenceResult, PersistenceStatus } from '../../services/persistence';
 
 const task = (overrides: Partial<OfficeTask> & Pick<OfficeTask, 'id' | 'kind' | 'assigneeId'>): OfficeTask => ({

@@ -10,7 +10,7 @@
  * nobody types "Modernización" with the accent in a search box.
  */
 
-import { foldOfficeText } from '../architectureOffice/officeShared';
+import { foldOfficeText } from '../architectureOffice/domain/officeShared';
 import type {
   PortfolioGraph,
   PortfolioLevel,

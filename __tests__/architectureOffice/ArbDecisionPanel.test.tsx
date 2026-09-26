@@ -8,8 +8,8 @@ import {
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
   type OfficeEngagementStatus,
-} from '../../services/architectureOffice/OfficeTypes';
-import type { OfficeQualityAssessment } from '../../services/architectureOffice/officeQualityGates';
+} from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeQualityAssessment } from '../../services/architectureOffice/domain/officeQualityGates';
 
 const assessment = (overallStatus: OfficeQualityAssessment['overallStatus']): OfficeQualityAssessment => ({
   overallStatus,

@@ -21,8 +21,8 @@ import {
   OFFICE_AGENT_PERSONAS,
   resolveOfficeAgentMention,
   type OfficeAgentId,
-} from '../officeAgentPersonas';
-import { getOfficeArchitectureContext } from '../officeArchitectureKnowledge';
+} from '../domain/officeAgentPersonas';
+import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 
 /** The project instruction, framed by the persona and the Office's standards. */
 export function composeProjectChatInstruction(

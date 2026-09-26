@@ -23,7 +23,7 @@ import {
   resolveAgentProfiles,
   type OfficeAgentProfile,
   type OfficeAgentProfileOverride,
-} from '../officeAgentProfile';
+} from '../domain/officeAgentProfile';
 import { EA_LEVELS, PRODUCT_NAME } from '../../../lib/eaTerminology';
 import {
   findGuideTopics,

@@ -5,7 +5,7 @@ import {
   canActAsArb,
   decideEngagement,
   describeArbDecisionEligibility,
-} from '../../services/architectureOffice/OfficeArbService';
+} from '../../services/architectureOffice/domain/OfficeArbService';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
@@ -14,8 +14,8 @@ import {
   type OfficeEngagement,
   type OfficeEngagementStatus,
   type OfficeTask,
-} from '../../services/architectureOffice/OfficeTypes';
-import type { OfficeQualityAssessment } from '../../services/architectureOffice/officeQualityGates';
+} from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeQualityAssessment } from '../../services/architectureOffice/domain/officeQualityGates';
 
 const ADMIN: OfficeActor = { id: 'user-1', name: 'Ana Admin', role: 'admin' };
 const AUTHOR: OfficeActor = { id: 'user-2', name: 'Beto Arquitecto', role: 'student' };

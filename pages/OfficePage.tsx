@@ -36,8 +36,8 @@ import {
 } from '../components/architectureOffice/dashboard';
 import { BrokenLinksPanel, PortfolioCanvas, PortfolioSearchBox } from '../components/navigation';
 import { resolvePortfolioGraph, type PortfolioSearchHit } from '../services/portfolioGraph';
-import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/officeAgentPersonas';
-import { buildOfficePortfolio } from '../services/architectureOffice/officePortfolio';
+import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
+import { buildOfficePortfolio } from '../services/architectureOffice/domain/officePortfolio';
 
 type OfficeTabId = 'resumen' | 'portafolio' | 'canvas' | 'especialistas';
 

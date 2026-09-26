@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { summarizeEngagementMetrics } from '../../services/architectureOffice/officeTelemetry';
+import { summarizeEngagementMetrics } from '../../services/architectureOffice/infrastructure/officeTelemetry';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
   type OfficeTask,
-} from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/OfficeTypes';
 
 const task = (overrides: Partial<OfficeTask> & Pick<OfficeTask, 'id' | 'kind' | 'assigneeId' | 'status'>): OfficeTask => ({
   engagementId: 'eng-1',

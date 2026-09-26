@@ -21,8 +21,8 @@ import { join } from 'node:path';
 const OFFICE = 'services/architectureOffice';
 /** The registry implements the lookups; the persona file owns the values. */
 const OWNERS = new Set([
-  join(OFFICE, 'agentRegistry.ts'),
-  join(OFFICE, 'officeAgentPersonas.ts'),
+  join(OFFICE, 'domain', 'agentRegistry.ts'),
+  join(OFFICE, 'domain', 'officeAgentPersonas.ts'),
 ]);
 
 function filesUnder(dir: string): string[] {
@@ -51,7 +51,7 @@ describe('the agent registry is the only selector', () => {
   });
 
   it('leaves exactly one implementation of each lookup', () => {
-    const registry = codeOf(join(OFFICE, 'agentRegistry.ts'));
+    const registry = codeOf(join(OFFICE, 'domain', 'agentRegistry.ts'));
     for (const name of [
       'findAgentsByCapability',
       'findAgentsByDomain',

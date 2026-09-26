@@ -24,9 +24,9 @@ const ok = (data?: unknown): Outcome & { data?: unknown } => ({
 /** Lo que `list()` devolverá. Vacío salvo que una prueba siembre un encargo. */
 let seededEngagements: unknown[] = [];
 
-vi.mock('../../services/architectureOffice/OfficeEngagementRepository', async () => {
-  const actual = await vi.importActual<typeof import('../../services/architectureOffice/OfficeEngagementRepository')>(
-    '../../services/architectureOffice/OfficeEngagementRepository',
+vi.mock('../../services/architectureOffice/infrastructure/OfficeEngagementRepository', async () => {
+  const actual = await vi.importActual<typeof import('../../services/architectureOffice/infrastructure/OfficeEngagementRepository')>(
+    '../../services/architectureOffice/infrastructure/OfficeEngagementRepository',
   );
   return {
     ...actual,
@@ -106,8 +106,8 @@ const Harness: React.FC<{ onReady: (office: ReturnType<typeof useOffice>) => voi
 beforeAll(async () => {
   await Promise.all([
     import('../../services/architectureOffice/application/projectConversation'),
-    import('../../services/architectureOffice/OfficeRunnerAdapters'),
-    import('../../services/architectureOffice/OfficeEngagementRunner'),
+    import('../../services/architectureOffice/infrastructure/OfficeRunnerAdapters'),
+    import('../../services/architectureOffice/application/OfficeEngagementRunner'),
     import('../../services/architectureOffice/application/agentConfiguration'),
   ]);
 }, 120_000);

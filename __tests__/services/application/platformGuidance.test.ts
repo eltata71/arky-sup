@@ -15,7 +15,7 @@ import {
   platformGuideAgentBriefing,
   PLATFORM_GUIDE_HISTORY_TURNS,
 } from '../../../services/architectureOffice/application/platformGuidance';
-import { OFFICE_AGENT_PERSONAS } from '../../../services/architectureOffice/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../../../services/architectureOffice/domain/officeAgentPersonas';
 import type { OfficeAgentProfileOverride } from '../../../services/architectureOffice';
 
 const AGENT_COUNT = Object.keys(OFFICE_AGENT_PERSONAS).length;

@@ -43,7 +43,7 @@ import {
   Users,
 } from 'lucide-react';
 import { OFFICE_HEALTH_VISUALS } from '../architectureOffice/officeChartTokens';
-import type { OfficeHealthBucket } from '../../services/architectureOffice/officePortfolio';
+import type { OfficeHealthBucket } from '../../services/architectureOffice/domain/officePortfolio';
 import type {
   InitiativeHealth,
   InitiativeDocumentKind,

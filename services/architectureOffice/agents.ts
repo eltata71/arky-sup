@@ -8,8 +8,8 @@
  *
  * Nothing here calls a model. A module that does, does not belong behind this door.
  */
-export * from './officeAgentProfile';
-export * from './OfficeAgentProfileRepository';
-export * from './officeArchitectureKnowledge';
-export { DEFAULT_MAX_SPECIALISTS } from './officeOrchestration';
-export type { OfficeAgentId } from './agentDefinition';
+export * from './domain/officeAgentProfile';
+export * from './infrastructure/OfficeAgentProfileRepository';
+export * from './domain/officeArchitectureKnowledge';
+export { DEFAULT_MAX_SPECIALISTS } from './application/officeOrchestration';
+export type { OfficeAgentId } from './domain/agentDefinition';

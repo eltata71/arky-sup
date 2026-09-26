@@ -26,7 +26,7 @@ import type { ArtifactSummary } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import { isInitiativeCode, type BusinessInitiativeCode } from '../../lib/eaTerminology';
 import type { BusinessInitiative } from '../businessInitiatives/domain';
-import type { OfficeEngagement } from '../architectureOffice/OfficeTypes';
+import type { OfficeEngagement } from '../architectureOffice/domain/OfficeTypes';
 import type {
   ArtifactNode,
   AttentionNode,

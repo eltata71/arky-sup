@@ -22,8 +22,8 @@ import { AIArchitectAvatar } from '../ui/AIArchitectIdentity';
 import { TeamCoordinationPanel } from './TeamCoordinationPanel';
 import { PersonaAvatar } from './PersonaAvatar';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
-import { planOfficeWorkstreams } from '../../services/architectureOffice/officeOrchestration';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import { planOfficeWorkstreams } from '../../services/architectureOffice/application/officeOrchestration';
 import {
   coordinateRequest,
   teamFromPlan,
@@ -31,8 +31,8 @@ import {
   type CoordinationOutcome,
   type CoordinationScope,
   type CoordinationTeamMember,
-} from '../../services/architectureOffice/officeCoordination';
-import { buildCoordinationInvoker } from '../../services/architectureOffice/officeCoordinationInvoker';
+} from '../../services/architectureOffice/application/officeCoordination';
+import { buildCoordinationInvoker } from '../../services/architectureOffice/application/officeCoordinationInvoker';
 import { chatWithProject, configuredModelTiers, customizedAgentBriefings, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
 import type { Settings } from '../../types';

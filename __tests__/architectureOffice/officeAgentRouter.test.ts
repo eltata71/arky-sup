@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   assignDeliverable,
   rankPersonasForBrief,
-} from '../../services/architectureOffice/OfficeAgentRouter';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/OfficeAgentRouter';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 describe('OfficeAgentRouter — brief ranking', () => {
   it('surfaces the specialists whose domain the brief actually mentions', () => {

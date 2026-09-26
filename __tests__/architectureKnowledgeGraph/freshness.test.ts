@@ -22,7 +22,7 @@ import {
   type ArchitectureGraphBuildInput,
 } from '../../services/architectureKnowledgeGraph';
 import { NOW, fullBuildInput, makeArtifact } from './fixtures';
-import { getOfficeArchitectureContext } from '../../services/architectureOffice/officeArchitectureKnowledge';
+import { getOfficeArchitectureContext } from '../../services/architectureOffice/domain/officeArchitectureKnowledge';
 
 /** A build input cloned from the full fixture, deeply enough for mutation. */
 const cloneInput = (): ArchitectureGraphBuildInput => ({

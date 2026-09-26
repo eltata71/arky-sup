@@ -2,7 +2,7 @@ import React from 'react';
 import {
   OFFICE_AGENT_PERSONAS,
   type OfficeAgentPersona,
-} from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 interface OfficeAgentPickerProps {
   onSelect: (persona: OfficeAgentPersona) => void;

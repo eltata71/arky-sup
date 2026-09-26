@@ -43,15 +43,15 @@ const AGGREGATES = [
   },
   {
     type: 'OfficeEngagement',
-    factory: 'services/architectureOffice/officeEngagementFactory.ts',
+    factory: 'services/architectureOffice/domain/officeEngagementFactory.ts',
     /**
      * El runner y el servicio del ARB producen el *siguiente estado* de un
      * encargo que ya existe. Son transiciones, no construcción: el agregado ya
      * pasó por la fábrica y sus invariantes se comprobaron entonces.
      */
     alsoAllowed: [
-      'services/architectureOffice/OfficeEngagementRunner.ts',
-      'services/architectureOffice/OfficeArbService.ts',
+      'services/architectureOffice/application/OfficeEngagementRunner.ts',
+      'services/architectureOffice/domain/OfficeArbService.ts',
     ],
   },
   {

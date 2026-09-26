@@ -10,9 +10,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createOfficeEngagement } from '../../../services/architectureOffice/officeEngagementFactory';
-import { planCharterDeterministic } from '../../../services/architectureOffice/OfficeEngagementPlanner';
-import type { OfficeActor } from '../../../services/architectureOffice/OfficeTypes';
+import { createOfficeEngagement } from '../../../services/architectureOffice/domain/officeEngagementFactory';
+import { planCharterDeterministic } from '../../../services/architectureOffice/domain/OfficeEngagementPlanner';
+import type { OfficeActor } from '../../../services/architectureOffice/domain/OfficeTypes';
 
 const actor: OfficeActor = { id: 'u1', name: 'Ana', role: 'admin' } as OfficeActor;
 

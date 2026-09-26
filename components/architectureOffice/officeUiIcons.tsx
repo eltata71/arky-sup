@@ -45,16 +45,16 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import type { OfficeHealthBucket } from '../../services/architectureOffice/officePortfolio';
-import type { OfficeAgentId } from '../../services/architectureOffice/officeAgentPersonas';
+import type { OfficeHealthBucket } from '../../services/architectureOffice/domain/officePortfolio';
+import type { OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import type {
   OfficeEngagementKind,
   OfficeEngagementStatus,
   OfficeFindingSeverity,
   OfficeTaskKind,
   OfficeTaskStatus,
-} from '../../services/architectureOffice/OfficeTypes';
-import type { OfficeQualityGateStatus } from '../../services/architectureOffice/officeQualityGates';
+} from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeQualityGateStatus } from '../../services/architectureOffice/domain/officeQualityGates';
 
 /** The three levels of the hierarchy, each with its own permanent glyph. */
 export const HIERARCHY_ICONS = Object.freeze({

@@ -3,11 +3,11 @@ import {
   OFFICE_AGENT_PERSONAS,
   resolveOfficeAgentMention,
   buildOfficePersonaInstruction,
-} from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/officeAgentPersonas';
 import {
   findAgentsThatProduce,
   findAgentsThatReview,
-} from '../../services/architectureOffice/agentRegistry';
+} from '../../services/architectureOffice/domain/agentRegistry';
 
 describe('officeAgentPersonas', () => {
   it('defines the thirteen approved personas with stable unique ids', () => {

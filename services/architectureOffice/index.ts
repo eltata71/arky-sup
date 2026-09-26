@@ -8,43 +8,30 @@
  */
 
 // Personas, standards and shared helpers
-export * from './officeAgentPersonas';
+export * from './domain';
 /**
  * La mitad configurable de una persona: su ficha. Se publica junto al registro
  * porque nadie debería poder leer uno sin el otro — una pantalla que pinta
  * `OFFICE_AGENT_PERSONAS` sin resolver las fichas muestra la configuración por
  * defecto y contradice lo que el usuario acaba de guardar.
  */
-export * from './agentDefinition';
-export * from './agentHandoff';
-export * from './agentRegistry';
-export * from './officeAgentProfile';
-export * from './OfficeAgentProfileRepository';
-export * from './officeArchitectureKnowledge';
-export * from './officeShared';
+export * from './infrastructure/OfficeAgentProfileRepository';
 
 // Domain model
-export * from './OfficeTypes';
 
 // Planning and execution
-export * from './OfficeAgentRouter';
-export * from './OfficeEngagementPlanner';
-export * from './OfficeEngagementRunner';
-export * from './OfficeRunnerAdapters';
+export * from './application/OfficeEngagementRunner';
+export * from './infrastructure/OfficeRunnerAdapters';
 
 // Persistence
-export * from './OfficeEngagementRepository';
-export * from './SupabaseOfficeEngagementRepository';
+export * from './infrastructure/OfficeEngagementRepository';
+export * from './infrastructure/SupabaseOfficeEngagementRepository';
 
 // Governance
-export * from './officeArtifactValidators';
-export * from './officeQualityGates';
-export * from './OfficeArbService';
-export * from './officePublicationBridge';
 
 // Observability
-export * from './officeRunTrace';
-export * from './officeTelemetry';
+export * from './application/officeRunTrace';
+export * from './infrastructure/officeTelemetry';
 
 /**
  * El retrato del portafolio: el resumen por estado, la cola de decisiones, la
@@ -55,7 +42,6 @@ export * from './officeTelemetry';
  * el acoplamiento que `index.ts` existe para evitar, y aquí no hay motivo de
  * empaquetado que lo justifique: todo lo que lo consume es código diferido.
  */
-export * from './officePortfolio';
 
 /**
  * Servicios de aplicación: lo que una pantalla *decide*, fuera de la pantalla.
@@ -70,7 +56,7 @@ export * from './application/copilotTurn';
 // cierre del barril —`captureAssistance` la importa—; publicarla es lo que deja
 // a las pantallas entrar por la puerta en lugar de por la ruta.
 export * from './application/assistantConsultation';
-export type { CoordinationScope, CoordinationScopeLevel } from './officeCoordination';
+export type { CoordinationScope, CoordinationScopeLevel } from './application/officeCoordination';
 export * from './application/officeCapabilities';
 export * from './application/platformGuidance';
 export * from './application/portfolioCommandCenter';
@@ -78,8 +64,8 @@ export * from './application/projectConversation';
 
 // Legacy chat-triggered orchestration. Superseded by the engagement engine
 // above; still reachable from the project copilot via "@Lucía coordina…".
-export * from './officeOrchestration';
+export * from './application/officeOrchestration';
 
 // `normalizeBusinessProjectIds` is the office's own normalisation of the
 // `NEG-YYYY-NNN` codes, and the persistence layer needs it on every read.
-export { normalizeBusinessProjectIds } from './officeShared';
+export { normalizeBusinessProjectIds } from './domain/officeShared';

@@ -22,11 +22,11 @@ import {
   GATE_STATUS_LABELS,
   GATE_STATUS_TONES,
 } from '../officeUiLabels';
-import { summarizeEngagementProgress } from '../../../services/architectureOffice/OfficeTypes';
+import { summarizeEngagementProgress } from '../../../services/architectureOffice/domain/OfficeTypes';
 import type {
   ArchitectureProjectNode,
   BusinessProgramNode,
-} from '../../../services/architectureOffice/officePortfolio';
+} from '../../../services/architectureOffice/domain/officePortfolio';
 
 export interface PortfolioExplorerProps {
   programs: BusinessProgramNode[];

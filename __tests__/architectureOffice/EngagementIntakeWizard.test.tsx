@@ -8,7 +8,7 @@ import {
   type IntakeProjectOption,
 } from '../../components/architectureOffice/EngagementIntakeWizard';
 import { buildInitiative, type BusinessInitiative } from '../../services/businessInitiatives';
-import type { OfficeEngagement } from '../../services/architectureOffice/OfficeTypes';
+import type { OfficeEngagement } from '../../services/architectureOffice/domain/OfficeTypes';
 
 const BRIEF = 'Modernizar el motor de siniestros AS/400 exponiendo APIs a Salesforce, cumpliendo HIPAA.';
 const NOW = '2026-08-26T00:00:00.000Z';

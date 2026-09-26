@@ -26,8 +26,8 @@ import {
   executeOfficeOrchestration,
   isOfficeOrchestrationRequest,
   planOfficeWorkstreams,
-} from '../officeOrchestration';
-import type { OfficeAgentId } from '../officeAgentPersonas';
+} from './officeOrchestration';
+import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import { chatWithProject } from './projectConversation';
 import { consultOffice } from './assistantConsultation';
 

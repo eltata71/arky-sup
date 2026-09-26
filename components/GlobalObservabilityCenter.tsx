@@ -3,7 +3,7 @@ import { Activity, AlertTriangle, CheckCircle2, Clipboard, ShieldCheck, X } from
 import { useObservability } from '../context/ObservabilityContext';
 import type { ObservabilityEvent, ObservabilitySeverity } from '../services/observability';
 import type { Project } from '../context/AppContext';
-import { evaluateOfficeQualityGates, OFFICE_GATE_LABELS } from '../services/architectureOffice/officeQualityGates';
+import { evaluateOfficeQualityGates, OFFICE_GATE_LABELS } from '../services/architectureOffice/domain/officeQualityGates';
 
 interface GlobalObservabilityCenterProps {
   project?: Project;

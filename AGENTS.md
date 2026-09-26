@@ -359,7 +359,12 @@ Reglas que no se negocian al trabajar aquí:
     las pantallas emiten un `ProjectCommand` y `runProjectCommand` aplica
     `applyProjectCommand`. Quitar la última iniciativa se rechaza, un comando
     que no cambia nada no escribe, y el grafo va por `saveProjectGraph` sin tocar
-    la raíz. `namedOperations.test.ts` impide que vuelvan los parches. Los cambios son **operaciones con nombre** —una unión de
+    la raíz. `namedOperations.test.ts` impide que vuelvan los parches.
+    **La Oficina también tiene la forma** (corte 3): `domain/`, `application/`
+    (runner y coordinación) e `infrastructure/`. Cinco reglas llegaban a la
+    base por un solo import —`withAuditEntry` vivía en el repositorio—, y el
+    puerto `AgentPersonaBriefing` bajó a su hoja para que el dominio entre en
+    `strict` sin arrastrar el motor. Los cambios son **operaciones con nombre** —una unión de
     comandos y `applyInitiativeCommand`, que devuelve el agregado nuevo o un
     rechazo tipado—, nunca `update(partial)`, y el proveedor de React sólo hace
     lo que es de un proveedor: estado optimista, la escritura y revertir.

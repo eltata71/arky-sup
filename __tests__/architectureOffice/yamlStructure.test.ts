@@ -5,7 +5,7 @@ import {
   hasYamlPath,
   readYamlStructure,
   yamlTopLevelKeys,
-} from '../../services/architectureOffice/yamlStructure';
+} from '../../services/architectureOffice/domain/yamlStructure';
 
 describe('yamlStructure', () => {
   it('reads top-level keys and nested paths', () => {

@@ -14,7 +14,7 @@ import React, { useEffect, useState } from 'react';
 import { Badge, cn } from '../ui';
 import { useAppContext } from '../../context/AppContext';
 import type { AgentActionRecord } from '../../services/agent';
-import type { OfficeAuditEntry } from '../../services/architectureOffice/OfficeTypes';
+import type { OfficeAuditEntry } from '../../services/architectureOffice/domain/OfficeTypes';
 
 interface OfficeTimelineProps {
   projectId: string;

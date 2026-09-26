@@ -13,7 +13,7 @@ import {
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
   type OfficeTask,
-} from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/OfficeTypes';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 

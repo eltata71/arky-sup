@@ -9,15 +9,15 @@
  * calls it once.
  */
 import type { Project } from '../../architectureProjects';
-import { OFFICE_AGENT_PERSONAS } from '../officeAgentPersonas';
-import { OFFICE_VALIDATORS } from '../officeArtifactValidators';
-import { getOfficeArchitectureContext } from '../officeArchitectureKnowledge';
+import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
+import { OFFICE_VALIDATORS } from '../domain/officeArtifactValidators';
+import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 import {
   evaluateOfficeQualityGates,
   OFFICE_GATE_LABELS,
   type OfficeQualityAssessment,
   type OfficeQualityGateResult,
-} from '../officeQualityGates';
+} from '../domain/officeQualityGates';
 
 export interface OfficeCapabilityGate extends OfficeQualityGateResult {
   /** The gate's name as a reviewer reads it. */

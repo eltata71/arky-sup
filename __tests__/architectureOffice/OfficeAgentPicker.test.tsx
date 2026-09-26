@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { OfficeAgentPicker } from '../../components/architectureOffice/OfficeAgentPicker';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 describe('OfficeAgentPicker', () => {
   it('offers every registered persona and reports a keyboard/click selection', () => {

@@ -15,7 +15,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Badge, Input, cn } from '../ui';
 import { Check, Link2Off, Search, X } from 'lucide-react';
-import { foldOfficeText } from '../../services/architectureOffice/officeShared';
+import { foldOfficeText } from '../../services/architectureOffice/domain/officeShared';
 import {
   INITIATIVE_STATUS_LABELS,
   INITIATIVE_STATUS_TONES,

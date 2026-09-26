@@ -24,7 +24,7 @@ import { useAppContext } from './AppContext';
 import { useAuth } from './AuthContext';
 import {
   officeEngagementRepository,
-} from '../services/architectureOffice/OfficeEngagementRepository';
+} from '../services/architectureOffice/infrastructure/OfficeEngagementRepository';
 import {
   approveCharterOperation,
   createEngagementOperation,
@@ -38,15 +38,15 @@ import {
   canActAsArb,
   describeArbDecisionEligibility,
   type ArbDecisionEligibility,
-} from '../services/architectureOffice/OfficeArbService';
+} from '../services/architectureOffice/domain/OfficeArbService';
 import {
   type OfficeActor,
   type OfficeArbVerdict,
   type OfficeEngagement,
-} from '../services/architectureOffice/OfficeTypes';
-import { canRunEngagement } from '../services/architectureOffice/officeEngagementTransitions';
-import { trackEngagementCompleted } from '../services/architectureOffice/officeTelemetry';
-import type { OfficeAgentId } from '../services/architectureOffice/officeAgentPersonas';
+} from '../services/architectureOffice/domain/OfficeTypes';
+import { canRunEngagement } from '../services/architectureOffice/domain/officeEngagementTransitions';
+import { trackEngagementCompleted } from '../services/architectureOffice/infrastructure/officeTelemetry';
+import type { OfficeAgentId } from '../services/architectureOffice/domain/officeAgentPersonas';
 
 /**
  * La intake, tal y como la escribe una pantalla.
@@ -128,8 +128,8 @@ const loadConversation = () => import('../services/architectureOffice/applicatio
  */
 const loadRunner = () =>
   Promise.all([
-    import('../services/architectureOffice/OfficeRunnerAdapters'),
-    import('../services/architectureOffice/OfficeEngagementRunner'),
+    import('../services/architectureOffice/infrastructure/OfficeRunnerAdapters'),
+    import('../services/architectureOffice/application/OfficeEngagementRunner'),
     import('../services/architectureOffice/application/agentConfiguration'),
   ]).then(([adapters, runner, configuration]) => ({
     createOfficeRunnerPorts: adapters.createOfficeRunnerPorts,

@@ -3,7 +3,7 @@ import type { Artifact } from '../../lib/artifacts';
 import {
   OFFICE_VALIDATORS,
   validateOfficeArtifact,
-} from '../../services/architectureOffice/officeArtifactValidators';
+} from '../../services/architectureOffice/domain/officeArtifactValidators';
 
 const artifact = (overrides: Partial<Artifact>): Artifact => ({
   id: 'artifact-1',

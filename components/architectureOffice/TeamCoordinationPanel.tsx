@@ -25,11 +25,11 @@ import { ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../ui/cn';
 import { PersonaAvatar } from './PersonaAvatar';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../services/architectureOffice/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import type {
   CoordinationEvent,
   CoordinationTeamMember,
-} from '../../services/architectureOffice/officeCoordination';
+} from '../../services/architectureOffice/application/officeCoordination';
 
 /** Per-agent state, derived from the stream rather than tracked separately. */
 type AgentState = 'idle' | 'active' | 'done' | 'failed';

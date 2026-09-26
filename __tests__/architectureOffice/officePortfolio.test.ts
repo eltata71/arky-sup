@@ -10,7 +10,7 @@ import {
   UNASSIGNED_PROGRAM_ID,
   UNASSIGNED_PROGRAM_NAME,
   worstHealthBucket,
-} from '../../services/architectureOffice/officePortfolio';
+} from '../../services/architectureOffice/domain/officePortfolio';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
@@ -19,7 +19,7 @@ import {
   type OfficeEngagement,
   type OfficeEngagementStatus,
   type OfficeTask,
-} from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/OfficeTypes';
 
 const NOW = Date.parse('2026-08-27T12:00:00.000Z');
 

@@ -5,8 +5,8 @@ import {
   teamFromPlan,
   type CoordinationEvent,
   type CoordinationScope,
-} from '../../services/architectureOffice/officeCoordination';
-import { planOfficeWorkstreams } from '../../services/architectureOffice/officeOrchestration';
+} from '../../services/architectureOffice/application/officeCoordination';
+import { planOfficeWorkstreams } from '../../services/architectureOffice/application/officeOrchestration';
 
 const scope: CoordinationScope = {
   level: 'project',

@@ -11,7 +11,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { resolvePortfolioGraph } from '../../services/portfolioGraph';
-import { buildOfficePortfolio } from '../../services/architectureOffice/officePortfolio';
+import { buildOfficePortfolio } from '../../services/architectureOffice/domain/officePortfolio';
 import type { ArtifactSummary } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 

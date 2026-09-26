@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { EngagementTaskBoard } from '../../components/architectureOffice/EngagementTaskBoard';
-import type { OfficeTask } from '../../services/architectureOffice/OfficeTypes';
+import type { OfficeTask } from '../../services/architectureOffice/domain/OfficeTypes';
 
 const task = (overrides: Partial<OfficeTask> & Pick<OfficeTask, 'id' | 'kind' | 'assigneeId' | 'status'>): OfficeTask => ({
   engagementId: 'eng-1',

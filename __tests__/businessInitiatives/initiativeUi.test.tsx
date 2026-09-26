@@ -9,13 +9,13 @@ import {
   emptyInitiativeRollup,
   type BusinessInitiative,
 } from '../../services/businessInitiatives';
-import { buildOfficePortfolio } from '../../services/architectureOffice/officePortfolio';
+import { buildOfficePortfolio } from '../../services/architectureOffice/domain/officePortfolio';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
-} from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/OfficeTypes';
 import type { Project } from '../../services/architectureProjects';
 
 const NOW = Date.parse('2026-08-27T12:00:00.000Z');

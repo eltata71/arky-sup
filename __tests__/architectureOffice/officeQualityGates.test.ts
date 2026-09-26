@@ -4,7 +4,7 @@ import type { Project } from '../../services/architectureProjects';
 import {
   evaluateOfficeQualityGates,
   OFFICE_QUALITY_GATE_IDS,
-} from '../../services/architectureOffice/officeQualityGates';
+} from '../../services/architectureOffice/domain/officeQualityGates';
 
 const artifact = (overrides: Partial<Artifact>): Artifact => ({
   id: `artifact-${Math.random()}`,

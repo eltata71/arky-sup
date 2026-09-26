@@ -8,9 +8,9 @@ import {
   evaluateOfficeQualityGates,
   OFFICE_GATE_LABELS,
 } from '../../services/architectureOffice';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
-import { OFFICE_VALIDATORS } from '../../services/architectureOffice/officeArtifactValidators';
-import { getOfficeArchitectureContext } from '../../services/architectureOffice/officeArchitectureKnowledge';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import { OFFICE_VALIDATORS } from '../../services/architectureOffice/domain/officeArtifactValidators';
+import { getOfficeArchitectureContext } from '../../services/architectureOffice/domain/officeArchitectureKnowledge';
 import type { Project } from '../../services/architectureProjects';
 
 const project = {

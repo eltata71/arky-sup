@@ -40,19 +40,19 @@ import {
   GATE_STATUS_LABELS,
   GATE_STATUS_TONES,
 } from '../components/architectureOffice/officeUiLabels';
-import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
 import { AssistantDock } from '../components/architectureOffice/AssistantDock';
 import { AssistantLauncher } from '../components/architectureOffice/AssistantLauncher';
-import type { CoordinationScope } from '../services/architectureOffice/officeCoordination';
+import type { CoordinationScope } from '../services/architectureOffice/application/officeCoordination';
 import {
   buildOfficePortfolio,
   healthBucketOf,
   UNASSIGNED_PROGRAM_NAME,
-} from '../services/architectureOffice/officePortfolio';
+} from '../services/architectureOffice/domain/officePortfolio';
 import {
   summarizeEngagementProgress,
   type OfficeArbVerdict,
-} from '../services/architectureOffice/OfficeTypes';
+} from '../services/architectureOffice/domain/OfficeTypes';
 
 /** Anchors used by the section rail. */
 const SECTIONS = [

@@ -6,7 +6,7 @@ import {
 import {
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
-} from '../../../services/architectureOffice/OfficeTypes';
+} from '../../../services/architectureOffice/domain/OfficeTypes';
 
 const ownerId = '00000000-0000-4000-8000-000000000001';
 const adminId = '00000000-0000-4000-8000-000000000002';

@@ -21,7 +21,7 @@ import {
 import type {
   OfficeActor,
   OfficeEngagement,
-} from '../../../../services/architectureOffice/OfficeTypes';
+} from '../../../../services/architectureOffice/domain/OfficeTypes';
 
 const admin: OfficeActor = { id: 'u1', name: 'Ana', role: 'admin' };
 const architect: OfficeActor = { id: 'u2', name: 'Beto', role: 'architect' };

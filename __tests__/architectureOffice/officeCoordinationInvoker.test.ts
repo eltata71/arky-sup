@@ -10,10 +10,10 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { buildCoordinationInvoker } from '../../services/architectureOffice/officeCoordinationInvoker';
-import { configuredModelTiers } from '../../services/architectureOffice/officeAgentProfile';
-import type { CoordinationScope } from '../../services/architectureOffice/officeCoordination';
-import type { OfficeAgentProfile } from '../../services/architectureOffice/officeAgentProfile';
+import { buildCoordinationInvoker } from '../../services/architectureOffice/application/officeCoordinationInvoker';
+import { configuredModelTiers } from '../../services/architectureOffice/domain/officeAgentProfile';
+import type { CoordinationScope } from '../../services/architectureOffice/application/officeCoordination';
+import type { OfficeAgentProfile } from '../../services/architectureOffice/domain/officeAgentProfile';
 import type { Settings } from '../../types';
 
 const scope: CoordinationScope = {

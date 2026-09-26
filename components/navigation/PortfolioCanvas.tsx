@@ -35,8 +35,8 @@ import { initiativeHealth, type BusinessInitiative } from '../../services/busine
 import {
   healthBucketOf,
   type ArchitectureProjectNode,
-} from '../../services/architectureOffice/officePortfolio';
-import { summarizeEngagementProgress } from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/officePortfolio';
+import { summarizeEngagementProgress } from '../../services/architectureOffice/domain/OfficeTypes';
 
 export interface PortfolioCanvasProps {
   initiatives: BusinessInitiative[];
