@@ -66,7 +66,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     settings,
     updateSettings,
     updateProjectContext,
-    updateProject,
+    runProjectCommand,
     saveChatHistory,
     loadChatHistory,
     createArtifact,
@@ -134,10 +134,10 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
   }, [messages, isLoading]);
 
   const memoryStore = useAgentMemoryStore({
-    settings, updateSettings, getProject, updateProject,
+    settings, updateSettings, getProject, runProjectCommand,
     updateProjectContext, getArtifact, updateArtifact,
   });
-  const lessonStore = useAgentLessonStore({ getProject, updateProject });
+  const lessonStore = useAgentLessonStore({ getProject, runProjectCommand });
 
   /**
    * Answer a question the agent layer found no executable intent in.

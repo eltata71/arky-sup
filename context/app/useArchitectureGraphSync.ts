@@ -30,7 +30,7 @@
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
-import type { Project } from '../../services/architectureProjects';
+import type { Project, ProjectCommand } from '../../services/architectureProjects';
 // Diferida y por su propia puerta: este hook está en el arranque y la
 // recuperación sólo corre cuando ya hay proyectos (ver `graphProjection.ts`).
 import type { GraphProjectionReport } from '../../services/architectureProjects/graphProjection';
@@ -55,7 +55,9 @@ interface ArchitectureGraphSyncPorts {
   readonly projectsRef: React.MutableRefObject<Project[]>;
   readonly globalContext: string[];
   readonly globalContextRef: React.MutableRefObject<string[]>;
-  readonly updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'artifacts'>>) => void;
+  readonly runProjectCommand: (id: string, command: ProjectCommand) => unknown;
+  /** The graph's own write path: it does not touch the project's root (F6-03, corte 2b). */
+  readonly saveProjectGraph: (id: string, graph: ArchitectureGraph) => void;
   /** Applies a recovered graph to state without another write: it is already saved. */
   readonly setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
 }
@@ -65,7 +67,8 @@ export const useArchitectureGraphSync = ({
   projectsRef,
   globalContext,
   globalContextRef,
-  updateProject,
+  runProjectCommand,
+  saveProjectGraph,
   setProjects,
 }: ArchitectureGraphSyncPorts) => {
   const rebuildArchitectureGraph = useCallback((projectId: string): ArchitectureGraph | null => {
@@ -83,11 +86,12 @@ export const useArchitectureGraphSync = ({
           // The revision travels with the graph (F5-05): the save compares it.
           revision: project.architectureKnowledgeGraph?.revision,
       };
-      // Persisted through the standard project-update path, so optimistic
-      // rollback and concurrency control are unchanged.
-      updateProject(projectId, { architectureKnowledgeGraph: graph });
+      // Its own path (F6-03, corte 2b): saving a derived graph used to rewrite
+      // the project's root and move its revision, so a rebuild could collide
+      // with a real edit made in another tab.
+      saveProjectGraph(projectId, graph);
       return graph;
-  }, [updateProject, projectsRef, globalContextRef]);
+  }, [saveProjectGraph, projectsRef, globalContextRef]);
 
   const getArchitectureGraphFreshness = useCallback((projectId: string): ArchitectureGraphFreshness => {
       const project = projectsRef.current.find(p => p.id === projectId);
@@ -201,10 +205,10 @@ export const useArchitectureGraphSync = ({
   }, [projects, globalContext, rebuildArchitectureGraph, processGraphProjections, projectsRef, globalContextRef]);
 
   const savePublicationPackages = useCallback((projectId: string, packages: PublicationPackage[]) => {
-    // Persisted through the standard project-update path, so optimistic
-    // rollback and concurrency control are unchanged.
-    updateProject(projectId, { publicationPackages: packages });
-  }, [updateProject]);
+    // A named operation on the root: optimistic, with rollback and the
+    // revision check, like every other project write.
+    runProjectCommand(projectId, { kind: 'set-publication-packages', packages });
+  }, [runProjectCommand]);
 
   return { rebuildArchitectureGraph, getArchitectureGraphFreshness, savePublicationPackages };
 };

@@ -33,7 +33,7 @@ import { useAttentionInitiatives } from '../../hooks/useAttentionInitiatives';
 import { AttentionTrackingPanel } from './AttentionTrackingPanel';
 import { AttentionContributionPanel } from './AttentionContributionPanel';
 import { EA_LEVELS } from '../../lib/eaTerminology';
-import type { Project } from '../../context/AppContext';
+import type { Project, ProjectCommand } from '../../context/AppContext';
 import type { ProjectAttentionTracking } from '../../services/architectureProjects';
 import type { BusinessInitiative } from '../../services/businessInitiatives';
 
@@ -41,8 +41,12 @@ export interface AttentionDetailsPanelProps {
   project: Project;
   /** Las iniciativas registradas; la ficha usa las que este proyecto atiende. */
   initiatives: readonly BusinessInitiative[];
-  onPatch: (patch: Partial<Pick<Project, 'name' | 'description' | 'projectContext'>>
-    & { attention?: ProjectAttentionTracking }) => void;
+  /**
+   * Una operación con nombre (F6-03, corte 2b). La ficha dice qué se quiso
+   * hacer; recortar, rechazar un nombre vacío o no repetir una entrada son
+   * reglas del dominio (`applyProjectCommand`), no de esta pantalla.
+   */
+  onCommand: (command: ProjectCommand) => void;
   busy?: boolean;
 }
 
@@ -51,7 +55,7 @@ const inputClass = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 
 export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
   project,
   initiatives,
-  onPatch,
+  onCommand,
   busy,
 }) => {
   const capture = useAttentionRecordCapture(project, initiatives);
@@ -63,12 +67,14 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
   const [contextEntry, setContextEntry] = useState('');
 
   const addContext = useCallback((value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    if (project.projectContext.includes(trimmed)) return;
-    onPatch({ projectContext: [...project.projectContext, trimmed] });
+    if (!value.trim()) return;
+    onCommand({ kind: 'add-context-entry', entry: value });
     setContextEntry('');
-  }, [project.projectContext, onPatch]);
+  }, [onCommand]);
+  const changeTracking = useCallback(
+    (patch: { attention: ProjectAttentionTracking }) => onCommand({ kind: 'update-tracking', tracking: patch.attention }),
+    [onCommand],
+  );
 
   return (
     <div className="space-y-4">
@@ -102,7 +108,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
               assistant={capture.assistant}
               context={capture.context}
               current={nameDraft ?? project.name}
-              apply={(value) => { setNameDraft(null); onPatch({ name: value }); }}
+              apply={(value) => { setNameDraft(null); onCommand({ kind: 'rename', name: value }); }}
             />
           </div>
           <Input
@@ -112,7 +118,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
             onChange={(event) => setNameDraft(event.target.value)}
             onBlur={() => {
               if (nameDraft !== null && nameDraft.trim() && nameDraft !== project.name) {
-                onPatch({ name: nameDraft.trim() });
+                onCommand({ kind: 'rename', name: nameDraft });
               }
               setNameDraft(null);
             }}
@@ -129,7 +135,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
               assistant={capture.assistant}
               context={capture.context}
               current={descriptionDraft ?? project.description}
-              apply={(value) => { setDescriptionDraft(null); onPatch({ description: value }); }}
+              apply={(value) => { setDescriptionDraft(null); onCommand({ kind: 'describe', description: value }); }}
             />
           </div>
           <textarea
@@ -140,7 +146,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
             onChange={(event) => setDescriptionDraft(event.target.value)}
             onBlur={() => {
               if (descriptionDraft !== null && descriptionDraft !== project.description) {
-                onPatch({ description: descriptionDraft.trim() });
+                onCommand({ kind: 'describe', description: descriptionDraft });
               }
               setDescriptionDraft(null);
             }}
@@ -175,9 +181,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
                     type="button"
                     aria-label={`Quitar del contexto: ${entry}`}
                     disabled={busy}
-                    onClick={() => onPatch({
-                      projectContext: project.projectContext.filter((item) => item !== entry),
-                    })}
+                    onClick={() => onCommand({ kind: 'remove-context-entry', entry })}
                     className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-40 dark:hover:bg-red-950/40 dark:hover:text-red-400"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden />
@@ -211,14 +215,14 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
 
       <AttentionTrackingPanel
         project={project}
-        onPatch={onPatch}
+        onPatch={changeTracking}
         busy={busy}
       />
 
       <AttentionContributionPanel
         project={project}
         initiatives={servedInitiatives}
-        onPatch={onPatch}
+        onPatch={changeTracking}
         busy={busy}
       />
     </div>

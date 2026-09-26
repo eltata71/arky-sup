@@ -10,7 +10,8 @@
 
 import type { ConsistencySuggestion, Settings } from '../../types';
 import type { Artifact, GroupedArtifacts } from '../../lib/artifacts';
-import type { Project, CreateArchitectureProjectInput, CreateArchitectureProjectResult } from '../../services/architectureProjects';
+import type { Project, CreateArchitectureProjectInput, CreateArchitectureProjectResult, ProjectCommand } from '../../services/architectureProjects';
+import type { ProjectCommandOutcome } from './useProjectsState';
 // Type-only, so these enter through the modules' barrels rather than naming a
 // file: `import type` is erased at build time, so a barrel costs nothing here.
 // The value imports in the hooks still name the file — see `useProjectsState`.
@@ -27,7 +28,8 @@ import type { PublicationPackage } from '../../services/publicationPipeline';
  * reexportación de compatibilidad que retiró `types.ts`: aquélla subía de la
  * fundación al dominio; ésta baja de la capa de interfaz a él.
  */
-export type { Project, ProjectAttentionTracking } from '../../services/architectureProjects';
+export type { Project, ProjectAttentionTracking, ProjectCommand, ProjectMemoryArea } from '../../services/architectureProjects';
+export type { ProjectCommandOutcome } from './useProjectsState';
 /** The chat turn the context loads and saves; screens receive it from here (F5-02). */
 export type { ChatMessage } from '../../services/chat';
 import type {
@@ -59,7 +61,12 @@ export interface AppContextType {
    * Idempotent and safe to call on an already-hydrated project.
    */
   ensureProjectArtifacts: (id: string) => Promise<void>;
-  updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'artifacts'>>) => void;
+  /**
+   * A named operation on a project (F6-03, corte 2b). There is no
+   * `updateProject(partial)`: screens say what they meant, and the domain
+   * decides whether it may happen (`applyProjectCommand`).
+   */
+  runProjectCommand: (id: string, command: ProjectCommand) => ProjectCommandOutcome;
   deleteProject: (id: string) => void;
   createArtifact: (projectId: string, artifact: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>, deterministicId?: string) => Artifact;
   createArtifactVersion: (projectId: string, versionGroupId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => Artifact;

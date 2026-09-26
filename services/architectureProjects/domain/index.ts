@@ -22,3 +22,4 @@ export * from './architectureProjectFactory';
 export * from './attentionTracking';
 export * from './projectDocumentMapper';
 export * from './projectRuntimeValidation';
+export * from './projectCommands';

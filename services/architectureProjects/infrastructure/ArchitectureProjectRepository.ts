@@ -21,10 +21,11 @@
  */
 
 import { getAllProjects, getProject } from './projectReads';
-import { createProject, deleteProject, updateProject, type ProjectWriteConfirmation } from './projectWrites';
+import { createProject, deleteProject, saveProjectGraph, updateProject, type ProjectWriteConfirmation } from './projectWrites';
 import type { PersistenceResult } from '../../persistence';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project, ProjectRoot } from '../domain/ArchitectureProjectTypes';
+import type { ProjectRootChanges } from '../domain/projectCommands';
 
 export interface ArchitectureProjectRepository {
   list(userId?: string, isAdmin?: boolean): Promise<Project[]>;
@@ -38,15 +39,18 @@ export interface ArchitectureProjectRepository {
    */
   create(project: ProjectRoot, userId: string | undefined): Promise<PersistenceResult<ProjectWriteConfirmation>>;
   /**
-   * `expectedRevision` es la del registro que se está viendo (F4-07): viaja en
-   * el `Project`, y quien la trae evita que una edición hecha sobre una copia
-   * vieja pise otra.
+   * Guarda los cambios que decidió `applyProjectCommand` (F6-03, corte 2b):
+   * sólo campos de la raíz. `expectedRevision` es la del registro que se está
+   * viendo (F4-07): viaja en el `Project`, y quien la trae evita que una
+   * edición hecha sobre una copia vieja pise otra.
    */
   update(
     projectId: string,
-    updates: Partial<Project>,
+    changes: ProjectRootChanges,
     options?: { userId?: string; expectedRevision?: number },
   ): Promise<PersistenceResult<ProjectWriteConfirmation>>;
+  /** El grafo de conocimiento, por su propia ruta: no toca la raíz ni su revisión. */
+  saveGraph(projectId: string, graph: NonNullable<Project['architectureKnowledgeGraph']>): Promise<{ readonly revision: number } | undefined>;
   remove(projectId: string, expectedRevision?: number): Promise<PersistenceResult<unknown>>;
   /** Hydrate the artifacts of a project loaded from the portfolio index. */
   loadArtifacts(projectId: string): Promise<Artifact[] | undefined>;
@@ -56,7 +60,8 @@ export const architectureProjectRepository: ArchitectureProjectRepository = {
   list: (userId, isAdmin) => getAllProjects(userId, isAdmin),
   get: (projectId) => getProject(projectId),
   create: (project, userId) => createProject({ ...project, userId }),
-  update: (projectId, updates, options = {}) => updateProject(projectId, updates, options),
+  update: (projectId, changes, options = {}) => updateProject(projectId, changes, options),
+  saveGraph: (projectId, graph) => saveProjectGraph(projectId, graph),
   remove: (projectId, expectedRevision) => deleteProject(projectId, { expectedRevision }),
   loadArtifacts: async (projectId) => (await getProject(projectId))?.artifacts,
 };

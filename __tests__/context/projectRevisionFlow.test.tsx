@@ -56,9 +56,9 @@ describe('the revision a project edit compares', () => {
     repository.update.mockResolvedValueOnce(confirmed(4)).mockResolvedValueOnce(confirmed(5));
     const { result } = mount([project(3)]);
 
-    act(() => result.current.updateProject('p1', { name: 'Uno' }));
+    act(() => result.current.runProjectCommand('p1', { kind: 'rename', name: 'Uno' }));
     await waitFor(() => expect(result.current.projects[0].revision).toBe(4));
-    act(() => result.current.updateProject('p1', { name: 'Dos' }));
+    act(() => result.current.runProjectCommand('p1', { kind: 'rename', name: 'Dos' }));
     await waitFor(() => expect(result.current.projects[0].revision).toBe(5));
 
     expect(repository.update.mock.calls[0][2]).toMatchObject({ expectedRevision: 3 });
@@ -71,23 +71,41 @@ describe('the revision a project edit compares', () => {
       .mockResolvedValueOnce({ status: 'conflict', success: false, target: 'supabase', operationId: 'op', message: 'Conflicto' });
     const { result } = mount([project(3)]);
 
-    act(() => result.current.updateProject('p1', { name: 'Uno' }));
+    act(() => result.current.runProjectCommand('p1', { kind: 'rename', name: 'Uno' }));
     await waitFor(() => expect(result.current.projects[0].revision).toBe(4));
-    act(() => result.current.updateProject('p1', { name: 'Pisado' }));
+    act(() => result.current.runProjectCommand('p1', { kind: 'rename', name: 'Pisado' }));
 
     await waitFor(() => expect(repository.update).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(result.current.projects[0].name).toBe('Uno'));
   });
 
-  it('never lets a caller overwrite the revision through the update payload', async () => {
+  it('never sends a revision in the changes: the one compared is the record\'s', async () => {
     repository.update.mockResolvedValue(confirmed(4));
     const { result } = mount([project(3)]);
 
-    act(() => result.current.updateProject('p1', { name: 'Uno', revision: 99 } as Partial<Project>));
+    act(() => { result.current.runProjectCommand('p1', { kind: 'rename', name: 'Uno' }); });
 
     await waitFor(() => expect(repository.update).toHaveBeenCalled());
     expect(repository.update.mock.calls[0][1]).not.toHaveProperty('revision');
     expect(repository.update.mock.calls[0][2]).toMatchObject({ expectedRevision: 3 });
+  });
+
+  it('a rejected command never reaches the database, and says why (F6-03, corte 2b)', () => {
+    const { result } = mount([project(3)]);
+    let outcome: unknown;
+    act(() => { outcome = result.current.runProjectCommand('p1', { kind: 'link-initiatives', initiativeIds: [] }); });
+    expect(outcome).toMatchObject({ ok: false, rejection: { reason: 'no-initiative' } });
+    act(() => { outcome = result.current.runProjectCommand('p1', { kind: 'rename', name: '   ' }); });
+    expect(outcome).toMatchObject({ ok: false, rejection: { reason: 'empty-name' } });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('a command that changes nothing does not write a new revision', () => {
+    const { result } = mount([project(3)]);
+    let outcome: unknown;
+    act(() => { outcome = result.current.runProjectCommand('p1', { kind: 'rename', name: result.current.projects[0].name }); });
+    expect(outcome).toEqual({ ok: true, changed: false });
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('travels with a deletion', async () => {

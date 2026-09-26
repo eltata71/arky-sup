@@ -22,7 +22,7 @@
  *
  * `projects` has a single owner — `useProjectsState` — and the hooks that
  * write artifacts or graph fields do it through the `setProjects` and
- * `updateProject` handed to them. Two copies of the same artifacts is how a
+ * `runProjectCommand` / `saveProjectGraph` handed to them. Two copies of the same artifacts is how a
  * canvas and a sidebar start disagreeing.
  */
 
@@ -36,7 +36,7 @@ import { useArtifactsState } from './app/useArtifactsState';
 import { useProjectHistory } from './app/useProjectHistory';
 import { useArchitectureGraphSync } from './app/useArchitectureGraphSync';
 
-export type { AppContextType, ChatMessage, Project, ProjectAttentionTracking } from './app/appContextTypes';
+export type { AppContextType, ChatMessage, Project, ProjectAttentionTracking, ProjectCommand, ProjectCommandOutcome, ProjectMemoryArea } from './app/appContextTypes';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -53,7 +53,8 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     addProject,
     getProject,
     ensureProjectArtifacts,
-    updateProject,
+    runProjectCommand,
+    saveProjectGraph,
     deleteProject,
     updateProjectContext,
     loadProjects,
@@ -93,7 +94,8 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     projectsRef,
     globalContext: settings.globalContext,
     globalContextRef,
-    updateProject,
+    runProjectCommand,
+    saveProjectGraph,
     setProjects,
   });
 
@@ -111,14 +113,14 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
    * between renders instead of being recomputed every time.
    */
   const value = useMemo<AppContextType>(() => ({
-    projects, settings, isLoading, addProject, getProject, ensureProjectArtifacts, updateProject, deleteProject, createArtifact,
+    projects, settings, isLoading, addProject, getProject, ensureProjectArtifacts, runProjectCommand, deleteProject, createArtifact,
     createArtifactVersion, updateArtifact, deleteArtifact, getArtifact, updateSettings, t, getGroupedArtifactsByView, updateProjectContext,
     applyConsistencySuggestion, toggleArtifactFavorite, findLatestArtifactByName, getArtifactVersions,
     restoreArtifactVersion, removeCorruptArtifacts, saveChatHistory, loadChatHistory, replaceChatHistory, rebuildArchitectureGraph,
     getArchitectureGraphFreshness, savePublicationPackages, persistenceStatus, persistenceMessage,
     logAgentAction, listAgentActions,
   }), [
-    projects, settings, isLoading, addProject, getProject, ensureProjectArtifacts, updateProject, deleteProject, createArtifact,
+    projects, settings, isLoading, addProject, getProject, ensureProjectArtifacts, runProjectCommand, deleteProject, createArtifact,
     createArtifactVersion, updateArtifact, deleteArtifact, getArtifact, updateSettings, t, getGroupedArtifactsByView, updateProjectContext,
     applyConsistencySuggestion, toggleArtifactFavorite, findLatestArtifactByName, getArtifactVersions,
     restoreArtifactVersion, removeCorruptArtifacts, saveChatHistory, loadChatHistory, replaceChatHistory, rebuildArchitectureGraph,

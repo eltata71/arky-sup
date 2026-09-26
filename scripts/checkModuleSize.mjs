@@ -62,12 +62,12 @@ export const BYTE_CEILINGS = {
   // F6-01: fuera sus delegados públicos y su fábrica de cliente, que sólo leían las pruebas (94 962 → 92638)
   'services/ai/generation/artifacts/artifactGenerationEngine.ts': 92638,
   'components/ReactFlowCanvas.tsx': 109906,
-  'components/ProjectHub.tsx': 78862, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/ProjectHub.tsx': 78777, // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
-  'components/MemoryCenterModal.tsx': 55475, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/MemoryCenterModal.tsx': 55552, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/ArtifactCanvas.tsx': 43291, // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 49197,
-  'pages/ProjectsPage.tsx': 43863, // F5-02: el portafolio sale a `useAttentionPortfolio`
+  'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
   'services/export/adapters/pdfExporter.ts': 43514,
   'components/artifacts/export/ArtifactExportModal.tsx': 42543, // F4-05: la coordinación salió a `services/artifacts/application`
@@ -82,7 +82,7 @@ export const BYTE_CEILINGS = {
    * while gaining a guarantee.
    */
   'services/agent/agentExecutor.ts': 41241, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
-  'components/AssistantPanel.tsx': 36431, // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
+  'components/AssistantPanel.tsx': 36443, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   'pages/Workspace.tsx': 36374, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/artifacts/artifactRefinementOrchestrator.ts': 36722, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/Icons.tsx': 35946,
@@ -91,7 +91,7 @@ export const BYTE_CEILINGS = {
   'pages/LMS/LMSDashboard.tsx': 34123,
   'services/diagram/suggestionActionExecutors.ts': 33643,
   'components/memory/ChatHistoryPanel.tsx': 32783,
-  'components/copilot/ProjectCopilotChatModal.tsx': 24441, // F5-02: el enrutado del turno salió a `routeCopilotTurn`
+  'components/copilot/ProjectCopilotChatModal.tsx': 24453, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
   'components/CustomEdge.tsx': 32023,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
@@ -175,7 +175,7 @@ export const CEILINGS = {
   'pages/Workspace.tsx': 730, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/ai/prompts/diagramPrompts.ts': 1145,
   'services/export/adapters/pdfExporter.ts': 1125,
-  'components/ProjectHub.tsx': 1063, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/ProjectHub.tsx': 1060, // F6-03 corte 2b // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/MemoryCenterModal.tsx': 1017, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   // 1001 → 988 el 2026-09-22. No es trabajo nuevo: las extracciones de la fase 2
   // (`deterministicArtifactReuse`, `agentExecutorContracts`) ya lo habían bajado

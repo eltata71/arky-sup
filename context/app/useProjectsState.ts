@@ -14,6 +14,13 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import type { Project } from '../../services/architectureProjects';
+// The domain door, not the module barrel: this hook is on the boot path, and
+// the domain is pure and small (the rule of the barrel against the bundle).
+import {
+  applyProjectCommand,
+  type ProjectCommand,
+  type ProjectCommandRejection,
+} from '../../services/architectureProjects/domain';
 import { architectureProjectRepository } from '../../services/architectureProjects/infrastructure/ArchitectureProjectRepository';
 import {
   createArchitectureProject,
@@ -33,7 +40,14 @@ export interface ProjectsState {
   readonly addProject: (input: CreateArchitectureProjectInput) => CreateArchitectureProjectResult;
   readonly getProject: (id: string) => Project | undefined;
   readonly ensureProjectArtifacts: (id: string) => Promise<void>;
-  readonly updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'artifacts'>>) => void;
+  /**
+   * Apply a named operation to a project (F6-03, corte 2b) — there is no
+   * `update(partial)`. The rule is the domain's (`applyProjectCommand`); this
+   * only does what a provider is for: optimistic state, the write, the rollback.
+   */
+  readonly runProjectCommand: (id: string, command: ProjectCommand) => ProjectCommandOutcome;
+  /** The knowledge graph, by its own path: it does not touch the root nor its revision. */
+  readonly saveProjectGraph: (id: string, graph: NonNullable<Project['architectureKnowledgeGraph']>) => void;
   readonly deleteProject: (id: string) => void;
   readonly updateProjectContext: (projectId: string, context: string[]) => void;
   /**
@@ -45,6 +59,15 @@ export interface ProjectsState {
    */
   readonly loadProjects: (userId: string | undefined, includeAll: boolean) => Promise<Project[]>;
 }
+
+/**
+ * What a command did, synchronously: rejected with a typed reason, applied
+ * with nothing to write, or applied and on its way to the database. The write
+ * itself is reported like every other write, through the persistence reporter.
+ */
+export type ProjectCommandOutcome =
+  | { readonly ok: true; readonly changed: boolean }
+  | { readonly ok: false; readonly rejection: ProjectCommandRejection | { readonly reason: 'not-found'; readonly message: string } };
 
 export const useProjectsState = (reporter: PersistenceReporter): ProjectsState => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -161,7 +184,7 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
   }, []);
 
   /**
-   * Writes a change to a project's root.
+   * Applies a named operation to a project's root and writes what it changed.
    *
    * The snapshot is read from `projectsRef`, not captured inside the state
    * updater: React only runs an updater synchronously for the first update of
@@ -171,15 +194,30 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
    * read with, and the one the database confirms is written back into state,
    * so the next edit compares against it.
    */
-  const updateProject = useCallback((id: string, updates: Partial<Omit<Project, 'id' | 'artifacts'>>) => {
+  const runProjectCommand = useCallback((id: string, command: ProjectCommand): ProjectCommandOutcome => {
     const snapshot = projectsRef.current.find(p => p.id === id);
-    if (!snapshot) return;
-    const { revision: _revision, ...changes } = updates;
-    const updatedFields = { ...changes, updatedAt: new Date().toISOString() };
-    setProjects(prev => prev.map(p => (p.id === id ? { ...p, ...updatedFields } : p)));
+    if (!snapshot) {
+      return { ok: false, rejection: { reason: 'not-found', message: `El proyecto ${id} no está cargado.` } };
+    }
+    const decision = applyProjectCommand(snapshot, command);
+    if (!decision.ok) {
+      observabilityService.recordWarning({
+        source: 'operation',
+        title: 'Cambio de proyecto rechazado',
+        message: decision.rejection.message,
+        operationName: `project:${command.kind}`,
+        metadata: { projectId: id, reason: decision.rejection.reason },
+        recoverable: true,
+      });
+      return decision;
+    }
+    if (!decision.changed) return { ok: true, changed: false };
+
+    const changes = decision.changes;
+    setProjects(prev => prev.map(p => (p.id === id ? { ...p, ...changes } : p)));
     setPersistenceStatus('saving');
     const rollback = () => setProjects(prev => prev.map(p => (p.id === id ? snapshot : p)));
-    architectureProjectRepository.update(id, updatedFields, { userId: user?.uid, expectedRevision: snapshot.revision }).then(result => {
+    architectureProjectRepository.update(id, changes, { userId: user?.uid, expectedRevision: snapshot.revision }).then(result => {
       if (!handleWriteResult(result, 'Proyecto actualizado en base de datos.')) {
         rollback();
         return;
@@ -193,14 +231,40 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
         source: 'operation',
         title: 'No se pudo actualizar el proyecto',
         message: 'Se revirtió la actualización local porque el guardado remoto falló.',
-        operationName: 'updateProject',
+        operationName: `project:${command.kind}`,
         recoverable: true,
         userVisible: true,
         metadata: { projectId: id },
       });
       rollback();
     });
+    return { ok: true, changed: true };
   }, [user, handleWriteResult, setPersistenceStatus]);
+
+  /**
+   * The graph is derived, so a failed save keeps it in state: it is still the
+   * right picture of the artifacts, and the projection outbox rebuilds and
+   * saves it on the next start (F5-04/F5-05). What changes on success is only
+   * the revision the next save compares against.
+   */
+  const saveProjectGraph = useCallback((id: string, graph: NonNullable<Project['architectureKnowledgeGraph']>) => {
+    setProjects(prev => prev.map(p => (p.id === id ? { ...p, architectureKnowledgeGraph: graph } : p)));
+    architectureProjectRepository.saveGraph(id, graph).then((confirmed) => {
+      if (!confirmed) return;
+      setProjects(prev => prev.map(p => (p.id === id && p.architectureKnowledgeGraph
+        ? { ...p, architectureKnowledgeGraph: { ...p.architectureKnowledgeGraph, revision: confirmed.revision } }
+        : p)));
+    }).catch(e => {
+      observabilityService.reportError(e, {
+        source: 'operation',
+        severity: 'warning',
+        title: 'Grafo de conocimiento sin guardar',
+        operationName: 'saveProjectGraph',
+        recoverable: true,
+        metadata: { projectId: id },
+      });
+    });
+  }, []);
 
   const deleteProject = useCallback((id: string) => {
     const snapshot = projectsRef.current.find(p => p.id === id);
@@ -225,8 +289,8 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
   }, [handleWriteResult, setPersistenceStatus]);
 
   const updateProjectContext = useCallback((projectId: string, context: string[]) => {
-    updateProject(projectId, { projectContext: context });
-  }, [updateProject]);
+    runProjectCommand(projectId, { kind: 'replace-memory', area: 'projectContext', texts: context });
+  }, [runProjectCommand]);
 
   return {
     projects,
@@ -235,7 +299,8 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
     addProject,
     getProject,
     ensureProjectArtifacts,
-    updateProject,
+    runProjectCommand,
+    saveProjectGraph,
     deleteProject,
     updateProjectContext,
     loadProjects,

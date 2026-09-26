@@ -52,6 +52,20 @@ export {
   type CreateArchitectureProjectInput,
   type CreateArchitectureProjectResult,
 } from './domain';
+/**
+ * Lo que se le puede hacer a un proyecto, con nombre (F6-03, corte 2b). Las
+ * pantallas emiten comandos; el proveedor los aplica con esta función y guarda
+ * los cambios. No hay `update(partial)`.
+ */
+export {
+  applyProjectCommand,
+  type ProjectCommand,
+  type ProjectCommandKind,
+  type ProjectCommandRejection,
+  type ProjectCommandResult,
+  type ProjectMemoryArea,
+  type ProjectRootChanges,
+} from './domain';
 export {
   architectureProjectRepository,
   type ArchitectureProjectRepository,

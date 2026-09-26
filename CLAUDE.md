@@ -886,8 +886,8 @@ Each concern owns a module under `context/app/`:
 | `useArchitectureGraphSync` | the debounced knowledge-graph rebuild |
 
 **`projects` has exactly one owner** — `useProjectsState`. The hooks that write
-artifacts or graph fields do it through the `setProjects` and `updateProject`
-handed to them. Two arrays of the same artifacts is how a canvas and a sidebar
+artifacts or graph fields do it through the `setProjects`, `runProjectCommand`
+and `saveProjectGraph` handed to them. Two arrays of the same artifacts is how a canvas and a sidebar
 start disagreeing about what the user just edited, and
 `__tests__/context/appContextComposition.test.ts` fails if a second one appears.
 
@@ -1365,6 +1365,20 @@ screen or the context's own `infrastructure/`. A domain may read another
 context's vocabulary — the project's read model contains the knowledge graph
 and publication packages — but no rule may do I/O. Its `CONTEXTS` list only
 grows; a context joins the day it has the shape.
+
+**And Proyectos changes by named operations** (corte 2b). `updateProject(id,
+partial)` is gone: screens emit a `ProjectCommand` —`rename`, `describe`,
+`add-context-entry`, `remove-context-entry`, `replace-memory`,
+`update-tracking`, `link-initiatives`, `set-publication-packages`— and
+`runProjectCommand` applies `applyProjectCommand` (domain) before the optimistic
+write. Two things a patch could not say are now rules: **P-02 holds on change,
+not only on creation** (removing the last initiative is rejected), and **a
+command that changes nothing writes nothing** (no new revision). The knowledge
+graph is **not** a command: it has its own path, `saveProjectGraph`, because
+saving it through the root used to rewrite the project and move its revision on
+every rebuild — so a rebuild could collide with a real edit in another tab.
+`namedOperations.test.ts` keeps `updateProject` and `updateInitiative` from
+coming back.
 
 ## Aggregates: one factory each, and a gate
 
