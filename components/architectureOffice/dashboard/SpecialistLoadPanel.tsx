@@ -8,10 +8,10 @@
 
 import React from 'react';
 import { Badge, Card, EmptyState, cn } from '../../ui';
-import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../../services/architectureOffice/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../../services/architectureOffice/domain/officeAgentPersonas';
 import { PersonaAvatar } from '../PersonaAvatar';
 import { OFFICE_HEALTH_VISUALS } from '../officeChartTokens';
-import type { OfficeSpecialistLoad } from '../../../services/architectureOffice/officePortfolio';
+import type { OfficeSpecialistLoad } from '../../../services/architectureOffice/domain/officePortfolio';
 
 export interface SpecialistLoadPanelProps {
   specialists: OfficeSpecialistLoad[];

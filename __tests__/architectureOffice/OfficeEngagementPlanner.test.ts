@@ -6,9 +6,9 @@ import {
   inferEngagementKind,
   planCharterDeterministic,
   validateCharter,
-} from '../../services/architectureOffice/OfficeEngagementPlanner';
-import { findTaskCycle } from '../../services/architectureOffice/OfficeTypes';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/OfficeEngagementPlanner';
+import { findTaskCycle } from '../../services/architectureOffice/domain/OfficeTypes';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 const CLAIMS_BRIEF = 'Modernizar el motor de siniestros AS/400 exponiendo APIs a Salesforce Health Cloud, con modelo de datos y despliegue en AWS.';
 

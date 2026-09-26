@@ -16,8 +16,8 @@
 import { describe, expect, it } from 'vitest';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { transitionEngagement } from '../../../services/architectureOffice/officeEngagementTransitions';
-import type { OfficeEngagement } from '../../../services/architectureOffice/OfficeTypes';
+import { transitionEngagement } from '../../../services/architectureOffice/domain/officeEngagementTransitions';
+import type { OfficeEngagement } from '../../../services/architectureOffice/domain/OfficeTypes';
 
 const sourceFiles = (): string[] =>
   execSync('git ls-files --cached --others --exclude-standard "services/architectureOffice"')
@@ -28,10 +28,10 @@ const sourceFiles = (): string[] =>
 /** Dónde puede escribirse `status` sobre un encargo, y por qué. */
 const ALLOWED = new Set([
   // La transición misma: es quien lo aplica.
-  'services/architectureOffice/officeEngagementTransitions.ts',
+  'services/architectureOffice/domain/officeEngagementTransitions.ts',
   // La fábrica: un encargo nace en `awaiting-charter`, y eso no es una
   // transición sino su estado inicial.
-  'services/architectureOffice/officeEngagementFactory.ts',
+  'services/architectureOffice/domain/officeEngagementFactory.ts',
 ]);
 
 describe('el estado de un encargo no se mueve sin su rastro', () => {

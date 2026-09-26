@@ -12,8 +12,8 @@ import { describe, expect, it } from 'vitest';
 import {
   canRunEngagement,
   isCharterApproved,
-} from '../../../services/architectureOffice/officeEngagementTransitions';
-import type { OfficeEngagement } from '../../../services/architectureOffice/OfficeTypes';
+} from '../../../services/architectureOffice/domain/officeEngagementTransitions';
+import type { OfficeEngagement } from '../../../services/architectureOffice/domain/OfficeTypes';
 
 const withCharter = (approvedAt?: string): OfficeEngagement =>
   ({ id: 'eng-1', charter: { approvedAt } } as unknown as OfficeEngagement);

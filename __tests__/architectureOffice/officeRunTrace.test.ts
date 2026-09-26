@@ -9,21 +9,21 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { runEngagement, type OfficeRunnerPorts } from '../../services/architectureOffice/OfficeEngagementRunner';
+import { runEngagement, type OfficeRunnerPorts } from '../../services/architectureOffice/application/OfficeEngagementRunner';
 import {
   describeRun,
   describeRuns,
   runIdsOf,
   unattributedWork,
-} from '../../services/architectureOffice/officeRunTrace';
+} from '../../services/architectureOffice/application/officeRunTrace';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
   type OfficeTask,
-} from '../../services/architectureOffice/OfficeTypes';
-import type { OfficeAgentId } from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import type { PersistenceResult } from '../../services/persistence';
 
 /**

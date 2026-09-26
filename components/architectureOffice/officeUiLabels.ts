@@ -13,8 +13,8 @@ import type {
   OfficeReviewVerdict,
   OfficeTaskKind,
   OfficeTaskStatus,
-} from '../../services/architectureOffice/OfficeTypes';
-import type { OfficeQualityGateStatus } from '../../services/architectureOffice/officeQualityGates';
+} from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeQualityGateStatus } from '../../services/architectureOffice/domain/officeQualityGates';
 
 export const ENGAGEMENT_STATUS_LABELS: Readonly<Record<OfficeEngagementStatus, string>> = Object.freeze({
   intake: 'Recepción',

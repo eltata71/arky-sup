@@ -29,14 +29,14 @@ import {
   applyCharterRefinement,
   buildCharterRefinementPrompt,
   planCharterDeterministic,
-} from '../OfficeEngagementPlanner';
+} from '../domain/OfficeEngagementPlanner';
 import {
   approveCharter as approveCharterRule,
   attachGateAssessment,
   decideEngagement as decideEngagementRule,
-} from '../OfficeArbService';
-import { evaluateOfficeQualityGates } from '../officeQualityGates';
-import { createOfficeEngagement } from '../officeEngagementFactory';
+} from '../domain/OfficeArbService';
+import { evaluateOfficeQualityGates } from '../domain/officeQualityGates';
+import { createOfficeEngagement } from '../domain/officeEngagementFactory';
 import type {
   OfficeActor,
   OfficeArbDecision,
@@ -44,7 +44,7 @@ import type {
   OfficeCharter,
   OfficeEngagement,
   OfficeEngagementPriority,
-} from '../OfficeTypes';
+} from '../domain/OfficeTypes';
 
 /** Un proyecto, con lo poco que estas operaciones necesitan saber de él. */
 export interface EngagementProjectRef {

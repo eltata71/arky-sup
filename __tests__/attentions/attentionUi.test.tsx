@@ -4,13 +4,13 @@ import { type BusinessInitiative, buildInitiative } from '../../services/busines
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AttentionCard, AttentionInitiativeGate, AttentionKpiRow } from '../../components/attentions';
-import { buildOfficePortfolio } from '../../services/architectureOffice/officePortfolio';
+import { buildOfficePortfolio } from '../../services/architectureOffice/domain/officePortfolio';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
   SYSTEM_OFFICE_ACTOR,
   type OfficeEngagement,
-} from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/OfficeTypes';
 import { InitiativeCard } from '../../components/businessInitiatives';
 import type { Project } from '../../services/architectureProjects';
 

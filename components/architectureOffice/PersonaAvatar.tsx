@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { cn } from '../ui/cn';
-import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../services/architectureOffice/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import { personaIcon } from './officeUiIcons';
 
 /**

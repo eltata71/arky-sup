@@ -26,14 +26,14 @@
 import { type CaptureContext, type CaptureContextLine, type CaptureFieldId, type CaptureLevel, type CaptureSuggestionRequest, captureField, captureFieldsForLevel } from '../../../lib/capture';
 import type { Project } from '../../architectureProjects';
 import type { BusinessInitiative } from '../../businessInitiatives';
-import { getOfficeArchitectureContext } from '../officeArchitectureKnowledge';
-import type { OfficeAgentId } from '../officeAgentPersonas';
+import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
+import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import {
   buildAgentProfileBriefing,
   resolveAgentProfile,
   type OfficeAgentProfile,
   type OfficeAgentProfileOverride,
-} from '../officeAgentProfile';
+} from '../domain/officeAgentProfile';
 import { initiativeDisplayName } from './assistantConsultation';
 
 /**

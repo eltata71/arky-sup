@@ -6,14 +6,14 @@ import {
   newOfficeTaskId,
   normalizeEngagement,
   withAuditEntry,
-} from '../../services/architectureOffice/OfficeEngagementRepository';
+} from '../../services/architectureOffice/domain/officeEngagementRecord';
 import {
   DEFAULT_OFFICE_BUDGET,
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
   SYSTEM_OFFICE_ACTOR,
   selectSchedulableTasks,
   type OfficeEngagement,
-} from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/OfficeTypes';
 
 const storedEngagement = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: 'eng-1',

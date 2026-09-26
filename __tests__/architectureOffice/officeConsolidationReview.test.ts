@@ -12,12 +12,12 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   evaluateConsolidation,
   MIN_CONSOLIDATION_LENGTH,
-} from '../../services/architectureOffice/officeConsolidationReview';
+} from '../../services/architectureOffice/domain/officeConsolidationReview';
 import {
   DEFAULT_MAX_SPECIALISTS,
   executeOfficeOrchestration,
   planOfficeWorkstreams,
-} from '../../services/architectureOffice/officeOrchestration';
+} from '../../services/architectureOffice/application/officeOrchestration';
 
 const results = [
   { workstreamId: 'ws-1', personaId: 'mauricio' as const, status: 'completed' as const, output: 'ok' },

@@ -17,7 +17,7 @@ import {
   initiativeCaptureSubject,
   pendingFieldsForInitiative,
 } from '../../services/architectureOffice/application/captureAssistance';
-import { createAgentProfileOverride } from '../../services/architectureOffice/officeAgentProfile';
+import { createAgentProfileOverride } from '../../services/architectureOffice/domain/officeAgentProfile';
 import type { BusinessInitiative } from '../../services/businessInitiatives';
 import type { Project } from '../../services/architectureProjects';
 

@@ -25,9 +25,9 @@ import {
   validateAgentDefinition,
   validateAgentRegistry,
   workstreamCapableAgents,
-} from '../../services/architectureOffice/agentRegistry';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
-import type { OfficeAgentPersona } from '../../services/architectureOffice/agentDefinition';
+} from '../../services/architectureOffice/domain/agentRegistry';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import type { OfficeAgentPersona } from '../../services/architectureOffice/domain/agentDefinition';
 
 const clone = (over: Partial<OfficeAgentPersona> = {}): OfficeAgentPersona => ({
   ...OFFICE_AGENT_PERSONAS.felipe,

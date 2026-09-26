@@ -18,7 +18,7 @@ import { Badge, Button, cn } from '../ui';
 import { ArrowRight, CalendarClock, FileStack, Landmark, Layers, Link2, Plus } from 'lucide-react';
 import { HEALTH_ICONS } from '../architectureOffice/officeUiIcons';
 import { OFFICE_HEALTH_VISUALS, formatPercent } from '../architectureOffice/officeChartTokens';
-import type { ArchitectureProjectNode } from '../../services/architectureOffice/officePortfolio';
+import type { ArchitectureProjectNode } from '../../services/architectureOffice/domain/officePortfolio';
 
 /** The initiative behind an attention, reduced to what the card shows. */
 export interface AttentionInitiativeRef {

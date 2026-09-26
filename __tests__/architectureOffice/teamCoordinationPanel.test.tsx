@@ -5,8 +5,8 @@ import { TeamCoordinationPanel } from '../../components/architectureOffice/TeamC
 import {
   teamFromPlan,
   type CoordinationEvent,
-} from '../../services/architectureOffice/officeCoordination';
-import { planOfficeWorkstreams } from '../../services/architectureOffice/officeOrchestration';
+} from '../../services/architectureOffice/application/officeCoordination';
+import { planOfficeWorkstreams } from '../../services/architectureOffice/application/officeOrchestration';
 
 const team = teamFromPlan(planOfficeWorkstreams('modernizar el AS/400 con MuleSoft en AWS'));
 

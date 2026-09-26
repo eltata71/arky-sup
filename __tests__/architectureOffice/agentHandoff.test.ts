@@ -17,14 +17,14 @@ import {
   renderHandoffPrompt,
   validateHandoff,
   type AgentHandoffEnvelope,
-} from '../../services/architectureOffice/agentHandoff';
-import { canHandOff } from '../../services/architectureOffice/agentRegistry';
+} from '../../services/architectureOffice/domain/agentHandoff';
+import { canHandOff } from '../../services/architectureOffice/domain/agentRegistry';
 import {
   executeOfficeOrchestration,
   planOfficeWorkstreams,
   type OfficeAgentInvoker,
   type OfficeOrchestrationPlan,
-} from '../../services/architectureOffice/officeOrchestration';
+} from '../../services/architectureOffice/application/officeOrchestration';
 
 /** Typed like the real invoker, so the call arguments are real positions. */
 const invoker = () => vi.fn<OfficeAgentInvoker>(async () => 'resultado');

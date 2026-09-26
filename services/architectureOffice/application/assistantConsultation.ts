@@ -25,9 +25,9 @@
 import type { Settings } from '../../../types';
 import type { Project } from '../../architectureProjects';
 import type { BusinessInitiative } from '../../businessInitiatives';
-import { coordinateRequest, type CoordinationScope } from '../officeCoordination';
-import { buildCoordinationInvoker } from '../officeCoordinationInvoker';
-import { OFFICE_AGENT_PERSONAS } from '../officeAgentPersonas';
+import { coordinateRequest, type CoordinationScope } from './officeCoordination';
+import { buildCoordinationInvoker } from './officeCoordinationInvoker';
+import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 
 /** Lo que la Oficina sabe del proyecto mientras responde. */
 export const buildProjectScope = (

@@ -25,6 +25,7 @@ const ROOT = join(__dirname, '..', '..');
 const CONTEXTS = [
   'services/businessInitiatives',
   'services/architectureProjects',
+  'services/architectureOffice',
 ] as const;
 
 /** Lo que hace E/S, o pinta: nada de esto puede alcanzarse desde un dominio. */

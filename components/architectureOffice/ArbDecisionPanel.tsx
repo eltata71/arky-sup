@@ -10,11 +10,11 @@
 
 import React, { useState } from 'react';
 import { Alert, Badge, Button, Card, CardTitle } from '../ui';
-import { OFFICE_GATE_LABELS } from '../../services/architectureOffice/officeQualityGates';
+import { OFFICE_GATE_LABELS } from '../../services/architectureOffice/domain/officeQualityGates';
 import type {
   OfficeArbVerdict,
   OfficeEngagement,
-} from '../../services/architectureOffice/OfficeTypes';
+} from '../../services/architectureOffice/domain/OfficeTypes';
 // Por el barril y no por el fichero: es un `import type`, así que TypeScript lo
 // borra entero y no cuesta un byte de bundle — que es lo único que justifica
 // entrar por una ruta profunda en este repositorio.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildAgentSystemInstruction } from '../../services/agent/agentContextComposer';
-import { buildOfficePersonaBriefing } from '../../services/architectureOffice/officeAgentPersonas';
+import { buildOfficePersonaBriefing } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import type { Settings } from '../../types';
 import type { Project } from '../../services/architectureProjects';
 

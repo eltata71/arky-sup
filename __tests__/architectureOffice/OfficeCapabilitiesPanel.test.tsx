@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { OfficeCapabilitiesPanel } from '../../components/architectureOffice/OfficeCapabilitiesPanel';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import { buildInitiative, type BusinessInitiative } from '../../services/businessInitiatives';
 import type { Project } from '../../services/architectureProjects';
 

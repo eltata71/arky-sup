@@ -24,7 +24,7 @@
 import type { ArtifactSummary } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { BusinessInitiative } from '../businessInitiatives/domain';
-import type { OfficeEngagement, OfficeTask } from '../architectureOffice/OfficeTypes';
+import type { OfficeEngagement, OfficeTask } from '../architectureOffice/domain/OfficeTypes';
 
 /** The four levels, outermost first. Mirrors `EaLevel` in `lib/eaTerminology`. */
 export type PortfolioLevel = 'initiative' | 'attention' | 'deliverable' | 'artifact';

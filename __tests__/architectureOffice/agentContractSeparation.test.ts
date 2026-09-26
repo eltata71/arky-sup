@@ -18,9 +18,9 @@ import { describe, expect, it } from 'vitest';
 import {
   createAgentProfileOverride,
   resolveAgentProfile,
-} from '../../services/architectureOffice/officeAgentProfile';
-import { listAgents, getAgent } from '../../services/architectureOffice/agentRegistry';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/officeAgentProfile';
+import { listAgents, getAgent } from '../../services/architectureOffice/domain/agentRegistry';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 describe('the definition is frozen', () => {
   it('cannot be mutated in place', () => {

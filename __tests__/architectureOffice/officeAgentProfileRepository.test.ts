@@ -9,9 +9,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { normalizeAgentProfileOverride } from '../../services/architectureOffice/OfficeAgentProfileRepository';
-import { resolveAgentProfile } from '../../services/architectureOffice/officeAgentProfile';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+import { normalizeAgentProfileOverride } from '../../services/architectureOffice/infrastructure/OfficeAgentProfileRepository';
+import { resolveAgentProfile } from '../../services/architectureOffice/domain/officeAgentProfile';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 const stored = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   agentId: 'elena',

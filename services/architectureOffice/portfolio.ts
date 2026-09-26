@@ -10,5 +10,5 @@
  * Nothing here calls a model or lays out a diagram. Keep it that way: a module
  * that reaches either does not belong behind this door.
  */
-export * from './officePortfolio';
+export * from './domain/officePortfolio';
 export * from './application/portfolioCommandCenter';

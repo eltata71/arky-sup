@@ -13,7 +13,7 @@ import { formatPercent } from '../officeChartTokens';
 import {
   totalFindings,
   type OfficePortfolioRollup,
-} from '../../../services/architectureOffice/officePortfolio';
+} from '../../../services/architectureOffice/domain/officePortfolio';
 
 export interface OfficeKpiRowProps {
   rollup: OfficePortfolioRollup;

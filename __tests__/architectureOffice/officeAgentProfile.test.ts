@@ -15,8 +15,8 @@ import {
   disabledAgentIds,
   resolveAgentProfile,
   resolveAgentProfiles,
-} from '../../services/architectureOffice/officeAgentProfile';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/domain/officeAgentProfile';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 const at = () => '2026-09-05T00:00:00.000Z';
 

@@ -39,7 +39,7 @@ import type { BadgeTone, ChartSegment } from '../ui';
 import {
   OFFICE_HEALTH_ORDER,
   type OfficeHealthBucket,
-} from '../../services/architectureOffice/officePortfolio';
+} from '../../services/architectureOffice/domain/officePortfolio';
 
 export interface OfficeHealthVisual {
   /** Short Spanish label. Always rendered next to the colour. */

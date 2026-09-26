@@ -17,12 +17,12 @@
  */
 
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
-import type { OfficeAgentId } from '../officeAgentPersonas';
+import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import {
   resolveAgentProfiles,
   type OfficeAgentProfileOverride,
-} from '../officeAgentProfile';
-import { officeAgentProfileRepository } from '../OfficeAgentProfileRepository';
+} from '../domain/officeAgentProfile';
+import { officeAgentProfileRepository } from '../infrastructure/OfficeAgentProfileRepository';
 
 export interface OfficeAgentConfiguration {
   /** Capacity per agent, keyed by id. Empty means "use the shipped defaults". */

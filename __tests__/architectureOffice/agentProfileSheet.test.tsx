@@ -13,8 +13,8 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AgentProfileCard, AgentProfileSheet, AgentTeamMap } from '../../components/architectureOffice/agentProfile';
-import { resolveAgentProfile, resolveAgentProfiles } from '../../services/architectureOffice/officeAgentProfile';
-import { DEFAULT_MAX_SPECIALISTS } from '../../services/architectureOffice/officeOrchestration';
+import { resolveAgentProfile, resolveAgentProfiles } from '../../services/architectureOffice/domain/officeAgentProfile';
+import { DEFAULT_MAX_SPECIALISTS } from '../../services/architectureOffice/application/officeOrchestration';
 
 const sofia = () => resolveAgentProfile('sofia', {
   agentId: 'sofia',

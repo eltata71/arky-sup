@@ -3,10 +3,10 @@ import {
   executeOfficeOrchestration,
   isOfficeOrchestrationRequest,
   planOfficeWorkstreams,
-} from '../../services/architectureOffice/officeOrchestration';
-import { rankPersonasForBrief } from '../../services/architectureOffice/OfficeAgentRouter';
-import { canTakeWorkstream } from '../../services/architectureOffice/agentRegistry';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/officeAgentPersonas';
+} from '../../services/architectureOffice/application/officeOrchestration';
+import { rankPersonasForBrief } from '../../services/architectureOffice/domain/OfficeAgentRouter';
+import { canTakeWorkstream } from '../../services/architectureOffice/domain/agentRegistry';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 
 describe('officeOrchestration', () => {
   it('routes a Lucia request to the relevant independent specialists', () => {

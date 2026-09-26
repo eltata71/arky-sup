@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildGraphInputFromProject } from '../../services/architectureKnowledgeGraph';
-import { getOfficeArchitectureContext } from '../../services/architectureOffice/officeArchitectureKnowledge';
+import { getOfficeArchitectureContext } from '../../services/architectureOffice/domain/officeArchitectureKnowledge';
 import { validateProject } from '../../services/architectureProjects/domain/projectRuntimeValidation';
 import type { Project } from '../../services/architectureProjects';
 

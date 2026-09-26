@@ -253,8 +253,9 @@ arkypro-1.0/
 │   │                        # collection paths, the cache+local-mirror primitive
 │   ├── settings/             # ★ Per-user preferences: theme, language, AI config
 │   ├── observability/        # Runtime error capture, boot session, telemetry
-│   ├── architectureOffice/   # ★ Engagement engine: personas, agent profiles, router, planner,
-│   │                        # runner, ARB, coordination + the consolidation evaluator
+│   ├── architectureOffice/   # ★ Engagement engine, in the pilot's shape (F6-03 corte 3): domain/
+│   │                        # (engagement, record, factory, transitions, ARB, planner, agents),
+│   │                        # application/ (runner, coordination), infrastructure/ (repos, adapters)
 │   ├── architectureKnowledgeGraph/  # Entity/relation extraction, consistency, impact, traceability
 │   ├── artifactCompiler/     # Contracts, validators, repair, scoring, recompile
 │   ├── artifacts/            # View controller, brief, presentation compilers, export facade,
@@ -1379,6 +1380,18 @@ saving it through the root used to rewrite the project and move its revision on
 every rebuild — so a rebuild could collide with a real edit in another tab.
 `namedOperations.test.ts` keeps `updateProject` and `updateInitiative` from
 coming back.
+
+**The Office has the shape too** (corte 3): `domain/`, `application/` (the
+runner and the team's coordination, which orchestrate ports) and
+`infrastructure/` (repositories, the runner's real adapters, telemetry). Two
+things made its domain pure, and both are the general rule. Five rules —the
+factory, the transitions, the ARB, the planner, the resumption— reached the
+database through **one** import: `withAuditEntry` and the id generators lived
+inside the repository file; they are `domain/officeEngagementRecord.ts` now.
+And the whole domain enters `typecheck:strict` because the port
+`AgentPersonaBriefing` moved to its own leaf (`services/agent/agentPersonaBriefing.ts`):
+named through the agent barrel, even as a type, it dragged the agent, the AI
+layer and the engine into type checking.
 
 ## Aggregates: one factory each, and a gate
 

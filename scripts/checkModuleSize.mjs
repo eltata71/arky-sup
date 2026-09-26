@@ -111,7 +111,7 @@ export const BYTE_CEILINGS = {
   'components/artifacts/ArtifactInspectorPanel.tsx': 24735, // F4-05: la coordinación salió a `services/artifacts/application`
   'pages/LMS/CourseView.tsx': 24691,
   'services/diagram/irToReactFlow.ts': 23866,
-  'services/architectureOffice/officePortfolio.ts': 23876, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'services/architectureOffice/domain/officePortfolio.ts': 23879, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 3: rutas de `domain/`
   // 23338 → 23347 el 2026-09-22: nueve bytes, y la razón es la que el gate
   // pide que se escriba. La sala pasó de leer un booleano de permiso
   // (`canApprove`) a preguntar si **esta** persona puede firmar **este**
@@ -146,7 +146,7 @@ export const BYTE_CEILINGS = {
    * adición legítima lo rompe. Un presupuesto sin holgura no protege el
    * fichero, sólo obliga a tocar este archivo.
    */
-  'services/architectureOffice/OfficeEngagementPlanner.ts': 21001,
+  'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   'components/ArtifactSelectionStep.tsx': 20101,
   'pages/UserManagementPage.tsx': 20037,
 };
@@ -201,7 +201,7 @@ export const CEILINGS = {
   'services/diagram/qualityRepair.ts': 705,
   'hooks/artifacts/useDiagramRendering.ts': 685,
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
-  'services/architectureOffice/officePortfolio.ts': 680,
+  'services/architectureOffice/domain/officePortfolio.ts': 680,
   'components/memory/ChatHistoryPanel.tsx': 650,
   'components/CustomNode.tsx': 640,
   // 636, not 635: splitting `import { ChatMessage } from '../../types'` into an
@@ -225,7 +225,7 @@ export const CEILINGS = {
   'context/LMSContext.tsx': 530,
   'services/diagram/irToReactFlow.ts': 545,
   'pages/EngagementRoom.tsx': 540,
-  'services/architectureOffice/OfficeEngagementPlanner.ts': 540,
+  'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 540,
   'components/artifacts/toolbar/ArtifactBottomToolbar.tsx': 520,
   'components/artifacts/ArtifactInspectorPanel.tsx': 505,
 };

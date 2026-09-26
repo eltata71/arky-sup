@@ -12,7 +12,7 @@ import { ArrowRight, ShieldAlert } from 'lucide-react';
 import { HEALTH_ICONS } from '../officeUiIcons';
 import { OFFICE_HEALTH_VISUALS } from '../officeChartTokens';
 import { ENGAGEMENT_STATUS_LABELS, ENGAGEMENT_STATUS_TONES } from '../officeUiLabels';
-import type { OfficeDecisionItem } from '../../../services/architectureOffice/officePortfolio';
+import type { OfficeDecisionItem } from '../../../services/architectureOffice/domain/officePortfolio';
 
 export interface DecisionQueueProps {
   items: OfficeDecisionItem[];

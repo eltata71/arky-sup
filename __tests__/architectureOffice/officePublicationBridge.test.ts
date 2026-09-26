@@ -3,8 +3,8 @@ import {
   mergeOfficeFindings,
   officeAssessmentToPreflight,
   officeGateToPreflightFinding,
-} from '../../services/architectureOffice/officePublicationBridge';
-import type { OfficeQualityAssessment, OfficeQualityGateResult } from '../../services/architectureOffice/officeQualityGates';
+} from '../../services/architectureOffice/domain/officePublicationBridge';
+import type { OfficeQualityAssessment, OfficeQualityGateResult } from '../../services/architectureOffice/domain/officeQualityGates';
 import type { PublicationPreflightFinding } from '../../services/publicationPipeline/PublicationPipelineTypes';
 
 const gate = (overrides: Partial<OfficeQualityGateResult> & Pick<OfficeQualityGateResult, 'id' | 'status'>): OfficeQualityGateResult => ({
