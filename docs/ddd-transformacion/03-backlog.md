@@ -83,7 +83,9 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   que llama la RPC nueva — la regla aditiva que el repositorio ya tiene escrita.
 - **Verificado.** Los contratos pgTAP **corrieron y pasaron**, y la migración se
   aplicó a `ArkyDB-US` antes de fusionar, en el orden que el repositorio exige.
-- **Pendiente.** Retirar `api.record_arb_decision`, que ya no llama ningún código
+- **Pendiente —resuelto a medias en F2-09:** la función quedó **revocada** a
+  `authenticated`, así que es inalcanzable, pero sigue existiendo (ver
+  `13-deuda-residual.md`). Retirar `api.record_arb_decision`, que ya no llama ningún código
   de este repositorio pero sí los clientes desplegados hasta que el despliegue
   nuevo los reemplace: es una migración posterior, no ésta.
 - **Alcance.** `services/architectureOffice/application/decideEngagement.ts` (nuevo),
@@ -653,7 +655,8 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   el motor pierde 852 líneas (3 661 → 2 809) y sus imports profundos hacia
   `services/diagram` bajan 6 → 3: los guardarraíles y el gate de calidad los
   toma la vertical por el barril de `services/diagram`.
-  **Hallazgo, no arreglado aquí:** `legacyTransport.generateTextWithFallback`
+  **Hallazgo, no arreglado aquí —y arreglado después, en #62:**
+  `legacyTransport.generateTextWithFallback`
   no intenta el proxy; con la clave de operador sólo en el servidor, sin clave
   personal lanza y la IR acaba siempre en el esqueleto determinista. Afecta
   también a la generación de artefactos del motor. Se registra como tarea
@@ -694,9 +697,15 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
   El motor baja a 2 330 líneas según el gate; `any` 13 → 11 al tipar la
   configuración legacy que el escáner léxico dejó visible. Evidencia en
   `evidencias/f5-01-corte-10.md`.
-- **Lo que queda.** La vertical de artefactos (`artifactGenerationService`),
-  que es el grueso del motor. La arista `services/ai -> services (raíz)` y el
-  SCC de catorce no desaparecen hasta que salga.
+- **Cortes 11 a 14 (2026-09-23/24, #67–#70).** Salieron la revisión, las
+  mejoras y los casos de prueba (11), el brief y la presentación (12), y la
+  persona por un puerto (13). En el 14 el motor entró en
+  `services/ai/generation/artifacts/` con `ArtifactGenerationSupport` como
+  puerto obligatorio, y `services/geminiService.ts` dejó de existir. Se
+  disolvió la arista `services/ai -> services (raíz)`: ver
+  `11-cierre-fase-5.md` y `evidencias/f5-01-corte-14.md`. *(Actualizado en la
+  verificación final, 2026-09-26: esta entrada terminaba en el corte 10 y
+  seguía diciendo que faltaba la vertical de artefactos.)*
 
 ### F5-02 · Políticas de negocio a su contexto propietario
 - **Prioridad** P1 · **Tamaño** L · **Estado** `hecha` (#71) · **Depende de** F5-01
@@ -724,7 +733,7 @@ Una tarea pasa a `completada` sólo con implementación **y** evidencia ejecutad
 
 ### F6-01 · Retirar rutas antiguas y adaptadores sin consumidor · P1 · M · `hecha` (#77, #78 y el corte 3)
 ### F6-02 · Dependencias no autorizadas entre contextos a cero · P0 · L · `hecha` (imports profundos 44 → 29; `evidencias/f6-02.md`)
-### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `en curso` (corte 1: revisiones de `settings` y `learning`)
+### F6-03 · Aplicar el patrón al resto de contextos · P1 · XL · `en curso` — corte 1 hecho (revisiones de `settings` y `learning`). **Falta el grueso** (verificación final, 2026-09-26): sólo `businessInitiatives` tiene `domain/` + `infrastructure/` + prueba de pureza + comandos con nombre; `architectureProjects`, `architectureOffice` y `artifacts` tienen reglas puras (fábricas, transiciones, servicios de aplicación) sin esa forma ni su prueba de pureza
 ### F6-04 · Pruebas integrales de los flujos críticos · P0 · L · `hecha` (#80, #81; `evidencias/f6-04-flujos-criticos.md`)
 ### F6-05 · Verificar rendimiento, descarga, concurrencia y recuperación · P0 · M · `hecha` (`evidencias/f6-05-rendimiento-concurrencia.md`)
 ### F6-06 · Documentación, ADR, instrucciones y runbooks · P1 · M · `hecha` (ADR-107…109, `docs/operacion/runbook-*.md`, `06` y `07` revisados)

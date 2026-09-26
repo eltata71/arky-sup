@@ -1,7 +1,7 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-25
-**Estado integrado:** Fase 2 completa, **fases 3 y 4 cerradas** (`09-cierre-fase-3.md`, `10-cierre-fase-4.md`) y **fase 5 en curso**, todo en `main` y publicado por CI en el destino canónico `arky-sup`.
+**Última actualización:** 2026-09-26
+**Estado integrado:** fases 1 a 5 cerradas; fase 6 con ocho de diez tareas hechas. Pendientes **F6-03** (el patrón piloto en el resto de contextos, sólo el primer corte) y **F6-09** (informe de cierre). Todo en `main` y publicado por CI en `arky-sup`. Verificación final: `evidencias/verificacion-final.md`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
