@@ -1,489 +1,204 @@
-# Plan de Mejora del Pipeline de Diagramas — Arky 10
-
-**Basado en análisis comparativo de:**
-- **Archify** (tt-a1i/archify) — Agent skill para diagramas técnicos desde lenguaje natural
-- **diagram-design** (cathrynlavery/diagram-design) — 27-40+ diagramas editoriales brand-aware
+# Plan de mejora de diagramas — de lo construido a clase mundial
 
 **Fecha:** 2026-09-28
-**Estado:** Borrador para revisión y ejecución
-**Objetivo:** Potenciar el pipeline de diagramas de arky-sup con capacidades diferenciadoras de ambos proyectos
+**Estado:** propuesto, pendiente de aprobación del propietario
+**Sustituye a:** la versión anterior de este fichero (commit `a80abea`), retirada por las razones de §1.
 
 ---
 
-## RESUMEN EJECUTIVO
-
-| Métrica | Actual | Objetivo Post-Plan |
-|---------|--------|-------------------|
-| Tipos de diagrama | 6 (arquitectura, flujo, secuencia, estado, C4, BPMN) | **22+** (incl. quadrant, radar, loop, pyramid, Gantt, org chart, medallion, DP matrix, etc.) |
-| Variantes visuales | 2 (light/dark) | **3 por tipo** (minimal-light, minimal-dark, full-editorial) |
-| Brand-aware | ❌ No | ✅ Auto-extracción colores/fuentes de web cliente |
-| Importación externa | Solo Mermaid | **draw.io, Lucidchart, PlantUML, Mermaid** |
-| Progressive disclosure | Zoom/pan básico | **MAP → READ → FULL** estructurado |
-| Distribución | Solo app integrada | **Agent Skill instalable** (Cursor, Claude Code, Codex, OpenCode) |
-| Design system | Tailwind primario | **Estricto**: 1 accent, 3 fuentes, coords % 4, 1px hairline, no shadows |
-
----
-
-## FASE A — QUICK WINS (Semanas 1-2)
-**Objetivo:** Mejoras de bajo esfuerzo, alto impacto visual y de compatibilidad inmediata
-**Beneficio:** Consistencia profesional, compatibilidad Mermaid real, export portable, base para fases posteriores
-
-### A1 — Design System Estricto
-**Objetivo:** Aplicar reglas visuales inquebrantables que eliminan el "look AI-generated"
-**Beneficio:** Diagramas listos para presentación ejecutiva sin retoques manuales; coherencia visual automática
-
-**Tareas:**
-1. **Definir tokens base** en `lib/diagramTokens.ts`:
-   - `spacingUnit = 4` (todas las coords, widths, gaps divisibles por 4)
-   - `borderWidth = 1` (hairline), `borderRadiusMax = 10`
-   - `shadow = 'none'` (prohibido)
-   - Fuentes: `fontTitle = 'Instrument Serif'`, `fontUI = 'Geist Sans'`, `fontMono = 'Geist Mono'`
-   - Paleta: 1 accent color + grises neutros; coral-tint para nodos focales (máx 2 por diagrama)
-
-2. **Aplicar a ReactFlow** en `components/reactFlowCanvas/CustomNode.tsx` y `CustomEdge.tsx`:
-   - Eliminar `boxShadow`, `filter: drop-shadow`
-   - Forzar `rx={10}` máx en nodos rectangulares
-   - Usar `fontFamily` según rol semántico (title/UI/mono)
-   - Edge labels en `fontMono` tamaño 11px
-
-3. **Aplicar a Excalidraw** en `irToExcalidraw.ts`:
-   - `strokeWidth: 1`, `roughness: 0` (salvo variante sketchy)
-   - Fuentes mapeadas a equivalentes Excalidraw
-
-4. **Tests visuales** en `e2e/diagram-design-system.spec.ts`:
-   - Render 6 tipos × 3 variantes × 2 temas = 36 screenshots
-   - Assert: coords % 4 === 0, borderWidth === 1, no box-shadow en DOM
-
----
-
-### A2 — 3 Variantes Visuales por Tipo
-**Objetivo:** Ofrecer minimal-light, minimal-dark, full-editorial sin configuración manual
-**Beneficio:** Un diagrama, tres audiencias (trabajo diario, docs técnicas, presentaciones ejecutivas)
-
-**Tareas:**
-1. **Extender `DiagramIR`** en `services/diagram/index.ts`:
-   ```typescript
-   interface DiagramIR {
-     // ... existente
-     variant: 'minimal-light' | 'minimal-dark' | 'full-editorial';
-     brandTheme?: BrandTheme; // para fase B1
-   }
-   ```
-
-2. **Crear `variantPresets.ts`** (nuevo archivo):
-   ```typescript
-   export const variantPresets = {
-     'minimal-light': { background: '#ffffff', grid: false, annotations: false, density: 'low' },
-     'minimal-dark':  { background: '#0f172a', grid: false, annotations: false, density: 'low' },
-     'full-editorial': { background: 'var(--bg)', grid: true, annotations: true, density: 'target-4-of-10' }
-   };
-   ```
-
-3. **Propagar a renderers**:
-   - `irToReactFlow.ts`: leer `variant` → aplicar preset → `CustomNode/Edge` consumen via context
-   - `irToExcalidraw.ts`: mismo enfoque
-   - `diagramExportFrame.ts`: incluir variant en export HTML
-
-4. **UI toggle** en `components/artifacts/diagram/DiagramToolbar.tsx`:
-   - Selector de 3 variantes (iconos: □, ▣, ◆)
-   - Persistir en `Artifact.metadata.variant`
-
----
-
-### A3 — Validar Export Self-Contained
-**Objetivo:** Garantizar que `diagramExportFrame.ts` genera HTML+SVG 100% autocontenido
-**Beneficio:** Archivos portables, versionables en Git, abiertos en cualquier navegador sin red
-
-**Tareas:**
-1. **Auditar `diagramExportFrame.ts`**:
-   - Verificar: fuentes embebidas (base64 data: URLs o Google Fonts @import inline)
-   - Verificar: sin `<script src="https://...">`, sin CDN
-   - Verificar: SVG inline o `<img src="data:image/svg+xml,...">`
-   - Verificar: CSS completo inline (sin Tailwind JIT en runtime)
-
-2. **Corregir fugas** encontradas:
-   - Mover `diagramTokens.css` → inline style tag
-   - Embebir Geist/Instrument Serif via `@font-face` con data: URLs (subset latin)
-   - Reemplazar `lucide-react` icons por SVG inline
-
-3. **Test E2E** en `e2e/diagram-export-selfcontained.spec.ts`:
-   - Abrir export en `file://` protocol → sin errores de consola, render idéntico
-   - Validar tamaño < 500 KB para diagrama medio (50 nodos)
-
----
-
-### A4 — Mermaid como Input Dialect (Semántico, no Mecánico)
-**Objetivo:** Leer Mermaid por estructura y hacer layout from scratch en estilo arky
-**Beneficio:** Usuarios pegan Mermaid existente → sale diagrama arky sin "Mermaid slop"
-
-**Tareas:**
-1. **Extender `mermaidToIR.ts`** con heurísticas semánticas:
-   - `subgraph` → `lane` (workflow) o `region` (architecture)
-   - `classDef` con `fill:` → `semanticType` mapping (database, api, security, external)
-   - `shape: diamond` / `{}` → `decision` / `security` node
-   - `-->|label|` → `edgeLabel` (usar con parsimonia)
-   - `flowchart TB/TD/LR/RL` → inferir `direction` en `layoutDirective`
-
-2. **No parsear mecánicamente**: usar regex + heurísticas, no parser Mermaid completo
-   - Regla: "read for structure, lay out from scratch in matching archify mode"
-
-3. **Test fixtures** en `tests/fixtures/mermaid-dialect/`:
-   - 10 casos: architecture, flowchart, sequence, C4, BPMN, ER, etc.
-   - Assert: IR result tiene `semanticType` en ≥80% nodos, `layoutDirective` coherente
-
----
-
-## FASE B — CORE FEATURES (Semanas 3-7)
-**Objetivo:** Diferenciadores competitivos que ningún competidor tiene integrado
-**Beneficio:** Posicionamiento único — diagramas brand-aware, tipos empresariales, migración zero-friction, UX progresiva
-
-### B1 — Brand-Aware Engine (Auto-extracción de identidad visual)
-**Objetivo:** Dada una URL, extraer colores/fuentes y generar `DiagramTheme` personalizado en < 3s
-**Beneficio:** Diagramas que "encajan" en la web/docs del cliente automáticamente; cero configuración manual
-
-**Tareas:**
-1. **Crear `services/diagram/brandExtractor.ts`** (nuevo):
-   ```typescript
-   interface BrandTheme {
-     colors: { accent: string; bg: string; fg: string; muted: string; border: string };
-     fonts: { title: string; ui: string; mono: string };
-     sourceUrl: string;
-     extractedAt: number;
-   }
-   ```
-
-2. **Extracción de colores** (prioridad):
-   - CSS custom properties: `--color-primary`, `--brand-accent`, `:root` vars
-   - Meta tags: `<meta name="theme-color">`, `<meta property="og:image">` (dominant color)
-   - Favicon/apple-touch-icon → color dominante via canvas
-   - Fallback: paleta por defecto (Tailwind primary)
-
-3. **Extracción de fuentes**:
-   - `@import url(https://fonts.googleapis.com/...)` → parsear familia
-   - `@font-face` declarations → font-family names
-   - `font-family` en `body` / headings → inferir stack
-   - Mapear a: title (serif preferido), ui (sans), mono (monospace)
-
-3. **Cache por dominio** (24h en `localStorage` + `sessionStorage`):
-   - Key: `arky.brandTheme.{hostname}`
-   - Invalidar en `SettingsPage` botón "Refrescar tema"
-
-4. **Integrar en pipeline**:
-   - `diagramTypeInference.ts`: si `brandTheme` presente → override tokens
-   - `diagramTypeQualityGates.ts`: validar contraste WCAG AA con colores extraídos
-   - `components/artifacts/diagram/DiagramToolbar.tsx`: badge "Brand: example.com" + botón reset
-
-5. **Tests**:
-   - 5 sitios reales (Stripe, Linear, Vercel, GitHub, Supabase) → temas generados pasan revisión visual manual
-   - Fallback probado: sitio sin CSS vars → usa paleta por defecto sin error
-
----
-
-### B2 — 15+ Nuevos Tipos de Diagrama Editorial
-**Objetivo:** Cubrir casos de uso de arquitectura empresarial que hoy no existen
-**Beneficio:** Arky-sup se convierte en herramienta completa para arquitectos (no solo diagramas técnicos)
-
-**Tipos a implementar (prioridad):**
-| Prioridad | Tipo | Caso de uso | Referencia diagram-design |
-|-----------|------|-------------|---------------------------|
-| P0 | **Quadrant** | Matriz impacto/esfuerzo, tecnología/madurez | `type-quadrant.md` |
-| P0 | **Radar/Spider** | Comparativa multi-eje (capacidades, riesgos) | `type-radar.md` |
-| P0 | **Loop/Flywheel** | Bucles de valor, flywheels organizacionales | `type-loop.md` |
-| P1 | **Pyramid/Funnel** | Jerarquía rankada, drop-off funnel | `type-pyramid.md` |
-| P1 | **Consultant 2×2** | Matriz escenarios con celdas nombradas | `type-consultant2x2.md` |
-| P1 | **Org Chart** | Propiedad, routing, reporting lines | `type-orgchart.md` |
-| P1 | **Tree/Nested** | Jerarquía por contención (dominios, módulos) | `type-tree.md`, `type-nested.md` |
-| P1 | **Venn** | Overlap de capacidades, dominios, equipos | `type-venn.md` |
-| P2 | **Layer Stack** | Abstracciones apiladas (infra, platform, app) | `type-layerstack.md` |
-| P2 | **Timeline/Gantt** | Eventos en eje temporal, fases de proyecto | `type-timeline.md`, `type-gantt.md` |
-| P2 | **Charts** | Bar, Line, Scatter — métricas arquitectónicas | `type-barchart.md`, `type-linechart.md`, `type-scatter.md` |
-| P2 | **Process** | Multi-actor sequential workflow | `type-process.md` |
-| P2 | **Medallion** | Multi-tier data storage (bronze/silver/gold) | `type-medallion.md` |
-| P2 | **Data Flow** | Role-scoped pipeline steps | `type-dataflow.md` |
-| P2 | **DP Integration/Security Matrix** | Sources→core→consumers, per-role permissions | `type-dpintegration.md`, `type-dpsecurity.md` |
-
-**Tareas por tipo (repetir para cada uno):**
-1. **Definir esquema IR** en `diagramTypeInference.ts` → `DiagramType` union + `typeConfig[type]`
-2. **Layout directive** en `layoutDirective.ts` + `groupSemantics.ts` (semantic groups → zones)
-3. **Renderer ReactFlow** en `irToReactFlow.ts` (nodos/edges específicos, handles, labels)
-4. **Renderer Excalidraw** en `irToExcalidraw.ts`
-5. **Quality gates** en `diagramTypeQualityGates.ts` (reglas específicas por tipo)
-6. **Accessibility summary** en `accessibleSummary.ts` (descripción textual para screen readers)
-7. **Test fixture** en `tests/fixtures/diagram-types/{type}.json` + snapshot test
-
-**Infraestructura compartida:**
-- `groupZoneSeparation.ts`: zonas semánticas por tipo (lanes, regions, quadrants, rings)
-- `edgeRoutingPolicy.ts`: routing policies por tipo (orthogonal, curved, straight)
-- `layoutSelector.ts`: elegir Dagre/ELK/custom por tipo
-
----
-
-### B3 — Importadores Externos (Migración Zero-Friction)
-**Objetivo:** Importar draw.io, Lucidchart, PlantUML, Mermaid → IR → render arky
-**Beneficio:** Adopción inmediata — equipos migran diagramas existentes sin redibujar
-
-**Tareas:**
-1. **Crear carpeta** `services/diagram/import/`
-2. **Implementar importadores** (cada uno archivo independiente):
-   - `drawioToIR.ts`: parsear `.drawio` (XML) → mxGraph model → IR
-   - `lucidToIR.ts`: usar `services/lucid/` (ya existe integración) → IR
-   - `plantumlToIR.ts`: parsear PlantUML texto → AST → IR (subset: component, sequence, class)
-   - `mermaidToIR.ts`: reutilizar/mejorar A4
-
-3. **CLI unificada** en `bin/arky-diagram.mjs` (nuevo):
-   ```bash
-   npx arky-diagram import diagram.drawio --output diagram.json --type architecture
-   npx arky-diagram import diagram.lucid --output diagram.json
-   npx arky-diagram render diagram.json --variant full-editorial --output diagram.html
-   npx arky-diagram validate diagram.json --type architecture
-   ```
-
-4. **UI en app** — `components/artifacts/diagram/DiagramImportWizard.tsx`:
-   - Drag & drop archivo → detectar formato → preview IR → confirmar → crear artifact
-
-5. **Tests**: 3 archivos por formato → IR válido → render sin errores
-
----
-
-### B4 — Progressive Disclosure MAP → READ → FULL
-**Objetivo:** Navegación semántica por 3 niveles de detalle en mismo diagrama
-**Beneficio:** Ejecutivos ven MAP (contexto), técnicos ven READ (detalle), expertos ven FULL (todo)
-
-**Tareas:**
-1. **Extender `DiagramIR`** con `detailLevels`:
-   ```typescript
-   interface DiagramIR {
-     // ... existente
-     detailLevels: {
-       map: DiagramIR;      // Solo contenedores + conexiones principales
-       read: DiagramIR;     // Contenedores + nodos clave + edges etiquetados
-       full: DiagramIR;     // Todo (actual)
-     };
-     currentLevel: 'map' | 'read' | 'full';
-   }
-   ```
-
-2. **Implementar `audienceProjector.ts`** (ya existe, completar):
-   - `projectToMap(ir)`: agrupar nodos por `semanticGroup` → super-nodos; edges = conexiones entre grupos
-   - `projectToRead(ir)`: nodos con `prominence >= 0.5` + edges con `label`
-   - `projectToFull(ir)`: identity
-
-3. **ReactFlow canvas** — `components/reactFlowCanvas/`:
-   - Toolbar: 3 botones MAP/READ/FULL (atajos 1/2/3)
-   - Transición animada (Motion): fade + reposition (300ms)
-   - Persistir nivel en `Artifact.metadata.detailLevel`
-
-4. **Semantic camera** (base para Fase C2):
-   - `storyPlanner.ts` genera `CameraPath[]` por nivel
-   - MAP: vista completa; READ: zoom a zona activa; FULL: pan recorrido
-
-5. **Tests**: 5 diagramas complejos → 3 niveles → cada nivel renderiza < 2s, sin loss semántico
-
----
-
-## FASE C — DISTRIBUCIÓN & POLISH (Semanas 8-10)
-**Objetivo:** Empaquetar como skill distribuible, pulir UX, documentar
-**Beneficio:** Adopción viral vía agent skills; arky-sup como "diagram engine" headless de referencia
-
-### C1 — Agent Skill Package (Instalable en Cursor/Claude Code/Codex/OpenCode)
-**Objetivo:** Publicar `npx skills add eltata71/arky-sup --skill arky-diagram`
-**Beneficio:** Distribución viral; arky-sup usado como motor de diagramas en cualquier IDE
-
-**Tareas:**
-1. **Crear estructura** `.claude/skills/arky-diagram/`:
-   ```
-   arky-diagram/
-   ├── SKILL.md              # Frontmatter + instrucciones principales
-   ├── references/
-   │   ├── type-architecture.md
-   │   ├── type-quadrant.md
-   │   ├── ... (uno por tipo)
-   │   ├── brand-extraction.md
-   │   ├── progressive-disclosure.md
-   │   ├── import-export.md
-   │   └── style-guide.md
-   ├── bin/
-   │   └── arky-diagram.mjs  # CLI: render, validate, check, demo
-   ├── assets/
-   │   └── index.html        # Galería live con tabs
-   └── examples/
-       ├── architecture.json
-       ├── quadrant.json
-       └── ... (10+ ejemplos)
-   ```
-
-2. **`SKILL.md`** — puntos clave:
-   - Trigger: "diagrama", "architecture diagram", "quadrant", "make a diagram"
-   - Lee `style-guide.md` del proyecto usuario (brand-aware)
-   - Genera `.arky-diagram/{type}.json` + `.arky-diagram/{type}.html`
-   - Valida con `node bin/arky-diagram.mjs validate`
-
-3. **`bin/arky-diagram.mjs`** comandos:
-   - `render <type> <input.json> <output.html>`
-   - `validate <type> <input.json> --json`
-   - `check <output.html>`
-   - `demo [output-dir]` → genera 10 ejemplos listos
-
-4. **Publicar**: `npx skills add` apunta a `github:eltata71/arky-sup` subpath `.claude/skills/arky-diagram`
-
----
-
-### C2 — Semantic Camera + Path-Aware Stories
-**Objetivo:** Animaciones guiadas por narrativa (no solo zoom/pan)
-**Beneficio:** Presentaciones ejecutivas diferenciadoras; "cuenta la historia" del diagrama
-
-**Tareas:**
-1. **Completar `storyPlanner.ts`** y `storyDerivation.ts`:
-   - Input: `DiagramIR` + `audience` (executive/technical/operations)
-   - Output: `Story{ scenes: Scene[]; cameraPath: CameraKeyframe[] }`
-   - Scene = { nodes: string[], focus: string, narration: string, duration: number }
-
-2. **Camera engine** en `components/reactFlowCanvas/`:
-   - `useSemanticCamera(story)` → controla viewport via `ReactFlowViewport`
-   - Keyframes: position (x,y,z), target node, easing
-   - Controles: play/pause, next/prev scene, speed
-
-3. **Narración opcional**: TTS via `speechSynthesis` (accesibilidad) o export a script
-
-4. **Export story** → MP4/GIF via `ascii-video` skill o captura pantalla
-
----
-
-### C3 — Galería Live (Showcase Interactivo)
-**Objetivo:** `skills/arky-diagram/assets/index.html` con tabs por tipo y variante
-**Beneficio:** Demo inmediata sin instalar; referencia visual para usuarios y agentes
-
-**Tareas:**
-1. **HTML estático** (sin build, sin JS externo):
-   - Grid de tarjetas: tipo × variante (3) × tema (light/dark)
-   - Click → abre diagrama HTML en nueva pestaña
-   - Filtros: search, category, variant
-
-2. **Generar en build** — script `scripts/generate-gallery.mjs`:
-   - Lee `examples/*.json` → render cada variante → embed en gallery
-
-3. **Hostear** en `tt-a1i.github.io/arky-diagram/` (GitHub Pages) o Vercel preview
-
----
-
-### C4 — Documentación y Ejemplos Completos
-**Objetivo:** 10+ ejemplos JSON IR por tipo + guías de uso
-**Beneficio:** Onboarding sin fricción; agentes y humanos aprenden patrones correctos
-
-**Tareas:**
-1. **Ejemplos** en `.claude/skills/arky-diagram/examples/`:
-   - Por tipo: architecture, quadrant, radar, loop, pyramid, orgchart, tree, venn, layerstack, timeline, gantt, barchart, linechart, scatter, process, medallion, dataflow, dpintegration, dpsecurity
-   - Cada uno: `input.json` (IR), `output.html` (full-editorial), `README.md` (explicación)
-
-2. **Guías** en `references/`:
-   - `style-guide.md` — design system completo (tokens, reglas, anti-patrones)
-   - `brand-extraction.md` — cómo funciona, cómo personalizar, troubleshooting
-   - `progressive-disclosure.md` — cuándo usar cada nivel, mejores prácticas
-   - `import-export.md` — formatos soportados, limitaciones, round-trip
-
-3. **Validación automática**: `node bin/arky-diagram.mjs check examples/*.html` en CI
-
----
-
-## CRITERIOS DE ACEPTACIÓN GLOBALES
-
-| Gate | Comando | Umbral |
-|------|---------|--------|
-| TypeScript strict | `npm run typecheck:strict` | 0 errores |
-| ESLint | `npm run lint` | 0 errores, 0 warnings |
-| Module boundaries | `npm run check:module-boundaries` | 0 ciclos dominio, 0 pares ascendentes, 0 fan-out >2 |
-| Bundle budget | `npm run check:bundle-budget` | Carga inicial ≤ 340 KB gz; Dashboard ≤ 60 KB gz |
-| Tests unitarios | `npm run test:ci` | 4 733+ tests passing |
-| Coverage | `npm run test:coverage` | ≥ 67% statements, ≥ 58% branches |
-| E2E | `npm run e2e` | 36 casos passing (Chromium desktop) |
-| Supabase contracts | `bash scripts/supabase/local.sh verify` | 18 pgTAP contracts passing |
-| Secrets | `npm run check:bundle-secrets` | Limpio |
-| Any budget | `npm run check:any-budget` | ≤ 7 `any` (actual) |
-
----
-
-## RIESGOS Y MITIGACIONES (Resumen)
-
-| Riesgo | Prob. | Impacto | Mitigación |
-|--------|-------|---------|------------|
-| Brand extractor falla en SPAs | Media | Medio | Fallback a paleta por defecto; cache 24h; opt-in |
-| 15+ tipos rompen quality gates | Alta | Alto | TDD 1 tipo a la vez; `diagramTypeQualityGates.ts` extensible |
-| Bundle size se dispara | Media | Alto | `check:bundle-budget` por ruta; lazy-load Excalidraw/Lucid; code-split por tipo |
-| Skill no instala en Windows | Baja | Medio | CI matrix (ubuntu/windows/mac); `run.sh` sin `make` |
-| Mermaid dialect ambiguo | Media | Bajo | Heurísticas conservadoras; fallback "workflow"; log warnings |
-| Cambios en `DiagramIR` rompen artifacts existentes | Media | Alto | Migración `irMigration.ts` (ya existe); versionar IR; tests de compatibilidad |
-
----
-
-## SECUENCIA DE EJECUCIÓN RECOMENDADA
-
-```mermaid
-gantt
-    title Plan de Mejora Diagramas — Arky 10
-    dateFormat  YYYY-MM-DD
-    axisFormat  %m/%d
-
-    section Fase A - Quick Wins
-    A1 Design System Estricto     :a1, 2026-09-29, 3d
-    A2 3 Variantes Visuales       :a2, after a1, 3d
-    A3 Export Self-Contained      :a3, after a1, 2d
-    A4 Mermaid Dialect            :a4, after a1, 3d
-
-    section Fase B - Core Features
-    B1 Brand-Aware Engine         :b1, after a4, 5d
-    B2 Nuevos Tipos (P0)          :b2, after b1, 10d
-    B2 Nuevos Tipos (P1)          :b3, after b2, 10d
-    B2 Nuevos Tipos (P2)          :b4, after b3, 10d
-    B3 Importadores Externos      :b5, after b1, 7d
-    B4 Progressive Disclosure     :b6, after b2, 5d
-
-    section Fase C - Distribución
-    C1 Agent Skill Package        :c1, after b4, 5d
-    C2 Semantic Camera            :c2, after b6, 5d
-    C3 Galería Live               :c3, after c1, 3d
-    C4 Documentación              :c4, after c1, 3d
-```
-
-**Total estimado:** 10 semanas (≈ 50 días laborables)
-**Entregables incrementales:** Cada fase produce valor usable independientemente
-
----
-
-## PRÓXIMOS PASOS INMEDIATOS
-
-1. **Revisar y aprobar** este plan (comentarios en PR o issue)
-2. **Crear rama** `feat/diagram-pipeline-enhancement`
-3. **Iniciar Fase A1** — Design System Estricto (base para todo lo demás)
-4. **Daily sync** en standup: avance, bloqueos, decisiones de diseño
-5. **PR por fase** (no mega-PR): A1→A2→A3→A4 → merge → B1→B2...
-
----
-
-## ARCHIVOS CLAVE A MODIFICAR (Referencia Rápida)
-
-```
-lib/diagramTokens.ts              # A1 - Tokens base
-lib/diagramThemes.ts              # A1, A2, B1 - Temas y variants
-services/diagram/index.ts         # A2, B4 - DiagramIR extensions
-services/diagram/variantPresets.ts # A2 - NUEVO
-services/diagram/brandExtractor.ts # B1 - NUEVO
-services/diagram/mermaidToIR.ts   # A4 - Extender
-services/diagram/diagramTypeInference.ts # B2 - Nuevos tipos
-services/diagram/irToReactFlow.ts # A1, A2, B2 - Renderers
-services/diagram/irToExcalidraw.ts # A1, A2, B2 - Renderers
-services/diagram/diagramTypeQualityGates.ts # B2 - Gates por tipo
-services/diagram/audienceProjector.ts # B4 - Progressive disclosure
-services/diagram/storyPlanner.ts  # C2 - Stories
-services/diagram/import/          # B3 - NUEVA CARPETA
-components/reactFlowCanvas/       # A1, A2, B4, C2 - Canvas
-components/artifacts/diagram/     # A2, A3, B1, B3 - Toolbar, Import, Export
-services/diagram/diagramExportFrame.ts # A3 - Export
-.claude/skills/arky-diagram/      # C1, C3, C4 - NUEVA CARPETA
-bin/arky-diagram.mjs              # C1, C3 - CLI
-tests/fixtures/                   # A4, B2 - Fixtures
-e2e/                              # A1, A3, B1, B2, B4 - Tests
-```
-
----
-
-**Fin del documento — Listo para revisión y ejecución fase a fase**
+## 1. Por qué se reemplazó el plan anterior
+
+El plan anterior comparaba Arky con dos repositorios externos (Archify y
+diagram-design) y proponía importar sus funciones. Se revisó contra el código y
+no se puede ejecutar tal cual, por tres motivos:
+
+- **Partía de una línea base falsa.** Decía «6 tipos de diagrama» y «2
+  variantes». El IR declara 12 tipos (`lib/diagram/DiagramIRTypes.ts`: C4 en
+  cuatro niveles, integración, BPMN, cadena de valor, flujo de datos,
+  despliegue, secuencia, ERD, genérico). Ya existen tres audiencias
+  (`audienceProjector`: ejecutiva, técnica, operaciones), un modo historia
+  (`storyPlanner` + `PresentationMode`), la persistencia de posiciones manuales
+  y un motor de cambios semánticos (`semanticPatchEngine`). Un plan que no sabe
+  lo que hay termina reconstruyéndolo.
+- **Chocaba con decisiones de arquitectura vigentes.** Leer los colores de una
+  web cualquiera desde el navegador lo bloquea CORS, así que exigiría un
+  endpoint de dominio en `api/`, y eso está prohibido. Meter tres copias del IR
+  dentro del propio IR duplica el modelo que el proyector ya deriva. Un campo
+  `variant` obligatorio en el IR rompe los artefactos guardados. Imponer
+  fuentes nuevas y prohibir sombras reescribe el aspecto de todo el producto
+  sin que nadie lo haya decidido.
+- **Arrastraba restos de otros proyectos:** publicar la galería en el dominio
+  del autor de Archify, una skill `ascii-video` que no existe aquí, y una CLI
+  distribuible con `npx` que queda fuera del alcance de un SaaS.
+
+§6 recoge lo que sí se rescata.
+
+## 2. Punto de partida real
+
+El subsistema es el más probado del producto: 49 módulos en
+`services/diagram/` y 110 suites en `__tests__/diagram/`. Esto es lo que ya
+tiene:
+
+| Capacidad | Dónde | Llega al usuario |
+|---|---|---|
+| Pipeline determinista Mermaid → IR → ReactFlow / Excalidraw / Mermaid | `services/diagram/` | Sí |
+| 12 tipos con puertas de calidad por tipo, validación C4 y BPMN | `diagramTypeQualityGates`, `c4Validation`, `bpmnValidation` | Sí |
+| Tres audiencias sobre un mismo modelo | `audienceProjector`, selector en `ArtifactCanvas` | Sí |
+| Historia autoral o derivada, modo presentación | `storyPlanner`, `PresentationMode` | Sí |
+| Posiciones manuales que sobreviven a la recarga | `ReactFlowCanvas` (ida y vuelta del arrastre) | Sí |
+| Resumen accesible, contraste comprobado | `accessibleSummary`, `lib/colorContrast` | Sí |
+| Exportación PNG/SVG con marco y recorte | `canvasImageExport`, `diagramExportFrame` | Sí |
+| **Cambiar un diagrama sin regenerarlo** (13 operaciones, vista previa, rechazos tipados) | `semanticPatchEngine`, `diagramEditService` | **No: ninguna pantalla lo llama** |
+| Historial de versiones | `ArtifactHistoryModal` | A medias: compara el **texto** Mermaid línea a línea, no el diagrama |
+| Lectura de Mermaid | `mermaidToIR` | A medias: descarta `classDef`, `style` y `class` (`mermaidToIR.ts:195`) |
+| Marca de la organización | `publicationPipeline/PublicationBrandingService` | En los paquetes de publicación, no en la exportación del diagrama |
+
+**La conclusión guía todo el plan:** la distancia hasta clase mundial no está
+en añadir tipos ni en importar funciones ajenas. Está en que quien usa Arky
+pueda **modificar, comparar, reutilizar y entregar** un diagrama con la
+confianza de una herramienta profesional. Buena parte de eso ya está escrito y
+le falta la mitad visible.
+
+## 3. Principios del plan (qué lo hace seguro)
+
+1. **Primero la superficie de lo construido, luego lo nuevo.** Cada fase empieza
+   por capacidades que ya tienen motor y pruebas.
+2. **Cero regresiones por construcción:**
+   - Todo campo nuevo del IR es **opcional**, y si cambia una forma pasa por
+     `irMigration.ts` con prueba de compatibilidad sobre artefactos antiguos.
+   - Toda función nueva de pantalla entra en un chunk diferido (`lazyWithRetry`
+     o `import()`), y `check:bundle-budget` fija el techo por ruta.
+   - Nada escribe en el diagrama sin un clic explícito (la regla de la captura
+     asistida).
+   - Ninguna dependencia nueva sin medir el bundle, y ningún endpoint en `api/`.
+3. **Una PR por tarea**, con los gates completos (`npm run quality`, E2E, pgTAP
+   si toca SQL) y fusión *squash*. Sin mega-PR.
+4. **Cada tarea declara su criterio de terminado.** Si no se puede comprobar,
+   no está terminada.
+
+## 4. Fases y tareas
+
+Tamaño: **S** ≈ 1–2 días · **M** ≈ 3–5 días · **L** ≈ 1–2 semanas.
+
+### Fase 1 — Cambiar un diagrama sin perderlo *(la de mayor impacto)*
+
+**Objetivo:** que ajustar un diagrama con IA cueste una frase y conserve todo
+lo demás: ids, layout, posiciones manuales y narrativa.
+
+**Beneficio:** hoy un cambio pequeño pedido a la IA regenera el diagrama entero,
+así que el usuario deja de pedir cambios pequeños o pierde su trabajo manual.
+Este es el comportamiento que distingue una herramienta profesional de un
+generador.
+
+| # | Tarea | Tamaño | Terminado cuando |
+|---|---|---|---|
+| **1.1** | **Panel «Modificar diagrama»** en el lienzo: la persona escribe una instrucción → `diagramEditService.proposeEdit` → se muestra la vista previa que escribe el **motor** (`describeSemanticPatch`): operaciones, cascadas y rechazos → «Aplicar» crea una versión nueva con `applySemanticPatch`. Orquestación en `services/artifacts/application/`, hook en `hooks/artifacts/` y panel diferido, para no hacer crecer `ArtifactCanvas` | M | La instrucción «renombra X y conéctalo a Y» cambia solo eso. Las posiciones manuales se conservan (prueba). Una propuesta rechazada deja el diagrama intacto y lo dice. Fan-out ≤ 2 |
+| **1.2** | **Deshacer y rehacer semántico:** cada patch aplicado es una versión con descripción legible («Añadido nodo Auth; eliminada 1 conexión en cascada») | S | El historial muestra la frase del motor, no «Versión 7» |
+| **1.3** | **Comparación semántica entre versiones:** función pura `diffDiagramIR(a, b)` en `services/diagram` (nodos y conexiones añadidos, eliminados, renombrados y reagrupados). `ArtifactHistoryModal` la usa para los diagramas en vez del diff de texto | M | Cambiar el orden de líneas del Mermaid sin cambiar el diagrama da «sin cambios». Suite con generador sembrado |
+| **1.4** | **El copiloto usa patches para diagramas:** cuando el artefacto tiene IR, `interpretArtifactModification` pide un patch en lugar de reescribir el contenido. Si el patch falla, se usa el camino actual | M | Misma instrucción al copiloto → mismo resultado que 1.1. La prueba del camino de respaldo existe |
+
+### Fase 2 — Fidelidad de entrada y de entrega
+
+**Objetivo:** lo que entra no pierde información y lo que sale puede entregarse
+a un comité sin retoques.
+
+**Beneficio:** Arky pasa de ser la herramienta donde se *dibuja* a la
+herramienta que se *entrega*.
+
+| # | Tarea | Tamaño | Terminado cuando |
+|---|---|---|---|
+| **2.1** | **Mermaid leído por su significado** *(rescatado de A4)*: `classDef`, `class` y `style` alimentan el tipo semántico del nodo (base de datos, externo, seguridad…) con heurísticas conservadoras. Lo que no se reconoce se registra en `MermaidToIRDiagnostics`, nunca se inventa | M | 10 fixtures nuevos en `tests/fixtures/`. Las suites existentes de `mermaidToIR` siguen en verde sin tocarlas |
+| **2.2** | **Exportación autocontenida verificada** *(rescatado de A3)*: prueba que falla si el SVG o PNG exportado referencia un recurso externo (fuente, imagen o CSS) | S | Prueba en verde. Si encuentra fugas, se corrigen en la misma PR |
+| **2.3** | **Marca de la organización en la exportación** *(B1 bien planteado)*: el marco de exportación lee el logo y los colores que ya gestiona `PublicationBrandingService`, en vez de extraerlos de una web. Pasa por la puerta de contraste | M | Un diagrama exportado lleva la marca configurada. Una paleta con contraste insuficiente se rechaza con motivo |
+| **2.4** | **PDF vectorial del diagrama** con portada mínima (título, versión, autor, resumen accesible), reutilizando el adaptador PDF de `services/export` | M | El texto del PDF se puede seleccionar. Al pasar por `check:bundle-budget`, la ruta del Workspace no sube |
+
+### Fase 3 — Coherencia visual *(rescata la intención de A1, con decisión)*
+
+**Objetivo:** que dos diagramas cualesquiera parezcan hechos por la misma mano.
+
+**Beneficio:** los diagramas se ven profesionales sin retoque manual.
+
+| # | Tarea | Tamaño | Terminado cuando |
+|---|---|---|---|
+| **3.1** | **Auditoría de valores sueltos** en `CustomNode` y `CustomEdge`: colores, radios, sombras y tamaños tipográficos escritos en línea se pasan a `lib/diagramTokens.ts` / `lib/designTokens.ts`. No cambia el aspecto, solo su origen | M | Prueba que escanea ambos ficheros y falla si aparece un literal nuevo. Captura E2E sin diferencias |
+| **3.2** | **Decisión del propietario:** ¿diagrama plano (sin sombras, línea fina) o con elevación sutil? ¿Fuentes nuevas o las actuales? Se registra como ADR | S | ADR aprobado |
+| **3.3** | **Aplicar la decisión** de 3.2 solo en los tokens. Rejilla de 8 px al arrastrar a mano | S | Cambio en un solo sitio. Las pruebas de contraste siguen en verde |
+| **3.4** | **Preset de exportación «editorial»:** fondo, densidad de anotaciones y leyenda pensados para diapositivas. Es una opción de exportación, no un campo del IR | S | Mismo diagrama en dos presets sin tocar el artefacto |
+
+### Fase 4 — Navegación arquitectónica *(sustituye a B4)*
+
+**Objetivo:** recorrer la arquitectura como la piensa un arquitecto, de un nivel
+C4 al siguiente.
+
+**Beneficio:** el conjunto de diagramas de un proyecto se convierte en un
+modelo navegable, no en una colección de imágenes.
+
+| # | Tarea | Tamaño | Terminado cuando |
+|---|---|---|---|
+| **4.1** | **Drill-down C4:** un nodo puede enlazar, **por id**, al artefacto que lo detalla (contexto → contenedores → componentes). Campo opcional en el nodo del IR y selector que solo ofrece artefactos existentes del proyecto | M | Doble clic abre el nivel siguiente. Un enlace roto se informa y nunca se descarta (regla del portafolio) |
+| **4.2** | **Coherencia entre niveles:** una puerta de calidad avisa si un contenedor del diagrama de contenedores no aparece en el sistema que lo contiene. Se apoya en el grafo de conocimiento existente | M | Aviso con referencia al nodo. No bloquea |
+| **4.3** | **Editor de escenas de la historia:** escribir y ordenar las escenas del modo presentación con las operaciones `add-callout` / `remove-callout` que ya existen | M | Una historia escrita queda marcada `authored` y gana a la derivada |
+
+### Fase 5 — Ampliación bajo demanda *(opcional, tras fases 1–4)*
+
+Solo si hay una necesidad de usuario que lo justifique:
+
+- **5.1 Radar tecnológico y cuadrante** *(lo único de B2 con sentido para
+  arquitectura empresarial)*: un tipo cada vez, con puerta de calidad, resumen
+  accesible y fixture propios.
+- **5.2 Importar draw.io** *(rescatado de B3)*: parser puro de XML en un chunk
+  diferido, sin dependencia nueva, que produce IR y pasa por las puertas.
+
+## 5. Recomendación de arranque
+
+**Empezar por 1.1 (panel «Modificar diagrama»).** Tiene la mejor relación entre
+impacto y riesgo:
+
+- El motor, la vista previa, los rechazos y las pruebas ya existen. Lo que falta
+  es la mitad visible.
+- Es aditivo: no cambia ningún camino actual.
+- Desbloquea 1.2, 1.3 y 1.4, y convierte en experiencia de usuario el principio
+  del ADR-006 («un diagrama se cambia, no se regenera»).
+
+En paralelo, por ser pequeña e independiente, **2.2** cierra una duda abierta
+con una sola prueba.
+
+## 6. Qué se rescató del plan anterior y qué se descartó
+
+| Propuesta anterior | Decisión | Motivo |
+|---|---|---|
+| A1 Design system estricto | **Reformulado** → 3.1–3.3 | La intención (coherencia) vale. Fuentes y sombras son decisión del propietario, no un quick win |
+| A2 Tres variantes en el IR | **Reformulado** → 3.4 | Como preset de exportación, sin campo obligatorio en el IR |
+| A3 Export autocontenido | **Rescatado** → 2.2 | Pequeño y comprobable |
+| A4 Mermaid semántico | **Rescatado** → 2.1 | Hueco real: `classDef`/`style` se descartan hoy |
+| B1 Extraer marca de una URL | **Sustituido** → 2.3 | CORS lo impide sin backend. La marca ya existe en publicación |
+| B2 15+ tipos nuevos | **Reducido** → 5.1 | Más tipos no suben el nivel de los existentes. Solo radar y cuadrante tienen uso en arquitectura |
+| B3 Importadores | **Reducido** → 5.2 | Solo draw.io, y bajo demanda. Lucid ya tiene integración y PlantUML aporta poco |
+| B4 Tres copias del IR | **Sustituido** → 4.1 | Las audiencias ya existen. El salto útil es entre niveles C4 |
+| C1 Skill / CLI con `npx` | **Descartado** | Fuera del alcance del producto |
+| C2 Cámara semántica y vídeo | **Descartado** (lo útil va en 4.3) | El modo historia ya existe; la skill de vídeo no existe |
+| C3 Galería en dominio ajeno | **Descartado** | Resto copiado de Archify |
+| C4 Ejemplos de la skill | **Descartado** | Dependía de C1 |
+
+## 7. Seguimiento
+
+Actualizar esta tabla en la PR de cada tarea.
+
+| Tarea | Estado | PR |
+|---|---|---|
+| 1.1 Panel «Modificar diagrama» | Pendiente | — |
+| 1.2 Deshacer semántico | Pendiente | — |
+| 1.3 Comparación semántica | Pendiente | — |
+| 1.4 Copiloto con patches | Pendiente | — |
+| 2.1 Mermaid semántico | Pendiente | — |
+| 2.2 Export autocontenido | Pendiente | — |
+| 2.3 Marca en exportación | Pendiente | — |
+| 2.4 PDF vectorial | Pendiente | — |
+| 3.1 Auditoría de tokens | Pendiente | — |
+| 3.2 ADR visual | Pendiente (decisión del propietario) | — |
+| 3.3 Aplicar decisión visual | Pendiente | — |
+| 3.4 Preset editorial | Pendiente | — |
+| 4.1 Drill-down C4 | Pendiente | — |
+| 4.2 Coherencia entre niveles | Pendiente | — |
+| 4.3 Editor de escenas | Pendiente | — |
+| 5.x Ampliación | Bajo demanda | — |
