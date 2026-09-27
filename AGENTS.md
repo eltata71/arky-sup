@@ -330,6 +330,9 @@ Reglas que no se negocian al trabajar aquí:
     (`runbook-proyecciones.md`) y cómo corren y se leen las pruebas E2E
     (`runbook-e2e.md`)—. Las decisiones de las fases 5 y 6 están en
     `docs/ddd-transformacion/adr/ADR-107…109`.
+    **La transformación DDD está cerrada (2026-09-27)**: el punto de entrada es
+    `docs/ddd-transformacion/14-informe-cierre.md`, y lo que queda, con
+    responsable, está en `13-deuda-residual.md`.
     **Toda RPC y toda tabla de `api` tiene dueño en
     `docs/ddd-transformacion/06-propiedad-datos.md`**, y
     `dataOwnershipMatrix.test.ts` falla si falta una.
