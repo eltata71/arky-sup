@@ -6,7 +6,7 @@
  * `vite.config.ts` — and this is the exception, declared where it is read.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LocalArtifactReviewRepository } from '../../../services/review';
+import { LocalArtifactReviewRepository } from '../../../services/review/localArtifactReviewRepository';
 import type { ArtifactCommentAuthor } from '../../../services/review';
 
 const author: ArtifactCommentAuthor = { id: 'u1', name: 'Ada' };

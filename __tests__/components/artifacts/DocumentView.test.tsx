@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
 import { DocumentView } from '../../../components/artifacts/document/DocumentView';
 
 const noop = () => {};

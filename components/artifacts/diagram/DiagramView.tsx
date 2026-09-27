@@ -13,7 +13,7 @@ import {
 } from '../../Icons';
 import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramAudience } from '../../../lib/diagram';
-import type { RenderableDiagramResolution } from '../../../services/diagram/resolveRenderableDiagram';
+import type { RenderableDiagramResolution } from '../../../services/diagram';
 import type { DiagramFlowData } from './diagramFlow';
 import type { LayoutPlan } from '../../../lib/layoutSelector';
 

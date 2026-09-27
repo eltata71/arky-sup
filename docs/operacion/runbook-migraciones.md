@@ -88,3 +88,34 @@ nuevo, pero el código nuevo no funciona con el esquema viejo.
   registrada y el paso 2 miente la próxima vez.
 - Usar la clave `service_role` en el paso 6: prueba otra cosa.
 - Imprimir claves en un log, en una PR o en un chat.
+
+## Anexo — cómo se revierte cada migración de la transformación
+
+Escrito en la revisión de deuda técnica del 2026-09-26 (deuda R-14). El
+criterio de cierre de la fase 4 pedía «migraciones con compatibilidad y
+reversión», y 8 de las 13 migraciones de la transformación no decían cómo
+deshacerse. **Las migraciones aplicadas no se editan**, porque
+`supabase migration list` compara versiones y no contenido. Por eso la
+reversión de cada una va aquí, y se aplica como una migración **nueva** que
+siga este runbook.
+
+Revertir una de éstas casi nunca es la respuesta. Cinco cierran hallazgos de
+seguridad o de consistencia. Lo normal es revertir el **código**
+(`docs/ci-cd-pipeline.md` § 6): todas se escribieron compatibles con la
+aplicación anterior.
+
+| Migración | Qué hizo | Reversión (migración nueva) | Qué reabre |
+|---|---|---|---|
+| `20260920120000_engagement_overload_and_initiative_references` | Retiró `delete_engagement(text, text)`; `delete_business_initiative` se niega si un proyecto la cita; bloqueo `for key share` al guardar | Recrear la función de dos argumentos con la definición de `20260912170000` y la de borrado de iniciativas con la de `20260912060520` | **H09 y H08**: un borrado sin revisión y proyectos con iniciativas rotas. No revertir |
+| `20260920160000_decide_engagement_atomic` | `api.decide_engagement`: decisión y transición en una transacción; columna `office_arb_decisions.decided_revision` | `drop function api.decide_engagement(text, jsonb, bigint, jsonb)`. La columna puede quedarse: es aditiva y nulable. Antes, el cliente anterior tiene que volver a escribir con `record_arb_decision` | **H01**: decisión y entrega en dos escrituras. No revertir sin volver a desplegar el cliente anterior |
+| `20260920213000_reject_arb_decision_id_collisions` | `decide_engagement` falla con `23505` si el id de la decisión ya existe | `create or replace` con la definición de `20260920160000` | Que un id repetido «firme» otro encargo |
+| `20260920224928_phase_2_governance_guards` | Transiciones legales (`office_engagement_transition_allowed`), bandeja del comité (`load_arb_engagements`), el autor no firma lo suyo, revocación de cuatro RPC huérfanas, confirmación de archivos por disparador | Por partes: `drop function private.office_engagement_transition_allowed(text, text)` tras restaurar `save_engagement` de `20260912181347`; `drop function api.load_arb_engagements()`; volver a `grant execute` las cuatro revocadas | **H02**: saltos de estado arbitrarios y autoaprobación. No revertir |
+| `20260921060000_canonicalize_arb_decision_evidence` | La evidencia de la decisión la canoniza el servidor, no la envía el cliente | `create or replace` de `decide_engagement` con la definición de `20260920224928` | Evidencia escrita por el cliente (parte de H02) |
+| `20260921070000_grant_office_arb_decisions_read` | `grant select on api.office_arb_decisions to authenticated` | `revoke select on api.office_arb_decisions from authenticated` | Nada: la lectura la filtra además la política de la siguiente |
+| `20260921080000_rls_office_arb_decisions_read_own` | Política `office_arb_decisions_read_own` | `drop policy office_arb_decisions_read_own on api.office_arb_decisions`. **Hay que revertir también la anterior en la misma migración**, o la tabla queda sin filas visibles | — |
+| `20260922180000_artifact_commands` | El Artefacto como raíz de agregado (ADR-106): cinco comandos por artefacto, `save_project`, columnas generadas `version_group_id`/`version`, índice único `project_artifacts_version_unique` | **Sólo junto con `20260923090000`**, que retiró `save_project_aggregate`: primero recrear esa RPC (su definición está en `20260920120000`), luego `drop` de los cinco comandos, de `save_project` y del índice, y quitar las dos columnas generadas | **H05**: una edición reescribe el agregado entero. Revertirla sola deja a los clientes sin ninguna ruta de escritura |
+
+Las otras cinco migraciones de la transformación traen su reversión en la
+cabecera: `20260923090000`, `20260924120000`, `20260925090000`,
+`20260926090000` y `20260926140000`. **Toda migración nueva la trae también**,
+y el paso 4 de este runbook lo pide antes de la aprobación.

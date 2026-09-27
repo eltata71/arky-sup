@@ -174,3 +174,8 @@ export {
   defineSchema,
 } from './structuredOutput';
 export type { AIJsonSchema, ParseStructuredResult } from './structuredOutput';
+
+// Tipos que otros módulos ya usaban entrando por ruta de fichero: se publican
+// aquí, en la puerta, sin coste en el bundle (se borran al compilar).
+export type { ArtifactSuggestion, ArtifactSuggestionAction } from './artifactSuggestionTypes';
+export type { ArtifactSuggestionGapType } from './artifactSuggestionService';

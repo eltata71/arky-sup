@@ -44,8 +44,7 @@ describe('buildBasePrompt — diagram mode', () => {
 
         const prompt = buildBasePrompt(project, baseSettings, { mode: 'diagram' });
 
-        // Count "- " bullets in the output (project context list).
-        const bulletLines = prompt.split('\n').filter((l) => l.startsWith('- '));
+        // Count "- " bullets in the project-specific section only.
         // The header "Project Description: ..." also starts with "- "? No, it starts with "Project". Only context items begin with "- ".
         // But the global prompt also has "- " for global context items. So count items in the project-specific section.
         const ctxStart = prompt.indexOf('Project-Specific Context');

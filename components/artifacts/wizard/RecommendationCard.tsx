@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircleIcon } from '../../Icons';
 import { CollapsibleSection } from './CollapsibleSection';
-import type { ArtifactRecommendationCandidate } from '../../../services/artifacts/domain/artifactRecommendationService';
+import type { ArtifactRecommendationCandidate } from '../../../services/artifacts';
 import { cn } from '../../ui/cn';
 
 interface RecommendationCardProps {

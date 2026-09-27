@@ -20,7 +20,7 @@ import { formatDayLabel, healthSegments, OFFICE_HEALTH_VISUALS } from '../office
 import type {
   OfficeActivityPoint,
   OfficePortfolioRollup,
-} from '../../../services/architectureOffice/domain/officePortfolio';
+} from '../../../services/architectureOffice';
 
 export interface PortfolioPulseProps {
   rollup: OfficePortfolioRollup;

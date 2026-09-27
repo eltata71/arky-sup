@@ -176,7 +176,7 @@ export class ContextPackBuilder {
   }
 
   private renderMarkdown(
-    graph: ArchitectureContextGraph,
+    _graph: ArchitectureContextGraph,
     query: ContextPackQuery,
     entities: ContextPackEntity[],
     relationships: ContextRelationship[],

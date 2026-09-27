@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { RemoteArtifactReviewRepository } from '../../../services/review';
+import { RemoteArtifactReviewRepository } from '../../../services/review/remoteArtifactReviewRepository';
 import type { ArtifactCommentAuthor } from '../../../services/review';
 import { FakeReviewGateway } from './fakeGateway';
 

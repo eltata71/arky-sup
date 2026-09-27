@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Settings } from '../../../types';
-import {
-  createSupabaseSettingsRepository,
-  sanitizeSettingsForRemote,
-  type SupabaseSettingsClientLike,
-} from '../../../services/settings';
+import { sanitizeSettingsForRemote } from '../../../services/settings';
+import { createSupabaseSettingsRepository, type SupabaseSettingsClientLike } from '../../../services/settings/SupabaseSettingsRepository';
 
 const settings: Settings = {
   globalContext: ['Sin datos sensibles'],

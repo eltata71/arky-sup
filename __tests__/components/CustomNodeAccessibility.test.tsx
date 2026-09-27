@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ReactFlowProvider } from 'reactflow';
-import React from 'react';
 import CustomNode from '../../components/CustomNode';
 
 const renderNode = (data: Record<string, unknown>) =>

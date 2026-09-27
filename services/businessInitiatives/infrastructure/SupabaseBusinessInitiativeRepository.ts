@@ -115,7 +115,7 @@ export function createSupabaseBusinessInitiativeRepository(
       };
     },
 
-    async remove(initiativeId, userId, expectedRevision = 0) {
+    async remove(initiativeId, _userId, expectedRevision = 0) {
       const operationId = createOperationId('deleteBusinessInitiative');
       const { error } = await client.rpc('delete_business_initiative', {
         p_id: initiativeId,

@@ -8,7 +8,19 @@
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **F6-03, corte 4 — Artefactos, y con él los cuatro
+- **Tarea en curso:** **revisión de deuda técnica antes de F6-09**
+  (`evidencias/revision-deuda-tecnica.md`).
+  - Una dependencia muerta fuera.
+  - Código muerto a cero, con `noUnusedLocals` y `noUnusedParameters` en todo
+    el repositorio.
+  - Imports profundos 173 → 127.
+  - H04 reducido: los barriles ya no publican implementaciones de Supabase
+    sin consumidor.
+  - T-01 con prueba: invariantes 37 de 43.
+  - Anexo de reversión de migraciones (R-14).
+  - Corrige la carga inicial: 311,2 KB gz. Las cifras anteriores venían de un
+    `node_modules` desviado.
+- **Antes:** **F6-03, corte 4 — Artefactos, y con él los cuatro
   agregados con la forma del piloto.** 31 ficheros repartidos: 21 a
   `domain/`, 7 a `application/` y 3 a `infrastructure/`.
   - La fábrica recibe el compilador como puerto. El núcleo puro

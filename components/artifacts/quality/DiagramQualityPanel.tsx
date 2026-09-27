@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { DiagramQualityReport } from '../../../services/diagram';
-import type { DiagramSuggestion, SuggestionCategory } from '../../../services/diagram/diagramTypeQualityGates';
+import type { DiagramSuggestion, SuggestionCategory } from '../../../services/diagram';
 
 const ARCHETYPE_LABEL: Record<string, string> = {
   context: 'Diagrama de Contexto',

@@ -29,6 +29,8 @@
     "strict": true,
     "noImplicitThis": true,
     "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "alwaysStrict": true,
     "useUnknownInCatchVariables": true,
     "forceConsistentCasingInFileNames": true

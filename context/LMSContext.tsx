@@ -444,7 +444,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return original;
   }, [versions]);
 
-  const resetCourseProgress = useCallback((courseId: string, lessonIds: string[]) => {
+  const resetCourseProgress = useCallback((_courseId: string, lessonIds: string[]) => {
     setProgress(prev => {
       const newProgress = {
         ...prev,

@@ -6,7 +6,6 @@
  * `newArtifactVersionId` (new version of an existing one).
  */
 
-import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AgentResultCard } from '../../components/assistant/AgentActionCard';

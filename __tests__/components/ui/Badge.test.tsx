@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { Badge } from '../../../components/ui/Badge';
-import React from 'react';
 
 describe('Badge', () => {
     it('renders text children', () => {

@@ -26,7 +26,7 @@ import { INITIATIVE_SECTION_ICONS, PRIORITY_LABELS, HORIZON_LABELS, HORIZON_HINT
 import { InitiativeDraftReview } from './InitiativeDraftReview';
 import { CaptureAssist } from '../capture';
 import { useInitiativeCapture } from '../../hooks/useLevelCapture';
-import type { InitiativeDraft } from '../../services/ai/generation/initiativeAssistantService';
+import type { InitiativeDraft } from '../../services/ai';
 import type {
   InitiativeHorizon,
   InitiativePriority,

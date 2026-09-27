@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
 import { ArtifactSuggestionsPanel } from '../../../components/artifacts/suggestions/ArtifactSuggestionsPanel';
 import type { ArtifactSuggestionReport } from '../../../services/ai/artifactSuggestionService';
 

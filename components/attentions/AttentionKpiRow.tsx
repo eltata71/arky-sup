@@ -13,7 +13,7 @@ import React from 'react';
 import { StatTile } from '../ui';
 import { AlertTriangle, Boxes, FileStack, Gavel, Layers } from 'lucide-react';
 import { formatPercent } from '../architectureOffice/officeChartTokens';
-import type { OfficePortfolio } from '../../services/architectureOffice/domain/officePortfolio';
+import type { OfficePortfolio } from '../../services/architectureOffice';
 
 export interface AttentionKpiRowProps {
   portfolio: OfficePortfolio;

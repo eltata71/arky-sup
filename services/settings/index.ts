@@ -11,10 +11,9 @@
  * `firestore.rules`.
  */
 export { confirmedSettingsRevision, settingsRepository, type SettingsRepository } from './SettingsRepository';
+// H04 (deuda residual R-10): la implementación de Supabase no se publica; fuera
+// del módulo nadie la usa, y el repositorio es la puerta.
 export {
-  createSupabaseSettingsRepository,
   sanitizeSettingsForRemote,
   type RemoteSettingsRecord,
-  type SupabaseSettingsClientLike,
-  type SupabaseSettingsRepository,
 } from './SupabaseSettingsRepository';

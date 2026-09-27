@@ -15,9 +15,9 @@
 import type { Artifact } from '../../lib/artifacts';
 import { newPrefixedId } from '../../lib/ids';
 import { getExportCapabilities } from '../export/exportRegistry';
-import type { ExportFormat } from '../export/exportTypes';
-import type { ArchitectureGraph } from '../architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes';
-import type { ArchitectureGraphFreshness } from '../architectureKnowledgeGraph/ArchitectureGraphFreshness';
+import type { ExportFormat } from '../export';
+import type { ArchitectureGraph } from '../architectureKnowledgeGraph';
+import type { ArchitectureGraphFreshness } from '../architectureKnowledgeGraph';
 import {
   clampPublicationScore,
   publicationTierFromScore,

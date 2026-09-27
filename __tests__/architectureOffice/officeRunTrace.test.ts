@@ -23,7 +23,6 @@ import {
   type OfficeEngagement,
   type OfficeTask,
 } from '../../services/architectureOffice/domain/OfficeTypes';
-import type { OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import type { PersistenceResult } from '../../services/persistence';
 
 /**

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
 import { ReviewPanel } from '../../../components/artifacts/ReviewPanel';
 import { artifactReviewService } from '../../../services/review/artifactReviewService';
 

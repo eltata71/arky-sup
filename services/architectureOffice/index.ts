@@ -25,7 +25,6 @@ export * from './infrastructure/OfficeRunnerAdapters';
 
 // Persistence
 export * from './infrastructure/OfficeEngagementRepository';
-export * from './infrastructure/SupabaseOfficeEngagementRepository';
 
 // Governance
 
@@ -69,3 +68,7 @@ export * from './application/officeOrchestration';
 // `normalizeBusinessProjectIds` is the office's own normalisation of the
 // `NEG-YYYY-NNN` codes, and the persistence layer needs it on every read.
 export { normalizeBusinessProjectIds } from './domain/officeShared';
+
+// Tipos que otros módulos ya usaban entrando por ruta de fichero: se publican
+// aquí, en la puerta, sin coste en el bundle (se borran al compilar).
+export type { CoordinationEvent, CoordinationTeamMember } from './application/officeCoordination';

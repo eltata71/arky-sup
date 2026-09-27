@@ -43,7 +43,7 @@ import {
 import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
 import { AssistantDock } from '../components/architectureOffice/AssistantDock';
 import { AssistantLauncher } from '../components/architectureOffice/AssistantLauncher';
-import type { CoordinationScope } from '../services/architectureOffice/application/officeCoordination';
+import type { CoordinationScope } from '../services/architectureOffice';
 import {
   buildOfficePortfolio,
   healthBucketOf,

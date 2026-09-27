@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardEyebrow } from '../../../components/ui/Card';
-import React from 'react';
 
 describe('Card', () => {
     it('renders children inside a div by default', () => {

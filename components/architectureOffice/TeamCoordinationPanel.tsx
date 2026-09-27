@@ -29,7 +29,7 @@ import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../services/archit
 import type {
   CoordinationEvent,
   CoordinationTeamMember,
-} from '../../services/architectureOffice/application/officeCoordination';
+} from '../../services/architectureOffice';
 
 /** Per-agent state, derived from the stream rather than tracked separately. */
 type AgentState = 'idle' | 'active' | 'done' | 'failed';

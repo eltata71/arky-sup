@@ -43,10 +43,10 @@ import {
   type OfficeActor,
   type OfficeArbVerdict,
   type OfficeEngagement,
-} from '../services/architectureOffice/domain/OfficeTypes';
+} from '../services/architectureOffice';
 import { canRunEngagement } from '../services/architectureOffice/domain/officeEngagementTransitions';
 import { trackEngagementCompleted } from '../services/architectureOffice/infrastructure/officeTelemetry';
-import type { OfficeAgentId } from '../services/architectureOffice/domain/officeAgentPersonas';
+import type { OfficeAgentId } from '../services/architectureOffice';
 
 /**
  * La intake, tal y como la escribe una pantalla.

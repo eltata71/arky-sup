@@ -7,20 +7,8 @@
  */
 
 export * from './types';
-export {
-  LocalArtifactReviewRepository,
-  COMMENTS_STORAGE_KEY,
-  DECISIONS_STORAGE_KEY,
-  newCommentId,
-  newReplyId,
-  newDecisionId,
-} from './localArtifactReviewRepository';
-export {
-  RemoteArtifactReviewRepository,
-  createRemoteReviewGateway,
-  type ReviewRemoteGateway,
-} from './remoteArtifactReviewRepository';
-export { HybridArtifactReviewRepository } from './hybridArtifactReviewRepository';
+// H04 (deuda residual R-10): los repositorios local, remoto e híbrido no se
+// publican; fuera del módulo sólo se usa el servicio y la fábrica por defecto.
 
 export { createDefaultReviewRepository } from './defaultReviewRepository';
 export * from './reviewTransitions';

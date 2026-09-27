@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { ArtifactQualityReport, ArtifactQualityExportabilityState } from '../../../services/quality/artifactQualityModel';
+import type { ArtifactQualityReport, ArtifactQualityExportabilityState } from '../../../services/quality';
 import { tierLabel } from '../../../services/quality/artifactQualityModel';
 
 export interface ArtifactQualityPanelProps {

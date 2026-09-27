@@ -6,13 +6,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  assertRequiredCapabilities,
-  negotiateCapabilities,
-  negotiateAndReport,
-  reportCapabilityGaps,
-} from '../../../../services/ai/capabilities';
-import { AIError } from '../../../../services/ai/core/AIError';
+import { negotiateCapabilities, negotiateAndReport, reportCapabilityGaps } from '../../../../services/ai/capabilities';
 import { observabilityService } from '../../../../services/observability';
 import type { AIProviderCapabilities } from '../../../../services/ai/core/AICapabilities';
 import type { AIProvider } from '../../../../services/ai/core/AIProvider';

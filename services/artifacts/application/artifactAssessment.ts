@@ -42,7 +42,7 @@ import type {
   GroupRect,
   NodeRect,
   ViewportRect,
-} from '../../diagram/layoutQualityService';
+} from '../../diagram';
 import { getExportFormatOptions, type ArtifactView, type ExportFormat } from '../../export';
 
 // El vocabulario de lo que esta capa devuelve. Las pantallas del lienzo lo

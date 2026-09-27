@@ -263,25 +263,25 @@ export const LAYER_VIOLATION_BUDGET = {
  */
 export const DEEP_IMPORT_BUDGET = {
   'api -> services/ai': 1,
-  'components -> services/ai': 2,
-  'components -> services/architectureOffice': 37, // F5-02: capacidades y copiloto, por la puerta
-  'components -> services/artifacts': 11,
-  'components -> services/diagram': 16,
-  'components -> services/quality': 3,
+  'components -> services/ai': 1,
+  'components -> services/architectureOffice': 19, // F5-02: capacidades y copiloto, por la puerta
+  'components -> services/artifacts': 8,
+  'components -> services/diagram': 14,
+  'components -> services/quality': 2,
   // F5-01 corte 8: 10 → 11, y `context -> services/ai` desaparece a cambio.
   // `OfficeContext` carga el chat de proyecto de la Oficina en diferido por su
   // fichero, no por el barril: el provider está en el arranque, y entrar por el
   // barril subía la carga inicial de 309,6 a 310,7 KB gz (arrastraba
   // `agentDefinition` al chunk de entrada). Es la regla del barril contra el
   // bundle, medida por `check:bundle-budget`.
-  'context -> services/architectureOffice': 11,
+  'context -> services/architectureOffice': 9,
   'context -> services/architectureProjects': 2,
   'hooks -> services/agent': 2,
-  'hooks -> services/ai': 2,
+  'hooks -> services/ai': 1,
   'hooks -> services/artifacts': 3,
-  'hooks -> services/diagram': 5,
+  'hooks -> services/diagram': 3,
   'hooks -> services/export': 2,
-  'pages -> services/architectureOffice': 7, // F5-02: `InitiativesPage` y `ProjectsPage` salen por hooks
+  'pages -> services/architectureOffice': 6, // F5-02: `InitiativesPage` y `ProjectsPage` salen por hooks
   // `services (raíz) -> …` — cinco pares, 16 imports profundos — se fueron con
   // el motor el 2026-09-24 (F5-01, corte 14). Dentro de `services/ai` entra por
   // los barriles de cada contexto: es código perezoso, y la regla del barril
@@ -291,22 +291,22 @@ export const DEEP_IMPORT_BUDGET = {
   'services/architectureOffice -> services/diagram': 1,
   'services/architectureProjects -> services/memory': 2,
   'services/architectureProjects -> services/publicationPipeline': 4,
-  'services/artifactCompiler -> services/quality': 3,
+  'services/artifactCompiler -> services/quality': 2,
   // F4-05: el lienzo y el Workspace dejaron de importar la capa de IA; la
   // clasificación del fallo y el vocabulario de sugerencias bajaron a
   // `services/artifacts/application`. Es el intercambio que la regla de
   // fan-out busca: `components -> services/ai` bajó a la vez.
-  'services/artifacts -> services/ai': 2,
+  'services/artifacts -> services/ai': 1,
   // F4-05: la auto-mejora determinista del diagrama y los tipos de medida del
   // lienzo salieron de cuatro pantallas; `components -> services/diagram`
   // bajó de 20 a 16 en el mismo cambio.
-  'services/artifacts -> services/diagram': 17,
+  'services/artifacts -> services/diagram': 15,
   'services/artifacts -> services/export': 3,
-  'services/artifacts -> services/quality': 3,
+  'services/artifacts -> services/quality': 2,
   'services/export -> services/quality': 11,
-  'services/portfolioGraph -> services/architectureOffice': 3,
-  'services/publicationPipeline -> services/architectureKnowledgeGraph': 7,
-  'services/publicationPipeline -> services/export': 7,
+  'services/portfolioGraph -> services/architectureOffice': 1,
+  'services/publicationPipeline -> services/architectureKnowledgeGraph': 2,
+  'services/publicationPipeline -> services/export': 4,
   // F6-02: se intentó por el barril y la carga inicial pasó de 310,1 a
   // 776,9 KB gz — `quality` está en el arranque y el barril de `diagram` trae
   // Mermaid. Es la regla del barril contra el bundle; se queda por fichero.

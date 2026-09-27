@@ -401,3 +401,9 @@ export {
  * of invariants, and only one of them would be the one the lint rules check.
  */
 export { applySemanticPatch, describeSemanticPatch } from './semanticPatchEngine';
+
+// Tipos que otros módulos ya usaban entrando por ruta de fichero: se publican
+// aquí, en la puerta, sin coste en el bundle (se borran al compilar).
+export type { RenderableDiagramResolution } from './resolveRenderableDiagram';
+export type { DiagramSuggestion, SuggestionCategory } from './diagramTypeQualityGates';
+export type { EdgeSegment, FloatingObstacleRect, GroupRect, NodeRect, ViewportRect } from './layoutQualityService';

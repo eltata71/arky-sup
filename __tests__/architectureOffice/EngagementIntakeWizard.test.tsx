@@ -1,4 +1,3 @@
-import React from 'react';
 import { toInitiativeCode } from '../../lib/eaTerminology';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
