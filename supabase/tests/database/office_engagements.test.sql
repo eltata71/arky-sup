@@ -19,8 +19,8 @@ select ok(has_function_privilege('authenticated', 'api.save_engagement(text,json
   'El cliente recibe una RPC de guardado de encargo');
 select ok(has_function_privilege('authenticated', 'api.load_engagements(text)', 'EXECUTE'),
   'El cliente recibe una RPC de listado de encargos');
-select ok(not has_function_privilege('authenticated', 'api.record_arb_decision(jsonb)', 'EXECUTE'),
-  'La RPC de decisión antigua ya no forma parte de la superficie cliente');
+select hasnt_function('api', 'record_arb_decision', array['jsonb'],
+  'La RPC de decisión antigua ya no existe (R-13): api.decide_engagement es la única puerta');
 select ok(
   (select exists(select 1 from information_schema.routines
     where routine_schema = 'api' and routine_name = 'load_arb_engagements'))

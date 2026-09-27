@@ -31,6 +31,7 @@ const MIGRATIONS = join(ROOT, 'supabase', 'migrations');
 /** Cada entrada dice qué se retiró, cuándo y por qué, para que el fallo se explique solo. */
 const RETIRED = [
   { name: 'save_project_aggregate', task: 'F4-06', replacement: 'api.save_project + comandos de artefacto (ADR-106)' },
+  { name: 'record_arb_decision', task: 'R-13', replacement: 'api.decide_engagement (decisión y transición en una transacción)' },
 ] as const;
 
 const sourceFiles = (directory: string): string[] => readdirSync(directory).flatMap((entry) => {

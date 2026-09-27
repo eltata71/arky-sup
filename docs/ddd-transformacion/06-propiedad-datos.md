@@ -55,9 +55,9 @@ cada comando escribe un artefacto y ninguno recibe la lista del proyecto.
 
 | Tabla | RPC | Naturaleza | Consumidores | Desde |
 |---|---|---|---|---|
-| `office_engagements` | `load_engagements`, `save_engagement` (con transiciones legales; no puede entregar; no ejecuta sin charter aprobado), `delete_engagement` (una sola firma, con revisión) | autoritativo | `services/architectureOffice`, `OfficeContext` | fase 2 (H02, H09), F6-08 (H06) |
+| `office_engagements` | `load_engagements`, `save_engagement` (con transiciones legales; no puede entregar; no ejecuta sin charter aprobado; nace vinculado a una iniciativa y no la pierde), `delete_engagement` (una sola firma, con revisión) | autoritativo | `services/architectureOffice`, `OfficeContext` | fase 2 (H02, H09), F6-08 (H06), E-01 (2026-09-27) |
 | `office_engagements.data->'arbDecisions'` | reconstruido **por el servidor** desde el registro, dentro de `decide_engagement` | **espejo** que no decide | `EngagementRoom` | fase 2 (H01) |
-| `office_arb_decisions` | `decide_engagement` (decisión + transición en una transacción; el autor no firma lo suyo), `record_arb_decision`, `load_arb_engagements` (la bandeja del comité) | autoritativo, **inmutable** | `ArbDecisionPanel`, `OfficeContext` | fase 2 (ADR-101, ADR-102) |
+| `office_arb_decisions` | `decide_engagement` (decisión + transición en una transacción; el autor no firma lo suyo), `load_arb_engagements` (la bandeja del comité) | autoritativo, **inmutable** | `ArbDecisionPanel`, `OfficeContext` | fase 2 (ADR-101, ADR-102) |
 | `agent_profiles` | `list_agent_profiles`, `save_agent_profile`, `delete_agent_profile` | autoritativo, por usuario | `services/architectureOffice` (`agents.ts`), `useAgentProfiles` | — |
 
 ## Contexto: Identidad y Acceso

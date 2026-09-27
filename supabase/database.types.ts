@@ -834,7 +834,6 @@ export type Database = {
         Args: { target: string; target_name?: string; target_role: string }
         Returns: undefined
       }
-      record_arb_decision: { Args: { p_decision: Json }; Returns: undefined }
       record_artifact_review_decision: {
         Args: { p_decision: Json }
         Returns: undefined
