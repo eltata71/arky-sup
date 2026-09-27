@@ -4,7 +4,7 @@
  */
 
 import type { ArtifactComment, ArtifactReviewDecision } from '../../../services/review';
-import type { ReviewRemoteGateway } from '../../../services/review';
+import type { ReviewRemoteGateway } from '../../../services/review/remoteArtifactReviewRepository';
 
 type CommentCb = (comments: ArtifactComment[]) => void;
 type DecisionCb = (decisions: ArtifactReviewDecision[]) => void;

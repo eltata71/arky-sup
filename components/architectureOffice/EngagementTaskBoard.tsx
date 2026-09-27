@@ -16,7 +16,7 @@ import React from 'react';
 import { Badge, Card, cn } from '../ui';
 import { ArrowUpRight } from 'lucide-react';
 import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
-import type { OfficeTask, OfficeTaskStatus } from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeTask, OfficeTaskStatus } from '../../services/architectureOffice';
 import { PersonaChip } from './PersonaAvatar';
 import { SEVERITY_ICONS, TASK_KIND_ICONS, TASK_STATUS_ICONS } from './officeUiIcons';
 import {

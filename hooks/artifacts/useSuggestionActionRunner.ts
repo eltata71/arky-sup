@@ -19,7 +19,7 @@
 
 import { useCallback } from 'react';
 import { executeDiagramSuggestionAction } from '../../services/diagram/suggestionActionExecutors';
-import type { ArtifactSuggestion, ArtifactSuggestionAction } from '../../services/ai/artifactSuggestionTypes';
+import type { ArtifactSuggestion, ArtifactSuggestionAction } from '../../services/ai';
 import type { DiagramAudience, DiagramIR } from '../../lib/diagram';
 
 export type SuggestionActionRunner = (

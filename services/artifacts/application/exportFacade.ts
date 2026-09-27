@@ -9,7 +9,7 @@ import type { ExportRequest, ExportResult } from '../../../lib/artifacts/contrac
 import { exportArtifact } from '../../export/exportService';
 import { downloadFile } from '../../export/downloadService';
 import { validateArtifactForExport } from '../../export';
-import type { DiagramPreflightReport } from '../../diagram/quality/diagramQualityService';
+import type { DiagramPreflightReport } from '../../diagram';
 import type { Settings } from '../../../types';
 
 export interface PerformExportInput extends ExportRequest {

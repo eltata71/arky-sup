@@ -83,7 +83,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | # | Invariante | Autoridad | ¿Basta? | Desde |
 |---|---|---|---|---|
-| T-01 | No se persiste una URL firmada | convención + revisión | ⚠️ sin gate | — |
+| T-01 | No se persiste una URL firmada | prueba (`noPersistedSignedUrl.test.ts`): sólo dos ficheros piden una, se usa para abrir, el documento guarda la ruta y ninguna migración tiene la columna | ✅ | deuda técnica, 2026-09-26 |
 | T-02 | Una credencial no sale en un prompt | `TS` (`guardrails`, tres rutas) | ✅ | — |
 | T-03 | Un secreto no entra en el bundle | gate de build | ✅ | — |
 | T-04 | El grafo derivado acaba reflejando los artefactos actuales | `SQL` (disparador en la transacción del artefacto) + `RPC` (`save_graph_projection` idempotente) + recuperación al arrancar | ✅ cierra **H11** — ADR-107. Eventual: se procesa la próxima vez que alguien abre la aplicación | F5-04, F5-05 |
@@ -96,7 +96,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | Autoridad suficiente | Insuficiente | Total |
 |---|---|---|
-| **36 ✅** | 1 ❌ + 6 ⚠️ | 43 |
+| **37 ✅** | 1 ❌ + 5 ⚠️ | 43 |
 
 En la línea base eran 17 ✅, 8 ❌ y 8 ⚠️ sobre 33. **De las ocho sin autoridad
 efectiva, siete tienen hoy servidor detrás.** H02 se cerró en sus tres partes
@@ -105,8 +105,8 @@ A-02 ya estaba marcada ✅ en el catálogo anterior.
 
 **Lo que queda, y por qué:**
 
-- **E-01, E-04, E-05, E-14** y **T-01**: reglas que hoy sólo aplica
-  TypeScript o la revisión de código.
+- **E-01, E-04, E-05** y **E-14**: reglas que hoy sólo aplica TypeScript. T-01
+  tiene prueba desde la revisión de deuda técnica.
 - **T-06**: el único ❌, encontrado en F6-05.
 
 Todas están en el registro de deuda residual (`13-deuda-residual.md`), con responsable y condición de revisión. E-02 se cerró en F6-08.

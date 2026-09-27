@@ -6,11 +6,9 @@
  * `vite.config.ts` — and this is the exception, declared where it is read.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  RemoteArtifactReviewRepository,
-  HybridArtifactReviewRepository,
-  LocalArtifactReviewRepository,
-} from '../../../services/review';
+import { RemoteArtifactReviewRepository } from '../../../services/review/remoteArtifactReviewRepository';
+import { HybridArtifactReviewRepository } from '../../../services/review/hybridArtifactReviewRepository';
+import { LocalArtifactReviewRepository } from '../../../services/review/localArtifactReviewRepository';
 import type { ArtifactCommentAuthor } from '../../../services/review';
 import { FakeReviewGateway } from './fakeGateway';
 

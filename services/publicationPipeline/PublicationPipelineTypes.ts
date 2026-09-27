@@ -19,7 +19,7 @@
  */
 
 import type { ArtifactType } from '../../types';
-import type { ExportFormat } from '../export/exportTypes';
+import type { ExportFormat } from '../export';
 
 /* ------------------------------------------------------------------------- */
 /* Schema versioning                                                          */

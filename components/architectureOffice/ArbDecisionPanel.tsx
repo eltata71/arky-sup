@@ -14,7 +14,7 @@ import { OFFICE_GATE_LABELS } from '../../services/architectureOffice/domain/off
 import type {
   OfficeArbVerdict,
   OfficeEngagement,
-} from '../../services/architectureOffice/domain/OfficeTypes';
+} from '../../services/architectureOffice';
 // Por el barril y no por el fichero: es un `import type`, así que TypeScript lo
 // borra entero y no cuesta un byte de bundle — que es lo único que justifica
 // entrar por una ruta profunda en este repositorio.

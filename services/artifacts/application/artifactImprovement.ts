@@ -21,7 +21,7 @@ import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import type { Project } from '../../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../../review';
 import { artifactGenerationService, documentGenerationService } from '../../ai';
-import type { ArtifactSuggestionGapType } from '../../ai/artifactSuggestionService';
+import type { ArtifactSuggestionGapType } from '../../ai';
 import { irToMermaid } from '../../diagram';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
 import type { NewArtifactDraft } from '../domain/artifactFactory';

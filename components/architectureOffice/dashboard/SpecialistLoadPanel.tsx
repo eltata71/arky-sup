@@ -11,7 +11,7 @@ import { Badge, Card, EmptyState, cn } from '../../ui';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../../services/architectureOffice/domain/officeAgentPersonas';
 import { PersonaAvatar } from '../PersonaAvatar';
 import { OFFICE_HEALTH_VISUALS } from '../officeChartTokens';
-import type { OfficeSpecialistLoad } from '../../../services/architectureOffice/domain/officePortfolio';
+import type { OfficeSpecialistLoad } from '../../../services/architectureOffice';
 
 export interface SpecialistLoadPanelProps {
   specialists: OfficeSpecialistLoad[];

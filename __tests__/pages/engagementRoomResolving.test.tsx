@@ -6,7 +6,6 @@
  * E2E la leyó como «ya firmado» y saltó la firma. Ahora, mientras la Oficina
  * resuelve, la sala muestra la carga; «no encontrado» sólo cuando ha terminado.
  */
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';

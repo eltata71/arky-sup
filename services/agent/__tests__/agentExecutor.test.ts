@@ -349,7 +349,7 @@ describe('executeAgentAction', () => {
     let createArtifact: ReturnType<typeof vi.fn> & CreateArtifactFn;
 
     beforeEach(() => {
-      createArtifact = vi.fn((projectId: string, data: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => ({
+      createArtifact = vi.fn((_projectId: string, data: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => ({
         ...data,
         id: 'art-new',
         versionGroupId: 'art-new',

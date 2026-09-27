@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
 
 // Force the inner viewers to crash during render so we can assert that each
 // extracted view isolates the failure inside its own ErrorBoundary instead of

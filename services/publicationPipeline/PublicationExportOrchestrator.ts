@@ -19,7 +19,7 @@ import type { Artifact } from '../../lib/artifacts';
 import { newPrefixedId } from '../../lib/ids';
 import { exportArtifact } from '../export/exportService';
 import { downloadFile } from '../export/downloadService';
-import type { ExportFormat, ExportedFile } from '../export/exportTypes';
+import type { ExportFormat, ExportedFile } from '../export';
 import { runArtifactPreflight } from './PublicationPreflightService';
 import { trackPublicationEvent, reportPublicationFailure } from './PublicationObservability';
 import {

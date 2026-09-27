@@ -8,7 +8,7 @@ import {
   type ArtifactEnvelope,
 } from './artifactGenerationPipeline';
 import { buildArtifactQualityReport } from '../../quality/artifactQualityService';
-import type { ArtifactQualityDimension, ArtifactQualityReport } from '../../quality/artifactQualityModel';
+import type { ArtifactQualityDimension, ArtifactQualityReport } from '../../quality';
 import { buildArtifactExportabilityState } from '../../quality/artifactQualityGateService';
 import { extractIRFromArtifact } from '../../diagram';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';

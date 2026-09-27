@@ -6,7 +6,6 @@
  * veinte bloques es más ruidoso que el spinner que vino a sustituir.
  */
 
-import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PageSkeleton } from '../../../components/ui/PageSkeleton';

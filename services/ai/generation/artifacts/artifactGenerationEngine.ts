@@ -28,14 +28,10 @@ import {
 import { emitGenerationPhase, type Artifact, type ArtifactGenerationPhaseEvent } from '../../../../lib/artifacts';
 import { isPresentationArtifactType } from '../../../../lib/artifacts/artifactKind';
 import type { Project } from '../../../architectureProjects';
-import { cleanJsonString as cleanJsonStringUtil } from '../../../../utils';
 import {
-  buildGlobalPrompt as buildGlobalPromptUtil,
   buildBasePrompt as buildBasePromptUtil,
   buildArtifactsContext as buildArtifactsContextUtil,
   buildSiblingDiagramsPromptBlock as buildSiblingDiagramsPromptBlockUtil,
-  type BasePromptOptions,
-  type ArtifactsContextOptions,
 } from '../../prompts/projectPrompts';
 import { resolveModelForSettings } from '../../catalog';
 import { legacyTransport, type LegacyGenerationOptions } from '../legacyTransport';
@@ -87,29 +83,6 @@ class ArtifactGenerationEngine {
         options: LegacyGenerationOptions = {}
     ): Promise<string> {
         return this.transport.generateTextWithFallback(settings, preferredModel, contents, config, options);
-    }
-
-    /**
-     * Helper: cleanJsonString
-     * SURGICAL JSON EXTRACTION: Finds the first '{' or '[' and the last '}' or ']' 
-     * to extract the payload, ignoring any preamble text from the LLM.
-     */
-    private cleanJsonString(text: string): string {
-        return cleanJsonStringUtil(text);
-    }
-
-    // --- Prompt Builders ---
-    
-    private buildGlobalPrompt(settings: Settings): string {
-        return buildGlobalPromptUtil(settings);
-    }
-
-    private buildBasePrompt(project: Project, settings: Settings, opts?: BasePromptOptions): string {
-        return buildBasePromptUtil(project, settings, opts);
-    }
-
-    private buildArtifactsContext(project: Project, opts?: ArtifactsContextOptions): string {
-        return buildArtifactsContextUtil(project, opts);
     }
 
     // --- Core Operations ---

@@ -1382,6 +1382,16 @@ every rebuild — so a rebuild could collide with a real edit in another tab.
 `namedOperations.test.ts` keeps `updateProject` and `updateInitiative` from
 coming back.
 
+**A type-only import enters by the module's door** (technical-debt review,
+2026-09-26): 46 deep imports that carried only types were rerouted through
+barrels —erased at build, so free— and 11 types other modules already used
+by path are now published there with `export type`; deep imports went
+173 → 127. **Except from a `domain/` folder**: in `strict`, a type through a
+heavy barrel drags that whole module into type checking. And barrels stopped
+publishing Supabase implementations nobody outside the module used; a test
+of an implementation imports it from its file. Measure bundle figures after
+`npm ci`: a drifted local `node_modules` read 0.3 KB gz low for a week.
+
 **The Office has the shape too** (corte 3): `domain/`, `application/` (the
 runner and the team's coordination, which orchestrate ports) and
 `infrastructure/` (repositories, the runner's real adapters, telemetry). Two
@@ -1699,7 +1709,7 @@ the only screen still linking to `/users` and `/settings`.
 
 ## TypeScript Conventions
 
-- **`strict: true` is on for a growing boundary, not yet repository-wide.** `tsconfig.json` keeps the incremental flags (`noImplicitThis`, `noFallthroughCasesInSwitch`, `alwaysStrict`, `useUnknownInCatchVariables`, `forceConsistentCasingInFileNames`) for everything; **`tsconfig.strict.json` applies full `strict` plus `noUnusedLocals`/`noUnusedParameters`/`noImplicitReturns`/`noImplicitOverride` to an allowlist of modules**, checked by `npm run typecheck:strict` in CI. The list only grows — `__tests__/lib/strictBoundary.test.ts` fails if an entry leaves. **Put new modules inside it**, and add an existing one when you make it hold.
+- **`strict: true` is on for a growing boundary, not yet repository-wide.** `tsconfig.json` keeps the incremental flags (`noImplicitThis`, `noFallthroughCasesInSwitch`, `alwaysStrict`, `useUnknownInCatchVariables`, `forceConsistentCasingInFileNames`) for everything — **and, since the technical-debt review of 2026-09-26, `noUnusedLocals`/`noUnusedParameters` too**: the repository had 65 unused declarations, they were removed, and dead code now fails `typecheck` everywhere (an intentionally unused parameter is prefixed with `_`); **`tsconfig.strict.json` applies full `strict` plus `noUnusedLocals`/`noUnusedParameters`/`noImplicitReturns`/`noImplicitOverride` to an allowlist of modules**, checked by `npm run typecheck:strict` in CI. The list only grows — `__tests__/lib/strictBoundary.test.ts` fails if an entry leaves. **Put new modules inside it**, and add an existing one when you make it hold.
 
   Two things about enrolling a module, learned the expensive way in Wave 4.
   **`tsc` checks the whole transitive closure**, so a module joins only if

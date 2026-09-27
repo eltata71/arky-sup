@@ -8,7 +8,6 @@
  * an accurate report of an empty portfolio.
  */
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DonutChart, FlowBars, TrendArea, StatTile } from '../../../components/ui/charts';

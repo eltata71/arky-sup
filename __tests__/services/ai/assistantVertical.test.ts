@@ -18,7 +18,6 @@ import {
   processMultimodalChat,
   runConsistencyCheck,
 } from '../../../services/ai/generation/assistant';
-import { assistantService } from '../../../services/ai/generation/assistantService';
 import { runAgentTurn, streamAgentTurn } from '../../../services/ai/generation/assistant/agentTurn';
 import { generateProjectChatReply } from '../../../services/ai/generation/assistant/projectChat';
 import { chatWithProject, composeProjectChatInstruction } from '../../../services/architectureOffice/application/projectConversation';

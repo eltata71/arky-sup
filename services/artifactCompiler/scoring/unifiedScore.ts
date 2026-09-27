@@ -16,7 +16,7 @@ import { buildArtifactQualityReport } from '../../quality/artifactQualityService
 import type {
   ArtifactQualityIssue,
   ArtifactQualityReport,
-} from '../../quality/artifactQualityModel';
+} from '../../quality';
 import type {
   CompilationTier,
   CompilerDimensionScore,

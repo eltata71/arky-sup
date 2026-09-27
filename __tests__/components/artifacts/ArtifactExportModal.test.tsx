@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
 import { ArtifactExportModal } from '../../../components/artifacts/export/ArtifactExportModal';
 import type { ExportFormatOption } from '../../../services/export/artifactExportValidation';
 import type { ArtifactPresentationModel } from '../../../lib/artifacts/artifactPresentationModel';

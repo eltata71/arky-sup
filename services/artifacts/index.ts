@@ -91,3 +91,7 @@ export {
   isPresentationExportEnabled,
   isPublicationViewEnabled,
 } from './domain';
+
+// Tipos que otros módulos ya usaban entrando por ruta de fichero: se publican
+// aquí, en la puerta, sin coste en el bundle (se borran al compilar).
+export type { ArtifactRecommendationCandidate } from './domain/artifactRecommendationService';

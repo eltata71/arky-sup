@@ -13,7 +13,7 @@ import { HierarchyBreadcrumb, type HierarchyLevel } from './HierarchyBreadcrumb'
 import { HIERARCHY_ICONS } from '../architectureOffice/officeUiIcons';
 import { ENGAGEMENT_STATUS_LABELS, ENGAGEMENT_STATUS_TONES } from '../architectureOffice/officeUiLabels';
 import { UNASSIGNED_PROGRAM_NAME } from '../../services/architectureOffice/domain/officePortfolio';
-import type { OfficeEngagement } from '../../services/architectureOffice/domain/OfficeTypes';
+import type { OfficeEngagement } from '../../services/architectureOffice';
 
 export interface ProjectContextBarProps {
   projectName: string;

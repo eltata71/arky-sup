@@ -19,10 +19,7 @@
  * la migración por estrangulamiento y está en `services/ai/generation/learning`,
  * detrás de `learningService`. Este módulo persiste; aquél genera.
  */
-export {
-  createSupabaseLearningRepository,
-  sanitizeLearningForRemote,
-  type SupabaseLearningClientLike,
-  type SupabaseLearningRepository,
-} from './SupabaseLearningRepository';
+// H04 (deuda residual R-10): la implementación de Supabase no se publica; fuera
+// del módulo nadie la usa, y el repositorio es la puerta.
+export { sanitizeLearningForRemote } from './SupabaseLearningRepository';
 export { resetTrainingServiceCache, trainingService, type TrainingWriteResult } from './trainingService';

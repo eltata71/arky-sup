@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createSupabaseOfficeEngagementRepository,
-  type SupabaseOfficeClientLike,
-} from '../../../services/architectureOffice';
-import {
-  SYSTEM_OFFICE_ACTOR,
-  type OfficeEngagement,
-} from '../../../services/architectureOffice/domain/OfficeTypes';
+import { createSupabaseOfficeEngagementRepository, type SupabaseOfficeClientLike } from '../../../services/architectureOffice/infrastructure/SupabaseOfficeEngagementRepository';
+import { type OfficeEngagement } from '../../../services/architectureOffice/domain/OfficeTypes';
 
 const ownerId = '00000000-0000-4000-8000-000000000001';
 const adminId = '00000000-0000-4000-8000-000000000002';

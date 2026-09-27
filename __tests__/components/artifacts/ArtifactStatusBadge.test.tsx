@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
 import { ArtifactStatusBadge, deriveArtifactStatus } from '../../../components/artifacts/ArtifactStatusBadge';
 import type { Artifact } from '../../../lib/artifacts';
 

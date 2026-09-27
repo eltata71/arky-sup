@@ -13,7 +13,6 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import { CaptureAssist } from '../../components/capture';
 import type { CaptureAssistantApi } from '../../hooks/useCaptureAssistant';
 import type { CaptureContext } from '../../lib/capture';

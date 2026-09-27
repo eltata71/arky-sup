@@ -24,7 +24,7 @@ import {
   getRisksWithoutMitigation,
   getDecisionsWithoutImpact,
 } from '../architectureKnowledgeGraph';
-import type { ArchitectureGraph } from '../architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes';
+import type { ArchitectureGraph } from '../architectureKnowledgeGraph';
 import {
   clampPublicationScore,
   publicationTierFromScore,

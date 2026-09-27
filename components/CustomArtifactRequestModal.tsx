@@ -10,7 +10,7 @@ import { extractArtifactBriefWithAI } from '../services/artifacts/application/ar
 import { getArtifactGenerationFeatureFlags } from '../services/artifacts/domain/artifactGenerationFlags';
 import { buildArtifactRecommendationCandidates, candidateToLegacyRecommendation, type ArtifactRecommendationCandidate } from '../services/artifacts/domain/artifactRecommendationService';
 import { selectArtifactGenerationContext } from '../services/artifacts/domain/artifactContextSelectionService';
-import type { ArtifactGenerationContract } from '../services/artifacts/domain/artifactGenerationContract';
+import type { ArtifactGenerationContract } from '../types';
 import { CustomArtifactBriefWizard, type ArtifactBriefSource } from './CustomArtifactBriefWizard';
 import { ArrowUturnLeftIcon, SparklesIcon, LightBulbIcon, CheckCircleIcon, Square2StackIcon } from './Icons';
 import { CollapsibleSection, WizardStepProgress, type WizardStepNumber } from './artifacts/wizard';

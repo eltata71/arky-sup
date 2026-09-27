@@ -26,7 +26,7 @@ import { summarizeEngagementProgress } from '../../../services/architectureOffic
 import type {
   ArchitectureProjectNode,
   BusinessProgramNode,
-} from '../../../services/architectureOffice/domain/officePortfolio';
+} from '../../../services/architectureOffice';
 
 export interface PortfolioExplorerProps {
   programs: BusinessProgramNode[];

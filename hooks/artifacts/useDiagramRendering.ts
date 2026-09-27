@@ -5,7 +5,7 @@ import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 import type { DiagramAudience } from '../../lib/diagram';
 import type { ArtifactViewMode } from '../../lib/artifacts/contracts';
-import type { RenderableDiagramResolution } from '../../services/diagram/resolveRenderableDiagram';
+import type { RenderableDiagramResolution } from '../../services/diagram';
 import { diagramGenerationService } from '../../services/ai';
 import { isDiagramAIFallbackEnabled, mermaidToReactFlow as mermaidToReactFlowDeterministic, resolveRenderableDiagram, toDiagramIR as reactFlowToIR, mergeIRMetadata } from '../../services/diagram';
 import { hasManualLayout, irToReactFlowSmart } from '../../services/diagram/irToReactFlow';
