@@ -1,14 +1,20 @@
 # Registro de avance y punto de reanudación
 
-**Última actualización:** 2026-09-26
-**Estado integrado:** fases 1 a 5 cerradas; fase 6 con nueve de diez tareas hechas. Pendiente **F6-09** (informe de cierre). Todo en `main` y publicado por CI en `arky-sup`. Verificación final: `evidencias/verificacion-final.md`.
+**Última actualización:** 2026-09-27
+**Estado integrado:** **las seis fases cerradas** (2026-09-27). Informe de cierre: `14-informe-cierre.md`. Todo en `main` y publicado por CI en `arky-sup`. Verificación final: `evidencias/verificacion-final.md`.
 **Producción:** `https://arky-sup.vercel.app` · contrato: `docs/operacion/contrato-despliegue.md`
 
 ---
 
 ## Punto de reanudación
 
-- **Tarea en curso:** **revisión de deuda técnica antes de F6-09**
+- **Transformación cerrada.** **F6-09**: `14-informe-cierre.md`, con parte
+  gerencial y técnica. Antes, con aprobación del propietario, E-01 y R-13
+  (#94): el servidor exige iniciativa en un encargo y `record_arb_decision`
+  ya no existe. Invariantes 38 de 43; 11 de 12 hallazgos cerrados.
+  Lo que sigue lo marca `13-deuda-residual.md`: R-01, R-02 y R-03 antes de
+  datos reales o de más usuarios.
+- **Antes:** **revisión de deuda técnica antes de F6-09**
   (`evidencias/revision-deuda-tecnica.md`).
   - Una dependencia muerta fuera.
   - Código muerto a cero, con `noUnusedLocals` y `noUnusedParameters` en todo
@@ -428,7 +434,7 @@
 | **F4-06** ruta de escritura única | ✅ | `save_project_aggregate` retirada: `revoke` + `drop`, contratos reescritos, `retiredRpcs.test.ts`. |
 | **F4-07** mapa de revisiones de proyectos | ✅ | Sin `Map` ni exportación; la revisión viaja en `Project.revision`. Mismo defecto del actualizador que F4-03. |
 
-## Fase 6 — en curso
+## Fase 6 — cerrada (2026-09-27)
 
 | Tarea | Estado | Nota |
 |---|---|---|
@@ -441,7 +447,7 @@
 | **F6-07** comparación final contra la línea base | ✅ (2026-09-25) | `12-comparacion-linea-base.md`: 10 de 12 hallazgos cerrados; H04 y H06 parciales; el chunk compartido más grande, peor. |
 | **F6-08** deuda residual con responsable | ✅ (2026-09-26) | `13-deuda-residual.md`: D-2 → A; E-02/H06 al servidor (migración aprobada); doce deudas con responsable y condición de revisión. |
 | *Deuda técnica* revisión antes del cierre | ✅ (2026-09-27) | #92: código muerto a cero con `noUnused*` en todo el repositorio, imports profundos 173 → 127, T-01 con prueba, reversión escrita de 8 migraciones. Después, con aprobación del propietario: E-01 (el servidor exige iniciativa en un encargo) y R-13 (`record_arb_decision` eliminada), migración `20260927090000`. Invariantes: 38 de 43. |
-| **F6-09** informe técnico y gerencial | ⏳ | |
+| **F6-09** informe técnico y gerencial | ✅ (2026-09-27) | `14-informe-cierre.md`: qué se entregó y qué gana el negocio, lo que queda y quién lo decide, cifras contra la línea base, los doce hallazgos y los criterios de cierre de las seis fases. |
 | **F6-10** el despliegue comprueba el esquema de producción | ✅ (2026-09-26) | Opción B: sonda `deploy_status.migration_applied` y paso de `ci.yml` que falla cerrado antes de construir. |
 
 ## Fase 5 — cerrada (2026-09-24)

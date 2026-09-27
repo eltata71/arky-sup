@@ -13,7 +13,7 @@ sobre invariantes que nadie aplica es reordenar un edificio sin cimientos.
 
 ---
 
-## Fase 1 — Modelo de dominio y línea base  ▸ *en curso*
+## Fase 1 — Modelo de dominio y línea base
 
 **Objetivo.** Saber exactamente dónde estamos, qué reglas existen y quién las
 aplica, y dejar un backlog ejecutable.

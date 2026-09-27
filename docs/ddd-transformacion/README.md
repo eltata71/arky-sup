@@ -20,6 +20,7 @@ como antecedente, no como estado.
 | `11-cierre-fase-5.md` | Cierre de la fase 5: el componente de dominio a cero, el motor dentro de `services/ai` y la bitácora de proyecciones. |
 | `12-comparacion-linea-base.md` | La línea base medida otra vez con los mismos comandos, al final de la fase 6: qué mejoró, qué empeoró y qué no se puede comparar. |
 | `13-deuda-residual.md` | Lo que la transformación deja sin hacer, a propósito: cada deuda con responsable, justificación y el hecho que obliga a revisarla. |
+| `14-informe-cierre.md` | **El cierre**: parte gerencial (qué se entregó, qué gana el negocio, qué queda y quién lo decide) y técnica (cifras contra la línea base, hallazgos, criterios de cierre de las seis fases). Empieza aquí. |
 | `adr/` | Decisiones arquitectónicas de esta transformación: ADR-100…109. |
 | `../operacion/` | Runbooks: migraciones a `ArkyDB-US`, una ruta que no carga, un grafo que no se actualiza y las pruebas E2E. |
 | `evidencias/` | Salidas de comandos, censos y capturas de medición. |
