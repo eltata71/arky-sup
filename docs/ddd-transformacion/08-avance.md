@@ -440,6 +440,7 @@
 | **F6-06** documentación, ADR, instrucciones y runbooks | ✅ (2026-09-25) | ADR-107…109; cuatro runbooks; matriz de propiedad e invariantes al día, con prueba; tabla de estado de CLAUDE.md con una sola fecha. |
 | **F6-07** comparación final contra la línea base | ✅ (2026-09-25) | `12-comparacion-linea-base.md`: 10 de 12 hallazgos cerrados; H04 y H06 parciales; el chunk compartido más grande, peor. |
 | **F6-08** deuda residual con responsable | ✅ (2026-09-26) | `13-deuda-residual.md`: D-2 → A; E-02/H06 al servidor (migración aprobada); doce deudas con responsable y condición de revisión. |
+| *Deuda técnica* revisión antes del cierre | ✅ (2026-09-27) | #92: código muerto a cero con `noUnused*` en todo el repositorio, imports profundos 173 → 127, T-01 con prueba, reversión escrita de 8 migraciones. Después, con aprobación del propietario: E-01 (el servidor exige iniciativa en un encargo) y R-13 (`record_arb_decision` eliminada), migración `20260927090000`. Invariantes: 38 de 43. |
 | **F6-09** informe técnico y gerencial | ⏳ | |
 | **F6-10** el despliegue comprueba el esquema de producción | ✅ (2026-09-26) | Opción B: sonda `deploy_status.migration_applied` y paso de `ci.yml` que falla cerrado antes de construir. |
 

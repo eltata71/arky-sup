@@ -919,7 +919,7 @@ manipulado no gane nada: no hay superficie que atacar.
 | `api.agent_actions` | `list_agent_actions`, `append_agent_action` | Registro append-only de lo que hizo el agente |
 | `api.artifact_comments` | `list_artifact_comments`, `save_artifact_comment`, `delete_artifact_comment` | Hilos de revisión |
 | `api.artifact_review_decisions` | `list_artifact_review_decisions`, `record_artifact_review_decision` | Rastro **inmutable**: `on conflict do nothing`, nunca se reescribe |
-| `api.office_engagements` + `api.office_arb_decisions` | `load_engagements`, `save_engagement`, `delete_engagement`, `record_arb_decision` | Encargos de Oficina y decisiones del ARB |
+| `api.office_engagements` + `api.office_arb_decisions` | `load_engagements`, `save_engagement`, `delete_engagement`, `decide_engagement`, `load_arb_engagements` | Encargos de Oficina y decisiones del ARB. La decisión y su transición van juntas en `decide_engagement`; la antigua `record_arb_decision` se eliminó (R-13, 2026-09-27) |
 | `api.business_initiatives` | `list_business_initiatives`, `save_business_initiative`, `delete_business_initiative` | Iniciativas: lo alto de la jerarquía. **El código `NEG-AAAA-NNN` lo asigna el servidor al crear** (F6-04): es único en toda la base y el cliente sólo ve las suyas, así que calcularlo en el cliente bloqueaba a cualquier segundo usuario |
 | `api.architecture_knowledge_graphs` | `load_knowledge_graph`, `save_knowledge_graph` | Grafo de conocimiento: **derivado**, en su tabla porque crece con los artefactos. La revisión viaja en `ArchitectureGraph.revision` (F5-05), nunca en un mapa del repositorio |
 | `api.projection_outbox` | `list_pending_projections`, `save_graph_projection`, `fail_projection` | **F5-04.** El trabajo de proyección pendiente, escrito por un disparador **en la transacción del artefacto** — sólo si el proyecto ya tiene grafo. `save_graph_projection` guarda y marca la generación a la vez: una ya procesada o anterior no se escribe. Lo procesa `recoverGraphProjections` (F5-05) al arrancar y tras el periodo de espera |
@@ -1483,6 +1483,14 @@ removed or rewritten, and its signer must be the session writing it. It does
 `charter:approve` exists in the matrix and nothing requires it, a product
 decision recorded as R-02 in `docs/ddd-transformacion/13-deuda-residual.md`,
 the register of every debt the transformation left on purpose.
+
+**And the engagement's initiative too** (E-01, migration
+`20260927090000_engagement_initiative_guard`, 2026-09-27): `save_engagement`
+refuses a new engagement with no initiative link —an id, or a `NEG-AAAA-NNN`
+code, the same two the factory accepts— and refuses a save that removes the
+last one. It does not check that the initiative exists: a reference that does
+not resolve is *reported* by the portfolio graph, never refused silently. An
+engagement stored before the rule with no link still saves.
 
 **And a state change carries its own reason.** `transitionEngagement` changes
 `status` *and* appends the audit entry in one operation, because these used to

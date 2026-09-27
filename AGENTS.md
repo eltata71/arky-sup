@@ -121,6 +121,10 @@ Reglas que no se negocian al trabajar aquí:
    (el dueño); `charter:approve` sin exigir es la deuda R-02 de
    `docs/ddd-transformacion/13-deuda-residual.md`, el registro de la deuda
    residual con responsable.
+   **Y un encargo nace vinculado a una iniciativa, también en el servidor**
+   (E-01, 2026-09-27): `save_engagement` rechaza crear uno sin id ni código
+   `NEG-AAAA-NNN` y quitarle el último vínculo. `record_arb_decision` ya no
+   existe (R-13): la decisión del comité entra sólo por `decide_engagement`.
 4. La evidencia determinista (validadores + compilador) manda sobre el veredicto
    del modelo: un validador bloqueante es `changes-requested`.
 5. El ejecutor no importa React ni ningún SDK; todo entra por puertos inyectados.

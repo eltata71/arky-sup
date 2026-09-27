@@ -43,7 +43,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | # | Invariante | Autoridad | ¿Basta? | Desde |
 |---|---|---|---|---|
-| E-01 | Un encargo tiene título, atención e iniciativa | `TS` (`officeEngagementFactory`) + `RPC` (título, brief y proyecto) | ⚠️ la RPC no exige iniciativa | — |
+| E-01 | Un encargo tiene título, atención e iniciativa | `TS` (`officeEngagementFactory`) + `RPC` (`save_engagement`: título, brief y proyecto; nace con un vínculo a iniciativa —id o código `NEG-AAAA-NNN`— y no lo pierde) + contrato `engagement_initiative_guard` | ✅ | deuda técnica, 2026-09-27 |
 | E-02 | **Nadie ejecuta un charter sin aprobar** | `TS` en el runner (`canRunEngagement`) + `RPC` (`save_engagement`: `in-progress` exige charter aprobado; la aprobación es inmutable y la firma la sesión) + contrato `charter_approval_guard` | ✅ cierra **H06** | fase 2, F6-08 |
 | E-03 | El estado sigue transiciones legales | `RPC` (`office_engagement_transition_allowed`) | ✅ cierra **H02** (transiciones) | fase 2 |
 | E-04 | Un cambio de estado deja su rastro de auditoría | `TS` (`transitionEngagement`) + gate de pruebas | ⚠️ sólido en TS, invisible al servidor | — |
@@ -96,7 +96,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | Autoridad suficiente | Insuficiente | Total |
 |---|---|---|
-| **37 ✅** | 1 ❌ + 5 ⚠️ | 43 |
+| **38 ✅** | 1 ❌ + 4 ⚠️ | 43 |
 
 En la línea base eran 17 ✅, 8 ❌ y 8 ⚠️ sobre 33. **De las ocho sin autoridad
 efectiva, siete tienen hoy servidor detrás.** H02 se cerró en sus tres partes
@@ -105,11 +105,12 @@ A-02 ya estaba marcada ✅ en el catálogo anterior.
 
 **Lo que queda, y por qué:**
 
-- **E-01, E-04, E-05** y **E-14**: reglas que hoy sólo aplica TypeScript. T-01
-  tiene prueba desde la revisión de deuda técnica.
+- **E-04, E-05** y **E-14**: reglas que hoy sólo aplica TypeScript. T-01
+  tiene prueba desde la revisión de deuda técnica, y E-01 servidor desde el
+  2026-09-27.
 - **T-06**: el único ❌, encontrado en F6-05.
 
-Todas están en el registro de deuda residual (`13-deuda-residual.md`), con responsable y condición de revisión. E-02 se cerró en F6-08.
+Todas están en el registro de deuda residual (`13-deuda-residual.md`), con responsable y condición de revisión. E-02 se cerró en F6-08 y E-01 el 2026-09-27.
 
 **Los dos patrones que funcionan siguen siendo los de siempre:** E-15, un
 `check` declarativo que ninguna ruta puede saltarse, y U-06, una prueba que
