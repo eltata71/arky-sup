@@ -66,3 +66,20 @@ No se implementa integración directa con Google Drive API. Por lo tanto, la apl
 7. Importar XLSX en Excel/Numbers/Google Sheets.
 8. Abrir un artefacto de diagrama y verificar que los formatos diagramáticos aparecen sólo allí.
 9. Verificar que un documento sin diagrama no muestra bloqueo por quality gate visual.
+
+## PDF de un diagrama, en vectores (plan de diagramas 2.4)
+
+Exportar a PDF **desde la vista Diagrama** ya no imprime el texto del artefacto:
+`useArtifactExportActions` toma del lienzo una instantánea (`snapshotFromFlow`:
+posiciones, medidas, etiquetas y conexiones tal como se ven, más el resumen
+accesible leído de lo que se ve y la marca de 2.3), y el adaptador PDF delega en
+`adapters/diagramPdf.ts`. Dos páginas apaisadas: el diagrama dibujado con
+operadores de PDF —escala sin perder nitidez y su texto se puede seleccionar— y
+el resumen accesible. Sin instantánea (otra vista, o sin lienzo), el PDF es el
+de siempre. `diagramPdf` se carga con `import()`: `services/export` está en el
+arranque.
+
+**Los bytes del PDF son Latin-1** (`latin1` en `pdfExporter`). Las fuentes se
+declaran WinAnsi, un byte por carácter; hasta #104 el escritor codificaba en
+UTF-8 y cada «ó» salía como «Ã³». Toda escritura de un PDF pasa por `latin1`.
+

@@ -202,8 +202,8 @@ Actualizar esta tabla en la PR de cada tarea.
 | 1.4 Copiloto con patches | Hecha (ver nota en §4) | #100 |
 | 2.1 Mermaid semántico | Hecha (corrige además `A:::clase` → nodo «A:::clase») | #102 |
 | 2.2 Export autocontenido | Hecha: no había fugas; la prueba lo fija | #101 |
-| 2.3 Marca en exportación | Hecha | esta rama (`feat/diagram-2-3-export-branding`) |
-| 2.4 PDF vectorial | Pendiente | — |
+| 2.3 Marca en exportación | Hecha | #103 |
+| 2.4 PDF vectorial | Hecha (y corrige los acentos de todos los PDF, #104) | esta rama (`feat/diagram-2-4-vector-pdf`) |
 | 3.1 Auditoría de tokens | Pendiente | — |
 | 3.2 ADR visual | Pendiente (decisión del propietario) | — |
 | 3.3 Aplicar decisión visual | Pendiente | — |

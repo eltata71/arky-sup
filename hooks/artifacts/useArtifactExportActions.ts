@@ -2,8 +2,8 @@ import { useCallback, useState, type RefObject } from 'react';
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { ArtifactPresentationModel, PublicationExportMode } from '../../lib/artifacts/artifactPresentationModel';
-import type { DiagramPreflightReport } from '../../services/diagram';
-import { type ArtifactView, type ExportFormat, validateArtifactForExport } from '../../services/export';
+import { buildAccessibleSummary, toDiagramIR, type DiagramPreflightReport } from '../../services/diagram';
+import { type ArtifactView, type DiagramSnapshot, type ExportFormat, snapshotFromFlow, validateArtifactForExport } from '../../services/export';
 import { exportArtifact } from '../../services/export/exportService';
 import { downloadFile } from '../../services/export/downloadService';
 import type { ReactFlowCanvasHandle } from '../../components/ReactFlowCanvas';
@@ -109,6 +109,31 @@ export const useArtifactExportActions = (
     }
   }, [artifact, preflightReport, reactFlowRef, addToast, publicationPackages]);
 
+  /**
+   * El PDF de un diagrama se dibuja en vectores a partir del lienzo (plan de
+   * diagramas, 2.4): la disposición que ve la persona, su resumen accesible
+   * —leído de lo que se ve, así que respeta la audiencia— y la marca de 2.3.
+   * Sólo desde la vista Diagrama; en Documento o Híbrido el PDF es el de siempre.
+   */
+  const diagramSnapshotFor = useCallback((format: ExportFormat): DiagramSnapshot | null => {
+    if (format !== 'pdf' || activeView !== 'diagram' || !reactFlowRef.current) return null;
+    try {
+      const flow = reactFlowRef.current.getFlowData();
+      const summary = buildAccessibleSummary(toDiagramIR(flow.nodes, flow.edges)).fullText
+        .split(/\n+/).map((line) => line.trim()).filter(Boolean);
+      const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+      const branding = resolveDiagramExportBranding(publicationPackages, artifact, { isDark });
+      const snapshot = snapshotFromFlow(flow.nodes, flow.edges, summary);
+      return snapshot && branding
+        ? { ...snapshot, owner: branding.organizationName, confidentiality: branding.confidentiality }
+        : snapshot;
+    } catch (err) {
+      // Sin instantánea, el PDF sale como documento: lo de antes, no un error.
+      console.warn('[useArtifactExportActions] no se pudo tomar la instantánea del diagrama', err);
+      return null;
+    }
+  }, [activeView, artifact, publicationPackages, reactFlowRef]);
+
   const exportFormat = useCallback(async (format: ExportFormat, options?: ArtifactExportOptions) => {
     const selectedPresentationModel = options?.presentationModel ?? presentationModel ?? null;
     const selectedPublication = Boolean(options?.exportAsPublication ?? exportAsPublication);
@@ -141,6 +166,7 @@ export const useArtifactExportActions = (
         presentationModel: selectedPresentationModel,
         exportAsPublication: selectedPublication,
         publicationMode: selectedMode,
+        diagramSnapshot: diagramSnapshotFor(format),
       }, format);
       const download = await downloadFile(result.file);
       addToast(`Archivo descargado: ${download.filename} (${Math.round(download.size / 1024)} KB)`, 'success');
@@ -148,7 +174,7 @@ export const useArtifactExportActions = (
       console.error('[useArtifactExportActions] export failed', err);
       addToast(err instanceof Error ? err.message : 'La exportación falló inesperadamente.', 'error');
     }
-  }, [artifact, activeView, settings, preflightReport, captureImage, addToast, presentationModel, exportAsPublication, publicationMode]);
+  }, [artifact, activeView, settings, preflightReport, captureImage, addToast, presentationModel, exportAsPublication, publicationMode, diagramSnapshotFor]);
 
   const exportMarkdown = useCallback(async () => {
     await exportFormat('md');
