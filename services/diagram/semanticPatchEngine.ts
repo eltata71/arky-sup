@@ -31,23 +31,14 @@
 import type {
     DiagramCallout,
     DiagramIR,
-    DiagramIREdge,
-    DiagramIRGroup,
-    DiagramIRNode,
     DiagramPatch,
     DiagramPatchOperation,
     DiagramPatchResult,
     PatchApplication,
     PatchRejection,
 } from '../../lib/diagram';
+import { applyStoryOperation, authorStory, dropFromScenes, type Draft } from './semanticPatchStory';
 
-interface Draft {
-    nodes: DiagramIRNode[];
-    edges: DiagramIREdge[];
-    groups: DiagramIRGroup[];
-    callouts: DiagramCallout[];
-    metadata: NonNullable<DiagramIR['metadata']>;
-}
 
 const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
@@ -57,19 +48,34 @@ const readCallouts = (ir: DiagramIR): DiagramCallout[] => {
     return [...(narrative.callouts ?? [])];
 };
 
-const toDraft = (ir: DiagramIR): Draft => ({
-    nodes: ir.nodes.map(node => ({ ...node })),
-    edges: ir.edges.map(edge => ({ ...edge })),
-    groups: ir.groups.map(group => ({ ...group, nodeIds: [...group.nodeIds] })),
-    callouts: readCallouts(ir),
-    metadata: { ...(ir.metadata ?? {}) },
-});
+const toDraft = (ir: DiagramIR): Draft => {
+    const narrative = ir.metadata?.narrative;
+    return {
+        nodes: ir.nodes.map(node => ({ ...node })),
+        edges: ir.edges.map(edge => ({ ...edge })),
+        groups: ir.groups.map(group => ({ ...group, nodeIds: [...group.nodeIds] })),
+        callouts: readCallouts(ir),
+        scenes: typeof narrative === 'object' && narrative
+            ? (narrative.scenes ?? []).map(scene => ({ ...scene, focusNodeIds: [...(scene.focusNodeIds ?? [])], focusEdgeIds: [...(scene.focusEdgeIds ?? [])] }))
+            : [],
+        summary: typeof narrative === 'string' ? narrative : narrative?.summary,
+        scenesTouched: false,
+        storyEdited: false,
+        metadata: { ...(ir.metadata ?? {}) },
+    };
+};
 
 const fromDraft = (ir: DiagramIR, draft: Draft): DiagramIR => {
     const previous = draft.metadata.narrative;
-    const narrative = typeof previous === 'string'
+    const base = typeof previous === 'string'
         ? { summary: previous, callouts: draft.callouts }
         : { ...(previous ?? {}), callouts: draft.callouts };
+    const withScenes = draft.scenesTouched || draft.storyEdited ? { ...base, scenes: draft.scenes } : base;
+    // Una historia editada es una historia escrita (4.3): gana a la derivada.
+    const { summary: _previousSummary, ...rest } = withScenes;
+    const narrative = draft.storyEdited
+        ? { ...rest, ...(draft.summary ? { summary: draft.summary } : {}), source: 'authored' as const }
+        : withScenes;
     return {
         ...ir,
         nodes: draft.nodes,
@@ -80,7 +86,7 @@ const fromDraft = (ir: DiagramIR, draft: Draft): DiagramIR => {
             // A narrative with no callouts left keeps its other halves; an IR
             // that never had one does not grow an empty object just because a
             // patch touched something else.
-            ...(draft.callouts.length > 0 || previous ? { narrative } : {}),
+            ...(draft.callouts.length > 0 || previous || draft.storyEdited ? { narrative } : {}),
         },
     };
 };
@@ -97,6 +103,8 @@ const cascadeNodeRemoval = (draft: Draft, nodeId: string): string[] => {
     if (orphanedEdges.length > 0) {
         draft.edges = draft.edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId);
         cascaded.push(`${orphanedEdges.length} conexión(es) eliminadas: ${orphanedEdges.map(edge => edge.id).join(', ')}.`);
+        const gone = new Set(orphanedEdges.map(edge => edge.id));
+        dropFromScenes(draft, id => gone.has(id), 'focusEdgeIds');
     }
 
     const touchedGroups = draft.groups.filter(group => group.nodeIds.includes(nodeId));
@@ -116,6 +124,9 @@ const cascadeNodeRemoval = (draft: Draft, nodeId: string): string[] => {
         draft.callouts = draft.callouts.filter(callout => callout.targetId !== nodeId);
         cascaded.push(`${orphanedCallouts.length} anotación(es) sin destino eliminadas.`);
     }
+
+    const scenes = dropFromScenes(draft, id => id === nodeId, 'focusNodeIds');
+    if (scenes > 0) cascaded.push(`Retirado del foco de ${scenes} escena(s) de la historia.`);
 
     return cascaded;
 };
@@ -181,10 +192,12 @@ const applyOne = (
             if (orphanedCallouts.length > 0) {
                 draft.callouts = draft.callouts.filter(callout => callout.targetId !== operation.edgeId);
             }
-            return done(
-                `Conexión ${removed.source} → ${removed.target} eliminada.`,
-                orphanedCallouts.length > 0 ? [`${orphanedCallouts.length} anotación(es) sin destino eliminadas.`] : undefined,
-            );
+            const scenes = dropFromScenes(draft, id => id === operation.edgeId, 'focusEdgeIds');
+            const cascaded = [
+                ...(orphanedCallouts.length > 0 ? [`${orphanedCallouts.length} anotación(es) sin destino eliminadas.`] : []),
+                ...(scenes > 0 ? [`Retirada del foco de ${scenes} escena(s) de la historia.`] : []),
+            ];
+            return done(`Conexión ${removed.source} → ${removed.target} eliminada.`, cascaded);
         }
 
         case 'update-edge': {
@@ -258,15 +271,22 @@ const applyOne = (
                 return reject('unknown-node', `La anotación apunta a "${callout.targetId}", que no existe.`);
             }
             draft.callouts.push({ ...callout, id, targetKind: callout.targetKind ?? (isNode ? 'node' : 'edge') });
-            return done(`Anotación añadida sobre "${callout.targetId}".`);
+            return done(`Anotación añadida sobre "${callout.targetId}".`, authorStory(draft));
         }
 
         case 'remove-callout': {
             const index_ = draft.callouts.findIndex(callout => callout.id === operation.calloutId);
             if (index_ < 0) return reject('unknown-callout', `No existe la anotación "${operation.calloutId}".`);
             draft.callouts.splice(index_, 1);
-            return done('Anotación eliminada.');
+            return done('Anotación eliminada.', authorStory(draft));
         }
+
+        case 'set-story-message':
+        case 'add-scene':
+        case 'update-scene':
+        case 'remove-scene':
+        case 'move-scene':
+            return applyStoryOperation(draft, operation, reject, done);
 
         case 'set-layout-hint': {
             const { direction, density } = operation;

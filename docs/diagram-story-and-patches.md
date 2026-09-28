@@ -152,7 +152,15 @@ describe una cosa y codifica otra.
 | Conexiones | `add-edge`, `remove-edge`, `update-edge` |
 | Agrupaciones | `group-nodes`, `ungroup`, `add-to-group`, `remove-from-group` |
 | Anotaciones | `add-callout`, `remove-callout` |
+| Historia (4.3) | `set-story-message`, `add-scene`, `update-scene`, `remove-scene`, `move-scene` |
 | Layout | `set-layout-hint` |
+
+Las operaciones de historia y las de anotación dejan la narrativa marcada
+`authored`; la primera sobre una narrativa derivada retira el resumen que
+compuso la reparación y lo dice en `cascaded`. Borrar un nodo o una conexión
+los retira también del foco de las escenas. El esquema con el que se pide un
+patch a un modelo **no** ofrece las operaciones de escena: la historia la
+escribe quien presenta.
 
 **Lo que no hay, y no por olvido:** ninguna operación fija posición, tamaño ni
 color. La geometría es del motor de layout y la apariencia del sistema de
@@ -293,6 +301,18 @@ tipos C4 se leen del texto Mermaid, porque la migración del IR normaliza
 `Container` a un tipo genérico. Los avisos entran en el informe de calidad del
 panel **después** del preflight y con `fixable: false`: no bajan la puntuación,
 no bloquean la exportación y no ofrecen un arreglo rápido que no existe.
+
+### Escribir la historia: «Editar historia» (4.3)
+
+En la barra inferior, **Presentación → Editar historia** abre
+`DiagramStoryEditorPanel`: el mensaje principal, las escenas —título, qué debe
+ver quien mira y qué nodos enfoca— en su orden, y las anotaciones. Ordenar es
+con botones «Subir»/«Bajar», no arrastrando. Cada gesto es una operación del
+motor sobre un borrador (`hooks/artifacts/useDiagramStoryEditor`); la que el
+motor rechaza no entra. Guardar pasa por `planStoryEdit`, que vuelve a aplicar
+las operaciones sobre el IR **actual** y sólo guarda si hacen lo mismo que en
+el borrador; se guarda como versión nueva, con nota, y sin la revisión de
+calidad anterior, que puntuó otra narrativa. El texto Mermaid no se toca.
 
 ---
 

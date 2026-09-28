@@ -515,7 +515,18 @@ Reglas que no se negocian al trabajar aquí:
     la generación de diagramas y de artefactos no llegaba a un modelo en
     producción. Un camino nuevo hacia un proveedor que no pase antes por el
     proxy repite ese defecto.
-25. Antes de cerrar una tarea de código:
+25. **Un diagrama se cambia, no se regenera, y su historia también.** Todo
+    cambio asistido o manual es un patch semántico (`lib/diagram/semanticPatch.ts`,
+    dieciocho operaciones sobre ids que ya existen) que aplica
+    `applySemanticPatch`, guardado como versión nueva con su nota. Las cinco
+    operaciones de historia (`set-story-message`, `add-scene`, `update-scene`,
+    `remove-scene`, `move-scene`, plan de diagramas 4.3) y las de anotación dejan
+    la narrativa marcada `authored`, que gana a la derivada en `buildStoryPlan`;
+    el asistente de IA no las recibe, porque su esquema enumera las suyas. Un
+    nodo enlaza al diagrama que lo detalla por `detailArtifactGroupId` (4.1), y
+    la coherencia entre niveles avisa sin bloquear (4.2). Ver *A diagram is
+    changed, not regenerated* en `CLAUDE.md`.
+26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
      ESLint debe quedar en 0 errores y 0 avisos),

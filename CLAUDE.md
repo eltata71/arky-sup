@@ -1291,9 +1291,11 @@ Every AI-assisted change used to be a fresh `generateDiagramIR`: new ids, a new
 layout, and every manual adjustment gone. A change of one word cost the diagram,
 which is why nobody made small changes.
 
-`lib/diagram/semanticPatch.ts` declares thirteen operations over ids that
-already exist, and `services/diagram/semanticPatchEngine.ts` applies them with
-three guarantees: **checked before applied** (a typed rejection per bad
+`lib/diagram/semanticPatch.ts` declares eighteen operations over ids that
+already exist —thirteen over the model and, since plan de diagramas 4.3, five
+over its story: `set-story-message` and `add`/`update`/`remove`/`move-scene`—
+and `services/diagram/semanticPatchEngine.ts` applies them with three
+guarantees: **checked before applied** (a typed rejection per bad
 operation, and the good ones beside it still apply), **the result is always a
 valid IR** (removing a node takes its edges, group memberships and annotations,
 and every cascade is listed — a deletion nobody asked for is one they get told
@@ -1307,6 +1309,13 @@ an operation able to set either would let a model overrule both from inside a
 JSON payload. `services/ai/generation/diagramEdit/` is the vertical that asks a
 model for one — one agent, one call, proposes and never applies. See `ADR-006`
 and `docs/diagram-story-and-patches.md`.
+
+**A story operation makes the story written.** Every scene, message and callout
+operation leaves the narrative marked `authored`, which `buildStoryPlan` walks
+instead of a derivation; the first one on a narrative the repair pass composed
+drops that derived summary and says so. The model's patch schema does not offer
+the scene operations — writing the story is the presenter's job, through
+«Editar historia» (`services/artifacts/application/diagramStoryEditing`).
 
 ---
 

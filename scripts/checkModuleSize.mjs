@@ -65,7 +65,7 @@ export const BYTE_CEILINGS = {
   'components/ProjectHub.tsx': 78777, // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
   'components/MemoryCenterModal.tsx': 55552, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/ArtifactCanvas.tsx': 43860, // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
+  'components/ArtifactCanvas.tsx': 43500, // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 49197,
   'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
@@ -171,7 +171,7 @@ export const CEILINGS = {
   'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1723, // F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
-  'components/ArtifactCanvas.tsx': 964, // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
+  'components/ArtifactCanvas.tsx': 962, // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
   'pages/Workspace.tsx': 730, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/ai/prompts/diagramPrompts.ts': 1145,
   'services/export/adapters/pdfExporter.ts': 1131, // plan diagramas 2.4: +2 // +4: `latin1`
@@ -226,7 +226,7 @@ export const CEILINGS = {
   'services/diagram/irToReactFlow.ts': 545,
   'pages/EngagementRoom.tsx': 540,
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 540,
-  'components/artifacts/toolbar/ArtifactBottomToolbar.tsx': 520,
+  'components/artifacts/toolbar/ArtifactBottomToolbar.tsx': 522, // plan diagramas 4.3: +2, «Editar historia» en Presentación
   'components/artifacts/ArtifactInspectorPanel.tsx': 505,
 };
 

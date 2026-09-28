@@ -44,6 +44,7 @@ export interface ArtifactBottomToolbarProps {
 
   // Presentación
   onStartPresentation: () => void;
+  onEditStory?: () => void; // «Editar historia», plan de diagramas 4.3
   /**
    * Recomendación 6: Visual Quality Gate tone for the presentation action.
    * When `warn` or `block` the dropdown entry surfaces the gate status
@@ -143,6 +144,7 @@ export const ArtifactBottomToolbar: React.FC<ArtifactBottomToolbarProps> = (prop
     showMiniMap,
     onToggleMiniMap,
     onStartPresentation,
+    onEditStory,
     presentationGateTone,
     onOpenOnePager,
     audience,
@@ -242,6 +244,7 @@ export const ArtifactBottomToolbar: React.FC<ArtifactBottomToolbarProps> = (prop
           disabled: !hasIR || !isDiagramSurface,
           onClick: onStartPresentation,
         },
+        ...(onEditStory ? [{ id: 'edit-story', icon: <DocumentTextIcon className="h-4 w-4" />, label: 'Editar historia', description: 'Escenas, orden y anotaciones del recorrido', disabled: !hasIR || !isDiagramSurface, onClick: onEditStory }] : []),
         {
           id: 'brief',
           icon: <DocumentTextIcon className="h-4 w-4" />,

@@ -83,6 +83,13 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     keywords: ['c4', 'nivel', 'niveles', 'detalle', 'contexto', 'contenedores', 'componentes', 'enlazar', 'navegar', 'drill-down', 'doble clic'],
   }),
   topic({
+    id: 'editar-historia',
+    question: '¿Cómo decido qué cuenta el modo presentación y en qué orden?',
+    answer: 'Con **Editar historia**: escribes el mensaje principal del diagrama, las escenas —cada una enfoca unos nodos y dice qué debe ver quien mira— y las anotaciones que no hay que perderse. Las escenas se ordenan con Subir y Bajar. Mientras nadie la escriba, el recorrido se deriva de la topología; en cuanto la guardas, pasa a ser una historia escrita y el modo presentación recorre tus escenas en tu orden. Se guarda como versión nueva.',
+    where: 'Dentro de un artefacto de diagrama → barra inferior → Presentación → Editar historia.',
+    keywords: ['historia', 'escenas', 'presentacion', 'recorrido', 'orden', 'mensaje', 'anotacion', 'storytelling', 'narrativa'],
+  }),
+  topic({
     id: 'oficina',
     question: '¿Qué es la Oficina de Arquitectura?',
     answer: 'Es el equipo de agentes que atiende cada solicitud. No responde un agente suelto: la petición entra por la coordinadora, se reparte entre los especialistas cuyos dominios toca y se consolida en una única recomendación firmada. El panel de coordinación muestra ese reparto según ocurre, no una animación inventada.',
