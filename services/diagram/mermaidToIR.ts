@@ -20,6 +20,7 @@ import {
     resolveSemanticRole,
     repairDiagramIRSemantics,
 } from '../../lib/semanticRoleResolver';
+import { applyClassRoles, parseClassStatement, recordClasses, takeClassSuffix } from './mermaidClasses';
 
 const SHAPE_SYNTAX: Array<{ open: string; close: string; shape: NodeShape }> = [
     { open: '[[', close: ']]', shape: 'tab-box' },
@@ -62,6 +63,8 @@ interface ParseContext {
     title?: string;
     sourceFormat: NonNullable<DiagramIR['metadata']>['sourceFormat'];
     edgeCounter: number;
+    /** Clases asignadas a cada nodo (`A:::db`, `class A db`), leídas por su nombre (2.1). */
+    classes: Map<string, string[]>;
     /**
      * Mermaid dialect detected by `detectHeader` (`'flowchart' | 'c4container' |
      * 'sequencediagram' | …`). The semantic-role resolver uses it to decide
@@ -84,6 +87,13 @@ function stripBrTags(label: string): string {
 }
 
 function parseNodeDeclaration(token: string, ctx: ParseContext): { id: string; label?: string; shape?: NodeShape } {
+    const { token: bare, classes } = takeClassSuffix(token);
+    const node = parseNodeShape(bare, ctx);
+    recordClasses(ctx.classes, node.id, classes);
+    return node;
+}
+
+function parseNodeShape(token: string, ctx: ParseContext): { id: string; label?: string; shape?: NodeShape } {
     for (const { open, close, shape } of SHAPE_SYNTAX) {
         const openIdx = token.indexOf(open);
         if (openIdx === -1) continue;
@@ -192,6 +202,11 @@ function parseFlowchart(body: string, ctx: ParseContext) {
             }
             continue;
         }
+        const classLine = parseClassStatement(line);
+        if (classLine) {
+            for (const id of classLine.nodeIds) recordClasses(ctx.classes, id, classLine.classes);
+            continue;
+        }
         if (/^(style|classDef|linkStyle|direction|click|class|%)/i.test(line)) continue;
 
         // 1) "A -- label --> B" / "A -. label .-> B" / "A == label ==> B"
@@ -230,7 +245,7 @@ function parseFlowchart(body: string, ctx: ParseContext) {
             continue;
         }
 
-        const declMatch = line.match(/^([A-Za-z0-9_]+)\s*[[({<][^\n]+$/);
+        const declMatch = line.match(/^([A-Za-z0-9_]+)\s*(?:[[({<]|:::)[^\n]+$/);
         if (declMatch) {
             const node = parseNodeDeclaration(line, ctx);
             if (groupStack.length > 0) {
@@ -777,6 +792,8 @@ export interface MermaidToIRDiagnostics {
     parsedEdges: number;
     bodyLines: number;
     title?: string;
+    /** Clases de Mermaid cuyo nombre no dice qué es el nodo: se informan, no se adivinan (2.1). */
+    unmappedClasses?: string[];
 }
 
 /**
@@ -790,6 +807,7 @@ export function mermaidToIRWithDiagnostics(code: string): { ir: DiagramIR; diagn
         groups: [],
         sourceFormat: 'mermaid',
         edgeCounter: 0,
+        classes: new Map(),
     };
 
     const { kind, body, title } = detectHeader(code);
@@ -807,6 +825,7 @@ export function mermaidToIRWithDiagnostics(code: string): { ir: DiagramIR; diagn
         parseFlowchart(body, ctx);
     }
 
+    const unmappedClasses = applyClassRoles(ctx.nodes, ctx.classes, canonicalKindForRole);
     const ir: DiagramIR = {
         nodes: Array.from(ctx.nodes.values()),
         edges: ctx.edges,
@@ -834,6 +853,7 @@ export function mermaidToIRWithDiagnostics(code: string): { ir: DiagramIR; diagn
             parsedEdges: repaired.ir.edges.length,
             bodyLines,
             title: ctx.title,
+            ...(unmappedClasses.length > 0 ? { unmappedClasses } : {}),
         },
     };
 }

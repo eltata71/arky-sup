@@ -1,0 +1,6 @@
+flowchart LR
+  A[Emisión] --> Q[Eventos de póliza]
+  B[Siniestros] --> Q
+  Q --> C[Facturación]
+  class A,B,C servicio
+  class Q kafka
