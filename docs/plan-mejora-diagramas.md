@@ -203,8 +203,8 @@ Actualizar esta tabla en la PR de cada tarea.
 | 2.1 Mermaid semántico | Hecha (corrige además `A:::clase` → nodo «A:::clase») | #102 |
 | 2.2 Export autocontenido | Hecha: no había fugas; la prueba lo fija | #101 |
 | 2.3 Marca en exportación | Hecha | #103 |
-| 2.4 PDF vectorial | Hecha (y corrige los acentos de todos los PDF, #104) | esta rama (`feat/diagram-2-4-vector-pdf`) |
-| 3.1 Auditoría de tokens | Pendiente | — |
+| 2.4 PDF vectorial | Hecha (y corrige los acentos de todos los PDF, #104) | #105 |
+| 3.1 Auditoría de tokens | Hecha: sin cambio visual; los colores de nodos y conexiones salen de `NODE_CHROME_TOKENS`/`EDGE_CHROME_TOKENS` | esta rama (`feat/diagram-3-1-token-audit`) |
 | 3.2 ADR visual | Pendiente (decisión del propietario) | — |
 | 3.3 Aplicar decisión visual | Pendiente | — |
 | 3.4 Preset editorial | Pendiente | — |

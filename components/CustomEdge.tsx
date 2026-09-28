@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { EdgeProps, getBezierPath, getSmoothStepPath, EdgeLabelRenderer, BaseEdge, useStore } from 'reactflow';
-import { EDGE_TOKENS, TYPOGRAPHY_TOKENS } from '../lib/diagramTokens';
+import { EDGE_CHROME_TOKENS, EDGE_TOKENS, TYPOGRAPHY_TOKENS } from '../lib/diagramTokens';
 import { BPMN_FLOW_TOKENS, detectBpmnFlowType, type BpmnFlowType } from '../lib/diagramBpmn';
 import { slotOffsetPx, type EdgeLabelSlot } from '../services/diagram/edgeLabelSlots';
 
@@ -279,13 +279,11 @@ const CustomEdge: React.FC<EdgeProps> = ({
     // showed edge labels disappearing on busy diagrams). Switch to a solid
     // near-white background with a colour-tinted border so the text stays
     // readable while the relation hue still communicates the edge type.
-    const labelBg = isDark
-        ? 'rgba(15,23,42,0.92)'
-        : 'rgba(255,255,255,0.96)';
+    const edgeChrome = EDGE_CHROME_TOKENS[isDark ? 'dark' : 'light'];
     const labelBorderColor = isDark
         ? hexToRgba(strokeColor, 0.40)
         : hexToRgba(strokeColor, 0.55);
-    const labelColor = isDark ? '#f1f5f9' : strokeColor;
+    const labelColor = edgeChrome.labelText ?? strokeColor;
 
     // Phase 2: discreet extra badges. Each badge surfaces one piece of
     // governance metadata (sensitivity, frequency, retry, security) so the
@@ -444,7 +442,7 @@ const CustomEdge: React.FC<EdgeProps> = ({
                 already make the type visually unambiguous, so this is a
                 refinement, not a critical signal. */}
             {bpmnTokens?.originBadge && !isDimmed && (() => {
-                const badgeProps = { stroke: strokeColor, fill: isDark ? '#0b0b0f' : '#ffffff' };
+                const badgeProps = { stroke: strokeColor, fill: edgeChrome.badgeFill };
                 if (bpmnTokens.originBadge === 'circle') {
                     return (
                         <circle
@@ -532,7 +530,7 @@ const CustomEdge: React.FC<EdgeProps> = ({
                                     ${isNarrativeFocus ? 'ring-1 ring-cyan-400/70 dark:ring-cyan-300/70 scale-105' : ''}
                                 `}
                                 style={{
-                                    backgroundColor: labelBg,
+                                    backgroundColor: edgeChrome.labelBg,
                                     color: labelColor,
                                     border: `1px solid ${labelBorderColor}`,
                                     fontSize: TYPOGRAPHY_TOKENS.scale.edge.size,

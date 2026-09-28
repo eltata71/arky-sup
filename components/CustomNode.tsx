@@ -2,7 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { getNodeIcon } from './NodeIcons';
 import type { DiagramDensity, DiagramNodeData, NodeShape } from '../lib/diagram';
-import { detectSemanticRole, ELEVATION_TOKENS, paletteFor, TYPOGRAPHY_TOKENS, type SemanticRole } from '../lib/diagramTokens';
+import { detectSemanticRole, ELEVATION_TOKENS, NODE_CHROME_TOKENS, paletteFor, TYPOGRAPHY_TOKENS, type SemanticRole } from '../lib/diagramTokens';
 import { detectTechBadge } from '../lib/diagramTechBadges';
 import { detectC4Ribbon } from '../lib/diagramC4Levels';
 import { evaluateNodeContrast } from '../lib/colorContrast';
@@ -127,7 +127,7 @@ function gradientFor(bg: string, accent: string, isDark: boolean): string {
     if (isDark) {
         return `radial-gradient(120% 90% at 0% 0%, ${accent}26 0%, ${bg} 65%), radial-gradient(80% 60% at 100% 100%, ${accent}1f 0%, transparent 70%)`;
     }
-    return `radial-gradient(120% 90% at 0% 0%, ${accent}26 0%, ${bg} 60%), linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 70%)`;
+    return `radial-gradient(120% 90% at 0% 0%, ${accent}26 0%, ${bg} 60%), ${NODE_CHROME_TOKENS.light.highlight}`;
 }
 
 // --- Main component ----------------------------------------------------------
@@ -212,11 +212,11 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
     // canonical palette is used directly with hard-coded fallbacks so the
     // node ALWAYS has a visible background — even when palette resolution
     // fails for an unfamiliar role.
-    const stroke = nodeData.color ?? palette?.stroke ?? (isDark ? '#94a3b8' : '#64748b');
-    const fallbackBg = isDark ? '#1e293b' : '#f1f5f9';
-    const bg = nodeData.color ? `${nodeData.color}22` : palette?.bg ?? fallbackBg;
-    const headerBg = nodeData.color ? `${nodeData.color}33` : palette?.bg ?? (isDark ? '#0f172a' : '#f8fafc');
-    const textColor = palette?.text ?? (isDark ? '#f1f5f9' : '#0f172a');
+    const chrome = NODE_CHROME_TOKENS[isDark ? 'dark' : 'light'];
+    const stroke = nodeData.color ?? palette?.stroke ?? chrome.stroke;
+    const bg = nodeData.color ? `${nodeData.color}22` : palette?.bg ?? chrome.bg;
+    const headerBg = nodeData.color ? `${nodeData.color}33` : palette?.bg ?? chrome.headerBg;
+    const textColor = palette?.text ?? chrome.text;
     const iconColor = nodeData.color ?? palette?.accent ?? stroke;
 
     const baseShadow = isDark ? ELEVATION_TOKENS.dark.card : ELEVATION_TOKENS.light.card;
@@ -479,7 +479,7 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300"
                 style={{
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 45%, transparent 65%, rgba(255,255,255,0.06) 100%)',
+                    background: chrome.sheen,
                     opacity: isHovered ? 1 : 0,
                     mixBlendMode: isDark ? 'soft-light' : 'overlay',
                 }}
@@ -559,9 +559,9 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
                         <div
                             className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold tracking-wide border"
                             style={{
-                                backgroundColor: isDark ? 'rgba(148,163,184,0.18)' : 'rgba(15,23,42,0.06)',
+                                backgroundColor: chrome.chipBg,
                                 color: textColor,
-                                borderColor: isDark ? 'rgba(148,163,184,0.35)' : 'rgba(15,23,42,0.12)',
+                                borderColor: chrome.chipBorder,
                                 opacity: 0.9,
                             }}
                             title={nodeData.technology}

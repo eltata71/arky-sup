@@ -267,6 +267,41 @@ export const TYPOGRAPHY_TOKENS = {
  * Elevation scale. Favors modest shadows in light mode and subtle coloured
  * glows in dark mode to avoid the heavy dropshadow look that ages fast.
  */
+/**
+ * El «cromo» de nodos y conexiones: colores de reserva y superficies pequeñas
+ * que `CustomNode` y `CustomEdge` escribían en línea (plan de diagramas, 3.1).
+ * Mismos valores que tenían; ahora con nombre y en un solo sitio, para que un
+ * cambio de estilo (3.2) toque este fichero y no dos componentes.
+ */
+const NODE_SHEEN = 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 45%, transparent 65%, rgba(255,255,255,0.06) 100%)';
+export const NODE_CHROME_TOKENS = {
+    light: {
+        stroke: '#64748b',
+        bg: '#f1f5f9',
+        headerBg: '#f8fafc',
+        text: '#0f172a',
+        chipBg: 'rgba(15,23,42,0.06)',
+        chipBorder: 'rgba(15,23,42,0.12)',
+        highlight: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 70%)',
+        sheen: NODE_SHEEN,
+    },
+    dark: {
+        stroke: '#94a3b8',
+        bg: '#1e293b',
+        headerBg: '#0f172a',
+        text: '#f1f5f9',
+        chipBg: 'rgba(148,163,184,0.18)',
+        chipBorder: 'rgba(148,163,184,0.35)',
+        highlight: null,
+        sheen: NODE_SHEEN,
+    },
+} as const;
+
+export const EDGE_CHROME_TOKENS = {
+    light: { labelBg: 'rgba(255,255,255,0.96)', labelText: null, badgeFill: '#ffffff' },
+    dark: { labelBg: 'rgba(15,23,42,0.92)', labelText: '#f1f5f9', badgeFill: '#0b0b0f' },
+} as const;
+
 export const ELEVATION_TOKENS = {
     light: {
         card:    '0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04)',
