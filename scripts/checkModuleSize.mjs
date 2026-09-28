@@ -87,7 +87,7 @@ export const BYTE_CEILINGS = {
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 36854, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35804,
-  'services/diagram/mermaidToIR.ts': 34295,
+  'services/diagram/mermaidToIR.ts': 35358, // plan diagramas 2.1: +1 063, leer `:::clase` y `class` (la lógica vive en `mermaidClasses.ts`)
   'pages/LMS/LMSDashboard.tsx': 34123,
   'services/diagram/suggestionActionExecutors.ts': 33643,
   'components/memory/ChatHistoryPanel.tsx': 32783,
@@ -184,7 +184,7 @@ export const CEILINGS = {
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
   'services/agent/agentExecutor.ts': 983, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'pages/ProjectsPage.tsx': 890, // F5-02
-  'services/diagram/mermaidToIR.ts': 856,
+  'services/diagram/mermaidToIR.ts': 871, // plan diagramas 2.1
   'components/artifacts/export/ArtifactExportModal.tsx': 844,
   'components/CustomArtifactBriefWizard.tsx': 845,
   'components/CustomArtifactRequestModal.tsx': 845,

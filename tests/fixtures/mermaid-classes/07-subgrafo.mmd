@@ -1,0 +1,7 @@
+flowchart LR
+  subgraph Datos
+    R[Réplica]:::db
+    P[Principal]:::db
+  end
+  App[Aplicación] --> P
+  P --> R
