@@ -187,8 +187,8 @@ Actualizar esta tabla en la PR de cada tarea.
 | Tarea | Estado | PR |
 |---|---|---|
 | 1.1 Panel «Modificar diagrama» | Hecha | #97 |
-| 1.2 Deshacer semántico | Hecha | esta rama (`feat/diagram-1-2-change-notes`) |
-| 1.3 Comparación semántica | Pendiente | — |
+| 1.2 Deshacer semántico | Hecha | #98 |
+| 1.3 Comparación semántica | Hecha | esta rama (`feat/diagram-1-3-semantic-diff`) |
 | 1.4 Copiloto con patches | Pendiente | — |
 | 2.1 Mermaid semántico | Pendiente | — |
 | 2.2 Export autocontenido | Pendiente | — |
