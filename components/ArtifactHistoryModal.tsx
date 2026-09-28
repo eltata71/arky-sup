@@ -1,9 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { Modal } from './Modal';
 import type { Artifact, ArtifactChangeNote } from '../lib/artifacts';
 import { useAppContext } from '../context/AppContext';
+import { resolveEditableDiagramIR } from '../services/diagram';
 import { ClockIcon, EyeIcon } from './Icons';
-import { buildDiffHunks, computeLineDiff, summarizeDiff } from '../lib/textDiff';
+import { lazyWithRetry } from './routing/lazyWithRetry';
+
+// Sólo quien compara descarga el comparador (y el diff de texto y de modelo que lleva).
+const ArtifactVersionComparison = lazyWithRetry(() => import('./ArtifactVersionComparison'), { chunkName: 'ArtifactVersionComparison' });
 
 interface ArtifactHistoryModalProps {
     isOpen: boolean;
@@ -12,70 +16,6 @@ interface ArtifactHistoryModalProps {
     artifact: Artifact | null;
     onOpenVersion: (artifactId: string) => void;
 }
-
-/**
- * Inline version-diff viewer: collapsed unchanged regions, coloured added /
- * removed lines, and a compact summary. Lets the architect verify exactly
- * what changed between a historical version and the current one without
- * leaving the history modal.
- */
-const VersionDiff: React.FC<{ oldVersion: Artifact; current: Artifact }> = ({ oldVersion, current }) => {
-    const { summary, hunks } = useMemo(() => {
-        const lines = computeLineDiff(oldVersion.content ?? '', current.content ?? '');
-        return { summary: summarizeDiff(lines), hunks: buildDiffHunks(lines, 2) };
-    }, [oldVersion.content, current.content]);
-
-    if (summary.identical) {
-        return (
-            <p className="mt-2 rounded-lg bg-gray-100 dark:bg-gray-700/60 px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
-                El contenido es idéntico a la versión actual.
-            </p>
-        );
-    }
-
-    return (
-        <div className="mt-2 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-700 text-[11px]">
-                <span className="font-semibold text-gray-700 dark:text-gray-200">
-                    v{oldVersion.version} → v{current.version}
-                </span>
-                <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 font-semibold">
-                    +{summary.added}
-                </span>
-                <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 font-semibold">
-                    −{summary.removed}
-                </span>
-                <span className="text-gray-400 dark:text-gray-500">{summary.unchanged} sin cambios</span>
-            </div>
-            <div className="max-h-72 overflow-auto bg-white dark:bg-gray-900 font-mono text-[11px] leading-5">
-                {hunks.map((hunk, hIdx) => (
-                    <div key={hIdx}>
-                        <div className="px-3 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-semibold sticky top-0">
-                            {hunk.header}
-                        </div>
-                        {hunk.lines.map((line, lIdx) => (
-                            <div
-                                key={`${hIdx}-${lIdx}`}
-                                className={`px-3 whitespace-pre-wrap break-words ${
-                                    line.type === 'added'
-                                        ? 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-200'
-                                        : line.type === 'removed'
-                                            ? 'bg-rose-50 dark:bg-rose-900/25 text-rose-800 dark:text-rose-300 line-through decoration-rose-400/50'
-                                            : 'text-gray-500 dark:text-gray-400'
-                                }`}
-                            >
-                                <span className="select-none inline-block w-4 text-gray-400 dark:text-gray-600">
-                                    {line.type === 'added' ? '+' : line.type === 'removed' ? '−' : ' '}
-                                </span>
-                                {line.text || ' '}
-                            </div>
-                        ))}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
 
 const NOTE_VISIBLE_CHANGES = 5;
 
@@ -118,6 +58,16 @@ export const RealArtifactHistoryModal: React.FC<ArtifactHistoryModalProps> = ({
         () => versions.find((v) => v.id === artifact?.id) ?? artifact,
         [versions, artifact],
     );
+
+    // Los modelos se leen aquí, en el chunk que ya lleva el pipeline de
+    // diagramas; el comparador diferido sólo los compara.
+    const comparedModels = useMemo(() => {
+        const old = versions.find((v) => v.id === comparingId);
+        if (!old || !currentVersion || old.representation === 'document' || currentVersion.representation === 'document') return null;
+        const before = resolveEditableDiagramIR(old);
+        const after = resolveEditableDiagramIR(currentVersion);
+        return before && after ? { before, after } : null;
+    }, [versions, comparingId, currentVersion]);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Historial: ${artifact?.name || 'Artefacto'}`}>
@@ -168,7 +118,9 @@ export const RealArtifactHistoryModal: React.FC<ArtifactHistoryModalProps> = ({
                                 </div>
                             </div>
                             {comparingId === ver.id && currentVersion && ver.id !== currentVersion.id && (
-                                <VersionDiff oldVersion={ver} current={currentVersion} />
+                                <Suspense fallback={<p role="status" className="mt-2 text-xs text-gray-500 dark:text-gray-400">Preparando la comparación…</p>}>
+                                    <ArtifactVersionComparison oldVersion={ver} current={currentVersion} models={comparedModels} />
+                                </Suspense>
                             )}
                         </div>
                     ))

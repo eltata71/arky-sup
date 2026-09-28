@@ -223,6 +223,18 @@ servicio. Tres reglas:
   hereda. Es un campo opcional del documento del artefacto (JSONB), sin
   migración.
 
+### Comparar dos versiones
+
+«Comparar», en el historial, compara un diagrama **como diagrama**:
+`diffDiagramIR` (`services/diagram/diagramDiff.ts`) devuelve los elementos,
+conexiones y agrupaciones añadidos, eliminados y modificados, campo a campo. El
+diff del texto queda a un clic. Cuatro reglas: el orden no es un cambio; la
+posición tampoco (es layout, no arquitectura); una conexión se identifica por
+sus extremos, no por su id; y un nodo que cambió de id pero conserva una
+etiqueta única a ambos lados es el mismo nodo, que se informa como
+*reidentificado* porque es una inferencia. El comparador es un chunk diferido
+(`ArtifactVersionComparison`): sólo lo descarga quien compara.
+
 ---
 
 ## 3. Diagnosticar
