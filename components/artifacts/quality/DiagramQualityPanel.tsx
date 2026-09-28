@@ -290,12 +290,14 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
                             <div className="min-w-0">
                               <p className="text-xs font-medium text-gray-800 dark:text-gray-100">{issue.message}</p>
                               <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-0.5">{issue.recommendation}</p>
-                              <button
-                                onClick={() => onApplyIssueFix(issue.id)}
-                                className="mt-1.5 px-2 py-1 rounded-md text-[10px] font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-900/60"
-                              >
-                                Aplicar fix rápido
-                              </button>
+                              {issue.fixable !== false && (
+                                <button
+                                  onClick={() => onApplyIssueFix(issue.id)}
+                                  className="mt-1.5 px-2 py-1 rounded-md text-[10px] font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-900/60"
+                                >
+                                  Aplicar fix rápido
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>

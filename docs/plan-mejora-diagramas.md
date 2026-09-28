@@ -208,7 +208,7 @@ Actualizar esta tabla en la PR de cada tarea.
 | 3.2 ADR visual | Hecha: elevación sutil y fuentes actuales (ADR-007, decisión del propietario 2026-09-28) | #107 |
 | 3.3 Aplicar decisión visual | Hecha: tokens de elevación, foco sin halo, rejilla de 8 px | #107 |
 | 3.4 Preset editorial | Hecha: tres preajustes (Presentación, Documentación técnica, Captura rápida); el modal de exportación pasa a diferido | #108 |
-| 4.1 Drill-down C4 | Hecha: `detailArtifactGroupId` en el nodo (enlaza el grupo de versiones y abre la última), panel «Niveles» que sólo ofrece diagramas del proyecto, doble clic y botón Abrir, enlaces rotos informados | esta rama (`feat/diagram-4-1-c4-drilldown`) |
-| 4.2 Coherencia entre niveles | Pendiente | — |
+| 4.1 Drill-down C4 | Hecha: `detailArtifactGroupId` en el nodo (enlaza el grupo de versiones y abre la última), panel «Niveles» que sólo ofrece diagramas del proyecto, doble clic y botón Abrir, enlaces rotos informados | rama `feat/diagram-4-1-c4-drilldown` |
+| 4.2 Coherencia entre niveles | Hecha: avisos en el panel de calidad —contenedor fuera del sistema que detalla, detalle sin límite con ese nombre, enlace roto— con referencia al nodo; nombres comparados con `isSameEntityName` del grafo de conocimiento; no puntúan ni bloquean | esta rama (`feat/diagram-4-2-c4-coherence`) |
 | 4.3 Editor de escenas | Pendiente | — |
 | 5.x Ampliación | Bajo demanda | — |

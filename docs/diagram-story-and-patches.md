@@ -275,6 +275,25 @@ para teclado. La regla vive en `services/artifacts/application/diagramDetailLink
 El campo viaja en los datos del nodo de ReactFlow y vuelve por `toDiagramIR`,
 así que guardar posiciones no lo pierde.
 
+### Coherencia entre niveles (4.2)
+
+`services/artifacts/application/c4LevelCoherence.ts` comprueba que el detalle
+cuente la misma historia que el nivel que lo enlaza. En un diagrama de
+contenedores (o de componentes) enlazado desde un nodo «Core de pólizas»:
+
+- si ningún límite se llama como ese nodo, un aviso `C4_DETAIL_PARENT_MISSING`
+  que nombra el nodo de arriba;
+- si hay límite, un aviso `C4_ELEMENT_OUTSIDE_PARENT` por cada contenedor
+  (componente) que quede fuera, con la referencia a ese nodo;
+- y los enlaces de detalle rotos del propio diagrama, `C4_DETAIL_LINK_BROKEN`.
+
+«Se llama como» lo decide `isSameEntityName`, la regla con la que el grafo de
+conocimiento consolida entidades, publicada como puerta pequeña del módulo. Los
+tipos C4 se leen del texto Mermaid, porque la migración del IR normaliza
+`Container` a un tipo genérico. Los avisos entran en el informe de calidad del
+panel **después** del preflight y con `fixable: false`: no bajan la puntuación,
+no bloquean la exportación y no ofrecen un arreglo rápido que no existe.
+
 ---
 
 ## 3. Diagnosticar
