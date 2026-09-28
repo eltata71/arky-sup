@@ -263,6 +263,8 @@ function reactFlowJsonToIR(payload: { nodes?: unknown[]; edges?: unknown[] }): D
             if (businessMeaning) node.businessMeaning = businessMeaning;
             const technicalMeaning = optString(data, 'technicalMeaning');
             if (technicalMeaning) node.technicalMeaning = technicalMeaning;
+            const detailArtifactGroupId = optString(data, 'detailArtifactGroupId');
+            if (detailArtifactGroupId) node.detailArtifactGroupId = detailArtifactGroupId;
             return node;
         })
         .filter((n) => n.id);

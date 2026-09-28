@@ -9,6 +9,7 @@ import {
   LightBulbIcon,
   MagnifyingGlassIcon,
   SparklesIcon,
+  Square2StackIcon,
   Squares2X2Icon,
   ViewColumnsIcon,
 } from '../../Icons';
@@ -28,6 +29,8 @@ export interface ArtifactTopToolbarProps {
   onOpenExport: () => void;
   /** Abre «Modificar diagrama». Sin él, el botón no aparece: sólo existe donde hay diagrama. */
   onModifyDiagram?: () => void;
+  /** Abre «Niveles C4» (4.1). Sin él, el botón no aparece. */
+  onOpenDetailLinks?: () => void;
 }
 
 const PRIMARY_VIEWS: Array<{ value: ArtifactViewMode; label: string; icon: React.ReactNode }> = [
@@ -53,6 +56,7 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
   onOpenInspector,
   onOpenExport,
   onModifyDiagram,
+  onOpenDetailLinks,
 }) => {
   const views = PRIMARY_VIEWS.filter((view) => availableViews.includes(view.value));
 
@@ -123,6 +127,20 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
             >
               <SparklesIcon className="h-3.5 w-3.5" />
               <span className="hidden md:inline">Modificar</span>
+            </button>
+          </Tooltip>
+        )}
+        {onOpenDetailLinks && (
+          <Tooltip label="Enlazar cada nodo con el diagrama del nivel siguiente" side="bottom">
+            <button
+              type="button"
+              onClick={onOpenDetailLinks}
+              aria-label="Niveles C4"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              aria-haspopup="dialog"
+            >
+              <Square2StackIcon className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Niveles</span>
             </button>
           </Tooltip>
         )}

@@ -212,3 +212,30 @@ export const withDiagramContent = (
     return { content };
   }
 };
+
+/**
+ * Lo que se guarda cuando la persona pulsa «Guardar» en el lienzo interactivo.
+ *
+ * Un híbrido conserva su texto y cambia sólo el bloque del diagrama —el
+ * Mermaid o el JSON que hubiera— por el JSON del lienzo. Cualquier otro
+ * artefacto pasa a ser un grafo de ReactFlow.
+ *
+ * El reemplazo usa una función y no una cadena: con una cadena, `replace`
+ * interpreta `$&`, `$1` o `$$` dentro del JSON —una etiqueta «Coste $1» basta—
+ * y guarda un bloque corrupto.
+ */
+export const planCanvasDiagramSave = (
+  artifact: Pick<Artifact, 'content' | 'type' | 'representation'>,
+  flowData: unknown,
+): Pick<Artifact, 'content' | 'type' | 'representation'> => {
+  const json = JSON.stringify(flowData, null, 2);
+  if (artifact.representation !== 'hybrid') {
+    return { content: json, type: 'react-flow-graph', representation: 'diagram' };
+  }
+  const block = `\`\`\`json\n${json}\n\`\`\``;
+  const existing = artifact.content.match(/```mermaid\s*([\s\S]*?)\s*```/) ?? artifact.content.match(/```json\s*([\s\S]*?)\s*```/);
+  const content = existing
+    ? artifact.content.replace(existing[0], () => block)
+    : `${artifact.content}\n\n${block}`;
+  return { content, type: artifact.type, representation: artifact.representation };
+};

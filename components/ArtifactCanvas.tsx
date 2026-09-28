@@ -69,7 +69,9 @@ import type { ArtifactViewMode } from '../lib/artifacts/contracts';
 import { useArtifactAssessment } from '../hooks/artifacts/useArtifactAssessment';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DiagramModifyPanel } from './artifacts/diagram/DiagramModifyPanel';
-import { withDiagramContent } from '../services/artifacts/application/diagramModification';
+import { planCanvasDiagramSave, withDiagramContent } from '../services/artifacts/application/diagramModification';
+import { resolveNodeDetailLink } from '../services/artifacts/application/diagramDetailLinks';
+import { DiagramDetailLinksPanel } from './artifacts/diagram/DiagramDetailLinksPanel';
 
 export interface ArtifactCanvasProps {
   project: Project;
@@ -103,6 +105,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
   const [showInspector, setShowInspector] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showModifyDiagram, setShowModifyDiagram] = useState(false);
+  const [showDetailLinks, setShowDetailLinks] = useState(false);
   const [showMarkdownSource, setShowMarkdownSource] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [showQualityPanel, setShowQualityPanel] = useState(false);
@@ -358,37 +361,18 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
 
   const handleSaveDiagram = useCallback(() => {
     if (!reactFlowRef.current) return;
-    const flowData = reactFlowRef.current.getFlowData();
-    const jsonContent = JSON.stringify(flowData, null, 2);
-
-    let newContent = jsonContent;
-    let newType = artifact.type;
-    let newRepresentation = artifact.representation;
-
-    if (artifact.representation === 'hybrid') {
-      const matchMermaid = artifact.content.match(/```mermaid\s*([\s\S]*?)\s*```/);
-      const matchJson = artifact.content.match(/```json\s*([\s\S]*?)\s*```/);
-      if (matchMermaid) {
-        newContent = artifact.content.replace(matchMermaid[0], `\`\`\`json\n${jsonContent}\n\`\`\``);
-      } else if (matchJson) {
-        newContent = artifact.content.replace(matchJson[0], `\`\`\`json\n${jsonContent}\n\`\`\``);
-      } else {
-        newContent = `${artifact.content}\n\n\`\`\`json\n${jsonContent}\n\`\`\``;
-      }
-    } else {
-      newType = 'react-flow-graph';
-      newRepresentation = 'diagram';
-    }
-
-    const newVersion = restoreArtifactVersion(project.id, {
-      ...artifact,
-      content: newContent,
-      type: newType,
-      representation: newRepresentation,
-    });
+    const saved = planCanvasDiagramSave(artifact, reactFlowRef.current.getFlowData());
+    const newVersion = restoreArtifactVersion(project.id, { ...artifact, ...saved });
     setActiveArtifactId(newVersion.id);
     addToast('Diagrama guardado como nueva versión.', 'success');
   }, [artifact, project.id, restoreArtifactVersion, setActiveArtifactId, addToast]);
+
+  // 4.1: abre el nivel siguiente; un enlace roto se dice.
+  const handleNodeDoubleClick = useCallback((nodeId: string) => {
+    const link = resolveNodeDetailLink(artifact, nodeId, project.artifacts);
+    if (link?.status === 'resolved') setActiveArtifactId(link.target.artifactId);
+    else if (link) addToast(`El detalle de «${link.nodeLabel}» ya no existe (ver «Niveles C4»).`, 'warning');
+  }, [artifact, project.artifacts, setActiveArtifactId, addToast]);
 
   /**
    * Run the deterministic quality gate over the current IR and persist the
@@ -514,9 +498,11 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         onOpenInspector={() => setShowInspector(true)}
         onOpenExport={() => setIsExportModalOpen(true)}
         onModifyDiagram={isDiagramSurface && renderable.ir ? () => setShowModifyDiagram(true) : undefined}
+        onOpenDetailLinks={isDiagramSurface && renderable.ir ? () => setShowDetailLinks(true) : undefined}
       />
 
       <DiagramModifyPanel isOpen={showModifyDiagram} onClose={() => setShowModifyDiagram(false)} projectId={project.id} artifact={artifact} onVersionCreated={setActiveArtifactId} />
+      <DiagramDetailLinksPanel isOpen={showDetailLinks} onClose={() => setShowDetailLinks(false)} projectId={project.id} artifact={artifact} projectArtifacts={project.artifacts} onVersionCreated={setActiveArtifactId} onOpenArtifact={(id) => { setShowDetailLinks(false); setActiveArtifactId(id); }} />
 
       <Drawer
         isOpen={showInspector}
@@ -790,6 +776,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
                 onRetryDiagram={diagram.retryDiagram}
                 onViewText={() => setViewMode('document')}
                 onResetCanvas={diagram.resetCanvas}
+                onNodeDoubleClick={handleNodeDoubleClick}
                 layoutPlan={diagram.layoutPlan}
                 hasExternalPositions={diagram.hasExternalPositions}
                 onLayoutQualityComputed={(snap) => {

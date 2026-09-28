@@ -252,6 +252,29 @@ Vive en los llamantes y no en `artifactWorkflow` a propósito: el flujo de
 escritura está en el camino de arranque y el pipeline de diagramas lleva
 Mermaid (el caso F6-02 de *The barrel against the bundle*).
 
+### Navegar entre niveles C4: «Niveles»
+
+Un nodo puede declarar qué artefacto lo detalla: `DiagramIRNode.detailArtifactGroupId`
+(plan de diagramas, 4.1). El botón **Niveles** abre `DiagramDetailLinksPanel`,
+que lista los nodos del IR completo con un selector por nodo; el doble clic en un
+nodo enlazado abre el detalle, y el panel ofrece lo mismo con un botón «Abrir»
+para teclado. La regla vive en `services/artifacts/application/diagramDetailLinks.ts`:
+
+- **Se enlaza un grupo de versiones, no una versión.** El enlace guarda el
+  `versionGroupId` y abre siempre la última versión del detalle.
+- **Sólo lo que existe.** El selector ofrece los diagramas del proyecto —el
+  nivel C4 siguiente primero— y `planDetailLink` rechaza cualquier otro id, el
+  propio diagrama y los documentos.
+- **Lo roto se informa y se conserva.** Un enlace cuyo grupo ya no existe se
+  lista como roto, y el doble clic lo dice en vez de no hacer nada.
+- **Pasa por el motor.** Es un `update-node`, guardado como versión nueva con su
+  nota. El texto Mermaid no se toca: el enlace no tiene representación en él.
+  Como `update-node` da por cambiado un nodo aunque el valor sea el mismo, el
+  caso sin cambios se decide antes, y un clic de más no crea una versión.
+
+El campo viaja en los datos del nodo de ReactFlow y vuelve por `toDiagramIR`,
+así que guardar posiciones no lo pierde.
+
 ---
 
 ## 3. Diagnosticar

@@ -85,6 +85,8 @@ export interface DiagramNodeData {
    * when the AI emits a placeholder kind.
    */
   category?: string;
+  /** Mirrors `DiagramIRNode.detailArtifactGroupId` so the canvas round-trip keeps it. */
+  detailArtifactGroupId?: string;
 }
 
 export interface DiagramEdgeData {
@@ -203,6 +205,16 @@ export interface DiagramIRNode {
   trust?: 'internal' | 'partner' | 'external' | 'public';
   businessMeaning?: string;
   technicalMeaning?: string;
+  /**
+   * El artefacto que detalla este nodo — el siguiente nivel C4 (plan de
+   * diagramas, 4.1). Es el `versionGroupId` del artefacto, no el id de una
+   * versión: el enlace sigue valiendo cuando el diagrama de detalle recibe una
+   * versión nueva, y siempre abre la última.
+   *
+   * Un id, nunca un nombre: la regla de todo el portafolio. Si deja de
+   * resolver, el enlace se informa como roto y no se borra.
+   */
+  detailArtifactGroupId?: string;
 }
 
 export interface DiagramIREdge {

@@ -81,6 +81,8 @@ export interface DiagramViewProps {
     };
     layoutPlan: LayoutPlan | null | undefined;
   }) => void;
+  /** Doble clic en un nodo: abre su diagrama de detalle (plan de diagramas, 4.1). */
+  onNodeDoubleClick?: (nodeId: string) => void;
 }
 
 /**
@@ -117,6 +119,7 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
   layoutPlan = null,
   hasExternalPositions = false,
   onLayoutQualityComputed,
+  onNodeDoubleClick,
 }) => {
   const hasDisplayFlowNodes = displayFlowNodes.length > 0;
   const hasDisplayFlowEdges = displayFlowEdges.length > 0;
@@ -183,6 +186,7 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
             preserveExternalLayout={hasExternalPositions}
             externalLayoutPlan={layoutPlan ?? renderable.ir?.metadata?.layoutPlan ?? null}
             onLayoutQualityComputed={(snapshot) => onLayoutQualityComputed?.({ ...snapshot, layoutPlan: layoutPlan ?? null })}
+            onNodeDoubleClick={onNodeDoubleClick}
           />
         </CanvasErrorBoundary>
       )}
