@@ -26,7 +26,7 @@ import { parseChartSpec, CHART_PALETTE, type ChartSpec } from '../../../lib/char
  * escribía cada «ó» como dos bytes y el visor mostraba «Ã³» (plan de
  * diagramas, corrección hallada en 2.4).
  */
-const latin1 = (value: string): Uint8Array => {
+export const latin1 = (value: string): Uint8Array => {
   const out = new Uint8Array(value.length);
   for (let i = 0; i < value.length; i += 1) out[i] = value.charCodeAt(i) & 0xff;
   return out;
@@ -61,13 +61,13 @@ const F_MONO = 'F4';
 
 // --- PDF string + glyph helpers ---------------------------------------------
 
-const escapePdfString = (value: string): string =>
+export const escapePdfString = (value: string): string =>
   value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
 
 // Latin-1 (WinAnsi) is the default encoding for Type1 fonts. Map common
 // punctuation to ASCII equivalents and drop anything we cannot represent so
 // PDFs stay valid for Spanish content (accents survive via WinAnsi).
-const sanitizeForPdf = (value: string): string => {
+export const sanitizeForPdf = (value: string): string => {
   return value
     .replace(/\r\n?/g, '\n')
     .replace(/[‘’‚‛]/g, "'")
@@ -114,7 +114,7 @@ const FALLBACK_W_REG = 500;
 const FALLBACK_W_BOLD = 556;
 const MONO_W = 600; // Courier-ish
 
-const measure = (text: string, fontPt: number, font: 'reg' | 'bold' | 'ital' | 'mono'): number => {
+export const measure = (text: string, fontPt: number, font: 'reg' | 'bold' | 'ital' | 'mono'): number => {
   let units = 0;
   for (const ch of text) {
     if (font === 'mono') units += MONO_W;
@@ -1123,6 +1123,8 @@ export function buildPdfBlob(context: ExportContext): Blob {
 export const pdfExporter: ExportAdapter = {
   format: 'pdf',
   async export(context) {
+    // Un diagrama desde el lienzo se dibuja en vectores (2.4); diferido, porque esto está en el arranque.
+    if (context.diagramSnapshot?.nodes.length) return (await import('./diagramPdf')).exportDiagramPdf(context);
     return buildFile(context, 'pdf', buildPdfBlob(context), 'PDF generado con tipografía profesional, jerarquía de títulos, tablas y paginación.');
   },
 };

@@ -402,6 +402,7 @@ export {
  */
 export { applySemanticPatch, describeSemanticPatch } from './semanticPatchEngine';
 export { diffDiagramIR, matchDiagramIR } from './diagramDiff';
+export { buildAccessibleSummary } from './accessibleSummary';
 export { reconcileIRWithContent } from './contentReconciliation';
 export type { DiagramDiff, DiagramDiffEdge, DiagramDiffField, DiagramDiffNode, DiagramFieldChange } from './diagramDiff';
 

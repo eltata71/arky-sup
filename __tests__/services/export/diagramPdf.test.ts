@@ -1,0 +1,107 @@
+/**
+ * El PDF vectorial de un diagrama (plan de diagramas, 2.4): se dibuja en
+ * vectores con la disposición del lienzo, su texto es texto, lleva el resumen
+ * accesible, y sólo sustituye al PDF de documento cuando hay instantánea.
+ */
+import { describe, expect, it } from 'vitest';
+import type { Artifact } from '../../../lib/artifacts';
+import { snapshotFromFlow, type DiagramSnapshot } from '../../../services/export';
+import { buildDiagramPdfBlob } from '../../../services/export/adapters/diagramPdf';
+import { pdfExporter } from '../../../services/export/adapters/pdfExporter';
+
+const latin1 = async (blob: Blob): Promise<string> => {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let out = '';
+  for (const b of bytes) out += String.fromCharCode(b);
+  return out;
+};
+
+const snapshot = (): DiagramSnapshot => snapshotFromFlow(
+  [
+    { id: 'web', position: { x: 0, y: 0 }, width: 160, height: 60, data: { label: 'Portal de asegurados' } },
+    { id: 'api', position: { x: 300, y: 0 }, width: 160, height: 60, data: { label: 'API de pólizas' } },
+    { id: 'db', position: { x: 600, y: 120 }, width: 160, height: 60, data: { label: 'Base de datos' } },
+  ],
+  [
+    { source: 'web', target: 'api', label: 'HTTPS' },
+    { source: 'api', target: 'db', label: 'SQL', animated: true },
+  ],
+  ['Diagrama de integración con 3 elementos.', 'El portal llama a la API de pólizas.'],
+)!;
+
+const artifact: Artifact = {
+  id: 'a1', versionGroupId: 'a1', version: 3, createdAt: '2026-09-28T00:00:00.000Z',
+  name: 'Integración de pólizas', type: 'mermaid-graph', phase: 'Diseño',
+  architecturalView: 'Vista Lógica y de Diseño', content: 'graph LR; web-->api', objective: 'x',
+  keyConcepts: [], representation: 'diagram',
+};
+
+describe('snapshotFromFlow', () => {
+  it('toma posiciones, medidas y etiquetas del lienzo, y descarta conexiones colgantes', () => {
+    const snap = snapshotFromFlow(
+      [{ id: 'a', position: { x: 1, y: 2 }, data: { label: 'A' } }, { id: 'b', positionAbsolute: { x: 5, y: 6 }, width: 90, height: 40 }],
+      [{ source: 'a', target: 'b', data: { relation: 'async' } }, { source: 'a', target: 'fantasma' }],
+    )!;
+    expect(snap.nodes).toEqual([
+      { id: 'a', label: 'A', x: 1, y: 2, width: 160, height: 64 },
+      { id: 'b', label: 'b', x: 5, y: 6, width: 90, height: 40 },
+    ]);
+    expect(snap.edges).toEqual([{ source: 'a', target: 'b', label: '', dashed: true }]);
+  });
+
+  it('sin nodos dibujables no hay instantánea', () => {
+    expect(snapshotFromFlow([], [])).toBeNull();
+    expect(snapshotFromFlow([{ id: 'x' }], [])).toBeNull();
+  });
+});
+
+describe('buildDiagramPdfBlob', () => {
+  it('dos páginas apaisadas: el diagrama en vectores y el resumen accesible', async () => {
+    const pdf = await latin1(buildDiagramPdfBlob({ title: 'Integración de pólizas', version: 3, date: '2026-09-28T00:00:00Z', snapshot: snapshot() }));
+    expect(pdf.startsWith('%PDF-1.4')).toBe(true);
+    expect(pdf).toContain('/Count 2');
+    expect(pdf).toContain('/MediaBox [0 0 792 612]');
+    // Vectores, no una imagen incrustada.
+    expect(pdf).not.toContain('/Image');
+    expect((pdf.match(/ re B/g) ?? []).length).toBe(3);
+    expect(pdf).toContain('[3 2] 0 d');
+    // El texto es texto, con sus acentos en un byte.
+    expect(pdf).toContain('(API de pólizas) Tj');
+    expect(pdf).toContain('(HTTPS) Tj');
+    expect(pdf).toContain('Resumen accesible');
+    expect(pdf).toContain('El portal llama a la API de pólizas.');
+    expect(pdf.trimEnd().endsWith('%%EOF')).toBe(true);
+  });
+
+  it('la tabla xref apunta al inicio real de cada objeto', async () => {
+    const pdf = await latin1(buildDiagramPdfBlob({ title: 'X', date: '2026-09-28', snapshot: snapshot() }));
+    const xref = pdf.slice(pdf.lastIndexOf('\nxref\n'));
+    const offsets = [...xref.matchAll(/^(\d{10}) 00000 n $/gm)].map((m) => Number(m[1]));
+    expect(offsets.length).toBeGreaterThan(5);
+    offsets.forEach((offset, index) => expect(pdf.slice(offset, offset + 12)).toMatch(new RegExp(`^${index + 1} 0 obj`)));
+    const startxref = Number(pdf.match(/startxref\n(\d+)/)![1]);
+    expect(pdf.slice(startxref, startxref + 4)).toBe('xref');
+  });
+
+  it('lleva la organización y la clasificación en la cabecera', async () => {
+    const pdf = await latin1(buildDiagramPdfBlob({ title: 'X', date: '2026-09-28', owner: 'Seguros Andinos', confidentiality: 'Uso interno', snapshot: snapshot() }));
+    expect(pdf).toContain('Seguros Andinos');
+    expect(pdf).toContain('Uso interno');
+  });
+});
+
+describe('pdfExporter con y sin instantánea', () => {
+  it('con instantánea dibuja el diagrama', async () => {
+    const file = await pdfExporter.export({ artifact, activeView: 'diagram', diagramSnapshot: snapshot() });
+    const pdf = await latin1(file.blob);
+    expect(pdf).toContain('/MediaBox [0 0 792 612]');
+    expect(pdf).toContain('Resumen accesible');
+  });
+
+  it('sin instantánea el PDF es el de siempre', async () => {
+    const file = await pdfExporter.export({ artifact, activeView: 'document' });
+    const pdf = await latin1(file.blob);
+    expect(pdf).toContain('/MediaBox [0 0 612 792]');
+    expect(pdf).not.toContain('Resumen accesible');
+  });
+});

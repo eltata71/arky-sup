@@ -73,6 +73,12 @@ export interface ExportContext {
   exportAsPublication?: boolean;
   /** Publication slice requested by the user; omitted preserves legacy export behavior. */
   publicationMode?: PublicationExportMode;
+  /**
+   * The diagram as the canvas shows it (plan de diagramas, 2.4). When present,
+   * the PDF adapter draws it in vectors instead of printing the artifact text.
+   * Only the canvas can supply it, so every other export keeps its contract.
+   */
+  diagramSnapshot?: import('./diagramSnapshot').DiagramSnapshot | null;
 }
 
 
