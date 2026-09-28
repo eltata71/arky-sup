@@ -27,7 +27,7 @@ import type { Settings } from '../../../types';
 import type { Artifact, ArtifactChangeNote } from '../../../lib/artifacts';
 import type { DiagramIR, DiagramPatch, PatchApplication, PatchRejection } from '../../../lib/diagram';
 import { diagramEditService } from '../../ai';
-import { applySemanticPatch, irToMermaid, resolveEditableDiagramIR } from '../../diagram';
+import { applySemanticPatch, irToMermaid, reconcileIRWithContent, resolveEditableDiagramIR } from '../../diagram';
 import { replaceMermaidBlock } from './artifactImprovement';
 
 type EditableSource = Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>;
@@ -177,4 +177,38 @@ export const planDiagramModification = (params: {
     at: now(),
   };
   return { kind: 'version', draft: { ...artifact, ir, content, changeNote }, summary };
+};
+
+/**
+ * El contenido nuevo de un artefacto, con su IR al día (plan de diagramas, 1.4).
+ *
+ * Quien guarda un texto nuevo —el copiloto, una edición del Mermaid a mano,
+ * «Mejorar con IA»— pasa por aquí. Si el artefacto tiene IR y el texto nuevo
+ * dice otra cosa, el IR se reconcilia con un patch mínimo
+ * (`reconcileIRWithContent`), que conserva posiciones y campos que el texto no
+ * expresa. Sin esto el servidor fusionaba sólo el texto y el lienzo seguía
+ * dibujando el diagrama anterior.
+ *
+ * Si el texto no se puede leer como diagrama, devuelve sólo el texto: es lo
+ * que se hacía antes, y no se pierde nada que no se perdiera ya.
+ */
+export const withDiagramContent = (
+  source: Artifact,
+  content: string,
+): { content: string; ir?: DiagramIR } => {
+  if (source.representation === 'document' || content === source.content || !source.ir?.nodes?.length) {
+    return { content };
+  }
+  try {
+    const current = resolveEditableDiagramIR(source);
+    const parsed = resolveEditableDiagramIR({ type: source.type, representation: source.representation, content, ir: undefined });
+    if (!current || !parsed) return { content };
+    const result = reconcileIRWithContent(current, parsed);
+    if (!result.changed) return { content };
+    const { qualityReview: _staleReview, ...metadata } = result.ir.metadata ?? { qualityReview: undefined };
+    return { content, ir: { ...result.ir, metadata } };
+  } catch (err) {
+    console.warn('[diagramModification] no se pudo reconciliar el IR con el texto nuevo', err);
+    return { content };
+  }
 };

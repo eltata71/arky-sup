@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramIR, DiagramPatch } from '../../../lib/diagram';
 import type { Settings } from '../../../types';
-import { applySemanticPatch, resolveEditableDiagramIR } from '../../../services/diagram';
+import { applySemanticPatch, resolveEditableDiagramIR, resolveRenderableDiagram } from '../../../services/diagram';
 
 const ai = vi.hoisted(() => ({ proposeEdit: vi.fn() }));
 vi.mock('../../../services/ai', async (importOriginal) => ({
@@ -22,6 +22,7 @@ import {
   canModifyDiagram,
   planDiagramModification,
   proposeDiagramModification,
+  withDiagramContent,
   type DiagramModificationProposal,
 } from '../../../services/artifacts/application/diagramModification';
 
@@ -200,5 +201,41 @@ describe('planDiagramModification', () => {
   it('se niega si la propuesta es de otro artefacto', () => {
     const proposal = proposalFor(artifact(), renamePatch());
     expect(planDiagramModification({ artifact: artifact({ id: 'otro' }), proposal }).kind).toBe('stale');
+  });
+});
+
+describe('withDiagramContent', () => {
+  // El IR del fixture tiene ids cliente/api/db y etiquetas Cliente/API/Base de datos.
+  const rewritten = 'graph LR\n  cliente[Cliente] -->|llama| api[API Gateway]\n  api -->|lee| db[Base de datos]';
+
+  it('el defecto: guardar sólo el texto dejaba el lienzo dibujando el diagrama anterior', () => {
+    const stale = { ...artifact(), content: rewritten };
+    const drawn = resolveRenderableDiagram(stale, { audience: 'technical' });
+    expect(drawn.ir?.nodes.some((n) => n.label === 'API Gateway')).toBe(false);
+  });
+
+  it('con el IR reconciliado, el lienzo dibuja el cambio', () => {
+    const source = artifact();
+    const updates = withDiagramContent(source, rewritten);
+    const drawn = resolveRenderableDiagram({ ...source, ...updates }, { audience: 'technical' });
+
+    expect(updates.content).toBe(rewritten);
+    expect(drawn.ir?.nodes.some((n) => n.label === 'API Gateway')).toBe(true);
+    expect(updates.ir?.nodes.find((n) => n.id === 'api')?.position).toEqual({ x: 300, y: 40 });
+    expect(updates.ir?.metadata?.qualityReview).toBeUndefined();
+  });
+
+  it('un texto equivalente no reescribe el IR', () => {
+    const same = 'graph LR\n  api[API] -->|lee| db[Base de datos]\n  cliente[Cliente] -->|llama| api';
+    expect(withDiagramContent(artifact(), same)).toEqual({ content: same });
+  });
+
+  it('un texto que no es un diagrama se guarda como antes, sin tocar el IR', () => {
+    expect(withDiagramContent(artifact(), 'esto no es mermaid')).toEqual({ content: 'esto no es mermaid' });
+  });
+
+  it('un documento, o un diagrama sin IR guardado, sólo lleva el texto', () => {
+    expect(withDiagramContent(artifact({ representation: 'document', type: 'markdown' }), '# x')).toEqual({ content: '# x' });
+    expect(withDiagramContent(artifact({ ir: undefined }), rewritten)).toEqual({ content: rewritten });
   });
 });

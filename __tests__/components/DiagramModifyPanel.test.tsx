@@ -2,7 +2,7 @@
  * El panel «Modificar diagrama»: nada se escribe sin un clic, y el clic crea
  * una versión nueva con lo que el motor previsualizó.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Artifact } from '../../lib/artifacts';
 import type { DiagramIR, DiagramPatch } from '../../lib/diagram';
@@ -54,10 +54,15 @@ const patch: DiagramPatch = {
   operations: [{ op: 'update-node', nodeId: 'api', changes: { label: 'API Gateway' } }],
 };
 
-const renderPanel = (onVersionCreated = vi.fn(), onClose = vi.fn()) => {
+// El cuerpo del panel es un chunk diferido: se precarga para que la espera de
+// `findBy` mida el render y no la primera transformación del módulo.
+beforeAll(async () => { await import('../../components/artifacts/diagram/DiagramModifyPanelBody'); }, 60_000);
+
+const renderPanel = async (onVersionCreated = vi.fn(), onClose = vi.fn()) => {
   render(
     <DiagramModifyPanel isOpen onClose={onClose} projectId="p1" artifact={artifact} onVersionCreated={onVersionCreated} />,
   );
+  await screen.findByLabelText('¿Qué quieres cambiar?');
   return { onVersionCreated, onClose };
 };
 
@@ -70,7 +75,7 @@ beforeEach(() => {
 describe('DiagramModifyPanel', () => {
   it('muestra la vista previa del motor y no escribe nada antes del clic', async () => {
     ai.proposeEdit.mockResolvedValue({ ok: true, patch, preview: applySemanticPatch(ir, patch) });
-    renderPanel();
+    await renderPanel();
 
     fireEvent.change(screen.getByLabelText('¿Qué quieres cambiar?'), { target: { value: 'renombra la API' } });
     fireEvent.click(screen.getByRole('button', { name: /Proponer cambio/ }));
@@ -82,7 +87,7 @@ describe('DiagramModifyPanel', () => {
 
   it('aplicar crea una versión nueva y el lienzo pasa a mostrarla', async () => {
     ai.proposeEdit.mockResolvedValue({ ok: true, patch, preview: applySemanticPatch(ir, patch) });
-    const { onVersionCreated, onClose } = renderPanel();
+    const { onVersionCreated, onClose } = await renderPanel();
 
     fireEvent.change(screen.getByLabelText('¿Qué quieres cambiar?'), { target: { value: 'renombra la API' } });
     fireEvent.click(screen.getByRole('button', { name: /Proponer cambio/ }));
@@ -99,7 +104,7 @@ describe('DiagramModifyPanel', () => {
 
   it('descartar olvida la propuesta sin escribir', async () => {
     ai.proposeEdit.mockResolvedValue({ ok: true, patch, preview: applySemanticPatch(ir, patch) });
-    renderPanel();
+    await renderPanel();
 
     fireEvent.change(screen.getByLabelText('¿Qué quieres cambiar?'), { target: { value: 'renombra la API' } });
     fireEvent.click(screen.getByRole('button', { name: /Proponer cambio/ }));
@@ -111,7 +116,7 @@ describe('DiagramModifyPanel', () => {
 
   it('un rechazo se explica y no ofrece aplicar', async () => {
     ai.proposeEdit.mockResolvedValue({ ok: false, patch: null, preview: null, reason: 'El asistente no está disponible ahora.' });
-    renderPanel();
+    await renderPanel();
 
     fireEvent.change(screen.getByLabelText('¿Qué quieres cambiar?'), { target: { value: 'algo' } });
     fireEvent.click(screen.getByRole('button', { name: /Proponer cambio/ }));
@@ -120,8 +125,17 @@ describe('DiagramModifyPanel', () => {
     expect(screen.queryByRole('button', { name: 'Aplicar como versión nueva' })).not.toBeInTheDocument();
   });
 
-  it('sin instrucción no se puede proponer', () => {
-    renderPanel();
+  it('sin instrucción no se puede proponer', async () => {
+    await renderPanel();
     expect(screen.getByRole('button', { name: /Proponer cambio/ })).toBeDisabled();
+  });
+});
+
+describe('DiagramModifyPanel cerrado', () => {
+  it('no monta nada ni descarga el cuerpo', () => {
+    const { container } = render(
+      <DiagramModifyPanel isOpen={false} onClose={vi.fn()} projectId="p1" artifact={artifact} onVersionCreated={vi.fn()} />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 });

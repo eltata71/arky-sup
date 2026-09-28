@@ -97,6 +97,16 @@ generador.
 | **1.3** | **Comparación semántica entre versiones:** función pura `diffDiagramIR(a, b)` en `services/diagram` (nodos y conexiones añadidos, eliminados, renombrados y reagrupados). `ArtifactHistoryModal` la usa para los diagramas en vez del diff de texto | M | Cambiar el orden de líneas del Mermaid sin cambiar el diagrama da «sin cambios». Suite con generador sembrado |
 | **1.4** | **El copiloto usa patches para diagramas:** cuando el artefacto tiene IR, `interpretArtifactModification` pide un patch en lugar de reescribir el contenido. Si el patch falla, se usa el camino actual | M | Misma instrucción al copiloto → mismo resultado que 1.1. La prueba del camino de respaldo existe |
 
+> **Cómo se resolvió 1.4 (2026-09-28).** Al implementarla apareció un defecto
+> mayor que la tarea: el copiloto, guardar una edición del Mermaid a mano y
+> «Mejorar con IA» escribían sólo el **texto**; el servidor fusiona el parcial y
+> el IR viejo sobrevivía, así que el lienzo seguía dibujando el diagrama
+> anterior. En vez de pedirle al modelo un patch (una llamada más y un prompt
+> nuevo), el texto que ya devuelve se **convierte** en el patch mínimo sobre el
+> IR existente (`reconcileIRWithContent`), con la misma regla de identidad que
+> la comparación de 1.3. Cubre los cuatro caminos, conserva posiciones y los
+> campos que Mermaid no expresa, y no cambia el prompt del copiloto.
+
 ### Fase 2 — Fidelidad de entrada y de entrega
 
 **Objetivo:** lo que entra no pierde información y lo que sale puede entregarse
@@ -188,8 +198,8 @@ Actualizar esta tabla en la PR de cada tarea.
 |---|---|---|
 | 1.1 Panel «Modificar diagrama» | Hecha | #97 |
 | 1.2 Deshacer semántico | Hecha | #98 |
-| 1.3 Comparación semántica | Hecha | esta rama (`feat/diagram-1-3-semantic-diff`) |
-| 1.4 Copiloto con patches | Pendiente | — |
+| 1.3 Comparación semántica | Hecha | #99 |
+| 1.4 Copiloto con patches | Hecha (ver nota en §4) | esta rama (`feat/diagram-1-4-content-reconciliation`) |
 | 2.1 Mermaid semántico | Pendiente | — |
 | 2.2 Export autocontenido | Pendiente | — |
 | 2.3 Marca en exportación | Pendiente | — |

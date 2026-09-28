@@ -65,7 +65,7 @@ export const BYTE_CEILINGS = {
   'components/ProjectHub.tsx': 78777, // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
   'components/MemoryCenterModal.tsx': 55552, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/ArtifactCanvas.tsx': 43370, // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
+  'components/ArtifactCanvas.tsx': 43510, // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 49197,
   'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
@@ -82,7 +82,7 @@ export const BYTE_CEILINGS = {
    * while gaining a guarantee.
    */
   'services/agent/agentExecutor.ts': 41241, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
-  'components/AssistantPanel.tsx': 36443, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
+  'components/AssistantPanel.tsx': 36588, // plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   'pages/Workspace.tsx': 36386, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina · F6-03 corte 4: rutas de `domain/`/`application/`
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 36854, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
@@ -171,7 +171,7 @@ export const CEILINGS = {
   'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1723, // F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
-  'components/ArtifactCanvas.tsx': 975, // plan diagramas 1.1: 981 → 975
+  'components/ArtifactCanvas.tsx': 976, // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
   'pages/Workspace.tsx': 730, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/ai/prompts/diagramPrompts.ts': 1145,
   'services/export/adapters/pdfExporter.ts': 1125,
@@ -190,7 +190,7 @@ export const CEILINGS = {
   'components/CustomArtifactRequestModal.tsx': 845,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
   'constants.ts': 805,
-  'components/AssistantPanel.tsx': 731, // F5-02
+  'components/AssistantPanel.tsx': 732, // plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
   'components/artifacts/fable/FableDiagramCanvas.tsx': 790,
   'pages/SDDProcessView.tsx': 785,
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 785,

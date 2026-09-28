@@ -140,13 +140,57 @@ function pair<T>(
 const NODE_FIELDS = ['label', 'kind', 'technology', 'description', 'criticality'] as const;
 const EDGE_FIELDS = ['label', 'protocol', 'criticality'] as const;
 
-export function diffDiagramIR(before: DiagramIR, after: DiagramIR): DiagramDiff {
-  // ── Nodos
+interface Matched<T> {
+  readonly pairs: ReadonlyArray<readonly [T, T]>;
+  readonly removed: readonly T[];
+  readonly added: readonly T[];
+}
+
+/** Qué elemento de antes es qué elemento de después: la regla de identidad. */
+export interface DiagramMatch {
+  readonly nodes: Matched<DiagramIRNode> & { readonly reidentified: number };
+  readonly edges: Matched<DiagramIREdge>;
+  readonly groups: Matched<DiagramIRGroup>;
+  /** Id de un nodo de antes → su id después (el mismo si no se reidentificó). */
+  readonly toAfterId: (beforeId: string) => string;
+}
+
+/**
+ * Empareja dos IR con las decisiones 3 y 4 de la cabecera. Es la única regla
+ * de identidad entre versiones: la usan la comparación del historial y la
+ * reconciliación de un texto reescrito (1.4), y dos copias acabarían
+ * discrepando sobre qué nodo es cuál.
+ */
+export function matchDiagramIR(before: DiagramIR, after: DiagramIR): DiagramMatch {
   const nodes = pair<DiagramIRNode>(before.nodes, after.nodes, (n) => n.id, (n) => norm(n.label));
   // Id de antes → id de después, para que las conexiones y los grupos hablen
   // de los mismos nodos aunque se hayan reidentificado.
   const renamed = new Map(nodes.pairs.map(([a, b]) => [a.id, b.id]));
   const toAfterId = (id: string) => renamed.get(id) ?? id;
+  const endpoints = (e: DiagramIREdge, mapped: boolean) =>
+    `${mapped ? toAfterId(e.source) : e.source}→${mapped ? toAfterId(e.target) : e.target}`;
+  const edges = pair(
+    before.edges.map((edge) => ({ edge, key: endpoints(edge, true) })),
+    after.edges.map((edge) => ({ edge, key: endpoints(edge, false) })),
+    (entry) => `${entry.key}|${norm(entry.edge.label)}`,
+    (entry) => entry.key,
+  );
+  const groups = pair<DiagramIRGroup>(before.groups, after.groups, (g) => g.id, (g) => norm(g.label));
+  return {
+    nodes: { pairs: nodes.pairs, removed: nodes.removed, added: nodes.added, reidentified: nodes.bySecondary },
+    edges: {
+      pairs: edges.pairs.map(([a, b]) => [a.edge, b.edge] as const),
+      removed: edges.removed.map((entry) => entry.edge),
+      added: edges.added.map((entry) => entry.edge),
+    },
+    groups,
+    toAfterId,
+  };
+}
+
+export function diffDiagramIR(before: DiagramIR, after: DiagramIR): DiagramDiff {
+  const match = matchDiagramIR(before, after);
+  const { nodes, edges, groups, toAfterId } = match;
   const labelBefore = new Map(before.nodes.map((n) => [n.id, text(n.label) || n.id]));
   const labelAfter = new Map(after.nodes.map((n) => [n.id, text(n.label) || n.id]));
   const nodeRef = (n: DiagramIRNode): DiagramDiffNode => ({ id: n.id, label: text(n.label) || n.id });
@@ -156,17 +200,6 @@ export function diffDiagramIR(before: DiagramIR, after: DiagramIR): DiagramDiff 
     .filter((entry) => entry.changes.length > 0)
     .sort(byLabel);
 
-  // ── Conexiones: por extremos (en ids de después) y etiqueta; luego sólo por extremos.
-  const endpoints = (e: DiagramIREdge, mapped: boolean) =>
-    `${mapped ? toAfterId(e.source) : e.source}→${mapped ? toAfterId(e.target) : e.target}`;
-  const beforeEdges = before.edges.map((edge) => ({ edge, key: endpoints(edge, true) }));
-  const afterEdges = after.edges.map((edge) => ({ edge, key: endpoints(edge, false) }));
-  const edges = pair(
-    beforeEdges,
-    afterEdges,
-    (entry) => `${entry.key}|${norm(entry.edge.label)}`,
-    (entry) => entry.key,
-  );
   const edgeRef = (edge: DiagramIREdge, labels: Map<string, string>): DiagramDiffEdge => ({
     from: labels.get(edge.source) ?? edge.source,
     to: labels.get(edge.target) ?? edge.target,
@@ -176,12 +209,11 @@ export function diffDiagramIR(before: DiagramIR, after: DiagramIR): DiagramDiff 
     `${a.from}→${a.to}`.localeCompare(`${b.from}→${b.to}`, 'es');
 
   const changedEdges = edges.pairs
-    .map(([a, b]) => ({ ...edgeRef(b.edge, labelAfter), changes: fieldChanges(a.edge, b.edge, EDGE_FIELDS) }))
+    .map(([a, b]) => ({ ...edgeRef(b, labelAfter), changes: fieldChanges(a, b, EDGE_FIELDS) }))
     .filter((entry) => entry.changes.length > 0)
     .sort(byEdge);
 
-  // ── Agrupaciones: por id, luego por etiqueta; los miembros, en etiquetas de nodo.
-  const groups = pair<DiagramIRGroup>(before.groups, after.groups, (g) => g.id, (g) => norm(g.label));
+  // Los miembros de un grupo, en etiquetas de nodo.
   const members = (g: DiagramIRGroup, mapped: boolean, labels: Map<string, string>) =>
     [...new Set(g.nodeIds.map((id) => (mapped ? toAfterId(id) : id)))]
       .map((id) => labels.get(id) ?? labelBefore.get(id) ?? id)
@@ -207,8 +239,8 @@ export function diffDiagramIR(before: DiagramIR, after: DiagramIR): DiagramDiff 
       changed: changedNodes,
     },
     edges: {
-      added: edges.added.map((entry) => edgeRef(entry.edge, labelAfter)).sort(byEdge),
-      removed: edges.removed.map((entry) => edgeRef(entry.edge, labelBefore)).sort(byEdge),
+      added: edges.added.map((edge) => edgeRef(edge, labelAfter)).sort(byEdge),
+      removed: edges.removed.map((edge) => edgeRef(edge, labelBefore)).sort(byEdge),
       changed: changedEdges,
     },
     groups: {
@@ -216,7 +248,7 @@ export function diffDiagramIR(before: DiagramIR, after: DiagramIR): DiagramDiff 
       removed: groups.removed.map(groupRef).sort(byLabel),
       changed: changedGroups,
     },
-    reidentified: nodes.bySecondary,
+    reidentified: nodes.reidentified,
   };
   const count = [diff.nodes, diff.edges, diff.groups]
     .reduce((total, section) => total + section.added.length + section.removed.length + section.changed.length, 0);
