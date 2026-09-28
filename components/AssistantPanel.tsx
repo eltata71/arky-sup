@@ -3,6 +3,7 @@ import { useAppContext, type Project } from '../context/AppContext';
 import { ArtifactTemplate } from '../types';
 import type { Artifact } from '../lib/artifacts';
 import { type ChatMessage, createChatMessage } from '../services/chat';
+import { withDiagramContent } from '../services/artifacts/application/diagramModification';
 import { useAgentLessonStore, useAgentMemoryStore } from '../hooks/useAgentMemoryStore';
 import type { ArtifactTemplateSuggestion } from '../lib/artifacts/artifactSuggestions';
 import { PlusCircleIcon, SparklesIcon, TrashIcon, ArrowUpTrayIcon, ArrowPathIcon, ExclamationTriangleIcon } from './Icons';
@@ -179,7 +180,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         if (modification.kind === 'not-applied') {
             finalResponse += `\n\n${modification.note}`;
         } else if (modification.kind === 'update-current' && activeArtifact) {
-            updateArtifact(project.id, activeArtifact.id, { content: modification.content });
+            updateArtifact(project.id, activeArtifact.id, withDiagramContent(activeArtifact, modification.content));
             // updateArtifact resolves synchronously via the optimistic
             // setProjects branch in AppContext, so reading the artifact
             // back through getArtifact gives us the persisted snapshot we
@@ -191,7 +192,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         } else if (modification.kind === 'new-version' && activeArtifact) {
             const newVersion = createArtifactVersion(project.id, activeArtifact.versionGroupId, {
                 ...activeArtifact,
-                content: modification.content,
+                ...withDiagramContent(activeArtifact, modification.content),
             });
             if (newVersion?.id) {
                 setActiveArtifactId(newVersion.id);

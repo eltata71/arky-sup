@@ -69,6 +69,7 @@ import type { ArtifactViewMode } from '../lib/artifacts/contracts';
 import { useArtifactAssessment } from '../hooks/artifacts/useArtifactAssessment';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DiagramModifyPanel } from './artifacts/diagram/DiagramModifyPanel';
+import { withDiagramContent } from '../services/artifacts/application/diagramModification';
 
 export interface ArtifactCanvasProps {
   project: Project;
@@ -349,7 +350,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
 
   // ─── Orchestration handlers ──────────────────────────────────────────────
   const handleSave = useCallback(() => {
-    const newVersion = restoreArtifactVersion(project.id, { ...artifact, content: editing.editedContent });
+    const newVersion = restoreArtifactVersion(project.id, { ...artifact, ...withDiagramContent(artifact, editing.editedContent) });
     setActiveArtifactId(newVersion.id);
     editing.exitEditMode();
   }, [restoreArtifactVersion, project.id, artifact, editing, setActiveArtifactId]);
@@ -467,7 +468,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         addToast('La IA no propuso cambios aplicables. Revisa las sugerencias manualmente.', 'warning');
         return;
       }
-      const newVersion = restoreArtifactVersion(project.id, { ...artifact, content: newContent });
+      const newVersion = restoreArtifactVersion(project.id, { ...artifact, ...withDiagramContent(artifact, newContent) });
       setActiveArtifactId(newVersion.id);
       setShowSuggestions(false);
       addToast('Mejoras aplicadas con IA como nueva versión.', 'success');

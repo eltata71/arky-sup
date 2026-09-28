@@ -401,7 +401,8 @@ export {
  * of invariants, and only one of them would be the one the lint rules check.
  */
 export { applySemanticPatch, describeSemanticPatch } from './semanticPatchEngine';
-export { diffDiagramIR } from './diagramDiff';
+export { diffDiagramIR, matchDiagramIR } from './diagramDiff';
+export { reconcileIRWithContent } from './contentReconciliation';
 export type { DiagramDiff, DiagramDiffEdge, DiagramDiffField, DiagramDiffNode, DiagramFieldChange } from './diagramDiff';
 
 // Tipos que otros módulos ya usaban entrando por ruta de fichero: se publican

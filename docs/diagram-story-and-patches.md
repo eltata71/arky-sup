@@ -235,6 +235,23 @@ etiqueta única a ambos lados es el mismo nodo, que se informa como
 *reidentificado* porque es una inferencia. El comparador es un chunk diferido
 (`ArtifactVersionComparison`): sólo lo descarga quien compara.
 
+### Guardar un texto nuevo: el IR se reconcilia
+
+El lienzo dibuja desde `artifact.ir`, y el servidor fusiona el parcial que se
+guarda. Quien escribe un texto nuevo sin IR —el copiloto al actualizar o
+versionar, guardar una edición del Mermaid, «Mejorar con IA»— pasa por
+`withDiagramContent` (`services/artifacts/application/diagramModification.ts`):
+el texto se lee, se empareja con el IR actual (`matchDiagramIR`) y lo que
+difiere se aplica como patch (`reconcileIRWithContent`). Sólo se toca lo que el
+texto expresa —elementos, etiquetas, conexiones, pertenencia a agrupaciones—;
+posiciones, tecnología, descripción o criticidad se conservan, porque llegan
+vacíos al leer Mermaid y compararlos los borraría. Si el texto no se puede leer
+como diagrama, se guarda sólo el texto, como antes.
+
+Vive en los llamantes y no en `artifactWorkflow` a propósito: el flujo de
+escritura está en el camino de arranque y el pipeline de diagramas lleva
+Mermaid (el caso F6-02 de *The barrel against the bundle*).
+
 ---
 
 ## 3. Diagnosticar
