@@ -251,6 +251,35 @@ describe('ArtifactExportModal — configuración de imagen', () => {
     expect(options?.imageExportLegend).toBe(true);
   });
 
+  it('3.4 · un preajuste fija las cuatro decisiones de una vez y se marca como activo', () => {
+    const onExportFormat = vi.fn();
+    render(<ArtifactExportModal {...diagramProps} formatOptions={[pngOption]} onExportFormat={onExportFormat} />);
+
+    const presentation = screen.getByRole('button', { name: 'Presentación' });
+    fireEvent.click(presentation);
+    expect(presentation).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/lista para una diapositiva/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Exportar como PNG/ }));
+    const [, options] = onExportFormat.mock.calls[0];
+    expect(options).toMatchObject({ imageExportView: 'executive', imageExportScale: 3, imageExportFrame: true, imageExportLegend: true });
+  });
+
+  it('3.4 · cambiar una opción a mano deja de marcar el preajuste', () => {
+    render(<ArtifactExportModal {...diagramProps} formatOptions={[pngOption]} onExportFormat={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Presentación' }));
+    fireEvent.click(screen.getByTestId('image-export-scale-1'));
+    expect(screen.getByRole('button', { name: 'Presentación' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('3.4 · el preajuste elegido se recuerda para la próxima exportación', () => {
+    const { unmount } = render(<ArtifactExportModal {...diagramProps} formatOptions={[pngOption]} onExportFormat={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Captura rápida' }));
+    unmount();
+    render(<ArtifactExportModal {...diagramProps} formatOptions={[pngOption]} onExportFormat={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Captura rápida' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('deshabilita la escala y muestra una explicación accesible para SVG', () => {
     render(
       <ArtifactExportModal
@@ -336,3 +365,12 @@ describe('ArtifactExportModal — configuración de imagen', () => {
     expect((screen.getByTestId('image-export-view-technical') as HTMLInputElement).checked).toBe(true);
   });
 });
+
+describe('ArtifactExportModal diferido (3.4)', () => {
+  it('cerrado no monta nada ni descarga el cuerpo', async () => {
+    const { default: ArtifactExportModalLazy } = await import('../../../components/artifacts/export/ArtifactExportModalLazy');
+    const { container } = render(<ArtifactExportModalLazy {...baseProps} isOpen={false} onExportFormat={() => {}} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+

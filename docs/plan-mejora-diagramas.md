@@ -205,9 +205,9 @@ Actualizar esta tabla en la PR de cada tarea.
 | 2.3 Marca en exportación | Hecha | #103 |
 | 2.4 PDF vectorial | Hecha (y corrige los acentos de todos los PDF, #104) | #105 |
 | 3.1 Auditoría de tokens | Hecha: sin cambio visual; los colores de nodos y conexiones salen de `NODE_CHROME_TOKENS`/`EDGE_CHROME_TOKENS` | #106 |
-| 3.2 ADR visual | Hecha: elevación sutil y fuentes actuales (ADR-007, decisión del propietario 2026-09-28) | esta rama (`feat/diagram-3-2-3-3-subtle-elevation`) |
-| 3.3 Aplicar decisión visual | Hecha: tokens de elevación, foco sin halo, rejilla de 8 px | esta rama |
-| 3.4 Preset editorial | Pendiente | — |
+| 3.2 ADR visual | Hecha: elevación sutil y fuentes actuales (ADR-007, decisión del propietario 2026-09-28) | #107 |
+| 3.3 Aplicar decisión visual | Hecha: tokens de elevación, foco sin halo, rejilla de 8 px | #107 |
+| 3.4 Preset editorial | Hecha: tres preajustes (Presentación, Documentación técnica, Captura rápida); el modal de exportación pasa a diferido | esta rama (`feat/diagram-3-4-export-presets`) |
 | 4.1 Drill-down C4 | Pendiente | — |
 | 4.2 Coherencia entre niveles | Pendiente | — |
 | 4.3 Editor de escenas | Pendiente | — |
