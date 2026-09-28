@@ -110,3 +110,21 @@ describe('pdfExporter — professional layout', () => {
     expect(text).toContain('...');
   });
 });
+
+describe('pdfExporter — acentos en WinAnsi', () => {
+  // Las fuentes se declaran WinAnsi (un byte por carácter). Codificar el texto
+  // en UTF-8 escribía «ó» como dos bytes, y el visor mostraba «Ã³».
+  it('un carácter acentuado se escribe como un solo byte Latin-1', async () => {
+    const blob = buildPdfBlob({ activeView: 'document', artifact: artifact({ content: '# Diseño\n\nMigración de pólizas en año fiscal.' }) });
+    const text = await readText(blob);
+    expect(text).toContain('Migraci\u00f3n de p\u00f3lizas en a\u00f1o fiscal.');
+    expect(text).not.toMatch(/\u00c3[\u00a0-\u00bf]/);
+  });
+
+  it('la cabecera binaria mantiene cuatro bytes por encima de 127', async () => {
+    const blob = buildPdfBlob({ activeView: 'document', artifact: artifact({ content: 'x' }) });
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    expect(Array.from(bytes.slice(9, 15))).toEqual([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]);
+  });
+});
+

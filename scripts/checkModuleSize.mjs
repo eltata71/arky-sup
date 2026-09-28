@@ -69,7 +69,7 @@ export const BYTE_CEILINGS = {
   'constants.ts': 49197,
   'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
-  'services/export/adapters/pdfExporter.ts': 43514,
+  'services/export/adapters/pdfExporter.ts': 43909, // +395: `latin1`, los PDF escribían los acentos en UTF-8 sobre fuentes WinAnsi («Ã³»)
   'components/artifacts/export/ArtifactExportModal.tsx': 42543, // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42447, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
@@ -174,7 +174,7 @@ export const CEILINGS = {
   'components/ArtifactCanvas.tsx': 977, // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
   'pages/Workspace.tsx': 730, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/ai/prompts/diagramPrompts.ts': 1145,
-  'services/export/adapters/pdfExporter.ts': 1125,
+  'services/export/adapters/pdfExporter.ts': 1129, // +4: `latin1`
   'components/ProjectHub.tsx': 1060, // F6-03 corte 2b // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/MemoryCenterModal.tsx': 1017, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   // 1001 → 988 el 2026-09-22. No es trabajo nuevo: las extracciones de la fase 2
