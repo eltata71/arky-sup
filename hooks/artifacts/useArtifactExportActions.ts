@@ -8,6 +8,9 @@ import { exportArtifact } from '../../services/export/exportService';
 import { downloadFile } from '../../services/export/downloadService';
 import type { ReactFlowCanvasHandle } from '../../components/ReactFlowCanvas';
 import type { ArtifactExportOptions } from '../../components/artifacts/export/ArtifactExportModal';
+// Por el fichero: es una puerta declarada y pura; el barrel de publicación arrastra el pipeline entero.
+import { resolveDiagramExportBranding } from '../../services/publicationPipeline/diagramExportBranding';
+import type { PublicationPackage } from '../../services/publicationPipeline';
 
 type ToastTone = 'success' | 'error' | 'warning' | 'info';
 
@@ -21,6 +24,8 @@ export interface UseArtifactExportActionsInput {
   presentationModel?: ArtifactPresentationModel | null;
   exportAsPublication?: boolean;
   publicationMode?: PublicationExportMode;
+  /** Los paquetes del proyecto: de ahí sale la marca del marco (plan de diagramas, 2.3). */
+  publicationPackages?: readonly PublicationPackage[];
 }
 
 export interface UseArtifactExportActionsResult {
@@ -42,7 +47,7 @@ export interface UseArtifactExportActionsResult {
 export const useArtifactExportActions = (
   input: UseArtifactExportActionsInput,
 ): UseArtifactExportActionsResult => {
-  const { artifact, activeView, settings, preflightReport, reactFlowRef, addToast, presentationModel, exportAsPublication, publicationMode } = input;
+  const { artifact, activeView, settings, preflightReport, reactFlowRef, addToast, presentationModel, exportAsPublication, publicationMode, publicationPackages } = input;
   const [markdownCopied, setMarkdownCopied] = useState(false);
 
   const captureImage = useCallback(async (
@@ -74,12 +79,17 @@ export const useArtifactExportActions = (
       addToast('No hay un canvas activo para exportar. Cambia a la vista de diagrama y reintenta.', 'warning');
       return;
     }
+    const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+    const branding = resolveDiagramExportBranding(publicationPackages, artifact, { isDark });
     try {
       const dataUrl = await reactFlowRef.current.exportImage(format, {
         view: imageOptions?.view,
         scale: imageOptions?.scale,
         frame: imageOptions?.frame,
         legend: imageOptions?.legend,
+        ...(branding ? {
+          branding: { owner: branding.organizationName, confidentiality: branding.confidentiality, accentColor: branding.accentColor },
+        } : {}),
       });
       if (!dataUrl) {
         addToast('No se pudo capturar la imagen. Verifica que el diagrama esté visible y reintenta.', 'error');
@@ -90,11 +100,14 @@ export const useArtifactExportActions = (
       a.download = `${artifact.name}.${format}`;
       a.click();
       addToast(`Imagen ${format.toUpperCase()} descargada: ${artifact.name}.${format}`, 'success');
+      // El aviso sólo tiene sentido si se pintó el marco (apagado por defecto en la vista `current`).
+      const framed = imageOptions?.frame ?? imageOptions?.view !== 'current';
+      if (branding?.issue && framed) addToast(branding.issue, 'warning');
     } catch (err) {
       console.error('[useArtifactExportActions] Image export failed', err);
       addToast('La exportación falló inesperadamente. Revisa la consola para más detalles.', 'error');
     }
-  }, [artifact.name, preflightReport, reactFlowRef, addToast]);
+  }, [artifact, preflightReport, reactFlowRef, addToast, publicationPackages]);
 
   const exportFormat = useCallback(async (format: ExportFormat, options?: ArtifactExportOptions) => {
     const selectedPresentationModel = options?.presentationModel ?? presentationModel ?? null;

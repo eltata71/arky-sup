@@ -200,9 +200,9 @@ Actualizar esta tabla en la PR de cada tarea.
 | 1.2 Deshacer semántico | Hecha | #98 |
 | 1.3 Comparación semántica | Hecha | #99 |
 | 1.4 Copiloto con patches | Hecha (ver nota en §4) | #100 |
-| 2.1 Mermaid semántico | Hecha (corrige además `A:::clase` → nodo «A:::clase») | esta rama (`feat/diagram-2-1-mermaid-classes`) |
+| 2.1 Mermaid semántico | Hecha (corrige además `A:::clase` → nodo «A:::clase») | #102 |
 | 2.2 Export autocontenido | Hecha: no había fugas; la prueba lo fija | #101 |
-| 2.3 Marca en exportación | Pendiente | — |
+| 2.3 Marca en exportación | Hecha | esta rama (`feat/diagram-2-3-export-branding`) |
 | 2.4 PDF vectorial | Pendiente | — |
 | 3.1 Auditoría de tokens | Pendiente | — |
 | 3.2 ADR visual | Pendiente (decisión del propietario) | — |

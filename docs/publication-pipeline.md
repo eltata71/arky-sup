@@ -57,6 +57,7 @@ services/publicationPipeline/
 ├── PublicationPipelineTypes.ts        # Modelo canónico tipado + helpers puros
 ├── PublicationObservability.ts        # Eventos del pipeline (Task 16)
 ├── PublicationBrandingService.ts      # Branding sin secretos
+├── diagramExportBranding.ts          # La marca en la imagen exportada del lienzo (plan de diagramas 2.3)
 ├── PublicationTemplateRegistry.ts     # 6 perfiles + plantillas editoriales
 ├── PublicationRuntimeValidation.ts    # Validación runtime (Task 17)
 ├── PublicationQualityBridge.ts        # Puente a compiler + AKG (Tasks 13/14)
@@ -106,6 +107,17 @@ flujo editorial (`orderArtifactRefsEditorially`) y mantiene las referencias
 consistentes. Ver `docs/publication-packages.md`.
 
 ---
+
+### La marca también en la imagen de un diagrama
+
+La marca de un paquete llega al marco de la imagen que se exporta desde el
+lienzo (PNG/SVG), por `resolveDiagramExportBranding`: la del paquete más
+reciente que incluye el artefacto. Tres reglas: **sin marca configurada no hay
+marca**, y la imagen sale exactamente como antes; **nunca el logo**, porque es
+una URL externa y rompería la exportación autocontenida; y **un color de acento
+que no se distingue del fondo del marco** (menos de 3:1, WCAG 2.2 · 1.4.11,
+medido contra el tema que se exporta) se descarta y se avisa por qué — la
+organización y la clasificación se conservan.
 
 ## 5. Preflight
 

@@ -300,6 +300,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     reactFlowRef,
     addToast,
     presentationModel,
+    publicationPackages: project.publicationPackages,
   });
 
   // ─── Suggestions ("Sugerencias") ─────────────────────────────────────────

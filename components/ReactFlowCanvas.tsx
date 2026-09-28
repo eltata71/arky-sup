@@ -190,7 +190,7 @@ export interface ReactFlowCanvasHandle {
      *
      * `scale` (1×/2×/3×) controls pixel ratio for PNG; ignored for SVG.
      */
-    exportImage: (format: 'png' | 'svg', options?: { scale?: 1 | 2 | 3; view?: ExportViewMode; frame?: boolean; legend?: boolean }) => Promise<string | null>;
+    exportImage: (format: 'png' | 'svg', options?: CanvasExportOptions) => Promise<string | null>;
     getFlowData: () => { nodes: Node[], edges: Edge[] };
     /** Undo last mutation. Returns true when a step was popped. */
     undo: () => boolean;

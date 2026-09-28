@@ -53,3 +53,25 @@ describe('applySvgExportFrame (Gap 12)', () => {
         expect(meta.legend?.length ?? 0).toBeGreaterThanOrEqual(2);
     });
 });
+
+describe('applySvgExportFrame — franja de marca (plan de diagramas 2.3)', () => {
+    const decodeOut = (out: string) => Buffer.from(out.replace(/^data:image\/svg\+xml;base64,/, ''), 'base64').toString('utf-8');
+
+    it('pinta la franja con el color de la organización', async () => {
+        const out = await applySvgExportFrame(encodeDataUrl(SAMPLE_SVG, true), { title: 'X', isDark: false, accentColor: '#1d4ed8' });
+        expect(decodeOut(out)).toContain('height="4" fill="#1d4ed8"');
+    });
+
+    it('sin color, sin franja: el marco genérico no cambia', async () => {
+        const out = await applySvgExportFrame(encodeDataUrl(SAMPLE_SVG, true), { title: 'X', isDark: false });
+        expect(decodeOut(out)).not.toContain('height="4"');
+    });
+
+    it('un valor que no es un hex se descarta: el color acaba en un atributo', async () => {
+        const out = await applySvgExportFrame(encodeDataUrl(SAMPLE_SVG, true), { title: 'X', isDark: false, accentColor: 'red" onload="x()' });
+        const svg = decodeOut(out);
+        expect(svg).not.toContain('onload');
+        expect(svg).not.toContain('height="4"');
+    });
+});
+

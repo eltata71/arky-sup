@@ -33,6 +33,8 @@ export interface CanvasExportOptions {
     view?: ExportViewMode;
     frame?: boolean;
     legend?: boolean;
+    /** The organisation's branding for the frame (plan de diagramas, 2.3); absent = generic frame. */
+    branding?: { owner?: string; confidentiality?: string; accentColor?: string };
 }
 
 /** What the export needs from the canvas, stated rather than closed over. */
@@ -170,6 +172,10 @@ export interface CanvasExportDeps {
                     // legend we drop it from the frame metadata so the
                     // footer stays minimal (date + confidentiality only).
                     if (!wantLegend) metadata.legend = [];
+                    const branding = exportOptions?.branding;
+                    if (branding?.owner) metadata.owner = branding.owner;
+                    if (branding?.confidentiality) metadata.confidentiality = branding.confidentiality;
+                    if (branding?.accentColor) metadata.accentColor = branding.accentColor;
                     if (format === 'png') return await applyExportFrame(cropped, metadata, { pixelRatio: scale });
                     if (format === 'svg') return await applySvgExportFrame(cropped, metadata);
                 }
