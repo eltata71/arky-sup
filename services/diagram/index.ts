@@ -337,7 +337,7 @@ function reactFlowJsonToIR(payload: { nodes?: unknown[]; edges?: unknown[] }): D
     return ir;
 }
 
-export { resolveRenderableDiagram } from './resolveRenderableDiagram';
+export { resolveEditableDiagramIR, resolveRenderableDiagram } from './resolveRenderableDiagram';
 
 /**
  * Diagram quality — the ten-dimension score, the lints and the preflight report.

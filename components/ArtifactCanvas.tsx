@@ -67,17 +67,8 @@ import { useCanvasStorytellingCommands } from '../hooks/artifacts/useCanvasStory
 import { useSuggestionActionRunner } from '../hooks/artifacts/useSuggestionActionRunner';
 import type { ArtifactViewMode } from '../lib/artifacts/contracts';
 import { useArtifactAssessment } from '../hooks/artifacts/useArtifactAssessment';
-
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-  return isMobile;
-};
+import { useIsMobile } from '../hooks/useIsMobile';
+import { DiagramModifyPanel } from './artifacts/diagram/DiagramModifyPanel';
 
 export interface ArtifactCanvasProps {
   project: Project;
@@ -91,10 +82,9 @@ export interface ArtifactCanvasProps {
  * ArtifactCanvas — lightweight orchestrator.
  *
  * Selects the active artifact, coordinates the active view, and mounts the
- * decoupled view components (`DocumentView`, `DiagramView`, `MarkdownView`,
- * `ExcalidrawArtifactView`, `LucidchartArtifactView`) plus the floating
- * `ArtifactToolbar`. All heavy rendering, parsing and AI-action logic lives
- * in the `hooks/artifacts/*` hooks and the `components/artifacts/*` modules.
+ * decoupled views (`DocumentView`, `DiagramView`, `MarkdownView`, Excalidraw,
+ * Lucidchart) and the two toolbars. Rendering, parsing and AI actions live in
+ * `hooks/artifacts/*` and `components/artifacts/*`.
  */
 export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
   project,
@@ -111,6 +101,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
   // ─── Local UI state ──────────────────────────────────────────────────────
   const [showInspector, setShowInspector] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showModifyDiagram, setShowModifyDiagram] = useState(false);
   const [showMarkdownSource, setShowMarkdownSource] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [showQualityPanel, setShowQualityPanel] = useState(false);
@@ -520,7 +511,10 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         onOpenSuggestions={handleOpenSuggestions}
         onOpenInspector={() => setShowInspector(true)}
         onOpenExport={() => setIsExportModalOpen(true)}
+        onModifyDiagram={isDiagramSurface && renderable.ir ? () => setShowModifyDiagram(true) : undefined}
       />
+
+      <DiagramModifyPanel isOpen={showModifyDiagram} onClose={() => setShowModifyDiagram(false)} projectId={project.id} artifact={artifact} onVersionCreated={setActiveArtifactId} />
 
       <Drawer
         isOpen={showInspector}

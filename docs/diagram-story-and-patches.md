@@ -192,6 +192,30 @@ sobre una llamada que el usuario abortó es mentir sobre la salud del sistema.
 Tope de **12 operaciones**: por encima de eso la petición es una regeneración
 con pasos extra, y conviene que lo diga.
 
+### En el lienzo: «Modificar»
+
+El botón **Modificar** de la barra superior del artefacto abre
+`DiagramModifyPanel`. La persona escribe una frase, lee la vista previa del
+motor —operaciones, cascadas y lo no aplicable— y aplica con un clic. Qué se
+propone y qué se guarda lo decide
+`services/artifacts/application/diagramModification.ts`; el panel entra por
+`hooks/artifacts/useDiagramModification`, así que la pantalla no suma módulos de
+servicio. Tres reglas:
+
+- **Se edita el IR completo, nunca el proyectado.** `resolveRenderableDiagram`
+  devuelve la vista de una audiencia, y la ejecutiva omite nodos a propósito.
+  Guardar un cambio hecho sobre ella borraría todo lo que oculta.
+  `resolveEditableDiagramIR` parte del IR persistido, migrado, o del que se lee
+  del contenido.
+- **Se aplica sobre el IR actual, y sólo si hace lo previsualizado.** Entre
+  proponer y aplicar, el lienzo puede guardar su plan de layout o la persona
+  puede mover un nodo. El motor vuelve a correr sobre el IR actual, así que eso
+  no se pierde; si lo que hace ya no coincide con la vista previa, la propuesta
+  está obsoleta y no se guarda nada.
+- **Se guarda como versión nueva.** La anterior queda en el historial, que es el
+  deshacer. La revisión de calidad guardada se descarta, porque describía el
+  diagrama anterior y haría que la puerta se saltara uno que nadie ha revisado.
+
 ---
 
 ## 3. Diagnosticar
