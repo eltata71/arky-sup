@@ -31,6 +31,7 @@ import {
   resolveExportView,
   type CanvasLayoutSnapshot,
 } from '../../services/artifacts/application/artifactAssessment';
+import { assessC4LevelCoherence, withC4Coherence } from '../../services/artifacts/application/c4LevelCoherence';
 
 export interface UseArtifactAssessmentInput {
   artifact: Artifact;
@@ -70,6 +71,14 @@ export function useArtifactAssessment(input: UseArtifactAssessmentInput) {
     [renderable.ir, qualityReport],
   );
 
+  // Plan de diagramas 4.2: la coherencia con los niveles C4 enlazados entra
+  // en el informe que se muestra, después del preflight: avisa, no bloquea.
+  const c4Coherence = useMemo(
+    () => assessC4LevelCoherence(artifact, project.artifacts),
+    [artifact, project.artifacts],
+  );
+  const reportedQuality = useMemo(() => withC4Coherence(qualityReport, c4Coherence), [qualityReport, c4Coherence]);
+
   useEffect(() => {
     if (!preflightReport) return;
     setLastPreflightReady(preflightReport.ready);
@@ -93,12 +102,12 @@ export function useArtifactAssessment(input: UseArtifactAssessmentInput) {
   );
 
   const suggestionContext = useMemo(
-    () => () => buildSuggestionContext({ artifact, project, quality: qualityReport, settings }),
-    [artifact, project, qualityReport, settings],
+    () => () => buildSuggestionContext({ artifact, project, quality: reportedQuality, settings }),
+    [artifact, project, reportedQuality, settings],
   );
 
   return {
-    qualityReport,
+    qualityReport: reportedQuality,
     preflightReport,
     presentationCompileResult,
     presentationModel: presentationCompileResult.model,

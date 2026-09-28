@@ -20,6 +20,12 @@ export interface DiagramLintIssue {
     severity: Severity;
     message: string;
     recommendation: string;
+    /**
+     * `false` cuando no hay arreglo rápido: el aviso pide una decisión del
+     * arquitecto (la coherencia entre niveles C4, plan 4.2) y el panel no
+     * ofrece un botón que no haría nada.
+     */
+    fixable?: false;
 }
 
 export interface DiagramScoreBreakdown {

@@ -105,4 +105,30 @@ describe('DiagramQualityPanel', () => {
         expect(onFix).toHaveBeenCalledWith('orphan-1');
         expect(onClose).toHaveBeenCalled();
     });
+
+    it('un aviso sin arreglo rápido (coherencia C4, plan 4.2) se muestra sin el botón', () => {
+        render(
+            <DiagramQualityPanel
+                open
+                qualityReport={{
+                    ...baseReport,
+                    issues: [{
+                        id: 'c4-coherence:C4_ELEMENT_OUTSIDE_PARENT:api',
+                        severity: 'medium',
+                        code: 'C4_ELEMENT_OUTSIDE_PARENT',
+                        message: 'El contenedor «API» no aparece dentro de «Core».',
+                        recommendation: 'Muévelo dentro del límite «Core».',
+                        fixable: false,
+                    }],
+                }}
+                isAutoImproving={false}
+                onClose={() => {}}
+                onAutoImprove={() => {}}
+                onGenerateWorldClass={() => {}}
+                onApplyIssueFix={() => {}}
+            />,
+        );
+        expect(screen.getByText('El contenedor «API» no aparece dentro de «Core».')).toBeInTheDocument();
+        expect(screen.queryByText('Aplicar fix rápido')).toBeNull();
+    });
 });

@@ -78,7 +78,7 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
   topic({
     id: 'niveles-c4',
     question: '¿Cómo paso de un diagrama de contexto a sus contenedores?',
-    answer: 'Con **Niveles**: en el diagrama de contexto eliges, para cada nodo, el diagrama de este proyecto que lo detalla —primero se ofrece el nivel C4 siguiente—. El nodo enlazado lleva la marca «Detalle» y un doble clic lo abre; el panel tiene también un botón Abrir para quien usa teclado. El enlace apunta al diagrama, no a una versión, así que siempre abre la última. Si el diagrama de detalle se borra, el enlace aparece como roto hasta que lo cambies o lo quites.',
+    answer: 'Con **Niveles**: en el diagrama de contexto eliges, para cada nodo, el diagrama de este proyecto que lo detalla —primero se ofrece el nivel C4 siguiente—. El nodo enlazado lleva la marca «Detalle» y un doble clic lo abre; el panel tiene también un botón Abrir para quien usa teclado. El enlace apunta al diagrama, no a una versión, así que siempre abre la última. Si el diagrama de detalle se borra, el enlace aparece como roto hasta que lo cambies o lo quites. En el diagrama de detalle, el panel de calidad avisa —sin bloquear nada— si un contenedor queda fuera del sistema que detalla.',
     where: 'Dentro de un artefacto de diagrama → botón Niveles de la barra superior.',
     keywords: ['c4', 'nivel', 'niveles', 'detalle', 'contexto', 'contenedores', 'componentes', 'enlazar', 'navegar', 'drill-down', 'doble clic'],
   }),
