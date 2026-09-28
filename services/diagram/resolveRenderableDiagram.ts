@@ -145,6 +145,38 @@ const sanitizeIR = (ir: DiagramIR): DiagramIR => {
     return { ...ir, nodes, edges };
 };
 
+/**
+ * The model a change applies to — never what the screen shows.
+ *
+ * `resolveRenderableDiagram` returns the IR *projected for an audience*, and
+ * the executive projection drops nodes on purpose. A change applied to that
+ * and saved would delete, silently, everything the audience hides. So an edit
+ * starts where the resolution starts — the persisted IR, migrated, or failing
+ * that the one read from the content — before any gate or projection.
+ * `null` when there is nothing to edit.
+ */
+export function resolveEditableDiagramIR(
+    artifact: Pick<Artifact, 'type' | 'content' | 'representation' | 'ir'>,
+): DiagramIR | null {
+    if (artifact.ir && artifact.ir.nodes?.length > 0) {
+        return sanitizeIR(migrateDiagramIROrSelf(artifact.ir));
+    }
+    const extracted = extractIRFromArtifact({
+        content: artifact.content,
+        representation: artifact.representation,
+        type: artifact.type,
+    });
+    if (extracted?.nodes?.length) return sanitizeIR(extracted);
+    const mermaid = extractMermaidCode(artifact.content, artifact.representation);
+    if (!mermaid) return null;
+    try {
+        const parsed = sanitizeIR(mermaidToIR(mermaid));
+        return parsed.nodes.length > 0 ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
 export function resolveRenderableDiagram(
     artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>,
     options: ResolveOptions,

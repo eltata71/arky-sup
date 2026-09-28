@@ -1,7 +1,7 @@
 # Plan de mejora de diagramas — de lo construido a clase mundial
 
 **Fecha:** 2026-09-28
-**Estado:** propuesto, pendiente de aprobación del propietario
+**Estado:** aprobado por el propietario el 2026-09-28 (#96), en ejecución
 **Sustituye a:** la versión anterior de este fichero (commit `a80abea`), retirada por las razones de §1.
 
 ---
@@ -186,7 +186,7 @@ Actualizar esta tabla en la PR de cada tarea.
 
 | Tarea | Estado | PR |
 |---|---|---|
-| 1.1 Panel «Modificar diagrama» | Pendiente | — |
+| 1.1 Panel «Modificar diagrama» | Hecha | esta rama (`feat/diagram-1-1-modify-panel`) |
 | 1.2 Deshacer semántico | Pendiente | — |
 | 1.3 Comparación semántica | Pendiente | — |
 | 1.4 Copiloto con patches | Pendiente | — |

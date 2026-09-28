@@ -69,6 +69,13 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     keywords: ['diagrama', 'mermaid', 'c4', 'lienzo', 'layout', 'excalidraw', 'lucid', 'exportar'],
   }),
   topic({
+    id: 'modificar-diagrama',
+    question: '¿Cómo cambio un diagrama sin perder lo que ya ajusté?',
+    answer: 'Con **Modificar**: describes el cambio en una frase y el asistente propone operaciones sobre el diagrama actual —añadir, renombrar, conectar, agrupar— en vez de regenerarlo. Antes de guardar ves exactamente lo que hará, incluidas las conexiones que arrastraría un borrado. Al aplicarlo se crea una versión nueva, las posiciones que moviste a mano se conservan y la versión anterior queda en el historial.',
+    where: 'Dentro de un artefacto de diagrama → botón Modificar de la barra superior.',
+    keywords: ['modificar', 'cambiar', 'editar', 'diagrama', 'renombrar', 'añadir', 'nodo', 'conexion', 'regenerar', 'version'],
+  }),
+  topic({
     id: 'oficina',
     question: '¿Qué es la Oficina de Arquitectura?',
     answer: 'Es el equipo de agentes que atiende cada solicitud. No responde un agente suelto: la petición entra por la coordinadora, se reparte entre los especialistas cuyos dominios toca y se consolida en una única recomendación firmada. El panel de coordinación muestra ese reparto según ocurre, no una animación inventada.',

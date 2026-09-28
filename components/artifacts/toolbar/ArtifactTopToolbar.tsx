@@ -8,6 +8,7 @@ import {
   DocumentTextIcon,
   LightBulbIcon,
   MagnifyingGlassIcon,
+  SparklesIcon,
   Squares2X2Icon,
   ViewColumnsIcon,
 } from '../../Icons';
@@ -25,6 +26,8 @@ export interface ArtifactTopToolbarProps {
   onOpenSuggestions: () => void;
   onOpenInspector: () => void;
   onOpenExport: () => void;
+  /** Abre «Modificar diagrama». Sin él, el botón no aparece: sólo existe donde hay diagrama. */
+  onModifyDiagram?: () => void;
 }
 
 const PRIMARY_VIEWS: Array<{ value: ArtifactViewMode; label: string; icon: React.ReactNode }> = [
@@ -36,7 +39,7 @@ const PRIMARY_VIEWS: Array<{ value: ArtifactViewMode; label: string; icon: React
 /**
  * Always-visible top toolbar of the artifact canvas. Holds only the primary
  * actions: the view switcher (Diagrama / Documento / Híbrido) and the
- * Sugerencias, Inspeccionar and Exportar buttons. Every secondary or
+ * Modificar (diagrams only), Sugerencias, Inspeccionar and Exportar buttons. Every secondary or
  * technical control lives in {@link ArtifactBottomToolbar}.
  */
 export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
@@ -49,6 +52,7 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
   onOpenSuggestions,
   onOpenInspector,
   onOpenExport,
+  onModifyDiagram,
 }) => {
   const views = PRIMARY_VIEWS.filter((view) => availableViews.includes(view.value));
 
@@ -108,6 +112,20 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
 
       {/* Right — primary actions */}
       <div className="pointer-events-auto flex flex-shrink-0 items-center gap-1 rounded-full border border-gray-200/60 bg-white/85 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/60 dark:bg-gray-900/85">
+        {onModifyDiagram && (
+          <Tooltip label="Cambiar el diagrama con una instrucción, sin regenerarlo" side="bottom">
+            <button
+              type="button"
+              onClick={onModifyDiagram}
+              aria-label="Modificar diagrama"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              aria-haspopup="dialog"
+            >
+              <SparklesIcon className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Modificar</span>
+            </button>
+          </Tooltip>
+        )}
         <Tooltip label="Sugerencias de IA para mejorar la calidad del artefacto" side="bottom">
           <button
             type="button"
