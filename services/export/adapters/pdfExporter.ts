@@ -20,7 +20,17 @@ import { parseChartSpec, CHART_PALETTE, type ChartSpec } from '../../../lib/char
  * advance values for Helvetica + Helvetica-Bold (good enough for wrapping).
  */
 
-const encoder = new TextEncoder();
+/**
+ * Los bytes del PDF, uno por carácter. Las fuentes se declaran WinAnsi, y
+ * `sanitizeForPdf` ya deja todo el texto en Latin-1; codificarlo en UTF-8
+ * escribía cada «ó» como dos bytes y el visor mostraba «Ã³» (plan de
+ * diagramas, corrección hallada en 2.4).
+ */
+const latin1 = (value: string): Uint8Array => {
+  const out = new Uint8Array(value.length);
+  for (let i = 0; i < value.length; i += 1) out[i] = value.charCodeAt(i) & 0xff;
+  return out;
+};
 
 // Page geometry (Letter, 72 dpi → points).
 const PAGE_W = 612;
@@ -1038,7 +1048,7 @@ export function buildPdfBlob(context: ExportContext): Blob {
     const streamObj = pageObj + 1;
     const stream = renderer.pages[i].ops.join('\n');
     objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Resources << /Font ${fontResource} >> /Contents ${streamObj} 0 R >>`);
-    const streamBytes = encoder.encode(stream);
+    const streamBytes = latin1(stream);
     objects.push(`<< /Length ${streamBytes.length} >>\nstream\n${stream}\nendstream`);
   }
   objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
@@ -1092,20 +1102,20 @@ export function buildPdfBlob(context: ExportContext): Blob {
   }
 
   const chunks: Uint8Array[] = [];
-  chunks.push(encoder.encode('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'));
+  chunks.push(latin1('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'));
   const offsets: number[] = [0];
   let cursor = chunks[0].length;
   objects.forEach((obj, index) => {
     offsets.push(cursor);
-    const bytes = encoder.encode(`${index + 1} 0 obj\n${obj}\nendobj\n`);
+    const bytes = latin1(`${index + 1} 0 obj\n${obj}\nendobj\n`);
     chunks.push(bytes);
     cursor += bytes.length;
   });
   const xrefOffset = cursor;
   let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   offsets.slice(1).forEach((offset) => { xref += `${String(offset).padStart(10, '0')} 00000 n \n`; });
-  chunks.push(encoder.encode(xref));
-  chunks.push(encoder.encode(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`));
+  chunks.push(latin1(xref));
+  chunks.push(latin1(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`));
 
   return new Blob([concatBytes(chunks)], { type: EXPORT_DEFINITIONS.pdf.mimeType });
 }
