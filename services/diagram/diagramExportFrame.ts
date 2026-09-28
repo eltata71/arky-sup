@@ -50,7 +50,18 @@ export interface FrameMetadata {
     legend?: LegendEntry[];
     /** Whether the source image already has a dark background. Defaults true. */
     isDark?: boolean;
+    /**
+     * The organisation's accent (plan de diagramas, 2.3), painted as a thin band
+     * across the top of the header. Only a `#rgb`/`#rrggbb` value is honoured:
+     * it lands in an SVG attribute, and anything else is dropped.
+     */
+    accentColor?: string;
 }
+
+/** Height of the accent band, in CSS pixels. */
+const ACCENT_BAND_HEIGHT = 4;
+const safeAccent = (value: string | undefined): string | null =>
+    value && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim()) ? value.trim() : null;
 
 export interface FrameOptions {
     /** Pixel ratio for the offscreen canvas. Matches the source export. */
@@ -146,6 +157,11 @@ function drawHeader(
     // Band background slightly darker / lighter than diagram surface.
     ctx.fillStyle = isDark ? '#13131a' : '#ffffff';
     ctx.fillRect(0, 0, width, height);
+    const accent = safeAccent(metadata.accentColor);
+    if (accent) {
+        ctx.fillStyle = accent;
+        ctx.fillRect(0, 0, width, ACCENT_BAND_HEIGHT * pr);
+    }
 
     // Title (large bold)
     ctx.fillStyle = isDark ? '#f1f5f9' : '#0f172a';
@@ -331,6 +347,7 @@ export async function applySvgExportFrame(
 <svg xmlns="http://www.w3.org/2000/svg" width="${innerWidth}" height="${totalH}" viewBox="0 0 ${innerWidth} ${totalH}">
   <rect x="0" y="0" width="${innerWidth}" height="${totalH}" fill="${fillBg}" />
   <rect x="0" y="0" width="${innerWidth}" height="${headerH}" fill="${fillBand}" />
+  ${safeAccent(metadata.accentColor) ? `<rect x="0" y="0" width="${innerWidth}" height="${ACCENT_BAND_HEIGHT}" fill="${safeAccent(metadata.accentColor)}" />` : ''}
   <text x="${SIDE_PADDING}" y="32" fill="${fgTitle}" font-size="18" font-weight="600" font-family="Inter, sans-serif">${headerTitle}</text>
   ${subtitle ? `<text x="${SIDE_PADDING}" y="55" fill="${fgMuted}" font-size="11" font-family="Inter, sans-serif">${subtitle}</text>` : ''}
   ${owner ? `<text x="${innerWidth - SIDE_PADDING}" y="32" fill="${fgMuted}" font-size="11" font-family="Inter, sans-serif" text-anchor="end">${owner}</text>` : ''}
