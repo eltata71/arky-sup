@@ -199,9 +199,9 @@ Actualizar esta tabla en la PR de cada tarea.
 | 1.1 Panel «Modificar diagrama» | Hecha | #97 |
 | 1.2 Deshacer semántico | Hecha | #98 |
 | 1.3 Comparación semántica | Hecha | #99 |
-| 1.4 Copiloto con patches | Hecha (ver nota en §4) | esta rama (`feat/diagram-1-4-content-reconciliation`) |
+| 1.4 Copiloto con patches | Hecha (ver nota en §4) | #100 |
 | 2.1 Mermaid semántico | Pendiente | — |
-| 2.2 Export autocontenido | Pendiente | — |
+| 2.2 Export autocontenido | Hecha: no había fugas; la prueba lo fija | esta rama (`feat/diagram-2-2-export-selfcontained`) |
 | 2.3 Marca en exportación | Pendiente | — |
 | 2.4 PDF vectorial | Pendiente | — |
 | 3.1 Auditoría de tokens | Pendiente | — |
