@@ -2,7 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { getNodeIcon } from './NodeIcons';
 import type { DiagramDensity, DiagramNodeData, NodeShape } from '../lib/diagram';
-import { detectSemanticRole, ELEVATION_TOKENS, NODE_CHROME_TOKENS, paletteFor, TYPOGRAPHY_TOKENS, type SemanticRole } from '../lib/diagramTokens';
+import { detectSemanticRole, ELEVATION_TOKENS, focusElevation, NODE_CHROME_TOKENS, paletteFor, TYPOGRAPHY_TOKENS, type SemanticRole } from '../lib/diagramTokens';
 import { detectTechBadge } from '../lib/diagramTechBadges';
 import { detectC4Ribbon } from '../lib/diagramC4Levels';
 import { evaluateNodeContrast } from '../lib/colorContrast';
@@ -221,9 +221,7 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
 
     const baseShadow = isDark ? ELEVATION_TOKENS.dark.card : ELEVATION_TOKENS.light.card;
     const hoverShadow = isDark ? ELEVATION_TOKENS.dark.hover : ELEVATION_TOKENS.light.hover;
-    const focusShadow = isNarrativeFocus
-        ? `${hoverShadow}, 0 0 0 3px ${iconColor}55, 0 0 24px ${iconColor}66`
-        : null;
+    const focusShadow = isNarrativeFocus ? focusElevation(hoverShadow, iconColor) : null;
     const shadow = focusShadow ?? (isHovered ? hoverShadow : baseShadow);
 
     // Hierarchy ring (Gap 1 enhancement): the policy already classifies nodes

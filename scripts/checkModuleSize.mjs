@@ -61,7 +61,7 @@ export const BYTE_CEILINGS = {
    */
   // F6-01: fuera sus delegados públicos y su fábrica de cliente, que sólo leían las pruebas (94 962 → 92638)
   'services/ai/generation/artifacts/artifactGenerationEngine.ts': 92638,
-  'components/ReactFlowCanvas.tsx': 109784, // plan diagramas 2.3: −122, `exportImage` nombra `CanvasExportOptions`
+  'components/ReactFlowCanvas.tsx': 109875, // plan diagramas 3.3: +91, rejilla de 8 px al arrastrar (ADR-007) // 2.3: −122, `exportImage` nombra `CanvasExportOptions`
   'components/ProjectHub.tsx': 78777, // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 57600,
   'components/MemoryCenterModal.tsx': 55552, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
