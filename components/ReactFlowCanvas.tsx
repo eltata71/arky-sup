@@ -20,7 +20,7 @@ import CustomEdge from './CustomEdge';
 import PresentationMode from './PresentationMode';
 import { XMarkIcon, ChevronDownIcon, ArrowUturnLeftIcon, ArrowPathIcon, ViewfinderCircleIcon, PresentationChartBarIcon, SparklesIcon } from './Icons';
 import { Dropdown, type DropdownItem } from './ui/Dropdown';
-import { CANVAS_BACKGROUND, MARKER_TOKENS } from '../lib/diagramTokens';
+import { CANVAS_BACKGROUND, DIAGRAM_SNAP_GRID, MARKER_TOKENS } from '../lib/diagramTokens';
 import type { DiagramDensity, DiagramIR, DiagramTheme } from '../lib/diagram';
 import type { EdgeSemanticType, NodeSemanticType } from '../lib/diagramCategoryLabels';
 import { EdgeInspector, NodeInspector } from './diagram/DiagramInspectorSection';
@@ -1347,6 +1347,8 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
                 proOptions={{ hideAttribution: true }}
                 nodesConnectable={true}
                 nodesDraggable={true}
+                snapToGrid
+                snapGrid={DIAGRAM_SNAP_GRID}
                 minZoom={0.15}
                 maxZoom={2.5}
                 className="min-h-full"

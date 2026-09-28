@@ -302,18 +302,36 @@ export const EDGE_CHROME_TOKENS = {
     dark: { labelBg: 'rgba(15,23,42,0.92)', labelText: '#f1f5f9', badgeFill: '#0b0b0f' },
 } as const;
 
+/**
+ * Elevación sutil (ADR-007, decisión del propietario del 2026-09-28): una
+ * sombra casi imperceptible en reposo y un realce contenido al pasar el cursor.
+ * «Sutil» es una regla medible y `diagramElevation.test.ts` la hace cumplir:
+ * como mucho 12 px de difuminado y 4 px de desplazamiento, y una opacidad que
+ * no pasa de 0,08 en claro ni de 0,40 en oscuro. `popover` es de los paneles
+ * flotantes, no de los nodos, y queda fuera de la regla.
+ */
 export const ELEVATION_TOKENS = {
     light: {
-        card:    '0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04)',
-        hover:   '0 8px 24px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.06)',
+        card:    '0 1px 2px rgba(15,23,42,0.06)',
+        hover:   '0 4px 12px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.06)',
         popover: '0 20px 48px rgba(15,23,42,0.12), 0 6px 16px rgba(15,23,42,0.08)',
     },
     dark: {
-        card:    '0 1px 2px rgba(0,0,0,0.45)',
-        hover:   '0 10px 28px rgba(0,0,0,0.55), 0 4px 8px rgba(0,0,0,0.35)',
+        card:    '0 1px 2px rgba(0,0,0,0.35)',
+        hover:   '0 4px 12px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.30)',
         popover: '0 24px 56px rgba(0,0,0,0.6), 0 8px 20px rgba(0,0,0,0.4)',
     },
 } as const;
+
+/**
+ * El nodo en foco narrativo: el realce del hover más un anillo del color del
+ * nodo. Sin resplandor (ADR-007): el anillo ya lo distingue, y un halo de 24 px
+ * es justo lo que una elevación sutil deja fuera.
+ */
+export const focusElevation = (hover: string, accent: string): string => `${hover}, 0 0 0 3px ${accent}55`;
+
+/** La rejilla del arrastre manual (ADR-007): los nodos movidos a mano quedan alineados. */
+export const DIAGRAM_SNAP_GRID: [number, number] = [8, 8];
 
 /**
  * Canvas background presets. Used by ReactFlowCanvas, PDF exporter and

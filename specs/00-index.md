@@ -32,7 +32,8 @@ specs/
 │   │   ├── ADR-003-model-routing-strategy.md ← Elegibilidad, ranking y fallback
 │   │   ├── ADR-004-agent-contract-and-registry.md ← Contrato de agente y registro
 │   │   ├── ADR-005-diagram-story-plan.md ← La historia es parte del modelo
-│   │   └── ADR-006-semantic-diagram-patches.md ← Editar sin regenerar
+│   │   ├── ADR-006-semantic-diagram-patches.md ← Editar sin regenerar
+│   │   └── ADR-007-diagram-visual-style.md ← Elevación sutil y tipografía actual
 │   ├── domain-model/
 │   │   └── domain-model-ddd.md   ← Modelo de Dominio DDD
 │   └── event-storming/
@@ -66,6 +67,7 @@ specs/
 | 4 | ADR-004 | `specs/02-architecture/ADR/ADR-004-agent-contract-and-registry.md` | ✅ Aprobado | 1.0.0 | — |
 | 4 | ADR-005 | `specs/02-architecture/ADR/ADR-005-diagram-story-plan.md` | ✅ Aprobado | 1.0.0 | — |
 | 4 | ADR-006 | `specs/02-architecture/ADR/ADR-006-semantic-diagram-patches.md` | ✅ Aprobado | 1.0.0 | — |
+| 4 | ADR-007 | `specs/02-architecture/ADR/ADR-007-diagram-visual-style.md` | ✅ Aprobado | 1.0.0 | — |
 | 5 | Domain Model DDD | `specs/02-architecture/domain-model/domain-model-ddd.md` | ✅ Aprobado | 1.0.0 | DDD/Evans |
 | 6 | Event Storming | `specs/02-architecture/event-storming/event-storming.md` | ✅ Aprobado | 1.0.0 | Brandolini |
 | 7 | Glosario UL | `specs/03-components/glossary/ubiquitous-language.md` | ✅ Aprobado | 1.0.0 | DDD |
