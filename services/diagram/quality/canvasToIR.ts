@@ -125,6 +125,8 @@ export const toDiagramIR = (nodes: Node[], edges: Edge[]): DiagramIR => {
             if (businessMeaning) node.businessMeaning = businessMeaning;
             const technicalMeaning = trimOrUndefined(data.technicalMeaning);
             if (technicalMeaning) node.technicalMeaning = technicalMeaning;
+            const detailArtifactGroupId = trimOrUndefined(data.detailArtifactGroupId);
+            if (detailArtifactGroupId) node.detailArtifactGroupId = detailArtifactGroupId;
             return node;
         });
 

@@ -284,6 +284,8 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
     if (Array.isArray(nodeData.compliance) && nodeData.compliance.length > 0) {
         ariaParts.push(`compliance ${nodeData.compliance.join(', ')}`);
     }
+    const hasDetail = Boolean(nodeData.detailArtifactGroupId);
+    if (hasDetail) ariaParts.push('tiene diagrama de detalle, doble clic para abrirlo');
     const ariaLabel = ariaParts.join('; ');
     // Only a *distinct* tooltip earns a `title`. Falling back to `ariaLabel`
     // made the attribute restate the accessible name, so VoiceOver announced
@@ -505,6 +507,12 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
                 >
                     {nodeData.type?.split(/[\s-]+/).slice(0, 2).join(' ') || 'Container'}
                 </div>
+            )}
+
+            {hasDetail && (
+                <span aria-hidden className="absolute -top-2.5 right-4 z-20 rounded-md bg-primary-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white shadow-sm dark:bg-primary-500">
+                    Detalle ↘
+                </span>
             )}
 
             {/* C4 kind ribbon */}

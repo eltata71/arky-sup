@@ -168,6 +168,8 @@ interface ReactFlowCanvasProps {
     };
     layoutPlan: ReactFlowCanvasProps['externalLayoutPlan'];
   }) => void;
+  /** Doble clic en un nodo (plan de diagramas, 4.1). */
+  onNodeDoubleClick?: (nodeId: string) => void;
 }
 
 export type { ExportViewMode };
@@ -218,7 +220,7 @@ export interface ReactFlowCanvasHandle {
 }
 
 
-const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(({ nodes: initialNodes, edges: initialEdges, layoutHint, theme = 'editorial', density = 'standard', onChange, presentation, showMiniMap = false, preserveExternalLayout = false, externalLayoutPlan = null, onLayoutQualityComputed }, ref) => {
+const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(({ nodes: initialNodes, edges: initialEdges, layoutHint, theme = 'editorial', density = 'standard', onChange, presentation, showMiniMap = false, preserveExternalLayout = false, externalLayoutPlan = null, onLayoutQualityComputed, onNodeDoubleClick }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -1338,6 +1340,7 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
                 onEdgesDelete={onEdgesDelete}
                 onEdgeUpdate={onEdgeUpdate}
                 onNodeClick={onNodeClick}
+                onNodeDoubleClick={onNodeDoubleClick ? (_event, node) => onNodeDoubleClick(node.id) : undefined}
                 onEdgeClick={onEdgeClick}
                 onPaneClick={onPaneClick}
                 onConnect={onConnect}
