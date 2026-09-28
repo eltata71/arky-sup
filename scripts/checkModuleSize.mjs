@@ -70,7 +70,7 @@ export const BYTE_CEILINGS = {
   'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
   'services/export/adapters/pdfExporter.ts': 44157, // plan diagramas 2.4: +248, publica sus ayudas de texto y delega el diagrama en `diagramPdf` // +395: `latin1`, los PDF escribían los acentos en UTF-8 sobre fuentes WinAnsi («Ã³»)
-  'components/artifacts/export/ArtifactExportModal.tsx': 42543, // F4-05: la coordinación salió a `services/artifacts/application`
+  'components/artifacts/export/ArtifactExportModal.tsx': 30760, // plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42447, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'pages/SDDProcessView.tsx': 41644, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
@@ -185,7 +185,7 @@ export const CEILINGS = {
   'services/agent/agentExecutor.ts': 983, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'pages/ProjectsPage.tsx': 890, // F5-02
   'services/diagram/mermaidToIR.ts': 871, // plan diagramas 2.1
-  'components/artifacts/export/ArtifactExportModal.tsx': 844,
+  'components/artifacts/export/ArtifactExportModal.tsx': 596, // plan diagramas 3.4: 844 → 596
   'components/CustomArtifactBriefWizard.tsx': 845,
   'components/CustomArtifactRequestModal.tsx': 845,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,

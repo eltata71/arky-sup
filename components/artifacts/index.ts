@@ -15,7 +15,7 @@ export { default as ArtifactQualityPanel } from './quality/ArtifactQualityPanel'
 export { default as ArtifactQualityBadge } from './quality/ArtifactQualityBadge';
 export { default as GenerationTracePanel } from './trace/GenerationTracePanel';
 export { default as ObservabilityBanner } from './diagnostic/ObservabilityBanner';
-export { default as ArtifactExportModal } from './export/ArtifactExportModal';
+export { default as ArtifactExportModal } from './export/ArtifactExportModalLazy';
 export { ArtifactStatusBadge, deriveArtifactStatus } from './ArtifactStatusBadge';
 export { ArtifactPresentationView } from './ArtifactPresentationView';
 export type { ArtifactPresentationViewProps } from './ArtifactPresentationView';
