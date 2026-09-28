@@ -68,10 +68,9 @@ import { useSuggestionActionRunner } from '../hooks/artifacts/useSuggestionActio
 import type { ArtifactViewMode } from '../lib/artifacts/contracts';
 import { useArtifactAssessment } from '../hooks/artifacts/useArtifactAssessment';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { DiagramModifyPanel } from './artifacts/diagram/DiagramModifyPanel';
 import { planCanvasDiagramSave, withDiagramContent } from '../services/artifacts/application/diagramModification';
 import { resolveNodeDetailLink } from '../services/artifacts/application/diagramDetailLinks';
-import { DiagramDetailLinksPanel } from './artifacts/diagram/DiagramDetailLinksPanel';
+import { DiagramPanels, type DiagramPanelId } from './artifacts/diagram/DiagramPanels';
 
 export interface ArtifactCanvasProps {
   project: Project;
@@ -104,8 +103,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
   // ─── Local UI state ──────────────────────────────────────────────────────
   const [showInspector, setShowInspector] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showModifyDiagram, setShowModifyDiagram] = useState(false);
-  const [showDetailLinks, setShowDetailLinks] = useState(false);
+  const [diagramPanel, setDiagramPanel] = useState<DiagramPanelId | null>(null);
   const [showMarkdownSource, setShowMarkdownSource] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [showQualityPanel, setShowQualityPanel] = useState(false);
@@ -497,12 +495,11 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         onOpenSuggestions={handleOpenSuggestions}
         onOpenInspector={() => setShowInspector(true)}
         onOpenExport={() => setIsExportModalOpen(true)}
-        onModifyDiagram={isDiagramSurface && renderable.ir ? () => setShowModifyDiagram(true) : undefined}
-        onOpenDetailLinks={isDiagramSurface && renderable.ir ? () => setShowDetailLinks(true) : undefined}
+        onModifyDiagram={isDiagramSurface && renderable.ir ? () => setDiagramPanel('modify') : undefined}
+        onOpenDetailLinks={isDiagramSurface && renderable.ir ? () => setDiagramPanel('levels') : undefined}
       />
 
-      <DiagramModifyPanel isOpen={showModifyDiagram} onClose={() => setShowModifyDiagram(false)} projectId={project.id} artifact={artifact} onVersionCreated={setActiveArtifactId} />
-      <DiagramDetailLinksPanel isOpen={showDetailLinks} onClose={() => setShowDetailLinks(false)} projectId={project.id} artifact={artifact} projectArtifacts={project.artifacts} onVersionCreated={setActiveArtifactId} onOpenArtifact={(id) => { setShowDetailLinks(false); setActiveArtifactId(id); }} />
+      <DiagramPanels open={diagramPanel} onClose={() => setDiagramPanel(null)} projectId={project.id} artifact={artifact} projectArtifacts={project.artifacts} onOpenArtifact={setActiveArtifactId} />
 
       <Drawer
         isOpen={showInspector}
@@ -554,6 +551,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         onToggleFullscreen={toggleFullscreen}
         showMiniMap={showMiniMap}
         onToggleMiniMap={() => setShowMiniMap((v) => !v)}
+        onEditStory={() => setDiagramPanel('story')}
         onStartPresentation={() => {
           // Brecha 4 + Recomendaciones 4/6/7: use the memoised hard-block
           // context so this path stays in sync with the export modal, and

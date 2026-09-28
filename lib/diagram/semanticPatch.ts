@@ -31,6 +31,7 @@ import type {
     DiagramIREdge,
     DiagramIRGroup,
     DiagramIRNode,
+    DiagramScene,
 } from './DiagramIRTypes';
 
 /** Node fields a patch may set. Identity and position are deliberately absent. */
@@ -54,7 +55,15 @@ export type DiagramPatchOperation =
     | { op: 'remove-from-group'; groupId: string; nodeIds: string[] }
     | { op: 'add-callout'; callout: DiagramCallout }
     | { op: 'remove-callout'; calloutId: string }
-    | { op: 'set-layout-hint'; direction?: 'TB' | 'LR' | 'BT' | 'RL'; density?: 'compact' | 'normal' | 'spacious' };
+    | { op: 'set-layout-hint'; direction?: 'TB' | 'LR' | 'BT' | 'RL'; density?: 'compact' | 'normal' | 'spacious' }
+    // La historia (plan de diagramas, 4.3). Escenas y mensaje: qué se cuenta y
+    // en qué orden, nunca dónde ni cómo se pinta. Toda operación de historia
+    // —éstas y las de anotación— deja la narrativa marcada `authored`.
+    | { op: 'set-story-message'; message: string }
+    | { op: 'add-scene'; scene: DiagramScene; index?: number }
+    | { op: 'update-scene'; sceneId: string; changes: Partial<Omit<DiagramScene, 'id'>> }
+    | { op: 'remove-scene'; sceneId: string }
+    | { op: 'move-scene'; sceneId: string; toIndex: number };
 
 export type DiagramPatchOperationKind = DiagramPatchOperation['op'];
 
@@ -73,6 +82,7 @@ export type PatchRejectionCode =
     | 'unknown-edge'
     | 'unknown-group'
     | 'unknown-callout'
+    | 'unknown-scene'
     | 'duplicate-id'
     | 'invalid-shape'
     | 'empty-result'

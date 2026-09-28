@@ -43,7 +43,8 @@ Las consecuencias no eran sólo de coste:
 aplicarse, y su previsualización la escribe el motor y no quien la propone.**
 
 - `lib/diagram/semanticPatch.ts` — el vocabulario: trece operaciones sobre ids
-  que ya existen, más los códigos de rechazo y la forma del resultado.
+  que ya existen (dieciocho desde el plan de diagramas 4.3, que añadió cinco de
+  historia: mensaje y escenas; el esquema del modelo no las ofrece), más los códigos de rechazo y la forma del resultado.
 - `services/diagram/semanticPatchEngine.ts` — `applySemanticPatch` y
   `describeSemanticPatch`. Puro, síncrono, sin llamada al modelo.
 - `services/ai/generation/diagramEdit/` — un agente, una llamada, que **propone
