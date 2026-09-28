@@ -24,7 +24,7 @@
  */
 
 import type { Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactChangeNote } from '../../../lib/artifacts';
 import type { DiagramIR, DiagramPatch, PatchApplication, PatchRejection } from '../../../lib/diagram';
 import { diagramEditService } from '../../ai';
 import { applySemanticPatch, irToMermaid, resolveEditableDiagramIR } from '../../diagram';
@@ -34,6 +34,8 @@ type EditableSource = Pick<Artifact, 'id' | 'type' | 'content' | 'representation
 
 export interface DiagramModificationProposal {
   readonly artifactId: string;
+  /** Lo que pidió la persona: viaja a la nota de la versión (1.2). */
+  readonly instruction: string;
   readonly patch: DiagramPatch;
   readonly applied: readonly PatchApplication[];
   readonly rejected: readonly PatchRejection[];
@@ -102,6 +104,7 @@ export const proposeDiagramModification = async (
     kind: 'proposal',
     proposal: {
       artifactId: artifact.id,
+      instruction: instruction.trim(),
       patch: result.patch,
       applied: result.preview.applied,
       rejected: result.preview.rejected,
@@ -126,12 +129,17 @@ const sameOutcome = (
  *
  * El código Mermaid se regenera cuando el artefacto lo usa como
  * representación. C4 no se toca: su texto no se regenera desde el IR.
+ *
+ * La versión lleva su nota —qué se pidió y qué hizo el motor— para que el
+ * historial diga algo más que «Versión 7» (1.2).
  */
 export const planDiagramModification = (params: {
   readonly artifact: Artifact;
   readonly proposal: DiagramModificationProposal;
+  readonly now?: () => string;
 }): DiagramModificationPlan => {
   const { artifact, proposal } = params;
+  const now = params.now ?? (() => new Date().toISOString());
   const current = proposal.artifactId === artifact.id ? resolveEditableDiagramIR(artifact) : null;
   if (!current) return { kind: 'stale' };
 
@@ -159,9 +167,14 @@ export const planDiagramModification = (params: {
     }
   }
 
-  return {
-    kind: 'version',
-    draft: { ...artifact, ir, content },
-    summary: result.applied.map((entry) => entry.description),
+  const summary = result.applied.map((entry) => entry.description);
+  const changeNote: ArtifactChangeNote = {
+    kind: 'diagram-patch',
+    basedOnVersion: artifact.version,
+    ...(proposal.instruction ? { instruction: proposal.instruction } : {}),
+    ...(proposal.patch.rationale ? { rationale: proposal.patch.rationale } : {}),
+    changes: summary,
+    at: now(),
   };
+  return { kind: 'version', draft: { ...artifact, ir, content, changeNote }, summary };
 };

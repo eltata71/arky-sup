@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Modal } from './Modal';
-import type { Artifact } from '../lib/artifacts';
+import type { Artifact, ArtifactChangeNote } from '../lib/artifacts';
 import { useAppContext } from '../context/AppContext';
 import { ClockIcon, EyeIcon } from './Icons';
 import { buildDiffHunks, computeLineDiff, summarizeDiff } from '../lib/textDiff';
@@ -77,6 +77,28 @@ const VersionDiff: React.FC<{ oldVersion: Artifact; current: Artifact }> = ({ ol
     );
 };
 
+const NOTE_VISIBLE_CHANGES = 5;
+
+/**
+ * Qué hizo una versión, dicho por quien lo hizo: la instrucción de la persona
+ * y las frases del motor de patches. Sin nota, la versión sólo tiene su número.
+ */
+const VersionChangeNote: React.FC<{ note: ArtifactChangeNote }> = ({ note }) => {
+    const hidden = note.changes.length - NOTE_VISIBLE_CHANGES;
+    return (
+        <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
+            <p className="font-medium text-gray-700 dark:text-gray-200">
+                Modificado con IA desde la v{note.basedOnVersion}
+                {note.instruction && <span className="font-normal italic"> · «{note.instruction}»</span>}
+            </p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {note.changes.slice(0, NOTE_VISIBLE_CHANGES).map((change, index) => <li key={index}>{change}</li>)}
+                {hidden > 0 && <li className="list-none text-gray-400 dark:text-gray-500">y {hidden} cambio{hidden === 1 ? '' : 's'} más</li>}
+            </ul>
+        </div>
+    );
+};
+
 export const RealArtifactHistoryModal: React.FC<ArtifactHistoryModalProps> = ({
     isOpen,
     onClose,
@@ -117,6 +139,7 @@ export const RealArtifactHistoryModal: React.FC<ArtifactHistoryModalProps> = ({
                                         <ClockIcon className="w-3 h-3 mr-1"/>
                                         {new Date(ver.createdAt).toLocaleString()}
                                     </div>
+                                    {ver.changeNote && <VersionChangeNote note={ver.changeNote} />}
                                 </div>
                                 <div className="flex items-center gap-1">
                                     {ver.id !== artifact?.id && currentVersion && (

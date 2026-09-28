@@ -84,4 +84,22 @@ describe('reviseArtifact', () => {
 
     expect((v2.compilation as unknown as { marker?: string })?.marker).toBeUndefined();
   });
+
+  it('conserva la nota del cambio cuando la revisión es ese paso', () => {
+    const v1 = createArtifact(draft, { id: 'art-1' });
+    const changeNote = { kind: 'diagram-patch' as const, basedOnVersion: 1, changes: ['Renombrado'], at: 'x' };
+    const v2 = reviseArtifact({ ...v1, changeNote }, 1, {}, { id: 'art-2' });
+
+    expect(v2.changeNote).toEqual(changeNote);
+  });
+
+  it('no hereda la nota a una versión que es otro paso', () => {
+    // Guardar una edición manual de la v2 crea la v3: contar en ella el
+    // renombrado de la v2 sería atribuirle un cambio que no hizo.
+    const v1 = createArtifact(draft, { id: 'art-1' });
+    const v2 = { ...v1, id: 'art-2', version: 2, changeNote: { kind: 'diagram-patch' as const, basedOnVersion: 1, changes: ['Renombrado'], at: 'x' } };
+    const v3 = reviseArtifact(v2, 2, { content: 'graph TD; A-->D;' }, { id: 'art-3' });
+
+    expect(v3.changeNote).toBeUndefined();
+  });
 });
