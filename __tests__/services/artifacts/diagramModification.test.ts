@@ -68,7 +68,7 @@ const renamePatch = (): DiagramPatch => ({
 /** La propuesta tal como la devolvería el servicio real: vista previa del motor. */
 const proposalFor = (source: Artifact, patch: DiagramPatch): DiagramModificationProposal => {
   const preview = applySemanticPatch(resolveEditableDiagramIR(source)!, patch);
-  return { artifactId: source.id, patch, applied: preview.applied, rejected: preview.rejected };
+  return { artifactId: source.id, instruction: 'renombra la API', patch, applied: preview.applied, rejected: preview.rejected };
 };
 
 beforeEach(() => ai.proposeEdit.mockReset());
@@ -114,7 +114,10 @@ describe('proposeDiagramModification', () => {
     expect(request.instruction).toBe('renombra la API');
     expect(request.context).toContain('Flujo de consulta');
     expect(outcome.kind).toBe('proposal');
-    if (outcome.kind === 'proposal') expect(outcome.proposal.applied).toHaveLength(1);
+    if (outcome.kind === 'proposal') {
+      expect(outcome.proposal.applied).toHaveLength(1);
+      expect(outcome.proposal.instruction).toBe('renombra la API');
+    }
   });
 
   it('una cancelación no es un fallo', async () => {
@@ -146,6 +149,20 @@ describe('planDiagramModification', () => {
     expect(plan.draft.versionGroupId).toBe('a1');
     expect(plan.draft.content).toContain('API Gateway');
     expect(plan.summary).toHaveLength(1);
+  });
+
+  it('la versión lleva su nota: qué se pidió, por qué y qué hizo el motor', () => {
+    const source = artifact();
+    const plan = planDiagramModification({ artifact: source, proposal: proposalFor(source, renamePatch()), now: () => '2026-09-28T12:00:00.000Z' });
+    if (plan.kind !== 'version') throw new Error(plan.kind);
+    expect(plan.draft.changeNote).toEqual({
+      kind: 'diagram-patch',
+      basedOnVersion: 2,
+      instruction: 'renombra la API',
+      rationale: 'Renombrar la API',
+      changes: plan.summary,
+      at: '2026-09-28T12:00:00.000Z',
+    });
   });
 
   it('descarta la revisión de calidad, que describía el diagrama anterior', () => {

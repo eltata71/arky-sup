@@ -211,6 +211,23 @@ export interface ArtifactGenerationTrace {
   architectureGraph?: ArtifactGenerationGraphUsage;
 }
 
+/**
+ * La descripción de un paso entre versiones, escrita por quien sabe qué hizo:
+ * el motor de patches, nunca un resumen reconstruido comparando textos.
+ */
+export interface ArtifactChangeNote {
+  readonly kind: 'diagram-patch';
+  /** La versión desde la que se aplicó el cambio. */
+  readonly basedOnVersion: number;
+  /** Lo que pidió la persona, con sus palabras. */
+  readonly instruction?: string;
+  /** Por qué, según quien lo propuso. */
+  readonly rationale?: string;
+  /** Lo que hizo el motor, una frase por operación aplicada. */
+  readonly changes: readonly string[];
+  readonly at: string;
+}
+
 export interface Artifact {
   id: string;
   versionGroupId: string; // To group versions of the same artifact
@@ -258,6 +275,13 @@ export interface Artifact {
   lastDiagramError?: DiagramErrorRecord;
   /** Observable generation provenance for quality review and troubleshooting. */
   generationTrace?: ArtifactGenerationTrace;
+  /**
+   * Qué cambió esta versión respecto de la que partió, cuando lo sabemos con
+   * certeza (plan de diagramas, 1.2). Sin él, el historial sólo puede decir
+   * «Versión 7». Describe **un paso**: `reviseArtifact` no lo hereda a la
+   * versión siguiente, que es otro paso.
+   */
+  changeNote?: ArtifactChangeNote;
   /** Raw AI response retained for parser/render/export troubleshooting. */
   rawResponse?: string;
   /** Normalized envelope snapshot used by the resilient artifact pipeline. */

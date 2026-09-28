@@ -128,9 +128,14 @@ export function reviseArtifact(
   // Una versión nueva es otro artefacto: no hereda la revisión de su origen
   // (ADR-106). Heredarla haría que la primera edición de la versión recién
   // creada comparara la revisión de otra fila.
-  const { revision: _revision, ...origin } = source;
+  const { revision: _revision, changeNote, ...origin } = source;
+  // La nota describe el paso desde `basedOnVersion` hasta la versión creada a
+  // partir de él. Sólo viaja si esta revisión *es* ese paso; heredada por otra
+  // edición contaría, sobre esa versión, un cambio que no hizo.
+  const note = changeNote && changeNote.basedOnVersion === source.version ? { changeNote } : {};
   return (options.compile ?? pureCompile)({
     ...origin,
+    ...note,
     ...overrides,
     id: options.id ?? newArtifactId(),
     version: latestVersion + 1,

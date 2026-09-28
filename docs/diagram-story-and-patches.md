@@ -215,6 +215,13 @@ servicio. Tres reglas:
 - **Se guarda como versión nueva.** La anterior queda en el historial, que es el
   deshacer. La revisión de calidad guardada se descarta, porque describía el
   diagrama anterior y haría que la puerta se saltara uno que nadie ha revisado.
+- **La versión dice qué hizo.** Lleva un `changeNote` (`lib/artifacts`): la
+  instrucción de la persona, el porqué de la propuesta y las frases del motor.
+  El historial lo muestra bajo la versión. Describe **un paso**, así que
+  `reviseArtifact` sólo lo conserva cuando la revisión parte de
+  `basedOnVersion`; una edición posterior de esa versión es otro paso y no lo
+  hereda. Es un campo opcional del documento del artefacto (JSONB), sin
+  migración.
 
 ---
 
