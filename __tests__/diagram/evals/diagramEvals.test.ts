@@ -12,7 +12,7 @@
  *
  * El modelo no se llama nunca: cada caso trae su respuesta.
  */
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -38,8 +38,11 @@ beforeAll(async () => {
     results = [];
     for (const testCase of corpus) results.push(await runEvalCase(testCase));
     summary = summarize(results);
+    // Vitest 5 no muestra la consola de una prueba que pasa: el informe va a un
+    // fichero que `npm run eval:diagrams` imprime.
     if (process.env.ARKY_DIAGRAM_EVAL_REPORT) {
-        console.info(`\n${renderReport(results, summary)}\n`);
+        mkdirSync(join(process.cwd(), '.vitest'), { recursive: true });
+        writeFileSync(join(process.cwd(), '.vitest', 'eval-diagramas.md'), `${renderReport(results, summary)}\n`);
     }
 }, 120_000);
 
