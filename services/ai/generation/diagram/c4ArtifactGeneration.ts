@@ -16,12 +16,52 @@
  */
 import type { ArtifactTemplate, Settings } from '../../../../types';
 import type { Artifact } from '../../../../lib/artifacts';
-import type { DiagramIR } from '../../../../lib/diagram';
+import type { DiagramAudience } from '../../../../lib/diagram';
 import type { Project } from '../../../architectureProjects';
-import { c4LevelOfArtifactType, irToMermaidC4 } from '../../../diagram';
+import { c4LevelOfArtifactType, irToMermaidC4, mermaidToIR, type C4DiagramLevel } from '../../../diagram';
 import { C4SelfHealingError } from '../../errors';
-import type { ArtifactGenerationSupport } from '../artifacts/artifactGenerationSupport';
+import { buildDiagramGenerationBrief, type UpperLevelDiagram } from '../../prompts/diagramGenerationBrief';
+import type { ArtifactContentGenerationOptions, ArtifactGenerationSupport } from '../artifacts/artifactGenerationSupport';
 import { generateDiagramIRWithSelfHealing } from './diagramIRGeneration';
+
+/** The C4 level whose names a diagram must reuse (plan de diagramas, 6.2). */
+const PARENT_LEVEL: Partial<Record<C4DiagramLevel, string>> = {
+    container: 'mermaid-c4-context',
+    component: 'mermaid-c4-container',
+    deployment: 'mermaid-c4-container',
+};
+
+const MAX_UPPER_ELEMENTS = 24;
+
+/**
+ * The newest diagram of the level above in the same project, reduced to the
+ * names a detail has to reuse. Its persisted IR when it has one — that is the
+ * model's, with technologies — and its text otherwise.
+ */
+function resolveUpperLevel(project: Project, level: C4DiagramLevel, ownGroupId?: string): UpperLevelDiagram | null {
+    const parentType = PARENT_LEVEL[level];
+    if (!parentType) return null;
+    const parent = (project.artifacts ?? [])
+        .filter((artifact) => artifact.type === parentType && artifact.versionGroupId !== ownGroupId)
+        .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '') || (b.version ?? 0) - (a.version ?? 0))[0];
+    if (!parent) return null;
+    try {
+        const nodes = parent.ir?.nodes?.length ? parent.ir.nodes : mermaidToIR(parent.content ?? '').nodes;
+        const elements = nodes
+            .slice(0, MAX_UPPER_ELEMENTS)
+            .map((node) => (node.technology ? `${node.label} [${node.technology}]` : node.label));
+        return elements.length ? { name: parent.name, elements } : null;
+    } catch {
+        return null;
+    }
+}
+
+/** The audience the request asked for wins over the one the last version had. */
+function requestedAudience(template: ArtifactTemplate, previous?: Artifact): DiagramAudience | undefined {
+    const asked = template.requestContext?.audience;
+    if (asked === 'executive' || asked === 'technical') return asked;
+    return previous?.audience;
+}
 
 /** True for the C4 family, which is routed through the IR path. */
 export function isC4ArtifactType(type: string): boolean {
@@ -67,7 +107,7 @@ ${controlledContext}`
         objective: structuredObjective,
         keyConcepts: template.keyConcepts,
         representation: template.representation,
-        audience: previousArtifact?.audience,
+        audience: requestedAudience(template, previousArtifact),
         theme: previousArtifact?.theme,
         lastDiagramError: previousArtifact?.lastDiagramError,
     };
@@ -82,13 +122,25 @@ export async function generateC4ArtifactContent(
     project: Project,
     template: ArtifactTemplate,
     settings: Settings,
-    support: ArtifactGenerationSupport,
     previousArtifact: Artifact | undefined,
-    onDiagramIR?: (ir: DiagramIR) => void,
+    opts: ArtifactContentGenerationOptions,
 ): Promise<string> {
+    const { support } = opts;
     const level = c4LevelOfArtifactType(template.type) ?? 'context';
     const stub = artifactStubFromTemplate(template, project, support, previousArtifact);
-    const result = await generateDiagramIRWithSelfHealing(stub, project, settings);
+    // The same context every other path gets, which this one used to skip
+    // by returning before the engine resolved it (plan de diagramas, 6.2).
+    const request = template.requestContext?.userRequest ?? template.objective;
+    const brief = buildDiagramGenerationBrief({
+        template,
+        language: settings.language,
+        businessMotivation: opts.businessMotivation,
+        upperLevel: resolveUpperLevel(project, level, previousArtifact?.versionGroupId),
+        architectureGraphBlock: opts.architectureGraphPromptBlock,
+        personaInstruction: opts.composePersonaInstruction?.('', request),
+    });
+    // A regeneration evolves the diagram it replaces instead of re-rolling it.
+    const result = await generateDiagramIRWithSelfHealing(stub, project, settings, { brief, previousIR: previousArtifact?.ir });
     const mermaid = irToMermaidC4(result.ir, level);
     if (result.fallback === 'skeleton') {
         throw new C4SelfHealingError(
@@ -101,6 +153,6 @@ export async function generateC4ArtifactContent(
             },
         );
     }
-    onDiagramIR?.(result.ir);
+    opts.onDiagramIR?.(result.ir);
     return mermaid;
 }

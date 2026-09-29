@@ -23,7 +23,7 @@ export async function generateDiagramIR(
     artifact: Artifact,
     project: Project,
     settings: Settings,
-    opts: { audience?: DiagramAudience; previousIR?: DiagramIR } = {},
+    opts: { audience?: DiagramAudience; previousIR?: DiagramIR; brief?: string } = {},
 ): Promise<DiagramIR | null> {
     const audience: DiagramAudience = opts.audience ?? artifact.audience ?? 'technical';
     const dialect = buildDialectInstruction(artifact.type);
@@ -42,6 +42,7 @@ export async function generateDiagramIR(
         audience,
         settings,
         previousIR: opts.previousIR,
+        brief: opts.brief,
     });
 
     const modelName = resolveModelForSettings('default', settings).id;
@@ -113,7 +114,7 @@ export async function generateDiagramIRWithSelfHealing(
     artifact: Artifact,
     project: Project,
     settings: Settings,
-    opts: { audience?: DiagramAudience; previousIR?: DiagramIR; skipCorrective?: boolean } = {},
+    opts: { audience?: DiagramAudience; previousIR?: DiagramIR; skipCorrective?: boolean; brief?: string } = {},
 ): Promise<{
     ir: DiagramIR;
     attempts: number;
@@ -125,7 +126,7 @@ export async function generateDiagramIRWithSelfHealing(
     const warnings: string[] = [];
 
     if (!opts.skipCorrective) {
-        const first = await generateDiagramIR(artifact, project, settings, { audience, previousIR: opts.previousIR });
+        const first = await generateDiagramIR(artifact, project, settings, { audience, previousIR: opts.previousIR, brief: opts.brief });
         if (first && first.nodes.length > 0) {
             return { ir: first, attempts: 1, fallback: 'none', warnings };
         }
@@ -141,7 +142,7 @@ export async function generateDiagramIRWithSelfHealing(
     const lastFailureReason = opts.skipCorrective
         ? (artifact.lastDiagramError?.reason ?? 'empty-ir')
         : 'empty-ir';
-    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason);
+    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason, opts.brief);
     if (correctiveIR && correctiveIR.nodes.length > 0) {
         warnings.push('[diagram-retry] attempt 2 (corrective) succeeded');
         return { ir: correctiveIR, attempts: opts.skipCorrective ? 1 : 2, fallback: 'none', warnings, lastReason: lastFailureReason };
@@ -170,6 +171,7 @@ async function generateDiagramIRCorrective(
     settings: Settings,
     audience: DiagramAudience,
     lastFailureReason: DiagramFailureReason,
+    brief?: string,
 ): Promise<DiagramIR | null> {
     const dialect = buildDialectInstruction(artifact.type);
     const responseSchema = buildDiagramIRSchema({ withReview: false });
@@ -185,6 +187,7 @@ async function generateDiagramIRCorrective(
         audience,
         lastFailureReason,
         previousResponseSample: artifact.lastDiagramError?.sample,
+        brief,
     });
     const modelName = resolveModelForSettings('default', settings).id;
     try {

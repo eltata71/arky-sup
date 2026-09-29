@@ -15,3 +15,4 @@ export * from './initiativeCommands';
 export * from './initiativeMetrics';
 export * from './initiativeDelivery';
 export * from './businessInitiativeFactory';
+export * from './initiativeMotivation';

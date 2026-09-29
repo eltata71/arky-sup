@@ -51,6 +51,10 @@ describe('banco de evaluación de diagramas', () => {
         expect(new Set(corpus.map((c) => c.dominio))).toEqual(new Set(['salud', 'vida']));
         expect(corpus.some((c) => c.plantilla.tipo.startsWith('mermaid-c4-'))).toBe(true);
         expect(corpus.some((c) => !c.plantilla.tipo.startsWith('mermaid-c4-'))).toBe(true);
+        // La 6.2 se mide sobre solicitudes, iniciativas y un nivel C4 superior reales.
+        expect(corpus.some((c) => c.solicitud?.audiencia === 'executive')).toBe(true);
+        expect(corpus.some((c) => (c.iniciativas ?? []).length > 0)).toBe(true);
+        expect(corpus.some((c) => (c.esperado.nivelSuperior ?? []).length > 0)).toBe(true);
         for (const c of corpus) expect(c.origenRespuesta, c.id).toMatch(/redactada-a-mano|capturada/);
     });
 
@@ -80,6 +84,12 @@ describe('banco de evaluación de diagramas', () => {
         });
     });
 
+    it.each(corpus.map((c) => c.id))('%s entrega al modelo todo su contexto, sin instrucciones contradictorias', (id) => {
+        const r = resultOf(id);
+        expect(r.contexto.filter((c) => !c.ok).map((c) => c.que)).toEqual([]);
+        expect(r.contradicciones).toEqual([]);
+    });
+
     it.each(corpus.filter((c) => !c.plantilla.tipo.startsWith('mermaid-c4-')).map((c) => c.id))(
         '%s conserva su dialecto y las entidades pedidas',
         (id) => {
@@ -98,10 +108,12 @@ describe('banco de evaluación de diagramas', () => {
             'metadatosConservados',
             'tecnologiasConservadas',
             'historiaConservada',
+            'contextoEntregado',
         ] as const) {
             expect(summary[key], key).toBeGreaterThanOrEqual(actual[key]);
         }
         expect(summary.tasaEsqueleto).toBeLessThanOrEqual(actual.tasaEsqueleto);
+        expect(summary.casosConContradicciones).toBeLessThanOrEqual(actual.casosConContradicciones);
         // La puntuación la calcula un motor heurístico que evoluciona por su
         // cuenta; se tolera un punto para no convertir cada ajuste suyo en un
         // cambio de línea base.

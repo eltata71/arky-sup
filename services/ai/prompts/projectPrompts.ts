@@ -15,7 +15,9 @@
  */
 
 import type { Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
+import { buildBusinessMotivationBlock } from './diagramGenerationBrief';
+import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { prioritizeProjectContext } from './diagramPrompts';
 // Por el barril: `services/memory` ya publica esta función y es un módulo de
@@ -106,6 +108,8 @@ export interface BasePromptOptions {
   maxContextItems?: number;
   /** Override the default per-mode cap on description characters. */
   maxDescriptionChars?: number;
+  /** The initiatives the project answers (plan de diagramas, 6.2). */
+  businessMotivation?: readonly ArtifactBusinessMotivation[];
 }
 
 const DIAGRAM_MAX_CONTEXT_ITEMS = 12;
@@ -131,13 +135,14 @@ export function buildBasePrompt(project: Project, settings: Settings, opts: Base
       { annotate: false },
     );
     const items = prioritizeProjectContext(orderedTexts, { limit: maxItems });
+    // What people wrote about the project is data, fenced (6.2).
     return `${buildGlobalPrompt(settings)}
 
-Project Name: ${project.name}
+${wrapUntrustedContent('proyecto', `Project Name: ${project.name}
 Project Description: ${trimmedDescription}
 Project-Specific Context (Updates & Requirements):
-${items.map(c => `- ${c}`).join('\n')}
-`;
+${items.map(c => `- ${c}`).join('\n')}`)}
+${motivationBlock(opts)}`;
   }
 
   const projectContextLines = formatMemoryTextsForPrompt(project.projectContext, project.projectContextEntries);
@@ -153,12 +158,18 @@ ${items.map(c => `- ${c}`).join('\n')}
 
   return `${buildGlobalPrompt(settings)}
 
-Project Name: ${project.name}
+${wrapUntrustedContent('proyecto', `Project Name: ${project.name}
 Project Description: ${description}
 Project-Specific Context (Updates & Requirements):
 ${projectContextLines.map(c => `- ${c}`).join('\n')}
-${optionalSections.length > 0 ? `\n${optionalSections.join('\n\n')}\n` : ''}`;
+${optionalSections.length > 0 ? `\n${optionalSections.join('\n\n')}\n` : ''}`)}
+${motivationBlock(opts)}`;
 }
+
+const motivationBlock = (opts: BasePromptOptions): string => {
+  const block = buildBusinessMotivationBlock(opts.businessMotivation);
+  return block ? `\n${block}\n` : '';
+};
 
 export interface ArtifactsContextOptions {
   /**

@@ -20,6 +20,7 @@ import { validateArtifactReadiness, type ReadinessResult } from '../lib/artifact
 import { observabilityService } from '../services/observability';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { useArtifactPersona } from '../hooks/useArtifactPersona';
+import { useProjectBusinessMotivation } from '../hooks/useProjectBusinessMotivation';
 import { runArtifactGeneration } from '../services/artifacts/application/artifactGenerationRun';
 import { describeGenerationFailure } from '../services/artifacts/application/generationFailure';
 
@@ -185,6 +186,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   };
 
   const composePersonaInstruction = useArtifactPersona();
+  const businessMotivation = useProjectBusinessMotivation(project);
   const proceedWithGeneration = useCallback(async (
         template: ArtifactTemplate,
         action: 'create' | 'replace' | 'new_version' = 'create',
@@ -224,7 +226,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
             operationId: generationOperationId,
             startedAt,
             startedMs,
-            onPhase, composePersonaInstruction,
+            onPhase, composePersonaInstruction, businessMotivation,
             onWarning: message => {
                 if (isMounted.current) addToast(message, 'warning', { durationMs: 8000 });
             },
@@ -385,7 +387,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
             setGeneratingMessage('');
         }
     }
-  }, [project, settings, t, createArtifact, createArtifactVersion, updateArtifact, addToast, composePersonaInstruction]);
+  }, [project, settings, t, createArtifact, createArtifactVersion, updateArtifact, addToast, composePersonaInstruction, businessMotivation]);
 
   const handleCreateArtifact = useCallback(async (
         template: ArtifactTemplate,

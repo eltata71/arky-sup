@@ -9,37 +9,159 @@
       "Validación de beneficiarios designados y de documentos (acta de defunción)",
       "Revisión contra listas restrictivas antes de pagar (AML)",
       "Pago por transferencia interbancaria"
+    ],
+    "artefactos": [
+      {
+        "nombre": "Contenedores de Siniestros de Vida",
+        "tipo": "mermaid-c4-container",
+        "contenido": "C4Container\n    title Contenedores de Siniestros de Vida\n    System_Boundary(siniestros, \"Siniestros de Vida\") {\n        Container(portal, \"Portal de Beneficiarios\", \"React 18\", \"Aviso de siniestro\")\n        Container(liquidacion, \"Servicio de Liquidación\", \"Java 21\", \"Decide y ejecuta el pago\")\n        ContainerDb(expedientes, \"BD Expedientes\", \"PostgreSQL 15\", \"Expedientes de siniestro\")\n    }\n    System_Ext(listas, \"Proveedor de Listas\", \"OFAC y listas locales\")\n    System(tesoreria, \"Tesorería\", \"Transferencias\")\n    Rel(portal, liquidacion, \"Registra aviso\", \"REST/HTTPS\")\n    Rel(liquidacion, expedientes, \"Persiste expediente\", \"JDBC\")\n    Rel(liquidacion, listas, \"Consulta listas\", \"REST/HTTPS\")\n    Rel(liquidacion, tesoreria, \"Ordena pago\", \"ISO 20022\")"
+      }
     ]
   },
+  "iniciativas": [
+    {
+      "title": "Pago de siniestros en 5 días",
+      "need": "Pagar los siniestros de vida a los beneficiarios en menos de 5 días hábiles cumpliendo las revisiones AML",
+      "objectives": [
+        "Automatizar la validación de beneficiarios"
+      ],
+      "expectedOutcomes": [
+        "Ningún pago sin revisión AML"
+      ],
+      "kpis": [
+        "Días hasta el pago: 20 → 5"
+      ],
+      "regulatoryDrivers": [
+        "Prevención de lavado de dinero (AML/KYC)"
+      ]
+    }
+  ],
   "plantilla": {
     "nombre": "Componentes del Servicio de Liquidación",
     "tipo": "mermaid-c4-component",
     "objetivo": "Detallar los componentes internos que deciden y ejecutan el pago a beneficiarios.",
     "conceptosClave": [
-      { "term": "Beneficiario", "definition": "Persona designada para recibir la suma asegurada" },
-      { "term": "Liquidación", "definition": "Cálculo y pago de la suma asegurada" }
+      {
+        "term": "Beneficiario",
+        "definition": "Persona designada para recibir la suma asegurada"
+      },
+      {
+        "term": "Liquidación",
+        "definition": "Cálculo y pago de la suma asegurada"
+      }
     ]
   },
   "respuestaModelo": {
     "nodes": [
-      { "id": "api-siniestros", "label": "Controlador Siniestros", "kind": "service", "technology": "Spring MVC", "description": "Recibe la reclamación de siniestro" },
-      { "id": "validador-beneficiarios", "label": "Validador Beneficiarios", "kind": "service", "technology": "Java 21", "description": "Coteja beneficiarios designados", "dataClassification": "pii" },
-      { "id": "screening-aml", "label": "Screening AML", "kind": "service", "technology": "Java 21", "description": "Consulta listas restrictivas", "compliance": ["AML"] },
-      { "id": "calculo-liquidacion", "label": "Cálculo Liquidación", "kind": "service", "technology": "Java 21", "description": "Suma asegurada menos adeudos" },
-      { "id": "repositorio", "label": "Repositorio Siniestros", "kind": "data", "technology": "Spring Data JPA", "description": "Persiste el expediente", "dataClassification": "pii" },
-      { "id": "listas", "label": "Proveedor de Listas", "kind": "external", "description": "Listas OFAC y locales", "trust": "external" },
-      { "id": "tesoreria", "label": "Tesorería", "kind": "system", "description": "Ejecuta transferencias", "trust": "internal" }
+      {
+        "id": "api-siniestros",
+        "label": "Controlador Siniestros",
+        "kind": "service",
+        "technology": "Spring MVC",
+        "description": "Recibe la reclamación de siniestro"
+      },
+      {
+        "id": "validador-beneficiarios",
+        "label": "Validador Beneficiarios",
+        "kind": "service",
+        "technology": "Java 21",
+        "description": "Coteja beneficiarios designados",
+        "dataClassification": "pii"
+      },
+      {
+        "id": "screening-aml",
+        "label": "Screening AML",
+        "kind": "service",
+        "technology": "Java 21",
+        "description": "Consulta listas restrictivas",
+        "compliance": [
+          "AML"
+        ]
+      },
+      {
+        "id": "calculo-liquidacion",
+        "label": "Cálculo Liquidación",
+        "kind": "service",
+        "technology": "Java 21",
+        "description": "Suma asegurada menos adeudos"
+      },
+      {
+        "id": "repositorio",
+        "label": "Repositorio Siniestros",
+        "kind": "data",
+        "technology": "Spring Data JPA",
+        "description": "Persiste el expediente",
+        "dataClassification": "pii"
+      },
+      {
+        "id": "listas",
+        "label": "Proveedor de Listas",
+        "kind": "external",
+        "description": "Listas OFAC y locales",
+        "trust": "external"
+      },
+      {
+        "id": "tesoreria",
+        "label": "Tesorería",
+        "kind": "system",
+        "description": "Ejecuta transferencias",
+        "trust": "internal"
+      }
     ],
     "edges": [
-      { "id": "e1", "source": "api-siniestros", "target": "validador-beneficiarios", "label": "Valida beneficiarios" },
-      { "id": "e2", "source": "validador-beneficiarios", "target": "screening-aml", "label": "Revisa listas" },
-      { "id": "e3", "source": "screening-aml", "target": "listas", "label": "Consulta listas", "protocol": "REST/HTTPS", "dataSensitivity": "pii" },
-      { "id": "e4", "source": "screening-aml", "target": "calculo-liquidacion", "label": "Libera cálculo" },
-      { "id": "e5", "source": "calculo-liquidacion", "target": "repositorio", "label": "Guarda liquidación" },
-      { "id": "e6", "source": "calculo-liquidacion", "target": "tesoreria", "label": "Ordena pago", "protocol": "ISO 20022" }
+      {
+        "id": "e1",
+        "source": "api-siniestros",
+        "target": "validador-beneficiarios",
+        "label": "Valida beneficiarios"
+      },
+      {
+        "id": "e2",
+        "source": "validador-beneficiarios",
+        "target": "screening-aml",
+        "label": "Revisa listas"
+      },
+      {
+        "id": "e3",
+        "source": "screening-aml",
+        "target": "listas",
+        "label": "Consulta listas",
+        "protocol": "REST/HTTPS",
+        "dataSensitivity": "pii"
+      },
+      {
+        "id": "e4",
+        "source": "screening-aml",
+        "target": "calculo-liquidacion",
+        "label": "Libera cálculo"
+      },
+      {
+        "id": "e5",
+        "source": "calculo-liquidacion",
+        "target": "repositorio",
+        "label": "Guarda liquidación"
+      },
+      {
+        "id": "e6",
+        "source": "calculo-liquidacion",
+        "target": "tesoreria",
+        "label": "Ordena pago",
+        "protocol": "ISO 20022"
+      }
     ],
     "groups": [
-      { "id": "liquidacion", "label": "Servicio de Liquidación", "nodeIds": ["api-siniestros", "validador-beneficiarios", "screening-aml", "calculo-liquidacion", "repositorio"], "kind": "system-boundary" }
+      {
+        "id": "liquidacion",
+        "label": "Servicio de Liquidación",
+        "nodeIds": [
+          "api-siniestros",
+          "validador-beneficiarios",
+          "screening-aml",
+          "calculo-liquidacion",
+          "repositorio"
+        ],
+        "kind": "system-boundary"
+      }
     ],
     "metadata": {
       "audience": "technical",
@@ -48,18 +170,78 @@
       "narrative": {
         "summary": "Ningún pago sale sin pasar antes por el screening AML.",
         "scenes": [
-          { "id": "s1", "title": "Validar", "focusNodeIds": ["api-siniestros", "validador-beneficiarios"], "focusEdgeIds": ["e1"] },
-          { "id": "s2", "title": "Controlar y pagar", "focusNodeIds": ["screening-aml", "calculo-liquidacion", "tesoreria"], "focusEdgeIds": ["e2", "e4", "e6"] }
+          {
+            "id": "s1",
+            "title": "Validar",
+            "focusNodeIds": [
+              "api-siniestros",
+              "validador-beneficiarios"
+            ],
+            "focusEdgeIds": [
+              "e1"
+            ]
+          },
+          {
+            "id": "s2",
+            "title": "Controlar y pagar",
+            "focusNodeIds": [
+              "screening-aml",
+              "calculo-liquidacion",
+              "tesoreria"
+            ],
+            "focusEdgeIds": [
+              "e2",
+              "e4",
+              "e6"
+            ]
+          }
         ]
       }
     }
   },
   "esperado": {
     "dialecto": "C4Component",
-    "entidades": [["Validador Beneficiarios", "Beneficiarios"], ["Screening AML", "AML"], ["Cálculo Liquidación", "Liquidación"], ["Proveedor de Listas", "Listas"], ["Tesorería"]],
+    "entidades": [
+      [
+        "Validador Beneficiarios",
+        "Beneficiarios"
+      ],
+      [
+        "Screening AML",
+        "AML"
+      ],
+      [
+        "Cálculo Liquidación",
+        "Liquidación"
+      ],
+      [
+        "Proveedor de Listas",
+        "Listas"
+      ],
+      [
+        "Tesorería"
+      ]
+    ],
     "metadatos": [
-      { "entidad": ["Validador Beneficiarios"], "campo": "dataClassification", "valor": "pii" },
-      { "entidad": ["Repositorio Siniestros"], "campo": "technology", "valor": "Spring Data JPA" }
+      {
+        "entidad": [
+          "Validador Beneficiarios"
+        ],
+        "campo": "dataClassification",
+        "valor": "pii"
+      },
+      {
+        "entidad": [
+          "Repositorio Siniestros"
+        ],
+        "campo": "technology",
+        "valor": "Spring Data JPA"
+      }
+    ],
+    "nivelSuperior": [
+      "Servicio de Liquidación",
+      "Proveedor de Listas",
+      "Tesorería"
     ]
   }
 }

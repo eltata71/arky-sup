@@ -202,6 +202,19 @@ class ArtifactGenerationEngine {
             },
         });
 
+        // Architecture Knowledge Graph by default: when the caller did not
+        // resolve a graph block explicitly (Workspace does), resolve it here
+        // so EVERY generation path — C4 included (6.2), agent, guided creation, SDD —
+        // grounds the model on the project's canonical architectural
+        // knowledge. Stale/missing graphs are rebuilt in-memory (deterministic
+        // extraction, no AI call) without touching persistence. Never throws.
+        if (opts.architectureGraphPromptBlock === undefined) {
+            opts = {
+                ...opts,
+                architectureGraphPromptBlock: this.resolveDefaultArchitectureGraphBlock(project, template, settings),
+            };
+        }
+
         // Stabilization: C4 diagrams (Context/Container/Component/Deployment)
         // always go through the IR-direct self-healing path. The legacy
         // Mermaid prompt accumulates 600+ lines of format instructions on top
@@ -218,7 +231,7 @@ class ArtifactGenerationEngine {
                 meta: { path: 'c4-self-healing', type: template.type },
             });
             try {
-                const mermaid = await generateC4ArtifactContent(project, template, settings, support, previousArtifact, opts.onDiagramIR);
+                const mermaid = await generateC4ArtifactContent(project, template, settings, previousArtifact, opts);
                 emit({
                     stage: 'ai-generation',
                     status: 'success',
@@ -246,19 +259,6 @@ class ArtifactGenerationEngine {
                 }
                 return support.deterministicDiagramSkeleton(project, template);
             }
-        }
-
-        // Architecture Knowledge Graph by default: when the caller did not
-        // resolve a graph block explicitly (Workspace does), resolve it here
-        // so EVERY generation path — Arquitecto Agente, creación guiada, SDD —
-        // grounds the model on the project's canonical architectural
-        // knowledge. Stale/missing graphs are rebuilt in-memory (deterministic
-        // extraction, no AI call) without touching persistence. Never throws.
-        if (opts.architectureGraphPromptBlock === undefined) {
-            opts = {
-                ...opts,
-                architectureGraphPromptBlock: this.resolveDefaultArchitectureGraphBlock(project, template, settings),
-            };
         }
 
         // Presentation artefacts get their own generation path: a JSON deck
@@ -298,7 +298,7 @@ class ArtifactGenerationEngine {
         const isDiagramTemplate = isDiagramArtifactType(template.type);
         const requestedBy = template.requestContext?.userRequest ?? template.objective;
         // The persona is handed in, never looked up: the Office imports this layer (corte 13).
-        const baseInstruction = buildBasePromptUtil(project, settings, isDiagramTemplate ? { mode: 'diagram' } : undefined);
+        const baseInstruction = buildBasePromptUtil(project, settings, { mode: isDiagramTemplate ? 'diagram' : 'document', businessMotivation: opts.businessMotivation });
         const basePrompt = opts.composePersonaInstruction?.(baseInstruction, requestedBy) ?? baseInstruction;
         // Documents embed excerpts of sibling artifacts so the generated
         // content stays consistent with what already exists (same entities,
@@ -454,7 +454,7 @@ VALUE STREAM MAP — DIALECT REQUIREMENTS (MANDATORY):
    - Service Level / Volume / Rework when relevant.
 - Use diamond {Decisión} for quality gates / approvals.
 - Use ((Cliente)) / ((Proveedor)) for actors at the boundaries.
-- Highlight bottlenecks/improvement opportunities with classDef warning fill:#fef3c7,stroke:#d97706 then class stepId warning.
+- Mark bottlenecks/improvement opportunities in the step label ("⚠ Cuello de botella"); never write colour values — the renderer applies the design tokens.
 - Every edge MUST carry a verb (Solicita / Aprueba / Produce / Empaca / Entrega) and the time metric when known.
 - Aim for 6–14 process steps grouped in 3–6 subgraphs.`
                 : isBPMN
@@ -480,16 +480,8 @@ Format Requirements:
 MERMAID DIAGRAM QUALITY STANDARDS (mandatory):
 - Choose the most appropriate diagram type: flowchart (graph TD/LR), sequenceDiagram, stateDiagram-v2, or erDiagram.
 - Use subgraph blocks or composite states for logical grouping of related elements.
-- Apply classDef definitions for semantic color coding when using graph/flowchart:
-  classDef frontend fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
-  classDef backend fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
-  classDef database fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#064e3b
-  classDef api fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#2e1065
-  classDef queue fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#451a03
-  classDef external fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
-  classDef warning fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#7c2d12
+- Declare each node's role with a class name from this vocabulary — service, gateway, database, queue, external, person, process (e.g. "class api,worker service"). Names only: never write fill/stroke/color values; the renderer applies the design tokens.
 - Use semantic node shapes: [(Cylinder)] for databases, {Diamond} for decisions, ((Circle)) for actors.
-- Assign class to every node: class nodeId className
 - Include descriptive labels on ALL edges with protocols or actions.
 - Aim for 8-15 nodes for optimal readability.
 - Output ONLY valid Mermaid v10.9+ syntax inside the fence. Do not add explanations inside the fence.
@@ -567,11 +559,7 @@ Then include ONE Mermaid diagram block (\`\`\`mermaid) showing the Bounded Conte
 DDD DIAGRAM QUALITY STANDARDS:
 - Use classDiagram for Bounded Context internals: show Aggregates, Entities, Value Objects, and their relationships.
 - Use graph TD with subgraph blocks if showing Context Map relationships (Partnership, ACL, Customer-Supplier).
-- Apply classDef for semantic color coding when using graph TD:
-  classDef core fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
-  classDef support fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#064e3b
-  classDef generic fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
-  classDef aggregate fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#2e1065
+- In graph TD, mark subdomains with the class names core / support / generic and aggregates with aggregate — names only, never colour values.
 - Label all relationships with their DDD pattern type (e.g., "ACL", "Shared Kernel", "Open Host Service").
 - Show cardinality on classDiagram associations.
 - Output ONLY valid Mermaid v10.9+ syntax inside the fence.
@@ -731,7 +719,7 @@ This artifact was explicitly requested by an architect after reviewing a recomme
 - Recommendation rationale: ${template.requestContext.rationale ?? 'Use the selected artifact type to communicate the request clearly.'}
 - Approved construction plan:
 ${(template.requestContext.constructionPlan ?? []).map((step, index) => `  ${index + 1}. ${step}`).join('\n') || '  1. Generate a complete, renderable and editable artifact.'}
-${generationContract ? `
+${!generationContract && template.requestContext.acceptanceCriteria?.length ? `- Acceptance criteria (must satisfy every item):\n${template.requestContext.acceptanceCriteria.map((c, i) => `  ${i + 1}. ${c}`).join('\n')}\n` : ''}${generationContract ? `
 *** STRUCTURED ARTIFACT GENERATION CONTRACT ***
 - Contract id: ${generationContract.id}
 - Normalized intent: ${generationContract.normalizedIntent}
@@ -1239,7 +1227,7 @@ Produce ONLY raw Mermaid using the flowchart dialect. Mandatory shape:
 - First line: "flowchart TD" (or "flowchart LR" if the flow is conversational).
 - Use [Rectangle], (Rounded), {Diamond}, [(Cylinder)], ((Circle)) shapes to convey semantic intent.
 - Include subgraph blocks for boundaries (e.g. "subgraph SB[Sistema]").
-- Use classDef + class assignments to colour by role: frontend/backend/database/external.
+- Assign role class names (service, gateway, database, queue, external, person, process) with "class"; never colour values.
 - Every edge must have a verb-action label (\`-->|"Verbo objeto"|\`).
 - 6 to 14 nodes, 5 to 18 edges.
 - Output the diagram only — no fences, no commentary.`;
@@ -1471,16 +1459,7 @@ MANDATORY STRUCTURE:
   - {{Hexagon}} for preparation/microservices
 
 PROFESSIONAL QUALITY — STYLING IS MANDATORY:
-- Define classDef for semantic color coding:
-  classDef frontend fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
-  classDef backend fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
-  classDef database fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#064e3b
-  classDef api fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#2e1065
-  classDef queue fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#451a03
-  classDef external fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
-  classDef security fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d
-  classDef cloud fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e
-- Assign classes to every node: class nodeId frontend
+- Declare each node's role with a class name from this vocabulary — service, gateway, database, queue, external, person, process (e.g. "class api,worker service"). Names only: never write fill/stroke/color values; the renderer applies the design tokens.
 - Use subgraph blocks with styled titles for logical grouping (e.g., "Frontend Layer", "Data Layer")
 - Use descriptive edge labels with protocols: A -->|"REST/HTTPS"| B
 - Use dotted arrows for async: A -.->|"Event"| B
@@ -1546,7 +1525,7 @@ ${crossCuttingGuidance}`;
 
             default:
                 // Fallback for any future mermaid-* types
-                return ` The content should be valid Mermaid v10.9+ syntax for a ${type.split('-').slice(1).join(' ')} diagram. Use professional styling including classDef for color coding, subgraph for grouping, and descriptive labels on all relationships.${crossCuttingGuidance}`;
+                return ` The content should be valid Mermaid v10.9+ syntax for a ${type.split('-').slice(1).join(' ')} diagram. Use role class names (service, database, queue, external…) instead of colour values, subgraph for grouping, and descriptive labels on all relationships.${crossCuttingGuidance}`;
         }
     }
 

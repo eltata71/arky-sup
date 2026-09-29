@@ -11,40 +11,175 @@
       "Firma electrónica de la solicitud"
     ]
   },
+  "solicitud": {
+    "texto": "Quiero explicar al comité de dirección cómo se emite una póliza de vida en línea y de qué terceros dependemos",
+    "audiencia": "executive",
+    "criterios": [
+      "Nombrar cada tercero del que depende la emisión"
+    ]
+  },
+  "iniciativas": [
+    {
+      "title": "Vida digital",
+      "code": "NEG-2026-021",
+      "need": "Vender seguros de vida individual en línea sin intervención de un agente, en menos de 15 minutos",
+      "objectives": [
+        "Emitir en línea pólizas hasta 2 M de suma asegurada"
+      ],
+      "expectedOutcomes": [
+        "30 % de las ventas nuevas por canal digital"
+      ],
+      "kpis": [
+        "Tiempo de emisión (minutos): 5 días → 15"
+      ],
+      "regulatoryDrivers": [
+        "Prevención de lavado de dinero (AML/KYC)"
+      ]
+    }
+  ],
   "plantilla": {
     "nombre": "Contexto de Emisión de Vida",
     "tipo": "mermaid-c4-context",
     "objetivo": "Mostrar los actores y sistemas externos que intervienen en la emisión de una póliza de vida.",
     "conceptosClave": [
-      { "term": "Solicitante", "definition": "Persona que pide la póliza" },
-      { "term": "Beneficiario", "definition": "Quien recibe la suma asegurada" }
+      {
+        "term": "Solicitante",
+        "definition": "Persona que pide la póliza"
+      },
+      {
+        "term": "Beneficiario",
+        "definition": "Quien recibe la suma asegurada"
+      }
     ]
   },
   "respuestaModelo": {
     "nodes": [
-      { "id": "solicitante", "label": "Solicitante", "kind": "person", "description": "Contrata la póliza en línea" },
-      { "id": "emision", "label": "Plataforma de Emisión", "kind": "system", "description": "Cotiza, suscribe y emite", "dataClassification": "pii", "compliance": ["AML", "Protección de datos"] },
-      { "id": "kyc", "label": "Servicio KYC/AML", "kind": "external", "description": "Verifica identidad y listas restrictivas", "trust": "external" },
-      { "id": "firma", "label": "Firma Electrónica", "kind": "external", "description": "Firma de la solicitud", "trust": "external" },
-      { "id": "reaseguro", "label": "Reasegurador", "kind": "external", "description": "Acepta cesiones por encima de retención", "trust": "partner" },
-      { "id": "admin-polizas", "label": "Administración Pólizas", "kind": "system", "description": "Sistema de administración de pólizas de vida", "technology": "Java EE" }
+      {
+        "id": "solicitante",
+        "label": "Solicitante",
+        "kind": "person",
+        "description": "Contrata la póliza en línea"
+      },
+      {
+        "id": "emision",
+        "label": "Plataforma de Emisión",
+        "kind": "system",
+        "description": "Cotiza, suscribe y emite",
+        "dataClassification": "pii",
+        "compliance": [
+          "AML",
+          "Protección de datos"
+        ]
+      },
+      {
+        "id": "kyc",
+        "label": "Servicio KYC/AML",
+        "kind": "external",
+        "description": "Verifica identidad y listas restrictivas",
+        "trust": "external"
+      },
+      {
+        "id": "firma",
+        "label": "Firma Electrónica",
+        "kind": "external",
+        "description": "Firma de la solicitud",
+        "trust": "external"
+      },
+      {
+        "id": "reaseguro",
+        "label": "Reasegurador",
+        "kind": "external",
+        "description": "Acepta cesiones por encima de retención",
+        "trust": "partner"
+      },
+      {
+        "id": "admin-polizas",
+        "label": "Administración Pólizas",
+        "kind": "system",
+        "description": "Sistema de administración de pólizas de vida",
+        "technology": "Java EE"
+      }
     ],
     "edges": [
-      { "id": "e1", "source": "solicitante", "target": "emision", "label": "Solicita póliza", "protocol": "HTTPS" },
-      { "id": "e2", "source": "emision", "target": "kyc", "label": "Verifica identidad", "protocol": "REST/HTTPS", "dataSensitivity": "pii" },
-      { "id": "e3", "source": "emision", "target": "firma", "label": "Firma solicitud", "protocol": "REST/HTTPS" },
-      { "id": "e4", "source": "emision", "target": "reaseguro", "label": "Cede riesgo", "protocol": "ACORD XML" },
-      { "id": "e5", "source": "emision", "target": "admin-polizas", "label": "Registra póliza", "protocol": "ACORD XML" }
+      {
+        "id": "e1",
+        "source": "solicitante",
+        "target": "emision",
+        "label": "Solicita póliza",
+        "protocol": "HTTPS"
+      },
+      {
+        "id": "e2",
+        "source": "emision",
+        "target": "kyc",
+        "label": "Verifica identidad",
+        "protocol": "REST/HTTPS",
+        "dataSensitivity": "pii"
+      },
+      {
+        "id": "e3",
+        "source": "emision",
+        "target": "firma",
+        "label": "Firma solicitud",
+        "protocol": "REST/HTTPS"
+      },
+      {
+        "id": "e4",
+        "source": "emision",
+        "target": "reaseguro",
+        "label": "Cede riesgo",
+        "protocol": "ACORD XML"
+      },
+      {
+        "id": "e5",
+        "source": "emision",
+        "target": "admin-polizas",
+        "label": "Registra póliza",
+        "protocol": "ACORD XML"
+      }
     ],
     "groups": [],
-    "metadata": { "audience": "executive", "title": "Contexto de Emisión de Vida", "diagramType": "c4-context" }
+    "metadata": {
+      "audience": "executive",
+      "title": "Contexto de Emisión de Vida",
+      "diagramType": "c4-context"
+    }
   },
   "esperado": {
     "dialecto": "C4Context",
-    "entidades": [["Solicitante"], ["Plataforma de Emisión", "Emisión"], ["KYC"], ["Firma Electrónica"], ["Reasegurador"]],
+    "entidades": [
+      [
+        "Solicitante"
+      ],
+      [
+        "Plataforma de Emisión",
+        "Emisión"
+      ],
+      [
+        "KYC"
+      ],
+      [
+        "Firma Electrónica"
+      ],
+      [
+        "Reasegurador"
+      ]
+    ],
     "metadatos": [
-      { "entidad": ["Plataforma de Emisión"], "campo": "dataClassification", "valor": "pii" },
-      { "entidad": ["Administración Pólizas"], "campo": "technology", "valor": "Java EE" }
+      {
+        "entidad": [
+          "Plataforma de Emisión"
+        ],
+        "campo": "dataClassification",
+        "valor": "pii"
+      },
+      {
+        "entidad": [
+          "Administración Pólizas"
+        ],
+        "campo": "technology",
+        "valor": "Java EE"
+      }
     ]
   }
 }
