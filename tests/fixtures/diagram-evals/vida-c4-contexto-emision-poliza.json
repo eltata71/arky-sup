@@ -180,6 +180,9 @@
         "campo": "technology",
         "valor": "Java EE"
       }
+    ],
+    "paquetes": [
+      "life-insurance"
     ]
   }
 }

@@ -27,6 +27,8 @@
 import type { ArtifactTemplate, Settings } from '../../../types';
 import type { ArtifactBusinessMotivation } from '../../../lib/artifacts';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
+import type { ResolvedDomainPack } from '../../../lib/domainPacks';
+import { buildDomainPackBlock } from './domainPackPrompt';
 
 /** The diagram one level up, as the brief needs it: names, not geometry. */
 export interface UpperLevelDiagram {
@@ -44,6 +46,8 @@ export interface DiagramBriefInput {
     architectureGraphBlock?: string;
     /** Already composed by the Office's persona port. */
     personaInstruction?: string;
+    /** The industry packs that apply, with why (6.4). */
+    domainPacks?: readonly ResolvedDomainPack[];
 }
 
 const AUDIENCE_LABEL: Record<string, string> = {
@@ -115,6 +119,7 @@ export function buildDiagramGenerationBrief(input: DiagramBriefInput): string {
         input.personaInstruction?.trim() ? `VOZ Y CRITERIO:\n${input.personaInstruction.trim()}` : '',
         renderRequest(input.template),
         buildBusinessMotivationBlock(input.businessMotivation),
+        buildDomainPackBlock(input.domainPacks ?? []),
         renderUpperLevel(input.upperLevel),
         input.architectureGraphBlock?.trim() ?? '',
     ].filter(Boolean).join('\n\n');

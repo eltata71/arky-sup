@@ -110,6 +110,7 @@ describe('Renderability guarantees — deterministic skeleton', () => {
             fallback: 'skeleton',
             warnings: ['forced fallback'],
             lastReason: 'skeleton-fallback',
+            dropped: [],
         });
         const events: ArtifactGenerationPhaseEvent[] = [];
         const settings: Settings = {

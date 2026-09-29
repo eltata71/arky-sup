@@ -67,6 +67,9 @@
         "Core de Pólizas"
       ]
     ],
-    "metadatos": []
+    "metadatos": [],
+    "paquetes": [
+      "health-insurance"
+    ]
   }
 }

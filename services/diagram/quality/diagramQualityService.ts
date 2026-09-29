@@ -13,7 +13,8 @@ import {
 } from '../layoutQualityService';
 import { runVisualQualityGate } from '../visualQualityGate';
 import { validateBPMN, type BpmnValidationIssue } from '../bpmnValidation';
-import { validateHealthcareCompliance, isHealthcareContext, type HealthcareComplianceIssue } from '../healthcareCompliance';
+import { isHealthcareContext, type DomainComplianceIssue } from '../healthcareCompliance';
+import { validateInsuranceCompliance } from '../insuranceCompliance';
 import { validateC4, type C4ValidationIssue } from '../c4Validation';
 import { inferDiagramType } from '../diagramTypeInference';
 
@@ -188,12 +189,10 @@ export const analyzeDiagramQuality = (
         console.warn('[analyzeDiagramQuality] BPMN validation threw; skipping', err);
     }
 
-    // Phase 3: healthcare / insurance compliance rules. Always runs
-    // because the validator self-filters by keyword/classification
-    // signals; non-healthcare diagrams return an empty array.
-    let healthcareIssues: HealthcareComplianceIssue[] = [];
+    // Health and life insurance rules; each self-filters by its signals.
+    let healthcareIssues: DomainComplianceIssue[] = [];
     try {
-        healthcareIssues = validateHealthcareCompliance(diagram);
+        healthcareIssues = validateInsuranceCompliance(diagram);
     } catch (err) {
         console.warn('[analyzeDiagramQuality] Healthcare validation threw; skipping', err);
     }

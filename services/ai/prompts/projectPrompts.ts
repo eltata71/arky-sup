@@ -17,6 +17,8 @@
 import type { Settings } from '../../../types';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { buildBusinessMotivationBlock } from './diagramGenerationBrief';
+import { resolveDomainPacks } from '../../../lib/domainPacks';
+import { buildDomainPackBlock } from './domainPackPrompt';
 import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { prioritizeProjectContext } from './diagramPrompts';
@@ -142,7 +144,7 @@ ${wrapUntrustedContent('proyecto', `Project Name: ${project.name}
 Project Description: ${trimmedDescription}
 Project-Specific Context (Updates & Requirements):
 ${items.map(c => `- ${c}`).join('\n')}`)}
-${motivationBlock(opts)}`;
+${motivationBlock(opts, project)}`;
   }
 
   const projectContextLines = formatMemoryTextsForPrompt(project.projectContext, project.projectContextEntries);
@@ -163,11 +165,16 @@ Project Description: ${description}
 Project-Specific Context (Updates & Requirements):
 ${projectContextLines.map(c => `- ${c}`).join('\n')}
 ${optionalSections.length > 0 ? `\n${optionalSections.join('\n\n')}\n` : ''}`)}
-${motivationBlock(opts)}`;
+${motivationBlock(opts, project)}`;
 }
 
-const motivationBlock = (opts: BasePromptOptions): string => {
-  const block = buildBusinessMotivationBlock(opts.businessMotivation);
+const motivationBlock = (opts: BasePromptOptions, project?: Project): string => {
+  // The initiatives, then the industry packs they and the project activate (6.4).
+  const packs = buildDomainPackBlock(resolveDomainPacks({
+    motivations: opts.businessMotivation,
+    texts: [project?.description, ...(project?.projectContext ?? [])],
+  }));
+  const block = [buildBusinessMotivationBlock(opts.businessMotivation), packs].filter(Boolean).join('\n\n');
   return block ? `\n${block}\n` : '';
 };
 

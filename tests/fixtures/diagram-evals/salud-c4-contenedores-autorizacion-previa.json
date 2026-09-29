@@ -16,38 +16,172 @@
     "tipo": "mermaid-c4-container",
     "objetivo": "Mostrar cómo entra una solicitud FHIR y cómo se decide.",
     "conceptosClave": [
-      { "term": "Autorización previa", "definition": "Aprobación antes de un procedimiento" }
+      {
+        "term": "Autorización previa",
+        "definition": "Aprobación antes de un procedimiento"
+      }
     ]
   },
   "respuestaModelo": {
     "nodes": [
-      { "id": "ehr", "label": "EHR del Proveedor", "kind": "external", "description": "Sistema clínico del hospital", "trust": "partner" },
-      { "id": "api-fhir", "label": "API FHIR", "kind": "gateway", "technology": "HAPI FHIR 7", "description": "Recibe Claim y devuelve ClaimResponse", "dataClassification": "phi" },
-      { "id": "revision-clinica", "label": "Revisión Clínica", "kind": "service", "technology": ".NET 8", "description": "Aplica criterios médicos", "dataClassification": "phi", "compliance": ["HIPAA"] },
-      { "id": "cola-urgentes", "label": "Cola de Urgentes", "kind": "messaging", "technology": "Azure Service Bus", "description": "Prioriza solicitudes de 24 h" },
-      { "id": "auditoria", "label": "Registro de Auditoría", "kind": "data", "technology": "Azure SQL", "description": "Rastro inmutable de decisiones", "dataClassification": "phi" },
-      { "id": "medico-dictaminador", "label": "Médico Dictaminador", "kind": "person", "description": "Decide casos no automáticos" }
+      {
+        "id": "ehr",
+        "label": "EHR del Proveedor",
+        "kind": "external",
+        "description": "Sistema clínico del hospital",
+        "trust": "partner"
+      },
+      {
+        "id": "api-fhir",
+        "label": "API FHIR",
+        "kind": "gateway",
+        "technology": "HAPI FHIR 7",
+        "description": "Recibe Claim y devuelve ClaimResponse",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "revision-clinica",
+        "label": "Revisión Clínica",
+        "kind": "service",
+        "technology": ".NET 8",
+        "description": "Aplica criterios médicos",
+        "dataClassification": "phi",
+        "compliance": [
+          "HIPAA"
+        ]
+      },
+      {
+        "id": "cola-urgentes",
+        "label": "Cola de Urgentes",
+        "kind": "messaging",
+        "technology": "Azure Service Bus",
+        "description": "Prioriza solicitudes de 24 h"
+      },
+      {
+        "id": "auditoria",
+        "label": "Registro de Auditoría",
+        "kind": "data",
+        "technology": "Azure SQL",
+        "description": "Rastro inmutable de decisiones",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "medico-dictaminador",
+        "label": "Médico Dictaminador",
+        "kind": "person",
+        "description": "Decide casos no automáticos"
+      }
     ],
     "edges": [
-      { "id": "e1", "source": "ehr", "target": "api-fhir", "label": "Solicita autorización", "protocol": "FHIR R4/HTTPS", "dataSensitivity": "phi" },
-      { "id": "e2", "source": "api-fhir", "target": "cola-urgentes", "label": "Encola urgente", "protocol": "AMQP" },
-      { "id": "e3", "source": "cola-urgentes", "target": "revision-clinica", "label": "Entrega solicitud", "protocol": "AMQP" },
-      { "id": "e4", "source": "medico-dictaminador", "target": "revision-clinica", "label": "Dictamina caso", "protocol": "HTTPS" },
-      { "id": "e5", "source": "revision-clinica", "target": "auditoria", "label": "Registra decisión", "protocol": "TDS" },
-      { "id": "e6", "source": "revision-clinica", "target": "api-fhir", "label": "Responde decisión", "protocol": "REST/HTTPS" }
+      {
+        "id": "e1",
+        "source": "ehr",
+        "target": "api-fhir",
+        "label": "Solicita autorización",
+        "protocol": "FHIR R4/HTTPS",
+        "dataSensitivity": "phi"
+      },
+      {
+        "id": "e2",
+        "source": "api-fhir",
+        "target": "cola-urgentes",
+        "label": "Encola urgente",
+        "protocol": "AMQP"
+      },
+      {
+        "id": "e3",
+        "source": "cola-urgentes",
+        "target": "revision-clinica",
+        "label": "Entrega solicitud",
+        "protocol": "AMQP"
+      },
+      {
+        "id": "e4",
+        "source": "medico-dictaminador",
+        "target": "revision-clinica",
+        "label": "Dictamina caso",
+        "protocol": "HTTPS"
+      },
+      {
+        "id": "e5",
+        "source": "revision-clinica",
+        "target": "auditoria",
+        "label": "Registra decisión",
+        "protocol": "TDS"
+      },
+      {
+        "id": "e6",
+        "source": "revision-clinica",
+        "target": "api-fhir",
+        "label": "Responde decisión",
+        "protocol": "REST/HTTPS"
+      }
     ],
     "groups": [
-      { "id": "autorizaciones", "label": "Autorizaciones", "nodeIds": ["api-fhir", "revision-clinica", "cola-urgentes", "auditoria"], "kind": "system-boundary" }
+      {
+        "id": "autorizaciones",
+        "label": "Autorizaciones",
+        "nodeIds": [
+          "api-fhir",
+          "revision-clinica",
+          "cola-urgentes",
+          "auditoria"
+        ],
+        "kind": "system-boundary"
+      }
     ],
-    "metadata": { "audience": "technical", "title": "Contenedores de Autorización Previa", "diagramType": "c4-container" }
+    "metadata": {
+      "audience": "technical",
+      "title": "Contenedores de Autorización Previa",
+      "diagramType": "c4-container"
+    }
   },
   "esperado": {
     "dialecto": "C4Container",
-    "entidades": [["EHR del Proveedor", "EHR"], ["API FHIR"], ["Revisión Clínica"], ["Registro de Auditoría", "Auditoría"], ["Médico Dictaminador"]],
+    "entidades": [
+      [
+        "EHR del Proveedor",
+        "EHR"
+      ],
+      [
+        "API FHIR"
+      ],
+      [
+        "Revisión Clínica"
+      ],
+      [
+        "Registro de Auditoría",
+        "Auditoría"
+      ],
+      [
+        "Médico Dictaminador"
+      ]
+    ],
     "metadatos": [
-      { "entidad": ["API FHIR"], "campo": "technology", "valor": "HAPI FHIR 7" },
-      { "entidad": ["Revisión Clínica"], "campo": "dataClassification", "valor": "phi" },
-      { "entidad": ["Registro de Auditoría"], "campo": "dataClassification", "valor": "phi" }
+      {
+        "entidad": [
+          "API FHIR"
+        ],
+        "campo": "technology",
+        "valor": "HAPI FHIR 7"
+      },
+      {
+        "entidad": [
+          "Revisión Clínica"
+        ],
+        "campo": "dataClassification",
+        "valor": "phi"
+      },
+      {
+        "entidad": [
+          "Registro de Auditoría"
+        ],
+        "campo": "dataClassification",
+        "valor": "phi"
+      }
+    ],
+    "paquetes": [
+      "health-insurance"
     ]
   }
 }

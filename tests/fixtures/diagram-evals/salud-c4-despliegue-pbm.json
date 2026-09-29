@@ -16,32 +16,121 @@
     "tipo": "mermaid-c4-deployment",
     "objetivo": "Mostrar dónde se despliega cada contenedor de la integración con el PBM.",
     "conceptosClave": [
-      { "term": "PBM", "definition": "Administrador de beneficios de farmacia" }
+      {
+        "term": "PBM",
+        "definition": "Administrador de beneficios de farmacia"
+      }
     ]
   },
   "respuestaModelo": {
     "nodes": [
-      { "id": "switch-ncpdp", "label": "Switch NCPDP", "kind": "service", "technology": "Java 21 en EKS", "description": "Traduce NCPDP D.0" },
-      { "id": "elegibilidad-rx", "label": "Elegibilidad Rx", "kind": "service", "technology": "Go 1.22 en EKS", "description": "Valida cobertura de farmacia", "dataClassification": "phi" },
-      { "id": "bd-formulario", "label": "BD Formulario", "kind": "data", "technology": "Aurora PostgreSQL", "description": "Formulario y acumuladores", "dataClassification": "phi" },
-      { "id": "pbm", "label": "PBM", "kind": "external", "description": "Adjudica recetas", "trust": "partner" }
+      {
+        "id": "switch-ncpdp",
+        "label": "Switch NCPDP",
+        "kind": "service",
+        "technology": "Java 21 en EKS",
+        "description": "Traduce NCPDP D.0"
+      },
+      {
+        "id": "elegibilidad-rx",
+        "label": "Elegibilidad Rx",
+        "kind": "service",
+        "technology": "Go 1.22 en EKS",
+        "description": "Valida cobertura de farmacia",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "bd-formulario",
+        "label": "BD Formulario",
+        "kind": "data",
+        "technology": "Aurora PostgreSQL",
+        "description": "Formulario y acumuladores",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "pbm",
+        "label": "PBM",
+        "kind": "external",
+        "description": "Adjudica recetas",
+        "trust": "partner"
+      }
     ],
     "edges": [
-      { "id": "e1", "source": "pbm", "target": "switch-ncpdp", "label": "Envía transacción", "protocol": "NCPDP D.0/PrivateLink", "dataSensitivity": "phi" },
-      { "id": "e2", "source": "switch-ncpdp", "target": "elegibilidad-rx", "label": "Consulta cobertura", "protocol": "gRPC" },
-      { "id": "e3", "source": "elegibilidad-rx", "target": "bd-formulario", "label": "Lee formulario", "protocol": "JDBC" }
+      {
+        "id": "e1",
+        "source": "pbm",
+        "target": "switch-ncpdp",
+        "label": "Envía transacción",
+        "protocol": "NCPDP D.0/PrivateLink",
+        "dataSensitivity": "phi"
+      },
+      {
+        "id": "e2",
+        "source": "switch-ncpdp",
+        "target": "elegibilidad-rx",
+        "label": "Consulta cobertura",
+        "protocol": "gRPC"
+      },
+      {
+        "id": "e3",
+        "source": "elegibilidad-rx",
+        "target": "bd-formulario",
+        "label": "Lee formulario",
+        "protocol": "JDBC"
+      }
     ],
     "groups": [
-      { "id": "aws", "label": "AWS us-east-1", "nodeIds": ["switch-ncpdp", "elegibilidad-rx", "bd-formulario"], "kind": "cloud" }
+      {
+        "id": "aws",
+        "label": "AWS us-east-1",
+        "nodeIds": [
+          "switch-ncpdp",
+          "elegibilidad-rx",
+          "bd-formulario"
+        ],
+        "kind": "cloud"
+      }
     ],
-    "metadata": { "audience": "operations", "title": "Despliegue PBM", "diagramType": "c4-deployment" }
+    "metadata": {
+      "audience": "operations",
+      "title": "Despliegue PBM",
+      "diagramType": "c4-deployment"
+    }
   },
   "esperado": {
     "dialecto": "C4Deployment",
-    "entidades": [["Switch NCPDP"], ["Elegibilidad Rx"], ["BD Formulario"], ["PBM"]],
+    "entidades": [
+      [
+        "Switch NCPDP"
+      ],
+      [
+        "Elegibilidad Rx"
+      ],
+      [
+        "BD Formulario"
+      ],
+      [
+        "PBM"
+      ]
+    ],
     "metadatos": [
-      { "entidad": ["Elegibilidad Rx"], "campo": "dataClassification", "valor": "phi" },
-      { "entidad": ["BD Formulario"], "campo": "technology", "valor": "Aurora PostgreSQL" }
+      {
+        "entidad": [
+          "Elegibilidad Rx"
+        ],
+        "campo": "dataClassification",
+        "valor": "phi"
+      },
+      {
+        "entidad": [
+          "BD Formulario"
+        ],
+        "campo": "technology",
+        "valor": "Aurora PostgreSQL"
+      }
+    ],
+    "paquetes": [
+      "health-insurance"
     ]
   }
 }

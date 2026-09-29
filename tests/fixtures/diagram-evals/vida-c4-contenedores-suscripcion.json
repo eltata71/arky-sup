@@ -16,42 +16,203 @@
     "tipo": "mermaid-c4-container",
     "objetivo": "Mostrar los contenedores del motor de suscripción y sus fuentes de evidencia.",
     "conceptosClave": [
-      { "term": "Evidencia", "definition": "Información médica y de hábitos del solicitante" },
-      { "term": "Decisión", "definition": "Aceptar, rechazar o referir a suscriptor" }
+      {
+        "term": "Evidencia",
+        "definition": "Información médica y de hábitos del solicitante"
+      },
+      {
+        "term": "Decisión",
+        "definition": "Aceptar, rechazar o referir a suscriptor"
+      }
     ]
   },
   "respuestaModelo": {
     "nodes": [
-      { "id": "suscriptor", "label": "Suscriptor", "kind": "person", "description": "Revisa casos referidos" },
-      { "id": "orquestador", "label": "Orquestador de Casos", "kind": "process", "technology": "Camunda 8", "description": "Coordina la recolección de evidencia" },
-      { "id": "motor-reglas", "label": "Motor de Reglas", "kind": "service", "technology": "FICO Blaze", "description": "Calcula la decisión de riesgo", "criticality": "high" },
-      { "id": "evidencias", "label": "Servicio de Evidencias", "kind": "service", "technology": "Kotlin, Ktor", "description": "Normaliza resultados médicos", "dataClassification": "phi" },
-      { "id": "bd-casos", "label": "BD de Casos", "kind": "data", "technology": "Oracle 19c", "description": "Casos y evidencia", "dataClassification": "phi" },
-      { "id": "laboratorio", "label": "Laboratorio Externo", "kind": "external", "description": "Resultados de exámenes", "trust": "partner" },
-      { "id": "buro-medico", "label": "Buró Médico", "kind": "external", "description": "Historial de solicitudes previas", "trust": "external" },
-      { "id": "consola", "label": "Consola de Suscripción", "kind": "service", "technology": "React 18", "description": "Mesa de trabajo del suscriptor" }
+      {
+        "id": "suscriptor",
+        "label": "Suscriptor",
+        "kind": "person",
+        "description": "Revisa casos referidos"
+      },
+      {
+        "id": "orquestador",
+        "label": "Orquestador de Casos",
+        "kind": "process",
+        "technology": "Camunda 8",
+        "description": "Coordina la recolección de evidencia"
+      },
+      {
+        "id": "motor-reglas",
+        "label": "Motor de Reglas",
+        "kind": "service",
+        "technology": "FICO Blaze",
+        "description": "Calcula la decisión de riesgo",
+        "criticality": "high"
+      },
+      {
+        "id": "evidencias",
+        "label": "Servicio de Evidencias",
+        "kind": "service",
+        "technology": "Kotlin, Ktor",
+        "description": "Normaliza resultados médicos",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "bd-casos",
+        "label": "BD de Casos",
+        "kind": "data",
+        "technology": "Oracle 19c",
+        "description": "Casos y evidencia",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "laboratorio",
+        "label": "Laboratorio Externo",
+        "kind": "external",
+        "description": "Resultados de exámenes",
+        "trust": "partner"
+      },
+      {
+        "id": "buro-medico",
+        "label": "Buró Médico",
+        "kind": "external",
+        "description": "Historial de solicitudes previas",
+        "trust": "external"
+      },
+      {
+        "id": "consola",
+        "label": "Consola de Suscripción",
+        "kind": "service",
+        "technology": "React 18",
+        "description": "Mesa de trabajo del suscriptor"
+      }
     ],
     "edges": [
-      { "id": "e1", "source": "orquestador", "target": "laboratorio", "label": "Solicita exámenes", "protocol": "HL7 FHIR", "dataSensitivity": "phi" },
-      { "id": "e2", "source": "orquestador", "target": "buro-medico", "label": "Consulta historial", "protocol": "REST/HTTPS", "dataSensitivity": "phi" },
-      { "id": "e3", "source": "orquestador", "target": "evidencias", "label": "Entrega evidencia", "protocol": "gRPC" },
-      { "id": "e4", "source": "evidencias", "target": "bd-casos", "label": "Guarda evidencia", "protocol": "JDBC" },
-      { "id": "e5", "source": "orquestador", "target": "motor-reglas", "label": "Pide decisión", "protocol": "REST/HTTPS" },
-      { "id": "e6", "source": "suscriptor", "target": "consola", "label": "Resuelve referidos", "protocol": "HTTPS" },
-      { "id": "e7", "source": "consola", "target": "orquestador", "label": "Registra decisión", "protocol": "REST/HTTPS" }
+      {
+        "id": "e1",
+        "source": "orquestador",
+        "target": "laboratorio",
+        "label": "Solicita exámenes",
+        "protocol": "HL7 FHIR",
+        "dataSensitivity": "phi"
+      },
+      {
+        "id": "e2",
+        "source": "orquestador",
+        "target": "buro-medico",
+        "label": "Consulta historial",
+        "protocol": "REST/HTTPS",
+        "dataSensitivity": "phi"
+      },
+      {
+        "id": "e3",
+        "source": "orquestador",
+        "target": "evidencias",
+        "label": "Entrega evidencia",
+        "protocol": "gRPC"
+      },
+      {
+        "id": "e4",
+        "source": "evidencias",
+        "target": "bd-casos",
+        "label": "Guarda evidencia",
+        "protocol": "JDBC"
+      },
+      {
+        "id": "e5",
+        "source": "orquestador",
+        "target": "motor-reglas",
+        "label": "Pide decisión",
+        "protocol": "REST/HTTPS"
+      },
+      {
+        "id": "e6",
+        "source": "suscriptor",
+        "target": "consola",
+        "label": "Resuelve referidos",
+        "protocol": "HTTPS"
+      },
+      {
+        "id": "e7",
+        "source": "consola",
+        "target": "orquestador",
+        "label": "Registra decisión",
+        "protocol": "REST/HTTPS"
+      }
     ],
     "groups": [
-      { "id": "suscripcion", "label": "Suscripción de Vida", "nodeIds": ["orquestador", "motor-reglas", "evidencias", "bd-casos", "consola"], "kind": "system-boundary" }
+      {
+        "id": "suscripcion",
+        "label": "Suscripción de Vida",
+        "nodeIds": [
+          "orquestador",
+          "motor-reglas",
+          "evidencias",
+          "bd-casos",
+          "consola"
+        ],
+        "kind": "system-boundary"
+      }
     ],
-    "metadata": { "audience": "technical", "title": "Contenedores de Suscripción", "diagramType": "c4-container" }
+    "metadata": {
+      "audience": "technical",
+      "title": "Contenedores de Suscripción",
+      "diagramType": "c4-container"
+    }
   },
   "esperado": {
     "dialecto": "C4Container",
-    "entidades": [["Suscriptor"], ["Orquestador de Casos", "Orquestador"], ["Motor de Reglas"], ["Servicio de Evidencias", "Evidencias"], ["Laboratorio Externo", "Laboratorio"], ["Buró Médico"]],
+    "entidades": [
+      [
+        "Suscriptor"
+      ],
+      [
+        "Orquestador de Casos",
+        "Orquestador"
+      ],
+      [
+        "Motor de Reglas"
+      ],
+      [
+        "Servicio de Evidencias",
+        "Evidencias"
+      ],
+      [
+        "Laboratorio Externo",
+        "Laboratorio"
+      ],
+      [
+        "Buró Médico"
+      ]
+    ],
     "metadatos": [
-      { "entidad": ["Servicio de Evidencias"], "campo": "dataClassification", "valor": "phi" },
-      { "entidad": ["Motor de Reglas"], "campo": "technology", "valor": "FICO Blaze" },
-      { "entidad": ["BD de Casos"], "campo": "dataClassification", "valor": "phi" }
+      {
+        "entidad": [
+          "Servicio de Evidencias"
+        ],
+        "campo": "dataClassification",
+        "valor": "phi"
+      },
+      {
+        "entidad": [
+          "Motor de Reglas"
+        ],
+        "campo": "technology",
+        "valor": "FICO Blaze"
+      },
+      {
+        "entidad": [
+          "BD de Casos"
+        ],
+        "campo": "dataClassification",
+        "valor": "phi"
+      }
+    ],
+    "paquetes": [
+      "life-insurance"
+    ],
+    "hallazgosDominio": [
+      "LI_UNDERWRITING_EVIDENCE_NOT_PHI"
     ]
   }
 }

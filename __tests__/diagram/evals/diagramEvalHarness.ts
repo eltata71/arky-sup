@@ -27,6 +27,8 @@ import type { Project } from '../../../services/architectureProjects';
 import type { DiagramIR, DiagramIRNode, DiagramNarrative } from '../../../lib/diagram';
 import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
 import { UNTRUSTED_FENCE_OPEN } from '../../../lib/untrustedContent';
+import { DOMAIN_PACKS } from '../../../lib/domainPacks';
+import { validateInsuranceCompliance } from '../../../services/diagram/insuranceCompliance';
 import { legacyTransport } from '../../../services/ai/generation/legacyTransport';
 import { runArtifactGeneration } from '../../../services/artifacts/application/artifactGenerationRun';
 import { isSkeletonFallbackContent } from '../../../services/artifacts/domain/deterministicArtifactFallbacks';
@@ -72,6 +74,11 @@ export interface DiagramEvalCase {
         avisos?: string[];
         /** La corrección grabada debe aplicarse y cerrar las brechas de fidelidad. */
         correccionAplicada?: boolean;
+        /** Los paquetes de dominio que deben llegar al prompt, y sólo ésos (6.4). */
+        paquetes?: string[];
+        /** Códigos que el validador de dominio debe encontrar, y los que no. */
+        hallazgosDominio?: string[];
+        sinHallazgosDominio?: string[];
     };
 }
 
@@ -107,6 +114,13 @@ export interface DiagramEvalCaseResult {
     /** Llamadas a la vía de corrección (0 o 1). */
     llamadasCorreccion: number;
     degradado: boolean;
+    /** Paquetes de dominio que llegaron al prompt (6.4). */
+    paquetes: string[];
+    /** Códigos del validador de dominio sobre el IR guardado. */
+    hallazgosDominio: string[];
+    paquetesEsperados?: string[];
+    hallazgosEsperados: string[];
+    hallazgosProhibidos: string[];
 }
 
 export interface DiagramEvalSummary {
@@ -126,6 +140,10 @@ export interface DiagramEvalSummary {
     fidelidadMedia: number;
     /** De los casos diseñados para degradarse, cuántos se lo dijeron al usuario (6.3). */
     degradacionesAvisadas: number;
+    /** Casos cuyo prompt lleva exactamente los paquetes de dominio esperados (6.4). */
+    paquetesCorrectos: number;
+    /** Hallazgos de dominio esperados que el validador encontró, y ausentes los que no debía (6.4). */
+    hallazgosDominioCorrectos: number;
 }
 
 export function loadCorpus(): DiagramEvalCase[] {
@@ -295,6 +313,11 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             avisosFidelidad: (result.fidelity?.warnings ?? []).map((w) => w.message),
             llamadasCorreccion: correction.mock.calls.length,
             degradado: Boolean(testCase.esperado.degradado),
+            paquetes: DOMAIN_PACKS.filter((pack) => prompt.includes(`PAQUETE DE DOMINIO — ${pack.name}`)).map((pack) => pack.id),
+            hallazgosDominio: ir ? validateInsuranceCompliance(ir).map((issue) => issue.code) : [],
+            paquetesEsperados: testCase.esperado.paquetes,
+            hallazgosEsperados: testCase.esperado.hallazgosDominio ?? [],
+            hallazgosProhibidos: testCase.esperado.sinHallazgosDominio ?? [],
             dialectoConservado: dialectMatches(dialectoGuardado, testCase.esperado.dialecto),
             dialectoGuardado,
             entidades: {
@@ -385,6 +408,13 @@ export function summarize(all: DiagramEvalCaseResult[]): DiagramEvalSummary {
         casosConContradicciones: all.filter((r) => r.contradicciones.length > 0).length,
         fidelidadMedia: round(fidelityScores.reduce((a, b) => a + b, 0) / Math.max(1, fidelityScores.length)),
         degradacionesAvisadas: round(ratio(degraded.filter((r) => r.avisos.length > 0).length, degraded.length)),
+        paquetesCorrectos: round(ratio(all.filter((r) => r.paquetesEsperados === undefined
+            || [...r.paquetes].sort().join() === [...r.paquetesEsperados].sort().join()).length, all.length)),
+        hallazgosDominioCorrectos: round(ratio(
+            all.reduce((acc, r) => acc + r.hallazgosEsperados.filter((code) => r.hallazgosDominio.includes(code)).length
+                + r.hallazgosProhibidos.filter((code) => !r.hallazgosDominio.includes(code)).length, 0),
+            all.reduce((acc, r) => acc + r.hallazgosEsperados.length + r.hallazgosProhibidos.length, 0),
+        )),
     };
 }
 
@@ -404,10 +434,12 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.fidelidad ?? '—',
         r.llamadasCorreccion,
         r.avisos.length ? r.avisos.join(' / ').slice(0, 140) : '—',
+        r.paquetes.join(',') || '—',
+        r.hallazgosDominio.join(',') || '—',
     ].join(' | '));
     const missing = results.flatMap((r) => r.contexto.filter((c) => !c.ok).map((c) => `  ${r.id}: falta ${c.que}`));
     return [
-        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario',
+        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | hallazgos de dominio',
         ...rows,
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),

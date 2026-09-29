@@ -28,17 +28,13 @@ describe('DIAGRAM_SYSTEM_INSTRUCTION', () => {
 });
 
 describe('buildDiagramIRSchema', () => {
-    it('produces a schema with required nodes/edges arrays and a review block by default', () => {
+    it('produces a schema with required nodes/edges arrays and no self-review block', () => {
+        // The `review` block cost tokens on every call and nothing read it (6.4).
         const schema = buildDiagramIRSchema() as any;
         expect(schema.type).toBe('object');
         expect(schema.required).toEqual(['nodes', 'edges']);
         expect(schema.properties.nodes.type).toBe('array');
         expect(schema.properties.edges.type).toBe('array');
-        expect(schema.properties.review).toBeDefined();
-    });
-
-    it('drops the review block when withReview is false', () => {
-        const schema = buildDiagramIRSchema({ withReview: false }) as any;
         expect(schema.properties.review).toBeUndefined();
     });
 

@@ -50,7 +50,7 @@ beforeEach(() => {
     // The bounded correction reaches the gateway; here it must never leave.
     vi.spyOn(legacyTransport, 'generateContentWithFallback').mockRejectedValue(new Error('offline'));
     selfHealing.mockReset();
-    selfHealing.mockResolvedValue({ ir: modelIR, attempts: 1, fallback: 'none', warnings: [] });
+    selfHealing.mockResolvedValue({ ir: modelIR, attempts: 1, fallback: 'none', warnings: [], dropped: [] });
 });
 
 describe('generateC4ArtifactContent', () => {

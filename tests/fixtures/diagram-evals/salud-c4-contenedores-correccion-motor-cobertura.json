@@ -148,6 +148,9 @@
         "valor": "phi"
       }
     ],
-    "correccionAplicada": true
+    "correccionAplicada": true,
+    "paquetes": [
+      "health-insurance"
+    ]
   }
 }

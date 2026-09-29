@@ -1,5 +1,5 @@
 {
-  "_nota": "Agregados del banco de evaluación de diagramas. 'antes' se midió sobre main e15e1d5 antes de la 6.1; 'antes62' sobre df9b18b antes de la 6.2; 'antes63' sobre 91fd382 antes de la 6.3, cada uno con el corpus de su ola; 'actual' es el suelo que la prueba exige y sólo puede mejorar. Actualizar con `npm run eval:diagrams` en el mismo commit que cambia las cifras. Los casos diseñados para degradarse no entran en los agregados de conservación.",
+  "_nota": "Agregados del banco de evaluación de diagramas. 'antes' se midió sobre main e15e1d5 antes de la 6.1; 'antes62' sobre df9b18b antes de la 6.2; 'antes63' sobre 91fd382 antes de la 6.3; 'antes64' sobre 397c259 antes de la 6.4 (con el validador que main ejecutaba), cada uno con el corpus de su ola; 'actual' es el suelo que la prueba exige y sólo puede mejorar. Actualizar con `npm run eval:diagrams` en el mismo commit que cambia las cifras. Los casos diseñados para degradarse no entran en los agregados de conservación.",
   "antes": {
     "casos": 10,
     "dialectoConservado": 0.1,
@@ -36,18 +36,36 @@
     "fidelidadMedia": 0,
     "degradacionesAvisadas": 0
   },
-  "actual": {
-    "casos": 11,
+  "antes64": {
+    "casos": 12,
     "dialectoConservado": 1,
     "coberturaEntidades": 1,
     "metadatosConservados": 1,
     "tecnologiasConservadas": 1,
     "historiaConservada": 1,
     "tasaEsqueleto": 0,
-    "calidadMedia": 48.818,
+    "calidadMedia": 49.563,
     "contextoEntregado": 1,
     "casosConContradicciones": 0,
-    "fidelidadMedia": 0.867,
-    "degradacionesAvisadas": 1
+    "fidelidadMedia": 0.879,
+    "degradacionesAvisadas": 1,
+    "paquetesCorrectos": 0.071,
+    "hallazgosDominioCorrectos": 0.333
+  },
+  "actual": {
+    "casos": 12,
+    "dialectoConservado": 1,
+    "coberturaEntidades": 1,
+    "metadatosConservados": 1,
+    "tecnologiasConservadas": 1,
+    "historiaConservada": 1,
+    "tasaEsqueleto": 0,
+    "calidadMedia": 49.333,
+    "contextoEntregado": 1,
+    "casosConContradicciones": 0,
+    "fidelidadMedia": 0.879,
+    "degradacionesAvisadas": 1,
+    "paquetesCorrectos": 1,
+    "hallazgosDominioCorrectos": 1
   }
 }

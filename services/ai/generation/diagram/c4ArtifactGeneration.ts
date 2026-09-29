@@ -18,6 +18,7 @@ import type { ArtifactTemplate, Settings } from '../../../../types';
 import type { Artifact } from '../../../../lib/artifacts';
 import type { DiagramAudience } from '../../../../lib/diagram';
 import type { Project } from '../../../architectureProjects';
+import { resolveDomainPacks } from '../../../../lib/domainPacks';
 import { c4LevelOfArtifactType, irToMermaidC4, mermaidToIR, type C4DiagramLevel } from '../../../diagram';
 import { C4SelfHealingError } from '../../errors';
 import { buildDiagramGenerationBrief, type UpperLevelDiagram } from '../../prompts/diagramGenerationBrief';
@@ -139,6 +140,10 @@ export async function generateC4ArtifactContent(
         upperLevel: resolveUpperLevel(project, level, previousArtifact?.versionGroupId),
         architectureGraphBlock: opts.architectureGraphPromptBlock,
         personaInstruction: opts.composePersonaInstruction?.('', request),
+        domainPacks: resolveDomainPacks({
+            motivations: opts.businessMotivation,
+            texts: [project.description, ...(project.projectContext ?? []), template.objective, template.requestContext?.userRequest],
+        }),
     });
     // A regeneration evolves the diagram it replaces instead of re-rolling it.
     const result = await generateDiagramIRWithSelfHealing(stub, project, settings, { brief, previousIR: previousArtifact?.ir });
@@ -154,6 +159,15 @@ export async function generateC4ArtifactContent(
                 warnings: result.warnings,
             },
         );
+    }
+    if (result.dropped.length) {
+        opts.onPhase?.({
+            stage: 'validation',
+            status: 'warning',
+            message: `Se descartaron ${result.dropped.length} elemento(s) inválidos de la respuesta del modelo.`,
+            detail: result.dropped.slice(0, 12).join(' · '),
+            at: new Date().toISOString(),
+        });
     }
     // One bounded correction, only when the deterministic evaluation finds
     // something, and kept only if it does not make things worse (6.3).

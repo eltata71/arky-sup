@@ -114,7 +114,7 @@ export const ROUTE_BUDGETS_GZIP_KB = {
   EngagementRoom: 650,
   TrainingCenterPage: 630,
   SDDProcessView: 665,
-  Workspace: 1109, // plan diagramas 6.2: +1,9 KB gz medidos (1 105,2 → 1 107,1): el brief de generación y el cercado del contexto viajan con el motor · plan diagramas 6.1: +1,5 KB gz medidos (1 103,7 → 1 105,2): el serializador C4 y la reescritura por dialecto viven en el camino de generación
+  Workspace: 1112, // plan diagramas 6.4: +1,5 KB gz medidos (1 108,8 → 1 110,3): los paquetes de seguros de salud y vida, el validador de vida y el lector del IR viajan con el motor y el servicio de calidad · plan diagramas 6.2: +1,9 KB gz medidos (1 105,2 → 1 107,1): el brief de generación y el cercado del contexto viajan con el motor · plan diagramas 6.1: +1,5 KB gz medidos (1 103,7 → 1 105,2): el serializador C4 y la reescritura por dialecto viven en el camino de generación
 };
 
 /** Route-only runtimes that must never be preloaded by the application shell. */

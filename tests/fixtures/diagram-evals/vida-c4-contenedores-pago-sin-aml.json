@@ -1,0 +1,129 @@
+{
+  "id": "vida-c4-contenedores-pago-sin-aml",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Liquidación Exprés de Vida",
+    "descripcion": "Pago de la suma asegurada a beneficiarios de seguros de vida en 48 horas tras el aviso de fallecimiento.",
+    "contexto": [
+      "Pago por transferencia ISO 20022"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Contenedores de Liquidación Exprés",
+    "tipo": "mermaid-c4-container",
+    "objetivo": "Mostrar los contenedores que liquidan un siniestro de vida.",
+    "conceptosClave": []
+  },
+  "respuestaModelo": {
+    "nodes": [
+      {
+        "id": "beneficiario",
+        "label": "Beneficiario",
+        "kind": "person",
+        "description": "Presenta el aviso de fallecimiento"
+      },
+      {
+        "id": "portal",
+        "label": "Portal de Siniestros",
+        "kind": "service",
+        "technology": "React 18",
+        "description": "Recibe el aviso y los documentos"
+      },
+      {
+        "id": "liquidacion",
+        "label": "Servicio de Liquidación",
+        "kind": "service",
+        "technology": "Java 21",
+        "description": "Calcula y ordena el pago de la suma asegurada"
+      },
+      {
+        "id": "expedientes",
+        "label": "BD Expedientes",
+        "kind": "data",
+        "technology": "PostgreSQL 15",
+        "description": "Expedientes de siniestro y beneficiarios",
+        "dataClassification": "pii"
+      },
+      {
+        "id": "tesoreria",
+        "label": "Tesorería",
+        "kind": "system",
+        "description": "Ejecuta transferencias"
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "beneficiario",
+        "target": "portal",
+        "label": "Avisa fallecimiento",
+        "protocol": "HTTPS"
+      },
+      {
+        "id": "e2",
+        "source": "portal",
+        "target": "liquidacion",
+        "label": "Registra siniestro",
+        "protocol": "REST/HTTPS"
+      },
+      {
+        "id": "e3",
+        "source": "liquidacion",
+        "target": "expedientes",
+        "label": "Guarda expediente",
+        "protocol": "JDBC"
+      },
+      {
+        "id": "e4",
+        "source": "liquidacion",
+        "target": "tesoreria",
+        "label": "Ordena pago de la suma asegurada",
+        "protocol": "ISO 20022"
+      }
+    ],
+    "groups": [
+      {
+        "id": "liq",
+        "label": "Liquidación Exprés",
+        "nodeIds": [
+          "portal",
+          "liquidacion",
+          "expedientes"
+        ],
+        "kind": "system-boundary"
+      }
+    ],
+    "metadata": {
+      "audience": "technical",
+      "title": "Contenedores de Liquidación Exprés",
+      "diagramType": "c4-container"
+    }
+  },
+  "esperado": {
+    "dialecto": "C4Container",
+    "entidades": [
+      [
+        "Servicio de Liquidación"
+      ],
+      [
+        "Tesorería"
+      ]
+    ],
+    "metadatos": [
+      {
+        "entidad": [
+          "BD Expedientes"
+        ],
+        "campo": "dataClassification",
+        "valor": "pii"
+      }
+    ],
+    "paquetes": [
+      "life-insurance"
+    ],
+    "hallazgosDominio": [
+      "LI_PAYOUT_WITHOUT_AML"
+    ]
+  }
+}

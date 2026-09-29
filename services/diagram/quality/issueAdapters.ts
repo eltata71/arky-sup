@@ -11,7 +11,7 @@ import type { DiagramLintIssue } from './diagramQualityTypes';
 import type { DiagramSuggestion, SuggestionSeverity } from '../diagramTypeQualityGates';
 import type { VisualLintIssue } from '../diagramVisualLints';
 import type { BpmnValidationIssue } from '../bpmnValidation';
-import type { HealthcareComplianceIssue } from '../healthcareCompliance';
+import type { DomainComplianceIssue } from '../healthcareCompliance';
 import type { C4ValidationIssue } from '../c4Validation';
 
 /**
@@ -74,7 +74,7 @@ export function bpmnIssuesToLints(issues: BpmnValidationIssue[]): DiagramLintIss
     }));
 }
 
-export function healthcareIssuesToLints(issues: HealthcareComplianceIssue[]): DiagramLintIssue[] {
+export function healthcareIssuesToLints(issues: DomainComplianceIssue[]): DiagramLintIssue[] {
     return issues.map((issue) => ({
         id: issue.id,
         code: issue.code,

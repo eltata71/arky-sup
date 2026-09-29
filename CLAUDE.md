@@ -1281,8 +1281,10 @@ and `narrativeIsAuthored` (`lib/diagram`) are the one definition of each
 question; the repair and the planner had drifted apart on it.
 
 The generator can finally produce one: `services/ai/prompts/diagramStorySchema.ts`
-carries the structured narrative in **both** halves of the contract — the JSON
-the prompt prints and the schema the request enforces — so they cannot diverge.
+carries the structured narrative in the schema the request enforces and in the
+instructions that travel with it. (It used to print the same shape a second
+time as JSON, for prompt builders nothing called; task 6.4 removed both, so
+there is one description of the shape and it cannot diverge.)
 The model writes meaning, never geometry: scenes are ids and a title, callouts
 are ids and a sentence. See `ADR-005`.
 
@@ -1363,6 +1365,30 @@ most, and never degrades in silence** (task 6.3).
   what was asked — the model declined for lack of data (not retried: it
   would decline again with less), or a notation fell back to a flowchart.
   Skeletons use names from the project, never «Componente A».
+
+**And an insurance diagram is drawn and checked with the industry's
+knowledge, from one source** (task 6.4). `lib/domainPacks` declares the
+**health** and **life** insurance packs — canonical entities, typical flows,
+standards *with when to use each*, data rules, and the vocabulary that
+detects them. `resolveDomainPacks` activates a pack from an initiative's
+regulatory drivers on their own, or from two distinct vocabulary terms in
+free text, and records its source and evidence; `buildDomainPackBlock` puts
+it in the brief and in `buildBasePrompt`. The validators read the same packs:
+`healthcareCompliance` takes its detectors from the health pack and gives
+health-only advice (FHIR, X12, NCPDP, adjudication, PHI by vocabulary) only
+when the diagram has health vocabulary — a life diagram used to receive it
+because it classified a beneficiary as PII — and
+`lifeInsuranceCompliance` adds what nothing checked: a payout with no
+AML/sanctions screening, underwriting evidence not classified PHI, policy
+parties not classified, ACORD. Local regulation is cited only when the
+project or the initiative names it.
+
+The model's IR is read as untrusted structured output: `readModelDiagramIR`
+parses with `parseStructured`, keeps what is valid, removes what is not —
+duplicate ids, edges to nowhere, enums outside the schema — and **names each
+removal** for the trace. The unused self-review `review` block left the
+schema, and so did three prompt builders that printed a second, different
+schema and that nothing called.
 
 ### A diagram is changed, not regenerated
 
@@ -2645,6 +2671,9 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
   is not a flowchart, and do not re-parse the model's IR from the text you just
   serialised it into. Use `serializeIRPreservingDialect` / `rewriteDiagramContent`
   and `onDiagramIR`; the evaluation bench (`diagram-evals`) fails otherwise.
+- Do not write industry knowledge into a prompt or a validator directly: it
+  belongs in `lib/domainPacks`, which both read. Do not cast a model's JSON to
+  `DiagramIR`; read it with `readModelDiagramIR` and report what it drops.
 - Do not save a diagram that differs from what was asked without saying so
   (`onDegraded`, `checkRequestFidelity`), do not retry a model that declined
   for lack of data, and do not correct a generated diagram by rewriting its
