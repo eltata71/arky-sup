@@ -22,9 +22,10 @@ import type { ArtifactReviewSuggestion } from '../review';
 import type { ChatMessage } from '../chat';
 import { appendMemoryNotes } from '../memory/memoryEntries';
 import { artifactGenerationService, classifyAIError, AIServiceError } from '../ai';
-import { assessDocumentArtifact } from '../quality';
 import { validateArtifactReadiness } from '../../lib/artifacts/artifactGovernance';
-import { extractIRFromArtifact, runDiagramQualityGate } from '../diagram';
+import { instructionPermitsRemoval } from '../../lib/artifacts';
+import { validateArtifactContent } from './agentContentValidation';
+import { extractIRFromArtifact } from '../diagram';
 import { repairDiagramIRSemantics } from '../../lib/semanticRoleResolver';
 import { ARTIFACT_TEMPLATES } from '../../constants';
 import type {
@@ -258,7 +259,11 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
     }
 
     emit('validating', 'Validando calidad del resultado…');
-    const validation = validateArtifactContent(artifact, newContent);
+    const validation = validateArtifactContent(artifact, newContent, {
+      // A regeneration rebuilds the structure on purpose; a request to remove
+      // or condense says so in its own words. Neither is a loss.
+      permitsRemoval: plan.actionType === 'artifact.regenerate' || instructionPermitsRemoval(plan.intent.userInstruction),
+    });
     if (!validation.passed) {
       emit('failed', `La validación de calidad rechazó el resultado: ${validation.summary}`);
       logAgentEvent({
@@ -899,85 +904,3 @@ const findTemplateForArtifact = (artifact: Artifact): ArtifactTemplate | undefin
   return ARTIFACT_TEMPLATES.find((t) => t.type === artifact.type);
 };
 
-/**
- * Lightweight quality gate. For diagrams that have an IR field we run the
- * existing deterministic gate. For everything else we apply structural sanity
- * checks (non-empty, length sanity, no truncation markers). This is a
- * pre-flight — the canvas-level renderability gate still runs on the actual
- * persisted artifact when the user navigates to it.
- */
-const validateArtifactContent = (
-  artifact: Artifact,
-  newContent: string,
-): NonNullable<AgentActionResult['validationResult']> => {
-  const trimmed = newContent.trim();
-  if (trimmed.length === 0) {
-    return { passed: false, summary: 'El contenido generado está vacío.' };
-  }
-  if (trimmed.length < 16) {
-    return { passed: false, summary: 'El contenido generado es demasiado corto para ser válido.' };
-  }
-  if (/```\s*$/m.test(trimmed) && !/```[\s\S]*```/.test(trimmed)) {
-    return { passed: false, summary: 'El contenido contiene un bloque de código sin cerrar.' };
-  }
-  // Document-quality parity with the Workspace generation gate: agent paths
-  // (improve / patch / applySuggestion) bypass `generateArtifactContent`, so
-  // without this check a truncated or gutted document would persist silently.
-  // We fail only on hard signals (truncation, drastic shrinkage); structural
-  // warnings pass through with the score in the summary.
-  if (artifact.representation === 'document' && artifact.type !== 'yaml' && !artifact.ir) {
-    const assessment = assessDocumentArtifact(trimmed, { expectStructuredDocument: true });
-    if (assessment.truncated) {
-      const issues = assessment.issues.map((i) => i.message).join(' · ');
-      return { passed: false, summary: `El documento llegó truncado: ${issues}`, score: assessment.score };
-    }
-    const previousLength = (artifact.content ?? '').trim().length;
-    const shrankDrastically = previousLength >= 800 && trimmed.length < previousLength * 0.35;
-    if (shrankDrastically) {
-      return {
-        passed: false,
-        summary: `El nuevo contenido (${trimmed.length} caracteres) es drásticamente más corto que el actual (${previousLength}); se descarta para evitar pérdida de contenido.`,
-        score: assessment.score,
-      };
-    }
-    return {
-      passed: true,
-      summary: assessment.ok
-        ? `Documento válido (calidad estimada ${assessment.score}/100).`
-        : `Documento aceptado con advertencias (${assessment.issues.map((i) => i.code).join(', ')}) — calidad estimada ${assessment.score}/100.`,
-      score: assessment.score,
-    };
-  }
-
-  // Diagram-specific: if we already have an IR snapshot, run the existing
-  // deterministic quality gate. We only USE its score; we don't apply its
-  // automatic rewrites (those are reserved for the explicit "Auto-mejorar"
-  // button so the user retains control over deterministic patches).
-  if (artifact.ir) {
-    try {
-      const gate = runDiagramQualityGate(artifact.ir, {
-        artifact: {
-          name: artifact.name,
-          type: artifact.type,
-          objective: artifact.objective,
-          audience: artifact.audience,
-          theme: artifact.theme,
-        },
-        audience: artifact.audience ?? 'technical',
-        targetScore: 60,
-        maxPasses: 1,
-      });
-      return {
-        passed: gate.quality.score >= 40,
-        summary:
-          gate.quality.score >= 40
-            ? `Calidad estimada ${gate.quality.score}/100.`
-            : `Calidad estimada ${gate.quality.score}/100 — por debajo del umbral mínimo (40).`,
-        score: gate.quality.score,
-      };
-    } catch {
-      // Fall through to "structural OK".
-    }
-  }
-  return { passed: true, summary: 'Contenido estructuralmente válido.' };
-};

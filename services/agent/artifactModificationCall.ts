@@ -10,7 +10,7 @@
  * only be tested by rendering the panel. Here they are a pure function; the
  * screen still does the write, because the write is the context's.
  */
-import type { Artifact } from '../../lib/artifacts';
+import { checkContentPreservation, instructionPermitsRemoval, type Artifact } from '../../lib/artifacts';
 
 /** The call as the turn returns it: a name and untyped arguments. */
 export interface ModelFunctionCall {
@@ -37,7 +37,9 @@ export const MODIFICATION_NOTES = Object.freeze({
 
 export const interpretArtifactModification = (
   functionCall: ModelFunctionCall | undefined,
-  activeArtifact: Pick<Artifact, 'content'> | null,
+  activeArtifact: Pick<Artifact, 'content' | 'representation'> | null,
+  /** What the person asked for: a request to remove or condense is not a loss. */
+  instruction?: string,
 ): ArtifactModification => {
   if (!functionCall || functionCall.name !== 'modifyArtifact') return { kind: 'none' };
   if (!activeArtifact) {
@@ -62,7 +64,21 @@ export const interpretArtifactModification = (
     };
   }
   const target = String(functionCall.args.target ?? '');
-  if (target === 'current') return { kind: 'update-current', content };
-  if (target === 'new_version') return { kind: 'new-version', content };
-  return { kind: 'none' };
+  if (target !== 'current' && target !== 'new_version') return { kind: 'none' };
+  // The chat is the path most used to rewrite an artifact and it was the only
+  // one with no preservation rule (plan de calidad de artefactos, 7.1a). A
+  // diagram's structure is guarded by its IR reconciliation, not by its text.
+  if (activeArtifact.representation !== 'diagram') {
+    const preservation = checkContentPreservation(activeArtifact.content, content, {
+      mode: activeArtifact.representation === 'hybrid' ? 'hybrid' : 'document',
+      permitsRemoval: instructionPermitsRemoval(instruction),
+    });
+    if (!preservation.ok) {
+      return {
+        kind: 'not-applied',
+        note: `*No apliqué el cambio para no perder contenido: ${preservation.reason} Si querías quitar esa parte, pídelo de forma explícita («elimina la sección…»).*`,
+      };
+    }
+  }
+  return target === 'current' ? { kind: 'update-current', content } : { kind: 'new-version', content };
 };
