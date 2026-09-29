@@ -69,10 +69,15 @@ changelog the UI can surface.
 
 ### 3. Pipeline wiring
 
-- **Generation** (`services/geminiService.ts::generateAndRefineDiagramIR`):
-  the deterministic gate replaces the previous `autoRepairIR`-only step,
-  guaranteeing the post-repair IR has clean metadata, no orphans, and
-  verb-driven labels before the AI critique pass.
+- **Generation** (`services/artifacts/application/artifactGenerationRun.ts`):
+  the deterministic gate runs over the model's IR before persisting,
+  guaranteeing clean metadata, no orphans and verb-driven labels. The C4
+  path adds one bounded correction before that
+  (`services/ai/generation/diagram/diagramSelfCorrection.ts`, plan de
+  diagramas 6.3): a semantic patch, only when the deterministic evaluation
+  finds something, kept only if it does not make things worse. The old
+  `generateAndRefineDiagramIR`, which rewrote the whole IR and nothing
+  called, was removed.
 - **Render** (`services/diagram/resolveRenderableDiagram.ts`): the gate
   also runs at render time for legacy artifacts (Mermaid-only, no
   `artifact.ir`) so the score badge reflects the best deterministic

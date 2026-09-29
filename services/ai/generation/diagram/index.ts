@@ -2,7 +2,6 @@
 export { buildDiagramGenerationConfig, diagramTemperature, THINKING_BUDGET } from './diagramGenerationConfig';
 export type { DiagramConfigOptions } from './diagramGenerationConfig';
 export { generateDiagramIR, generateDiagramIRWithSelfHealing } from './diagramIRGeneration';
-export { generateAndRefineDiagramIR } from './diagramIRRefinement';
 export { generateC4ArtifactContent, isC4ArtifactType } from './c4ArtifactGeneration';
 export { convertToExcalidrawJSON } from './excalidrawConversion';
 export { parseMermaidToReactFlow } from './mermaidToReactFlow';

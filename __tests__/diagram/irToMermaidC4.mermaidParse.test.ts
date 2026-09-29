@@ -12,7 +12,9 @@ import type { DiagramIR } from '../../lib/diagram';
 import { c4LevelOfArtifactType, irToMermaidC4 } from '../../services/diagram/irToMermaidC4';
 import { loadCorpus } from './evals/diagramEvalHarness';
 
-const c4Cases = loadCorpus().filter((c) => c.plantilla.tipo.startsWith('mermaid-c4-'));
+// Only cases where the model answered an IR: a declined request has none.
+const c4Cases = loadCorpus().filter((c) => c.plantilla.tipo.startsWith('mermaid-c4-')
+    && typeof c.respuestaModelo === 'object' && 'nodes' in c.respuestaModelo);
 
 describe('Mermaid acepta el C4 serializado', () => {
     it.each(c4Cases.map((c) => [c.id, c] as const))('%s', async (_id, testCase) => {

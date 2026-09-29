@@ -1344,6 +1344,26 @@ the IR prompts and in `buildBasePrompt`, with the rules outside the fence.
 The bench now also checks the prompt: 100 % of the context delivered, no
 contradictions.
 
+**And a generated diagram is checked against the request, corrected once at
+most, and never degrades in silence** (task 6.3).
+
+- `checkRequestFidelity` (`services/diagram/requestFidelity.ts`) is the
+  deterministic verdict: notation, skeleton, the names the request commits
+  to, each acceptance criterion and the audience. What it cannot prove it
+  reports as *sin evidencia*, never as met or failed. The run records every
+  check in the trace and tells the person the gaps in one sentence
+  (`reviewDiagramFidelity`).
+- `correctDiagramOnce` is the evaluator-optimizer: a deterministic
+  evaluation, and **one** semantic patch from the diagram edit vertical only
+  when a named element, the audience or a high-severity violation is off.
+  Criteria never trigger it: chasing a word match makes a model write words.
+  A patch that closes a gap may cost up to five heuristic points; one that
+  closes none must not lower the score.
+- `onDegraded` carries, in Spanish, why a path saved something other than
+  what was asked — the model declined for lack of data (not retried: it
+  would decline again with less), or a notation fell back to a flowchart.
+  Skeletons use names from the project, never «Componente A».
+
 ### A diagram is changed, not regenerated
 
 Every AI-assisted change used to be a fresh `generateDiagramIR`: new ids, a new
@@ -2625,6 +2645,10 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
   is not a flowchart, and do not re-parse the model's IR from the text you just
   serialised it into. Use `serializeIRPreservingDialect` / `rewriteDiagramContent`
   and `onDiagramIR`; the evaluation bench (`diagram-evals`) fails otherwise.
+- Do not save a diagram that differs from what was asked without saying so
+  (`onDegraded`, `checkRequestFidelity`), do not retry a model that declined
+  for lack of data, and do not correct a generated diagram by rewriting its
+  IR: one semantic patch, kept only if it does not make things worse.
 - Do not add a diagram path that returns before its context is composed, and
   do not ask a model for colour values or for Mermaid macro arguments on a
   path that returns an IR. `buildDiagramGenerationBrief` is the context; the

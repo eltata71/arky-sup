@@ -639,7 +639,10 @@ interface SkeletonHints {
 function pickSkeletonHints(artifact: Artifact, project: Project): SkeletonHints {
     const concepts = (artifact.keyConcepts ?? []).map((c) => (c?.term ?? '').trim()).filter(Boolean);
     const primaryName = (project.name && project.name.trim()) || (concepts[0] ?? 'Sistema Principal');
-    const secondaryNames = concepts.length >= 2 ? concepts.slice(0, 6) : ['Componente A', 'Componente B', 'Componente C'];
+    // Project names, never invented placeholders (6.3).
+    const signals = extractDiagramSignals(project);
+    const found = [...signals.systems, ...signals.integrations, ...signals.dataStores].map((s) => s.label);
+    const secondaryNames = concepts.length >= 2 ? concepts.slice(0, 6) : [...new Set(found)].slice(0, 6);
     return { primaryName, secondaryNames };
 }
 
@@ -747,13 +750,15 @@ export function buildSkeletonIRFromArtifact(artifact: Artifact, project: Project
 
     // Generic fallback (flowcharts, integration, ER, etc.)
     const nodes = [makeNode('center', primaryName, 'Process')].concat(
-        secondaryNames.slice(0, 4).map((name, i) => makeNode(`n${i + 1}`, name, 'Component')),
+        secondaryNames.length
+            ? secondaryNames.slice(0, 4).map((name, i) => makeNode(`n${i + 1}`, name, 'Component'))
+            : [makeNode('n1', 'Usuario', 'Person')],
     );
     const edges = nodes.slice(1).map((n, i) => ({
         id: `e-center-${i + 1}`,
         source: 'center',
         target: n.id,
-        label: 'Relaciona',
+        label: 'Relación por confirmar',
         relation: 'default' as const,
     }));
     return { nodes, edges, groups: [], metadata: baseMetadata };
@@ -917,9 +922,7 @@ inheritance/composition matter.`;
  * etc.
  */
 export function buildArchitecturalConstraints(type: ArtifactType): string {
-    // C4 goes through the IR path, so these speak of IR fields, never of
-    // Mermaid macros (plan de diagramas, 6.2): asking for "the 4th argument of
-    // Rel()" while demanding JSON was an instruction the model could not follow.
+    // C4 goes through the IR path: IR fields, never Mermaid macros (6.2).
     if (type === 'mermaid-c4-context') {
         return `ARCHITECTURAL GUARDRAILS — C4 CONTEXT (L1)
 - Only people, the system in scope and external systems (≤ 8 elements); no
@@ -1023,106 +1026,4 @@ export function buildArchitecturalConstraints(type: ArtifactType): string {
   domain verb ("Valida pago", "Sincroniza catálogo").`;
     }
     return '';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Multi-pass refinement: critique + refine prompts
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface IRCritiqueOptions {
-    ir: DiagramIR;
-    artifact: Pick<Artifact, 'name' | 'type' | 'objective'>;
-    audience: DiagramAudience;
-    /** Optional pre-computed local issues (from `analyzeDiagramQuality`). */
-    detectedIssues?: Array<{ severity: 'critical' | 'high' | 'medium' | 'low'; message: string; recommendation?: string }>;
-    /** Optional architectural violations from the guardrails module. */
-    architecturalViolations?: Array<{ code: string; severity: 'critical' | 'high' | 'medium' | 'low'; message: string; targetIds?: string[] }>;
-}
-
-/**
- * Asks the model to act as a senior reviewer and emit a structured critique
- * of an existing IR.  The critique is then fed back into
- * `buildIRRefinePrompt` so the model produces an improved IR instead of a
- * narrative response.
- *
- * Critically, this prompt **includes** any local issues already detected by
- * the deterministic quality service so the model is explicitly aware of them
- * — closing the gap where the model would otherwise re-introduce the same
- * problem.
- */
-export function buildIRCritiquePrompt(opts: IRCritiqueOptions): string {
-    const { ir, artifact, audience, detectedIssues = [], architecturalViolations = [] } = opts;
-    const issueLines = detectedIssues.length
-        ? detectedIssues
-            .slice(0, 12)
-            .map((i) => `- [${i.severity}] ${i.message}${i.recommendation ? ` → ${i.recommendation}` : ''}`)
-            .join('\n')
-        : '- (none detected by the static analyser)';
-    const violationLines = architecturalViolations.length
-        ? architecturalViolations
-            .slice(0, 12)
-            .map((v) => `- [${v.severity}] ${v.code}: ${v.message}${v.targetIds?.length ? ` (targets: ${v.targetIds.join(', ')})` : ''}`)
-            .join('\n')
-        : '- (no architectural violations detected)';
-
-    return `You are reviewing a draft DiagramIR for "${artifact.name}" (${artifact.type}).
-Audience: ${audience.toUpperCase()}.
-Objective: ${artifact.objective ?? ''}.
-
-Static analyser findings:
-${issueLines}
-
-Architectural guardrails findings:
-${violationLines}
-
-Apply the 10-dimension Arky rubric and emit a JSON critique.  Be surgical: only
-propose fixes that materially raise the score.  Each fix MUST be expressible
-as a structural change to the IR (relabel, regroup, add/remove edge, change
-relation), not a narrative.
-
-DiagramIR draft:
-${JSON.stringify(ir, null, 2)}
-
-Respond ONLY with this JSON shape (no prose):
-{
-  "score": number,
-  "breakdown": { "claridadSemantica": number, "consistenciaArquitectonica": number, "jerarquiaVisual": number, "legibilidad": number, "narrativa": number, "atractivoVisual": number, "preparacionEjecutiva": number, "preparacionTecnica": number, "exportabilidad": number, "mantenibilidadPipeline": number },
-  "issues": [{ "severity": "critical"|"high"|"medium"|"low", "message": string, "recommendation": string }],
-  "fixes": [{ "target": "<nodeId|edgeId|group:<id>>", "change": "<surgical instruction>", "category": "label"|"relation"|"group"|"add-edge"|"remove-edge"|"add-node"|"remove-node" }]
-}`;
-}
-
-export interface IRRefineOptions {
-    ir: DiagramIR;
-    critique: unknown;
-    artifact: Pick<Artifact, 'name' | 'type' | 'objective'>;
-    audience: DiagramAudience;
-}
-
-/**
- * Asks the model to apply a critique to a draft IR and return an improved IR.
- *
- * This is the second leg of multi-pass generation.  The critique is fed in
- * verbatim, the draft IR is shown, and the model is constrained to *only*
- * adjust what the critique flagged — preventing creative drift that would
- * otherwise re-roll the entire diagram and lose stable parts.
- */
-export function buildIRRefinePrompt(opts: IRRefineOptions): string {
-    const { ir, critique, artifact, audience } = opts;
-    return `Refine this DiagramIR by applying the critique below.  Keep every
-unchanged part stable: do not re-roll labels, kinds or ids that were not
-flagged.  When applying a fix, prefer the smallest possible change.
-
-Artifact: ${artifact.name} — ${artifact.type}
-Audience: ${audience.toUpperCase()}.
-Objective: ${artifact.objective ?? ''}.
-
-Draft IR:
-${JSON.stringify(ir, null, 2)}
-
-Critique (apply every fix unless it would violate the rubric):
-${typeof critique === 'string' ? critique : JSON.stringify(critique, null, 2)}
-
-Emit the improved DiagramIR using the schema you have been given.  Include a
-\`review\` block with the post-fix score.  Do NOT emit Mermaid.`;
 }

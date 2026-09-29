@@ -16,6 +16,7 @@ vi.mock('../../../services/ai/generation/diagram/diagramIRGeneration', () => ({
 }));
 
 const { generateC4ArtifactContent } = await import('../../../services/ai/generation/diagram/c4ArtifactGeneration');
+const { legacyTransport } = await import('../../../services/ai/generation/legacyTransport');
 const { artifactGenerationSupport } = await import('../../../services/artifacts');
 
 const modelIR: DiagramIR = {
@@ -46,6 +47,8 @@ const template = (requestContext?: ArtifactTemplate['requestContext']): Artifact
 const settings = { language: 'es', aiConfig: { model: 'gemini-2.5-flash' } } as unknown as Settings;
 
 beforeEach(() => {
+    // The bounded correction reaches the gateway; here it must never leave.
+    vi.spyOn(legacyTransport, 'generateContentWithFallback').mockRejectedValue(new Error('offline'));
     selfHealing.mockReset();
     selfHealing.mockResolvedValue({ ir: modelIR, attempts: 1, fallback: 'none', warnings: [] });
 });

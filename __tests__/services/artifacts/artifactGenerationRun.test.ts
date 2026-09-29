@@ -90,7 +90,13 @@ describe('runArtifactGeneration', () => {
         // A two-node diagram scores below the gate's target, so the run is
         // allowed to warn — what it must not do is fall back.
         expect(result.generationTrace.status).not.toBe('fallback');
-        expect(result.generationTrace.errors.every(step => step.stage === 'quality-gate')).toBe(true);
+        // The template is a C4 context and the model answered a flowchart: the
+        // fidelity check says so (plan de diagramas 6.3) instead of letting it
+        // pass as the notation that was asked for.
+        const fidelity = result.generationTrace.errors.filter(step => step.message.startsWith('Fidelidad a la solicitud'));
+        expect(fidelity.map(step => step.message)).toEqual([expect.stringMatching(/C4 de contexto.*otra notación/)]);
+        expect(result.fidelity?.warnings.map(w => w.kind)).toEqual(['dialect']);
+        expect(result.generationTrace.errors.every(step => step.stage === 'quality-gate' || fidelity.includes(step))).toBe(true);
     });
 
     it('persists a deterministic fallback — never nothing — when the model returns empty content', async () => {

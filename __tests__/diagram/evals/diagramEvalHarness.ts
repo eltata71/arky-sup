@@ -55,7 +55,9 @@ export interface DiagramEvalCase {
         conceptosClave: Array<{ term: string; definition: string }>;
     };
     /** El IR (camino C4) o el texto (Mermaid, híbrido) que devolvió el modelo. */
-    respuestaModelo: DiagramIR | string;
+    respuestaModelo: DiagramIR | string | { error: string };
+    /** El parche que propone el modelo cuando se le pide corregir (plan 6.3). */
+    respuestaCorreccion?: unknown;
     esperado: {
         /** La cabecera que debe abrir el contenido guardado. */
         dialecto: string;
@@ -64,6 +66,12 @@ export interface DiagramEvalCase {
         metadatos: Array<{ entidad: string[]; campo: keyof DiagramIRNode; valor: string }>;
         /** Nombres del nivel superior que el prompt debe entregar al modelo. */
         nivelSuperior?: string[];
+        /** El caso está diseñado para degradarse: lo que se mide es que se diga (6.3). */
+        degradado?: boolean;
+        /** Fragmentos que deben aparecer en lo que se le dice al usuario. */
+        avisos?: string[];
+        /** La corrección grabada debe aplicarse y cerrar las brechas de fidelidad. */
+        correccionAplicada?: boolean;
     };
 }
 
@@ -91,6 +99,14 @@ export interface DiagramEvalCaseResult {
     contexto: PromptCheck[];
     /** Instrucciones que contradicen al system prompt o al camino (colores, sintaxis Mermaid en un C4). */
     contradicciones: string[];
+    /** Lo que la corrida le dijo al usuario (`onWarning`). */
+    avisos: string[];
+    /** Veredicto del verificador de fidelidad (0–1), `null` si no hubo nada que verificar. */
+    fidelidad: number | null;
+    avisosFidelidad: string[];
+    /** Llamadas a la vía de corrección (0 o 1). */
+    llamadasCorreccion: number;
+    degradado: boolean;
 }
 
 export interface DiagramEvalSummary {
@@ -106,6 +122,10 @@ export interface DiagramEvalSummary {
     contextoEntregado: number;
     /** Casos cuyo prompt contiene una instrucción contradictoria. */
     casosConContradicciones: number;
+    /** Media del veredicto de fidelidad en los casos no degradados (6.3). */
+    fidelidadMedia: number;
+    /** De los casos diseñados para degradarse, cuántos se lo dijeron al usuario (6.3). */
+    degradacionesAvisadas: number;
 }
 
 export function loadCorpus(): DiagramEvalCase[] {
@@ -214,6 +234,13 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
         ? testCase.respuestaModelo
         : JSON.stringify(testCase.respuestaModelo);
     const transport = vi.spyOn(legacyTransport, 'generateTextWithFallback').mockResolvedValue(response);
+    // La corrección llega por `aiGateway`; sin respuesta grabada, falla como un
+    // proveedor caído — nunca sale a la red.
+    const correction = vi.spyOn(legacyTransport, 'generateContentWithFallback').mockImplementation(async () => {
+        if (testCase.respuestaCorreccion === undefined) throw new Error('sin respuesta de corrección grabada');
+        return { text: JSON.stringify(testCase.respuestaCorreccion) } as never;
+    });
+    const avisos: string[] = [];
     try {
         const result = await runArtifactGeneration({
             project: projectFor(testCase),
@@ -224,6 +251,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             startedAt: '2026-09-29T00:00:00.000Z',
             startedMs: 0,
             businessMotivation: testCase.iniciativas,
+            onWarning: (message) => { avisos.push(message); },
         });
 
         const ir = result.ir;
@@ -239,7 +267,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
 
         let tecnologias: DiagramEvalCaseResult['tecnologias'] = null;
         let historiaConservada: boolean | null = null;
-        if (typeof testCase.respuestaModelo !== 'string') {
+        if (typeof testCase.respuestaModelo !== 'string' && 'nodes' in testCase.respuestaModelo) {
             const declared = testCase.respuestaModelo.nodes.filter((node) => node.technology);
             if (declared.length > 0) {
                 const conservadas = declared.filter((node) =>
@@ -262,6 +290,11 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             tipo: testCase.plantilla.tipo,
             contexto,
             contradicciones,
+            avisos,
+            fidelidad: result.fidelity?.score ?? null,
+            avisosFidelidad: (result.fidelity?.warnings ?? []).map((w) => w.message),
+            llamadasCorreccion: correction.mock.calls.length,
+            degradado: Boolean(testCase.esperado.degradado),
             dialectoConservado: dialectMatches(dialectoGuardado, testCase.esperado.dialecto),
             dialectoGuardado,
             entidades: {
@@ -282,6 +315,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
         };
     } finally {
         transport.mockRestore();
+        correction.mockRestore();
     }
 }
 
@@ -322,7 +356,12 @@ const ratio = (hits: number, total: number): number => (total === 0 ? 1 : hits /
 const round = (value: number): number => Math.round(value * 1000) / 1000;
 
 /** Agregado micro: cada entidad, metadato y tecnología pesa lo mismo, sea del caso que sea. */
-export function summarize(results: DiagramEvalCaseResult[]): DiagramEvalSummary {
+export function summarize(all: DiagramEvalCaseResult[]): DiagramEvalSummary {
+    // Los casos diseñados para degradarse miden otra cosa —que se avise— y no
+    // entran en los agregados de lo que se conserva.
+    const results = all.filter((r) => !r.degradado);
+    const degraded = all.filter((r) => r.degradado);
+    const fidelityScores = results.map((r) => r.fidelidad).filter((v): v is number => v !== null);
     const sum = (pick: (r: DiagramEvalCaseResult) => number) => results.reduce((acc, r) => acc + pick(r), 0);
     const withTech = results.filter((r) => r.tecnologias);
     const withStory = results.filter((r) => r.historiaConservada !== null);
@@ -343,7 +382,9 @@ export function summarize(results: DiagramEvalCaseResult[]): DiagramEvalSummary 
             sum((r) => r.contexto.filter((c) => c.ok).length),
             sum((r) => r.contexto.length),
         )),
-        casosConContradicciones: results.filter((r) => r.contradicciones.length > 0).length,
+        casosConContradicciones: all.filter((r) => r.contradicciones.length > 0).length,
+        fidelidadMedia: round(fidelityScores.reduce((a, b) => a + b, 0) / Math.max(1, fidelityScores.length)),
+        degradacionesAvisadas: round(ratio(degraded.filter((r) => r.avisos.length > 0).length, degraded.length)),
     };
 }
 
@@ -360,10 +401,13 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.calidad ?? '—',
         `${r.contexto.filter((c) => c.ok).length}/${r.contexto.length}`,
         r.contradicciones.length ? r.contradicciones.join('; ') : '—',
+        r.fidelidad ?? '—',
+        r.llamadasCorreccion,
+        r.avisos.length ? r.avisos.join(' / ').slice(0, 140) : '—',
     ].join(' | '));
     const missing = results.flatMap((r) => r.contexto.filter((c) => !c.ok).map((c) => `  ${r.id}: falta ${c.que}`));
     return [
-        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones',
+        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario',
         ...rows,
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
