@@ -303,3 +303,27 @@ Tamaño: **S** ≈ 1–2 días · **M** ≈ 3–5 días · **L** ≈ 1–2 seman
 
 7.3 y 7.4 pueden avanzar en paralelo cuando exista el bundle. 7.4b reutiliza la
 política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
+
+## 6. Seguimiento
+
+| Tarea | PR | Estado |
+|---|---|---|
+| Plan | #119 | Fusionada |
+| 7.1a — política única de conservación | #121 | Fusionada |
+| 7.1b — el copiloto ve entero lo que puede reescribir | #122 | Fusionada |
+| 7.1c — banco `artifact-evals` | #123 | En revisión |
+
+**Línea base del banco (2026-09-30)**, `tests/fixtures/artifact-evals/linea-base.json`:
+
+| Métrica | Valor |
+|---|---|
+| Contexto entregado | 32,1 % |
+| Por camino | generar 66,7 · criticar 0 · refinar 10 · revisar 40 · sugerir 10 · presentar 55,6 · convertir 40 · copiloto 60 |
+| Por ámbito | proyecto 84,6 · global, captura y memoria del proyecto 53,8 · memoria del artefacto 21,9 · agente y hermanos 17,9 · iniciativa 15,4 · **entregable 0 · conversación 0** |
+| Artefacto cercado al llegar al modelo | 21,9 % |
+| El contrato detecta la sección que falta | 0 % |
+| Conservación bajo edición (garantía de 7.1a) | 100 % |
+| El copiloto ve el artefacto entero (garantía de 7.1b) | 100 % |
+
+Las olas 7.2 y 7.3 existen para llevar el contexto entregado y el cercado al
+100 %. La ola 7.4 existe para que el contrato detecte lo que falta.

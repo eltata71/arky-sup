@@ -1,0 +1,44 @@
+{
+  "id": "salud-runbook-elegibilidad",
+  "dominio": "salud",
+  "origenRespuesta": "redactada-a-mano: documento representativo escrito para el banco; no es una salida capturada de un modelo",
+  "plantilla": "Manual de Operaciones / Runbook",
+  "proyecto": {
+    "nombre": "Elegibilidad en línea",
+    "descripcion": "Operar el servicio de elegibilidad en línea para prestadores con alta disponibilidad."
+  },
+  "caminos": [
+    "generar",
+    "criticar",
+    "refinar",
+    "revisar",
+    "sugerir",
+    "copiloto"
+  ],
+  "artefacto": {
+    "contenido": "# Runbook — Servicio de Elegibilidad en Línea\n\n## Propósito\nGuiar a operaciones en la atención de incidentes del servicio de elegibilidad, que responde las consultas EDI 270/271 de prestadores y las del portal.\n\n## Arquitectura de Referencia\nEl servicio corre en contenedores detrás del gateway de APIs, consulta el Motor de Coberturas y cachea respuestas por cinco minutos. La base de afiliados se replica cada noche desde el core.\n\n## Indicadores y Alertas\n| Indicador | Umbral | Severidad |\n| --- | --- | --- |\n| Latencia p95 | Más de 800 ms durante 5 minutos | Alta |\n| Tasa de error 5xx | Más del 2 % | Crítica |\n| Respuestas 271 rechazadas | Más del 5 % | Alta |\n| Antigüedad de la réplica de afiliados | Más de 26 horas | Media |\n\n## Procedimientos\n### Latencia alta\n1. Revisar la saturación del Motor de Coberturas en el tablero de dependencias.\n2. Si la caché tiene tasa de acierto menor al 60 %, reiniciar el calentamiento de caché.\n3. Escalar horizontalmente el servicio hasta ocho réplicas.\n\n### Errores 5xx\n1. Identificar el despliegue más reciente y compararlo con el inicio del incidente.\n2. Si coincide, revertir al despliegue anterior con el pipeline.\n3. Si no coincide, revisar el certificado mTLS del gateway.\n\n### Réplica desactualizada\n1. Relanzar el trabajo de réplica nocturna.\n2. Verificar el recuento de afiliados contra el core.\n\n## Verificación\nTras cualquier procedimiento, ejecutar la consulta sintética de elegibilidad para los tres afiliados de prueba y confirmar respuesta 271 válida.\n",
+    "representacion": "document"
+  },
+  "respuestaModelo": "# Runbook — Servicio de Elegibilidad en Línea\n\n## Propósito\nGuiar a operaciones en la atención de incidentes del servicio de elegibilidad, que responde las consultas EDI 270/271 de prestadores y las del portal.\n\n## Arquitectura de Referencia\nEl servicio corre en contenedores detrás del gateway de APIs, consulta el Motor de Coberturas y cachea respuestas por cinco minutos. La base de afiliados se replica cada noche desde el core.\n\n## Indicadores y Alertas\n| Indicador | Umbral | Severidad |\n| --- | --- | --- |\n| Latencia p95 | Más de 800 ms durante 5 minutos | Alta |\n| Tasa de error 5xx | Más del 2 % | Crítica |\n| Respuestas 271 rechazadas | Más del 5 % | Alta |\n| Antigüedad de la réplica de afiliados | Más de 26 horas | Media |\n\n## Procedimientos\n### Latencia alta\n1. Revisar la saturación del Motor de Coberturas en el tablero de dependencias.\n2. Si la caché tiene tasa de acierto menor al 60 %, reiniciar el calentamiento de caché.\n3. Escalar horizontalmente el servicio hasta ocho réplicas.\n\n### Errores 5xx\n1. Identificar el despliegue más reciente y compararlo con el inicio del incidente.\n2. Si coincide, revertir al despliegue anterior con el pipeline.\n3. Si no coincide, revisar el certificado mTLS del gateway.\n\n### Réplica desactualizada\n1. Relanzar el trabajo de réplica nocturna.\n2. Verificar el recuento de afiliados contra el core.\n\n## Verificación\nTras cualquier procedimiento, ejecutar la consulta sintética de elegibilidad para los tres afiliados de prueba y confirmar respuesta 271 válida.\n",
+  "seccionesDisciplina": [
+    [
+      "Propósito"
+    ],
+    [
+      "Indicadores",
+      "Alertas"
+    ],
+    [
+      "Procedimientos"
+    ],
+    [
+      "Escalamiento"
+    ],
+    [
+      "Verificación"
+    ]
+  ],
+  "seccionesOmitidas": [
+    "Escalamiento"
+  ]
+}

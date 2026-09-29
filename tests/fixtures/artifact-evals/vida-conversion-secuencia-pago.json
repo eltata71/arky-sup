@@ -1,0 +1,19 @@
+{
+  "id": "vida-conversion-secuencia-pago",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: documento representativo escrito para el banco; no es una salida capturada de un modelo",
+  "plantilla": "Manual de Operaciones / Runbook",
+  "proyecto": {
+    "nombre": "Pago ágil de siniestros de vida",
+    "descripcion": "Acelerar el pago de siniestros de vida manteniendo los controles regulatorios."
+  },
+  "caminos": [
+    "convertir",
+    "copiloto"
+  ],
+  "artefacto": {
+    "contenido": "sequenceDiagram\n  participant B as Beneficiario\n  participant P as Portal de Siniestros\n  participant V as Validador de Beneficiarios\n  participant S as Control de Sanciones\n  participant G as Gestor de Pagos\n  B->>P: Avisa el siniestro y sube documentos\n  P->>V: Valida identidad y parentesco\n  V-->>P: Beneficiario validado\n  P->>S: Consulta listas de sanciones\n  S-->>P: Sin coincidencias\n  P->>G: Solicita liberación del pago\n  G-->>B: Transferencia realizada",
+    "representacion": "diagram"
+  },
+  "respuestaModelo": "# Flujo de Pago de Siniestros de Vida\n\n## Resumen\nEl beneficiario avisa el siniestro desde el portal, se valida su identidad y parentesco, se consulta el control de sanciones y, sin coincidencias, el gestor de pagos libera la transferencia.\n\n## Participantes\n| Participante | Rol |\n| --- | --- |\n| Beneficiario | Inicia el trámite |\n| Portal de Siniestros | Orquesta el flujo |\n| Validador de Beneficiarios | Verifica identidad y parentesco |\n| Control de Sanciones | Consulta listas restrictivas |\n| Gestor de Pagos | Libera la transferencia |\n\n## Pasos\n1. Aviso del siniestro y carga documental.\n2. Validación del beneficiario.\n3. Control de sanciones.\n4. Liberación del pago.\n"
+}

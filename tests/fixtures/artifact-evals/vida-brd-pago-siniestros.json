@@ -1,0 +1,23 @@
+{
+  "id": "vida-brd-pago-siniestros",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: documento representativo escrito para el banco; no es una salida capturada de un modelo",
+  "plantilla": "BRD — Documento de Requisitos de Negocio",
+  "proyecto": {
+    "nombre": "Pago ágil de siniestros de vida",
+    "descripcion": "Acelerar el pago de siniestros de vida manteniendo los controles regulatorios."
+  },
+  "caminos": [
+    "generar",
+    "criticar",
+    "refinar",
+    "revisar",
+    "sugerir",
+    "copiloto"
+  ],
+  "artefacto": {
+    "contenido": "# BRD — Pago Ágil de Siniestros de Vida\n\n## Resumen Ejecutivo\nLa aseguradora paga hoy el 55 % de los siniestros de vida en menos de 10 días hábiles. La iniciativa busca llegar al 90 % sin relajar los controles de prevención de lavado ni de validación de beneficiarios.\n\n## Objetivos de Negocio\n| ID | Objetivo | Indicador | Meta |\n| --- | --- | --- | --- |\n| OB-01 | Acelerar el pago | Siniestros pagados en menos de 10 días hábiles | 90 % |\n| OB-02 | Reducir contactos del beneficiario | Llamadas por siniestro | Menos de 2 |\n| OB-03 | Mantener el control | Pagos liberados sin control de sanciones | 0 |\n\n## Alcance\nIncluye el aviso de siniestro, la recepción documental, la validación de beneficiarios, el control de sanciones y la liberación del pago. Excluye los siniestros en litigio.\n\n## Stakeholders\n| Stakeholder | Interés |\n| --- | --- |\n| Dirección de siniestros | Tiempo de pago |\n| Cumplimiento | Prevención de lavado y sanciones |\n| Beneficiarios | Claridad y rapidez |\n\n## Requisitos de Negocio\n| ID | Requisito | Prioridad |\n| --- | --- | --- |\n| RN-01 | El beneficiario sube la documentación desde el móvil | Alta |\n| RN-02 | La validación de beneficiarios se automatiza contra el registro civil | Alta |\n| RN-03 | Todo pago pasa por el control de listas de sanciones antes de liberarse | Crítica |\n| RN-04 | El beneficiario ve el estado de su trámite en tiempo real | Media |\n\n## Riesgos\n| Riesgo | Mitigación |\n| --- | --- |\n| Fraude documental | Validación biométrica y cruce con registro civil |\n| Falsos positivos de sanciones | Revisión humana en menos de 24 horas |\n\n## Próximos Pasos\nValidar los requisitos con cumplimiento y priorizar el piloto con siniestros de capital menor.\n",
+    "representacion": "document"
+  },
+  "respuestaModelo": "# BRD — Pago Ágil de Siniestros de Vida\n\n## Resumen Ejecutivo\nLa aseguradora paga hoy el 55 % de los siniestros de vida en menos de 10 días hábiles. La iniciativa busca llegar al 90 % sin relajar los controles de prevención de lavado ni de validación de beneficiarios.\n\n## Objetivos de Negocio\n| ID | Objetivo | Indicador | Meta |\n| --- | --- | --- | --- |\n| OB-01 | Acelerar el pago | Siniestros pagados en menos de 10 días hábiles | 90 % |\n| OB-02 | Reducir contactos del beneficiario | Llamadas por siniestro | Menos de 2 |\n| OB-03 | Mantener el control | Pagos liberados sin control de sanciones | 0 |\n\n## Alcance\nIncluye el aviso de siniestro, la recepción documental, la validación de beneficiarios, el control de sanciones y la liberación del pago. Excluye los siniestros en litigio.\n\n## Stakeholders\n| Stakeholder | Interés |\n| --- | --- |\n| Dirección de siniestros | Tiempo de pago |\n| Cumplimiento | Prevención de lavado y sanciones |\n| Beneficiarios | Claridad y rapidez |\n\n## Requisitos de Negocio\n| ID | Requisito | Prioridad |\n| --- | --- | --- |\n| RN-01 | El beneficiario sube la documentación desde el móvil | Alta |\n| RN-02 | La validación de beneficiarios se automatiza contra el registro civil | Alta |\n| RN-03 | Todo pago pasa por el control de listas de sanciones antes de liberarse | Crítica |\n| RN-04 | El beneficiario ve el estado de su trámite en tiempo real | Media |\n\n## Riesgos\n| Riesgo | Mitigación |\n| --- | --- |\n| Fraude documental | Validación biométrica y cruce con registro civil |\n| Falsos positivos de sanciones | Revisión humana en menos de 24 horas |\n\n## Próximos Pasos\nValidar los requisitos con cumplimiento y priorizar el piloto con siniestros de capital menor.\n"
+}

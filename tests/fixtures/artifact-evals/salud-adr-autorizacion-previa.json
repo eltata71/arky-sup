@@ -1,0 +1,43 @@
+{
+  "id": "salud-adr-autorizacion-previa",
+  "dominio": "salud",
+  "origenRespuesta": "redactada-a-mano: documento representativo escrito para el banco; no es una salida capturada de un modelo",
+  "plantilla": "Registro de Decisiones Arquitectónicas (ADR)",
+  "proyecto": {
+    "nombre": "Autorización previa digital",
+    "descripcion": "Modernizar la autorización previa de servicios médicos para prestadores de la red."
+  },
+  "caminos": [
+    "generar",
+    "criticar",
+    "refinar",
+    "revisar",
+    "sugerir",
+    "copiloto"
+  ],
+  "artefacto": {
+    "contenido": "# ADR-014: Mensajería para las solicitudes de autorización previa\n\n## Estado\nPropuesta — pendiente de decisión del comité de arquitectura (ARB).\n\n## Contexto\nLas solicitudes de autorización previa llegan hoy por tres canales (portal de prestadores, centro de llamadas y EDI X12 278) y se procesan con llamadas síncronas encadenadas al Motor de Coberturas, al servicio de Elegibilidad y al Gestor de Casos Clínicos. En picos de campaña la cadena supera los 40 segundos y el 6 % de las solicitudes termina en reintento manual. La norma de la aseguradora exige resolver los casos urgentes en menos de 72 horas y dejar rastro auditable de cada paso.\n\n## Decisión\nSe adopta un bus de eventos gestionado para desacoplar la recepción de la adjudicación. Cada solicitud se publica como evento `AutorizacionSolicitada`; Elegibilidad, Coberturas y Casos Clínicos consumen de forma independiente y publican su resultado. Un orquestador de proceso consolida los resultados y emite `AutorizacionResuelta`.\n\n## Alternativas consideradas\n| Alternativa | Ventajas | Inconvenientes | Resultado |\n| --- | --- | --- | --- |\n| Mantener llamadas síncronas | Sin cambio operativo | No escala en campaña; reintentos manuales | Descartada |\n| Bus propietario del proveedor del core | Integración nativa | Coste de licencias y dependencia del proveedor | Descartada |\n| Bus de eventos gestionado en la nube | Escala elástica, reintentos y DLQ nativos | Nueva capacidad operativa que aprender | Elegida |\n\n## Cumplimiento\nLos eventos llevan PHI mínima: identificador de solicitud y de afiliado, nunca diagnóstico en claro. El cifrado en tránsito y en reposo es obligatorio, y la retención de los eventos sigue la norma interna de datos clínicos.\n\n## Próximos Pasos\n1. Prueba de concepto con el canal de portal de prestadores.\n2. Definir el catálogo de eventos y su versionado.\n3. Presentar la decisión al ARB con el coste de operación estimado.\n",
+    "representacion": "document"
+  },
+  "respuestaModelo": "# ADR-014: Mensajería para las solicitudes de autorización previa\n\n## Estado\nPropuesta — pendiente de decisión del comité de arquitectura (ARB).\n\n## Contexto\nLas solicitudes de autorización previa llegan hoy por tres canales (portal de prestadores, centro de llamadas y EDI X12 278) y se procesan con llamadas síncronas encadenadas al Motor de Coberturas, al servicio de Elegibilidad y al Gestor de Casos Clínicos. En picos de campaña la cadena supera los 40 segundos y el 6 % de las solicitudes termina en reintento manual. La norma de la aseguradora exige resolver los casos urgentes en menos de 72 horas y dejar rastro auditable de cada paso.\n\n## Decisión\nSe adopta un bus de eventos gestionado para desacoplar la recepción de la adjudicación. Cada solicitud se publica como evento `AutorizacionSolicitada`; Elegibilidad, Coberturas y Casos Clínicos consumen de forma independiente y publican su resultado. Un orquestador de proceso consolida los resultados y emite `AutorizacionResuelta`.\n\n## Alternativas consideradas\n| Alternativa | Ventajas | Inconvenientes | Resultado |\n| --- | --- | --- | --- |\n| Mantener llamadas síncronas | Sin cambio operativo | No escala en campaña; reintentos manuales | Descartada |\n| Bus propietario del proveedor del core | Integración nativa | Coste de licencias y dependencia del proveedor | Descartada |\n| Bus de eventos gestionado en la nube | Escala elástica, reintentos y DLQ nativos | Nueva capacidad operativa que aprender | Elegida |\n\n## Cumplimiento\nLos eventos llevan PHI mínima: identificador de solicitud y de afiliado, nunca diagnóstico en claro. El cifrado en tránsito y en reposo es obligatorio, y la retención de los eventos sigue la norma interna de datos clínicos.\n\n## Próximos Pasos\n1. Prueba de concepto con el canal de portal de prestadores.\n2. Definir el catálogo de eventos y su versionado.\n3. Presentar la decisión al ARB con el coste de operación estimado.\n",
+  "seccionesDisciplina": [
+    [
+      "Estado"
+    ],
+    [
+      "Contexto"
+    ],
+    [
+      "Decisión"
+    ],
+    [
+      "Alternativas"
+    ],
+    [
+      "Consecuencias"
+    ]
+  ],
+  "seccionesOmitidas": [
+    "Consecuencias"
+  ]
+}
