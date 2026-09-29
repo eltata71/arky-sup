@@ -1,0 +1,69 @@
+{
+  "id": "salud-c4-contexto-portal-asegurado",
+  "dominio": "salud",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Portal del Asegurado",
+    "descripcion": "Autogestión de pólizas de gastos médicos: consulta de coberturas, red de proveedores, estado de reclamaciones y reembolsos.",
+    "contexto": [
+      "Aseguradora de salud con 1,2 M de asegurados",
+      "Cumplimiento HIPAA y aviso de privacidad; datos PHI",
+      "Core de pólizas legado en mainframe; integración vía ESB"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Contexto del Portal del Asegurado",
+    "tipo": "mermaid-c4-context",
+    "objetivo": "Mostrar quién usa el portal y con qué sistemas externos se integra.",
+    "conceptosClave": [
+      { "term": "Asegurado", "definition": "Titular o dependiente de la póliza" },
+      { "term": "Red de proveedores", "definition": "Hospitales y médicos en convenio" }
+    ]
+  },
+  "respuestaModelo": {
+    "nodes": [
+      { "id": "asegurado", "label": "Asegurado", "kind": "person", "description": "Titular o dependiente que consulta su póliza" },
+      { "id": "agente", "label": "Agente de seguros", "kind": "person", "description": "Asesora al asegurado", "trust": "partner" },
+      { "id": "portal", "label": "Portal del Asegurado", "kind": "system", "description": "Autogestión web y móvil", "dataClassification": "phi", "compliance": ["HIPAA"] },
+      { "id": "core-polizas", "label": "Core de Pólizas", "kind": "system", "description": "Sistema legado de pólizas", "technology": "Mainframe z/OS", "dataClassification": "phi" },
+      { "id": "red-proveedores", "label": "Directorio de Red", "kind": "external", "description": "Catálogo de hospitales en convenio", "trust": "partner" },
+      { "id": "pasarela-pagos", "label": "Pasarela de Pagos", "kind": "external", "description": "Cobro de primas y deducibles", "trust": "external", "dataClassification": "pci" },
+      { "id": "idp", "label": "Proveedor de Identidad", "kind": "external", "description": "Autenticación con MFA", "trust": "external" }
+    ],
+    "edges": [
+      { "id": "e1", "source": "asegurado", "target": "portal", "label": "Consulta póliza", "protocol": "HTTPS" },
+      { "id": "e2", "source": "agente", "target": "portal", "label": "Gestiona trámites", "protocol": "HTTPS" },
+      { "id": "e3", "source": "portal", "target": "core-polizas", "label": "Lee coberturas", "protocol": "ESB/SOAP", "dataSensitivity": "phi" },
+      { "id": "e4", "source": "portal", "target": "red-proveedores", "label": "Busca proveedores", "protocol": "REST/HTTPS" },
+      { "id": "e5", "source": "portal", "target": "pasarela-pagos", "label": "Cobra prima", "protocol": "REST/HTTPS", "dataSensitivity": "pci" },
+      { "id": "e6", "source": "portal", "target": "idp", "label": "Autentica usuario", "protocol": "OIDC" }
+    ],
+    "groups": [
+      { "id": "aseguradora", "label": "Aseguradora", "nodeIds": ["portal", "core-polizas"], "kind": "enterprise" }
+    ],
+    "metadata": {
+      "audience": "technical",
+      "title": "Contexto del Portal del Asegurado",
+      "diagramType": "c4-context",
+      "narrative": {
+        "summary": "Toda la información clínica del asegurado depende del core legado en mainframe.",
+        "scenes": [
+          { "id": "s1", "title": "Quién entra", "focusNodeIds": ["asegurado", "agente", "portal"], "focusEdgeIds": ["e1", "e2"] },
+          { "id": "s2", "title": "De dónde salen los datos", "focusNodeIds": ["portal", "core-polizas"], "focusEdgeIds": ["e3"] }
+        ],
+        "callouts": [
+          { "id": "c1", "targetId": "core-polizas", "targetKind": "node", "text": "Punto único de fallo para coberturas", "severity": "warning" }
+        ]
+      }
+    }
+  },
+  "esperado": {
+    "dialecto": "C4Context",
+    "entidades": [["Asegurado"], ["Portal del Asegurado", "Portal"], ["Core de Pólizas", "Core"], ["Pasarela de Pagos"], ["Proveedor de Identidad", "Identidad"]],
+    "metadatos": [
+      { "entidad": ["Portal del Asegurado"], "campo": "dataClassification", "valor": "phi" },
+      { "entidad": ["Core de Pólizas"], "campo": "technology", "valor": "Mainframe z/OS" },
+      { "entidad": ["Pasarela de Pagos"], "campo": "dataClassification", "valor": "pci" }
+    ]
+  }
+}

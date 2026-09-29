@@ -52,6 +52,8 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'DiagramSignalSource', rule: 'ningún módulo de dominio es mutuamente alcanzable (F5-03)' },
   { anchor: 'routeCopilotTurn', rule: 'ninguna pantalla supera el fan-out: la regla va a su contexto dueño (F5-02)' },
   { anchor: 'agentRegistry', rule: 'el registro es la única puerta a los agentes' },
+  { anchor: 'serializeIRPreservingDialect', rule: 'un diagrama conserva su dialecto al guardarse (plan de diagramas 6.1)' },
+  { anchor: 'diagram-evals', rule: 'el banco de evaluación de diagramas y su línea base monótona (6.1)' },
   { anchor: 'wrapUntrustedContent', rule: 'lo externo se valla antes de llegar al modelo' },
   { anchor: 'docs/operacion/despliegue.json', rule: 'producción la publica un solo camino' },
 ];

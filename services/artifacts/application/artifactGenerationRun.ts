@@ -24,8 +24,8 @@ import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../li
 import { artifactGenerationService } from '../../ai';
 import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
 import { extractIRFromArtifact } from '../../diagram';
+import { rewriteDiagramContent } from './diagramContentRewrite';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
-import { irToMermaid } from '../../diagram/irToMermaid';
 import { irToReactFlow } from '../../diagram/irToReactFlow';
 import {
     buildArtifactPipelineTraceSteps,
@@ -43,7 +43,6 @@ import {
     createTraceLog,
     makeTraceStep,
     mapRequestAudienceToDiagramAudience,
-    replaceMermaidBlock,
     resolveRefinementMode,
     type ArtifactGenerationAction,
 } from '../domain/artifactGenerationTrace';
@@ -160,12 +159,21 @@ export async function runArtifactGeneration({
                 + `frescura ${graphFreshness}.`,
         ));
     }
+    // The model's IR, when the path made one: re-parsing its notation lost
+    // classification, compliance and the story (plan de diagramas, 6.1).
+    const modelOutput: { ir: DiagramIR | null } = { ir: null };
     const generatedContent = await artifactGenerationService.generateArtifactContent(
         project,
         template,
         settings,
         existingArtifact,
-        { onPhase, architectureGraphPromptBlock: graphGenerationContext.promptBlock, composePersonaInstruction, support: artifactGenerationSupport },
+        {
+            onPhase,
+            architectureGraphPromptBlock: graphGenerationContext.promptBlock,
+            composePersonaInstruction,
+            support: artifactGenerationSupport,
+            onDiagramIR: (ir) => { modelOutput.ir = ir; },
+        },
     );
     const initialEnvelope = normalizeArtifactEnvelope({
         artifactId: existingArtifact?.id ?? operationId,
@@ -205,6 +213,10 @@ export async function runArtifactGeneration({
         content,
         resolvedContent: content,
         ir: (() => {
+            if (modelOutput.ir && !skeletonFallbackError) {
+                traceDecisions.push(makeTraceStep('validation', 'success', 'Se conserva el IR que produjo el modelo; no se reextrae del texto.', 'Mantiene clasificación de datos, cumplimiento, tecnologías e historia.'));
+                return modelOutput.ir;
+            }
             try {
                 return extractIRFromArtifact({ content, representation: template.representation, type: template.type });
             } catch (err) {
@@ -270,11 +282,14 @@ export async function runArtifactGeneration({
             if (!qualityGate.reachedTarget) {
                 traceErrors.push(makeTraceStep('quality-gate', 'warning', 'El artefacto quedó por debajo del objetivo de calidad.', qualityGate.quality.summary));
             }
-            const normalizedMermaid = irToMermaid(draft.ir);
-            if (template.type === 'hybrid-text-diagram') {
-                draft.resolvedContent = replaceMermaidBlock(draft.resolvedContent, normalizedMermaid);
-            } else if (template.type.startsWith('mermaid') && !template.type.startsWith('mermaid-c4-')) {
-                draft.resolvedContent = normalizedMermaid;
+            // Only a dialect that can hold the IR is rewritten (plan de diagramas, 6.1).
+            // A C4 without the model's IR is a skeleton: its text keeps the marker.
+            const rewrite = rewriteDiagramContent(draft.resolvedContent, draft.ir, template.type, template.type === 'hybrid-text-diagram');
+            const isC4 = template.type.startsWith('mermaid-c4-');
+            if (!rewrite.rewritten) {
+                traceDecisions.push(makeTraceStep('quality-gate', 'success', `Se conserva el texto en su dialecto (${rewrite.dialect}); las mejoras quedan en el IR.`));
+            } else if (template.type === 'hybrid-text-diagram' || (template.type.startsWith('mermaid') && (!isC4 || modelOutput.ir))) {
+                draft.resolvedContent = rewrite.content;
             }
         } catch (err) {
             traceErrors.push(makeTraceStep('quality-gate', 'warning', 'El quality gate no pudo ejecutarse; se conserva el contenido validado.', err instanceof Error ? err.message : String(err)));
@@ -322,6 +337,7 @@ export async function runArtifactGeneration({
             onPhase,
             lastDiagramError: skeletonFallbackError ?? undefined,
             generationTraceStatus: skeletonFallbackError ? 'fallback' : undefined,
+            draftIR: modelOutput.ir ? draft.ir ?? undefined : undefined,
         });
         refinementFallbackDetected = refinement.fallbackDetected;
         const refinementErrors = refinement.diagnostics.filter(step => step.status === 'warning' || step.status === 'error');
@@ -354,7 +370,7 @@ export async function runArtifactGeneration({
             draft.resolvedContent = refinement.content;
             refinedEnvelopeForPersistence = refinement.envelope;
             if (isDiagramTemplate) {
-                const refinedIR = extractIRFromArtifact({ content: draft.resolvedContent, representation: template.representation, type: template.type });
+                const refinedIR = refinement.ir ?? extractIRFromArtifact({ content: draft.resolvedContent, representation: template.representation, type: template.type });
                 if (refinedIR && (!draft.ir || refinedIR.nodes.length >= draft.ir.nodes.length)) {
                     draft.ir = refinedIR;
                     try {

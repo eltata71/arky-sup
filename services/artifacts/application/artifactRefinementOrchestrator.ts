@@ -10,9 +10,9 @@ import {
 import { buildArtifactQualityReport } from '../../quality/artifactQualityService';
 import type { ArtifactQualityDimension, ArtifactQualityReport } from '../../quality';
 import { buildArtifactExportabilityState } from '../../quality/artifactQualityGateService';
-import { extractIRFromArtifact } from '../../diagram';
+import { extractIRFromArtifact, mergeIRMetadata } from '../../diagram';
+import { rewriteDiagramContent } from './diagramContentRewrite';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
-import { irToMermaid } from '../../diagram/irToMermaid';
 import { irToReactFlow } from '../../diagram/irToReactFlow';
 import { artifactGenerationService } from '../../ai';
 import { markMermaidAsSkeletonFallback } from '../domain/deterministicArtifactFallbacks';
@@ -42,6 +42,12 @@ export interface ArtifactRefinementRequest {
   lastDiagramError?: DiagramErrorRecord;
   /** Generation trace status known at refinement time — strengthens fallback detection. */
   generationTraceStatus?: ArtifactGenerationTraceStatus;
+  /**
+   * The draft's IR when the caller already has it (plan de diagramas, 6.1).
+   * Re-parsing `draftContent` instead keeps only what the notation carries —
+   * a C4 text has no place for data classification or the story.
+   */
+  draftIR?: DiagramIR;
 }
 
 export type ArtifactRefinementStrategy =
@@ -84,6 +90,8 @@ export interface ArtifactRefinementResult {
   improvedDimensions: string[];
   /** True when an AI critique/refine call was attempted. */
   usedAI: boolean;
+  /** The IR of the accepted content, with the draft's metadata; absent when nothing was accepted. */
+  ir?: DiagramIR;
 }
 
 interface CandidateSafetyContext {
@@ -301,12 +309,6 @@ const ensureHybridNarrative = (request: ArtifactRefinementRequest, content: stri
   return { content: working, issues, changed: working !== before.trim() };
 };
 
-const replaceMermaidBlock = (content: string, mermaid: string): string => {
-  const fenced = /```mermaid\s*[\s\S]*?```/m;
-  if (fenced.test(content)) return content.replace(fenced, `\`\`\`mermaid\n${mermaid}\n\`\`\``);
-  return mermaid;
-};
-
 const assertRenderableDiagram = (ir: DiagramIR): boolean => {
   if (ir.nodes.length === 0) return false;
   const rendered = irToReactFlow(ir, { allowEmptyPlaceholder: false });
@@ -452,8 +454,9 @@ const applyDiagramGate = (request: ArtifactRefinementRequest, content: string, b
     warnings.push('refinement.discarded: el gate diagramático redujo nodos/aristas; se conserva el contenido previo.');
     return { content, ir: baselineIR, warnings };
   }
-  const mermaid = irToMermaid(gate.ir);
-  const candidate = request.mode === 'hybrid' ? replaceMermaidBlock(content, mermaid) : mermaid;
+  const rewrite = rewriteDiagramContent(content, gate.ir, request.template.type, request.mode === 'hybrid');
+  if (!rewrite.rewritten) return { content, ir: gate.ir, warnings: [...warnings, `refinement.dialect-preserved: ${rewrite.dialect}`] };
+  const candidate = rewrite.content;
   const afterReport = buildReport(request, candidate, gate.ir);
   const changed = candidate.trim() !== content.trim();
   return {
@@ -527,7 +530,7 @@ export const refineArtifactBeforePersistence = async (request: ArtifactRefinemen
   let safetyFailures = 0;
   let usedAI = false;
   const baselineIR = isDiagramMode(request.mode)
-    ? extractIRFromArtifact({ content: request.draftContent, representation: request.template.representation, type: request.template.type }) ?? undefined
+    ? request.draftIR ?? extractIRFromArtifact({ content: request.draftContent, representation: request.template.representation, type: request.template.type }) ?? undefined
     : undefined;
   const initialReport = buildReport(request, request.draftContent, baselineIR);
   const fallback = detectArtifactFallbackContent({
@@ -662,7 +665,9 @@ export const refineArtifactBeforePersistence = async (request: ArtifactRefinemen
           currentContent = diagram.content;
           currentEnvelope = safety.envelope ?? candidateEnvelope;
           currentReport = safety.report;
-          currentIR = safety.ir ?? diagram.ir;
+          // The gate's IR carries the draft's metadata; the one re-parsed
+          // from the candidate text only carries what the notation can.
+          currentIR = diagram.ir ?? safety.ir;
           passes.push({ ...diagram.pass, passNumber: passes.length + 1, afterScore: safety.report.score.value, remainingIssues: issueMessages(safety.report, 6) });
           diagnostics.push(traceStep('success', 'refinement.diagram-quality-gate.applied', `diagram-quality-gate aplicado antes de persistir. score ${diagram.pass.beforeScore} → ${safety.report.score.value}.`));
         } else {
@@ -699,7 +704,7 @@ export const refineArtifactBeforePersistence = async (request: ArtifactRefinemen
           currentContent = ai.content;
           currentEnvelope = safety.envelope;
           currentReport = safety.report;
-          currentIR = safety.ir ?? currentIR;
+          currentIR = safety.ir ? mergeIRMetadata(safety.ir, currentIR) : currentIR;
           passes.push({ ...ai.pass, passNumber: passes.length + 1, afterScore: safety.report.score.value, remainingIssues: issueMessages(safety.report, 6) });
           diagnostics.push(traceStep('success', 'refinement.ai.accepted', `ai-refine aceptado por mejorar sin romper renderización. score ${ai.pass.beforeScore} → ${safety.report.score.value}.`));
         } else {
@@ -762,6 +767,7 @@ export const refineArtifactBeforePersistence = async (request: ArtifactRefinemen
       qualityReport: accepted ? currentReport : initialReport,
       finalScore: accepted ? currentReport.score.value : initialReport.score.value,
       accepted,
+      ir: accepted ? currentIR : undefined,
       acceptanceReason: accepted ? 'Mejora segura aceptada.' : 'No hubo mejora segura que justificara reemplazar el contenido.',
       improvedDimensions: accepted ? improvedDimensions : [],
     });

@@ -1,0 +1,22 @@
+{
+  "id": "vida-hibrido-proceso-siniestro",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Pago de Siniestros de Vida",
+    "descripcion": "Proceso de negocio de reclamación y pago de siniestros de vida.",
+    "contexto": ["Revisión AML obligatoria antes del pago", "Documentos: acta de defunción e identificación"]
+  },
+  "plantilla": {
+    "nombre": "Proceso de Negocio de Siniestro de Vida",
+    "tipo": "hybrid-text-diagram",
+    "objetivo": "Describir el proceso BPMN de un siniestro de vida desde el aviso hasta el pago.",
+    "conceptosClave": [{ "term": "Aviso de siniestro", "definition": "Notificación del fallecimiento" }]
+  },
+  "respuestaModelo": "## Resumen Ejecutivo\nEl proceso cubre desde el aviso del fallecimiento hasta el pago al beneficiario, con control AML obligatorio.\n\n```mermaid\nflowchart LR\n    subgraph Beneficiario\n        inicio((Inicio)) --> aviso[Presenta aviso]\n    end\n    subgraph Siniestros\n        aviso --> docs[Valida documentos]\n        docs --> completo{¿Documentos completos?}\n        completo -->|No| pide[Solicita faltantes]\n        pide --> docs\n        completo -->|Sí| aml[Revisa listas AML]\n    end\n    subgraph Tesoreria\n        aml --> pago[Paga suma asegurada]\n        pago --> fin((Fin))\n    end\n```\n\n## Notas\nLos documentos faltantes reinician la validación.",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [["Presenta aviso", "aviso"], ["Valida documentos"], ["Revisa listas AML", "AML"], ["Paga suma asegurada", "Paga"]],
+    "metadatos": []
+  }
+}

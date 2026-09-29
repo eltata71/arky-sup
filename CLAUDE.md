@@ -619,6 +619,7 @@ npm run lint           # ESLint 10 flat config
 npm run lint:fix       # ESLint --fix
 npm test               # Vitest watch mode
 npm run test:ci        # Vitest single run
+npm run eval:diagrams  # The diagram evaluation bench, with its table (see *A diagram keeps its dialect*)
 npm run test:coverage  # Vitest + v8 coverage (applies the thresholds)
 npm run test:shard -- --shard=1/4   # One CI shard: coverage into a blob report
 npm run test:merge-reports          # Merge the shards' blobs and enforce the thresholds
@@ -1080,7 +1081,7 @@ each of them was broken while the docblock above them said otherwise:
   `providerHealth` is a circuit breaker per backend: three consecutive failures open it, sixty seconds later one probe decides. An open circuit **deprioritises rather than excludes** — a degraded backend that is the only one able to serve a required capability still beats a certain failure — and only transport-level failures count, so a 400 this app produced never opens a circuit against a vendor.
 - `generation/` holds the domain façades — `artifactGenerationService`, `diagramGenerationService`, `documentGenerationService`, `recommendationService`, `assistantService`, `learningService` — plus `aiGateway` for layers that compose their own prompts. **These are the import surface for the rest of the app.**
 
-### 2. The engine — `services/ai/generation/artifacts/artifactGenerationEngine.ts` (~1,790 lines)
+### 2. The engine — `services/ai/generation/artifacts/artifactGenerationEngine.ts` (~1,590 lines)
 
 **It was `services/geminiService.ts` until F5-01's fourteenth cut, and it
 lives inside this layer now.** What made the move possible is the last port:
@@ -1284,6 +1285,44 @@ carries the structured narrative in **both** halves of the contract — the JSON
 the prompt prints and the schema the request enforces — so they cannot diverge.
 The model writes meaning, never geometry: scenes are ids and a title, callouts
 are ids and a sentence. See `ADR-005`.
+
+### A diagram keeps its dialect, and its IR is the one the model wrote
+
+The user picks a notation when they pick a type, and until the 6.1 task of the
+diagram plan the pipeline changed it on the way to the database. The C4 path
+serialised the model's IR with `irToMermaid`, which only writes flowcharts;
+the generation run and the refinement "normalised" every `mermaid-*` type the
+same way, so **sequence diagrams and ERDs were stored as flowcharts too**; and
+the IR that reached the canvas was re-parsed from that text, so the data
+classification (PHI/PII/PCI), technologies, criticality and written story the
+model produced were gone before anyone saw them. Measured on the evaluation
+bench: 1 of 10 diagrams kept its dialect and 0 % of that metadata survived.
+
+Three rules now hold it:
+
+- **A text is rewritten only in a dialect that can hold the IR.**
+  `serializeIRPreservingDialect` (`services/diagram/dialectSerialization.ts`)
+  writes C4 with `irToMermaidC4` and flowcharts with `irToMermaid`, and returns
+  `null` for anything else — the caller keeps the model's text and the repairs
+  live in the IR. `rewriteDiagramContent`
+  (`services/artifacts/application/diagramContentRewrite.ts`) is the one place
+  the run and the refinement apply it.
+- **The model's IR is handed over, never re-parsed.** `onDiagramIR` on the
+  generation options receives it; `runArtifactGeneration` persists it and
+  hands it to the refinement as `draftIR`, which returns the accepted IR.
+  A notation carries part of an IR; re-parsing it is the loss.
+- **The C4 path lives in the diagram vertical**
+  (`services/ai/generation/diagram/c4ArtifactGeneration.ts`), not in the engine.
+
+**The diagram evaluation bench is the gate for all of this.**
+`tests/fixtures/diagram-evals/` holds cases from health and life insurance —
+project, template, the model's response and what is expected — and
+`__tests__/diagram/evals/` runs each through the real pipeline with only the
+transport replaced. It asserts per-case guarantees for C4 and a monotonic
+aggregate against `linea-base.json`; `npm run eval:diagrams` prints the table.
+The responses are hand-written and each case says so: it measures the
+pipeline, not the model. A change that improves a figure raises the baseline
+in the same commit.
 
 ### A diagram is changed, not regenerated
 
@@ -1833,7 +1872,7 @@ the only screen still linking to `/users` and `/settings`.
 ## Known Issues / Incomplete Areas
 
 - `components/ReviewArchitectureModal.tsx`, the empty placeholder this list used to warn about, is gone (F6-01), with four other components nothing imported — `AddArtifactModal`, `BoardView`, `InteractiveGraph`, `VersionHistoryPanel` — and a one-line re-export. The working review UI is `components/artifacts/ReviewPanel.tsx`.
-- The engine (`services/ai/generation/artifacts/artifactGenerationEngine.ts`, ~1,790 lines after F5-01's fourteen cuts, down from ~5,400 as `services/geminiService.ts`) is still one of the largest modules, but it is a private dependency of one façade, inside its layer, loaded lazily. Splitting `_generateArtifactContentInternal` (~900 lines) is what is left, and it is ordinary decomposition now, not a migration.
+- The engine (`services/ai/generation/artifacts/artifactGenerationEngine.ts`, ~1,590 lines after F5-01's fourteen cuts and the C4 path leaving in the 6.1 task of the diagram plan, down from ~5,400 as `services/geminiService.ts`) is still one of the largest modules, but it is a private dependency of one façade, inside its layer, loaded lazily. Splitting `_generateArtifactContentInternal` (~900 lines) is what is left, and it is ordinary decomposition now, not a migration.
 - Supabase Auth is behind `services/identity`; `context/AuthContext.tsx` imports no SDK, and `no-restricted-imports` plus `__tests__/authz/noSdkInUiLayers.test.ts` keep every SDK out of `components/`, `pages/`, `context/` and `hooks/`. La prueba conserva Firebase en su lista de prohibidos como sonda de regresión: una que sólo busca el SDK actual no impide que vuelva el anterior.
 - `@google/genai` is imported only in `providers/gemini/` and `api/ai.ts`. The engine stopped importing it in F6-01, when it lost its own client factory and its public delegates (`getAIClient`, `generateContentWithFallback`, `generateContentStreamWithFallback`, `isOpenRouterConfigured`), which only tests read. Its one public method is `generateArtifactContent`; the seam tests replace is `legacyTransport.getAIClient`.
 
@@ -2562,6 +2601,10 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
 - Do not capture a project's contribution to an initiative as text. The outcome
   and the KPI are ids of records that exist, like every other relation in the
   portfolio.
+- Do not write a diagram's IR back as Mermaid with `irToMermaid` when its type
+  is not a flowchart, and do not re-parse the model's IR from the text you just
+  serialised it into. Use `serializeIRPreservingDialect` / `rewriteDiagramContent`
+  and `onDiagramIR`; the evaluation bench (`diagram-evals`) fails otherwise.
 - Do not derive a diagram's reading order anywhere but `buildStoryPlan`, and do
   not present a derived story as an authored one. There were three copies of
   that traversal and the authored narrative lost to all three.

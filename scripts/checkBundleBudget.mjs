@@ -114,7 +114,7 @@ export const ROUTE_BUDGETS_GZIP_KB = {
   EngagementRoom: 650,
   TrainingCenterPage: 630,
   SDDProcessView: 665,
-  Workspace: 1105,
+  Workspace: 1107, // plan diagramas 6.1: +1,5 KB gz medidos (1 103,7 → 1 105,2): el serializador C4 y la reescritura por dialecto viven en el camino de generación
 };
 
 /** Route-only runtimes that must never be preloaded by the application shell. */
