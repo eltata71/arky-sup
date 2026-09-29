@@ -360,13 +360,13 @@ function parseClassDiagram(body: string, ctx: ParseContext) {
 }
 
 function parseErDiagram(body: string, ctx: ParseContext) {
-    // ER cardinality tokens we recognise. The middle "--" can also be ".." for
-    // optional relationships, so we accept both. The captured cardinality
-    // string is appended to the edge label so reviewers see it on the canvas.
-    const ER_REL = /^([A-Za-z0-9_]+)\s+([|}o\\\][a-z]?)([-.]{2})([|}o\\\][a-z]?)\s+([A-Za-z0-9_]+)\s*:\s*(.+)$/i;
-    // Conservative fallback (preserves previous behaviour when the regex above
-    // misses an exotic cardinality token).
-    const ER_REL_FALLBACK = /^([A-Za-z0-9_]+)\s*([|}o]+[-.]{2}[|}o]+)\s*([A-Za-z0-9_]+)\s*:\s*(.+)$/;
+    // Each cardinality end is two characters from `|`, `o`, `{`, `}` (`||--o{`,
+    // `}o..|{`); `--`/`..` is identifying/non-identifying. The cardinality goes
+    // into the edge label so it is visible on the canvas.
+    const ER_REL = /^([A-Za-z0-9_]+)\s+([|o{}]{1,2})([-.]{2})([|o{}]{1,2})\s+([A-Za-z0-9_]+)\s*:\s*(.+)$/;
+    const ER_CARDINALITY: Record<string, string> = {
+        '||': '1', '|o': '0..1', 'o|': '0..1', '}o': '0..*', 'o{': '0..*', '}|': '1..*', '|{': '1..*',
+    };
 
     for (const rawLine of body.split('\n')) {
         const line = rawLine.replace(/\s*%%.*$/, '').trim();
@@ -376,14 +376,14 @@ function parseErDiagram(body: string, ctx: ParseContext) {
             upsertNode(ctx, entityBlock[1], entityBlock[1], 'rectangle');
             continue;
         }
-        const rel = line.match(ER_REL) ?? line.match(ER_REL_FALLBACK);
+        const rel = line.match(ER_REL);
         if (rel) {
-            const a = rel[1];
-            const b = rel.length === 7 ? rel[5] : rel[3];
-            const lbl = rel[rel.length - 1];
+            const [, a, left, , right, b, rawLabel] = rel;
+            const lbl = rawLabel.replace(/^"(.*)"$/, '$1').trim();
+            const cardinality = `${ER_CARDINALITY[left] ?? left} → ${ER_CARDINALITY[right] ?? right}`;
             upsertNode(ctx, a);
             upsertNode(ctx, b);
-            pushEdge(ctx, a, b, lbl, 'data-flow');
+            pushEdge(ctx, a, b, `${lbl} (${cardinality})`, 'data-flow');
         }
     }
 }

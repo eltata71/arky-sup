@@ -73,6 +73,7 @@ export const BYTE_CEILINGS = {
   'components/artifacts/export/ArtifactExportModal.tsx': 30760, // plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42447, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
+  'context/OfficeContext.tsx': 20370, // 6.5: la motivación de la iniciativa llega a la producción del encargo (lectura diferida del portafolio)
   'pages/SDDProcessView.tsx': 41644, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   /**
    * +365 bytes while the line count fell 1005 → 1001. `executeAgentAction` now
@@ -81,13 +82,13 @@ export const BYTE_CEILINGS = {
    * refusal live in `agentConfirmationGate`, which is why the file got shorter
    * while gaining a guarantee.
    */
-  'services/agent/agentExecutor.ts': 41241, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
+  'services/agent/agentExecutor.ts': 41395, // 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente
   'components/AssistantPanel.tsx': 36588, // plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   'pages/Workspace.tsx': 36580, // plan diagramas 6.2: +194, entrega a la generación la motivación de negocio del proyecto (`useProjectBusinessMotivation`) · F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina · F6-03 corte 4: rutas de `domain/`/`application/`
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 37390, // plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35990, // plan diagramas 4.1: +186, marca «Detalle» y su texto accesible
-  'services/diagram/mermaidToIR.ts': 35358, // plan diagramas 2.1: +1 063, leer `:::clase` y `class` (la lógica vive en `mermaidClasses.ts`)
+  'services/diagram/mermaidToIR.ts': 35364, // 6.5: +6, el ER conserva sus relaciones; antes: plan diagramas 2.1: +1 063, leer `:::clase` y `class` (la lógica vive en `mermaidClasses.ts`)
   'pages/LMS/LMSDashboard.tsx': 34123,
   'services/diagram/suggestionActionExecutors.ts': 33643,
   'components/memory/ChatHistoryPanel.tsx': 32783,
@@ -182,7 +183,7 @@ export const CEILINGS = {
   // por debajo del techo y nadie fijó el número, así que la deuda seguía
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
-  'services/agent/agentExecutor.ts': 983, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
+  'services/agent/agentExecutor.ts': 984, // 6.5: la motivación de la iniciativa
   'pages/ProjectsPage.tsx': 890, // F5-02
   'services/diagram/mermaidToIR.ts': 871, // plan diagramas 2.1
   'components/artifacts/export/ArtifactExportModal.tsx': 596, // plan diagramas 3.4: 844 → 596

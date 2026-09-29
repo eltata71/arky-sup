@@ -1390,6 +1390,19 @@ removal** for the trace. The unused self-review `review` block left the
 schema, and so did three prompt builders that printed a second, different
 schema and that nothing called.
 
+**The initiative's reason reaches every road, and the score does not favour
+flowcharts** (task 6.5). `describeAttentionMotivation` in
+`services/portfolioGraph` is the one reading of which initiatives a project
+serves (ids first, codes only as migration) and it feeds the guided creation,
+the SDD view, the agent (`useAgentActions`) and the Office
+(`OfficeContext` → `createProduceArtifactPort`); a path that generates without
+it is this defect again. Two defects made non-flowchart dialects look worse
+than they were: `parseErDiagram` dropped **every** `||--o{` relation (an
+unclosed character class, and a fallback that did not know `{`), and the
+quality score judged a diagram's Mermaid source as a document, so every
+diagram paid `DOC_NO_HEADINGS` and nine missing sections. A `diagram`
+artifact's document issues are no longer counted; a `hybrid` still is.
+
 ### A diagram is changed, not regenerated
 
 Every AI-assisted change used to be a fresh `generateDiagramIR`: new ids, a new

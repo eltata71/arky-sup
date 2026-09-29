@@ -143,10 +143,10 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
   // Reads artifact content to assess SDD coverage, so it needs the documents.
   useProjectArtifacts(projectId);
   const { projects, settings, createArtifact } = useAppContext();
-  const generationPorts = useArtifactGenerationPorts();
   const navigate = useNavigate();
 
   const project = projects.find(p => p.id === projectId);
+  const generationPorts = useArtifactGenerationPorts(project);
 
   const [activePhase, setActivePhase] = useState<number>(1);
   const [sddPlan, setSddPlan] = useState<string>('');

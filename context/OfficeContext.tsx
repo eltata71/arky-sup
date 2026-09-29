@@ -22,6 +22,7 @@ import React, {
 } from 'react';
 import { useAppContext } from './AppContext';
 import { useAuth } from './AuthContext';
+import { useInitiatives } from './InitiativeContext';
 import {
   officeEngagementRepository,
 } from '../services/architectureOffice/infrastructure/OfficeEngagementRepository';
@@ -159,6 +160,9 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   // earlier tasks must be visible to later ones. A captured snapshot would
   // make every deliverable see an empty project — the same defect the
   // onboarding flow has today.
+  const { initiatives } = useInitiatives();
+  const initiativesRef = useRef(initiatives);
+  initiativesRef.current = initiatives;
   const projectsRef = useRef(projects);
   const settingsRef = useRef(settings);
   useEffect(() => { projectsRef.current = projects; }, [projects]);
@@ -350,9 +354,12 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Las fichas configuradas por esta organización: capacidad y nivel de
       // modelo por agente. Sin ellas el motor usa lo que trae el producto.
       const agentConfiguration = await loadAgentConfiguration(user?.uid ?? '');
+      // Lazy on purpose: the portfolio rule must not join the boot payload.
+      const { describeAttentionMotivation } = await import('../services/portfolioGraph');
       const ports = createOfficeRunnerPorts({
         getProject: () => projectsRef.current.find((candidate) => candidate.id === engagement.projectId),
         getSettings: () => settingsRef.current,
+        getBusinessMotivation: (project) => describeAttentionMotivation(project, initiativesRef.current),
         store: { createArtifact, createArtifactVersion, updateArtifact },
         invokePersona: async (personaId: OfficeAgentId, prompt, project) => {
           const { chatWithProject } = await loadConversation();

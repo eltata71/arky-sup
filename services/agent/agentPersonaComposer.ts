@@ -7,7 +7,7 @@
  * plus the artifacts context's `support` — the controlled source selection and
  * the deterministic fallbacks the AI layer declares and cannot look up.
  */
-import type { ArtifactPersonaComposer } from '../../lib/artifacts';
+import type { ArtifactBusinessMotivation, ArtifactPersonaComposer } from '../../lib/artifacts';
 import type { ArtifactContentGenerationOptions } from '../ai';
 import { artifactGenerationSupport } from '../artifacts';
 import type { AgentPersonaBriefing } from './agentContextComposer';
@@ -19,7 +19,9 @@ export const personaComposer = (
 
 export const agentGenerationOptions = (
   resolvePersona?: (message: string) => AgentPersonaBriefing,
+  businessMotivation?: readonly ArtifactBusinessMotivation[],
 ): ArtifactContentGenerationOptions => ({
   composePersonaInstruction: personaComposer(resolvePersona),
   support: artifactGenerationSupport,
+  ...(businessMotivation?.length ? { businessMotivation } : {}),
 });
