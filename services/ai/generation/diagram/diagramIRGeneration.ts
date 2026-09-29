@@ -6,7 +6,6 @@
 import type { Settings } from '../../../../types';
 import type { Artifact } from '../../../../lib/artifacts';
 import type { DiagramAudience, DiagramFailureReason, DiagramIR } from '../../../../lib/diagram';
-import { cleanJsonString } from '../../../../utils';
 import type { Project } from '../../../architectureProjects';
 import { resolveModelForSettings } from '../../catalog';
 import {
@@ -18,16 +17,24 @@ import {
 } from '../../prompts/diagramPrompts';
 import { legacyTransport } from '../legacyTransport';
 import { buildDiagramGenerationConfig, diagramTemperature } from './diagramGenerationConfig';
+import { readModelDiagramIR } from './modelDiagramIR';
 
 export async function generateDiagramIR(
     artifact: Artifact,
     project: Project,
     settings: Settings,
-    opts: { audience?: DiagramAudience; previousIR?: DiagramIR; brief?: string; onDecline?: (reason: string) => void } = {},
+    opts: {
+        audience?: DiagramAudience;
+        previousIR?: DiagramIR;
+        brief?: string;
+        onDecline?: (reason: string) => void;
+        /** What the reader removed from the answer, one line each (6.4). */
+        onDropped?: (dropped: string[]) => void;
+    } = {},
 ): Promise<DiagramIR | null> {
     const audience: DiagramAudience = opts.audience ?? artifact.audience ?? 'technical';
     const dialect = buildDialectInstruction(artifact.type);
-    const responseSchema = buildDiagramIRSchema({ withReview: true });
+    const responseSchema = buildDiagramIRSchema();
 
     const config = buildDiagramGenerationConfig({
         temperature: diagramTemperature(settings.aiConfig?.temperature),
@@ -49,50 +56,24 @@ export async function generateDiagramIR(
 
     try {
         const text = await legacyTransport.generateTextWithFallback(settings, modelName, prompt, config);
-        const cleanJson = cleanJsonString(text || '');
-        if (!cleanJson) return null;
-        const parsed = JSON.parse(cleanJson) as Partial<DiagramIR> & { error?: string };
-        if (parsed.error) {
+        const read = readModelDiagramIR(text);
+        if (read.declined !== undefined) {
             // The model said the input is not enough. That is an answer, not a
             // malformed response: it is handed up instead of retried (6.3).
-            opts.onDecline?.(String(parsed.error));
+            opts.onDecline?.(read.declined);
             return null;
         }
-        if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) return null;
-        if (parsed.nodes.length === 0) {
-            console.warn('[geminiService.generateDiagramIR] Empty IR returned by model.');
-            return null;
-        }
-
-        // Drop edges whose endpoints are not declared as nodes — this
-        // prevents the "phantom edge" rendering issue where the canvas
-        // shows edges into thin air after a partial structured-output
-        // response.
-        const nodeIds = new Set(parsed.nodes.map(n => n.id));
-        const cleanEdges = parsed.edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
-        if (cleanEdges.length !== parsed.edges.length) {
-            console.warn(
-                '[geminiService.generateDiagramIR] Dropped edges with dangling endpoints.',
-                { dropped: parsed.edges.length - cleanEdges.length },
-            );
-        }
-
-        // Same defence for groups: drop nodeIds that don't exist.
-        const cleanGroups = (Array.isArray(parsed.groups) ? parsed.groups : [])
-            .map(g => ({ ...g, nodeIds: g.nodeIds.filter(id => nodeIds.has(id)) }))
-            .filter(g => g.nodeIds.length > 0);
-
+        if (read.dropped.length) opts.onDropped?.(read.dropped);
+        if (!read.ir) return null;
         return {
-            nodes: parsed.nodes,
-            edges: cleanEdges,
-            groups: cleanGroups,
+            ...read.ir,
             metadata: {
                 sourceFormat: 'unknown',
                 audience,
                 generatedAt: new Date().toISOString(),
-                ...(parsed.metadata ?? {}),
+                ...(read.ir.metadata ?? {}),
             },
-        } as DiagramIR;
+        };
     } catch (err) {
         console.error('[geminiService.generateDiagramIR] failed', err);
         return null;
@@ -125,17 +106,21 @@ export async function generateDiagramIRWithSelfHealing(
     lastReason?: DiagramFailureReason;
     /** What the model said was missing, when it declined instead of answering (6.3). */
     declineReason?: string;
+    /** What the reader removed from the answer that was kept (6.4). */
+    dropped: string[];
 }> {
     const audience: DiagramAudience = opts.audience ?? artifact.audience ?? 'technical';
     const warnings: string[] = [];
+    let dropped: string[] = [];
+    const onDropped = (lines: string[]) => { dropped = lines; };
 
     if (!opts.skipCorrective) {
         let declineReason: string | undefined;
         const first = await generateDiagramIR(artifact, project, settings, {
-            audience, previousIR: opts.previousIR, brief: opts.brief, onDecline: (reason) => { declineReason = reason; },
+            audience, previousIR: opts.previousIR, brief: opts.brief, onDecline: (reason) => { declineReason = reason; }, onDropped,
         });
         if (first && first.nodes.length > 0) {
-            return { ir: first, attempts: 1, fallback: 'none', warnings };
+            return { ir: first, attempts: 1, fallback: 'none', warnings, dropped };
         }
         // A model that declined for lack of information would decline again
         // with less: asking twice spends a call to learn nothing (6.3).
@@ -148,6 +133,7 @@ export async function generateDiagramIRWithSelfHealing(
                 warnings,
                 lastReason: 'skeleton-fallback',
                 declineReason,
+                dropped: [],
             };
         }
         warnings.push('[diagram-retry] attempt 1 failed (empty or null IR)');
@@ -162,10 +148,10 @@ export async function generateDiagramIRWithSelfHealing(
     const lastFailureReason = opts.skipCorrective
         ? (artifact.lastDiagramError?.reason ?? 'empty-ir')
         : 'empty-ir';
-    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason, opts.brief);
+    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason, opts.brief, onDropped);
     if (correctiveIR && correctiveIR.nodes.length > 0) {
         warnings.push('[diagram-retry] attempt 2 (corrective) succeeded');
-        return { ir: correctiveIR, attempts: opts.skipCorrective ? 1 : 2, fallback: 'none', warnings, lastReason: lastFailureReason };
+        return { ir: correctiveIR, attempts: opts.skipCorrective ? 1 : 2, fallback: 'none', warnings, lastReason: lastFailureReason, dropped };
     }
     warnings.push('[diagram-retry] attempt 2 (corrective) failed; falling back to deterministic skeleton');
     console.warn('[diagram-retry] attempt 2 (corrective) failed', { artifactId: artifact.id, type: artifact.type });
@@ -178,6 +164,7 @@ export async function generateDiagramIRWithSelfHealing(
         fallback: 'skeleton',
         warnings,
         lastReason: 'skeleton-fallback',
+        dropped: [],
     };
 }
 
@@ -192,9 +179,10 @@ async function generateDiagramIRCorrective(
     audience: DiagramAudience,
     lastFailureReason: DiagramFailureReason,
     brief?: string,
+    onDropped?: (dropped: string[]) => void,
 ): Promise<DiagramIR | null> {
     const dialect = buildDialectInstruction(artifact.type);
-    const responseSchema = buildDiagramIRSchema({ withReview: false });
+    const responseSchema = buildDiagramIRSchema();
     const config = buildDiagramGenerationConfig({
         temperature: diagramTemperature(settings.aiConfig?.temperature),
         thinking: 'low',
@@ -212,22 +200,16 @@ async function generateDiagramIRCorrective(
     const modelName = resolveModelForSettings('default', settings).id;
     try {
         const text = await legacyTransport.generateTextWithFallback(settings, modelName, prompt, config);
-        const cleanJson = cleanJsonString(text || '');
-        if (!cleanJson) return null;
-        const parsed = JSON.parse(cleanJson) as Partial<DiagramIR> & { error?: string };
-        if (parsed.error) return null;
-        if (!Array.isArray(parsed.nodes) || parsed.nodes.length === 0) return null;
-        const nodeIds = new Set(parsed.nodes.map((n) => n.id));
-        const cleanEdges = (parsed.edges ?? []).filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target));
+        const read = readModelDiagramIR(text);
+        if (read.dropped.length) onDropped?.(read.dropped);
+        if (!read.ir) return null;
         return {
-            nodes: parsed.nodes,
-            edges: cleanEdges,
-            groups: Array.isArray(parsed.groups) ? parsed.groups.filter((g) => g.nodeIds?.length) : [],
+            ...read.ir,
             metadata: {
                 sourceFormat: 'unknown',
                 audience,
                 generatedAt: new Date().toISOString(),
-                ...(parsed.metadata ?? {}),
+                ...(read.ir.metadata ?? {}),
             },
         };
     } catch (err) {
@@ -235,25 +217,3 @@ async function generateDiagramIRCorrective(
         return null;
     }
 }
-
-/**
- * Multi-pass diagram generation: draft → deterministic auto-repair →
- * AI critique → AI refine.  This is the highest-quality entry point and
- * what new call sites should prefer when latency budget allows.
- *
- * Stages:
- *   1. **Draft**         — `generateDiagramIR()` (existing single-shot).
- *   2. **Auto-repair**   — deterministic fixes for known violations
- *                          (generic labels, missing protocols, layer
- *                          violations, missing groups, illegal cycles).
- *                          No AI call. ~5 ms.
- *   3. **Critique**      — AI reviewer flags remaining issues using the
- *                          10-D rubric, fed with the static analyser
- *                          report and remaining architectural violations.
- *   4. **Refine**        — AI applies the critique surgically, returning
- *                          a higher-quality IR.
- *
- * Each stage can be skipped via `opts` so callers control the latency /
- * cost / quality trade-off.  Stages 3 + 4 are skipped automatically when
- * the post-repair quality score already passes the target threshold.
- */

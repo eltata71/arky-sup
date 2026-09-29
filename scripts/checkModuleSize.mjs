@@ -63,7 +63,7 @@ export const BYTE_CEILINGS = {
   'services/ai/generation/artifacts/artifactGenerationEngine.ts': 86092, // plan diagramas 6.3: 86 126 → 86092 · plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
   'components/ReactFlowCanvas.tsx': 110112, // plan diagramas 4.1: +237, `onNodeDoubleClick` para abrir el nivel C4 siguiente // plan diagramas 3.3: +91, rejilla de 8 px al arrastrar (ADR-007) // 2.3: −122, `exportImage` nombra `CanvasExportOptions`
   'components/ProjectHub.tsx': 78777, // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'services/ai/prompts/diagramPrompts.ts': 52524, // plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
+  'services/ai/prompts/diagramPrompts.ts': 44265, // plan diagramas 6.4: 52 524 → 44265, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
   'components/MemoryCenterModal.tsx': 55552, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/ArtifactCanvas.tsx': 43500, // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 49197,
@@ -173,7 +173,7 @@ export const CEILINGS = {
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 962, // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
   'pages/Workspace.tsx': 732, // plan diagramas 6.2: +2, la motivación de negocio (import y hook) · F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
-  'services/ai/prompts/diagramPrompts.ts': 1030, // plan diagramas 6.3: 1 145 → 1030
+  'services/ai/prompts/diagramPrompts.ts': 830, // plan diagramas 6.4: 1 030 → 830, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 1 145 → 1030
   'services/export/adapters/pdfExporter.ts': 1131, // plan diagramas 2.4: +2 // +4: `latin1`
   'components/ProjectHub.tsx': 1060, // F6-03 corte 2b // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/MemoryCenterModal.tsx': 1017, // F3-07: el import de `Artifact`/`Project` nombra su módulo

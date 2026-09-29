@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { UNTRUSTED_FENCE_CLOSE } from '../../lib/untrustedContent';
 import { buildBasePrompt } from '../../services/ai/prompts/projectPrompts';
 import type { Settings } from '../../types';
 import type { Project } from '../../services/architectureProjects';
@@ -48,7 +49,9 @@ describe('buildBasePrompt — diagram mode', () => {
         // The header "Project Description: ..." also starts with "- "? No, it starts with "Project". Only context items begin with "- ".
         // But the global prompt also has "- " for global context items. So count items in the project-specific section.
         const ctxStart = prompt.indexOf('Project-Specific Context');
-        const ctxBlock = prompt.slice(ctxStart);
+        // The context ends at its fence (6.2); what follows — the industry
+        // pack HIPAA activates (6.4) — has bullets of its own.
+        const ctxBlock = prompt.slice(ctxStart, prompt.indexOf(UNTRUSTED_FENCE_CLOSE, ctxStart));
         const bulletsInCtx = ctxBlock.split('\n').filter((l) => l.startsWith('- '));
         expect(bulletsInCtx.length).toBeLessThanOrEqual(12);
 

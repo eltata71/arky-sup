@@ -277,6 +277,9 @@
       "Clearinghouse",
       "Plataforma de Reclamaciones",
       "Banco Pagador"
+    ],
+    "paquetes": [
+      "health-insurance"
     ]
   }
 }

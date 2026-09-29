@@ -242,6 +242,12 @@
       "Servicio de Liquidación",
       "Proveedor de Listas",
       "Tesorería"
+    ],
+    "paquetes": [
+      "life-insurance"
+    ],
+    "sinHallazgosDominio": [
+      "LI_PAYOUT_WITHOUT_AML"
     ]
   }
 }

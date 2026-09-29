@@ -33,8 +33,21 @@
  */
 
 import type { DiagramIR, DiagramIREdge, DiagramIRNode } from '../../lib/diagram';
+// By file, not by the barrel: this runs on the boot path and needs the
+// detectors, never the pack's prompt text (6.4).
+import { HEALTH_DETECTORS, HEALTH_REGULATORY_TERMS, HEALTH_VOCABULARY } from '../../lib/domainPacks/healthDetectors';
 
 export type ComplianceSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+
+/** What any industry validator reports; the quality service reads this shape (6.4). */
+export interface DomainComplianceIssue {
+    id: string;
+    code: string;
+    severity: ComplianceSeverity;
+    message: string;
+    recommendation: string;
+    affectedIds?: string[];
+}
 
 export interface HealthcareComplianceIssue {
     id: string;
@@ -54,15 +67,15 @@ export interface HealthcareComplianceIssue {
     affectedIds?: string[];
 }
 
-const PHI_KEYWORDS = /\b(patient|paciente|patient[-_ ]?id|mrn|member[-_ ]?id|policy[-_ ]?holder|assured|asegurado|claim|reclam(o|aci[oó]n)|coverage|cobertura|policy|p[oó]liza|eligibility|elegibilidad|remittance|adjudication|adjudicaci[oó]n|copay|deductible|deducible|prescription|prescripci[oó]n|formulary|formulario|pbm|pharmacy|farmacia|provider|proveedor|hl7|fhir|x12|ehr|emr|clinical|cl[ií]nico|diagnosis|diagn[oó]stico|treatment|tratamiento|medication|medicamento|lab\s+result|allergy|alergia)\b/i;
-const PII_KEYWORDS = /\b(ssn|social[-_ ]?security|tax[-_ ]?id|dni|cedula|c[eé]dula|passport|pasaporte|birth\s*date|fecha\s*de\s*nacimiento|home\s+address|domicilio|email|phone\s*number|tel[eé]fono|name\s+(of|del)\s+(member|patient|insured))\b/i;
-
-// Higher-confidence concept detectors used by the recommendation rules.
-const CLINICAL_KEYWORDS = /\b(patient|paciente|clinical|cl[ií]nico|diagnosis|diagn[oó]stico|lab\s+result|hl7|fhir|ehr|emr|prescription|prescripci[oó]n|allergy|alergia|encounter|encuentro|cdc|condition|treatment|tratamiento)\b/i;
-const ELIGIBILITY_KEYWORDS = /\b(eligibility|elegibilidad|270|271|coverage\s+check|verificaci[oó]n\s+de\s+cobertura|benefits\s+inquiry)\b/i;
-const CLAIM_KEYWORDS = /\b(claim|reclam(o|aci[oó]n)|837|835|adjudication|adjudicaci[oó]n|remittance|remesa|denial|denegaci[oó]n|cob|coordination\s+of\s+benefits|prior\s+auth)\b/i;
-const PHARMACY_KEYWORDS = /\b(pbm|pharmacy|farmacia|ncpdp|formulary|formulario|drug|medicaci[oó]n|prescription|prescripci[oó]n|script|d\.0|sig|days[-_ ]?supply)\b/i;
-const PAYER_PROVIDER_KEYWORDS = /\b(payer|payor|pagador|carrier|provider|proveedor|hospital|clinic|cl[ií]nica|insurer|aseguradora|tpa|clearing\s*house|clearinghouse|edi\s+gateway)\b/i;
+// The vocabulary is the health pack's (plan de diagramas, 6.4): the prompt
+// and this validator read one definition instead of two.
+const PHI_KEYWORDS = HEALTH_DETECTORS.phi;
+const PII_KEYWORDS = HEALTH_DETECTORS.pii;
+const CLINICAL_KEYWORDS = HEALTH_DETECTORS.clinical;
+const ELIGIBILITY_KEYWORDS = HEALTH_DETECTORS.eligibility;
+const CLAIM_KEYWORDS = HEALTH_DETECTORS.claim;
+const PHARMACY_KEYWORDS = HEALTH_DETECTORS.pharmacy;
+const PAYER_PROVIDER_KEYWORDS = HEALTH_DETECTORS.payerProvider;
 
 function nodeMatches(node: DiagramIRNode, re: RegExp): boolean {
     const haystack = `${node.label ?? ''} ${node.description ?? ''} ${node.domain ?? ''} ${node.technology ?? ''} ${node.businessMeaning ?? ''}`;
@@ -128,6 +141,24 @@ export function isHealthcareContext(ir: DiagramIR): boolean {
     return signals >= 2;
 }
 
+/**
+ * Health-specific vocabulary in the diagram itself (plan de diagramas, 6.4):
+ * a health standard, or two distinct terms of the health pack. The
+ * sensitive-data rules below apply to any insurance diagram; FHIR, X12,
+ * NCPDP and adjudication are health-insurance advice, and giving it to a
+ * life diagram because it classifies a beneficiary as PII was a false
+ * positive the life pack made visible.
+ */
+export function hasHealthVocabulary(ir: DiagramIR): boolean {
+    const text = [
+        ...ir.nodes.map((n) => `${n.label ?? ''} ${n.description ?? ''} ${n.technology ?? ''}`),
+        ...ir.edges.map((e) => `${e.label ?? ''} ${e.protocol ?? ''} ${e.payload ?? ''}`),
+        ir.metadata?.title ?? '',
+    ].join(' \n ');
+    if (HEALTH_REGULATORY_TERMS.some((term) => term.pattern.test(text))) return true;
+    return HEALTH_VOCABULARY.filter((term) => term.pattern.test(text)).length >= 2;
+}
+
 export function validateHealthcareCompliance(ir: DiagramIR): HealthcareComplianceIssue[] {
     if (!ir.nodes || ir.nodes.length === 0) return [];
     // Skip the validator unless the diagram clearly belongs to the
@@ -139,8 +170,12 @@ export function validateHealthcareCompliance(ir: DiagramIR): HealthcareComplianc
 
     const issues: HealthcareComplianceIssue[] = [];
 
+    // In health insurance a policy or a member id is PHI; in life insurance it
+    // is PII. The PHI vocabulary only applies to a health diagram (6.4).
+    const healthSpecific = hasHealthVocabulary(ir);
+
     // ── PHI / PII classification ────────────────────────────────────────
-    const phiCandidates = ir.nodes.filter((n) => looksLikePHI(n) && n.dataClassification !== 'phi');
+    const phiCandidates = healthSpecific ? ir.nodes.filter((n) => looksLikePHI(n) && n.dataClassification !== 'phi') : [];
     if (phiCandidates.length > 0) {
         issues.push({
             id: 'hc-missing-phi-classification',
@@ -191,8 +226,9 @@ export function validateHealthcareCompliance(ir: DiagramIR): HealthcareComplianc
         });
     }
 
+    // ── Health-specific advice, only on a health diagram (6.4) ──────────
     // ── FHIR recommendation ─────────────────────────────────────────────
-    const hasClinical = ir.nodes.some((n) => nodeMatches(n, CLINICAL_KEYWORDS));
+    const hasClinical = healthSpecific && ir.nodes.some((n) => nodeMatches(n, CLINICAL_KEYWORDS));
     if (hasClinical) {
         const fhirRe = /\bfhir\b/i;
         const fhirEdges = ir.edges.filter((e) => edgeMatches(e, fhirRe));
@@ -213,8 +249,9 @@ export function validateHealthcareCompliance(ir: DiagramIR): HealthcareComplianc
     const hasClaims = ir.nodes.some((n) => nodeMatches(n, CLAIM_KEYWORDS)) ||
         ir.edges.some((e) => edgeMatches(e, CLAIM_KEYWORDS));
     const hasPayerProvider = ir.nodes.some((n) => nodeMatches(n, PAYER_PROVIDER_KEYWORDS));
-    if ((hasEligibility || hasClaims) && hasPayerProvider) {
-        const x12Re = /\b(x12|edi|837|835|270|271|820)\b/i;
+    if (healthSpecific && (hasEligibility || hasClaims) && hasPayerProvider) {
+        // FHIR is the other accepted wire for eligibility and prior auth.
+        const x12Re = /\b(x12|edi|837|835|270|271|820|278|fhir)\b/i;
         const x12Edges = ir.edges.filter((e) => edgeMatches(e, x12Re));
         if (x12Edges.length === 0) {
             issues.push({
@@ -228,8 +265,8 @@ export function validateHealthcareCompliance(ir: DiagramIR): HealthcareComplianc
     }
 
     // ── NCPDP recommendation ────────────────────────────────────────────
-    const hasPharmacy = ir.nodes.some((n) => nodeMatches(n, PHARMACY_KEYWORDS)) ||
-        ir.edges.some((e) => edgeMatches(e, PHARMACY_KEYWORDS));
+    const hasPharmacy = healthSpecific && (ir.nodes.some((n) => nodeMatches(n, PHARMACY_KEYWORDS)) ||
+        ir.edges.some((e) => edgeMatches(e, PHARMACY_KEYWORDS)));
     if (hasPharmacy) {
         const ncpdpRe = /\b(ncpdp|d\.0|script|telecom)\b/i;
         const ncpdpEdges = ir.edges.filter((e) => edgeMatches(e, ncpdpRe));
@@ -259,7 +296,7 @@ export function validateHealthcareCompliance(ir: DiagramIR): HealthcareComplianc
     }
 
     // ── Adjudication trace ─────────────────────────────────────────────
-    if (hasClaims) {
+    if (healthSpecific && hasClaims) {
         const hasAdjudication = ir.nodes.some((n) => /\b(adjudication|adjudicaci[oó]n|accumulator|acumulador|remittance|remesa|payment|pago|denial|denegaci[oó]n|appeals|apelaciones?)\b/i.test(`${n.label ?? ''} ${n.description ?? ''}`));
         if (!hasAdjudication) {
             issues.push({

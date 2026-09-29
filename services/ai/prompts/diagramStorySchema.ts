@@ -14,8 +14,10 @@
  * for a reason worth keeping: `diagramPrompts.ts` sits at its size ceiling,
  * and a prompt that grows by whatever the newest capability needs is how that
  * file got there. The metadata contract moved out whole rather than being
- * duplicated — there is still exactly one place that says what
- * `metadata` looks like, on both sides.
+ * duplicated. Since the 6.4 task of the diagram plan it has one half only —
+ * the schema the request enforces, plus the instructions — because the JSON
+ * the old prompt printed belonged to builders nothing called, and a second
+ * description of the same shape is one that drifts.
  *
  * **The model writes meaning, never geometry.** Scenes are ids and a title;
  * callouts are ids and a sentence. Nothing here lets a model choose a
@@ -23,18 +25,6 @@
  * design system, and asking for them is how a diagram ends up with a story
  * nobody can lay out.
  */
-
-/** The `metadata` block as it appears in the JSON the prompt prints. */
-export const METADATA_CONTRACT = `  "metadata": {
-    "audience": "executive" | "technical" | "operations",
-    "title"?: string,
-    "narrative"?: {
-      "summary": string,
-      "scenes"?: [{ "id": string, "title": string, "focusNodeIds": string[], "focusEdgeIds": string[], "insight"?: string }],
-      "callouts"?: [{ "id": string, "targetId": string, "targetKind": "node" | "edge", "text": string, "severity"?: "info" | "warning" | "critical" }]
-    },
-    "diagramType"?: "c4-context" | "c4-container" | "c4-component" | "c4-deployment" | "integration" | "bpmn-process" | "value-stream" | "data-flow" | "deployment" | "sequence" | "erd" | "generic"
-  },`;
 
 /**
  * What the model is told about the story, in the prompt body.

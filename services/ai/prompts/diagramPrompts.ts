@@ -5,10 +5,11 @@
  * visual-pipeline audit.  They:
  *   - Ask Gemini to return DiagramIR JSON (not Mermaid) whenever possible.
  *   - Carry the 10-dimension quality rubric so the model can self-evaluate.
- *   - Reference design tokens instead of hard-coding colours.
+ *   - Leave colours to the design tokens.
  *   - Produce executive, technical and operations variants on demand.
- *   - Embed the self-review step so downstream consumers receive both the
- *     artifact and a JSON `review` block.
+ * The self-review `review` block and the builders that printed a second
+ * schema are gone (plan de diagramas, 6.4): nothing read the first, and the
+ * second described a shape the real schema did not.
  *
  * The prompts are grouped by intent; call sites import the builder they need.
  */
@@ -19,12 +20,12 @@ import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
-import { METADATA_CONTRACT, METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
+import { METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
 
 /**
- * Ten-dimension rubric used across every diagram prompt. Exported so legacy
- * Mermaid prompts can reinforce the same evaluation criteria without
- * duplicating copy.
+ * Ten-dimension rubric the Mermaid prompts carry for self-review. It asked
+ * for a scored breakdown in prompts that also said "deliver ONLY the code";
+ * the model is now told to use it and not to print it (plan de diagramas, 6.4).
  */
 export const RUBRIC = `Evalúa siempre el resultado en estas 10 dimensiones (0–10 cada una):
 1. claridadSemantica — ¿cada nodo tiene un rol inequívoco?
@@ -32,39 +33,12 @@ export const RUBRIC = `Evalúa siempre el resultado en estas 10 dimensiones (0�
 3. jerarquiaVisual — ¿hay agrupación / orden que guíe la lectura?
 4. legibilidad — ¿labels cortos, sin jerga innecesaria?
 5. narrativa — ¿las etiquetas en las aristas cuentan una historia?
-6. atractivoVisual — ¿es limpio, usa colores semánticos?
+6. atractivoVisual — ¿es limpio, con roles semánticos claros?
 7. preparacionEjecutiva — ¿un C-level lo entiende en 60 s?
 8. preparacionTecnica — ¿un arquitecto puede implementarlo?
 9. exportabilidad — ¿funciona sin contexto extra en PNG/Lucid?
 10. mantenibilidadPipeline — ¿es fácil de regenerar/editar?
-Devuelve además un breakdown numérico y un score total ponderado (0–100).`;
-
-export const SEMANTIC_ROLES = `Los roles canónicos disponibles son: person, system, gateway, data, messaging, external, service, process, generic.
-
-Además, asigna SIEMPRE un \`semanticType\` con la taxonomía profesional completa:
- - Actores y roles: human-actor, business-role
- - Sistemas: internal-system, external-system, legacy-system, application, c4-container, component
- - Canales / Portales: portal, digital-channel
- - APIs / Servicios: api, service, microservice
- - Datos: database, document-repository, data-product, analytics-system, report, dashboard
- - Integración / Mensajería: integration-platform, messaging, batch-file
- - Cloud / Plataforma: cloud-service
- - Seguridad / Reglas: security-service, rules-engine, notification-service
- - Negocio / Proveedores: business-process, external-provider
- - Fallback controlado: generic (usar solo si no hay evidencia)
-
-Para los \`edges\`, asigna también un \`semanticType\` específico cuando aplique:
- rest-api, soap, graphql, event, async-messaging, batch, file-transfer, query,
- publish, subscribe, authentication, authorization, notification, data-transfer,
- synchronization, orchestration, composition, dependency, business-flow,
- data-flow, control-flow, generic.
-
-Cada relación crítica DEBE declarar protocolo (REST/HTTPS, Kafka, SQS, EDI…),
-direction (unidirectional / bidirectional) y, cuando aplique, criticality
-(low / medium / high / critical) y dataSensitivity (public / internal /
-confidential / restricted) para que el inspector pueda mostrarlas.
-
-NO especifiques colores ni tamaños: el renderer los aplica usando tokens.`;
+Úsala para revisar tu propia salida antes de entregarla; no la incluyas en la respuesta.`;
 
 /**
  * Refuerzo ligero para prompts que siguen emitiendo Mermaid. Añade la rúbrica
@@ -99,139 +73,6 @@ Reglas de legibilidad (dimensión 4):
  - Usar grupos/boundaries cuando haya ≥ 5 nodos para mostrar jerarquía.
 
 Entrega SOLO el código solicitado en el formato indicado arriba — sin markdown fences extra, sin comentarios en prosa.`;
-}
-
-const IR_SCHEMA = `Devuelve EXCLUSIVAMENTE JSON con esta forma:
-{
-  "nodes": [{
-    "id": string,
-    "label": string,
-    "kind": string,
-    "semanticType"?: string,
-    "description"?: string,
-    "group"?: string,
-    "shape"?: "rectangle" | "cylinder" | "hexagon" | "cloud" | "person" | "diamond" | "tab-box",
-    "technology"?: string,
-    "owner"?: string,
-    "domain"?: string,
-    "dataClassification"?: "public" | "internal" | "confidential" | "restricted" | "pii" | "phi" | "pci",
-    "securityLevel"?: "none" | "standard" | "elevated" | "critical",
-    "compliance"?: string[],
-    "criticality"?: "low" | "medium" | "high" | "critical",
-    "trust"?: "internal" | "partner" | "external" | "public",
-    "businessMeaning"?: string,
-    "technicalMeaning"?: string
-  }],
-  "edges": [{
-    "id": string,
-    "source": string,
-    "target": string,
-    "label"?: string,
-    "relation"?: "sync" | "async" | "data-flow" | "dependency" | "inheritance" | "default",
-    "semanticType"?: string,
-    "protocol"?: string,
-    "direction"?: "unidirectional" | "bidirectional",
-    "criticality"?: "low" | "medium" | "high" | "critical",
-    "dataSensitivity"?: "public" | "internal" | "confidential" | "restricted" | "pii" | "phi" | "pci",
-    "retryPolicy"?: string,
-    "frequency"?: "real-time" | "near-real-time" | "batch" | "on-demand" | "periodic",
-    "synchrony"?: "sync" | "async" | "fire-and-forget" | "request-reply",
-    "security"?: string,
-    "payload"?: string,
-    "trust"?: "internal" | "partner" | "external" | "public",
-    "businessMeaning"?: string,
-    "technicalMeaning"?: string,
-    "observability"?: string,
-    "sla"?: string,
-    "errorHandling"?: string
-  }],
-  "groups": [{
-    "id": string,
-    "label": string,
-    "nodeIds": string[],
-    "kind"?: "swimlane" | "system-boundary" | "enterprise" | "security" | "external-provider" | "data" | "cloud" | "legacy" | "integration" | "cluster",
-    "purpose"?: string,
-    "boundaryType"?: "trust" | "network" | "data" | "organizational" | "process" | "compliance",
-    "owner"?: string,
-    "trust"?: "internal" | "partner" | "external" | "public"
-  }],
-${METADATA_CONTRACT}
-  "review": {
-    "breakdown": { "claridadSemantica": number, "consistenciaArquitectonica": number, "jerarquiaVisual": number, "legibilidad": number, "narrativa": number, "atractivoVisual": number, "preparacionEjecutiva": number, "preparacionTecnica": number, "exportabilidad": number, "mantenibilidadPipeline": number },
-    "score": number,
-    "issues": [{ "severity": "critical"|"high"|"medium"|"low", "message": string, "recommendation": string }]
-  }
-}`;
-
-export interface CanonicalGenerateOptions {
-    artifact: Artifact;
-    project: Project;
-    audience: DiagramAudience;
-    settings: Settings;
-}
-
-export function buildCanonicalGenerationPrompt(opts: CanonicalGenerateOptions): string {
-    const { artifact, project, audience } = opts;
-    return `Eres el Principal Software Architect de Arky 10.
-Contexto del proyecto: ${project.description}.
-Audiencia objetivo: ${audience.toUpperCase()}.
-Artefacto solicitado: ${artifact.name} (${artifact.type}).
-Objetivo: ${artifact.objective}.
-
-${SEMANTIC_ROLES}
-
-${RUBRIC}
-
-${IR_SCHEMA}
-
-Reglas estrictas:
- - No escribas texto fuera del JSON.
- - Mantén la información de la audiencia: el board ejecutivo necesita menos de 8 nodos; técnico puede tener hasta 40.
- - Las relaciones deben contar la historia: cada label en una arista es verbo + objeto + protocolo/canal (ej: "Consulta póliza · REST/HTTPS", "Publica evento · Kafka").
- - Para diagramas de integración/contexto, prioriza dirección unidireccional y evita etiquetas largas (>40 chars) en el canvas.
- - Marca información inferida con trust="inferred"; si falta información crítica usa trust="unknown" y evita inventar datos.
- - Si el dato de entrada es insuficiente, responde con {"error": "<motivo>"} y nada más.
-`;
-}
-
-export interface CanonicalReviewOptions {
-    ir: unknown;
-    audience: DiagramAudience;
-}
-
-export function buildCanonicalReviewPrompt(opts: CanonicalReviewOptions): string {
-    return `Revisa este DiagramIR como revisor senior. Aplica el rúbrica de 10 dimensiones.
-
-DiagramIR actual (JSON):
-${JSON.stringify(opts.ir, null, 2)}
-
-Audiencia declarada: ${opts.audience}.
-
-${RUBRIC}
-
-Responde SOLO JSON:
-{
-  "breakdown": { ... },
-  "score": number,
-  "issues": [{ "severity": ..., "message": ..., "recommendation": ... }],
-  "fixes": [{ "target": "<nodeId|edgeId|groups[0]>", "change": "<instrucción quirúrgica>" }]
-}`;
-}
-
-export interface ExecutivePrompt {
-    projectDescription: string;
-    ir: unknown;
-}
-
-export function buildExecutiveNarrativePrompt(opts: ExecutivePrompt): string {
-    return `Transforma el siguiente DiagramIR en una narrativa de 120 palabras para un comité ejecutivo.
-No uses jerga técnica. No menciones herramientas específicas. Habla de valor, riesgo y evolución.
-Entrega JSON { "title": string, "narrative": string, "callouts": string[] } donde callouts son máximo 3 frases de una línea.
-
-Contexto del proyecto: ${opts.projectDescription}
-Diagrama:
-${JSON.stringify(opts.ir, null, 2)}
-`;
 }
 
 export interface AutoFixPrompt {
@@ -372,13 +213,7 @@ export function buildDialectInstruction(type: ArtifactType): string {
  *    intermediate Mermaid hop (eliminates the "Mermaid hallucination" failure
  *    mode entirely).
  */
-export interface DiagramIRSchemaOptions {
-    /** When true, requires a self-review block. */
-    withReview?: boolean;
-}
-
-export function buildDiagramIRSchema(opts: DiagramIRSchemaOptions = {}): unknown {
-    const { withReview = true } = opts;
+export function buildDiagramIRSchema(): unknown {
     const node = {
         type: 'object',
         properties: {
@@ -475,47 +310,12 @@ export function buildDiagramIRSchema(opts: DiagramIRSchemaOptions = {}): unknown
         required: ['id', 'label', 'nodeIds'],
     } as const;
     const metadata = METADATA_SCHEMA;
-    const review = {
-        type: 'object',
-        properties: {
-            score: { type: 'number' },
-            breakdown: {
-                type: 'object',
-                properties: {
-                    claridadSemantica:         { type: 'number' },
-                    consistenciaArquitectonica:{ type: 'number' },
-                    jerarquiaVisual:           { type: 'number' },
-                    legibilidad:               { type: 'number' },
-                    narrativa:                 { type: 'number' },
-                    atractivoVisual:           { type: 'number' },
-                    preparacionEjecutiva:      { type: 'number' },
-                    preparacionTecnica:        { type: 'number' },
-                    exportabilidad:            { type: 'number' },
-                    mantenibilidadPipeline:    { type: 'number' },
-                },
-            },
-            issues: {
-                type: 'array',
-                items: {
-                    type: 'object',
-                    properties: {
-                        severity:       { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
-                        message:        { type: 'string' },
-                        recommendation: { type: 'string' },
-                    },
-                    required: ['severity', 'message'],
-                },
-            },
-        },
-    } as const;
-
     const properties: Record<string, unknown> = {
         nodes:  { type: 'array', items: node },
         edges:  { type: 'array', items: edge },
         groups: { type: 'array', items: group },
         metadata,
     };
-    if (withReview) properties.review = review;
 
     return {
         type: 'object',

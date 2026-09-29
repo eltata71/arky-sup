@@ -245,6 +245,9 @@
         "campo": "dataClassification",
         "valor": "pci"
       }
+    ],
+    "paquetes": [
+      "health-insurance"
     ]
   }
 }

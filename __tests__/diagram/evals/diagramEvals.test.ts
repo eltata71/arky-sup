@@ -94,6 +94,24 @@ describe('banco de evaluación de diagramas', () => {
         },
     );
 
+    // Plan de diagramas 6.4: el paquete de dominio correcto llega al modelo,
+    // y el validador de seguros encuentra lo que debe y nada más.
+    it.each(corpus.filter((c) => c.esperado.paquetes).map((c) => [c.id, c.esperado.paquetes ?? []] as const))(
+        '%s recibe exactamente sus paquetes de dominio',
+        (id, expected) => {
+            expect([...resultOf(id).paquetes].sort()).toEqual([...expected].sort());
+        },
+    );
+
+    it.each(corpus.filter((c) => c.esperado.hallazgosDominio || c.esperado.sinHallazgosDominio).map((c) => c.id))(
+        '%s: el validador de dominio encuentra lo que debe',
+        (id) => {
+            const r = resultOf(id);
+            for (const code of r.hallazgosEsperados) expect(r.hallazgosDominio, code).toContain(code);
+            for (const code of r.hallazgosProhibidos) expect(r.hallazgosDominio, code).not.toContain(code);
+        },
+    );
+
     it('la corrección sólo gasta una llamada cuando hay hallazgos', () => {
         for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
     });
@@ -147,6 +165,8 @@ describe('banco de evaluación de diagramas', () => {
             'contextoEntregado',
             'fidelidadMedia',
             'degradacionesAvisadas',
+            'paquetesCorrectos',
+            'hallazgosDominioCorrectos',
         ] as const) {
             expect(summary[key], key).toBeGreaterThanOrEqual(actual[key]);
         }
