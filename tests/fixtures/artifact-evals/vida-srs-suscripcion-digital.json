@@ -1,0 +1,43 @@
+{
+  "id": "vida-srs-suscripcion-digital",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: documento representativo escrito para el banco; no es una salida capturada de un modelo",
+  "plantilla": "Especificación de Requerimientos (SRS)",
+  "proyecto": {
+    "nombre": "Suscripción digital de vida",
+    "descripcion": "Digitalizar la suscripción de seguros de vida individual en el canal de brokers."
+  },
+  "caminos": [
+    "generar",
+    "criticar",
+    "refinar",
+    "revisar",
+    "sugerir",
+    "copiloto"
+  ],
+  "artefacto": {
+    "contenido": "# Especificación de Requerimientos — Suscripción Digital de Vida\n\n## Propósito\nEspecificar los requisitos del flujo de suscripción digital de seguros de vida individual para el canal de brokers, desde la cotización hasta la emisión de la póliza.\n\n## Alcance\nAplica a productos de vida temporal y vida entera con capital asegurado de hasta 150 000 USD bajo suscripción simplificada. Los capitales superiores siguen el flujo tradicional con evidencia médica completa.\n\n## Actores\n| Actor | Descripción |\n| --- | --- |\n| Broker | Captura la solicitud y acompaña al solicitante |\n| Solicitante | Responde el cuestionario de salud y firma |\n| Motor de reglas de suscripción | Decide aceptación, recargo o derivación |\n| Suscriptor | Resuelve los casos derivados |\n\n## Requisitos Funcionales\n| ID | Requisito | Criterio de aceptación | Prioridad |\n| --- | --- | --- | --- |\n| RF-01 | Cotizar en línea con tarifas vigentes | La prima coincide con el tarificador oficial al centavo | Alta |\n| RF-02 | Capturar el cuestionario de salud por bloques | Cada respuesta queda fechada y firmada | Alta |\n| RF-03 | Decidir automáticamente los casos simples | El 70 % de las solicitudes se decide sin intervención | Alta |\n| RF-04 | Derivar al suscriptor con el expediente completo | El suscriptor no pide datos ya capturados | Media |\n| RF-05 | Emitir la póliza y el certificado digital | La póliza se emite en menos de 24 horas desde la aceptación | Alta |\n\n## Reglas de Negocio\n- La evidencia médica se trata como información sensible y sólo la ve el suscriptor asignado.\n- Toda aceptación registra la versión de las reglas que la decidió.\n- Un solicitante con respuesta afirmativa en enfermedades graves se deriva siempre.\n\n## Supuestos y Dependencias\nEl core de pólizas AS/400 se conserva y se expone por API. El tarificador oficial es la única fuente de primas.\n",
+    "representacion": "document"
+  },
+  "respuestaModelo": "# Especificación de Requerimientos — Suscripción Digital de Vida\n\n## Propósito\nEspecificar los requisitos del flujo de suscripción digital de seguros de vida individual para el canal de brokers, desde la cotización hasta la emisión de la póliza.\n\n## Alcance\nAplica a productos de vida temporal y vida entera con capital asegurado de hasta 150 000 USD bajo suscripción simplificada. Los capitales superiores siguen el flujo tradicional con evidencia médica completa.\n\n## Actores\n| Actor | Descripción |\n| --- | --- |\n| Broker | Captura la solicitud y acompaña al solicitante |\n| Solicitante | Responde el cuestionario de salud y firma |\n| Motor de reglas de suscripción | Decide aceptación, recargo o derivación |\n| Suscriptor | Resuelve los casos derivados |\n\n## Requisitos Funcionales\n| ID | Requisito | Criterio de aceptación | Prioridad |\n| --- | --- | --- | --- |\n| RF-01 | Cotizar en línea con tarifas vigentes | La prima coincide con el tarificador oficial al centavo | Alta |\n| RF-02 | Capturar el cuestionario de salud por bloques | Cada respuesta queda fechada y firmada | Alta |\n| RF-03 | Decidir automáticamente los casos simples | El 70 % de las solicitudes se decide sin intervención | Alta |\n| RF-04 | Derivar al suscriptor con el expediente completo | El suscriptor no pide datos ya capturados | Media |\n| RF-05 | Emitir la póliza y el certificado digital | La póliza se emite en menos de 24 horas desde la aceptación | Alta |\n\n## Reglas de Negocio\n- La evidencia médica se trata como información sensible y sólo la ve el suscriptor asignado.\n- Toda aceptación registra la versión de las reglas que la decidió.\n- Un solicitante con respuesta afirmativa en enfermedades graves se deriva siempre.\n\n## Supuestos y Dependencias\nEl core de pólizas AS/400 se conserva y se expone por API. El tarificador oficial es la única fuente de primas.\n",
+  "seccionesDisciplina": [
+    [
+      "Propósito"
+    ],
+    [
+      "Alcance"
+    ],
+    [
+      "Requisitos Funcionales"
+    ],
+    [
+      "Requisitos No Funcionales"
+    ],
+    [
+      "Reglas de Negocio"
+    ]
+  ],
+  "seccionesOmitidas": [
+    "Requisitos No Funcionales"
+  ]
+}

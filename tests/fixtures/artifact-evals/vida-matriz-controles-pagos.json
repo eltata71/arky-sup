@@ -1,0 +1,45 @@
+{
+  "id": "vida-matriz-controles-pagos",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: documento representativo escrito para el banco; no es una salida capturada de un modelo",
+  "plantilla": "Matriz de Controles de Seguridad",
+  "proyecto": {
+    "nombre": "Pago ágil de siniestros de vida",
+    "descripcion": "Asegurar el flujo de pago de siniestros de vida frente a fraude y lavado."
+  },
+  "caminos": [
+    "generar",
+    "criticar",
+    "refinar",
+    "revisar",
+    "sugerir",
+    "copiloto"
+  ],
+  "artefacto": {
+    "contenido": "# Matriz de Controles de Seguridad — Pagos de Siniestros de Vida\n\n## Objetivo\nDeclarar los controles que protegen el flujo de pago de siniestros de vida frente a fraude, lavado de activos y fuga de información de beneficiarios.\n\n## Marco de Referencia\nLos controles se alinean con ISO 27001 anexo A, con las recomendaciones del GAFI sobre prevención de lavado y con la política interna de protección de datos personales.\n\n## Controles\n| ID | Control | Riesgo que mitiga | Tipo | Frecuencia |\n| --- | --- | --- | --- | --- |\n| CS-01 | Todo pago pasa por listas de sanciones antes de liberarse | Pago a persona sancionada | Preventivo | Cada pago |\n| CS-02 | Doble aprobación para pagos superiores a 50 000 USD | Fraude interno | Preventivo | Cada pago |\n| CS-03 | Cifrado de documentos de beneficiarios en reposo | Fuga de datos personales | Preventivo | Continuo |\n| CS-04 | Revisión mensual de accesos al gestor de siniestros | Accesos indebidos | Detectivo | Mensual |\n| CS-05 | Alerta por cambio de cuenta bancaria del beneficiario | Desvío de pagos | Detectivo | Cada cambio |\n| CS-06 | Bitácora inmutable de liberaciones de pago | Repudio | Detectivo | Continuo |\n\n## Clasificación de Datos\nLa identificación de beneficiarios es PII; la evidencia médica del asegurado fallecido es PHI y no sale del gestor de siniestros.\n\n## Brechas Identificadas\n| Brecha | Plan |\n| --- | --- |\n| CS-05 no cubre cambios hechos por el centro de llamadas | Integrar el centro de llamadas al servicio de alertas |\n| La revisión de accesos es manual | Automatizar con el gestor de identidades |\n",
+    "representacion": "document"
+  },
+  "respuestaModelo": "# Matriz de Controles de Seguridad — Pagos de Siniestros de Vida\n\n## Objetivo\nDeclarar los controles que protegen el flujo de pago de siniestros de vida frente a fraude, lavado de activos y fuga de información de beneficiarios.\n\n## Marco de Referencia\nLos controles se alinean con ISO 27001 anexo A, con las recomendaciones del GAFI sobre prevención de lavado y con la política interna de protección de datos personales.\n\n## Controles\n| ID | Control | Riesgo que mitiga | Tipo | Frecuencia |\n| --- | --- | --- | --- | --- |\n| CS-01 | Todo pago pasa por listas de sanciones antes de liberarse | Pago a persona sancionada | Preventivo | Cada pago |\n| CS-02 | Doble aprobación para pagos superiores a 50 000 USD | Fraude interno | Preventivo | Cada pago |\n| CS-03 | Cifrado de documentos de beneficiarios en reposo | Fuga de datos personales | Preventivo | Continuo |\n| CS-04 | Revisión mensual de accesos al gestor de siniestros | Accesos indebidos | Detectivo | Mensual |\n| CS-05 | Alerta por cambio de cuenta bancaria del beneficiario | Desvío de pagos | Detectivo | Cada cambio |\n| CS-06 | Bitácora inmutable de liberaciones de pago | Repudio | Detectivo | Continuo |\n\n## Clasificación de Datos\nLa identificación de beneficiarios es PII; la evidencia médica del asegurado fallecido es PHI y no sale del gestor de siniestros.\n\n## Brechas Identificadas\n| Brecha | Plan |\n| --- | --- |\n| CS-05 no cubre cambios hechos por el centro de llamadas | Integrar el centro de llamadas al servicio de alertas |\n| La revisión de accesos es manual | Automatizar con el gestor de identidades |\n",
+  "seccionesDisciplina": [
+    [
+      "Objetivo"
+    ],
+    [
+      "Controles"
+    ],
+    [
+      "Responsables",
+      "Dueño"
+    ],
+    [
+      "Evidencia"
+    ],
+    [
+      "Brechas"
+    ]
+  ],
+  "seccionesOmitidas": [
+    "Evidencia",
+    "Responsables"
+  ]
+}

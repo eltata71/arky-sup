@@ -1,0 +1,50 @@
+{
+  "id": "salud-drp-reclamaciones",
+  "dominio": "salud",
+  "origenRespuesta": "redactada-a-mano: documento representativo escrito para el banco; no es una salida capturada de un modelo",
+  "plantilla": "Plan de Recuperación ante Desastres (DRP)",
+  "proyecto": {
+    "nombre": "Continuidad de reclamaciones médicas",
+    "descripcion": "Garantizar la continuidad del procesamiento de reclamaciones médicas ante desastres."
+  },
+  "caminos": [
+    "generar",
+    "criticar",
+    "refinar",
+    "revisar",
+    "sugerir",
+    "copiloto"
+  ],
+  "artefacto": {
+    "contenido": "# Plan de Recuperación ante Desastres — Plataforma de Reclamaciones Médicas\n\n## Resumen Ejecutivo\nLa plataforma de reclamaciones médicas procesa 180 000 reclamaciones al mes y alimenta los pagos a prestadores. Este plan define cómo se recupera el servicio ante la pérdida de la región principal, de la base de datos transaccional o del proveedor de identidad.\n\n## Alcance\nIncluye la recepción de reclamaciones (portal y EDI 837), el motor de adjudicación, la base transaccional y la integración con pagos. Excluye el data warehouse actuarial, que tiene su propio plan.\n\n## Escenarios de Desastre\n| Escenario | Probabilidad | Impacto | Estrategia |\n| --- | --- | --- | --- |\n| Pérdida de la región principal | Baja | Crítico | Conmutación a región secundaria |\n| Corrupción de la base transaccional | Media | Alto | Restauración punto en el tiempo |\n| Caída del proveedor de identidad | Media | Alto | Modo degradado con sesiones vigentes |\n| Ransomware en estaciones de operación | Media | Medio | Aislamiento y reimagen desde golden image |\n\n## Procedimiento de Conmutación\n1. El responsable de guardia declara el desastre tras confirmar la pérdida con dos señales independientes.\n2. Se congela la recepción de reclamaciones y se publica aviso a prestadores.\n3. Se promueve la réplica de la base en la región secundaria y se redirige el DNS.\n4. Se ejecuta la batería de pruebas de humo de adjudicación.\n5. Se reabre la recepción y se reprocesan las reclamaciones en cola.\n\n## Pruebas del Plan\nEl plan se ensaya dos veces al año con una conmutación real en ventana acordada, y cada ensayo deja un informe con tiempos medidos y hallazgos.\n\n## Responsables\n| Rol | Responsabilidad |\n| --- | --- |\n| Líder de continuidad | Declara el desastre y coordina |\n| DBA de guardia | Promueve la réplica y verifica integridad |\n| Operaciones de red | Redirige tráfico y certificados |\n",
+    "representacion": "document"
+  },
+  "respuestaModelo": "# Plan de Recuperación ante Desastres — Plataforma de Reclamaciones Médicas\n\n## Resumen Ejecutivo\nLa plataforma de reclamaciones médicas procesa 180 000 reclamaciones al mes y alimenta los pagos a prestadores. Este plan define cómo se recupera el servicio ante la pérdida de la región principal, de la base de datos transaccional o del proveedor de identidad.\n\n## Alcance\nIncluye la recepción de reclamaciones (portal y EDI 837), el motor de adjudicación, la base transaccional y la integración con pagos. Excluye el data warehouse actuarial, que tiene su propio plan.\n\n## Escenarios de Desastre\n| Escenario | Probabilidad | Impacto | Estrategia |\n| --- | --- | --- | --- |\n| Pérdida de la región principal | Baja | Crítico | Conmutación a región secundaria |\n| Corrupción de la base transaccional | Media | Alto | Restauración punto en el tiempo |\n| Caída del proveedor de identidad | Media | Alto | Modo degradado con sesiones vigentes |\n| Ransomware en estaciones de operación | Media | Medio | Aislamiento y reimagen desde golden image |\n\n## Procedimiento de Conmutación\n1. El responsable de guardia declara el desastre tras confirmar la pérdida con dos señales independientes.\n2. Se congela la recepción de reclamaciones y se publica aviso a prestadores.\n3. Se promueve la réplica de la base en la región secundaria y se redirige el DNS.\n4. Se ejecuta la batería de pruebas de humo de adjudicación.\n5. Se reabre la recepción y se reprocesan las reclamaciones en cola.\n\n## Pruebas del Plan\nEl plan se ensaya dos veces al año con una conmutación real en ventana acordada, y cada ensayo deja un informe con tiempos medidos y hallazgos.\n\n## Responsables\n| Rol | Responsabilidad |\n| --- | --- |\n| Líder de continuidad | Declara el desastre y coordina |\n| DBA de guardia | Promueve la réplica y verifica integridad |\n| Operaciones de red | Redirige tráfico y certificados |\n",
+  "seccionesDisciplina": [
+    [
+      "Alcance"
+    ],
+    [
+      "Escenarios"
+    ],
+    [
+      "RTO"
+    ],
+    [
+      "RPO"
+    ],
+    [
+      "Procedimiento"
+    ],
+    [
+      "Pruebas"
+    ],
+    [
+      "Responsables"
+    ]
+  ],
+  "seccionesOmitidas": [
+    "RTO",
+    "RPO"
+  ]
+}
