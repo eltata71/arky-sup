@@ -56,4 +56,11 @@ export interface ArtifactGenerationOptions {
   onDiagramIR?: (ir: DiagramIR) => void;
   /** The initiatives the project answers; absent when the caller cannot resolve them. */
   businessMotivation?: readonly ArtifactBusinessMotivation[];
+  /**
+   * Told, in one Spanish sentence, when a path saved something other than
+   * what was asked — a skeleton, or another notation (plan de diagramas,
+   * 6.3). These used to be console lines only; a degradation the person does
+   * not hear about is one they present as their work.
+   */
+  onDegraded?: (message: string) => void;
 }

@@ -1,0 +1,28 @@
+{
+  "id": "vida-c4-contexto-modelo-declina",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Renovación de Vida Grupo",
+    "descripcion": "Por definir.",
+    "contexto": []
+  },
+  "plantilla": {
+    "nombre": "Contexto de Renovación",
+    "tipo": "mermaid-c4-context",
+    "objetivo": "Mostrar el contexto de la renovación de pólizas de vida grupo.",
+    "conceptosClave": []
+  },
+  "respuestaModelo": {
+    "error": "No hay información sobre los sistemas ni los actores que intervienen en la renovación"
+  },
+  "esperado": {
+    "dialecto": "C4Context",
+    "entidades": [],
+    "metadatos": [],
+    "degradado": true,
+    "avisos": [
+      "No hay información sobre los sistemas"
+    ]
+  }
+}

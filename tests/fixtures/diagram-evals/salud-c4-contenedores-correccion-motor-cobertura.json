@@ -1,0 +1,153 @@
+{
+  "id": "salud-c4-contenedores-correccion-motor-cobertura",
+  "dominio": "salud",
+  "origenRespuesta": "redactada-a-mano: respuesta y corrección representativas del modelo, no capturadas de una llamada real",
+  "proyecto": {
+    "nombre": "Portal de Proveedores",
+    "descripcion": "Portal donde hospitales consultan coberturas y registran pre-autorizaciones.",
+    "contexto": [
+      "Reglas de cobertura versionadas por plan",
+      "Datos PHI"
+    ]
+  },
+  "solicitud": {
+    "texto": "Diagrama de contenedores del portal de proveedores; debe aparecer el «Motor de Reglas de Cobertura» que decide qué procedimientos requieren autorización",
+    "audiencia": "technical",
+    "criterios": [
+      "Declarar la tecnología de cada contenedor"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Contenedores del Portal de Proveedores",
+    "tipo": "mermaid-c4-container",
+    "objetivo": "Descomponer el portal de proveedores en contenedores.",
+    "conceptosClave": []
+  },
+  "respuestaModelo": {
+    "nodes": [
+      {
+        "id": "hospital",
+        "label": "Hospital",
+        "kind": "external",
+        "trust": "partner",
+        "description": "Usuario institucional"
+      },
+      {
+        "id": "portal-web",
+        "label": "Portal Web",
+        "kind": "service",
+        "technology": "Angular 17",
+        "description": "Interfaz de proveedores"
+      },
+      {
+        "id": "api-portal",
+        "label": "API del Portal",
+        "kind": "service",
+        "technology": "Node.js 20",
+        "description": "Orquesta consultas",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "bd-portal",
+        "label": "BD del Portal",
+        "kind": "data",
+        "technology": "PostgreSQL 15",
+        "description": "Solicitudes",
+        "dataClassification": "phi"
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "hospital",
+        "target": "portal-web",
+        "label": "Consulta cobertura",
+        "protocol": "HTTPS"
+      },
+      {
+        "id": "e2",
+        "source": "portal-web",
+        "target": "api-portal",
+        "label": "Solicita cobertura",
+        "protocol": "REST/HTTPS"
+      },
+      {
+        "id": "e3",
+        "source": "api-portal",
+        "target": "bd-portal",
+        "label": "Guarda solicitud",
+        "protocol": "JDBC"
+      }
+    ],
+    "groups": [
+      {
+        "id": "portal",
+        "label": "Portal de Proveedores",
+        "nodeIds": [
+          "portal-web",
+          "api-portal",
+          "bd-portal"
+        ],
+        "kind": "system-boundary"
+      }
+    ],
+    "metadata": {
+      "audience": "technical",
+      "title": "Contenedores del Portal de Proveedores",
+      "diagramType": "c4-container"
+    }
+  },
+  "respuestaCorreccion": {
+    "rationale": "Se añade el motor de reglas que la solicitud nombra y su relación con la API.",
+    "operations": [
+      {
+        "op": "add-node",
+        "node": {
+          "id": "motor-reglas-cobertura",
+          "label": "Motor de Reglas de Cobertura",
+          "kind": "service",
+          "technology": "Drools 9",
+          "description": "Decide qué procedimientos requieren autorización"
+        }
+      },
+      {
+        "op": "add-edge",
+        "edge": {
+          "id": "e4",
+          "source": "api-portal",
+          "target": "motor-reglas-cobertura",
+          "label": "Evalúa cobertura",
+          "protocol": "gRPC"
+        }
+      },
+      {
+        "op": "add-to-group",
+        "groupId": "portal",
+        "nodeIds": [
+          "motor-reglas-cobertura"
+        ]
+      }
+    ]
+  },
+  "esperado": {
+    "dialecto": "C4Container",
+    "entidades": [
+      [
+        "Motor de Reglas de Cobertura"
+      ],
+      [
+        "API del Portal"
+      ]
+    ],
+    "metadatos": [
+      {
+        "entidad": [
+          "API del Portal"
+        ],
+        "campo": "dataClassification",
+        "valor": "phi"
+      }
+    ],
+    "correccionAplicada": true
+  }
+}

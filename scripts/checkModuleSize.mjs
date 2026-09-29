@@ -60,10 +60,10 @@ export const BYTE_CEILINGS = {
    * trace attribute a per-agent decision to the user's own preference.
    */
   // F6-01: fuera sus delegados públicos y su fábrica de cliente, que sólo leían las pruebas (94 962 → 92638)
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 86126, // plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 86092, // plan diagramas 6.3: 86 126 → 86092 · plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
   'components/ReactFlowCanvas.tsx': 110112, // plan diagramas 4.1: +237, `onNodeDoubleClick` para abrir el nivel C4 siguiente // plan diagramas 3.3: +91, rejilla de 8 px al arrastrar (ADR-007) // 2.3: −122, `exportImage` nombra `CanvasExportOptions`
   'components/ProjectHub.tsx': 78777, // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'services/ai/prompts/diagramPrompts.ts': 57600,
+  'services/ai/prompts/diagramPrompts.ts': 52524, // plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
   'components/MemoryCenterModal.tsx': 55552, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/ArtifactCanvas.tsx': 43500, // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 49197,
@@ -126,7 +126,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
   'services/export/adapters/pptxExporter.ts': 21273,
-  'services/artifacts/application/artifactGenerationRun.ts': 23019, // plan diagramas 6.2: +226, pasa `businessMotivation` a la generación · plan diagramas 6.1: +1132, conserva el IR que produjo el modelo en vez de reextraerlo del texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona) · F6-03 corte 4: rutas de `domain/`/`application/`
+  'services/artifacts/application/artifactGenerationRun.ts': 23772, // plan diagramas 6.3: +753, veredicto de fidelidad y canal de degradación hacia el usuario (la lógica está en `diagramFidelityReview`) · plan diagramas 6.2: +226, pasa `businessMotivation` a la generación · plan diagramas 6.1: +1132, conserva el IR que produjo el modelo en vez de reextraerlo del texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona) · F6-03 corte 4: rutas de `domain/`/`application/`
   'context/LMSContext.tsx': 21111,
   'services/observability/observabilityService.ts': 20937,
   /**
@@ -168,12 +168,12 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1571, // plan diagramas 6.2: 1 592 → 1571 · plan diagramas 6.1: 1 723 → 1 592, el camino C4 salió a la vertical de diagramas · F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1568, // plan diagramas 6.3: 1 571 → 1568 · plan diagramas 6.2: 1 592 → 1571 · plan diagramas 6.1: 1 723 → 1 592, el camino C4 salió a la vertical de diagramas · F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 962, // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
   'pages/Workspace.tsx': 732, // plan diagramas 6.2: +2, la motivación de negocio (import y hook) · F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
-  'services/ai/prompts/diagramPrompts.ts': 1145,
+  'services/ai/prompts/diagramPrompts.ts': 1030, // plan diagramas 6.3: 1 145 → 1030
   'services/export/adapters/pdfExporter.ts': 1131, // plan diagramas 2.4: +2 // +4: `latin1`
   'components/ProjectHub.tsx': 1060, // F6-03 corte 2b // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/MemoryCenterModal.tsx': 1017, // F3-07: el import de `Artifact`/`Project` nombra su módulo

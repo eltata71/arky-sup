@@ -23,6 +23,7 @@ import { C4SelfHealingError } from '../../errors';
 import { buildDiagramGenerationBrief, type UpperLevelDiagram } from '../../prompts/diagramGenerationBrief';
 import type { ArtifactContentGenerationOptions, ArtifactGenerationSupport } from '../artifacts/artifactGenerationSupport';
 import { generateDiagramIRWithSelfHealing } from './diagramIRGeneration';
+import { correctDiagramOnce } from './diagramSelfCorrection';
 
 /** The C4 level whose names a diagram must reuse (plan de diagramas, 6.2). */
 const PARENT_LEVEL: Partial<Record<C4DiagramLevel, string>> = {
@@ -141,18 +142,40 @@ export async function generateC4ArtifactContent(
     });
     // A regeneration evolves the diagram it replaces instead of re-rolling it.
     const result = await generateDiagramIRWithSelfHealing(stub, project, settings, { brief, previousIR: previousArtifact?.ir });
-    const mermaid = irToMermaidC4(result.ir, level);
     if (result.fallback === 'skeleton') {
         throw new C4SelfHealingError(
-            'C4 generation fell back to a deterministic skeleton after retries.',
+            result.declineReason
+                ? `El modelo indicó que falta información para este diagrama: ${result.declineReason}. Se guardó un esqueleto base; completa el contexto del proyecto y vuelve a generarlo.`
+                : 'El modelo no produjo un diagrama C4 válido tras dos intentos: se guardó un esqueleto base para completar a mano.',
             {
                 reason: result.lastReason ?? 'skeleton-fallback',
                 attempts: result.attempts,
-                sampleMermaid: support.markSkeleton(mermaid),
+                sampleMermaid: support.markSkeleton(irToMermaidC4(result.ir, level)),
                 warnings: result.warnings,
             },
         );
     }
-    opts.onDiagramIR?.(result.ir);
-    return mermaid;
+    // One bounded correction, only when the deterministic evaluation finds
+    // something, and kept only if it does not make things worse (6.3).
+    const correction = await correctDiagramOnce(result.ir, {
+        artifactType: template.type,
+        audience: stub.audience ?? 'technical',
+        request: template.requestContext ? {
+            userRequest: template.requestContext.userRequest,
+            acceptanceCriteria: template.requestContext.generationContract?.acceptanceCriteria?.length
+                ? template.requestContext.generationContract.acceptanceCriteria
+                : template.requestContext.acceptanceCriteria,
+            audience: template.requestContext.audience,
+        } : undefined,
+        context: `${project.name}: ${template.objective}`,
+    }, settings);
+    opts.onPhase?.({
+        stage: 'refinement',
+        status: correction.corrected ? 'success' : correction.calls ? 'warning' : 'skipped',
+        message: correction.note,
+        detail: correction.findings.join(' · ') || undefined,
+        at: new Date().toISOString(),
+    });
+    opts.onDiagramIR?.(correction.ir);
+    return irToMermaidC4(correction.ir, level);
 }

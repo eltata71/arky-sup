@@ -23,7 +23,7 @@ export async function generateDiagramIR(
     artifact: Artifact,
     project: Project,
     settings: Settings,
-    opts: { audience?: DiagramAudience; previousIR?: DiagramIR; brief?: string } = {},
+    opts: { audience?: DiagramAudience; previousIR?: DiagramIR; brief?: string; onDecline?: (reason: string) => void } = {},
 ): Promise<DiagramIR | null> {
     const audience: DiagramAudience = opts.audience ?? artifact.audience ?? 'technical';
     const dialect = buildDialectInstruction(artifact.type);
@@ -53,7 +53,9 @@ export async function generateDiagramIR(
         if (!cleanJson) return null;
         const parsed = JSON.parse(cleanJson) as Partial<DiagramIR> & { error?: string };
         if (parsed.error) {
-            console.warn('[geminiService.generateDiagramIR] Model declined:', parsed.error);
+            // The model said the input is not enough. That is an answer, not a
+            // malformed response: it is handed up instead of retried (6.3).
+            opts.onDecline?.(String(parsed.error));
             return null;
         }
         if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) return null;
@@ -121,14 +123,32 @@ export async function generateDiagramIRWithSelfHealing(
     fallback: 'none' | 'skeleton';
     warnings: string[];
     lastReason?: DiagramFailureReason;
+    /** What the model said was missing, when it declined instead of answering (6.3). */
+    declineReason?: string;
 }> {
     const audience: DiagramAudience = opts.audience ?? artifact.audience ?? 'technical';
     const warnings: string[] = [];
 
     if (!opts.skipCorrective) {
-        const first = await generateDiagramIR(artifact, project, settings, { audience, previousIR: opts.previousIR, brief: opts.brief });
+        let declineReason: string | undefined;
+        const first = await generateDiagramIR(artifact, project, settings, {
+            audience, previousIR: opts.previousIR, brief: opts.brief, onDecline: (reason) => { declineReason = reason; },
+        });
         if (first && first.nodes.length > 0) {
             return { ir: first, attempts: 1, fallback: 'none', warnings };
+        }
+        // A model that declined for lack of information would decline again
+        // with less: asking twice spends a call to learn nothing (6.3).
+        if (declineReason) {
+            warnings.push(`[diagram-retry] the model declined: ${declineReason}`);
+            return {
+                ir: buildSkeletonIRFromArtifact(artifact, project),
+                attempts: 1,
+                fallback: 'skeleton',
+                warnings,
+                lastReason: 'skeleton-fallback',
+                declineReason,
+            };
         }
         warnings.push('[diagram-retry] attempt 1 failed (empty or null IR)');
         console.warn('[diagram-retry] attempt 1 failed', {

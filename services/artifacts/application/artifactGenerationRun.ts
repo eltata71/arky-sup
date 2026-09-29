@@ -23,8 +23,9 @@ import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import { artifactGenerationService } from '../../ai';
 import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
-import { extractIRFromArtifact } from '../../diagram';
+import { extractIRFromArtifact, type FidelityReport } from '../../diagram';
 import { rewriteDiagramContent } from './diagramContentRewrite';
+import { reviewDiagramFidelity } from './diagramFidelityReview';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
 import { irToReactFlow } from '../../diagram/irToReactFlow';
 import {
@@ -92,6 +93,8 @@ export interface ArtifactGenerationRunResult {
     persistedEnvelope: ReturnType<typeof normalizeArtifactEnvelope>;
     /** Non-null when a deterministic skeleton stood in for the AI output. */
     skeletonFallbackError: DiagramErrorRecord | null;
+    /** Does the diagram answer the request? `null` for non-diagram artifacts (6.3). */
+    fidelity: FidelityReport | null;
 }
 
 export async function runArtifactGeneration({
@@ -164,7 +167,7 @@ export async function runArtifactGeneration({
     }
     // The model's IR, when the path made one: re-parsing its notation lost
     // classification, compliance and the story (plan de diagramas, 6.1).
-    const modelOutput: { ir: DiagramIR | null } = { ir: null };
+    const modelOutput: { ir: DiagramIR | null; degradations: string[] } = { ir: null, degradations: [] };
     const generatedContent = await artifactGenerationService.generateArtifactContent(
         project,
         template,
@@ -177,6 +180,7 @@ export async function runArtifactGeneration({
             support: artifactGenerationSupport,
             businessMotivation,
             onDiagramIR: (ir) => { modelOutput.ir = ir; },
+            onDegraded: (message) => { modelOutput.degradations.push(message); },
         },
     );
     const initialEnvelope = normalizeArtifactEnvelope({
@@ -396,6 +400,11 @@ export async function runArtifactGeneration({
     // From here on, persist `draft.resolvedContent` (skeleton when AI failed,
     // original/refined content otherwise) and the matching `draft.ir`.
     const persistedContent = draft.resolvedContent;
+    const fidelity = isDiagramTemplate ? reviewDiagramFidelity(template, persistedContent, draft.ir, Boolean(draft.skeletonFallbackError), modelOutput.degradations) : null;
+    if (fidelity) {
+        for (const step of fidelity.steps) (step.status === 'warning' ? traceErrors : traceDecisions).push(step);
+        if (fidelity.warning) onWarning?.(fidelity.warning);
+    }
     const generationTrace = buildGenerationTrace({
         log,
         template,
@@ -432,5 +441,6 @@ export async function runArtifactGeneration({
         generationTrace,
         persistedEnvelope,
         skeletonFallbackError: draft.skeletonFallbackError,
+        fidelity: fidelity?.report ?? null,
     };
 }

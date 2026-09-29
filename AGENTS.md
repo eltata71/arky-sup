@@ -537,6 +537,11 @@ Reglas que no se negocian al trabajar aquí:
     iniciativas (`ArtifactBusinessMotivation`, por puerto) y el nivel C4
     superior; lo que escribieron personas va cercado y ningún prompt pide
     colores ni argumentos de macros Mermaid a un camino que devuelve IR.
+    **Y se verifica, se corrige una vez como mucho y nunca se degrada en
+    silencio** (6.3): `checkRequestFidelity` informa lo no demostrable como
+    «sin evidencia»; `correctDiagramOnce` gasta a lo sumo una llamada, con un
+    parche semántico, y sólo se queda si no empeora; `onDegraded` le dice al
+    usuario por qué se guardó un esqueleto u otra notación.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;

@@ -1,0 +1,32 @@
+{
+  "id": "salud-secuencia-devuelve-flowchart",
+  "dominio": "salud",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Autorización Previa",
+    "descripcion": "Solicitud de autorización previa desde el hospital.",
+    "contexto": [
+      "HL7 FHIR"
+    ]
+  },
+  "solicitud": {
+    "texto": "Diagrama de secuencia de la solicitud de autorización previa",
+    "audiencia": "technical"
+  },
+  "plantilla": {
+    "nombre": "Secuencia de Autorización",
+    "tipo": "mermaid-sequence",
+    "objetivo": "Mostrar la secuencia de una autorización previa.",
+    "conceptosClave": []
+  },
+  "respuestaModelo": "flowchart LR\n    hospital[Hospital] -->|Solicita autorización| api[API FHIR]\n    api -->|Evalúa| revision[Revisión Clínica]\n    revision -->|Responde| api\n    api -->|Devuelve decisión| hospital",
+  "esperado": {
+    "dialecto": "sequenceDiagram",
+    "entidades": [],
+    "metadatos": [],
+    "degradado": true,
+    "avisos": [
+      "diagrama de secuencia"
+    ]
+  }
+}

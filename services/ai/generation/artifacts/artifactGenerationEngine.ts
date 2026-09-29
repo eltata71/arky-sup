@@ -254,6 +254,7 @@ class ArtifactGenerationEngine {
                         reason: err instanceof C4SelfHealingError ? err.reason : 'transient',
                     },
                 });
+                opts.onDegraded?.(err instanceof C4SelfHealingError ? err.message : 'La generación del C4 falló y se guardó un esqueleto base.');
                 if (err instanceof C4SelfHealingError && err.sampleMermaid.trim().length > 0) {
                     return err.sampleMermaid;
                 }
@@ -1002,9 +1003,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                     `[artifactGenerationEngine] Diagram retry still invalid (${retryAssessment.reason}); attempting flowchart fallback.`,
                 );
 
-                // Attempt 2: degrade to the most permissive dialect (flowchart)
-                // so the artifact is at least viewable while the user can ask
-                // for a regeneration in the original dialect.
+                // Attempt 2: a flowchart, said out loud through `onDegraded` (6.3).
                 if (template.type.startsWith('mermaid') || template.type === 'hybrid-text-diagram') {
                     const fallbackPrompt = this.buildFlowchartFallbackPrompt(template, basePrompt, promptArtifactsContext, consistencyInstructions);
                     try {
@@ -1017,9 +1016,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                             : fallback;
                         const fallbackAssessment = this.assessMermaidArtifact(normalizedFallback, template.type === 'hybrid-text-diagram' ? 'hybrid-text-diagram' : 'mermaid-graph');
                         if (fallbackAssessment.ok) {
-                            console.warn(
-                                `[artifactGenerationEngine] Returned flowchart fallback for "${template.name}" — original dialect failed twice.`,
-                            );
+                            opts.onDegraded?.(`El modelo no produjo un ${template.type} válido dos veces; se guardó como diagrama de flujo para no dejar el lienzo vacío.`);
                             return normalizedFallback;
                         }
                         console.warn(

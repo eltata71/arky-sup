@@ -59,10 +59,46 @@ describe('banco de evaluación de diagramas', () => {
     });
 
     it('no llama al modelo más de una vez por caso cuando la respuesta es válida', () => {
-        for (const r of results) expect(r.llamadasModelo, r.id).toBe(1);
+        for (const r of results.filter((x) => !x.degradado)) expect(r.llamadasModelo, r.id).toBe(1);
     });
 
-    describe.each(corpus.filter((c) => c.plantilla.tipo.startsWith('mermaid-c4-')).map((c) => c.id))('C4 %s', (id) => {
+    // Plan de diagramas 6.3: lo diseñado para degradarse se le dice al usuario.
+    it.each(corpus.filter((c) => c.esperado.degradado).map((c) => [c.id, c.esperado.avisos ?? []] as const))(
+        '%s se degrada y se lo dice al usuario',
+        (id, expected) => {
+            const r = resultOf(id);
+            expect(r.avisos.length, 'sin aviso al usuario').toBeGreaterThan(0);
+            for (const fragment of expected) expect(r.avisos.join(' ')).toContain(fragment);
+        },
+    );
+
+    it('un modelo que declina por falta de datos no se reintenta: su motivo llega al usuario', () => {
+        const declined = corpus.filter((c) => typeof c.respuestaModelo === 'object' && 'error' in c.respuestaModelo);
+        expect(declined.length).toBeGreaterThan(0);
+        for (const c of declined) {
+            const r = resultOf(c.id);
+            expect(r.llamadasModelo, c.id).toBe(1);
+            expect(r.esqueleto, c.id).toBe(true);
+        }
+    });
+
+    it.each(corpus.filter((c) => c.esperado.correccionAplicada).map((c) => c.id))(
+        '%s se corrige con un parche y cierra la brecha de fidelidad',
+        (id) => {
+            const r = resultOf(id);
+            expect(r.llamadasCorreccion).toBe(1);
+            expect(r.entidades.faltantes).toEqual([]);
+            // Los criterios se informan como «sin evidencia» y no disparan
+            // correcciones; lo que la corrección debe cerrar son los nombres.
+            expect(r.avisosFidelidad.filter((m) => !m.startsWith('Sin evidencia del criterio'))).toEqual([]);
+        },
+    );
+
+    it('la corrección sólo gasta una llamada cuando hay hallazgos', () => {
+        for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
+    });
+
+    describe.each(corpus.filter((c) => c.plantilla.tipo.startsWith('mermaid-c4-') && !c.esperado.degradado).map((c) => c.id))('C4 %s', (id) => {
         it('se guarda en el dialecto C4 que nombra su tipo, no como flowchart', () => {
             const r = resultOf(id);
             expect(r.dialectoConservado, r.dialectoGuardado).toBe(true);
@@ -90,7 +126,7 @@ describe('banco de evaluación de diagramas', () => {
         expect(r.contradicciones).toEqual([]);
     });
 
-    it.each(corpus.filter((c) => !c.plantilla.tipo.startsWith('mermaid-c4-')).map((c) => c.id))(
+    it.each(corpus.filter((c) => !c.plantilla.tipo.startsWith('mermaid-c4-') && !c.esperado.degradado).map((c) => c.id))(
         '%s conserva su dialecto y las entidades pedidas',
         (id) => {
             const r = resultOf(id);
@@ -109,6 +145,8 @@ describe('banco de evaluación de diagramas', () => {
             'tecnologiasConservadas',
             'historiaConservada',
             'contextoEntregado',
+            'fidelidadMedia',
+            'degradacionesAvisadas',
         ] as const) {
             expect(summary[key], key).toBeGreaterThanOrEqual(actual[key]);
         }
