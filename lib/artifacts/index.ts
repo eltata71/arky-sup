@@ -21,3 +21,4 @@ export * from './artifactKind';
 export * from './artifactPresentationModel';
 export * from './artifactSuggestions';
 export { buildDocumentIR } from './documentIR';
+export * from './contentPreservation';

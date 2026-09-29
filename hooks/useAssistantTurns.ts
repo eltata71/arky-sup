@@ -56,7 +56,7 @@ export interface AssistantTurns {
   /** The project chat, answered by the Office. */
   chatWithProject(project: Project, message: string, history: readonly ProjectChatTurn[], settings: Settings): Promise<string>;
   /** What a `modifyArtifact` call means for the open artifact. */
-  interpretModification(functionCall: ModelFunctionCall | undefined, activeArtifact: Artifact | null): ArtifactModification;
+  interpretModification(functionCall: ModelFunctionCall | undefined, activeArtifact: Artifact | null, instruction?: string): ArtifactModification;
   /** A one-sentence context note the exchange established, or `null`. */
   extractContextNote(history: ChatMessage[], question: string, answer: string, settings: Settings): Promise<string | null>;
   /** The next artifacts worth generating for this project. */

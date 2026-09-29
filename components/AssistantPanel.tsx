@@ -174,9 +174,9 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
       if (isMounted.current) {
         let finalResponse = aiResponse;
 
-        // What the call means — empty, unchanged, which target — is decided by
-        // `interpretArtifactModification`; the write is the context's.
-        const modification = assistantTurns.interpretModification(functionCall, activeArtifact);
+        // What the call means — empty, a loss, its target — is decided by
+        // `interpretArtifactModification`; the write, the context's.
+        const modification = assistantTurns.interpretModification(functionCall, activeArtifact, text);
         if (modification.kind === 'not-applied') {
             finalResponse += `\n\n${modification.note}`;
         } else if (modification.kind === 'update-current' && activeArtifact) {

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { interpretArtifactModification, MODIFICATION_NOTES } from '../artifactModificationCall';
 
-const open = { content: '# Contexto\n\nTexto actual.' };
+const open = { content: '# Contexto\n\nTexto actual.', representation: 'document' as const };
 const call = (args: Record<string, unknown>) => ({ name: 'modifyArtifact', args });
 
 describe('interpretArtifactModification', () => {
@@ -31,10 +31,56 @@ describe('interpretArtifactModification', () => {
   });
 
   it('routes a real change to its target, trimmed', () => {
-    expect(interpretArtifactModification(call({ newContent: ' Nuevo ', target: 'current' }), open))
-      .toEqual({ kind: 'update-current', content: 'Nuevo' });
-    expect(interpretArtifactModification(call({ newContent: 'Nuevo', target: 'new_version' }), open))
-      .toEqual({ kind: 'new-version', content: 'Nuevo' });
+    const changed = '# Contexto\n\nNuevo';
+    expect(interpretArtifactModification(call({ newContent: ` ${changed} `, target: 'current' }), open))
+      .toEqual({ kind: 'update-current', content: changed });
+    expect(interpretArtifactModification(call({ newContent: changed, target: 'new_version' }), open))
+      .toEqual({ kind: 'new-version', content: changed });
+  });
+
+  describe('content preservation (plan de calidad de artefactos, 7.1a)', () => {
+    const long = {
+      representation: 'document' as const,
+      content: [
+        '# Plan de recuperación',
+        '## Resumen Ejecutivo',
+        'Texto del resumen. '.repeat(20),
+        '## Riesgos',
+        '| ID | Riesgo |',
+        '| --- | --- |',
+        '| R1 | Pérdida del centro de datos |',
+        '| R2 | Corrupción de la base |',
+        '## Próximos Pasos',
+        'Pasos concretos. '.repeat(20),
+      ].join('\n'),
+    };
+
+    it('refuses a rewrite that drops a section the person did not ask to remove', () => {
+      const gutted = long.content.replace(/## Riesgos[\s\S]*?(?=## Próximos Pasos)/, '');
+      const result = interpretArtifactModification(call({ newContent: gutted, target: 'current' }), long, 'mejora la redacción');
+      expect(result.kind).toBe('not-applied');
+      expect(result.kind === 'not-applied' && result.note).toMatch(/no perder contenido.*riesgos/i);
+    });
+
+    it('refuses a rewrite that keeps only the beginning', () => {
+      const truncated = long.content.slice(0, 200);
+      const result = interpretArtifactModification(call({ newContent: truncated, target: 'current' }), long, 'añade un riesgo');
+      expect(result.kind).toBe('not-applied');
+    });
+
+    it('accepts removing a section when the person asked for it', () => {
+      const withoutRisks = long.content.replace(/## Riesgos[\s\S]*?(?=## Próximos Pasos)/, '');
+      const result = interpretArtifactModification(
+        call({ newContent: withoutRisks, target: 'current' }), long, 'Elimina la sección de riesgos',
+      );
+      expect(result).toEqual({ kind: 'update-current', content: withoutRisks.trim() });
+    });
+
+    it('leaves a diagram to its IR reconciliation', () => {
+      const diagram = { representation: 'diagram' as const, content: 'flowchart LR\n  A-->B\n  B-->C' };
+      expect(interpretArtifactModification(call({ newContent: 'flowchart LR\n  A-->B', target: 'current' }), diagram))
+        .toEqual({ kind: 'update-current', content: 'flowchart LR\n  A-->B' });
+    });
   });
 
   it('an unknown target changes nothing and says nothing', () => {

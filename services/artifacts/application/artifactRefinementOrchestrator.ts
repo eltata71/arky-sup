@@ -24,6 +24,7 @@ import {
 } from '../domain/artifactFallbackDetection';
 
 import type { ArtifactRefinementMode } from '../domain/artifactGenerationTrace';
+import { checkContentPreservation } from '../../../lib/artifacts';
 export type { ArtifactRefinementMode } from '../domain/artifactGenerationTrace';
 
 export interface ArtifactRefinementRequest {
@@ -205,34 +206,11 @@ const hasHeading = (content: string, label: string): boolean => {
   return new RegExp(`(^|\\n)#{1,3}\\s+${escaped}\\b`, 'i').test(content);
 };
 
-const extractHeadings = (content: string): string[] =>
-  (content.match(/^#{1,6}\s+.+$/gm) ?? []).map((heading) => heading.replace(/^#+\s+/, '').trim().toLowerCase());
-
-/** Count Markdown tables by their delimiter row (`| --- | --- |`). */
-const countMarkdownTables = (content: string): number =>
-  (content.match(/^\s*\|?[ :|]*-{3,}[ :|-]*\|?\s*$/gm) ?? []).length;
-
-/** Count Markdown table data rows (header + delimiter excluded is approximate). */
-const countTableRows = (content: string): number =>
-  (content.match(/^\s*\|.*\|\s*$/gm) ?? []).length;
-
-/** Generic placeholders that must never be introduced by a refinement pass. */
-const countGenericPlaceholders = (content: string): number =>
-  (content.match(/empresa x|sistema legacy|lorem ipsum|\[placeholder\]|insertar aquí|completar aquí|xxxxx/gi) ?? []).length;
-
 const countMermaidBlocks = (content: string): number => (content.match(/```mermaid\s*[\s\S]*?```/gi) ?? []).length;
 
 const hasSingleMermaidBlock = (content: string): boolean => countMermaidBlocks(content) === 1;
 
 const withoutMermaidBlocks = (content: string): string => content.replace(/```mermaid\s*[\s\S]*?```/gi, '').trim();
-
-/** Length of human-useful prose: strips diagram fences, markers and comments. */
-const usefulTextLength = (content: string): number =>
-  content
-    .replace(/```mermaid\s*[\s\S]*?```/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/%%\s*arky:skeleton-fallback/gi, '')
-    .trim().length;
 
 /** Ratio of edges that carry a non-empty label. */
 const labeledEdgeRatio = (ir: DiagramIR): number => {
@@ -359,16 +337,13 @@ export const isRefinedCandidateSafe = (candidateContent: string, context: Candid
     return { ok: false, reason: 'La mejora propuesta introduce señales de fallback inexistentes en el baseline.', envelope, warnings };
   }
 
-  // Drastic loss of useful content (diagram fences and markers excluded).
-  const baselineUseful = usefulTextLength(context.baselineContent);
-  const candidateUseful = usefulTextLength(candidateContent);
-  if (baselineUseful >= 200 && candidateUseful < baselineUseful * 0.55) {
-    return {
-      ok: false,
-      reason: `La mejora propuesta reduce drásticamente el contenido útil (${candidateUseful} < 55% de ${baselineUseful}).`,
-      envelope,
-      warnings,
-    };
+  // What a rewrite may not lose is one policy for every path that rewrites
+  // (plan de calidad de artefactos, 7.1a): the chat and the agent apply it too.
+  const preservation = checkContentPreservation(context.baselineContent, candidateContent, {
+    mode: context.mode === 'diagram' ? 'diagram' : context.mode === 'hybrid' ? 'hybrid' : 'document',
+  });
+  if (!preservation.ok) {
+    return { ok: false, reason: preservation.reason, envelope, warnings };
   }
 
   let candidateIR: DiagramIR | undefined;
@@ -396,27 +371,6 @@ export const isRefinedCandidateSafe = (candidateContent: string, context: Candid
 
   if (context.mode === 'hybrid' && !hasSingleMermaidBlock(candidateContent)) {
     return { ok: false, reason: 'El híbrido refinado debe conservar exactamente un bloque Mermaid.', envelope, ir: candidateIR, warnings };
-  }
-
-  // Documents / hybrids / tables: never lose sections, tables or rows; never
-  // introduce generic placeholders.
-  if (isDocumentishMode(context.mode)) {
-    const baselineHeadings = new Set(extractHeadings(context.baselineContent));
-    const candidateHeadings = new Set(extractHeadings(candidateContent));
-    const lostHeadings = [...baselineHeadings].filter((heading) => !candidateHeadings.has(heading));
-    if (lostHeadings.length > 0) {
-      return { ok: false, reason: `La mejora propuesta elimina secciones existentes (${lostHeadings.slice(0, 3).join(', ')}).`, envelope, ir: candidateIR, warnings };
-    }
-    const baselineTables = countMarkdownTables(context.baselineContent);
-    if (countMarkdownTables(candidateContent) < baselineTables) {
-      return { ok: false, reason: 'La mejora propuesta elimina tablas Markdown existentes.', envelope, ir: candidateIR, warnings };
-    }
-    if (baselineTables > 0 && countTableRows(candidateContent) < countTableRows(context.baselineContent)) {
-      return { ok: false, reason: 'La mejora propuesta reduce filas de las tablas existentes.', envelope, ir: candidateIR, warnings };
-    }
-    if (countGenericPlaceholders(candidateContent) > countGenericPlaceholders(context.baselineContent)) {
-      return { ok: false, reason: 'La mejora propuesta introduce placeholders genéricos.', envelope, ir: candidateIR, warnings };
-    }
   }
 
   const report = buildArtifactQualityReport({

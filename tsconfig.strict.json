@@ -51,6 +51,7 @@
     "services/ai/generation/legacyTransport.ts",
     "services/ai/generation/artifactSuggestions.ts",
     "lib/artifacts/generationPhase.ts",
+    "lib/artifacts/contentPreservation.ts",
     "services/ai/generation/recommendation/index.ts",
     "services/ai/generation/recommendationService.ts",
     "services/ai/generation/documentGenerationService.ts",
