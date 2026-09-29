@@ -16,7 +16,7 @@
  */
 
 import type { ArtifactTemplate, MemoryEntry, Settings } from '../../types';
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../review';
 import type { ChatMessage } from '../chat';
@@ -103,6 +103,8 @@ export interface AgentExecutorInput {
   confirmedByUser?: boolean;
   /** Who speaks in the patch turn, from its text — `officePersonaForMessage`; the agent cannot look the Office up. */
   resolvePersona?: (message: string) => AgentPersonaBriefing;
+  /** Why the project exists — the initiatives it answers, read by the caller (the agent cannot look them up). */
+  businessMotivation?: readonly ArtifactBusinessMotivation[];
 }
 
 /**
@@ -203,7 +205,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
           objective: `${template.objective}\n\nInstrucciones adicionales del Arquitecto: ${plan.intent.userInstruction}`,
         };
         emit('generating', 'Regenerando artefacto con la IA…');
-        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, agentGenerationOptions(input.resolvePersona));
+        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, agentGenerationOptions(input.resolvePersona, input.businessMotivation));
         appliedChanges.push(`Regenerado a partir de: "${truncate(plan.intent.userInstruction, 140)}"`);
         break;
       }
@@ -589,7 +591,7 @@ async function executeArtifactCreate(
     generatedContent = await artifactGenerationService.generateArtifactContent(
       project,
       generationTemplate,
-      settings, undefined, agentGenerationOptions(input.resolvePersona),
+      settings, undefined, agentGenerationOptions(input.resolvePersona, input.businessMotivation),
     );
   } catch (err) {
     const friendly = err instanceof AIServiceError ? err : classifyAIError(err);

@@ -58,6 +58,10 @@ vi.mock('../../context/AuthContext', () => ({
   useAuth: () => mockAuth,
 }));
 
+vi.mock('../../context/InitiativeContext', () => ({
+  useInitiatives: () => ({ initiatives: [] }),
+}));
+
 const project = {
   id: 'proj-1',
   name: 'Seguros',

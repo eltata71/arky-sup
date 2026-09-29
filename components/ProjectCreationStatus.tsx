@@ -21,7 +21,7 @@ interface CreationLogEntry {
 
 const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, initialArtifactNames, onComplete }) => {
     const { settings, createArtifact } = useAppContext();
-    const generationPorts = useArtifactGenerationPorts();
+    const generationPorts = useArtifactGenerationPorts(project);
     const [creationLog, setCreationLog] = useState<CreationLogEntry[]>([]);
     // Anti-reentry guard: ensures the generation loop runs exactly once for
     // this mount, even under React StrictMode double-invocation or unrelated

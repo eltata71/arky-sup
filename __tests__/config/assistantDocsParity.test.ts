@@ -58,6 +58,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'checkRequestFidelity', rule: 'un diagrama se verifica contra la solicitud (6.3)' },
   { anchor: 'correctDiagramOnce', rule: 'la autocorrección es un parche, una vez, y sólo si no empeora (6.3)' },
   { anchor: 'lib/domainPacks', rule: 'el conocimiento de seguros es una sola fuente para prompt y validador (6.4)' },
+  { anchor: 'describeAttentionMotivation', rule: 'la motivación de la iniciativa llega a todos los caminos de generación (6.5)' },
   { anchor: 'readModelDiagramIR', rule: 'la salida del modelo se lee como no confiable y lo descartado se informa (6.4)' },
   { anchor: 'wrapUntrustedContent', rule: 'lo externo se valla antes de llegar al modelo' },
   { anchor: 'docs/operacion/despliegue.json', rule: 'producción la publica un solo camino' },

@@ -150,7 +150,11 @@ export const buildArtifactQualityReport = (artifact: Artifact): ArtifactQualityR
     ?? (artifact.content.toLowerCase().includes('pii') || artifact.content.toLowerCase().includes('phi') ? 85 : 55);
 
   const dimensions = collectDimensions(profile, dimensionScores);
-  const allIssues: ArtifactQualityIssue[] = [...doc.issues, ...(diag?.issues ?? [])];
+  // Mermaid source is not prose: judging it as a document charged every
+  // diagram for missing headings, and the dialects with the least prose in
+  // their source (ERD, sequence) most.
+  const contentIsDiagramSource = Boolean(diagram) && artifact.representation === 'diagram';
+  const allIssues: ArtifactQualityIssue[] = [...(contentIsDiagramSource ? [] : doc.issues), ...(diag?.issues ?? [])];
   const baseScore = weightedAverage(dimensions);
   const penalty = penaltyForIssues(allIssues);
   let rawScore = Math.max(0, Math.min(100, baseScore - penalty));

@@ -17,7 +17,7 @@
  */
 
 import type { Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import {
   planAgentAction,
@@ -68,6 +68,8 @@ export interface OfficeRunnerAdapterDeps {
    */
   persist: (engagement: OfficeEngagement) => Promise<PersistenceResult<OfficeEngagement>>;
   onProgress?: (engagement: OfficeEngagement) => void;
+  /** Why the project exists (the initiatives it answers); the Office cannot resolve the portfolio itself. */
+  getBusinessMotivation?: (project: Project) => readonly ArtifactBusinessMotivation[];
 }
 
 // ---------------------------------------------------------------------------
@@ -182,6 +184,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       history: [],
       store: deps.store,
       resolvePersona: officePersonaForMessage,
+      businessMotivation: deps.getBusinessMotivation?.(project),
       actor: {
         id: task.assigneeId,
         name: OFFICE_AGENT_PERSONAS[task.assigneeId].alias,

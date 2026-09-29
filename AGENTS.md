@@ -545,6 +545,10 @@ Reglas que no se negocian al trabajar aquí:
     conocimiento de seguros de salud y vida vive en `lib/domainPacks`** (6.4):
     lo leen el prompt y los validadores; `readModelDiagramIR` lee la respuesta
     del modelo como salida no confiable y nombra lo que descarta.
+    **Y la motivación de la iniciativa llega a todos los caminos** (6.5):
+    `describeAttentionMotivation` (`services/portfolioGraph`) alimenta creación
+    guiada, SDD, agente y Oficina; el ER conserva sus relaciones y la
+    puntuación de un diagrama no lo juzga como documento.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;

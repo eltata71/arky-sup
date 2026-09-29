@@ -22,5 +22,6 @@ export type {
   AttentionInitiativeLinkState,
   InitiativeLinks,
 } from './attentionInitiativeLinks';
+export { initiativesServedBy, describeAttentionMotivation } from './attentionMotivation';
 export { searchPortfolio, relatedTo } from './portfolioSearch';
 export type { PortfolioSearchHit, PortfolioSearchOptions } from './portfolioSearch';

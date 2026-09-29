@@ -27,6 +27,8 @@ import {
 import { extractMemoryBullets, fallbackBulletsFromInstruction } from '../services/agent/memoryExtractor';
 import { buildAgentLesson, mergeAgentLesson } from '../services/agent/agentLessonRecorder';
 import { officePersonaForMessage } from '../services/architectureOffice';
+import { describeAttentionMotivation } from '../services/portfolioGraph';
+import { useInitiatives } from '../context/InitiativeContext';
 
 /**
  * React-side controller for the agent. Owns:
@@ -144,6 +146,9 @@ export interface UseAgentActionsResult {
 }
 
 export function useAgentActions(): UseAgentActionsResult {
+  const { initiatives } = useInitiatives();
+  const initiativesRef = useRef(initiatives);
+  initiativesRef.current = initiatives;
   const [pendingPlan, setPendingPlan] = useState<AgentActionPlan | null>(null);
   const [executionPhase, setExecutionPhase] = useState<AgentExecutionPhase>('idle');
   const [lastResult, setLastResult] = useState<AgentActionResult | null>(null);
@@ -382,6 +387,8 @@ export function useAgentActions(): UseAgentActionsResult {
         // The patch speaks as whoever the instruction names — the Office's
         // rule, supplied here because the agent must not look the Office up.
         resolvePersona: officePersonaForMessage,
+        // Why the project exists, resolved by the portfolio's rule.
+        businessMotivation: describeAttentionMotivation(project, initiativesRef.current),
         actor: actor ? { id: actor.id ?? null, name: actor.name ?? null } : undefined,
         onPhase: (phase) => setExecutionPhase(phase),
       });

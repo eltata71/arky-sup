@@ -16,8 +16,8 @@
 import { useCallback, useMemo } from 'react';
 import {
   initiativeLinksFor,
+  initiativesServedBy,
   resolveAttentionInitiativeLinks,
-  resolvePortfolioGraph,
   withoutInitiativeCode,
   type InitiativeLinks,
 } from '../services/portfolioGraph';
@@ -27,17 +27,7 @@ import type { Project } from '../services/architectureProjects';
 export const useAttentionInitiatives = (
   project: Project,
   initiatives: readonly BusinessInitiative[],
-): BusinessInitiative[] => useMemo(() => {
-  const graph = resolvePortfolioGraph(initiatives, [project], [], {
-    reportOrphanAttentions: false,
-  });
-  const node = graph.attentions.find((entry) => entry.id === project.id);
-  if (!node) return [];
-  const byId = new Map(initiatives.map((entry) => [entry.id, entry]));
-  return node.initiativeIds
-    .map((id) => byId.get(id))
-    .filter((entry): entry is BusinessInitiative => entry !== undefined);
-}, [project, initiatives]);
+): BusinessInitiative[] => useMemo(() => initiativesServedBy(project, initiatives), [project, initiatives]);
 
 export interface AttentionInitiativeLinkEditor {
   readonly linkedIds: string[];
