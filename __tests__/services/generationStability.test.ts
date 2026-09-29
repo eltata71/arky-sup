@@ -7,18 +7,19 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 
-// The engine calls the diagram vertical's self-healing as a module function
-// since F5-01 corte 6, so it is doubled at the module, passing through to the
+// The C4 path calls the self-healing ladder from inside the diagram vertical
+// since the 6.1 task of the diagram plan, so it is doubled at the file that
+// defines it — the barrel is no longer on that path — passing through to the
 // real one unless a test overrides it.
-vi.mock('../../services/ai/generation/diagram', async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../services/ai/generation/diagram')>();
+vi.mock('../../services/ai/generation/diagram/diagramIRGeneration', async (importOriginal) => {
+    const original = await importOriginal<typeof import('../../services/ai/generation/diagram/diagramIRGeneration')>();
     return {
         ...original,
         generateDiagramIRWithSelfHealing: vi.fn(original.generateDiagramIRWithSelfHealing),
     };
 });
 
-import { generateDiagramIRWithSelfHealing } from '../../services/ai/generation/diagram';
+import { generateDiagramIRWithSelfHealing } from '../../services/ai/generation/diagram/diagramIRGeneration';
 import { buildHeuristicCustomArtifactRecommendation } from '../../services/ai/generation/recommendation/customArtifactHeuristics';
 import {
     buildDeterministicArtifactFallback,

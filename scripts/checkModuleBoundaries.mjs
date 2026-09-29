@@ -300,7 +300,7 @@ export const DEEP_IMPORT_BUDGET = {
   // F4-05: la auto-mejora determinista del diagrama y los tipos de medida del
   // lienzo salieron de cuatro pantallas; `components -> services/diagram`
   // bajó de 20 a 16 en el mismo cambio.
-  'services/artifacts -> services/diagram': 15,
+  'services/artifacts -> services/diagram': 13, // plan diagramas 6.1: 15 → 13
   'services/artifacts -> services/export': 3,
   'services/artifacts -> services/quality': 2,
   'services/export -> services/quality': 11,

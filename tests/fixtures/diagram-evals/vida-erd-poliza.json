@@ -1,0 +1,22 @@
+{
+  "id": "vida-erd-poliza",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Modelo de Datos de Vida",
+    "descripcion": "Modelo lógico de pólizas de vida, asegurados, beneficiarios y siniestros.",
+    "contexto": ["Un asegurado puede tener varias pólizas", "Los beneficiarios suman 100 % por póliza"]
+  },
+  "plantilla": {
+    "nombre": "Modelo Entidad-Relación de Vida",
+    "tipo": "mermaid-erd",
+    "objetivo": "Modelar entidades y cardinalidades del dominio de vida.",
+    "conceptosClave": [{ "term": "Póliza", "definition": "Contrato de seguro" }]
+  },
+  "respuestaModelo": "erDiagram\n    ASEGURADO ||--o{ POLIZA : contrata\n    POLIZA ||--|{ BENEFICIARIO : designa\n    POLIZA ||--o{ SINIESTRO : origina\n    POLIZA ||--o{ PRIMA : cobra\n    ASEGURADO {\n        string id PK\n        string nombre\n        date fechaNacimiento\n    }\n    POLIZA {\n        string numero PK\n        string aseguradoId FK\n        decimal sumaAsegurada\n    }\n    BENEFICIARIO {\n        string id PK\n        string polizaNumero FK\n        decimal porcentaje\n    }\n    SINIESTRO {\n        string id PK\n        string polizaNumero FK\n        date fechaEvento\n    }\n    PRIMA {\n        string id PK\n        string polizaNumero FK\n        decimal monto\n    }",
+  "esperado": {
+    "dialecto": "erDiagram",
+    "entidades": [["ASEGURADO", "Asegurado"], ["POLIZA", "Póliza"], ["BENEFICIARIO", "Beneficiario"], ["SINIESTRO", "Siniestro"], ["PRIMA", "Prima"]],
+    "metadatos": []
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "_nota": "Agregados del banco de evaluación de diagramas. 'antes' se midió sobre main (e15e1d5) con el mismo corpus; 'actual' es el suelo que la prueba exige y sólo puede subir. Actualizar con `npm run eval:diagrams` en el mismo commit que cambia las cifras.",
+  "antes": {
+    "casos": 10,
+    "dialectoConservado": 0.1,
+    "coberturaEntidades": 0.745,
+    "metadatosConservados": 0,
+    "tecnologiasConservadas": 0,
+    "historiaConservada": 0,
+    "tasaEsqueleto": 0,
+    "calidadMedia": 43.75
+  },
+  "actual": {
+    "casos": 10,
+    "dialectoConservado": 1,
+    "coberturaEntidades": 1,
+    "metadatosConservados": 1,
+    "tecnologiasConservadas": 1,
+    "historiaConservada": 1,
+    "tasaEsqueleto": 0,
+    "calidadMedia": 48.55
+  }
+}

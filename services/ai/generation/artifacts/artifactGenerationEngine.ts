@@ -22,7 +22,8 @@ import {
     buildMermaidQualityReinforcement,
     DIAGRAM_SYSTEM_INSTRUCTION,
     diagramTemperature,
-    generateDiagramIRWithSelfHealing,
+    generateC4ArtifactContent,
+    isC4ArtifactType,
     THINKING_BUDGET,
 } from '../diagram';
 import { emitGenerationPhase, type Artifact, type ArtifactGenerationPhaseEvent } from '../../../../lib/artifacts';
@@ -40,7 +41,7 @@ import { generatePresentationDeck } from '../presentationDeck';
 import { renderContextGraphReinforcement } from '../../../contextGraph';
 import { assessDocumentArtifact } from '../../../quality';
 import { buildMinimalPresentationDeck } from '../../../presentation';
-import { extractDiagramSignals, irToMermaid, mermaidToIR, renderDiagramSignals } from '../../../diagram';
+import { extractDiagramSignals, mermaidToIR, renderDiagramSignals } from '../../../diagram';
 import {
     buildArchitectureKnowledgeGraphForProject,
     buildArtifactGenerationGraphContext,
@@ -87,111 +88,6 @@ class ArtifactGenerationEngine {
 
     // --- Core Operations ---
 
-    /**
-     * True for the C4 family of Mermaid artifacts. These types are routed
-     * through the self-healing IR-direct path because they are the most
-     * affected by guided-creation prompt saturation.
-     */
-    private isC4ArtifactType(type: string): boolean {
-        return (
-            type === 'mermaid-c4-context' ||
-            type === 'mermaid-c4-container' ||
-            type === 'mermaid-c4-component' ||
-            type === 'mermaid-c4-deployment'
-        );
-    }
-
-    /**
-     * Build a transient {@link Artifact} stub from a template so the IR-direct
-     * generator (which expects an Artifact-shaped object) can be called from
-     * `generateArtifactContent`, where the template has not yet been turned
-     * into a persisted artifact.
-     */
-    private artifactStubFromTemplate(
-        template: ArtifactTemplate,
-        project: Project,
-        support: ArtifactGenerationSupport,
-        previousArtifact?: Artifact,
-    ): Artifact {
-        const now = new Date().toISOString();
-        const contract = template.requestContext?.generationContract;
-        let controlledContext = '';
-        if (contract) {
-            const validation = support.controlledContext(project, contract, 700);
-            controlledContext = validation.ok ? validation.promptBlock : `
-## Selección controlada de fuentes/contexto
-- Omitida por validación de seguridad: ${validation.errors.join(' · ')}
-`;
-        }
-        const structuredObjective = contract
-            ? `${template.objective}
-
-Structured generation contract: ${contract.normalizedIntent}. Audience: ${contract.audience}. Purpose: ${contract.purpose}. Detail level: ${contract.detailLevel}. Acceptance criteria: ${contract.acceptanceCriteria.join(' | ')}. Excluded source ids: ${contract.excludedSourceArtifactIds.join(', ') || 'none'}.
-${controlledContext}`
-            : template.objective;
-        return {
-            id: previousArtifact?.id ?? `stub-${template.name}-${Date.now()}`,
-            versionGroupId: previousArtifact?.versionGroupId ?? `stub-${template.name}`,
-            version: previousArtifact?.version ?? 1,
-            createdAt: previousArtifact?.createdAt ?? now,
-            name: template.name,
-            type: template.type,
-            phase: template.phase,
-            architecturalView: template.architecturalView,
-            content: previousArtifact?.content ?? '',
-            objective: structuredObjective,
-            keyConcepts: template.keyConcepts,
-            representation: template.representation,
-            audience: previousArtifact?.audience,
-            theme: previousArtifact?.theme,
-            lastDiagramError: previousArtifact?.lastDiagramError,
-        };
-    }
-
-    /**
-     * Generate a C4 artifact via the self-healing IR-direct path and serialize
-     * the result back to Mermaid for storage on `artifact.content`. When the
-     * IR-direct path falls back to a skeleton, the transient
-     * {@link C4SelfHealingError} carries the renderable Mermaid so the public
-     * wrapper can persist a usable artifact and surface a precise diagnostic.
-     */
-    private async generateC4ArtifactViaSelfHealing(
-        project: Project,
-        template: ArtifactTemplate,
-        settings: Settings,
-        support: ArtifactGenerationSupport,
-        previousArtifact?: Artifact,
-    ): Promise<string> {
-        const stub = this.artifactStubFromTemplate(template, project, support, previousArtifact);
-        const result = await generateDiagramIRWithSelfHealing(stub, project, settings);
-        const mermaid = result.fallback === 'skeleton'
-            ? support.markSkeleton(irToMermaid(result.ir))
-            : irToMermaid(result.ir);
-        if (result.fallback === 'skeleton') {
-            // Surface the failure to the caller without losing the rendered
-            // skeleton: the caller can still persist `mermaid` so the canvas
-            // is never blank, while marking `lastDiagramError` on the
-            // artifact.
-            const err = new C4SelfHealingError(
-                'C4 generation fell back to a deterministic skeleton after retries.',
-                {
-                    reason: result.lastReason ?? 'skeleton-fallback',
-                    attempts: result.attempts,
-                    sampleMermaid: mermaid,
-                    warnings: result.warnings,
-                },
-            );
-            throw err;
-        }
-        return mermaid;
-    }
-
-    /**
-     * Generates a presentation deck as a JSON-serialised `PresentationDeck`.
-     * Drives Gemini with a presentation-specific prompt + `responseSchema` so
-     * the output is a structured deck instead of long-form prose. Falls back
-     * to a minimal deck when the model fails or the response is unparseable.
-     */
     /**
      * Public entry point for artifact generation. Wraps the internal
      * generation pipeline so that **every** return value (success path,
@@ -313,7 +209,7 @@ ${controlledContext}`
         // model in the guided-creation flow. By routing here we get the
         // capped prompt + automatic corrective retry + deterministic skeleton
         // fallback so the canvas is never silently empty.
-        if (this.isC4ArtifactType(template.type)) {
+        if (isC4ArtifactType(template.type)) {
             emit({
                 stage: 'ai-generation',
                 status: 'in-progress',
@@ -322,7 +218,7 @@ ${controlledContext}`
                 meta: { path: 'c4-self-healing', type: template.type },
             });
             try {
-                const mermaid = await this.generateC4ArtifactViaSelfHealing(project, template, settings, support, previousArtifact);
+                const mermaid = await generateC4ArtifactContent(project, template, settings, support, previousArtifact, opts.onDiagramIR);
                 emit({
                     stage: 'ai-generation',
                     status: 'success',

@@ -1,0 +1,65 @@
+{
+  "id": "vida-c4-componentes-pago-siniestro",
+  "dominio": "vida",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Pago de Siniestros de Vida",
+    "descripcion": "Liquidación de la suma asegurada a beneficiarios tras el fallecimiento del asegurado.",
+    "contexto": [
+      "Validación de beneficiarios designados y de documentos (acta de defunción)",
+      "Revisión contra listas restrictivas antes de pagar (AML)",
+      "Pago por transferencia interbancaria"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Componentes del Servicio de Liquidación",
+    "tipo": "mermaid-c4-component",
+    "objetivo": "Detallar los componentes internos que deciden y ejecutan el pago a beneficiarios.",
+    "conceptosClave": [
+      { "term": "Beneficiario", "definition": "Persona designada para recibir la suma asegurada" },
+      { "term": "Liquidación", "definition": "Cálculo y pago de la suma asegurada" }
+    ]
+  },
+  "respuestaModelo": {
+    "nodes": [
+      { "id": "api-siniestros", "label": "Controlador Siniestros", "kind": "service", "technology": "Spring MVC", "description": "Recibe la reclamación de siniestro" },
+      { "id": "validador-beneficiarios", "label": "Validador Beneficiarios", "kind": "service", "technology": "Java 21", "description": "Coteja beneficiarios designados", "dataClassification": "pii" },
+      { "id": "screening-aml", "label": "Screening AML", "kind": "service", "technology": "Java 21", "description": "Consulta listas restrictivas", "compliance": ["AML"] },
+      { "id": "calculo-liquidacion", "label": "Cálculo Liquidación", "kind": "service", "technology": "Java 21", "description": "Suma asegurada menos adeudos" },
+      { "id": "repositorio", "label": "Repositorio Siniestros", "kind": "data", "technology": "Spring Data JPA", "description": "Persiste el expediente", "dataClassification": "pii" },
+      { "id": "listas", "label": "Proveedor de Listas", "kind": "external", "description": "Listas OFAC y locales", "trust": "external" },
+      { "id": "tesoreria", "label": "Tesorería", "kind": "system", "description": "Ejecuta transferencias", "trust": "internal" }
+    ],
+    "edges": [
+      { "id": "e1", "source": "api-siniestros", "target": "validador-beneficiarios", "label": "Valida beneficiarios" },
+      { "id": "e2", "source": "validador-beneficiarios", "target": "screening-aml", "label": "Revisa listas" },
+      { "id": "e3", "source": "screening-aml", "target": "listas", "label": "Consulta listas", "protocol": "REST/HTTPS", "dataSensitivity": "pii" },
+      { "id": "e4", "source": "screening-aml", "target": "calculo-liquidacion", "label": "Libera cálculo" },
+      { "id": "e5", "source": "calculo-liquidacion", "target": "repositorio", "label": "Guarda liquidación" },
+      { "id": "e6", "source": "calculo-liquidacion", "target": "tesoreria", "label": "Ordena pago", "protocol": "ISO 20022" }
+    ],
+    "groups": [
+      { "id": "liquidacion", "label": "Servicio de Liquidación", "nodeIds": ["api-siniestros", "validador-beneficiarios", "screening-aml", "calculo-liquidacion", "repositorio"], "kind": "system-boundary" }
+    ],
+    "metadata": {
+      "audience": "technical",
+      "title": "Componentes de Liquidación",
+      "diagramType": "c4-component",
+      "narrative": {
+        "summary": "Ningún pago sale sin pasar antes por el screening AML.",
+        "scenes": [
+          { "id": "s1", "title": "Validar", "focusNodeIds": ["api-siniestros", "validador-beneficiarios"], "focusEdgeIds": ["e1"] },
+          { "id": "s2", "title": "Controlar y pagar", "focusNodeIds": ["screening-aml", "calculo-liquidacion", "tesoreria"], "focusEdgeIds": ["e2", "e4", "e6"] }
+        ]
+      }
+    }
+  },
+  "esperado": {
+    "dialecto": "C4Component",
+    "entidades": [["Validador Beneficiarios", "Beneficiarios"], ["Screening AML", "AML"], ["Cálculo Liquidación", "Liquidación"], ["Proveedor de Listas", "Listas"], ["Tesorería"]],
+    "metadatos": [
+      { "entidad": ["Validador Beneficiarios"], "campo": "dataClassification", "valor": "pii" },
+      { "entidad": ["Repositorio Siniestros"], "campo": "technology", "valor": "Spring Data JPA" }
+    ]
+  }
+}

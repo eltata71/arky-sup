@@ -525,7 +525,12 @@ Reglas que no se negocian al trabajar aquí:
     el asistente de IA no las recibe, porque su esquema enumera las suyas. Un
     nodo enlaza al diagrama que lo detalla por `detailArtifactGroupId` (4.1), y
     la coherencia entre niveles avisa sin bloquear (4.2). Ver *A diagram is
-    changed, not regenerated* en `CLAUDE.md`.
+    changed, not regenerated* en `CLAUDE.md`. **Y conserva su dialecto** (6.1):
+    un texto sólo se reescribe desde el IR en C4 o flowchart
+    (`serializeIRPreservingDialect`, aplicado en `rewriteDiagramContent`); el IR
+    del modelo llega por `onDiagramIR` y no se reextrae del texto. El banco
+    `diagram-evals` (`npm run eval:diagrams`) lo mide contra `linea-base.json`,
+    que sólo puede mejorar. Ver *A diagram keeps its dialect* en `CLAUDE.md`.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
