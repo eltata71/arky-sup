@@ -1,5 +1,5 @@
 {
-  "_nota": "Agregados del banco de evaluación de diagramas. 'antes' se midió sobre main (e15e1d5) con el mismo corpus; 'actual' es el suelo que la prueba exige y sólo puede subir. Actualizar con `npm run eval:diagrams` en el mismo commit que cambia las cifras.",
+  "_nota": "Agregados del banco de evaluación de diagramas. 'antes' se midió sobre main e15e1d5 antes de la 6.1; 'antes62' sobre main df9b18b antes de la 6.2, con el corpus ampliado; 'actual' es el suelo que la prueba exige y sólo puede mejorar. Actualizar con `npm run eval:diagrams` en el mismo commit que cambia las cifras.",
   "antes": {
     "casos": 10,
     "dialectoConservado": 0.1,
@@ -10,6 +10,18 @@
     "tasaEsqueleto": 0,
     "calidadMedia": 43.75
   },
+  "antes62": {
+    "casos": 10,
+    "dialectoConservado": 1,
+    "coberturaEntidades": 1,
+    "metadatosConservados": 1,
+    "tecnologiasConservadas": 1,
+    "historiaConservada": 1,
+    "tasaEsqueleto": 0,
+    "calidadMedia": 48.65,
+    "contextoEntregado": 0.22,
+    "casosConContradicciones": 8
+  },
   "actual": {
     "casos": 10,
     "dialectoConservado": 1,
@@ -18,6 +30,8 @@
     "tecnologiasConservadas": 1,
     "historiaConservada": 1,
     "tasaEsqueleto": 0,
-    "calidadMedia": 48.55
+    "calidadMedia": 48.65,
+    "contextoEntregado": 1,
+    "casosConContradicciones": 0
   }
 }

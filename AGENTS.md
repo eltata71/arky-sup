@@ -531,6 +531,12 @@ Reglas que no se negocian al trabajar aquí:
     del modelo llega por `onDiagramIR` y no se reextrae del texto. El banco
     `diagram-evals` (`npm run eval:diagrams`) lo mide contra `linea-base.json`,
     que sólo puede mejorar. Ver *A diagram keeps its dialect* en `CLAUDE.md`.
+    **Y todo camino de diagrama recibe el mismo contexto** (6.2):
+    `buildDiagramGenerationBrief` compone idioma, solicitud literal con su
+    audiencia y criterios, persona, grafo, la motivación de negocio de las
+    iniciativas (`ArtifactBusinessMotivation`, por puerto) y el nivel C4
+    superior; lo que escribieron personas va cercado y ningún prompt pide
+    colores ni argumentos de macros Mermaid a un camino que devuelve IR.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;

@@ -9,38 +9,181 @@
       "Reclamaciones electrónicas X12 837 y remesas 835 vía clearinghouse",
       "Datos PHI; cifrado en tránsito y reposo",
       "Kafka como bus de eventos"
+    ],
+    "artefactos": [
+      {
+        "nombre": "Contexto de Reclamaciones",
+        "tipo": "mermaid-c4-context",
+        "contenido": "C4Context\n    title Contexto de Reclamaciones\n    Person(proveedor, \"Proveedor de Salud\", \"Hospital o médico de la red\")\n    System_Ext(clearinghouse, \"Clearinghouse\", \"Intercambio EDI\")\n    System(plataforma, \"Plataforma de Reclamaciones\", \"Adjudica y paga\")\n    System_Ext(banco, \"Banco Pagador\", \"Transferencias\")\n    Rel(proveedor, clearinghouse, \"Envía reclamación\", \"X12 837\")\n    Rel(clearinghouse, plataforma, \"Reenvía reclamación\", \"AS2\")\n    Rel(plataforma, banco, \"Ordena pago\", \"ISO 20022\")"
+      }
     ]
   },
+  "solicitud": {
+    "texto": "Necesito el diagrama de contenedores de la plataforma de reclamaciones que muestre cómo la adjudicación asíncrona desacopla la recepción del pago",
+    "audiencia": "technical",
+    "criterios": [
+      "Mostrar el bus de eventos entre recepción y adjudicación",
+      "Declarar la tecnología de cada contenedor"
+    ]
+  },
+  "iniciativas": [
+    {
+      "title": "Adjudicación en 72 horas",
+      "code": "NEG-2026-014",
+      "need": "Reducir el tiempo de adjudicación de reclamaciones médicas de 12 a 3 días sin aumentar pagos indebidos",
+      "driver": "Quejas de la red de proveedores por pagos tardíos",
+      "objectives": [
+        "Automatizar la adjudicación de reclamaciones simples"
+      ],
+      "expectedOutcomes": [
+        "80 % de reclamaciones adjudicadas sin intervención manual"
+      ],
+      "kpis": [
+        "Tiempo de adjudicación (días): 12 → 3"
+      ],
+      "regulatoryDrivers": [
+        "HIPAA"
+      ]
+    }
+  ],
   "plantilla": {
     "nombre": "Contenedores de Reclamaciones",
     "tipo": "mermaid-c4-container",
     "objetivo": "Descomponer la plataforma de reclamaciones en contenedores con su tecnología.",
     "conceptosClave": [
-      { "term": "Adjudicación", "definition": "Decisión de pago de una reclamación" },
-      { "term": "Remesa", "definition": "Aviso de pago al proveedor (835)" }
+      {
+        "term": "Adjudicación",
+        "definition": "Decisión de pago de una reclamación"
+      },
+      {
+        "term": "Remesa",
+        "definition": "Aviso de pago al proveedor (835)"
+      }
     ]
   },
   "respuestaModelo": {
     "nodes": [
-      { "id": "clearinghouse", "label": "Clearinghouse", "kind": "external", "description": "Intercambio EDI con proveedores", "trust": "partner" },
-      { "id": "gateway-edi", "label": "Gateway EDI", "kind": "gateway", "technology": "IBM Sterling B2B", "description": "Recibe 837 y envía 835" },
-      { "id": "api-reclamaciones", "label": "API Reclamaciones", "kind": "service", "technology": "Java 21, Spring Boot 3", "description": "Valida y registra reclamaciones", "dataClassification": "phi" },
-      { "id": "motor-adjudicacion", "label": "Motor Adjudicación", "kind": "service", "technology": "Drools 9", "description": "Aplica reglas de cobertura y copagos", "dataClassification": "phi", "criticality": "critical" },
-      { "id": "bus-eventos", "label": "Bus de Eventos", "kind": "messaging", "technology": "Kafka 3.6", "description": "Eventos de reclamación" },
-      { "id": "bd-reclamaciones", "label": "BD Reclamaciones", "kind": "data", "technology": "PostgreSQL 15", "description": "Reclamaciones y acumuladores", "dataClassification": "phi" },
-      { "id": "pagos", "label": "Servicio de Pagos", "kind": "service", "technology": "Node.js 20", "description": "Genera pagos y remesas" }
+      {
+        "id": "clearinghouse",
+        "label": "Clearinghouse",
+        "kind": "external",
+        "description": "Intercambio EDI con proveedores",
+        "trust": "partner"
+      },
+      {
+        "id": "gateway-edi",
+        "label": "Gateway EDI",
+        "kind": "gateway",
+        "technology": "IBM Sterling B2B",
+        "description": "Recibe 837 y envía 835"
+      },
+      {
+        "id": "api-reclamaciones",
+        "label": "API Reclamaciones",
+        "kind": "service",
+        "technology": "Java 21, Spring Boot 3",
+        "description": "Valida y registra reclamaciones",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "motor-adjudicacion",
+        "label": "Motor Adjudicación",
+        "kind": "service",
+        "technology": "Drools 9",
+        "description": "Aplica reglas de cobertura y copagos",
+        "dataClassification": "phi",
+        "criticality": "critical"
+      },
+      {
+        "id": "bus-eventos",
+        "label": "Bus de Eventos",
+        "kind": "messaging",
+        "technology": "Kafka 3.6",
+        "description": "Eventos de reclamación"
+      },
+      {
+        "id": "bd-reclamaciones",
+        "label": "BD Reclamaciones",
+        "kind": "data",
+        "technology": "PostgreSQL 15",
+        "description": "Reclamaciones y acumuladores",
+        "dataClassification": "phi"
+      },
+      {
+        "id": "pagos",
+        "label": "Servicio de Pagos",
+        "kind": "service",
+        "technology": "Node.js 20",
+        "description": "Genera pagos y remesas"
+      }
     ],
     "edges": [
-      { "id": "e1", "source": "clearinghouse", "target": "gateway-edi", "label": "Envía 837", "protocol": "X12 837/AS2", "dataSensitivity": "phi" },
-      { "id": "e2", "source": "gateway-edi", "target": "api-reclamaciones", "label": "Registra reclamación", "protocol": "REST/HTTPS", "dataSensitivity": "phi" },
-      { "id": "e3", "source": "api-reclamaciones", "target": "bd-reclamaciones", "label": "Persiste reclamación", "protocol": "JDBC" },
-      { "id": "e4", "source": "api-reclamaciones", "target": "bus-eventos", "label": "Publica recibida", "protocol": "Kafka" },
-      { "id": "e5", "source": "bus-eventos", "target": "motor-adjudicacion", "label": "Dispara adjudicación", "protocol": "Kafka" },
-      { "id": "e6", "source": "motor-adjudicacion", "target": "pagos", "label": "Autoriza pago", "protocol": "gRPC" },
-      { "id": "e7", "source": "pagos", "target": "gateway-edi", "label": "Emite remesa 835", "protocol": "REST/HTTPS" }
+      {
+        "id": "e1",
+        "source": "clearinghouse",
+        "target": "gateway-edi",
+        "label": "Envía 837",
+        "protocol": "X12 837/AS2",
+        "dataSensitivity": "phi"
+      },
+      {
+        "id": "e2",
+        "source": "gateway-edi",
+        "target": "api-reclamaciones",
+        "label": "Registra reclamación",
+        "protocol": "REST/HTTPS",
+        "dataSensitivity": "phi"
+      },
+      {
+        "id": "e3",
+        "source": "api-reclamaciones",
+        "target": "bd-reclamaciones",
+        "label": "Persiste reclamación",
+        "protocol": "JDBC"
+      },
+      {
+        "id": "e4",
+        "source": "api-reclamaciones",
+        "target": "bus-eventos",
+        "label": "Publica recibida",
+        "protocol": "Kafka"
+      },
+      {
+        "id": "e5",
+        "source": "bus-eventos",
+        "target": "motor-adjudicacion",
+        "label": "Dispara adjudicación",
+        "protocol": "Kafka"
+      },
+      {
+        "id": "e6",
+        "source": "motor-adjudicacion",
+        "target": "pagos",
+        "label": "Autoriza pago",
+        "protocol": "gRPC"
+      },
+      {
+        "id": "e7",
+        "source": "pagos",
+        "target": "gateway-edi",
+        "label": "Emite remesa 835",
+        "protocol": "REST/HTTPS"
+      }
     ],
     "groups": [
-      { "id": "plataforma", "label": "Plataforma de Reclamaciones", "nodeIds": ["gateway-edi", "api-reclamaciones", "motor-adjudicacion", "bus-eventos", "bd-reclamaciones", "pagos"], "kind": "system-boundary" }
+      {
+        "id": "plataforma",
+        "label": "Plataforma de Reclamaciones",
+        "nodeIds": [
+          "gateway-edi",
+          "api-reclamaciones",
+          "motor-adjudicacion",
+          "bus-eventos",
+          "bd-reclamaciones",
+          "pagos"
+        ],
+        "kind": "system-boundary"
+      }
     ],
     "metadata": {
       "audience": "technical",
@@ -49,19 +192,91 @@
       "narrative": {
         "summary": "La adjudicación es asíncrona: una caída del bus detiene los pagos, no la recepción.",
         "scenes": [
-          { "id": "s1", "title": "Entrada EDI", "focusNodeIds": ["clearinghouse", "gateway-edi", "api-reclamaciones"], "focusEdgeIds": ["e1", "e2"] },
-          { "id": "s2", "title": "Adjudicación y pago", "focusNodeIds": ["bus-eventos", "motor-adjudicacion", "pagos"], "focusEdgeIds": ["e5", "e6", "e7"] }
+          {
+            "id": "s1",
+            "title": "Entrada EDI",
+            "focusNodeIds": [
+              "clearinghouse",
+              "gateway-edi",
+              "api-reclamaciones"
+            ],
+            "focusEdgeIds": [
+              "e1",
+              "e2"
+            ]
+          },
+          {
+            "id": "s2",
+            "title": "Adjudicación y pago",
+            "focusNodeIds": [
+              "bus-eventos",
+              "motor-adjudicacion",
+              "pagos"
+            ],
+            "focusEdgeIds": [
+              "e5",
+              "e6",
+              "e7"
+            ]
+          }
         ]
       }
     }
   },
   "esperado": {
     "dialecto": "C4Container",
-    "entidades": [["Clearinghouse"], ["Gateway EDI"], ["API Reclamaciones"], ["Motor Adjudicación", "Adjudicación"], ["Bus de Eventos"], ["BD Reclamaciones"], ["Servicio de Pagos", "Pagos"]],
+    "entidades": [
+      [
+        "Clearinghouse"
+      ],
+      [
+        "Gateway EDI"
+      ],
+      [
+        "API Reclamaciones"
+      ],
+      [
+        "Motor Adjudicación",
+        "Adjudicación"
+      ],
+      [
+        "Bus de Eventos"
+      ],
+      [
+        "BD Reclamaciones"
+      ],
+      [
+        "Servicio de Pagos",
+        "Pagos"
+      ]
+    ],
     "metadatos": [
-      { "entidad": ["Motor Adjudicación"], "campo": "dataClassification", "valor": "phi" },
-      { "entidad": ["BD Reclamaciones"], "campo": "technology", "valor": "PostgreSQL 15" },
-      { "entidad": ["Motor Adjudicación"], "campo": "criticality", "valor": "critical" }
+      {
+        "entidad": [
+          "Motor Adjudicación"
+        ],
+        "campo": "dataClassification",
+        "valor": "phi"
+      },
+      {
+        "entidad": [
+          "BD Reclamaciones"
+        ],
+        "campo": "technology",
+        "valor": "PostgreSQL 15"
+      },
+      {
+        "entidad": [
+          "Motor Adjudicación"
+        ],
+        "campo": "criticality",
+        "valor": "critical"
+      }
+    ],
+    "nivelSuperior": [
+      "Clearinghouse",
+      "Plataforma de Reclamaciones",
+      "Banco Pagador"
     ]
   }
 }

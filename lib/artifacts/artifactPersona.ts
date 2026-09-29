@@ -16,6 +16,30 @@ import type { ArtifactGenerationPhaseListener } from './artifactModel';
 
 export type ArtifactPersonaComposer = (baseInstruction: string, request: string) => string;
 
+/**
+ * Why the artifact exists, in the business's words (plan de diagramas, 6.2).
+ *
+ * A project answers an initiative, and the initiative is where the need, the
+ * outcomes and the indicators live. The generation used to see only the
+ * project, so an executive diagram could describe a topology but never the
+ * value it serves. The AI layer cannot look initiatives up — their context
+ * imports nothing of it and must stay that way — so it declares this shape
+ * and the caller, which resolves the project's initiatives by the portfolio
+ * rule, hands one over per initiative. Plain strings on purpose: this is what
+ * the prompt reads, not the aggregate.
+ */
+export interface ArtifactBusinessMotivation {
+  title: string;
+  code?: string;
+  need: string;
+  driver?: string;
+  objectives: readonly string[];
+  expectedOutcomes: readonly string[];
+  /** Each rendered with its unit and target, e.g. «Tiempo de adjudicación (días) → 3». */
+  kpis: readonly string[];
+  regulatoryDrivers: readonly string[];
+}
+
 /** Options of an artifact generation. */
 export interface ArtifactGenerationOptions {
   onPhase?: ArtifactGenerationPhaseListener;
@@ -30,4 +54,6 @@ export interface ArtifactGenerationOptions {
    * Not called for a skeleton — that IR is the system's, not the model's.
    */
   onDiagramIR?: (ir: DiagramIR) => void;
+  /** The initiatives the project answers; absent when the caller cannot resolve them. */
+  businessMotivation?: readonly ArtifactBusinessMotivation[];
 }

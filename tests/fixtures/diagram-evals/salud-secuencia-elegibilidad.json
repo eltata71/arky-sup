@@ -5,18 +5,68 @@
   "proyecto": {
     "nombre": "Verificación de Elegibilidad",
     "descripcion": "Consulta en tiempo real de la elegibilidad de un asegurado desde el hospital.",
-    "contexto": ["Transacciones X12 270/271", "Respuesta en menos de 3 segundos"]
+    "contexto": [
+      "Transacciones X12 270/271",
+      "Respuesta en menos de 3 segundos"
+    ]
   },
+  "solicitud": {
+    "texto": "Diagrama de secuencia de la consulta de elegibilidad 270/271 desde el hospital hasta el core de pólizas",
+    "audiencia": "technical",
+    "criterios": [
+      "Mostrar la respuesta 271 de vuelta al hospital"
+    ]
+  },
+  "iniciativas": [
+    {
+      "title": "Elegibilidad en tiempo real",
+      "need": "Que el hospital confirme la cobertura del asegurado en la admisión en menos de 3 segundos",
+      "objectives": [
+        "Responder 270/271 en línea"
+      ],
+      "expectedOutcomes": [
+        "Cero rechazos de admisión por cobertura no verificada"
+      ],
+      "kpis": [
+        "Latencia de elegibilidad (s): 30 → 3"
+      ],
+      "regulatoryDrivers": [
+        "HIPAA"
+      ]
+    }
+  ],
   "plantilla": {
     "nombre": "Secuencia de Elegibilidad",
     "tipo": "mermaid-sequence",
     "objetivo": "Mostrar la secuencia de una consulta de elegibilidad 270/271.",
-    "conceptosClave": [{ "term": "Elegibilidad", "definition": "Vigencia y beneficios del asegurado" }]
+    "conceptosClave": [
+      {
+        "term": "Elegibilidad",
+        "definition": "Vigencia y beneficios del asegurado"
+      }
+    ]
   },
   "respuestaModelo": "sequenceDiagram\n    participant H as Hospital\n    participant C as Clearinghouse\n    participant G as Gateway EDI\n    participant E as Servicio Elegibilidad\n    participant P as Core de Pólizas\n    H->>C: Envía 270\n    C->>G: Reenvía 270\n    G->>E: Solicita elegibilidad\n    E->>P: Consulta vigencia\n    P-->>E: Devuelve coberturas\n    E-->>G: Responde elegibilidad\n    G-->>C: Envía 271\n    C-->>H: Reenvía 271",
   "esperado": {
     "dialecto": "sequenceDiagram",
-    "entidades": [["Hospital"], ["Clearinghouse"], ["Gateway EDI"], ["Servicio Elegibilidad", "Elegibilidad"], ["Core de Pólizas"]],
+    "entidades": [
+      [
+        "Hospital"
+      ],
+      [
+        "Clearinghouse"
+      ],
+      [
+        "Gateway EDI"
+      ],
+      [
+        "Servicio Elegibilidad",
+        "Elegibilidad"
+      ],
+      [
+        "Core de Pólizas"
+      ]
+    ],
     "metadatos": []
   }
 }

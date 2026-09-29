@@ -18,7 +18,7 @@
  */
 
 import type { ArtifactTemplate, Settings } from '../../../types';
-import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import { artifactGenerationService } from '../../ai';
@@ -72,6 +72,8 @@ export interface ArtifactGenerationRunInput {
     onPhase?: ArtifactGenerationPhaseListener;
     /** Who speaks in the prompt; handed in because only the Office knows (corte 13). */
     composePersonaInstruction?: ArtifactPersonaComposer;
+    /** The initiatives the project answers, resolved by the caller (6.2). */
+    businessMotivation?: readonly ArtifactBusinessMotivation[];
     /**
      * Told when the run degraded to a fallback the user should know about.
      * A callback rather than a toast: this module has no screen.
@@ -103,6 +105,7 @@ export async function runArtifactGeneration({
     startedMs,
     onPhase,
     composePersonaInstruction,
+    businessMotivation,
     onWarning,
 }: ArtifactGenerationRunInput): Promise<ArtifactGenerationRunResult> {
     const log = createTraceLog([
@@ -172,6 +175,7 @@ export async function runArtifactGeneration({
             architectureGraphPromptBlock: graphGenerationContext.promptBlock,
             composePersonaInstruction,
             support: artifactGenerationSupport,
+            businessMotivation,
             onDiagramIR: (ir) => { modelOutput.ir = ir; },
         },
     );

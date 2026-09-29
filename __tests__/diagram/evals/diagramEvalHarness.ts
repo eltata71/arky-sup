@@ -25,6 +25,8 @@ import { vi } from 'vitest';
 import type { ArtifactTemplate, ArtifactType, Settings } from '../../../types';
 import type { Project } from '../../../services/architectureProjects';
 import type { DiagramIR, DiagramIRNode, DiagramNarrative } from '../../../lib/diagram';
+import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
+import { UNTRUSTED_FENCE_OPEN } from '../../../lib/untrustedContent';
 import { legacyTransport } from '../../../services/ai/generation/legacyTransport';
 import { runArtifactGeneration } from '../../../services/artifacts/application/artifactGenerationRun';
 import { isSkeletonFallbackContent } from '../../../services/artifacts/domain/deterministicArtifactFallbacks';
@@ -35,7 +37,17 @@ export interface DiagramEvalCase {
     id: string;
     dominio: 'salud' | 'vida';
     origenRespuesta: string;
-    proyecto: { nombre: string; descripcion: string; contexto: string[] };
+    proyecto: {
+        nombre: string;
+        descripcion: string;
+        contexto: string[];
+        /** Artefactos que ya existen en el proyecto: el nivel C4 superior, por ejemplo. */
+        artefactos?: Array<{ nombre: string; tipo: ArtifactType; contenido: string }>;
+    };
+    /** Lo que el usuario pidió, cuando el artefacto nace de una solicitud (plan 6.2). */
+    solicitud?: { texto: string; audiencia?: 'technical' | 'executive' | 'mixed'; criterios?: string[] };
+    /** Las iniciativas a las que responde el proyecto. */
+    iniciativas?: ArtifactBusinessMotivation[];
     plantilla: {
         nombre: string;
         tipo: ArtifactType;
@@ -50,7 +62,15 @@ export interface DiagramEvalCase {
         /** Cada entrada es una lista de alias; basta con que aparezca uno. */
         entidades: string[][];
         metadatos: Array<{ entidad: string[]; campo: keyof DiagramIRNode; valor: string }>;
+        /** Nombres del nivel superior que el prompt debe entregar al modelo. */
+        nivelSuperior?: string[];
     };
+}
+
+/** Una comprobación de lo que llegó al modelo: qué debía llegar y si llegó. */
+export interface PromptCheck {
+    que: string;
+    ok: boolean;
 }
 
 export interface DiagramEvalCaseResult {
@@ -67,6 +87,10 @@ export interface DiagramEvalCaseResult {
     esqueleto: boolean;
     calidad: number | null;
     llamadasModelo: number;
+    /** Lo que el prompt debía llevar (idioma, solicitud, criterios, necesidad, nivel superior, cercado). */
+    contexto: PromptCheck[];
+    /** Instrucciones que contradicen al system prompt o al camino (colores, sintaxis Mermaid en un C4). */
+    contradicciones: string[];
 }
 
 export interface DiagramEvalSummary {
@@ -78,6 +102,10 @@ export interface DiagramEvalSummary {
     historiaConservada: number;
     tasaEsqueleto: number;
     calidadMedia: number;
+    /** Fracción de lo que el modelo debía recibir y recibió (plan 6.2). */
+    contextoEntregado: number;
+    /** Casos cuyo prompt contiene una instrucción contradictoria. */
+    casosConContradicciones: number;
 }
 
 export function loadCorpus(): DiagramEvalCase[] {
@@ -141,7 +169,20 @@ function projectFor(testCase: DiagramEvalCase): Project {
         name: testCase.proyecto.nombre,
         description: testCase.proyecto.descripcion,
         projectContext: testCase.proyecto.contexto,
-        artifacts: [],
+        artifacts: (testCase.proyecto.artefactos ?? []).map((artefacto, index) => ({
+            id: `prev-${index}`,
+            versionGroupId: `grupo-${index}`,
+            version: 1,
+            createdAt: now,
+            name: artefacto.nombre,
+            type: artefacto.tipo,
+            phase: 'Fase 2: Arquitectura',
+            architecturalView: 'Vista Lógica y de Diseño',
+            content: artefacto.contenido,
+            objective: '',
+            keyConcepts: [],
+            representation: 'diagram',
+        }) as unknown as Artifact),
         createdAt: now,
         updatedAt: now,
     } as unknown as Project;
@@ -157,6 +198,13 @@ function templateFor(testCase: DiagramEvalCase): ArtifactTemplate {
         objective: testCase.plantilla.objetivo,
         keyConcepts: testCase.plantilla.conceptosClave,
         representation: type === 'hybrid-text-diagram' ? 'hybrid' : 'diagram',
+        ...(testCase.solicitud ? {
+            requestContext: {
+                userRequest: testCase.solicitud.texto,
+                audience: testCase.solicitud.audiencia,
+                acceptanceCriteria: testCase.solicitud.criterios,
+            },
+        } : {}),
     } as ArtifactTemplate;
 }
 
@@ -175,6 +223,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             operationId: `eval-${testCase.id}`,
             startedAt: '2026-09-29T00:00:00.000Z',
             startedMs: 0,
+            businessMotivation: testCase.iniciativas,
         });
 
         const ir = result.ir;
@@ -204,9 +253,15 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             }
         }
 
+        const [, , firstPrompt, firstConfig] = transport.mock.calls[0] ?? [];
+        const prompt = `${String((firstConfig as { systemInstruction?: string } | undefined)?.systemInstruction ?? '')}\n${String(firstPrompt ?? '')}`;
+        const { contexto, contradicciones } = checkPrompt(testCase, prompt);
+
         return {
             id: testCase.id,
             tipo: testCase.plantilla.tipo,
+            contexto,
+            contradicciones,
             dialectoConservado: dialectMatches(dialectoGuardado, testCase.esperado.dialecto),
             dialectoGuardado,
             entidades: {
@@ -230,6 +285,39 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
     }
 }
 
+/**
+ * Lo que un prompt debía llevar, derivado del caso: nada se declara a mano
+ * salvo los nombres del nivel superior, que dependen del artefacto previo.
+ */
+export function checkPrompt(testCase: DiagramEvalCase, prompt: string): { contexto: PromptCheck[]; contradicciones: string[] } {
+    const text = normalize(prompt);
+    const has = (needle: string) => text.includes(normalize(needle));
+    const contexto: PromptCheck[] = [
+        { que: 'idioma de salida', ok: /idioma de salida|language: spanish/.test(text) },
+        { que: 'contenido del proyecto cercado', ok: prompt.includes(UNTRUSTED_FENCE_OPEN) },
+    ];
+    if (testCase.solicitud) {
+        contexto.push({ que: 'solicitud literal', ok: has(testCase.solicitud.texto) });
+        const audience = testCase.solicitud.audiencia;
+        if (audience === 'executive' || audience === 'technical') {
+            contexto.push({ que: `audiencia ${audience}`, ok: new RegExp(`audience:?\\s*${audience}`).test(text) });
+        }
+        for (const criterio of testCase.solicitud.criterios ?? []) contexto.push({ que: `criterio «${criterio}»`, ok: has(criterio) });
+    }
+    for (const iniciativa of testCase.iniciativas ?? []) {
+        contexto.push({ que: `necesidad de ${iniciativa.title}`, ok: has(iniciativa.need) });
+    }
+    for (const nombre of testCase.esperado.nivelSuperior ?? []) {
+        contexto.push({ que: `nivel superior «${nombre}»`, ok: has(nombre) });
+    }
+    const contradicciones: string[] = [];
+    if (/fill:#|stroke:#/i.test(prompt)) contradicciones.push('pide colores hex y el system prompt los prohíbe');
+    if (testCase.plantilla.tipo.startsWith('mermaid-c4-') && /\bRel\(|argument/.test(prompt)) {
+        contradicciones.push('pide sintaxis Mermaid C4 en un camino que devuelve JSON');
+    }
+    return { contexto, contradicciones };
+}
+
 const ratio = (hits: number, total: number): number => (total === 0 ? 1 : hits / total);
 const round = (value: number): number => Math.round(value * 1000) / 1000;
 
@@ -251,6 +339,11 @@ export function summarize(results: DiagramEvalCaseResult[]): DiagramEvalSummary 
         historiaConservada: round(ratio(withStory.filter((r) => r.historiaConservada).length, withStory.length)),
         tasaEsqueleto: round(ratio(results.filter((r) => r.esqueleto).length, results.length)),
         calidadMedia: round(scored.reduce((acc, r) => acc + (r.calidad ?? 0), 0) / Math.max(1, scored.length)),
+        contextoEntregado: round(ratio(
+            sum((r) => r.contexto.filter((c) => c.ok).length),
+            sum((r) => r.contexto.length),
+        )),
+        casosConContradicciones: results.filter((r) => r.contradicciones.length > 0).length,
     };
 }
 
@@ -265,11 +358,15 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.historiaConservada === null ? '—' : r.historiaConservada ? 'sí' : 'NO',
         r.esqueleto ? 'SÍ' : 'no',
         r.calidad ?? '—',
+        `${r.contexto.filter((c) => c.ok).length}/${r.contexto.length}`,
+        r.contradicciones.length ? r.contradicciones.join('; ') : '—',
     ].join(' | '));
+    const missing = results.flatMap((r) => r.contexto.filter((c) => !c.ok).map((c) => `  ${r.id}: falta ${c.que}`));
     return [
-        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad',
+        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones',
         ...rows,
         '',
+        ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
         JSON.stringify(summary, null, 2),
     ].join('\n');
 }

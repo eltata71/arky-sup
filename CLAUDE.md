@@ -1324,6 +1324,26 @@ The responses are hand-written and each case says so: it measures the
 pipeline, not the model. A change that improves a figure raises the baseline
 in the same commit.
 
+**And every diagram path reaches the model with the same context** (task 6.2).
+The C4 path returned before the engine resolved the knowledge graph, the
+persona and the request, so the most used diagrams got the least context:
+the bench measured **22 %** of the required context reaching the model and
+contradictory instructions in 8 of 10 prompts (colour values the system prompt
+forbids, Mermaid `Rel()` arguments on a path that returns JSON).
+`buildDiagramGenerationBrief` (`services/ai/prompts/diagramGenerationBrief.ts`)
+composes it once — output language, the literal request with its audience,
+criteria and plan, the persona, the knowledge graph, the **business
+motivation** of the initiatives the project answers, and the names of the
+**C4 level above** — and a regeneration evolves the previous IR instead of
+re-rolling it. The motivation arrives through a port:
+`ArtifactBusinessMotivation` in `lib/artifacts`, supplied by
+`describeInitiativeMotivation` in the initiatives' domain and joined for a
+screen by `hooks/useProjectBusinessMotivation`; the AI layer still imports no
+initiative. Everything people wrote is fenced with `wrapUntrustedContent`, in
+the IR prompts and in `buildBasePrompt`, with the rules outside the fence.
+The bench now also checks the prompt: 100 % of the context delivered, no
+contradictions.
+
 ### A diagram is changed, not regenerated
 
 Every AI-assisted change used to be a fresh `generateDiagramIR`: new ids, a new
@@ -2605,6 +2625,10 @@ two "recommendation signed" events in a row are indistinguishable to a reader.
   is not a flowchart, and do not re-parse the model's IR from the text you just
   serialised it into. Use `serializeIRPreservingDialect` / `rewriteDiagramContent`
   and `onDiagramIR`; the evaluation bench (`diagram-evals`) fails otherwise.
+- Do not add a diagram path that returns before its context is composed, and
+  do not ask a model for colour values or for Mermaid macro arguments on a
+  path that returns an IR. `buildDiagramGenerationBrief` is the context; the
+  bench checks every prompt for both.
 - Do not derive a diagram's reading order anywhere but `buildStoryPlan`, and do
   not present a derived story as an authored one. There were three copies of
   that traversal and the authored narrative lost to all three.

@@ -18,6 +18,7 @@ import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { METADATA_CONTRACT, METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
 
 /**
@@ -327,7 +328,7 @@ requested envelope.`;
  */
 export function buildDialectInstruction(type: ArtifactType): string {
     if (type.startsWith('mermaid-c4-')) {
-        return `Mermaid dialect: C4 (Person/System/Container/Component/Deployment + Boundaries). Every Container/Component MUST declare its technology stack as the 3rd argument. Every Rel() MUST include the protocol as the 4th argument.`;
+        return `C4 as DiagramIR: the artifact type fixes the C4 level and the renderer writes the C4 notation; you describe elements and relations. Use "kind" from the taxonomy, the stack in "technology" for every service, data and messaging element, the protocol in "protocol" on every edge, and boundaries as "groups".`;
     }
     if (type === 'mermaid-sequence') {
         return `Mermaid dialect: sequenceDiagram. Declare every participant up-front; use "->>" for sync, "-)" for async, "rect rgb(...)" to group, alt/opt/loop for conditional flows.`;
@@ -339,7 +340,7 @@ export function buildDialectInstruction(type: ArtifactType): string {
         return `Mermaid dialect: erDiagram. Always declare PK/FK/UK; use proper cardinality notation; label every relationship with a verb.`;
     }
     if (type === 'mermaid-graph') {
-        return `Mermaid dialect: flowchart. Use shapes semantically: [Rectangle] services, [(Cylinder)] data, {Diamond} decisions, ((Circle)) actors. Apply classDef + class for semantic colour.`;
+        return `Mermaid dialect: flowchart. Use shapes semantically: [Rectangle] services, [(Cylinder)] data, {Diamond} decisions, ((Circle)) actors. Declare roles with class names (service, database, queue, external…), never colour values.`;
     }
     if (type === 'mermaid-gantt') {
         return `Mermaid dialect: gantt. Group tasks in section blocks; mark crit/active/milestone; include realistic durations and dependencies.`;
@@ -534,6 +535,8 @@ export interface IRDirectGenerateOptions {
     settings: Settings;
     /** Optional previous IR to evolve from instead of regenerating from scratch. */
     previousIR?: unknown;
+    /** Request, language, motivation and upper level (`buildDiagramGenerationBrief`). */
+    brief?: string;
 }
 
 /**
@@ -551,7 +554,7 @@ export function buildIRDirectGenerationPrompt(opts: IRDirectGenerateOptions): st
     // integrations / data / messaging / processes) so the model anchors the
     // diagram in real project signals instead of generic placeholders.
     const signalsBlock = renderDiagramSignals(extractDiagramSignals(project), artifact.type);
-    return `${buildProjectContextBlock(project, artifact)}${signalsBlock}
+    return `${buildProjectContextBlock(project, artifact)}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
 
 Artifact: ${artifact.name} — ${artifact.type}
 Objective: ${artifact.objective ?? ''}
@@ -595,6 +598,7 @@ export interface CorrectiveDiagramPromptOptions {
     lastFailureReason: string;
     /** Optional excerpt of the previous (invalid) response. */
     previousResponseSample?: string;
+    brief?: string;
 }
 
 /**
@@ -608,7 +612,7 @@ export function buildCorrectiveDiagramPrompt(opts: CorrectiveDiagramPromptOption
         ? `\n\nExcerpt of your previous (invalid) response:\n"""\n${previousResponseSample.slice(0, 240)}\n"""`
         : '';
     const signalsBlock = renderDiagramSignals(extractDiagramSignals(project), artifact.type);
-    return `${buildProjectContextBlock(project, artifact, { maxContextItems: 6, maxKeyConcepts: 0, maxDescriptionChars: 400 })}${signalsBlock}
+    return `${buildProjectContextBlock(project, artifact, { maxContextItems: 6, maxKeyConcepts: 0, maxDescriptionChars: 400 })}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
 
 CORRECTIVE RETRY — your previous response failed: ${lastFailureReason}.
 Emit ONLY a valid DiagramIR JSON object. No prose, no Mermaid, no Markdown fences.
@@ -848,7 +852,6 @@ export function buildProjectContextBlock(
     const maxDescriptionChars = opts.maxDescriptionChars ?? 800;
 
     const lines: string[] = [];
-    lines.push('PROJECT CONTEXT');
     lines.push(`- Name: ${project.name ?? '(unnamed)'}`);
     if (project.description?.trim()) {
         lines.push(`- Description: ${truncate(project.description.trim(), maxDescriptionChars)}`);
@@ -866,11 +869,14 @@ export function buildProjectContextBlock(
             .slice(0, maxKeyConcepts)
             .map((c) => `${c.term}: ${(c.definition ?? '').trim()}`);
         if (glossary.length) {
-            lines.push(`- Ubiquitous language (use these terms verbatim where applicable):`);
+            lines.push(`- Ubiquitous language:`);
             for (const item of glossary) lines.push(`    • ${item}`);
         }
     }
-    return lines.join('\n');
+    // Written by people and by document analysis, not by the app: fenced
+    // (plan de diagramas, 6.2). The rules about it stay outside the fence.
+    return `PROJECT CONTEXT — its constraints bind the diagram and its ubiquitous-language terms are used verbatim.
+${wrapUntrustedContent('proyecto', lines.join('\n'))}`;
 }
 
 /**
@@ -911,47 +917,46 @@ inheritance/composition matter.`;
  * etc.
  */
 export function buildArchitecturalConstraints(type: ArtifactType): string {
+    // C4 goes through the IR path, so these speak of IR fields, never of
+    // Mermaid macros (plan de diagramas, 6.2): asking for "the 4th argument of
+    // Rel()" while demanding JSON was an instruction the model could not follow.
     if (type === 'mermaid-c4-context') {
         return `ARCHITECTURAL GUARDRAILS — C4 CONTEXT (L1)
-- Show ONLY actors, the system in scope and EXTERNAL systems (≤ 8 nodes).
-- Do NOT model internal containers / components / databases here — those
-  belong in C4 L2/L3.
-- Every Rel() MUST express either business value or protocol on the label
-  ("Cobra suscripción", "Notifica vía Webhook").
-- Use Person()/Person_Ext() for humans, System()/System_Ext() for systems.
-- Boundaries (Enterprise/System_Boundary) are mandatory when grouping ≥3
-  external systems.`;
+- Only people, the system in scope and external systems (≤ 8 elements); no
+  containers, components or databases — those belong to L2/L3.
+- kind "person" for humans, "system" for the system in scope, "external" (or
+  trust "external"/"partner") for systems you do not operate.
+- Every edge label states the business intent ("Cobra suscripción"); the
+  protocol goes in "protocol".
+- ≥ 3 systems of one organisation share a group of kind "enterprise".`;
     }
     if (type === 'mermaid-c4-container') {
         return `ARCHITECTURAL GUARDRAILS — C4 CONTAINER (L2)
-- Model applications, APIs, databases, queues, services and external systems.
-- Every Container/ContainerDb/ContainerQueue MUST declare its TECHNOLOGY as
-  the 3rd argument ("Spring Boot 3", "PostgreSQL 15", "Kafka 3.6").
-- Every Rel() MUST include the protocol or wire format as the 4th argument
-  ("HTTPS/JSON", "JDBC", "AMQP").
-- A UI/Container MUST NOT connect directly to a ContainerDb unless that DB is
-  embedded in the same container.  Always route via a service container.
-- Group containers by bounded context using System_Boundary blocks.`;
+- Applications, APIs, databases, queues and services of ONE system, plus the
+  people and external systems they talk to.
+- Every service, data and messaging element declares "technology"
+  ("Spring Boot 3", "PostgreSQL 15", "Kafka 3.6"); every edge "protocol".
+- A user interface never reaches a database directly: route via a service.
+- The containers of the system in scope share a group of kind
+  "system-boundary" named after the system.`;
     }
     if (type === 'mermaid-c4-component') {
         return `ARCHITECTURAL GUARDRAILS — C4 COMPONENT (L3)
-- Model only the components inside ONE container; do NOT cross containers.
-- Each Component MUST declare a single, clear responsibility in its
-  description ("Authenticates token + roles", "Persists order aggregate").
-- Component contracts (inbound/outbound) MUST appear as labelled Rel().
-- Avoid generic "Helper" / "Util" components; if you need them, justify the
-  responsibility in the description.`;
+- Only the components inside ONE container, plus the neighbours they call.
+- Each component states one responsibility in "description".
+- Inbound and outbound contracts appear as labelled edges.
+- No generic "Helper"/"Util" unless the description justifies it.
+- The components share a group named after their container.`;
     }
     if (type === 'mermaid-c4-deployment') {
         return `ARCHITECTURAL GUARDRAILS — C4 DEPLOYMENT
-- Use Deployment_Node()/Node() to represent environment, region, network and
-  runtime nodes; nest them to express topology.
-- Each node MUST declare its TECHNOLOGY (e.g. "AWS, eu-west-1", "Kubernetes
-  1.29", "Linux 6.6").
-- Differentiate cloud vs on-premise vs network/security boundary explicitly.
-- Container_Instance() MUST reference a real container declared elsewhere.
-- Show external dependencies (DNS, identity provider, payment gateway) as
-  System_Ext() at the edges of the topology.`;
+- Groups are deployment nodes (environment, region, cluster, network zone)
+  named with their platform ("AWS us-east-1", "Kubernetes 1.29"); the
+  elements inside are the running containers, with their "technology".
+- Use the group "kind" (cloud, security…) to tell cloud, on-premise and
+  network boundaries apart.
+- External dependencies (DNS, identity, payments) are "external" elements
+  outside the groups.`;
     }
     if (type === 'mermaid-sequence') {
         return `ARCHITECTURAL GUARDRAILS — SEQUENCE
