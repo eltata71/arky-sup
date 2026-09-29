@@ -17,6 +17,7 @@ import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { ChatMessage } from '../chat';
 import { assistantService, type AgentTurnResult } from '../ai';
+import { artifactFitsWholeRewrite, describeRewriteRefusal } from './activeArtifactExposure';
 import {
   buildAgentSystemInstruction,
   prepareChatHistoryForModel,
@@ -41,7 +42,8 @@ const composeTurn = ({ project, activeArtifact, history, question, settings, per
   }),
   question,
   settings,
-  offerArtifactTool: activeArtifact !== null,
+  // A rewrite is offered only for what the model can see whole (7.1b).
+  offerArtifactTool: artifactFitsWholeRewrite(activeArtifact),
 });
 
 /** One buffered turn; `functionCall` carries a proposed `modifyArtifact`. */
@@ -63,6 +65,9 @@ export function processAssistantChatStream(
  * never an empty write.
  */
 export async function requestArtifactPatch(turn: AgentConversationTurn): Promise<string> {
+  if (turn.activeArtifact && !artifactFitsWholeRewrite(turn.activeArtifact)) {
+    throw new Error(describeRewriteRefusal(turn.activeArtifact.content.trim().length));
+  }
   const { functionCall } = await processAssistantChat(turn);
   if (!functionCall || functionCall.name !== 'modifyArtifact') {
     throw new Error('La IA no propuso una modificación aplicable.');

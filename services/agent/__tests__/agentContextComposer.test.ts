@@ -216,14 +216,30 @@ describe('agentContextComposer', () => {
       expect(instruction).toContain('Arquitecto Agente');
     });
 
-    it('truncates the artifact content excerpt when it exceeds the cap', () => {
-      const longContent = 'lorem '.repeat(2000); // > 1800 chars
+    it('shows a document it may rewrite whole, fenced, instead of its first 1 800 characters (7.1b)', () => {
+      const longContent = `# Plan\n${'lorem '.repeat(2000)}\n## Cierre\nÚltima frase del documento.`;
+      const instruction = buildAgentSystemInstruction({
+        project: PROJECT,
+        activeArtifact: { ...ARTIFACT, content: longContent },
+        settings: SETTINGS,
+      });
+      expect(instruction).toContain('Última frase del documento.');
+      expect(instruction).toContain('Contenido actual (completo)');
+      expect(instruction).toContain('<<<CONTENIDO_EXTERNO artefacto activo');
+      expect(instruction).not.toContain('[…contenido truncado para el contexto…]');
+    });
+
+    it('shows the outline and the beginning of a document too long to rewrite, and says so', () => {
+      const longContent = `# Plan\n${'lorem '.repeat(7000)}\n## Cierre\nÚltima frase del documento.`;
       const instruction = buildAgentSystemInstruction({
         project: PROJECT,
         activeArtifact: { ...ARTIFACT, content: longContent },
         settings: SETTINGS,
       });
       expect(instruction).toContain('[…contenido truncado para el contexto…]');
+      expect(instruction).toContain('No uses modifyArtifact');
+      expect(instruction).toContain('- cierre');
+      expect(instruction).not.toContain('Última frase del documento.');
     });
 
     it('applies the user query to project context selection', () => {
