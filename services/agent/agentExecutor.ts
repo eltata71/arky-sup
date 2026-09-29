@@ -8,8 +8,7 @@
  *  - `artifactGenerationService.generateArtifactContent`    → regenerate
  *  - `AppContext.createArtifactVersion`         → new version persistence
  *  - `AppContext.updateArtifact`                → "apply to current" persistence
- *  - `runDiagramQualityGate` (already used by   → post-execution quality validation
- *      "Auto-mejorar diagrama")
+ *  - `validateArtifactContent` (`agentContentValidation`) → post-execution validation
  *
  * The executor reports progress through `onPhase` so the action card can show
  * the live state (analizando → preparando → generando → validando → finalizado).
@@ -25,6 +24,7 @@ import { artifactGenerationService, classifyAIError, AIServiceError } from '../a
 import { validateArtifactReadiness } from '../../lib/artifacts/artifactGovernance';
 import { instructionPermitsRemoval } from '../../lib/artifacts';
 import { validateArtifactContent } from './agentContentValidation';
+import { artifactFitsWholeRewrite, describeRewriteRefusal } from './activeArtifactExposure';
 import { extractIRFromArtifact } from '../diagram';
 import { repairDiagramIRSemantics } from '../../lib/semanticRoleResolver';
 import { ARTIFACT_TEMPLATES } from '../../constants';
@@ -180,10 +180,11 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
         break;
       }
       case 'artifact.patch': {
+        // The model returns the whole content through modifyArtifact (`requestArtifactPatch`),
+        // so nothing it cannot see whole is rewritten (7.1b).
+        if (!artifactFitsWholeRewrite(artifact)) return { ...baseResult, status: 'cancelled', messages: [describeRewriteRefusal(artifact.content.trim().length)] };
         emit('preparing', 'Preparando cambio puntual…');
         emit('generating', 'Solicitando a la IA el contenido modificado…');
-        // The chat's own function-calling tool: the model must return the whole
-        // new content through modifyArtifact (see `requestArtifactPatch`).
         const patchPrompt = `Aplica el siguiente cambio puntual al artefacto y devuelve el contenido completo modificado mediante la herramienta modifyArtifact. Cambio solicitado: ${plan.intent.userInstruction}`;
         newContent = await requestArtifactPatch({
           project, activeArtifact: artifact, history, question: patchPrompt, settings,

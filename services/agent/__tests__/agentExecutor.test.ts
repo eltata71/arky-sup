@@ -186,6 +186,25 @@ describe('executeAgentAction', () => {
     expect(request.offerArtifactTool).toBe(true);
   });
 
+  it('refuses a whole rewrite of an artifact the model cannot see whole, before calling it (7.1b)', async () => {
+    const huge = { ...ARTIFACT, content: `# Documento\n${'párrafo largo. '.repeat(3500)}` };
+    const plan = planAgentAction({ intent: baseIntent({ type: 'artifact.patch' }), artifact: huge });
+    const result = await executeAgentAction({
+      confirmedByUser: true,
+      plan,
+      artifact: huge,
+      project: PROJECT,
+      settings: SETTINGS,
+      history: [],
+      store: { createArtifactVersion, updateArtifact },
+      targetOverride: 'current',
+    });
+    expect(runAgentTurn).not.toHaveBeenCalled();
+    expect(updateArtifact).not.toHaveBeenCalled();
+    expect(result.status).toBe('cancelled');
+    expect(result.messages.join(' ')).toMatch(/sección concreta/);
+  });
+
   it('uses generateArtifactContent for the regenerate action', async () => {
     const plan = planAgentAction({ intent: baseIntent({ type: 'artifact.regenerate' }), artifact: ARTIFACT });
     const result = await executeAgentAction({

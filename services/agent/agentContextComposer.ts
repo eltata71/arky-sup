@@ -42,6 +42,7 @@ import {
 
 export type { AgentPersonaBriefing } from './agentPersonaBriefing';
 import type { AgentPersonaBriefing } from './agentPersonaBriefing';
+import { describeActiveArtifactContent } from './activeArtifactExposure';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Defaults & constants
@@ -87,7 +88,7 @@ export interface ContextBudget {
   projectArtifactsMax: number;
   /** Per-bullet character cap before we truncate with an ellipsis. */
   bulletCharCap: number;
-  /** Max characters retained from the active artifact's content excerpt. */
+  /** Characters of the beginning shown when the active artifact is too long to show whole. */
   artifactContentCap: number;
   /** Max chat history messages forwarded to the model when history is ON. */
   historyMax: number;
@@ -487,13 +488,11 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
     if (activeArtifact.objective) {
       artifactHeader.push(`Objetivo: ${compactBullet(activeArtifact.objective, budget.bulletCharCap * 2)}`);
     }
-    const excerpt = (activeArtifact.content ?? '').trim();
-    if (excerpt.length > 0) {
-      const limited = excerpt.length > budget.artifactContentCap
-        ? `${excerpt.slice(0, budget.artifactContentCap)}\n[…contenido truncado para el contexto…]`
-        : excerpt;
-      artifactHeader.push('Contenido actual:\n```\n' + limited + '\n```');
-    }
+    // Whole, or an outline and the beginning — never a blind cut (7.1b).
+    const contentBlock = describeActiveArtifactContent(activeArtifact.content ?? '', {
+      excerptCap: budget.artifactContentCap,
+    });
+    if (contentBlock) artifactHeader.push(contentBlock);
     sections.push(artifactHeader.join('\n'));
 
     const artifactSelected = selectRelevantMemoryEntries({
