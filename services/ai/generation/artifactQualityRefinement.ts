@@ -10,7 +10,8 @@
  * artefactos, 7.3a).
  */
 import type { Settings, ArtifactTemplate } from '../../../types';
-import { describeDisciplineForPrompt, type Artifact, type ArtifactContextPorts } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
+import { describeDisciplineForPrompt } from '../prompts/documentDisciplinePrompt';
 import type { Project } from '../../architectureProjects';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { resolveModelForSettings } from '../catalog';

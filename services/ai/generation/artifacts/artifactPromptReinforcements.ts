@@ -5,7 +5,7 @@
  * tested — and read — without constructing a generation.
  */
 import type { ArtifactTemplate } from '../../../../types';
-import { describeDisciplineForPrompt } from '../../../../lib/artifacts';
+import { describeDisciplineForPrompt } from '../../prompts/documentDisciplinePrompt';
 
 /** Returns true when an ArtifactTemplate.type requires diagram-flavoured generation. */
 export function isDiagramArtifactType(type: string): boolean {

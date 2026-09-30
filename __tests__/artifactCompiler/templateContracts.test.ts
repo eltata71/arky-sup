@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { resolveContract } from '../../services/artifactCompiler/ArtifactContractRegistry';
 import { validateAgainstContract } from '../../services/artifactCompiler/validators/contractValidator';
 import { compileArtifact } from '../../services/artifactCompiler';
-import { DOCUMENT_DISCIPLINES, describeDisciplineForPrompt } from '../../lib/artifacts';
+import { DOCUMENT_DISCIPLINES } from '../../lib/artifacts';
+import { DISCIPLINE_GUIDANCE, describeDisciplineForPrompt } from '../../services/ai/prompts/documentDisciplinePrompt';
 import { ARTIFACT_TEMPLATES } from '../../constants';
 import { makeArtifact } from './fixtures';
 
@@ -82,6 +83,13 @@ describe('describeDisciplineForPrompt', () => {
       expect(block).toContain(`## ${section.label}`);
     }
     expect(block).toContain('RTO y RPO con cifra y unidad');
+  });
+
+  it('cada sección tiene su guía, y ninguna guía nombra una sección que no existe', () => {
+    for (const discipline of DOCUMENT_DISCIPLINES) {
+      const guidance = DISCIPLINE_GUIDANCE[discipline.templateName] ?? {};
+      expect(Object.keys(guidance).sort(), discipline.templateName).toEqual(discipline.sections.map((s) => s.id).sort());
+    }
   });
 
   it('no dice nada de una plantilla sin disciplina', () => {
