@@ -299,7 +299,7 @@ class ArtifactGenerationEngine {
         const isDiagramTemplate = isDiagramArtifactType(template.type);
         const requestedBy = template.requestContext?.userRequest ?? template.objective;
         // The persona is handed in, never looked up: the Office imports this layer (corte 13).
-        const baseInstruction = buildBasePromptUtil(project, settings, { mode: isDiagramTemplate ? 'diagram' : 'document', businessMotivation: opts.businessMotivation, conversation: opts.conversation, query: `${template.name}. ${requestedBy}`, artifact: previousArtifact, excludeVersionGroupId: previousArtifact?.versionGroupId });
+        const baseInstruction = buildBasePromptUtil(project, settings, { mode: isDiagramTemplate ? 'diagram' : 'document', businessMotivation: opts.businessMotivation, conversation: opts.conversation, deliverables: opts.deliverables, query: `${template.name}. ${requestedBy}`, artifact: previousArtifact, excludeVersionGroupId: previousArtifact?.versionGroupId });
         const basePrompt = opts.composePersonaInstruction?.(baseInstruction, requestedBy) ?? baseInstruction;
         // Sibling excerpts come ranked in the base prompt's context bundle (7.2b).
         const artifactsContext = buildArtifactsContextUtil(project, isDiagramTemplate ? { mode: 'diagram' } : {});

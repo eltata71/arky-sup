@@ -12,3 +12,4 @@
  */
 export * from './domain/officePortfolio';
 export * from './application/portfolioCommandCenter';
+export * from './domain/engagementArtifactContext';

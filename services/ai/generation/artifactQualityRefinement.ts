@@ -10,14 +10,15 @@
  * artefactos, 7.3a).
  */
 import type { Settings, ArtifactTemplate } from '../../../types';
-import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { resolveModelForSettings } from '../catalog';
 import { buildBasePrompt } from '../prompts/projectPrompts';
 import { aiGateway } from './aiGateway';
 
-export interface ArtifactContentCritiqueRequest {
+/** The context ports — initiative, conversation, deliverables — reach both calls (7.3). */
+export interface ArtifactContentCritiqueRequest extends ArtifactContextPorts {
     project: Project;
     template: ArtifactTemplate;
     settings: Settings;
@@ -27,10 +28,6 @@ export interface ArtifactContentCritiqueRequest {
     issues: string[];
     /** The artifact being regenerated, when there is one: its own memory is the highest scope. */
     previousArtifact?: Artifact;
-    /** The initiatives the project answers. */
-    businessMotivation?: readonly ArtifactBusinessMotivation[];
-    /** What the conversation with the agent settled (7.3b). */
-    conversation?: ArtifactConversationDigest;
 }
 
 export interface ArtifactContentRefinementRequest extends ArtifactContentCritiqueRequest {
@@ -51,6 +48,7 @@ const refinementContext = (request: ArtifactContentCritiqueRequest): string =>
         excludeVersionGroupId: request.previousArtifact?.versionGroupId,
         businessMotivation: request.businessMotivation,
         conversation: request.conversation,
+        deliverables: request.deliverables,
     });
 
 const fencedContent = (content: string, maxChars: number): string =>

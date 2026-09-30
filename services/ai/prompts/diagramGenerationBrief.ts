@@ -91,10 +91,16 @@ export function buildBusinessMotivationBlock(motivations: readonly ArtifactBusin
     if (!motivations?.length) return '';
     const body = motivations.map((m) => {
         const lines = [`Iniciativa: ${m.code ? `${m.code} · ` : ''}${m.title}`, `Necesidad: ${m.need}`];
+        // What THIS project moves goes first: the rest of the initiative is context (7.3c).
+        const own = m.projectContribution;
+        if (own?.statements.length) lines.push(`Lo que este proyecto aporta a la iniciativa: ${own.statements.join('; ')}`);
+        if (own?.outcomes.length) lines.push(`Resultados que este proyecto sirve: ${own.outcomes.join('; ')}`);
+        if (own?.kpis.length) lines.push(`Indicadores que este proyecto mueve: ${own.kpis.join('; ')}`);
         if (m.driver) lines.push(`Impulsor: ${m.driver}`);
         if (m.objectives.length) lines.push(`Objetivos: ${m.objectives.join('; ')}`);
-        if (m.expectedOutcomes.length) lines.push(`Resultados esperados: ${m.expectedOutcomes.join('; ')}`);
-        if (m.kpis.length) lines.push(`Indicadores: ${m.kpis.join('; ')}`);
+        const scoped = own ? ' de la iniciativa (contexto; prioriza los de este proyecto)' : '';
+        if (m.expectedOutcomes.length) lines.push(`Resultados esperados${scoped}: ${m.expectedOutcomes.join('; ')}`);
+        if (m.kpis.length) lines.push(`Indicadores${scoped}: ${m.kpis.join('; ')}`);
         if (m.regulatoryDrivers.length) lines.push(`Impulsores regulatorios: ${m.regulatoryDrivers.join('; ')}`);
         return lines.join('\n');
     }).join('\n\n');

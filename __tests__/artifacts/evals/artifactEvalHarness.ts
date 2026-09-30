@@ -31,7 +31,7 @@ import { join } from 'node:path';
 import { vi } from 'vitest';
 import type { ArtifactTemplate, Settings } from '../../../types';
 import type { Project } from '../../../services/architectureProjects';
-import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation, ArtifactDeliverableContext } from '../../../lib/artifacts';
 import { instructionPermitsRemoval, extractMarkdownHeadings } from '../../../lib/artifacts';
 import { UNTRUSTED_FENCE_CLOSE, UNTRUSTED_FENCE_OPEN } from '../../../lib/untrustedContent';
 import { ARTIFACT_TEMPLATES } from '../../../constants';
@@ -217,6 +217,20 @@ function motivationFor(testCase: ArtifactEvalCase): ArtifactBusinessMotivation[]
     }];
 }
 
+/** El entregable en curso del proyecto, como lo describe la Oficina (7.3c). */
+function deliverablesFor(testCase: ArtifactEvalCase): ArtifactDeliverableContext[] {
+    return [{
+        title: 'Entregable del caso',
+        brief: scopeSentence(testCase, 'entregable'),
+        status: 'in-progress',
+        objectives: [],
+        scope: [],
+        outOfScope: [],
+        constraints: [],
+        regulatoryDrivers: [],
+    }];
+}
+
 function conversationFor(testCase: ArtifactEvalCase): ChatMessage[] {
     return [
         { role: 'user', content: `${scopeSentence(testCase, 'conversacion')}.`, timestamp: NOW },
@@ -250,6 +264,8 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
                     businessMotivation: motivationFor(testCase),
                     // Lo que pasa el Workspace al generar: las decisiones del chat (7.3b).
                     conversation: extractConversationDecisions(conversationFor(testCase)),
+                    // Lo que pasa el Workspace: los entregables en curso (7.3c).
+                    deliverables: deliverablesFor(testCase),
                 });
                 break;
             case 'criticar':
@@ -259,6 +275,7 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
                     project, template, settings, content: artifact.content, mode: 'document' as const, score: 70, issues: [],
                     previousArtifact: artifact, businessMotivation: motivationFor(testCase),
                     conversation: extractConversationDecisions(conversationFor(testCase)),
+                    deliverables: deliverablesFor(testCase),
                 };
                 if (path === 'criticar') await artifactGenerationService.critiqueArtifactContent(request);
                 else await artifactGenerationService.refineArtifactContent(request);

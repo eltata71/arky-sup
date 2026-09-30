@@ -10,7 +10,8 @@ import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import { suggestArtifactImprovements } from './generation/artifactSuggestions';
-import { assembleArtifactContext, renderArtifactContextBundle } from './prompts/artifactContext';
+import { assembleArtifactContext } from './prompts/artifactContext';
+import { renderArtifactContextBundle } from './prompts/artifactContextRender';
 import {
   ArtifactSuggestionError,
   parseArtifactSuggestionReport,

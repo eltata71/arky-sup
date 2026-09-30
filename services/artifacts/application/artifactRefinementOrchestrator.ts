@@ -1,5 +1,5 @@
 import type { ArtifactTemplate, Settings } from '../../../types';
-import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import {
@@ -27,15 +27,13 @@ import type { ArtifactRefinementMode } from '../domain/artifactGenerationTrace';
 import { checkContentPreservation } from '../../../lib/artifacts';
 export type { ArtifactRefinementMode } from '../domain/artifactGenerationTrace';
 
-export interface ArtifactRefinementRequest {
+/** The context ports reach the critique and the refinement (7.3). */
+export interface ArtifactRefinementRequest extends ArtifactContextPorts {
   project: Project;
   template: ArtifactTemplate;
   settings: Settings;
   draftContent: string;
   previousArtifact?: Artifact;
-  /** The initiatives the project answers (7.3a), and what the conversation settled (7.3b). */
-  businessMotivation?: readonly ArtifactBusinessMotivation[];
-  conversation?: ArtifactConversationDigest;
   envelope: ArtifactEnvelope;
   targetScore?: number;
   maxPasses?: number;
@@ -442,8 +440,8 @@ const runAIRefinement = async (
   const startedAt = now();
   const warnings: string[] = [];
   const issues = issueMessages(report, 8);
-  const { project, template, settings, previousArtifact, businessMotivation, conversation, mode } = request;
-  const call = { project, template, settings, previousArtifact, businessMotivation, conversation, content, mode, score: report.score.value, issues };
+  const { project, template, settings, previousArtifact, businessMotivation, conversation, deliverables, mode } = request;
+  const call = { project, template, settings, previousArtifact, businessMotivation, conversation, deliverables, content, mode, score: report.score.value, issues };
   const critique = await artifactGenerationService.critiqueArtifactContent(call);
   const refined = await artifactGenerationService.refineArtifactContent({ ...call, critique });
   if (!refined.trim()) warnings.push('La IA devolvió contenido vacío durante refinamiento; se descartará por seguridad.');

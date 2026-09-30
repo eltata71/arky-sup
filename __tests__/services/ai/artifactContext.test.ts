@@ -11,8 +11,8 @@ import {
   ARTIFACT_CONTEXT_SCOPES,
   assembleArtifactContext,
   bundleItems,
-  renderArtifactContextBundle,
 } from '../../../services/ai/prompts/artifactContext';
+import { renderArtifactContextBundle } from '../../../services/ai/prompts/artifactContextRender';
 import { UNTRUSTED_FENCE_CLOSE, UNTRUSTED_FENCE_OPEN } from '../../../lib/untrustedContent';
 
 const settings = {
@@ -55,9 +55,14 @@ describe('assembleArtifactContext', () => {
     const artifact = artifactOf({ artifactMemory: ['Citar la norma de retención de datos clínicos'] });
     const sibling = artifactOf({ id: 's1', versionGroupId: 'gs', name: 'Visión', content: `# Visión\n${'La visión prioriza la trazabilidad regulatoria. '.repeat(4)}` });
     const conversation = { decisions: ['Acordamos que el canal de prestadores queda fuera de la fase 1'] };
-    const bundle = assembleArtifactContext({ project: projectOf({ artifacts: [sibling, artifact] }), settings, artifact, conversation }, 'generate');
+    const deliverables = [{
+      title: 'Integración con prestadores', brief: 'Diseñar la integración EDI 278', status: 'in-progress',
+      objectives: [], scope: [], outOfScope: ['Centro de llamadas'], constraints: [], regulatoryDrivers: [],
+    }];
+    const bundle = assembleArtifactContext({ project: projectOf({ artifacts: [sibling, artifact] }), settings, artifact, conversation, deliverables }, 'generate');
     expect(bundle.sections.map((section) => section.scope)).toEqual([...ARTIFACT_CONTEXT_SCOPES]);
     expect(bundleItems(bundle, 'conversacion')).toEqual(conversation.decisions);
+    expect(bundleItems(bundle, 'entregable')[0]).toMatch(/«Integración con prestadores».*Diseñar la integración EDI 278[\s\S]*Fuera de alcance: Centro de llamadas/);
     expect(bundleItems(bundle, 'hermanos')[0]).toContain('«Visión»');
   });
 

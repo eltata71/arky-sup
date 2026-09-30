@@ -38,6 +38,37 @@ export interface ArtifactBusinessMotivation {
   /** Each rendered with its unit and target, e.g. «Tiempo de adjudicación (días) → 3». */
   kpis: readonly string[];
   regulatoryDrivers: readonly string[];
+  /**
+   * What THIS project moves in the initiative — its declared contributions,
+   * with the outcomes and KPIs they point at resolved by id (plan de calidad
+   * de artefactos, 7.3c). Absent when the project declares none: then every
+   * outcome and KPI above reads as equally the project's, which is how it was.
+   */
+  projectContribution?: {
+    statements: readonly string[];
+    outcomes: readonly string[];
+    kpis: readonly string[];
+  };
+}
+
+/**
+ * The deliverable an artifact is produced for, as a prompt needs it (7.3c).
+ * The Office supplies it; the AI layer only reads this shape. A generation
+ * from the Workspace used to know nothing of the request the committee made:
+ * its constraints, what is out of scope, what the ARB asked to change.
+ */
+export interface ArtifactDeliverableContext {
+  title: string;
+  /** The original request, verbatim. */
+  brief: string;
+  status: string;
+  objectives: readonly string[];
+  scope: readonly string[];
+  outOfScope: readonly string[];
+  constraints: readonly string[];
+  regulatoryDrivers: readonly string[];
+  /** The review board's last observation, when it asked for changes. */
+  arbObservation?: string;
 }
 
 /**
@@ -52,8 +83,24 @@ export interface ArtifactConversationDigest {
   decisions: readonly string[];
 }
 
+/**
+ * What only other contexts know about the artifact being produced, handed in
+ * as data (plan de calidad de artefactos, 7.3): why the project exists, what
+ * the conversation settled and the deliverables it is produced for. One
+ * object, so a new port is one field here and not one parameter in every
+ * layer that passes it on.
+ */
+export interface ArtifactContextPorts {
+  /** The initiatives the project answers, with what this project moves in each. */
+  businessMotivation?: readonly ArtifactBusinessMotivation[];
+  /** What the conversation with the agent settled (7.3b). */
+  conversation?: ArtifactConversationDigest;
+  /** The open deliverables of the project (7.3c). */
+  deliverables?: readonly ArtifactDeliverableContext[];
+}
+
 /** Options of an artifact generation. */
-export interface ArtifactGenerationOptions {
+export interface ArtifactGenerationOptions extends ArtifactContextPorts {
   onPhase?: ArtifactGenerationPhaseListener;
   architectureGraphPromptBlock?: string;
   /** Composes the Office persona over the base instruction; without it the base goes as it is. */
@@ -66,10 +113,7 @@ export interface ArtifactGenerationOptions {
    * Not called for a skeleton — that IR is the system's, not the model's.
    */
   onDiagramIR?: (ir: DiagramIR) => void;
-  /** The initiatives the project answers; absent when the caller cannot resolve them. */
-  businessMotivation?: readonly ArtifactBusinessMotivation[];
-  /** What the conversation with the agent settled (7.3b). */
-  conversation?: ArtifactConversationDigest;
+
   /**
    * Told, in one Spanish sentence, when a path saved something other than
    * what was asked — a skeleton, or another notation (plan de diagramas,

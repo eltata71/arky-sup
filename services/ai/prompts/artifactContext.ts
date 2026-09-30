@@ -32,9 +32,8 @@
  * the deliverable, the conversation) arrives as data through a port.
  */
 import type { Settings } from '../../../types';
-import type { Artifact, ArtifactConversationDigest } from '../../../lib/artifacts';
+import type { Artifact, ArtifactConversationDigest, ArtifactDeliverableContext } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
-import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { rankRelevantMemoryEntries, scoreBulletForQuery } from '../../memory';
 import { getLatestArtifacts } from '../../../utils';
 
@@ -68,6 +67,7 @@ const isConversationalEcho = (text: string): boolean => {
 /** In hierarchy order: a scope earlier in this list wins a conflict. */
 export const ARTIFACT_CONTEXT_SCOPES = [
   'artefacto',
+  'entregable',
   'proyecto',
   'capturaInicial',
   'memoriaProyecto',
@@ -108,14 +108,14 @@ const architectureSignalBoost = (text: string): number => (ARCHITECTURE_SIGNAL_P
  * arrive as an inventory the agent composes itself.
  */
 export const ARTIFACT_CONTEXT_PROFILES: Readonly<Record<ArtifactContextProfileName, ArtifactContextProfile>> = Object.freeze({
-  generate: profile('generate', { artefacto: 8, proyecto: 50, capturaInicial: 12, memoriaProyecto: 10, conversacion: 8, global: 12, agente: 6, hermanos: 4 }, { noteChars: 400, excerptChars: 1100, totalChars: 24_000 }),
-  diagram: profile('diagram', { artefacto: 6, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 6, global: 8, agente: 4 }, { noteChars: 300, excerptChars: 0, totalChars: 9_000, noteBoost: architectureSignalBoost }),
-  refine: profile('refine', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
-  review: profile('review', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
-  edit: profile('edit', { artefacto: 8, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 6, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
-  present: profile('present', { artefacto: 6, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 6 }, { noteChars: 300, excerptChars: 1100, totalChars: 22_000 }),
-  convert: profile('convert', { artefacto: 8, proyecto: 16, capturaInicial: 6, memoriaProyecto: 6, conversacion: 4, global: 8, agente: 4, hermanos: 2 }, { noteChars: 300, excerptChars: 900, totalChars: 14_000 }),
-  consult: profile('consult', { artefacto: 8, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 8, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
+  generate: profile('generate', { artefacto: 8, entregable: 3, proyecto: 50, capturaInicial: 12, memoriaProyecto: 10, conversacion: 8, global: 12, agente: 6, hermanos: 4 }, { noteChars: 400, excerptChars: 1100, totalChars: 24_000 }),
+  diagram: profile('diagram', { artefacto: 6, entregable: 2, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 6, global: 8, agente: 4 }, { noteChars: 300, excerptChars: 0, totalChars: 9_000, noteBoost: architectureSignalBoost }),
+  refine: profile('refine', { artefacto: 8, entregable: 2, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
+  review: profile('review', { artefacto: 8, entregable: 3, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
+  edit: profile('edit', { artefacto: 8, entregable: 2, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 6, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
+  present: profile('present', { artefacto: 6, entregable: 3, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 6 }, { noteChars: 300, excerptChars: 1100, totalChars: 22_000 }),
+  convert: profile('convert', { artefacto: 8, entregable: 2, proyecto: 16, capturaInicial: 6, memoriaProyecto: 6, conversacion: 4, global: 8, agente: 4, hermanos: 2 }, { noteChars: 300, excerptChars: 900, totalChars: 14_000 }),
+  consult: profile('consult', { artefacto: 8, entregable: 2, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 8, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
 });
 
 export interface ArtifactContextSources {
@@ -134,6 +134,8 @@ export interface ArtifactContextSources {
   excludeVersionGroupId?: string;
   /** What the conversation with the agent settled — data from the chat context (7.3b). */
   conversation?: ArtifactConversationDigest;
+  /** The project's open deliverables — data from the Office (7.3c). */
+  deliverables?: readonly ArtifactDeliverableContext[];
 }
 
 export interface ArtifactContextItem {
@@ -263,6 +265,14 @@ function candidatesFor(scope: ArtifactContextScope, sources: ArtifactContextSour
       return memoryCandidates(settings.globalContext, settings.globalContextEntries, ranking);
     case 'agente':
       return memoryCandidates(sources.agentMemory ?? settings.agentMemory, undefined, ranking);
+    case 'entregable': {
+      const deliverables = sources.deliverables ?? [];
+      const items = deliverables.slice(0, ranking.limit).map((deliverable) => ({
+        text: describeDeliverable(deliverable),
+        key: `entregable:${normalizeKey(deliverable.title)}`,
+      }));
+      return { items, available: deliverables.length };
+    }
     case 'conversacion': {
       // Already most recent first, and already decisions: kept in that order.
       const decisions = (sources.conversation?.decisions ?? []).filter((text) => text.trim());
@@ -273,6 +283,20 @@ function candidatesFor(scope: ArtifactContextScope, sources: ArtifactContextSour
       return siblingCandidates(sources, ranking.limit, profileDef.excerptChars, query);
   }
 }
+
+/** A deliverable as one item: the request verbatim, then what the charter and the ARB bound. */
+const describeDeliverable = (deliverable: ArtifactDeliverableContext): string => {
+  const list = (label: string, values: readonly string[]): string[] => (values.length ? [`${label}: ${values.join('; ')}`] : []);
+  return [
+    `«${deliverable.title}» (${deliverable.status}) — solicitud: ${deliverable.brief.trim()}`,
+    ...list('Objetivos', deliverable.objectives),
+    ...list('Alcance', deliverable.scope),
+    ...list('Fuera de alcance', deliverable.outOfScope),
+    ...list('Restricciones', deliverable.constraints),
+    ...list('Marco regulatorio', deliverable.regulatoryDrivers),
+    ...(deliverable.arbObservation ? [`Observación del ARB por atender: ${deliverable.arbObservation}`] : []),
+  ].join('\n  ');
+};
 
 const addOmission = (omitted: ArtifactContextOmission[], scope: ArtifactContextScope, count: number, reason: ArtifactContextOmissionReason): void => {
   if (count <= 0) return;
@@ -324,49 +348,3 @@ export function assembleArtifactContext(
 /** The items a bundle kept for one scope (empty when it kept none). */
 export const bundleItems = (bundle: ArtifactContextBundle, scope: ArtifactContextScope): string[] =>
   bundle.sections.find((section) => section.scope === scope)?.items.map((item) => item.text) ?? [];
-
-// ─── Rendering ──────────────────────────────────────────────────────────────
-
-/** How each scope is titled in a prompt. The chat's composer uses the same words. */
-export const ARTIFACT_CONTEXT_TITLES: Readonly<Record<ArtifactContextScope, string>> = Object.freeze({
-  artefacto: 'Memoria del Artefacto',
-  proyecto: 'Contexto del Proyecto (selección relevante)',
-  capturaInicial: 'Captura Inicial del Proyecto (objetivos, alcance, stakeholders)',
-  memoriaProyecto: 'Memoria del Agente (Proyecto)',
-  conversacion: 'Decisiones recientes de la conversación con el agente (acordadas en el chat, aún no registradas como memoria)',
-  global: 'Memoria Global (estándares y preferencias)',
-  agente: 'Preferencias del Arquitecto (memoria del agente)',
-  hermanos: 'Extractos de artefactos relacionados del proyecto (fuente de verdad para nombres, IDs y decisiones; no los contradigas)',
-});
-
-/** The rule that tells the model how to weigh the scopes it just read. */
-export const ARTIFACT_CONTEXT_HIERARCHY_RULE = [
-  'Jerarquía del contexto (obligatoria):',
-  '- Usa todos los ámbitos disponibles; ante información en conflicto, manda el artefacto > el proyecto (contexto, captura inicial, memoria del proyecto, decisiones de la conversación) > lo global > las preferencias del arquitecto.',
-  '- Dentro de un ámbito, manda la prioridad de la nota (alta > media > baja) y, a igual prioridad, la más reciente. Las anotaciones [prioridad · fecha · autor] lo indican.',
-  '- Mantén los nombres, IDs y decisiones de los artefactos relacionados; si detectas una contradicción, señálala en vez de elegir en silencio.',
-].join('\n');
-
-/**
- * The bundle as one fenced block, with the hierarchy rule outside the fence:
- * everything inside is what people wrote, the rule is what the application says.
- */
-export function renderArtifactContextBundle(bundle: ArtifactContextBundle): string {
-  if (bundle.sections.length === 0) return '';
-  const body = bundle.sections
-    .map((section) => {
-      const lines = section.scope === 'hermanos'
-        ? section.items.map((item) => item.text)
-        : section.items.map((item) => `- ${item.text}`);
-      return [`${ARTIFACT_CONTEXT_TITLES[section.scope]}:`, ...lines].join('\n');
-    })
-    .join('\n\n');
-  return [wrapUntrustedContent('contexto del proyecto', body), ARTIFACT_CONTEXT_HIERARCHY_RULE].join('\n');
-}
-
-/** A diagram's context, ranked against the artifact it will draw (the IR path, 7.2b). */
-export const renderDiagramContextBundle = (project: Project, settings: Settings, artifact?: Artifact): string =>
-  renderArtifactContextBundle(assembleArtifactContext(
-    { project, settings, artifact, query: artifact ? `${artifact.name}. ${artifact.objective ?? ''}` : undefined },
-    'diagram',
-  ));

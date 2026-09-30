@@ -33,3 +33,4 @@ export * from './officePublicationBridge';
 export * from './officeQualityGates';
 export * from './officeShared';
 export * from './yamlStructure';
+export * from './engagementArtifactContext';
