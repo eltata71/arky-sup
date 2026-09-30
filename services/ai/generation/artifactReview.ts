@@ -66,7 +66,7 @@ export async function reviewArtifact(
   project: Project,
   settings: Settings,
 ): Promise<ArtifactImprovementProposal[]> {
-  const basePrompt = buildBasePrompt(project, settings);
+  const basePrompt = buildBasePrompt(project, settings, { profile: 'review', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
 
   const prompt = `
 ${basePrompt}
@@ -112,7 +112,7 @@ export async function applyArtifactImprovements(
   project: Project,
   settings: Settings,
 ): Promise<string> {
-  const basePrompt = buildBasePrompt(project, settings);
+  const basePrompt = buildBasePrompt(project, settings, { profile: 'refine', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
 
   const prompt = `
 ${basePrompt}
@@ -147,7 +147,7 @@ export async function generateTestCases(
   project: Project,
   settings: Settings,
 ): Promise<string> {
-  const basePrompt = buildBasePrompt(project, settings);
+  const basePrompt = buildBasePrompt(project, settings, { profile: 'review', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
   const language = settings.language === 'es' ? 'Spanish' : 'English';
 
   const prompt = `

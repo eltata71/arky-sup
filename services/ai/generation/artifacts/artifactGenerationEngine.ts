@@ -299,14 +299,10 @@ class ArtifactGenerationEngine {
         const isDiagramTemplate = isDiagramArtifactType(template.type);
         const requestedBy = template.requestContext?.userRequest ?? template.objective;
         // The persona is handed in, never looked up: the Office imports this layer (corte 13).
-        const baseInstruction = buildBasePromptUtil(project, settings, { mode: isDiagramTemplate ? 'diagram' : 'document', businessMotivation: opts.businessMotivation });
+        const baseInstruction = buildBasePromptUtil(project, settings, { mode: isDiagramTemplate ? 'diagram' : 'document', businessMotivation: opts.businessMotivation, query: `${template.name}. ${requestedBy}`, artifact: previousArtifact, excludeVersionGroupId: previousArtifact?.versionGroupId });
         const basePrompt = opts.composePersonaInstruction?.(baseInstruction, requestedBy) ?? baseInstruction;
-        // Documents embed excerpts of sibling artifacts so the generated
-        // content stays consistent with what already exists (same entities,
-        // requirement IDs, system names). Diagrams keep the compact list.
-        const artifactsContext = buildArtifactsContextUtil(project, isDiagramTemplate
-            ? { mode: 'diagram' }
-            : { includeExcerpts: true, excludeVersionGroupId: previousArtifact?.versionGroupId });
+        // Sibling excerpts come ranked in the base prompt's context bundle (7.2b).
+        const artifactsContext = buildArtifactsContextUtil(project, isDiagramTemplate ? { mode: 'diagram' } : {});
 
         let formatInstructions = `Generate the content for the artifact. Respond ONLY with the raw content (e.g., Markdown, Mermaid syntax, YAML). Do not include any explanations, titles, or code block fences unless it's part of the artifact's syntax itself.`;
         const sddSkillMarkdownGuidance = `

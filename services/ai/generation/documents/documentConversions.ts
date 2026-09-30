@@ -11,7 +11,7 @@ import { buildBasePrompt } from '../../prompts/projectPrompts';
 import { aiGateway } from '../aiGateway';
 
 export async function convertDiagramToDocument(artifact: Artifact, project: Project, settings: Settings): Promise<string> {
-    const prompt = `${buildBasePrompt(project, settings)}\nConvert this diagram to a detailed Markdown document:\n${artifact.content}`;
+    const prompt = `${buildBasePrompt(project, settings, { profile: 'convert', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}` })}\nConvert this diagram to a detailed Markdown document:\n${artifact.content}`;
     const modelName = resolveModelForSettings('default', settings).id;
     const { text } = await aiGateway.generateContent(settings, modelName, prompt, {
         temperature: settings.aiConfig?.temperature ?? 0.7

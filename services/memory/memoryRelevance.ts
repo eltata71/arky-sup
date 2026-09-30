@@ -180,6 +180,12 @@ export interface SelectRelevantMemoryEntriesOptions {
   limit: number;
   /** Per-bullet character cap. */
   bulletCharCap: number;
+  /**
+   * An extra score per note, added to relevance, priority and recency — a
+   * profile's own signal (the diagram profile favours notes that name a
+   * technology or a regulation). With it, notes are ranked even without a query.
+   */
+  extraScore?: (text: string) => number;
 }
 
 /** A selected note: the entry, and the line a prompt shows for it. */
@@ -196,7 +202,7 @@ export interface RankedMemoryNote {
  * scopes).
  */
 export function rankRelevantMemoryEntries(opts: SelectRelevantMemoryEntriesOptions): RankedMemoryNote[] {
-  const { texts, entries, query, limit, bulletCharCap } = opts;
+  const { texts, entries, query, limit, bulletCharCap, extraScore } = opts;
   if (limit <= 0) return [];
   const reconciled = reconcileMemoryEntries(texts, entries).filter((entry) => entry.text.trim().length > 0);
   if (reconciled.length === 0) return [];
@@ -207,7 +213,7 @@ export function rankRelevantMemoryEntries(opts: SelectRelevantMemoryEntriesOptio
     rendered: `${formatMemoryEntryAnnotation(entry)}${compactBullet(entry.text, bulletCharCap)}`,
   });
 
-  if (!query?.trim()) {
+  if (!query?.trim() && !extraScore) {
     return ordered.slice(0, limit).map(rank);
   }
 
@@ -227,7 +233,7 @@ export function rankRelevantMemoryEntries(opts: SelectRelevantMemoryEntriesOptio
   const scored = ordered.map((entry, index) => ({
     entry,
     index,
-    score: scoreBulletForQuery(entry.text, query) + priorityBoost(entry) + recencyBoost(entry),
+    score: scoreBulletForQuery(entry.text, query ?? '') + priorityBoost(entry) + recencyBoost(entry) + (extraScore?.(entry.text) ?? 0),
   }));
   scored.sort((a, b) => (b.score - a.score) || (a.index - b.index));
   return scored.slice(0, limit).map((item) => rank(item.entry));

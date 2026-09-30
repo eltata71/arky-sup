@@ -45,7 +45,7 @@ export async function analyzeChatForContext(
 /** Cross-artifact contradictions, each with the edit that would resolve it. `[]` on failure. */
 export async function runConsistencyCheck(project: Project, settings: Settings): Promise<ConsistencySuggestion[]> {
     const prompt = `
-${buildBasePrompt(project, settings)}
+${buildBasePrompt(project, settings, { profile: 'consult' })}
 Analyze ALL artifacts for inconsistencies/contradictions.
 Artifacts: ${JSON.stringify(project.artifacts.map(a => ({ id: a.id, name: a.name, content: a.content.substring(0, 1000) })))}
 

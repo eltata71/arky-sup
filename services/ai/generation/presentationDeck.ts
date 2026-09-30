@@ -34,11 +34,12 @@ export async function generatePresentationDeck(
 ): Promise<string> {
   const modelName = resolveModelForSettings('default', settings).id;
   const userTemp = settings.aiConfig?.temperature ?? 0.7;
-  const basePrompt = buildBasePrompt(project, settings);
-  // Presentations summarise the architecture: feeding real excerpts of the
-  // sibling artifacts keeps slide content consistent with the documents and
-  // diagrams it presents instead of re-inventing them.
-  const artifactsContext = buildArtifactsContext(project, { includeExcerpts: true });
+  // Presentations summarise the architecture: the `present` profile brings the
+  // sibling excerpts ranked against the deck, so the slides stay consistent with
+  // the documents and diagrams they present — with or without the knowledge
+  // graph, which used to replace them (7.2b).
+  const basePrompt = buildBasePrompt(project, settings, { profile: 'present', query: `${template.name}. ${template.objective}` });
+  const artifactsContext = buildArtifactsContext(project);
   const contextBlock = architectureGraphPromptBlock && architectureGraphPromptBlock.trim().length > 0
     ? architectureGraphPromptBlock
     : artifactsContext;
