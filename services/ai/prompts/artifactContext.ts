@@ -32,7 +32,7 @@
  * the deliverable, the conversation) arrives as data through a port.
  */
 import type { Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactConversationDigest } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { rankRelevantMemoryEntries, scoreBulletForQuery } from '../../memory';
@@ -71,6 +71,7 @@ export const ARTIFACT_CONTEXT_SCOPES = [
   'proyecto',
   'capturaInicial',
   'memoriaProyecto',
+  'conversacion',
   'global',
   'agente',
   'hermanos',
@@ -107,14 +108,14 @@ const architectureSignalBoost = (text: string): number => (ARCHITECTURE_SIGNAL_P
  * arrive as an inventory the agent composes itself.
  */
 export const ARTIFACT_CONTEXT_PROFILES: Readonly<Record<ArtifactContextProfileName, ArtifactContextProfile>> = Object.freeze({
-  generate: profile('generate', { artefacto: 8, proyecto: 50, capturaInicial: 12, memoriaProyecto: 10, global: 12, agente: 6, hermanos: 4 }, { noteChars: 400, excerptChars: 1100, totalChars: 24_000 }),
-  diagram: profile('diagram', { artefacto: 6, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, global: 8, agente: 4 }, { noteChars: 300, excerptChars: 0, totalChars: 9_000, noteBoost: architectureSignalBoost }),
-  refine: profile('refine', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
-  review: profile('review', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
-  edit: profile('edit', { artefacto: 8, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
-  present: profile('present', { artefacto: 6, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, global: 10, agente: 4, hermanos: 6 }, { noteChars: 300, excerptChars: 1100, totalChars: 22_000 }),
-  convert: profile('convert', { artefacto: 8, proyecto: 16, capturaInicial: 6, memoriaProyecto: 6, global: 8, agente: 4, hermanos: 2 }, { noteChars: 300, excerptChars: 900, totalChars: 14_000 }),
-  consult: profile('consult', { artefacto: 8, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
+  generate: profile('generate', { artefacto: 8, proyecto: 50, capturaInicial: 12, memoriaProyecto: 10, conversacion: 8, global: 12, agente: 6, hermanos: 4 }, { noteChars: 400, excerptChars: 1100, totalChars: 24_000 }),
+  diagram: profile('diagram', { artefacto: 6, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 6, global: 8, agente: 4 }, { noteChars: 300, excerptChars: 0, totalChars: 9_000, noteBoost: architectureSignalBoost }),
+  refine: profile('refine', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
+  review: profile('review', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
+  edit: profile('edit', { artefacto: 8, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 6, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
+  present: profile('present', { artefacto: 6, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, conversacion: 6, global: 10, agente: 4, hermanos: 6 }, { noteChars: 300, excerptChars: 1100, totalChars: 22_000 }),
+  convert: profile('convert', { artefacto: 8, proyecto: 16, capturaInicial: 6, memoriaProyecto: 6, conversacion: 4, global: 8, agente: 4, hermanos: 2 }, { noteChars: 300, excerptChars: 900, totalChars: 14_000 }),
+  consult: profile('consult', { artefacto: 8, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, conversacion: 8, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
 });
 
 export interface ArtifactContextSources {
@@ -131,6 +132,8 @@ export interface ArtifactContextSources {
   query?: string;
   /** A version group whose siblings must not be excerpted (its own previous output). */
   excludeVersionGroupId?: string;
+  /** What the conversation with the agent settled — data from the chat context (7.3b). */
+  conversation?: ArtifactConversationDigest;
 }
 
 export interface ArtifactContextItem {
@@ -260,6 +263,12 @@ function candidatesFor(scope: ArtifactContextScope, sources: ArtifactContextSour
       return memoryCandidates(settings.globalContext, settings.globalContextEntries, ranking);
     case 'agente':
       return memoryCandidates(sources.agentMemory ?? settings.agentMemory, undefined, ranking);
+    case 'conversacion': {
+      // Already most recent first, and already decisions: kept in that order.
+      const decisions = (sources.conversation?.decisions ?? []).filter((text) => text.trim());
+      const items = decisions.slice(0, ranking.limit).map((text) => ({ text, key: normalizeKey(text) }));
+      return { items, available: decisions.length };
+    }
     case 'hermanos':
       return siblingCandidates(sources, ranking.limit, profileDef.excerptChars, query);
   }
@@ -324,6 +333,7 @@ export const ARTIFACT_CONTEXT_TITLES: Readonly<Record<ArtifactContextScope, stri
   proyecto: 'Contexto del Proyecto (selección relevante)',
   capturaInicial: 'Captura Inicial del Proyecto (objetivos, alcance, stakeholders)',
   memoriaProyecto: 'Memoria del Agente (Proyecto)',
+  conversacion: 'Decisiones recientes de la conversación con el agente (acordadas en el chat, aún no registradas como memoria)',
   global: 'Memoria Global (estándares y preferencias)',
   agente: 'Preferencias del Arquitecto (memoria del agente)',
   hermanos: 'Extractos de artefactos relacionados del proyecto (fuente de verdad para nombres, IDs y decisiones; no los contradigas)',
@@ -332,7 +342,7 @@ export const ARTIFACT_CONTEXT_TITLES: Readonly<Record<ArtifactContextScope, stri
 /** The rule that tells the model how to weigh the scopes it just read. */
 export const ARTIFACT_CONTEXT_HIERARCHY_RULE = [
   'Jerarquía del contexto (obligatoria):',
-  '- Usa todos los ámbitos disponibles; ante información en conflicto, manda el artefacto > el proyecto (contexto, captura inicial, memoria del proyecto) > lo global > las preferencias del arquitecto.',
+  '- Usa todos los ámbitos disponibles; ante información en conflicto, manda el artefacto > el proyecto (contexto, captura inicial, memoria del proyecto, decisiones de la conversación) > lo global > las preferencias del arquitecto.',
   '- Dentro de un ámbito, manda la prioridad de la nota (alta > media > baja) y, a igual prioridad, la más reciente. Las anotaciones [prioridad · fecha · autor] lo indican.',
   '- Mantén los nombres, IDs y decisiones de los artefactos relacionados; si detectas una contradicción, señálala en vez de elegir en silencio.',
 ].join('\n');

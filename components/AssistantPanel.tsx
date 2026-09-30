@@ -209,9 +209,8 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         // regenerar…", "podrías corregir…"), surface a one-click follow-up
         // card. Only when no plan is already pending — we don't want to
         // distract the user mid-confirmation.
-        if (activeArtifact && !agent.pendingPlan) {
-          agent.scanForProactiveSuggestion(finalResponse);
-        }
+        if (activeArtifact && !agent.pendingPlan) agent.scanForProactiveSuggestion(finalResponse);
+        agent.offerDecisionMemory({ userText: text, project }); // a stated decision, offered as memory (7.3b)
 
         assistantTurns.extractContextNote(baseMessages, text, finalResponse, settings)
             .then(newContextNote => {

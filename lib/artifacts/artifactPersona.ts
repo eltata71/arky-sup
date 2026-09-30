@@ -40,6 +40,18 @@ export interface ArtifactBusinessMotivation {
   regulatoryDrivers: readonly string[];
 }
 
+/**
+ * What the conversation with the agent settled, as a prompt needs it (plan de
+ * calidad de artefactos, 7.3b). A decision said in the chat used to reach a
+ * generation only if somebody wrote «guarda esto»; the chat history is off by
+ * default. The chat context extracts it without a model; the AI layer only
+ * reads this shape, so it imports no chat.
+ */
+export interface ArtifactConversationDigest {
+  /** Explicit decisions, most recent first. */
+  decisions: readonly string[];
+}
+
 /** Options of an artifact generation. */
 export interface ArtifactGenerationOptions {
   onPhase?: ArtifactGenerationPhaseListener;
@@ -56,6 +68,8 @@ export interface ArtifactGenerationOptions {
   onDiagramIR?: (ir: DiagramIR) => void;
   /** The initiatives the project answers; absent when the caller cannot resolve them. */
   businessMotivation?: readonly ArtifactBusinessMotivation[];
+  /** What the conversation with the agent settled (7.3b). */
+  conversation?: ArtifactConversationDigest;
   /**
    * Told, in one Spanish sentence, when a path saved something other than
    * what was asked — a skeleton, or another notation (plan de diagramas,

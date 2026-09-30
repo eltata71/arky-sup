@@ -29,7 +29,7 @@
  */
 
 import type { Settings } from '../../types';
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact, ArtifactConversationDigest } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { ChatMessage } from '../chat';
 import { assembleArtifactContext, bundleItems, buildBasePrompt } from '../ai';
@@ -130,6 +130,8 @@ export interface BuildAgentSystemInstructionOptions {
   budget?: Partial<ContextBudget>;
   /** Optional specialist persona for this turn. See `AgentPersonaBriefing`. */
   persona?: AgentPersonaBriefing;
+  /** What the conversation settled — read even when the history itself is not sent (7.3b). */
+  conversation?: ArtifactConversationDigest;
 }
 
 /**
@@ -161,7 +163,7 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
   // One assembly for every scope (plan de calidad de artefactos, 7.2): the
   // same ranking, hierarchy and de-duplication artifact generation reads.
   const bundle = assembleArtifactContext(
-    { project, settings, artifact: activeArtifact, agentMemory: getAgentBaseMemory(settings), query: userQuery },
+    { project, settings, artifact: activeArtifact, agentMemory: getAgentBaseMemory(settings), query: userQuery, conversation: opts.conversation },
     {
       name: 'consult',
       limits: {
@@ -169,6 +171,7 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
         proyecto: budget.projectMax,
         capturaInicial: budget.initialCaptureMax,
         memoriaProyecto: budget.projectAgentMax,
+        conversacion: budget.projectAgentMax,
         global: budget.globalMax,
         agente: budget.agentBaseMax,
       },
@@ -235,6 +238,13 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
   if (projectAgentSelected.length > 0) {
     sections.push(['Memoria del Agente (Proyecto):', ...projectAgentSelected.map((b) => `- ${b}`)].join('\n'));
   }
+  // 6-ter. Decisiones de la conversación — lo acordado en el chat, aunque el
+  //    historial no se envíe (7.3b).
+  const conversationDecisions = bundleItems(bundle, 'conversacion');
+  if (conversationDecisions.length > 0) {
+    sections.push(['Decisiones recientes de la conversación (acordadas en el chat):', ...conversationDecisions.map((b) => `- ${b}`)].join('\n'));
+  }
+
 
   // 6-bis. Inventario de artefactos del proyecto — the agent must always be
   //    aware of what was already produced so new artifacts stay consistent

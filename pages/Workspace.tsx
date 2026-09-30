@@ -21,6 +21,7 @@ import { observabilityService } from '../services/observability';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { useArtifactPersona } from '../hooks/useArtifactPersona';
 import { useProjectBusinessMotivation } from '../hooks/useProjectBusinessMotivation';
+import { useConversationDecisions } from '../hooks/useConversationDecisions';
 import { runArtifactGeneration } from '../services/artifacts/application/artifactGenerationRun';
 import { describeGenerationFailure } from '../services/artifacts/application/generationFailure';
 
@@ -187,6 +188,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
 
   const composePersonaInstruction = useArtifactPersona();
   const businessMotivation = useProjectBusinessMotivation(project);
+  const loadConversationDecisions = useConversationDecisions();
   const proceedWithGeneration = useCallback(async (
         template: ArtifactTemplate,
         action: 'create' | 'replace' | 'new_version' = 'create',
@@ -226,7 +228,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
             operationId: generationOperationId,
             startedAt,
             startedMs,
-            onPhase, composePersonaInstruction, businessMotivation,
+            onPhase, composePersonaInstruction, businessMotivation, conversation: await loadConversationDecisions(project.id),
             onWarning: message => {
                 if (isMounted.current) addToast(message, 'warning', { durationMs: 8000 });
             },
@@ -387,7 +389,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
             setGeneratingMessage('');
         }
     }
-  }, [project, settings, t, createArtifact, createArtifactVersion, updateArtifact, addToast, composePersonaInstruction, businessMotivation]);
+  }, [project, settings, t, createArtifact, createArtifactVersion, updateArtifact, addToast, composePersonaInstruction, businessMotivation, loadConversationDecisions]);
 
   const handleCreateArtifact = useCallback(async (
         template: ArtifactTemplate,

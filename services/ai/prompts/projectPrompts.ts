@@ -19,7 +19,7 @@ import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { buildBusinessMotivationBlock } from './diagramGenerationBrief';
 import { resolveDomainPacks } from '../../../lib/domainPacks';
 import { buildDomainPackBlock } from './domainPackPrompt';
-import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { ARTIFACT_CONTEXT_PROFILES, assembleArtifactContext, renderArtifactContextBundle, type ArtifactContextProfileName } from './artifactContext';
 // Por el barril: `services/memory` ya publica esta función y es un módulo de
@@ -128,6 +128,8 @@ export interface BasePromptOptions {
   query?: string;
   /** A version group whose output must not be excerpted back (a regeneration). */
   excludeVersionGroupId?: string;
+  /** What the conversation with the agent settled (7.3b). */
+  conversation?: ArtifactConversationDigest;
 }
 
 const DIAGRAM_MAX_DESCRIPTION_CHARS = 600;
@@ -162,6 +164,7 @@ export function buildBasePrompt(project: Project, settings: Settings, opts: Base
       artifact: opts.artifact,
       query: opts.query,
       excludeVersionGroupId: opts.excludeVersionGroupId,
+      conversation: opts.conversation,
     },
     { ...profileDef, limits },
   );

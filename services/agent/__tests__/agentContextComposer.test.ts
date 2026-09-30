@@ -202,6 +202,18 @@ describe('agentContextComposer', () => {
       expect(withArtifact).toContain(ARTIFACT.name);
     });
 
+    it('carries what the conversation settled even though the history itself is off (7.3b)', () => {
+      const instruction = buildAgentSystemInstruction({
+        project: PROJECT,
+        activeArtifact: null,
+        settings: SETTINGS,
+        conversation: { decisions: ['Acordamos que el canal de prestadores queda fuera de la fase 1.'] },
+      });
+      expect(SETTINGS.aiConfig?.includeChatHistoryByDefault).toBe(false);
+      expect(instruction).toContain('Decisiones recientes de la conversación');
+      expect(instruction).toContain('el canal de prestadores queda fuera de la fase 1');
+    });
+
     it('uses DEFAULT_AGENT_MEMORY when settings.agentMemory is empty', () => {
       const instruction = buildAgentSystemInstruction({
         project: PROJECT,

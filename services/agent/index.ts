@@ -36,3 +36,4 @@ export {
   type ArtifactModification,
   type ModelFunctionCall,
 } from './artifactModificationCall';
+export { offerDecisionsAsMemory, createMemoryAnchorArtifact } from './decisionMemoryOffer';
