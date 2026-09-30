@@ -11,6 +11,7 @@
  */
 
 import type { ArtifactType } from '../../types';
+import type { DisciplineRule } from '../../lib/artifacts/documentDisciplines';
 import type { CompilerIssueSeverity } from './ArtifactCompilerTypes';
 
 export type ArtifactRepresentation = 'document' | 'diagram' | 'hybrid';
@@ -84,6 +85,12 @@ export interface ArtifactContract {
   delegatesToDiagramGate: boolean;
   /** Static recommendations surfaced for this family regardless of findings. */
   automaticRecommendations: { id: string; title: string; detail: string }[];
+  /**
+   * What a section title cannot prove — a recovery objective with a number and
+   * a unit, an ADR status from its lifecycle (plan de calidad de artefactos,
+   * 7.4a). Declared by the template's discipline in `lib/artifacts`.
+   */
+  contentRules?: readonly DisciplineRule[];
 }
 
 /** Normalise text for keyword detection (lowercase, strip diacritics). */

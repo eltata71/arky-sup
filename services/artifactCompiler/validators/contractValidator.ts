@@ -171,6 +171,16 @@ const validateDocumentContract = (
     );
   }
 
+  // ── Content rules of the discipline (7.4a) ─────────────────────────────
+  for (const rule of contract.contentRules ?? []) {
+    if (rule.pattern.test(content)) continue;
+    issues.push(
+      issue(`contract.rule.${rule.id}`, 'CONTRACT_CONTENT_RULE', rule.severity, 'contract', rule.message, rule.recommendation, {
+        dimension: 'cumplimiento-contrato',
+      }),
+    );
+  }
+
   // ── Empty sections ─────────────────────────────────────────────────────
   if (structure.emptySectionCount > 0) {
     issues.push(

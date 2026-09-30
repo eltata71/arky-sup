@@ -176,7 +176,8 @@ export const compileArtifact = (
 
   try {
     // 1 — Contract resolution.
-    const contract = resolveContract(artifact.type);
+    // A catalogue document is checked by its discipline, found by its name (7.4a).
+    const contract = resolveContract(artifact.type, artifact.name);
     recorder.step(
       'contract-resolution',
       'success',
