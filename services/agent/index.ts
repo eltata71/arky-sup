@@ -18,8 +18,6 @@ export { buildAgentActionRecord } from './agentRecord';
 export {
   buildAgentSystemInstruction,
   prepareChatHistoryForModel,
-  selectRelevantMemory,
-  compactBullet,
   getAgentBaseMemory,
   DEFAULT_AGENT_MEMORY,
   DEFAULT_CONTEXT_BUDGET,
@@ -30,7 +28,6 @@ export type {
   ContextBudget,
   PrepareChatHistoryOptions,
   PreparedChatTurn,
-  SelectRelevantMemoryOptions,
 } from './agentContextComposer';
 export { agentActionRepository, type AgentActionRepository } from './AgentActionRepository';
 export {
