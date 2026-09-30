@@ -13,7 +13,7 @@ import { aiGateway } from '../aiGateway';
 
 export async function getSuggestedActions(project: Project, settings: Settings): Promise<ArtifactTemplateSuggestion[]> {
     const prompt = `
-${buildBasePrompt(project, settings)}
+${buildBasePrompt(project, settings, { profile: 'consult' })}
 ${buildArtifactsContext(project)}
 
 Analyze architecture state. Suggest top 2 next artifacts from this list:

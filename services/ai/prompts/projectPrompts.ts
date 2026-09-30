@@ -21,7 +21,7 @@ import { resolveDomainPacks } from '../../../lib/domainPacks';
 import { buildDomainPackBlock } from './domainPackPrompt';
 import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
-import { prioritizeProjectContext } from './diagramPrompts';
+import { ARTIFACT_CONTEXT_PROFILES, assembleArtifactContext, renderArtifactContextBundle, type ArtifactContextProfileName } from './artifactContext';
 // Por el barril: `services/memory` ya publica esta función y es un módulo de
 // declaraciones puras —ningún chunk pesado detrás—, así que no hay razón de
 // bundle que justifique entrar por el fichero.
@@ -32,8 +32,16 @@ import { extractMermaidCode } from '../../../utils/diagram/extractMermaid';
 // usan cinco pantallas.
 import { getLatestArtifacts } from '../../../utils';
 
-export function buildGlobalPrompt(settings: Settings): string {
+export function buildGlobalPrompt(settings: Settings, opts: { includeGlobalContext?: boolean } = {}): string {
   const tone = settings.aiConfig?.tone || 'Profesional y Técnico';
+  // An artifact prompt reads the global scope from its context bundle, ranked
+  // and de-duplicated with the rest (7.2b); saying it here too would say it twice.
+  const globalBlock = opts.includeGlobalContext === false
+    ? ''
+    : `
+Global Context/Standards (ordenado por prioridad del usuario y recencia; [prioridad · fecha · autor] cuando se conoce):
+${formatMemoryTextsForPrompt(settings.globalContext, settings.globalContextEntries).map(c => `- ${c}`).join('\n')}
+`;
   return `You are an expert solution architect, acting as the Arquitecto Agente — the AI architecture agent for this platform.
 
 CRITICAL INDUSTRY CONTEXT:
@@ -41,10 +49,7 @@ This platform is a service provided to an Insurance Company that offers Life and
 Whenever you are generating a project, its artifacts, courses, knowledge cards, or answering ANY question, you MUST take this into account.
 You must adhere to the highest standards of the Life and Health Insurance industry, as well as the best standards in Technology.
 This is highly relevant when crafting or elaborating information for artifacts, courses, knowledge cards, and everything related to them.
-
-Global Context/Standards (ordenado por prioridad del usuario y recencia; [prioridad · fecha · autor] cuando se conoce):
-${formatMemoryTextsForPrompt(settings.globalContext, settings.globalContextEntries).map(c => `- ${c}`).join('\n')}
-
+${globalBlock}
 Style Instructions:
 - Tone: ${tone}
 - Language: ${settings.language === 'es' ? 'Spanish (Español)' : 'English'}`;
@@ -112,59 +117,61 @@ export interface BasePromptOptions {
   maxDescriptionChars?: number;
   /** The initiatives the project answers (plan de diagramas, 6.2). */
   businessMotivation?: readonly ArtifactBusinessMotivation[];
+  /**
+   * The operation, which fixes which context scopes are read and how much of
+   * each (7.2b). Defaults to `diagram` in diagram mode, `generate` otherwise.
+   */
+  profile?: ArtifactContextProfileName;
+  /** The artifact the operation works on: its own memory is the highest scope. */
+  artifact?: Artifact | null;
+  /** What the operation is about — ranks the notes and the sibling excerpts. */
+  query?: string;
+  /** A version group whose output must not be excerpted back (a regeneration). */
+  excludeVersionGroupId?: string;
 }
 
-const DIAGRAM_MAX_CONTEXT_ITEMS = 12;
 const DIAGRAM_MAX_DESCRIPTION_CHARS = 600;
 
+/**
+ * The global instruction, the project's name and description, its context
+ * bundle and the business motivation. Every scope of the bundle — global,
+ * the architect's preferences, the project's context, initial capture and
+ * memory, the artifact's memory and the sibling excerpts — is assembled once
+ * by `assembleArtifactContext` with the operation's profile (7.2b).
+ */
 export function buildBasePrompt(project: Project, settings: Settings, opts: BasePromptOptions = {}): string {
   const mode: BasePromptMode = opts.mode ?? 'document';
   const description = (project.description ?? '').toString();
+  const maxChars = opts.maxDescriptionChars ?? (mode === 'diagram' ? DIAGRAM_MAX_DESCRIPTION_CHARS : Number.POSITIVE_INFINITY);
+  const trimmedDescription = description.length > maxChars
+    ? `${description.slice(0, maxChars).trimEnd()}…`
+    : description;
 
-  if (mode === 'diagram') {
-    const maxItems = opts.maxContextItems ?? DIAGRAM_MAX_CONTEXT_ITEMS;
-    const maxChars = opts.maxDescriptionChars ?? DIAGRAM_MAX_DESCRIPTION_CHARS;
-    const trimmedDescription = description.length > maxChars
-      ? `${description.slice(0, maxChars).trimEnd()}…`
-      : description;
-    // Order by user priority + recency BEFORE the diagram-specific
-    // prioritizer caps the list, so high-priority/recent notes survive the
-    // tight diagram budget. Annotations stay off here: the diagram
-    // prioritizer keys on the note text itself.
-    const orderedTexts = formatMemoryTextsForPrompt(
-      project.projectContext,
-      project.projectContextEntries,
-      { annotate: false },
-    );
-    const items = prioritizeProjectContext(orderedTexts, { limit: maxItems });
-    // What people wrote about the project is data, fenced (6.2).
-    return `${buildGlobalPrompt(settings)}
+  const profileDef = ARTIFACT_CONTEXT_PROFILES[opts.profile ?? (mode === 'diagram' ? 'diagram' : 'generate')];
+  // `maxContextItems` narrows the project's own notes: 0 means the caller
+  // wants the project named and described, nothing more.
+  const limits = typeof opts.maxContextItems === 'number'
+    ? opts.maxContextItems === 0
+      ? { global: profileDef.limits.global, agente: profileDef.limits.agente }
+      : { ...profileDef.limits, proyecto: Math.min(opts.maxContextItems, profileDef.limits.proyecto ?? opts.maxContextItems) }
+    : profileDef.limits;
+  const bundle = assembleArtifactContext(
+    {
+      project,
+      settings,
+      artifact: opts.artifact,
+      query: opts.query,
+      excludeVersionGroupId: opts.excludeVersionGroupId,
+    },
+    { ...profileDef, limits },
+  );
 
-${wrapUntrustedContent('proyecto', `Project Name: ${project.name}
-Project Description: ${trimmedDescription}
-Project-Specific Context (Updates & Requirements):
-${items.map(c => `- ${c}`).join('\n')}`)}
-${motivationBlock(opts, project)}`;
-  }
-
-  const projectContextLines = formatMemoryTextsForPrompt(project.projectContext, project.projectContextEntries);
-  const agentMemoryLines = formatMemoryTextsForPrompt(project.agentMemory, project.agentMemoryEntries);
-  const initialCaptureLines = formatMemoryTextsForPrompt(project.initialCapture, project.initialCaptureEntries);
-  const optionalSections: string[] = [];
-  if (initialCaptureLines.length > 0) {
-    optionalSections.push(`Initial Capture (objetivos, alcance y stakeholders del proyecto):\n${initialCaptureLines.map(c => `- ${c}`).join('\n')}`);
-  }
-  if (agentMemoryLines.length > 0) {
-    optionalSections.push(`Agent Memory for this Project (decisiones, lecciones y preferencias registradas):\n${agentMemoryLines.map(c => `- ${c}`).join('\n')}`);
-  }
-
-  return `${buildGlobalPrompt(settings)}
+  // What people wrote about the project is data, fenced (6.2).
+  return `${buildGlobalPrompt(settings, { includeGlobalContext: false })}
 
 ${wrapUntrustedContent('proyecto', `Project Name: ${project.name}
-Project Description: ${description}
-Project-Specific Context (Updates & Requirements):
-${projectContextLines.map(c => `- ${c}`).join('\n')}
-${optionalSections.length > 0 ? `\n${optionalSections.join('\n\n')}\n` : ''}`)}
+Project Description: ${trimmedDescription}`)}
+${renderArtifactContextBundle(bundle)}
 ${motivationBlock(opts, project)}`;
 }
 

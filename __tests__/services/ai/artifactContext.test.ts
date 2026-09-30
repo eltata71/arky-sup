@@ -119,6 +119,21 @@ describe('assembleArtifactContext', () => {
     expect(bundle.omitted.some((entry) => entry.scope === 'agente' && entry.reason === 'presupuesto')).toBe(true);
   });
 
+  it('drops conversational echoes, and only them: a short note can still say something', () => {
+    const bundle = assembleArtifactContext(
+      { project: projectOf({ projectContext: ['Si gracias', 'ok', 'Perfecto, listo', 'Team of 5', 'Usa DynamoDB'] }), settings },
+      'generate',
+    );
+    expect(bundleItems(bundle, 'proyecto')).toEqual(['Team of 5', 'Usa DynamoDB']);
+    expect(bundle.omitted).toContainEqual({ scope: 'proyecto', count: 3, reason: 'ruido' });
+  });
+
+  it('ranks the notes that name a technology or a regulation first in the diagram profile', () => {
+    const notes = [...Array.from({ length: 14 }, (_, i) => `Reunión de seguimiento número ${i}`), 'Despliegue on-prem con Kubernetes y cumplimiento HIPAA'];
+    const bundle = assembleArtifactContext({ project: projectOf({ projectContext: notes }), settings }, 'diagram');
+    expect(bundleItems(bundle, 'proyecto')[0]).toContain('Kubernetes');
+  });
+
   it('does not read a scope its profile leaves out', () => {
     const artifact = artifactOf({ artifactMemory: ['Memoria propia'] });
     const sibling = artifactOf({ id: 's1', versionGroupId: 'gs', content: `# Otro\n${'texto. '.repeat(40)}` });

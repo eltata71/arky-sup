@@ -28,7 +28,7 @@ export function buildProjectChatInstruction(project: Project, settings: Settings
     ).join('\n');
 
     return `
-${buildBasePrompt(project, settings)}
+${buildBasePrompt(project, settings, { profile: 'consult' })}
 
 You are the Chief Software Architect for this project. You have GLOBAL CONTEXT of all the artifacts in the system.
 The user is asking a question or requesting an action that may span multiple artifacts or require understanding the system as a whole.

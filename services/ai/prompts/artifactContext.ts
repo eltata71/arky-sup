@@ -40,6 +40,31 @@ import { getLatestArtifacts } from '../../../utils';
 
 // ─── Vocabulary ─────────────────────────────────────────────────────────────
 
+/**
+ * A note that names a technology, a regulation or an architectural concern.
+ * The diagram profile ranks these first: a diagram is grounded by them, and
+ * the guided creation accumulates dozens of conversational echoes beside them.
+ * Curated for the Spanish guided-creation flow; extend it carefully — every
+ * new term inflates the pattern and lowers its selectivity.
+ */
+export const ARCHITECTURE_SIGNAL_PATTERN = /\b(tecnolog|stack|kafka|postgres|mysql|mongo|redis|aws|azure|gcp|kubernetes|docker|saas|hipaa|pci|sox|gdpr|on-?prem|cloud|microservic|monolit|integra|api|escala|tenant|legacy|cumplimiento|regulator|seguridad|sla|latencia|throughput|disponibilidad|backup|recovery|frontend|backend|gateway|queue|event|streaming|data\s*warehouse|etl|lakehouse|graphql|rest|grpc)\b/i;
+
+/**
+ * The words a conversational echo is made of. A note made only of them («ok»,
+ * «sí, gracias», «perfecto, listo») is the guided creation acknowledging a
+ * turn, not context. Length is not the test: «Team of 5» is short and says
+ * something.
+ */
+const ECHO_WORDS = new Set([
+  'ok', 'okay', 'si', 'sí', 'no', 'vale', 'gracias', 'muchas', 'perfecto', 'listo', 'entendido', 'claro',
+  'genial', 'bien', 'de', 'acuerdo', 'excelente', 'correcto', 'thanks', 'thank', 'you', 'yes', 'sure', 'great',
+]);
+
+const isConversationalEcho = (text: string): boolean => {
+  const words = text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  return words.length > 0 && words.length <= 4 && words.every((word) => ECHO_WORDS.has(word));
+};
+
 /** In hierarchy order: a scope earlier in this list wins a conflict. */
 export const ARTIFACT_CONTEXT_SCOPES = [
   'artefacto',
@@ -64,6 +89,8 @@ export interface ArtifactContextProfile {
   excerptChars: number;
   /** Characters for the whole bundle; the lowest scopes are cut first. */
   totalChars: number;
+  /** A profile's own signal, added to each note's ranking. */
+  noteBoost?: (text: string) => number;
 }
 
 const profile = (
@@ -72,14 +99,16 @@ const profile = (
   sizes: Omit<ArtifactContextProfile, 'name' | 'limits'>,
 ): ArtifactContextProfile => ({ name, limits, ...sizes });
 
+const architectureSignalBoost = (text: string): number => (ARCHITECTURE_SIGNAL_PATTERN.test(text) ? 1 : 0);
+
 /**
  * The profiles. Generation reads the most, because it writes an artifact from
  * nothing; a consultation reads what a chat turn can afford, and its siblings
  * arrive as an inventory the agent composes itself.
  */
 export const ARTIFACT_CONTEXT_PROFILES: Readonly<Record<ArtifactContextProfileName, ArtifactContextProfile>> = Object.freeze({
-  generate: profile('generate', { artefacto: 8, proyecto: 30, capturaInicial: 12, memoriaProyecto: 10, global: 12, agente: 6, hermanos: 4 }, { noteChars: 400, excerptChars: 1100, totalChars: 24_000 }),
-  diagram: profile('diagram', { artefacto: 6, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, global: 8, agente: 4 }, { noteChars: 300, excerptChars: 0, totalChars: 9_000 }),
+  generate: profile('generate', { artefacto: 8, proyecto: 50, capturaInicial: 12, memoriaProyecto: 10, global: 12, agente: 6, hermanos: 4 }, { noteChars: 400, excerptChars: 1100, totalChars: 24_000 }),
+  diagram: profile('diagram', { artefacto: 6, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, global: 8, agente: 4 }, { noteChars: 300, excerptChars: 0, totalChars: 9_000, noteBoost: architectureSignalBoost }),
   refine: profile('refine', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
   review: profile('review', { artefacto: 8, proyecto: 20, capturaInicial: 8, memoriaProyecto: 8, global: 10, agente: 4, hermanos: 3 }, { noteChars: 300, excerptChars: 900, totalChars: 16_000 }),
   edit: profile('edit', { artefacto: 8, proyecto: 12, capturaInicial: 6, memoriaProyecto: 6, global: 10, agente: 8 }, { noteChars: 220, excerptChars: 0, totalChars: 12_000 }),
@@ -116,7 +145,7 @@ export interface ArtifactContextSection {
   items: ArtifactContextItem[];
 }
 
-export type ArtifactContextOmissionReason = 'limite' | 'duplicado' | 'presupuesto';
+export type ArtifactContextOmissionReason = 'ruido' | 'limite' | 'duplicado' | 'presupuesto';
 
 export interface ArtifactContextOmission {
   scope: ArtifactContextScope;
@@ -152,21 +181,38 @@ const excerptOf = (content: string, maxChars: number): string => {
 
 interface Candidates {
   items: ArtifactContextItem[];
+  /** Candidates worth showing, before the limit. */
   available: number;
+  /** Conversational echoes left out before ranking. */
+  noise?: number;
+}
+
+interface NoteRanking {
+  limit: number;
+  noteChars: number;
+  query: string | undefined;
+  noteBoost?: (text: string) => number;
 }
 
 function memoryCandidates(
   texts: readonly string[] | null | undefined,
   entries: Parameters<typeof rankRelevantMemoryEntries>[0]['entries'],
-  limit: number,
-  noteChars: number,
-  query: string | undefined,
+  ranking: NoteRanking,
 ): Candidates {
-  const available = (texts ?? []).filter((text) => typeof text === 'string' && text.trim()).length;
-  const ranked = rankRelevantMemoryEntries({ texts: texts ? [...texts] : [], entries, query, limit, bulletCharCap: noteChars });
+  const present = (texts ?? []).filter((text): text is string => typeof text === 'string' && text.trim().length > 0);
+  const meaningful = present.filter((text) => !isConversationalEcho(text));
+  const ranked = rankRelevantMemoryEntries({
+    texts: meaningful,
+    entries,
+    query: ranking.query,
+    limit: ranking.limit,
+    bulletCharCap: ranking.noteChars,
+    extraScore: ranking.noteBoost,
+  });
   return {
     items: ranked.map((note) => ({ text: note.rendered, key: normalizeKey(note.entry.text) })),
-    available: Math.max(available, ranked.length),
+    available: Math.max(meaningful.length, ranked.length),
+    noise: present.length - meaningful.length,
   };
 }
 
@@ -199,24 +245,23 @@ function siblingCandidates(sources: ArtifactContextSources, limit: number, excer
 }
 
 function candidatesFor(scope: ArtifactContextScope, sources: ArtifactContextSources, profileDef: ArtifactContextProfile): Candidates {
-  const limit = profileDef.limits[scope] ?? 0;
   const { project, settings, artifact, query } = sources;
-  const { noteChars } = profileDef;
+  const ranking: NoteRanking = { limit: profileDef.limits[scope] ?? 0, noteChars: profileDef.noteChars, query, noteBoost: profileDef.noteBoost };
   switch (scope) {
     case 'artefacto':
-      return memoryCandidates(artifact?.artifactMemory, artifact?.artifactMemoryEntries, limit, noteChars, query);
+      return memoryCandidates(artifact?.artifactMemory, artifact?.artifactMemoryEntries, ranking);
     case 'proyecto':
-      return memoryCandidates(project.projectContext, project.projectContextEntries, limit, noteChars, query);
+      return memoryCandidates(project.projectContext, project.projectContextEntries, ranking);
     case 'capturaInicial':
-      return memoryCandidates(project.initialCapture, project.initialCaptureEntries, limit, noteChars, query);
+      return memoryCandidates(project.initialCapture, project.initialCaptureEntries, ranking);
     case 'memoriaProyecto':
-      return memoryCandidates(project.agentMemory, project.agentMemoryEntries, limit, noteChars, query);
+      return memoryCandidates(project.agentMemory, project.agentMemoryEntries, ranking);
     case 'global':
-      return memoryCandidates(settings.globalContext, settings.globalContextEntries, limit, noteChars, query);
+      return memoryCandidates(settings.globalContext, settings.globalContextEntries, ranking);
     case 'agente':
-      return memoryCandidates(sources.agentMemory ?? settings.agentMemory, undefined, limit, noteChars, query);
+      return memoryCandidates(sources.agentMemory ?? settings.agentMemory, undefined, ranking);
     case 'hermanos':
-      return siblingCandidates(sources, limit, profileDef.excerptChars, query);
+      return siblingCandidates(sources, ranking.limit, profileDef.excerptChars, query);
   }
 }
 
@@ -241,7 +286,8 @@ export function assembleArtifactContext(
   // Hierarchy order: the first scope to hold a note keeps it.
   for (const scope of ARTIFACT_CONTEXT_SCOPES) {
     if (!profileDef.limits[scope]) continue;
-    const { items, available } = candidatesFor(scope, sources, profileDef);
+    const { items, available, noise } = candidatesFor(scope, sources, profileDef);
+    addOmission(omitted, scope, noise ?? 0, 'ruido');
     addOmission(omitted, scope, available - items.length, 'limite');
     const kept = items.filter((item) => {
       if (seen.has(item.key)) return false;
@@ -307,3 +353,10 @@ export function renderArtifactContextBundle(bundle: ArtifactContextBundle): stri
     .join('\n\n');
   return [wrapUntrustedContent('contexto del proyecto', body), ARTIFACT_CONTEXT_HIERARCHY_RULE].join('\n');
 }
+
+/** A diagram's context, ranked against the artifact it will draw (the IR path, 7.2b). */
+export const renderDiagramContextBundle = (project: Project, settings: Settings, artifact?: Artifact): string =>
+  renderArtifactContextBundle(assembleArtifactContext(
+    { project, settings, artifact, query: artifact ? `${artifact.name}. ${artifact.objective ?? ''}` : undefined },
+    'diagram',
+  ));

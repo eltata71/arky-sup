@@ -21,6 +21,7 @@ import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
+import { ARCHITECTURE_SIGNAL_PATTERN, renderDiagramContextBundle } from './artifactContext';
 
 /**
  * Ten-dimension rubric the Mermaid prompts carry for self-review. It asked
@@ -354,7 +355,7 @@ export function buildIRDirectGenerationPrompt(opts: IRDirectGenerateOptions): st
     // integrations / data / messaging / processes) so the model anchors the
     // diagram in real project signals instead of generic placeholders.
     const signalsBlock = renderDiagramSignals(extractDiagramSignals(project), artifact.type);
-    return `${buildProjectContextBlock(project, artifact)}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
+    return `${buildProjectContextBlock(project, artifact, { settings: opts.settings })}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
 
 Artifact: ${artifact.name} — ${artifact.type}
 Objective: ${artifact.objective ?? ''}
@@ -582,14 +583,6 @@ export function buildSkeletonIRFromArtifact(artifact: Artifact, project: Project
  * to the constraints that distinguish a generic e-commerce diagram from one
  * that respects the user's regulated environment.
  */
-/**
- * Architecture / regulation / technology keywords that boost an item's
- * priority when the project context exceeds the cap. The list is curated for
- * the most common signals in the Spanish guided-creation flow; extend it
- * carefully — every new term inflates the regex and lowers selectivity.
- */
-const CONTEXT_KEYWORD_BOOST = /\b(tecnolog|stack|kafka|postgres|mysql|mongo|redis|aws|azure|gcp|kubernetes|docker|saas|hipaa|pci|sox|gdpr|on-?prem|cloud|microservic|monolit|integra|api|escala|tenant|legacy|cumplimiento|regulator|seguridad|sla|latencia|throughput|disponibilidad|backup|recovery|frontend|backend|gateway|queue|event|streaming|data\s*warehouse|etl|lakehouse|graphql|rest|grpc)\b/i;
-
 interface ScoredItem {
     item: string;
     index: number;
@@ -617,7 +610,7 @@ export function prioritizeProjectContext(rawItems: readonly string[], opts: { li
         const item = (raw ?? '').trim();
         if (!item) return;
         const recencyWeight = idx / Math.max(1, rawItems.length - 1); // 0..1
-        const keywordBoost = CONTEXT_KEYWORD_BOOST.test(item) ? 2 : 0;
+        const keywordBoost = ARCHITECTURE_SIGNAL_PATTERN.test(item) ? 2 : 0;
         const lengthSanity = item.length < 12 ? -1 : 0;
         cleaned.push({ item, index: idx, score: recencyWeight + keywordBoost + lengthSanity });
     });
@@ -640,6 +633,8 @@ export interface ProjectContextBlockOptions {
     maxKeyConcepts?: number;
     /** Cap (chars) for the description line. Defaults to 800. */
     maxDescriptionChars?: number;
+    /** With settings, every context scope comes from the bundle (7.2b). */
+    settings?: Settings;
 }
 
 function truncate(text: string, max: number): string {
@@ -661,7 +656,7 @@ export function buildProjectContextBlock(
     if (project.description?.trim()) {
         lines.push(`- Description: ${truncate(project.description.trim(), maxDescriptionChars)}`);
     }
-    if (Array.isArray(project.projectContext) && project.projectContext.length) {
+    if (!opts.settings && Array.isArray(project.projectContext) && project.projectContext.length) {
         const items = prioritizeProjectContext(project.projectContext, { limit: maxContextItems });
         if (items.length) {
             lines.push(`- Constraints / context:`);
@@ -680,8 +675,9 @@ export function buildProjectContextBlock(
     }
     // Written by people and by document analysis, not by the app: fenced
     // (plan de diagramas, 6.2). The rules about it stay outside the fence.
+    const bundle = opts.settings ? renderDiagramContextBundle(project, opts.settings, artifact) : '';
     return `PROJECT CONTEXT — its constraints bind the diagram and its ubiquitous-language terms are used verbatim.
-${wrapUntrustedContent('proyecto', lines.join('\n'))}`;
+${wrapUntrustedContent('proyecto', lines.join('\n'))}${bundle ? `\n${bundle}` : ''}`;
 }
 
 /**
