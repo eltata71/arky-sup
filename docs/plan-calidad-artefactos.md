@@ -314,7 +314,9 @@ política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
 | 7.1c — banco `artifact-evals` | #123 | Fusionada |
 | 7.2a — ensamblador único (`ArtifactContextBundle`): ámbitos, jerarquía, perfiles con presupuesto, duplicados entre ámbitos, relevancia de hermanos; el chat lo lee | #125 | Fusionada |
 | 7.2b — `buildBasePrompt` y el camino IR de diagramas leen el bundle (contexto entregado 32,1 → 39,4 %) | #126 | Fusionada |
-| 7.3a — crítica, refinamiento, sugerencias y edición de diagrama leen el bundle; todo artefacto va cercado (contexto 39,4 → 72,3 %, cercado 21,9 → 100 %) | — | En revisión |
+| 7.3a — crítica, refinamiento, sugerencias y edición de diagrama leen el bundle; todo artefacto va cercado (contexto 39,4 → 72,3 %, cercado 21,9 → 100 %) | #127 | Fusionada |
+| 7.3b — las decisiones del chat llegan a generar, refinar, criticar y al copiloto, y se ofrecen como memoria con un clic (contexto 72,3 → 78,9 %) | — | En revisión |
+| 7.3c — entregable, contribución del proyecto y enlace artefacto → tarea | — | Pendiente |
 
 **Línea base del banco (2026-09-30)**, `tests/fixtures/artifact-evals/linea-base.json`:
 

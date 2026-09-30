@@ -10,7 +10,7 @@
  * artefactos, 7.3a).
  */
 import type { Settings, ArtifactTemplate } from '../../../types';
-import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { resolveModelForSettings } from '../catalog';
@@ -29,6 +29,8 @@ export interface ArtifactContentCritiqueRequest {
     previousArtifact?: Artifact;
     /** The initiatives the project answers. */
     businessMotivation?: readonly ArtifactBusinessMotivation[];
+    /** What the conversation with the agent settled (7.3b). */
+    conversation?: ArtifactConversationDigest;
 }
 
 export interface ArtifactContentRefinementRequest extends ArtifactContentCritiqueRequest {
@@ -48,6 +50,7 @@ const refinementContext = (request: ArtifactContentCritiqueRequest): string =>
         query: `${request.template.name}. ${request.template.objective}`,
         excludeVersionGroupId: request.previousArtifact?.versionGroupId,
         businessMotivation: request.businessMotivation,
+        conversation: request.conversation,
     });
 
 const fencedContent = (content: string, maxChars: number): string =>

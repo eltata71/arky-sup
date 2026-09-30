@@ -54,8 +54,10 @@ describe('assembleArtifactContext', () => {
   it('reads every scope its profile declares, in hierarchy order', () => {
     const artifact = artifactOf({ artifactMemory: ['Citar la norma de retención de datos clínicos'] });
     const sibling = artifactOf({ id: 's1', versionGroupId: 'gs', name: 'Visión', content: `# Visión\n${'La visión prioriza la trazabilidad regulatoria. '.repeat(4)}` });
-    const bundle = assembleArtifactContext({ project: projectOf({ artifacts: [sibling, artifact] }), settings, artifact }, 'generate');
+    const conversation = { decisions: ['Acordamos que el canal de prestadores queda fuera de la fase 1'] };
+    const bundle = assembleArtifactContext({ project: projectOf({ artifacts: [sibling, artifact] }), settings, artifact, conversation }, 'generate');
     expect(bundle.sections.map((section) => section.scope)).toEqual([...ARTIFACT_CONTEXT_SCOPES]);
+    expect(bundleItems(bundle, 'conversacion')).toEqual(conversation.decisions);
     expect(bundleItems(bundle, 'hermanos')[0]).toContain('«Visión»');
   });
 

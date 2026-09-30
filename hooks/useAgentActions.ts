@@ -8,6 +8,8 @@ import {
   classifyAgentIntent,
   executeAgentAction,
   planAgentAction,
+  createMemoryAnchorArtifact,
+  offerDecisionsAsMemory,
   refineIntentWithLLM,
   LLM_REFINEMENT_THRESHOLD,
   detectProactiveSuggestion,
@@ -97,6 +99,8 @@ export interface UseAgentActionsResult {
     artifact?: Artifact | null;
     settings: Settings;
   }) => Promise<void>;
+  /** Offers the decisions just stated as project memory (7.3b): a filled draft, written only on confirm. */
+  offerDecisionMemory: (params: { userText: string; project?: Project }) => AgentActionPlan | null;
   /** Replace the editable draft (bullets / scope). User-driven from the card. */
   updateMemoryDraft: (next: Partial<MemoryDraft>) => void;
   /**
@@ -438,6 +442,12 @@ export function useAgentActions(): UseAgentActionsResult {
     [],
   );
 
+  const offerDecisionMemory = useCallback<UseAgentActionsResult['offerDecisionMemory']>(({ userText, project }) => {
+    const offer = planRef.current ? null : offerDecisionsAsMemory(userText, project);
+    if (offer) { setPendingPlan(offer.plan); setMemoryDraft(offer.draft); }
+    return offer?.plan ?? null;
+  }, []);
+
   return {
     pendingPlan,
     executionPhase,
@@ -450,6 +460,7 @@ export function useAgentActions(): UseAgentActionsResult {
     acceptProactiveSuggestion,
     dismissProactiveSuggestion,
     prepareMemoryDraft,
+    offerDecisionMemory,
     updateMemoryDraft,
     refineLowConfidencePlan,
     confirmAndExecute,
@@ -467,28 +478,3 @@ export { MIN_EXECUTION_CONFIDENCE };
  * declarations it only uses to talk to this hook.
  */
 export type { AgentExecutionTarget, AgentIntent, MemoryScope } from '../services/agent';
-
-/**
- * Synthetic anchor artifact used to satisfy the planner signature on
- * memory-save actions when no artifact is active. The planner only reads
- * `id`, `versionGroupId` and `name` from the anchor — nothing is persisted
- * with this stub, and the executor's memory branch never calls
- * `createArtifactVersion`/`updateArtifact` on it.
- */
-function createMemoryAnchorArtifact(): Artifact {
-  const now = new Date().toISOString();
-  return {
-    id: 'memory-anchor',
-    versionGroupId: 'memory-anchor',
-    version: 1,
-    createdAt: now,
-    name: 'Conversación actual',
-    type: 'markdown',
-    phase: '—',
-    architecturalView: 'Vista de Gestión y Soporte',
-    content: '',
-    objective: 'Anclaje sintético para acciones de memoria sin artefacto activo.',
-    keyConcepts: [],
-    representation: 'document',
-  };
-}

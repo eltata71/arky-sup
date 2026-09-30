@@ -14,3 +14,4 @@ export { chatHistoryRepository, type ChatHistoryRepository } from './ChatHistory
 export { capChatHistoryForPersistence } from './chatHistoryCap';
 export * from './ChatTypes';
 export * from './chatHistory';
+export { extractConversationDecisions } from './conversationDecisions';

@@ -10,6 +10,7 @@
 import type { ArtifactBusinessMotivation, ArtifactPersonaComposer } from '../../lib/artifacts';
 import type { ArtifactContentGenerationOptions } from '../ai';
 import { artifactGenerationSupport } from '../artifacts';
+import { extractConversationDecisions, type ChatMessage } from '../chat';
 import type { AgentPersonaBriefing } from './agentContextComposer';
 
 export const personaComposer = (
@@ -20,8 +21,14 @@ export const personaComposer = (
 export const agentGenerationOptions = (
   resolvePersona?: (message: string) => AgentPersonaBriefing,
   businessMotivation?: readonly ArtifactBusinessMotivation[],
-): ArtifactContentGenerationOptions => ({
-  composePersonaInstruction: personaComposer(resolvePersona),
-  support: artifactGenerationSupport,
-  ...(businessMotivation?.length ? { businessMotivation } : {}),
-});
+  /** The conversation the action came from: its decisions reach the generation (7.3b). */
+  history?: readonly ChatMessage[],
+): ArtifactContentGenerationOptions => {
+  const conversation = extractConversationDecisions(history);
+  return {
+    composePersonaInstruction: personaComposer(resolvePersona),
+    support: artifactGenerationSupport,
+    ...(businessMotivation?.length ? { businessMotivation } : {}),
+    ...(conversation.decisions.length ? { conversation } : {}),
+  };
+};

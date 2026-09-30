@@ -15,7 +15,7 @@
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
-import type { ChatMessage } from '../chat';
+import { extractConversationDecisions, type ChatMessage } from '../chat';
 import { assistantService, type AgentTurnResult } from '../ai';
 import { artifactFitsWholeRewrite, describeRewriteRefusal } from './activeArtifactExposure';
 import {
@@ -35,7 +35,9 @@ export interface AgentConversationTurn {
 }
 
 const composeTurn = ({ project, activeArtifact, history, question, settings, persona }: AgentConversationTurn) => ({
-  systemInstruction: buildAgentSystemInstruction({ project, activeArtifact, settings, userQuery: question, persona }),
+  systemInstruction: buildAgentSystemInstruction({
+    project, activeArtifact, settings, userQuery: question, persona, conversation: extractConversationDecisions(history),
+  }),
   history: prepareChatHistoryForModel({
     history,
     includeChatHistory: settings.aiConfig?.includeChatHistoryByDefault === true,

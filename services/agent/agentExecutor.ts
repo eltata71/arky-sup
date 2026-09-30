@@ -207,7 +207,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
           objective: `${template.objective}\n\nInstrucciones adicionales del Arquitecto: ${plan.intent.userInstruction}`,
         };
         emit('generating', 'Regenerando artefacto con la IA…');
-        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, agentGenerationOptions(input.resolvePersona, input.businessMotivation));
+        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, agentGenerationOptions(input.resolvePersona, input.businessMotivation, input.history));
         appliedChanges.push(`Regenerado a partir de: "${truncate(plan.intent.userInstruction, 140)}"`);
         break;
       }
@@ -597,7 +597,7 @@ async function executeArtifactCreate(
     generatedContent = await artifactGenerationService.generateArtifactContent(
       project,
       generationTemplate,
-      settings, undefined, agentGenerationOptions(input.resolvePersona, input.businessMotivation),
+      settings, undefined, agentGenerationOptions(input.resolvePersona, input.businessMotivation, input.history),
     );
   } catch (err) {
     const friendly = err instanceof AIServiceError ? err : classifyAIError(err);

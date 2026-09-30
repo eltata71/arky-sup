@@ -18,7 +18,7 @@
  */
 
 import type { ArtifactTemplate, Settings } from '../../../types';
-import type { Artifact, ArtifactBusinessMotivation, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import { artifactGenerationService } from '../../ai';
@@ -75,6 +75,8 @@ export interface ArtifactGenerationRunInput {
     composePersonaInstruction?: ArtifactPersonaComposer;
     /** The initiatives the project answers, resolved by the caller (6.2). */
     businessMotivation?: readonly ArtifactBusinessMotivation[];
+    /** What the conversation with the agent settled (7.3b). */
+    conversation?: ArtifactConversationDigest;
     /**
      * Told when the run degraded to a fallback the user should know about.
      * A callback rather than a toast: this module has no screen.
@@ -109,6 +111,7 @@ export async function runArtifactGeneration({
     onPhase,
     composePersonaInstruction,
     businessMotivation,
+    conversation,
     onWarning,
 }: ArtifactGenerationRunInput): Promise<ArtifactGenerationRunResult> {
     const log = createTraceLog([
@@ -179,6 +182,7 @@ export async function runArtifactGeneration({
             composePersonaInstruction,
             support: artifactGenerationSupport,
             businessMotivation,
+            conversation,
             onDiagramIR: (ir) => { modelOutput.ir = ir; },
             onDegraded: (message) => { modelOutput.degradations.push(message); },
         },
@@ -336,6 +340,7 @@ export async function runArtifactGeneration({
             draftContent: draft.resolvedContent,
             previousArtifact: existingArtifact,
             businessMotivation,
+            conversation,
             envelope: refinementEnvelope,
             targetScore: template.requestContext
                 ? (isDiagramTemplate ? 92 : 90)

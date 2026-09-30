@@ -35,7 +35,7 @@ import type { Artifact, ArtifactBusinessMotivation } from '../../../lib/artifact
 import { instructionPermitsRemoval, extractMarkdownHeadings } from '../../../lib/artifacts';
 import { UNTRUSTED_FENCE_CLOSE, UNTRUSTED_FENCE_OPEN } from '../../../lib/untrustedContent';
 import { ARTIFACT_TEMPLATES } from '../../../constants';
-import type { ChatMessage } from '../../../services/chat';
+import { extractConversationDecisions, type ChatMessage } from '../../../services/chat';
 import { legacyTransport } from '../../../services/ai/generation/legacyTransport';
 import { artifactGenerationService } from '../../../services/ai/generation/artifactGenerationService';
 import { generatePresentationDeck } from '../../../services/ai/generation/presentationDeck';
@@ -248,6 +248,8 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
                 await artifactGenerationService.generateArtifactContent(project, template, settings, undefined, {
                     support: artifactGenerationSupport,
                     businessMotivation: motivationFor(testCase),
+                    // Lo que pasa el Workspace al generar: las decisiones del chat (7.3b).
+                    conversation: extractConversationDecisions(conversationFor(testCase)),
                 });
                 break;
             case 'criticar':
@@ -256,6 +258,7 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
                 const request = {
                     project, template, settings, content: artifact.content, mode: 'document' as const, score: 70, issues: [],
                     previousArtifact: artifact, businessMotivation: motivationFor(testCase),
+                    conversation: extractConversationDecisions(conversationFor(testCase)),
                 };
                 if (path === 'criticar') await artifactGenerationService.critiqueArtifactContent(request);
                 else await artifactGenerationService.refineArtifactContent(request);
