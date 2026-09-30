@@ -28,6 +28,7 @@ const ARTIFACT_PROMPT_MODULES = [
   'services/ai/generation/documents/sddDocuments.ts',
   'services/ai/generation/artifacts/artifactGenerationEngine.ts',
   'services/artifacts/application/diagramModification.ts',
+  'services/artifacts/application/documentModification.ts',
   'services/agent/agentContextComposer.ts',
 ] as const;
 

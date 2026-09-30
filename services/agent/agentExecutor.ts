@@ -4,7 +4,7 @@
  *
  * Reused capabilities (in this order of dependency):
  *  - `artifactGenerationService.applyArtifactImprovements`  → improve / applySuggestion
- *  - `requestArtifactPatch` (`agentConversation`)  → patch (re-uses the modifyArtifact tool)
+ *  - `runArtifactPatch` (`agentPatchAction`)  → patch (document patch, or modifyArtifact)
  *  - `artifactGenerationService.generateArtifactContent`    → regenerate
  *  - `AppContext.createArtifactVersion`         → new version persistence
  *  - `AppContext.updateArtifact`                → "apply to current" persistence
@@ -24,7 +24,6 @@ import { artifactGenerationService, classifyAIError, AIServiceError } from '../a
 import { validateArtifactReadiness } from '../../lib/artifacts/artifactGovernance';
 import { instructionPermitsRemoval } from '../../lib/artifacts';
 import { validateArtifactContent } from './agentContentValidation';
-import { artifactFitsWholeRewrite, describeRewriteRefusal } from './activeArtifactExposure';
 import { extractIRFromArtifact } from '../diagram';
 import { repairDiagramIRSemantics } from '../../lib/semanticRoleResolver';
 import { ARTIFACT_TEMPLATES } from '../../constants';
@@ -41,7 +40,7 @@ import { logAgentEvent } from './agentLogger';
 import { matchTemplateFromInstruction, buildCustomTemplate } from './templateMatcher';
 import { reuseDeterministicArtifact } from './deterministicArtifactReuse';
 import type { AgentArtifactStore } from './agentExecutorContracts';
-import { requestArtifactPatch } from './agentConversation';
+import { runArtifactPatch } from './agentPatchAction';
 import type { AgentPersonaBriefing } from './agentContextComposer';
 import { agentGenerationOptions } from './agentPersonaComposer';
 export type { AgentArtifactStore } from './agentExecutorContracts';
@@ -180,17 +179,13 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
         break;
       }
       case 'artifact.patch': {
-        // The model returns the whole content through modifyArtifact (`requestArtifactPatch`),
-        // so nothing it cannot see whole is rewritten (7.1b).
-        if (!artifactFitsWholeRewrite(artifact)) return { ...baseResult, status: 'cancelled', messages: [describeRewriteRefusal(artifact.content.trim().length)] };
+        // A document is changed by a patch over its headings; the rest by a whole rewrite (7.4b).
         emit('preparing', 'Preparando cambio puntual…');
-        emit('generating', 'Solicitando a la IA el contenido modificado…');
-        const patchPrompt = `Aplica el siguiente cambio puntual al artefacto y devuelve el contenido completo modificado mediante la herramienta modifyArtifact. Cambio solicitado: ${plan.intent.userInstruction}`;
-        newContent = await requestArtifactPatch({
-          project, activeArtifact: artifact, history, question: patchPrompt, settings,
-          persona: input.resolvePersona?.(patchPrompt),
-        });
-        appliedChanges.push(`Cambio puntual: ${truncate(plan.intent.userInstruction, 140)}`);
+        emit('generating', 'Solicitando a la IA el cambio…');
+        const patch = await runArtifactPatch({ artifact, project, settings, history, instruction: plan.intent.userInstruction, resolvePersona: input.resolvePersona });
+        if (!patch.ok) return { ...baseResult, status: 'cancelled', messages: [patch.message] };
+        newContent = patch.content;
+        appliedChanges.push(...patch.changes);
         break;
       }
       case 'artifact.regenerate': {
