@@ -152,6 +152,20 @@ export {
   type BasePromptOptions,
   type ArtifactsContextOptions,
 } from './prompts/projectPrompts';
+// El contexto de una operación sobre un artefacto, ensamblado una vez (7.2).
+// Se publica porque `services/agent` lo lee para el chat.
+export {
+  assembleArtifactContext,
+  bundleItems,
+  renderArtifactContextBundle,
+  ARTIFACT_CONTEXT_PROFILES,
+  ARTIFACT_CONTEXT_SCOPES,
+  type ArtifactContextBundle,
+  type ArtifactContextProfile,
+  type ArtifactContextProfileName,
+  type ArtifactContextScope,
+  type ArtifactContextSources,
+} from './prompts/artifactContext';
 export {
   DEFAULT_TEXT_MODEL,
   listCurrentGeminiModels,

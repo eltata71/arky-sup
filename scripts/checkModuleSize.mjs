@@ -96,7 +96,7 @@ export const BYTE_CEILINGS = {
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
   'components/CustomEdge.tsx': 32023,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
-  'services/agent/agentContextComposer.ts': 31444, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'services/agent/agentContextComposer.ts': 21616, // F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
   // F6-05: +18 bytes, the import path to the model-directory door instead of
   // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
   'pages/SettingsPage.tsx': 30973,
@@ -208,7 +208,6 @@ export const CEILINGS = {
   // 636, not 635: splitting `import { ChatMessage } from '../../types'` into an
   // import from `services/chat` — where that model now lives — costs exactly one
   // line. A boundary paid for in line count, not in logic.
-  'services/agent/agentContextComposer.ts': 638, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/CustomEdge.tsx': 630,
   'services/diagram/layoutQualityService.ts': 630,
   'services/publicationPipeline/PublicationPreflightService.ts': 630,

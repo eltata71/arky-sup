@@ -2,15 +2,13 @@ import { describe, it, expect } from 'vitest';
 import {
   buildAgentSystemInstruction,
   buildProjectArtifactsInventory,
-  compactBullet,
   DEFAULT_AGENT_MEMORY,
   DEFAULT_CONTEXT_BUDGET,
   getAgentBaseMemory,
   prepareChatHistoryForModel,
-  selectRelevantMemory,
-  selectRelevantMemoryEntries,
-  stemMatchToken,
 } from '../agentContextComposer';
+// Memory relevance moved to the memory module (plan de calidad de artefactos, 7.2).
+import { compactBullet, selectRelevantMemory, selectRelevantMemoryEntries, stemMatchToken } from '../../memory';
 import type { MemoryEntry, Settings } from '../../../types';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';

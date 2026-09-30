@@ -286,7 +286,7 @@ export const DEEP_IMPORT_BUDGET = {
   // el motor el 2026-09-24 (F5-01, corte 14). Dentro de `services/ai` entra por
   // los barriles de cada contexto: es código perezoso, y la regla del barril
   // contra el bundle lo permite.
-  'services/agent -> services/memory': 3,
+  'services/agent -> services/memory': 2,
   'services/architectureOffice -> services/ai': 2,
   'services/architectureOffice -> services/diagram': 1,
   'services/architectureProjects -> services/memory': 2,

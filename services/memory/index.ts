@@ -5,3 +5,4 @@
  */
 export * from './memoryEntries';
 export * from './memoryScopes';
+export * from './memoryRelevance';

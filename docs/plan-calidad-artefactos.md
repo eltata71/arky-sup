@@ -311,7 +311,9 @@ política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
 | Plan | #119 | Fusionada |
 | 7.1a — política única de conservación | #121 | Fusionada |
 | 7.1b — el copiloto ve entero lo que puede reescribir | #122 | Fusionada |
-| 7.1c — banco `artifact-evals` | #123 | En revisión |
+| 7.1c — banco `artifact-evals` | #123 | Fusionada |
+| 7.2a — ensamblador único (`ArtifactContextBundle`): ámbitos, jerarquía, perfiles con presupuesto, duplicados entre ámbitos, relevancia de hermanos; el chat lo lee | — | En revisión |
+| 7.2b — `buildBasePrompt` y el camino IR de diagramas leen el bundle | — | Pendiente |
 
 **Línea base del banco (2026-09-30)**, `tests/fixtures/artifact-evals/linea-base.json`:
 
@@ -324,6 +326,16 @@ política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
 | El contrato detecta la sección que falta | 0 % |
 | Conservación bajo edición (garantía de 7.1a) | 100 % |
 | El copiloto ve el artefacto entero (garantía de 7.1b) | 100 % |
+
+**Cómo se repartió la ola 7.2.** Las tareas 7.2a (el bundle) y 7.2b (presupuesto,
+relevancia y duplicados) se entregaron juntas, porque un módulo que nadie
+importa no pasa `noOrphanModules`; con ellas, el compositor del chat pasó a
+leer el bundle. La que queda como 7.2b es la antigua 7.2c: el prompt base y el
+camino IR de diagramas. El ensamblador vive en `services/ai/prompts/` y no en
+`services/artifacts`: sólo lee lo que cada operación ya tiene (proyecto,
+ajustes, artefacto), y lo que sólo conocen otros contextos (iniciativa,
+entregable, conversación) le llegará como datos por puertos en la 7.3, así que
+la capa de IA sigue sin importar ningún contexto de dominio.
 
 Las olas 7.2 y 7.3 existen para llevar el contexto entregado y el cercado al
 100 %. La ola 7.4 existe para que el contrato detecte lo que falta.
