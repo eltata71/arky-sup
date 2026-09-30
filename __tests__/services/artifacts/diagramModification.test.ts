@@ -121,6 +121,28 @@ describe('proposeDiagramModification', () => {
     }
   });
 
+  it('con el proyecto, el contexto lleva sus notas y la memoria del artefacto, cercados (7.3a)', async () => {
+    const source = { ...artifact(), artifactMemory: ['Nombrar la base como «Pólizas»'] };
+    const patch = renamePatch();
+    ai.proposeEdit.mockResolvedValue({ ok: true, patch, preview: applySemanticPatch(source.ir!, patch) });
+    const project = {
+      id: 'p1',
+      name: 'Consulta de pólizas',
+      description: '',
+      projectContext: ['La API de consulta expone sólo lectura'],
+      artifacts: [],
+    } as unknown as import('../../../services/architectureProjects').Project;
+    const withContext = { ...settings, globalContext: ['Toda API usa OAuth 2.0 con mTLS'] } as Settings;
+
+    await proposeDiagramModification({ artifact: source, instruction: 'renombra la API', project }, withContext);
+
+    const [request] = ai.proposeEdit.mock.calls[0];
+    expect(request.context).toContain('La API de consulta expone sólo lectura');
+    expect(request.context).toContain('OAuth 2.0 con mTLS');
+    expect(request.context).toContain('Nombrar la base como «Pólizas»');
+    expect(request.context).toContain('<<<CONTENIDO_EXTERNO');
+  });
+
   it('una cancelación no es un fallo', async () => {
     ai.proposeEdit.mockResolvedValue({ ok: false, patch: null, preview: null, reason: '' });
     const outcome = await proposeDiagramModification({ artifact: artifact(), instruction: 'x' }, settings);

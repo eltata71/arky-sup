@@ -252,7 +252,11 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
                 break;
             case 'criticar':
             case 'refinar': {
-                const request = { project, template, settings, content: artifact.content, mode: 'document' as const, score: 70, issues: [] };
+                // Lo que pasa `refineArtifactBeforePersistence` al regenerar: el artefacto anterior y la motivación (7.3a).
+                const request = {
+                    project, template, settings, content: artifact.content, mode: 'document' as const, score: 70, issues: [],
+                    previousArtifact: artifact, businessMotivation: motivationFor(testCase),
+                };
                 if (path === 'criticar') await artifactGenerationService.critiqueArtifactContent(request);
                 else await artifactGenerationService.refineArtifactContent(request);
                 break;

@@ -335,6 +335,7 @@ export async function runArtifactGeneration({
             settings,
             draftContent: draft.resolvedContent,
             previousArtifact: existingArtifact,
+            businessMotivation,
             envelope: refinementEnvelope,
             targetScore: template.requestContext
                 ? (isDiagramTemplate ? 92 : 90)

@@ -24,9 +24,10 @@
  */
 
 import type { Settings } from '../../../types';
+import type { Project } from '../../architectureProjects';
 import type { Artifact, ArtifactChangeNote } from '../../../lib/artifacts';
 import type { DiagramIR, DiagramPatch, PatchApplication, PatchRejection } from '../../../lib/diagram';
-import { diagramEditService } from '../../ai';
+import { assembleArtifactContext, diagramEditService, renderArtifactContextBundle } from '../../ai';
 import { applySemanticPatch, irToMermaid, reconcileIRWithContent, resolveEditableDiagramIR } from '../../diagram';
 import { replaceMermaidBlock } from './artifactImprovement';
 
@@ -72,6 +73,8 @@ export const proposeDiagramModification = async (
   params: {
     readonly artifact: EditableSource & Pick<Artifact, 'name' | 'objective'>;
     readonly instruction: string;
+    /** With it, the proposal reads the project's context under the `edit` profile (7.3a). */
+    readonly project?: Project;
   },
   settings: Settings,
   options: { readonly signal?: AbortSignal } = {},
@@ -83,6 +86,12 @@ export const proposeDiagramModification = async (
   const context = [
     `Artefacto: ${artifact.name}`,
     artifact.objective ? `Objetivo: ${artifact.objective}` : null,
+    params.project
+      ? renderArtifactContextBundle(assembleArtifactContext(
+        { project: params.project, settings, artifact: artifact as Artifact, query: `${instruction} ${artifact.name}` },
+        'edit',
+      ))
+      : null,
   ].filter(Boolean).join('\n');
 
   const result = await diagramEditService.proposeEdit(

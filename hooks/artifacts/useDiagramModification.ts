@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
+import type { Project } from '../../context/AppContext';
 import type { PatchRejection } from '../../lib/diagram';
 import {
   canModifyDiagram,
@@ -25,6 +26,8 @@ interface UseDiagramModificationParams {
   readonly projectId: string;
   readonly artifact: Artifact;
   readonly settings: Settings;
+  /** The project, so the proposal reads its context (plan de calidad de artefactos, 7.3a). */
+  readonly project?: Project;
   readonly restoreArtifactVersion: (projectId: string, version: Artifact) => Artifact;
 }
 
@@ -38,6 +41,7 @@ export function useDiagramModification({
   projectId,
   artifact,
   settings,
+  project,
   restoreArtifactVersion,
 }: UseDiagramModificationParams) {
   const [state, setState] = useState<DiagramModificationState>({ status: 'idle' });
@@ -67,13 +71,13 @@ export function useDiagramModification({
     const controller = new AbortController();
     controllerRef.current = controller;
     setState({ status: 'proposing' });
-    const outcome = await proposeDiagramModification({ artifact, instruction }, settings, { signal: controller.signal });
+    const outcome = await proposeDiagramModification({ artifact, instruction, project }, settings, { signal: controller.signal });
     if (controller.signal.aborted || controllerRef.current !== controller) return;
     controllerRef.current = null;
     if (outcome.kind === 'proposal') setState({ status: 'ready', proposal: outcome.proposal });
     else if (outcome.kind === 'refused') setState({ status: 'refused', reason: outcome.reason, rejected: outcome.rejected });
     else setState({ status: 'idle' });
-  }, [abort, artifact, settings]);
+  }, [abort, artifact, project, settings]);
 
   const discard = useCallback(() => {
     abort();

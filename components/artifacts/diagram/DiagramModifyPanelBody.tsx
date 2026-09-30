@@ -40,12 +40,13 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
   artifact,
   onVersionCreated,
 }) => {
-  const { settings, restoreArtifactVersion } = useAppContext();
+  const { settings, restoreArtifactVersion, getProject } = useAppContext();
   const { addToast } = useToast();
   const { state, canModify, propose, apply, discard } = useDiagramModification({
     projectId,
     artifact,
     settings,
+    project: getProject(projectId),
     restoreArtifactVersion,
   });
   const [instruction, setInstruction] = useState('');

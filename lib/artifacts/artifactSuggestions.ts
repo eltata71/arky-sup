@@ -175,6 +175,13 @@ export interface ArtifactSuggestionContext {
   detectedTechnicalInfo: string[];
   refinementHistory: string[];
   language: 'es' | 'en';
+  /**
+   * The project's context — global standards, the architect's preferences,
+   * the project's notes and memory, the artifact's memory and the related
+   * artifacts — already assembled and fenced (plan de calidad de artefactos,
+   * 7.3a). Without it the suggestions judged the artifact against nothing.
+   */
+  contextBlock?: string;
 }
 
 /** Raised when the AI response cannot be coerced into a usable report. */
