@@ -10,6 +10,7 @@ import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import { suggestArtifactImprovements } from './generation/artifactSuggestions';
+import { assembleArtifactContext, renderArtifactContextBundle } from './prompts/artifactContext';
 import {
   ArtifactSuggestionError,
   parseArtifactSuggestionReport,
@@ -105,6 +106,11 @@ export const buildArtifactSuggestionContext = (
     ),
     refinementHistory,
     language: settings.language === 'en' ? 'en' : 'es',
+    // What the suggestions are judged against: the same context a review reads (7.3a).
+    contextBlock: renderArtifactContextBundle(assembleArtifactContext(
+      { project, settings, artifact, query: `${artifact.name}. ${artifact.objective ?? ''}` },
+      'review',
+    )),
   };
 };
 

@@ -18,6 +18,7 @@ import { cleanJsonString } from '../../../utils';
 import type { Project } from '../../architectureProjects';
 import type { Artifact } from '../../../lib/artifacts';
 import { resolveModelForSettings } from '../catalog';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { buildBasePrompt } from '../prompts/projectPrompts';
 import { aiGateway } from './aiGateway';
 
@@ -75,7 +76,7 @@ TASK: Review this specific artifact and suggest tangible improvements based on i
 Artifact Name: ${artifact.name}
 Type: ${artifact.type}
 Content:
-${artifact.content}
+${wrapUntrustedContent('artefacto', artifact.content)}
 
 Return a JSON Array of improvements: [{ "id": "uuid", "title": "short title", "description": "detailed explanation", "category": "Security" | "Performance" | "Scalability" | "Best Practices" | "Clarity" }]
 `;
@@ -119,7 +120,7 @@ ${basePrompt}
 
 TASK: Rewrite the following artifact content to incorporate SPECIFIC improvements.
 Original Content:
-${artifact.content}
+${wrapUntrustedContent('artefacto', artifact.content)}
 
 Selected Improvements to Apply:
 ${selectedImprovements.map((imp) => `- [${imp.category}] ${imp.title}: ${imp.description}`).join('\n')}
@@ -158,7 +159,7 @@ Artifact Name: ${artifact.name}
 Type: ${artifact.type}
 Objective: ${artifact.objective}
 Content:
-${artifact.content}
+${wrapUntrustedContent('artefacto', artifact.content)}
 
 INSTRUCTIONS:
 1. Provide a mix of Unit, Integration, and E2E test cases where applicable.

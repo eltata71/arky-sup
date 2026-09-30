@@ -16,7 +16,7 @@ vi.mock('../../services/ai', async (importOriginal) => ({
 
 const app = vi.hoisted(() => ({ restoreArtifactVersion: vi.fn(), addToast: vi.fn() }));
 vi.mock('../../context/AppContext', () => ({
-  useAppContext: () => ({ settings: { aiConfig: { model: 'm' } }, restoreArtifactVersion: app.restoreArtifactVersion }),
+  useAppContext: () => ({ settings: { aiConfig: { model: 'm' } }, restoreArtifactVersion: app.restoreArtifactVersion, getProject: () => undefined }),
 }));
 vi.mock('../../context/ToastContext', () => ({ useToast: () => ({ addToast: app.addToast }) }));
 

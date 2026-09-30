@@ -1,5 +1,5 @@
 import type { ArtifactTemplate, Settings } from '../../../types';
-import type { Artifact, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation, ArtifactGenerationPhaseListener, ArtifactGenerationTraceStatus, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import {
@@ -33,6 +33,8 @@ export interface ArtifactRefinementRequest {
   settings: Settings;
   draftContent: string;
   previousArtifact?: Artifact;
+  /** The initiatives the project answers (7.3a). */
+  businessMotivation?: readonly ArtifactBusinessMotivation[];
   envelope: ArtifactEnvelope;
   targetScore?: number;
   maxPasses?: number;
@@ -439,25 +441,10 @@ const runAIRefinement = async (
   const startedAt = now();
   const warnings: string[] = [];
   const issues = issueMessages(report, 8);
-  const critique = await artifactGenerationService.critiqueArtifactContent({
-    project: request.project,
-    template: request.template,
-    settings: request.settings,
-    content,
-    mode: request.mode,
-    score: report.score.value,
-    issues,
-  });
-  const refined = await artifactGenerationService.refineArtifactContent({
-    project: request.project,
-    template: request.template,
-    settings: request.settings,
-    content,
-    mode: request.mode,
-    score: report.score.value,
-    issues,
-    critique,
-  });
+  const { project, template, settings, previousArtifact, businessMotivation, mode } = request;
+  const call = { project, template, settings, previousArtifact, businessMotivation, content, mode, score: report.score.value, issues };
+  const critique = await artifactGenerationService.critiqueArtifactContent(call);
+  const refined = await artifactGenerationService.refineArtifactContent({ ...call, critique });
   if (!refined.trim()) warnings.push('La IA devolvió contenido vacío durante refinamiento; se descartará por seguridad.');
   return {
     content: refined,

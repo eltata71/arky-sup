@@ -4,6 +4,7 @@ import { cleanJsonString } from '../../../utils';
 import type { ArtifactSuggestionContext } from '../artifactSuggestionTypes';
 import { resolveModelForSettings } from '../catalog';
 import { aiGateway } from './aiGateway';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 
 export async function suggestArtifactImprovements(
   context: ArtifactSuggestionContext,
@@ -37,11 +38,10 @@ ${list('Generation lifecycle events', context.generationEvents)}
 ${list('Semantic refinement history', context.refinementHistory)}
 ${list('Detected business context', context.detectedBusinessInfo)}
 ${list('Detected technical context', context.detectedTechnicalInfo)}
+${context.contextBlock ? `\nPROJECT CONTEXT — judge the artifact against it: flag what it contradicts or ignores.\n${context.contextBlock}\n` : ''}
 
 ARTIFACT CONTENT (verbatim, may be truncated):
-"""
-${context.content || '(empty)'}
-"""
+${wrapUntrustedContent('artefacto', context.content || '(empty)')}
 
 INSTRUCTIONS
 1. Produce a SHORT qualitySummary (1-2 sentences) describing the current quality state and the single biggest opportunity.
