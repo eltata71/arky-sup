@@ -157,7 +157,6 @@ export {
 export {
   assembleArtifactContext,
   bundleItems,
-  renderArtifactContextBundle,
   ARTIFACT_CONTEXT_PROFILES,
   ARTIFACT_CONTEXT_SCOPES,
   type ArtifactContextBundle,
@@ -166,6 +165,7 @@ export {
   type ArtifactContextScope,
   type ArtifactContextSources,
 } from './prompts/artifactContext';
+export { renderArtifactContextBundle } from './prompts/artifactContextRender';
 export {
   DEFAULT_TEXT_MODEL,
   listCurrentGeminiModels,

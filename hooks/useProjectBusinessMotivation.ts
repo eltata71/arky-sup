@@ -23,5 +23,11 @@ const NO_PROJECT = { id: '', name: '', description: '', projectContext: [], arti
 export const useProjectBusinessMotivation = (project: Project | undefined): ArtifactBusinessMotivation[] => {
   const { initiatives } = useInitiatives();
   const served = useAttentionInitiatives(project ?? NO_PROJECT, project ? initiatives : NO_INITIATIVES);
-  return useMemo(() => served.map(describeInitiativeMotivation), [served]);
+  // What this project moves in each initiative leads its motivation (7.3c).
+  const contributions = project?.attention?.contributions;
+  return useMemo(
+    () => served.map((initiative) =>
+      describeInitiativeMotivation(initiative, (contributions ?? []).filter((c) => c.initiativeId === initiative.id))),
+    [served, contributions],
+  );
 };

@@ -21,7 +21,8 @@ import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
-import { ARCHITECTURE_SIGNAL_PATTERN, renderDiagramContextBundle } from './artifactContext';
+import { ARCHITECTURE_SIGNAL_PATTERN } from './artifactContext';
+import { renderDiagramContextBundle } from './artifactContextRender';
 
 /**
  * Ten-dimension rubric the Mermaid prompts carry for self-review. It asked

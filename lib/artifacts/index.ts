@@ -8,7 +8,7 @@
  */
 export * from './artifactModel';
 export { emitGenerationPhase } from './generationPhase';
-export type { ArtifactBusinessMotivation, ArtifactConversationDigest, ArtifactGenerationOptions, ArtifactPersonaComposer } from './artifactPersona';
+export type { ArtifactBusinessMotivation, ArtifactContextPorts, ArtifactConversationDigest, ArtifactDeliverableContext, ArtifactGenerationOptions, ArtifactPersonaComposer } from './artifactPersona';
 export * from './artifactCompilationSummary';
 export * from './contracts';
 export * from './exportContracts';

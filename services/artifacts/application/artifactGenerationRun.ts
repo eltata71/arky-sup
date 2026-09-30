@@ -18,7 +18,7 @@
  */
 
 import type { ArtifactTemplate, Settings } from '../../../types';
-import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import { artifactGenerationService } from '../../ai';
@@ -59,7 +59,8 @@ export type { ArtifactGenerationAction } from '../domain/artifactGenerationTrace
 
 
 
-export interface ArtifactGenerationRunInput {
+/** The ports carry why the project exists, what the chat settled and the open deliverables (7.3). */
+export interface ArtifactGenerationRunInput extends ArtifactContextPorts {
     project: Project;
     template: ArtifactTemplate;
     settings: Settings;
@@ -73,10 +74,6 @@ export interface ArtifactGenerationRunInput {
     onPhase?: ArtifactGenerationPhaseListener;
     /** Who speaks in the prompt; handed in because only the Office knows (corte 13). */
     composePersonaInstruction?: ArtifactPersonaComposer;
-    /** The initiatives the project answers, resolved by the caller (6.2). */
-    businessMotivation?: readonly ArtifactBusinessMotivation[];
-    /** What the conversation with the agent settled (7.3b). */
-    conversation?: ArtifactConversationDigest;
     /**
      * Told when the run degraded to a fallback the user should know about.
      * A callback rather than a toast: this module has no screen.
@@ -112,8 +109,10 @@ export async function runArtifactGeneration({
     composePersonaInstruction,
     businessMotivation,
     conversation,
+    deliverables,
     onWarning,
 }: ArtifactGenerationRunInput): Promise<ArtifactGenerationRunResult> {
+    const ports: ArtifactContextPorts = { businessMotivation, conversation, deliverables };
     const log = createTraceLog([
         makeTraceStep(
             template.requestContext ? 'recommendation' : 'prompt',
@@ -181,8 +180,7 @@ export async function runArtifactGeneration({
             architectureGraphPromptBlock: graphGenerationContext.promptBlock,
             composePersonaInstruction,
             support: artifactGenerationSupport,
-            businessMotivation,
-            conversation,
+            ...ports,
             onDiagramIR: (ir) => { modelOutput.ir = ir; },
             onDegraded: (message) => { modelOutput.degradations.push(message); },
         },
@@ -339,8 +337,7 @@ export async function runArtifactGeneration({
             settings,
             draftContent: draft.resolvedContent,
             previousArtifact: existingArtifact,
-            businessMotivation,
-            conversation,
+            ...ports,
             envelope: refinementEnvelope,
             targetScore: template.requestContext
                 ? (isDiagramTemplate ? 92 : 90)

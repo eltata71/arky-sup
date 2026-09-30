@@ -110,6 +110,24 @@ describe('buildBusinessMotivationBlock', () => {
     });
 });
 
+describe('buildBusinessMotivationBlock — lo que mueve este proyecto (7.3c)', () => {
+    it('pone primero la contribución del proyecto y marca el resto como contexto', () => {
+        const block = buildBusinessMotivationBlock([{
+            title: 'Vida digital',
+            need: 'Vender vida en línea',
+            objectives: [],
+            expectedOutcomes: ['30 % de ventas digitales', 'Menos papel'],
+            kpis: ['Tiempo de emisión (minutos): 7200 → 15'],
+            regulatoryDrivers: [],
+            projectContribution: { statements: ['Emite la póliza sin papel'], outcomes: ['Menos papel'], kpis: [] },
+        }]);
+        expect(block).toContain('Lo que este proyecto aporta a la iniciativa: Emite la póliza sin papel');
+        expect(block).toContain('Resultados que este proyecto sirve: Menos papel');
+        expect(block).toContain('Resultados esperados de la iniciativa (contexto; prioriza los de este proyecto)');
+        expect(block.indexOf('Resultados que este proyecto sirve')).toBeLessThan(block.indexOf('Resultados esperados'));
+    });
+});
+
 describe('describeInitiativeMotivation', () => {
     const initiative = {
         title: 'Vida digital',
@@ -138,6 +156,19 @@ describe('describeInitiativeMotivation', () => {
         expect(motivation.expectedOutcomes).toEqual(['30 % de ventas digitales (se evidencia por: Informe mensual)', 'Menos papel']);
         expect(motivation.kpis).toEqual(['Tiempo de emisión (minutos): 7200 → 15', 'Conversión (%): meta 12', 'Satisfacción']);
         expect(motivation.regulatoryDrivers).toEqual(['AML/KYC']);
+    });
+
+    it('resuelve por id lo que el proyecto declara que mueve, y omite lo que ya no resuelve (7.3c)', () => {
+        const motivation = describeInitiativeMotivation(initiative, [
+            { statement: 'Emite la póliza sin papel', outcomeId: 'o2', kpiId: 'k1' },
+            { statement: 'Mide la conversión', kpiId: 'k-borrado' },
+        ]);
+        expect(motivation.projectContribution).toEqual({
+            statements: ['Emite la póliza sin papel', 'Mide la conversión'],
+            outcomes: ['Menos papel'],
+            kpis: ['Tiempo de emisión (minutos): 7200 → 15'],
+        });
+        expect(describeInitiativeMotivation(initiative).projectContribution).toBeUndefined();
     });
 
     it('un código vacío no se presenta como código', () => {

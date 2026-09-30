@@ -24,4 +24,6 @@ export function initiativesServedBy(project: Project, initiatives: readonly Busi
 export const describeAttentionMotivation = (
   project: Project,
   initiatives: readonly BusinessInitiative[],
-): ArtifactBusinessMotivation[] => initiativesServedBy(project, initiatives).map(describeInitiativeMotivation);
+): ArtifactBusinessMotivation[] => initiativesServedBy(project, initiatives).map((initiative) =>
+  // What this project moves in each initiative leads its motivation (7.3c).
+  describeInitiativeMotivation(initiative, (project.attention?.contributions ?? []).filter((c) => c.initiativeId === initiative.id)));

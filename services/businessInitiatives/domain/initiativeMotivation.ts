@@ -25,8 +25,38 @@ const describeKpi = (kpi: InitiativeKpi): string => {
     return `${kpi.name}${unit}${path}`;
 };
 
-export function describeInitiativeMotivation(initiative: BusinessInitiative): ArtifactBusinessMotivation {
+/**
+ * What a project declares it moves in this initiative — the port the project
+ * context supplies (`AttentionContribution` fits it), so this context does not
+ * import the project's (plan de calidad de artefactos, 7.3c).
+ */
+export interface InitiativeContributionRef {
+    statement: string;
+    outcomeId?: string;
+    kpiId?: string;
+}
+
+/**
+ * The contributions resolved against the initiative, by id. A reference that
+ * no longer resolves is left out of the prompt — the portfolio graph reports
+ * it; a prompt is not where a broken link should be discovered.
+ */
+const describeContribution = (initiative: BusinessInitiative, contributions: readonly InitiativeContributionRef[]) => {
+    const outcomeIds = new Set(contributions.map((c) => c.outcomeId).filter(Boolean));
+    const kpiIds = new Set(contributions.map((c) => c.kpiId).filter(Boolean));
+    return {
+        statements: contributions.map((c) => c.statement.trim()).filter(Boolean),
+        outcomes: initiative.expectedOutcomes.filter((o) => outcomeIds.has(o.id) && o.statement.trim()).map((o) => o.statement.trim()),
+        kpis: initiative.kpis.filter((k) => kpiIds.has(k.id) && k.name.trim()).map(describeKpi),
+    };
+};
+
+export function describeInitiativeMotivation(
+    initiative: BusinessInitiative,
+    contributions: readonly InitiativeContributionRef[] = [],
+): ArtifactBusinessMotivation {
     const clean = (values: readonly string[]) => values.map((value) => value.trim()).filter(Boolean);
+    const contribution = contributions.length ? describeContribution(initiative, contributions) : null;
     return {
         title: initiative.title,
         code: initiative.code || undefined,
@@ -40,5 +70,8 @@ export function describeInitiativeMotivation(initiative: BusinessInitiative): Ar
                 : outcome.statement.trim())),
         kpis: initiative.kpis.filter((kpi) => kpi.name.trim()).map(describeKpi),
         regulatoryDrivers: clean(initiative.regulatoryDrivers),
+        ...(contribution && (contribution.statements.length || contribution.outcomes.length || contribution.kpis.length)
+            ? { projectContribution: contribution }
+            : {}),
     };
 }

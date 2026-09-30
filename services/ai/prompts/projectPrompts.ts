@@ -19,9 +19,10 @@ import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { buildBusinessMotivationBlock } from './diagramGenerationBrief';
 import { resolveDomainPacks } from '../../../lib/domainPacks';
 import { buildDomainPackBlock } from './domainPackPrompt';
-import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest } from '../../../lib/artifacts';
+import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest, ArtifactDeliverableContext } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
-import { ARTIFACT_CONTEXT_PROFILES, assembleArtifactContext, renderArtifactContextBundle, type ArtifactContextProfileName } from './artifactContext';
+import { ARTIFACT_CONTEXT_PROFILES, assembleArtifactContext, type ArtifactContextProfileName } from './artifactContext';
+import { renderArtifactContextBundle } from './artifactContextRender';
 // Por el barril: `services/memory` ya publica esta función y es un módulo de
 // declaraciones puras —ningún chunk pesado detrás—, así que no hay razón de
 // bundle que justifique entrar por el fichero.
@@ -130,6 +131,8 @@ export interface BasePromptOptions {
   excludeVersionGroupId?: string;
   /** What the conversation with the agent settled (7.3b). */
   conversation?: ArtifactConversationDigest;
+  /** The project's open deliverables (7.3c). */
+  deliverables?: readonly ArtifactDeliverableContext[];
 }
 
 const DIAGRAM_MAX_DESCRIPTION_CHARS = 600;
@@ -165,6 +168,7 @@ export function buildBasePrompt(project: Project, settings: Settings, opts: Base
       query: opts.query,
       excludeVersionGroupId: opts.excludeVersionGroupId,
       conversation: opts.conversation,
+      deliverables: opts.deliverables,
     },
     { ...profileDef, limits },
   );
