@@ -10,7 +10,7 @@
  * artefactos, 7.3a).
  */
 import type { Settings, ArtifactTemplate } from '../../../types';
-import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
+import { describeDisciplineForPrompt, type Artifact, type ArtifactContextPorts } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { resolveModelForSettings } from '../catalog';
@@ -120,7 +120,7 @@ Reglas estrictas:
 - Preserva significado, decisiones, restricciones y datos existentes.
 - No elimines secciones, nodos, relaciones, tablas ni trazabilidad útil.
 - No inventes datos específicos; si falta información, agrega supuestos explícitos.
-- Documentos: Markdown en ${languageName(request.settings)} con título, propósito/resumen, alcance, supuestos, riesgos/consideraciones y próximos pasos cuando aplique.
+- Documentos: Markdown en ${languageName(request.settings)}. ${describeDisciplineForPrompt(request.template.name) || 'Con título, propósito/resumen, alcance, supuestos, riesgos/consideraciones y próximos pasos cuando aplique.'}
 - Diagramas: conserva renderabilidad Mermaid/ReactFlow, etiquetas descriptivas y relaciones válidas.
 - Híbridos: conserva exactamente un bloque Mermaid válido y narrativa antes o después.
 

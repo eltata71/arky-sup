@@ -27,7 +27,7 @@
     "vistaCompleta": 100,
     "cercado": 100,
     "conservacion": 100,
-    "contratoDetecta": 0,
+    "contratoDetecta": 100,
     "celdasEntregadas": [
       "salud-adr-autorizacion-previa·copiloto·agenteBase",
       "salud-adr-autorizacion-previa·copiloto·capturaInicial",

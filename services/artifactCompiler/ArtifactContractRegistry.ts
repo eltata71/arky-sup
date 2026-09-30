@@ -15,6 +15,7 @@
 import type { ArtifactType } from '../../types';
 import type { ArtifactContract } from './ArtifactContract';
 import { matchesPattern } from './ArtifactContract';
+import { disciplineForTemplate } from '../../lib/artifacts/documentDisciplines';
 import {
   ARTIFACT_CONTRACTS,
   FALLBACK_DIAGRAM_CONTRACT,
@@ -31,8 +32,49 @@ const PATTERN_CONTRACTS = ARTIFACT_CONTRACTS.filter((c) => Boolean(c.pattern));
 const looksLikeDiagram = (artifactType: string): boolean =>
   artifactType.startsWith('mermaid') || artifactType === 'react-flow-graph';
 
-/** Resolve the contract for an artifact type. Always returns a contract. */
-export const resolveContract = (artifactType: ArtifactType): ArtifactContract => {
+const TEMPLATE_CONTRACTS = new Map<string, ArtifactContract>();
+
+/**
+ * A catalogue document's own contract, built from its discipline (plan de
+ * calidad de artefactos, 7.4a): the generic document contract's rules and
+ * thresholds, with the discipline's sections and content rules in place of
+ * the generic objective/context/scope. Sections carry no scaffolding: a
+ * missing decision or recovery objective is reported, never filled with a
+ * placeholder that looks like one.
+ */
+const templateContract = (templateName: string | undefined, artifactType: ArtifactType): ArtifactContract | undefined => {
+  const discipline = disciplineForTemplate(templateName);
+  if (!discipline) return undefined;
+  const cached = TEMPLATE_CONTRACTS.get(discipline.templateName);
+  if (cached) return cached;
+  const base = EXPLICIT_INDEX.get(artifactType) ?? FALLBACK_DOCUMENT_CONTRACT;
+  const contract: ArtifactContract = {
+    ...base,
+    id: `contract.template.${discipline.templateName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+    label: discipline.label,
+    appliesTo: [artifactType],
+    sections: discipline.sections.map((section) => ({
+      id: section.id,
+      label: section.label,
+      keywords: [...section.keywords],
+      requirement: section.requirement,
+      severity: section.requirement === 'required' ? 'high' : 'low',
+    })),
+    contentRules: discipline.rules,
+    automaticRecommendations: [],
+  };
+  TEMPLATE_CONTRACTS.set(discipline.templateName, contract);
+  return contract;
+};
+
+/**
+ * Resolve the contract for an artifact. A catalogue document with a declared
+ * discipline gets its own contract, by template name; everything else
+ * resolves by type. Always returns a contract.
+ */
+export const resolveContract = (artifactType: ArtifactType, templateName?: string): ArtifactContract => {
+  const byTemplate = templateContract(templateName, artifactType);
+  if (byTemplate) return byTemplate;
   const explicit = EXPLICIT_INDEX.get(artifactType);
   if (explicit) return explicit;
 

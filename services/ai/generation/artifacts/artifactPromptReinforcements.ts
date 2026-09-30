@@ -5,6 +5,7 @@
  * tested — and read — without constructing a generation.
  */
 import type { ArtifactTemplate } from '../../../../types';
+import { describeDisciplineForPrompt } from '../../../../lib/artifacts';
 
 /** Returns true when an ArtifactTemplate.type requires diagram-flavoured generation. */
 export function isDiagramArtifactType(type: string): boolean {
@@ -87,13 +88,16 @@ ON-DEMAND DOCUMENT QUALITY BAR (mandatory):
  * structures already in place.
  */
 export function buildCatalogDocumentReinforcement(template: ArtifactTemplate): string {
+    // The template's discipline is the structure the contract checks: one list
+    // for both (plan de calidad de artefactos, 7.4a).
+    const discipline = describeDisciplineForPrompt(template.name);
     return `
-
-CATALOG DOCUMENT QUALITY BAR (mandatory — apply on top of the per-template structure above):
+${discipline ? `\n${discipline}\n` : ''}
+CATALOG DOCUMENT QUALITY BAR (mandatory — apply on top of the ${discipline ? 'structure above' : 'document structure'}):
 - Personaliza CADA sección con detalles concretos del proyecto: nombres reales, integraciones declaradas, fases registradas, restricciones del contexto. Prohibido contenido genérico ("Empresa X", "Sistema legacy").
 - Mantén títulos en jerarquía consistente (# > ## > ###); nunca devuelvas un único párrafo monolítico.
 - Toda lista numerada o con viñetas debe contener al menos 3 elementos cuando aplique.
-- Si el artefacto es ${template.type}, respeta exactamente la plantilla declarada arriba — no remueves secciones, no las renombras.
+- ${discipline ? 'Usa exactamente los encabezados de la estructura obligatoria' : 'Mantén una estructura de secciones estable'} — no remueves secciones, no las renombras.
 - Cuando referencias trazabilidad (BR-, UC-, NFR-, TC-), usa identificadores monotónicos y consistentes a lo largo del documento.
 - Cierra con un breve bloque "Próximos pasos" con 2-4 acciones recomendadas.
 - Idioma: español por defecto (el contexto global del proyecto manda); evita anglicismos cuando exista término establecido en la industria aseguradora.`;
