@@ -68,6 +68,8 @@ export const planDiagramAutoImprove = (params: {
     targetScore: 90,
     maxPasses: 4,
     aggressive: true,
+    // The one place the gate may decide about the architecture: a person pressed the button (8.1b).
+    scope: 'full',
   });
 
   if (gate.changes.length === 0 && gate.quality.score <= beforeScore) {

@@ -45,6 +45,7 @@ import { artifactGenerationSupport } from '../domain/artifactGenerationSupport';
 import {
     buildGenerationTrace,
     createTraceLog,
+    describeGateProposals,
     makeTraceStep,
     mapRequestAudienceToDiagramAudience,
     resolveRefinementMode,
@@ -261,7 +262,7 @@ export async function runArtifactGeneration({
                 audience: mapRequestAudienceToDiagramAudience(template.requestContext?.audience),
                 targetScore: template.requestContext ? 92 : 90,
                 maxPasses: template.requestContext ? 4 : 3,
-                aggressive: Boolean(template.requestContext),
+                listProposals: true, // structural: saved as the model wrote it (8.1b)
             });
             const qualityGateIR = qualityGate.ir.nodes.length >= draft.ir.nodes.length ? qualityGate.ir : draft.ir;
             if (qualityGate.ir.nodes.length < draft.ir.nodes.length) {
@@ -296,6 +297,8 @@ export async function runArtifactGeneration({
             if (!qualityGate.reachedTarget) {
                 traceErrors.push(makeTraceStep('quality-gate', 'warning', 'El artefacto quedó por debajo del objetivo de calidad.', qualityGate.quality.summary));
             }
+            const proposed = describeGateProposals(qualityGate.proposals);
+            if (proposed) traceDecisions.push(proposed);
             // Only a dialect that can hold the IR is rewritten (plan de diagramas, 6.1).
             // A C4 without the model's IR is a skeleton: its text keeps the marker.
             const rewrite = rewriteDiagramContent(draft.resolvedContent, draft.ir, template.type, template.type === 'hybrid-text-diagram');

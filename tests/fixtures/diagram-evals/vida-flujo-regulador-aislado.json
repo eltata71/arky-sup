@@ -1,0 +1,50 @@
+{
+  "id": "vida-flujo-regulador-aislado",
+  "dominio": "vida",
+  "proposito": "Un actor declarado sin relación todavía (el regulador que recibe reportes trimestrales): la puerta no debe inventarle una conexión al nodo más conectado (8.1b).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Rescates de Pólizas de Vida",
+    "descripcion": "Proceso de rescate del valor acumulado de pólizas de vida universal.",
+    "contexto": [
+      "El rescate exige validar identidad y calcular el valor de rescate",
+      "El regulador recibe un reporte trimestral consolidado, fuera de este flujo"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Flujo de Rescate de Póliza",
+    "tipo": "mermaid-graph",
+    "objetivo": "Mostrar el flujo operativo de un rescate de póliza.",
+    "conceptosClave": [
+      {
+        "term": "Valor de rescate",
+        "definition": "Monto que recibe el asegurado al cancelar la póliza"
+      }
+    ]
+  },
+  "respuestaModelo": "flowchart LR\n    asegurado((Asegurado)) -->|Solicita rescate| servicio[Mesa de servicio]\n    servicio -->|Valida identidad| kyc[Validación KYC]\n    kyc -->|Pide cálculo| calculo[Cálculo de valor de rescate]\n    calculo -->|Instruye pago| tesoreria[(Tesorería)]\n    regulador[Superintendencia de Seguros]",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Asegurado"
+      ],
+      [
+        "Mesa de servicio"
+      ],
+      [
+        "Validación KYC"
+      ],
+      [
+        "Cálculo de valor de rescate"
+      ],
+      [
+        "Tesorería"
+      ],
+      [
+        "Superintendencia de Seguros"
+      ]
+    ],
+    "metadatos": []
+  }
+}

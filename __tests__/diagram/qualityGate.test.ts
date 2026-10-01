@@ -32,7 +32,7 @@ describe('runDiagramQualityGate', () => {
             groups: [],
         };
         const before = analyzeDiagramQuality(ir);
-        const result = runDiagramQualityGate(ir, { artifact, audience: 'technical', targetScore: 90 });
+        const result = runDiagramQualityGate(ir, { artifact, audience: 'technical', targetScore: 90, scope: 'full' });
         expect(result.quality.score).toBeGreaterThan(before.score);
         // The gate produced repair history.
         expect(result.changes.length).toBeGreaterThan(0);
@@ -98,6 +98,7 @@ describe('runDiagramQualityGate', () => {
             audience: 'technical',
             targetScore: 90,
             aggressive: true,
+            scope: 'full',
         });
 
         expect(result.ir.edges.every((edge) => edge.protocol && edge.protocol.length > 0)).toBe(true);
@@ -106,4 +107,49 @@ describe('runDiagramQualityGate', () => {
         expect(result.changes.some((change) => change.code === 'EDGE_PROTOCOL_INFERRED')).toBe(true);
     });
 
+});
+
+// Plan de diagramas 8.1b: por defecto la puerta repara, no decide la arquitectura.
+describe('runDiagramQualityGate — alcance estructural (por defecto)', () => {
+    const modelIR = (): DiagramIR => ({
+        nodes: [
+            { id: 'auditor', label: 'Auditor médico', kind: 'person' },
+            { id: 'historial', label: 'Historial clínico', kind: 'data' },
+            { id: 'pagos', label: 'Liquidación', kind: 'service' },
+            { id: 'regulador', label: 'Superintendencia', kind: 'external' },
+            { id: 'revisa', label: 'Revisa caso', kind: 'process' },
+        ],
+        edges: [
+            { id: 'e1', source: 'auditor', target: 'historial', label: 'Consulta antecedentes', protocol: 'ESB/SOAP' },
+            { id: 'e2', source: 'auditor', target: 'revisa', label: 'Abre caso' },
+            { id: 'e3', source: 'revisa', target: 'auditor', label: 'Devuelve observaciones' },
+            { id: 'e4', source: 'revisa', target: 'pagos', label: '' },
+            { id: 'roto', source: 'revisa', target: 'no-existe', label: 'Apunta a nada' },
+        ],
+        groups: [],
+    });
+
+    it('no añade nodos, relaciones, grupos ni descripciones, ni reescribe etiquetas o protocolos', () => {
+        const ir = modelIR();
+        const result = runDiagramQualityGate(ir, { artifact, audience: 'technical', targetScore: 99, maxPasses: 4, aggressive: true });
+        expect(result.ir.nodes.map((n) => [n.id, n.label, n.description])).toEqual(ir.nodes.map((n) => [n.id, n.label, undefined]));
+        const kept = ir.edges.filter((e) => e.id !== 'roto');
+        expect(result.ir.edges.map((e) => [e.id, e.source, e.target, e.label, e.protocol]))
+            .toEqual(kept.map((e) => [e.id, e.source, e.target, e.label, e.protocol]));
+        expect(result.ir.groups).toEqual([]);
+    });
+
+    it('sí quita lo que impide un modelo coherente: la relación a un nodo inexistente', () => {
+        const result = runDiagramQualityGate(modelIR(), { artifact, audience: 'technical' });
+        expect(result.ir.edges.some((e) => e.id === 'roto')).toBe(false);
+        expect(result.changes.map((c) => c.code)).toContain('EDGE_REFERENCE_DROPPED');
+    });
+
+    it('con listProposals dice lo que el alcance completo haría, sin aplicarlo', () => {
+        const ir = modelIR();
+        const result = runDiagramQualityGate(ir, { artifact, audience: 'technical', listProposals: true });
+        const codes = result.proposals.map((c) => c.code);
+        expect(codes).toContain('C4_UI_BYPASSES_SERVICE');
+        expect(result.ir.nodes).toHaveLength(ir.nodes.length);
+    });
 });

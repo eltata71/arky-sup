@@ -150,6 +150,8 @@ export interface IntegrityMetrics {
     gruposInventados: string[];
     /** Relaciones del modelo que no se guardaron con sus extremos y su etiqueta. */
     aristasAlteradas: string[];
+    /** Relaciones guardadas entre extremos que el modelo nunca conectó (8.1b). */
+    aristasInventadas: string[];
     /** Nodos que el modelo dejó sin descripción y se guardaron con una. */
     descripcionesSinteticas: number;
     /** Nodos que el lienzo pinta (vista técnica) y no existen en lo guardado. */
@@ -203,6 +205,7 @@ export interface DiagramEvalSummary {
     elementosInventados: number;
     gruposInventados: number;
     aristasAlteradas: number;
+    aristasInventadas: number;
     descripcionesSinteticas: number;
     /** Nodos que el lienzo pinta y no están guardados. */
     nodosRenderNoGuardados: number;
@@ -371,6 +374,10 @@ export function measureIntegrity(
     const aristasAlteradas = modelIR.edges
         .filter((e) => !savedEdges.has(`${labelOf(modelIR, e.source)}→${labelOf(modelIR, e.target)}::${normalize(e.label)}`))
         .map((e) => `${labelOf(modelIR, e.source)} → ${labelOf(modelIR, e.target)} «${e.label ?? ''}»`);
+    const modelPairs = new Set(modelIR.edges.map((e) => `${labelOf(modelIR, e.source)}→${labelOf(modelIR, e.target)}`));
+    const aristasInventadas = savedIR.edges
+        .map((e) => `${labelOf(savedIR, e.source)}→${labelOf(savedIR, e.target)}`)
+        .filter((pair) => !modelPairs.has(pair));
 
     const undescribed = new Set(modelIR.nodes.filter((n) => !n.description?.trim()).map(labelKey));
     const descripcionesSinteticas = savedIR.nodes
@@ -381,7 +388,7 @@ export function measureIntegrity(
         .filter((n) => !savedIds.has(n.id))
         .map((n) => n.label || n.id);
 
-    return { elementosInventados, gruposInventados, aristasAlteradas, descripcionesSinteticas, nodosRenderNoGuardados };
+    return { elementosInventados, gruposInventados, aristasAlteradas, aristasInventadas, descripcionesSinteticas, nodosRenderNoGuardados };
 }
 
 /** Mueve el primer nodo del lienzo 40 px, como un arrastre, y devuelve lo que escribe la pantalla. */
@@ -663,6 +670,7 @@ function summarizeIntegrity(results: DiagramEvalCaseResult[]) {
         elementosInventados: total((r) => r.integridad?.elementosInventados.length ?? 0),
         gruposInventados: total((r) => r.integridad?.gruposInventados.length ?? 0),
         aristasAlteradas: total((r) => r.integridad?.aristasAlteradas.length ?? 0),
+        aristasInventadas: total((r) => r.integridad?.aristasInventadas.length ?? 0),
         descripcionesSinteticas: total((r) => r.integridad?.descripcionesSinteticas ?? 0),
         nodosRenderNoGuardados: total((r) => r.integridad?.nodosRenderNoGuardados.length ?? 0),
         dialectoTrasEdicion: round(ratio(edited.filter((r) => r.edicion!.dialectoTrasEdicion).length, edited.length)),
@@ -679,6 +687,7 @@ export const INTEGRITY_COUNTERS = [
     'elementosInventados',
     'gruposInventados',
     'aristasAlteradas',
+    'aristasInventadas',
     'descripcionesSinteticas',
     'nodosRenderNoGuardados',
     'nodosPerdidosPorEdicion',
@@ -713,6 +722,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.integridad?.elementosInventados.join(', ') || '—',
         r.integridad?.gruposInventados.join(', ') || '—',
         r.integridad?.aristasAlteradas.length ?? '—',
+        r.integridad?.aristasInventadas.join(', ') || '—',
         r.integridad?.descripcionesSinteticas ?? '—',
         r.integridad?.nodosRenderNoGuardados.join(', ') || '—',
         r.edicion ? `${r.edicion.dialectoTrasEdicion ? 'sí' : 'NO'} (${r.edicion.dialectoGuardadoTrasEdicion})` : '—',
@@ -726,7 +736,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
         'Integridad y presentación (8.0b)',
-        'caso | inventados | grupos inventados | aristas alteradas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos',
+        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos',
         ...integrityRows,
         '',
         JSON.stringify(summary, null, 2),

@@ -33,10 +33,25 @@ import { autoRepairIR } from './autoRepair';
 import {
     autoRepairDiagramIR,
     type QualityRepairChange,
+    type QualityRepairScope,
 } from './qualityRepair';
 import { repairDiagramIRSemantics } from '../../lib/semanticRoleResolver';
 
 export interface QualityGateOptions {
+    /**
+     * What the gate may change (plan de diagramas, 8.1b). `structural` (the
+     * default) repairs what keeps the model coherent and renderable, and
+     * nothing else. `full` adds the architectural guardrail repairs (a
+     * synthetic gateway or service, a cycle relabelled as a retry) and every
+     * improvement of `autoRepairDiagramIR` — reserved for the «Auto-mejora»
+     * button, because each one is a decision about the architecture.
+     */
+    scope?: QualityRepairScope;
+    /**
+     * With `structural`, also compute what `full` would change, without
+     * applying it, so the trace can say what a person may still ask for.
+     */
+    listProposals?: boolean;
     /**
      * Source artifact context. Only `type` is required — `objective` is omitted
      * by render-time callers (they don't always have it cached) so we accept a
@@ -68,6 +83,8 @@ export interface QualityGateResult {
     changes: QualityGateChange[];
     /** Per-pass score evolution, useful for telemetry / UI breakdown. */
     history: Array<{ pass: number; score: number; changeCount: number }>;
+    /** What `full` would have changed and was not applied (`listProposals`). */
+    proposals: QualityGateChange[];
 }
 
 export interface QualityGateChange extends QualityRepairChange {
@@ -90,6 +107,10 @@ export function runDiagramQualityGate(
     const target = options.targetScore ?? DEFAULT_TARGET;
     const maxPasses = Math.max(1, options.maxPasses ?? DEFAULT_MAX_PASSES);
     const audience = options.audience ?? options.artifact.audience ?? 'technical';
+    const scope: QualityRepairScope = options.scope ?? 'structural';
+    const proposals = scope === 'structural' && options.listProposals
+        ? runDiagramQualityGate(initial, { ...options, scope: 'full', listProposals: false }).changes
+        : [];
 
     const allChanges: QualityGateChange[] = [];
     const history: QualityGateResult['history'] = [];
@@ -117,6 +138,7 @@ export function runDiagramQualityGate(
             bestPass,
             changes: [],
             history,
+            proposals,
         };
     }
 
@@ -124,10 +146,10 @@ export function runDiagramQualityGate(
         const passChanges: QualityGateChange[] = [];
 
         // 1) Architectural guardrails + their dedicated auto-repair.
-        const violations = detectArchitecturalViolations(working, {
-            type: options.artifact.type,
-            audience,
-        });
+        // Inserting a node or relabelling a cycle is an architectural decision.
+        const violations = scope === 'full'
+            ? detectArchitecturalViolations(working, { type: options.artifact.type, audience })
+            : [];
         if (violations.length > 0) {
             const arch = autoRepairIR(working, violations);
             if (arch.applied.length > 0) {
@@ -143,6 +165,7 @@ export function runDiagramQualityGate(
         //    gated by `aggressive` so the render path never silently mutates
         //    a persisted diagram's appearance.
         const struct = autoRepairDiagramIR(working, {
+            scope,
             artifact: options.artifact,
             audience,
             synthesizeDescriptions: options.aggressive ?? false,
@@ -182,6 +205,7 @@ export function runDiagramQualityGate(
         bestPass,
         changes: allChanges,
         history,
+        proposals,
     };
 }
 
