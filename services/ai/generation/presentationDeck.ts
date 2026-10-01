@@ -13,6 +13,7 @@
  */
 import type { ArtifactTemplate, Settings } from '../../../types';
 import type { Project } from '../../architectureProjects';
+import type { ArtifactContextPorts } from '../../../lib/artifacts';
 import {
   buildPresentationPromptInstructions,
   parsePresentationDeck,
@@ -31,6 +32,8 @@ export async function generatePresentationDeck(
   template: ArtifactTemplate,
   settings: Settings,
   architectureGraphPromptBlock?: string,
+  /** Initiative, conversation and deliverables, from the generation that asks (7.3d). */
+  ports: ArtifactContextPorts = {},
 ): Promise<string> {
   const modelName = resolveModelForSettings('default', settings).id;
   const userTemp = settings.aiConfig?.temperature ?? 0.7;
@@ -38,7 +41,7 @@ export async function generatePresentationDeck(
   // sibling excerpts ranked against the deck, so the slides stay consistent with
   // the documents and diagrams they present — with or without the knowledge
   // graph, which used to replace them (7.2b).
-  const basePrompt = buildBasePrompt(project, settings, { profile: 'present', query: `${template.name}. ${template.objective}` });
+  const basePrompt = buildBasePrompt(project, settings, { ...ports, profile: 'present', query: `${template.name}. ${template.objective}` });
   const artifactsContext = buildArtifactsContext(project);
   const contextBlock = architectureGraphPromptBlock && architectureGraphPromptBlock.trim().length > 0
     ? architectureGraphPromptBlock

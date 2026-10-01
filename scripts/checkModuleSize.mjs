@@ -82,7 +82,7 @@ export const BYTE_CEILINGS = {
    * refusal live in `agentConfirmationGate`, which is why the file got shorter
    * while gaining a guarantee.
    */
-  'services/agent/agentExecutor.ts': 37815, // plan artefactos 7.4b: −503, el cambio puntual sale a `agentPatchAction` (parche de documento o reescritura) · plan artefactos 7.3b: +30, las generaciones del agente reciben las decisiones de su historial · 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente · 7.1a: −4 125, la validación de contenido salió a `agentContentValidation` · 7.1b: +228, el cambio puntual se niega si el modelo no puede ver el artefacto entero
+  'services/agent/agentExecutor.ts': 37846, // plan artefactos 7.3d: +31, las mejoras del agente reciben motivación y conversación · plan artefactos 7.4b: −503, el cambio puntual sale a `agentPatchAction` (parche de documento o reescritura) · plan artefactos 7.3b: +30, las generaciones del agente reciben las decisiones de su historial · 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente · 7.1a: −4 125, la validación de contenido salió a `agentContentValidation` · 7.1b: +228, el cambio puntual se niega si el modelo no puede ver el artefacto entero
   'components/AssistantPanel.tsx': 36676, // plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   'pages/Workspace.tsx': 36572, // plan artefactos 7.3c: −236, los puertos de contexto (motivación, entregables, conversación) llegan por un solo hook, useArtifactContextPorts · plan diagramas 6.2: +194, entrega a la generación la motivación de negocio del proyecto (`useProjectBusinessMotivation`) · F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina · F6-03 corte 4: rutas de `domain/`/`application/`
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 34981, // plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
@@ -96,7 +96,7 @@ export const BYTE_CEILINGS = {
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
   'components/CustomEdge.tsx': 32023,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
-  'services/agent/agentContextComposer.ts': 22248, // plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
+  'services/agent/agentContextComposer.ts': 23023, // plan artefactos 7.3d: +775, entregables en curso, razón de negocio y extractos de hermanos en el copiloto · plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
   // F6-05: +18 bytes, the import path to the model-directory door instead of
   // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
   'pages/SettingsPage.tsx': 30973,
@@ -122,7 +122,7 @@ export const BYTE_CEILINGS = {
   // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
   'pages/EngagementRoom.tsx': 23347,
   'pages/LMS/LMSCatalog.tsx': 22897,
-  'components/ChatInterface.tsx': 22465,
+  'components/ChatInterface.tsx': 22492, // plan artefactos 7.3d: +27, el chat pasa su proyecto a los turnos del agente
   'services/diagram/diagramTypeQualityGates.ts': 22356,
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
@@ -183,7 +183,7 @@ export const CEILINGS = {
   // por debajo del techo y nadie fijó el número, así que la deuda seguía
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
-  'services/agent/agentExecutor.ts': 903, // 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
+  'services/agent/agentExecutor.ts': 904, // 7.3d: los puertos, una vez para todas las llamadas · 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
   'pages/ProjectsPage.tsx': 890, // F5-02
   'services/diagram/mermaidToIR.ts': 871, // plan diagramas 2.1
   'components/artifacts/export/ArtifactExportModal.tsx': 596, // plan diagramas 3.4: 844 → 596

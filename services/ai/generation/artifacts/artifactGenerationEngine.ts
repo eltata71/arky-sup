@@ -275,7 +275,7 @@ class ArtifactGenerationEngine {
                 meta: { path: 'presentation-deck', type: template.type },
             });
             try {
-                const deckJson = await generatePresentationDeck(project, template, settings, opts.architectureGraphPromptBlock);
+                const deckJson = await generatePresentationDeck(project, template, settings, opts.architectureGraphPromptBlock, opts);
                 emit({
                     stage: 'ai-generation',
                     status: 'success',

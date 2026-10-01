@@ -25,7 +25,7 @@
  */
 
 import type { Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramIR } from '../../../lib/diagram';
 import {
@@ -221,10 +221,13 @@ export const buildSuggestionContext = (params: {
   project: Project;
   quality: DiagramQualityReport | null;
   settings: Settings;
+  /** Initiative, conversation and deliverables (7.3d). */
+  ports?: ArtifactContextPorts;
 }) => buildArtifactSuggestionContext(
   {
     artifact: params.artifact,
     project: params.project,
+    ports: params.ports,
     qualityScore: params.quality?.score ?? null,
     qualitySummary: params.quality?.summary ?? null,
     qualityIssues: (params.quality?.issues ?? []).map(

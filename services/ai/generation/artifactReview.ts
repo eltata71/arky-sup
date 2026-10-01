@@ -16,7 +16,7 @@
 import type { Settings } from '../../../types';
 import { cleanJsonString } from '../../../utils';
 import type { Project } from '../../architectureProjects';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import { resolveModelForSettings } from '../catalog';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { buildBasePrompt } from '../prompts/projectPrompts';
@@ -66,8 +66,10 @@ export async function reviewArtifact(
   artifact: Artifact,
   project: Project,
   settings: Settings,
+  /** Initiative, conversation and deliverables, from the screen that asks (7.3d). */
+  ports: ArtifactContextPorts = {},
 ): Promise<ArtifactImprovementProposal[]> {
-  const basePrompt = buildBasePrompt(project, settings, { profile: 'review', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
+  const basePrompt = buildBasePrompt(project, settings, { ...ports, profile: 'review', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
 
   const prompt = `
 ${basePrompt}
@@ -112,8 +114,9 @@ export async function applyArtifactImprovements(
   selectedImprovements: ArtifactImprovementProposal[],
   project: Project,
   settings: Settings,
+  ports: ArtifactContextPorts = {},
 ): Promise<string> {
-  const basePrompt = buildBasePrompt(project, settings, { profile: 'refine', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
+  const basePrompt = buildBasePrompt(project, settings, { ...ports, profile: 'refine', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
 
   const prompt = `
 ${basePrompt}
@@ -147,8 +150,9 @@ export async function generateTestCases(
   artifact: Artifact,
   project: Project,
   settings: Settings,
+  ports: ArtifactContextPorts = {},
 ): Promise<string> {
-  const basePrompt = buildBasePrompt(project, settings, { profile: 'review', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
+  const basePrompt = buildBasePrompt(project, settings, { ...ports, profile: 'review', artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, excludeVersionGroupId: artifact.versionGroupId });
   const language = settings.language === 'es' ? 'Spanish' : 'English';
 
   const prompt = `

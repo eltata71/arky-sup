@@ -319,7 +319,8 @@ política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
 | 7.3c — entregables en curso y contribución del proyecto a su iniciativa (contexto 78,9 → 83,6 %) | #129 | Fusionada |
 | 7.4a — un contrato por plantilla para los 18 documentos del catálogo, una sola fuente para prompt y validador (el contrato detecta lo que falta: 0 → 100 %) | #130 | Fusionada |
 | 7.4b — parches semánticos de documento: el cambio puntual del copiloto opera sobre secciones y tablas, sin reescribir ni límite de longitud | #131 | Fusionada |
-| 7.4c — fidelidad de documentos contra la solicitud, una sola corrección con parche y aviso de lo que falta (banco: fidelidad 73,7 % medida antes de corregir) | — | En revisión |
+| 7.4c — fidelidad de documentos contra la solicitud, una sola corrección con parche y aviso de lo que falta (banco: fidelidad 73,7 % medida antes de corregir) | #132 | Fusionada |
+| 7.3d — iniciativa, entregables y conversación llegan también a revisar, sugerir, presentar, convertir y al copiloto (contexto entregado 83,6 → 100 %) | — | En revisión |
 
 **El enlace artefacto → tarea no se duplicó.** Ya existe como arista canónica
 (`OfficeTask.producedArtifactId`, resuelta por `services/portfolioGraph`); un
@@ -327,10 +328,10 @@ campo espejo en el artefacto sería una segunda fuente de verdad para la misma
 relación, que es lo que la regla «las relaciones son ids, y los ids ganan»
 prohíbe.
 
-**Lo que queda del contexto (16,4 %)** son caminos que ya leen el bundle pero
-a los que su pantalla aún no entrega iniciativa, entregable ni conversación:
-revisar, sugerir, presentar, convertir y el copiloto. Es cableado de pantalla,
-no de composición, y se hará cuando esas pantallas se toquen en la ola 7.4.
+**El 16,4 % que quedaba** eran caminos que ya leían el bundle pero a los que su
+pantalla no entregaba iniciativa, entregable ni conversación. Lo cerró la 7.3d,
+después de la ola 7.4: el lienzo los recibe por `useArtifactAssessment`, el
+copiloto por `useAssistantTurns(project)` y la presentación por el motor.
 
 **Línea base del banco (2026-09-30)**, `tests/fixtures/artifact-evals/linea-base.json`:
 

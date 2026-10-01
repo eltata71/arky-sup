@@ -18,8 +18,9 @@
  * Nothing here is state: the turns are module-level functions, returned as one
  * stable object so a screen can list it in a dependency array.
  */
+import { useMemo } from 'react';
 import type { Settings } from '../types';
-import type { Artifact } from '../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../lib/artifacts';
 import type { Project } from '../services/architectureProjects';
 import type { ChatMessage } from '../services/chat';
 import {
@@ -39,6 +40,7 @@ import {
   type ModelFunctionCall,
 } from '../services/agent';
 import { chatWithProject, officePersonaForMessage } from '../services/architectureOffice';
+import { useArtifactContextPorts } from './useArtifactContextPorts';
 
 export interface AgentTurnInput {
   project: Project;
@@ -46,6 +48,8 @@ export interface AgentTurnInput {
   history: ChatMessage[];
   question: string;
   settings: Settings;
+  /** Initiative, deliverables and conversation; the hook fills it when it has the project (7.3d). */
+  ports?: ArtifactContextPorts;
 }
 
 export interface AssistantTurns {
@@ -98,8 +102,19 @@ const TURNS: AssistantTurns = {
   describeFailure: describeTurnFailure,
 };
 
-export function useAssistantTurns(): AssistantTurns {
-  return TURNS;
+/**
+ * With the project, the agent's turns carry the initiative, the deliverables
+ * and the conversation as the canvas's own calls do (plan de calidad de
+ * artefactos, 7.3d), read when each turn starts.
+ */
+export function useAssistantTurns(project?: Project): AssistantTurns {
+  const loadContextPorts = useArtifactContextPorts(project);
+  return useMemo<AssistantTurns>(() => (project ? {
+    ...TURNS,
+    askAgent: async (input) => processAssistantChat(withPersona({ ...input, ports: await loadContextPorts() })),
+    streamAgent: async (input, onDelta) =>
+      processAssistantChatStream(withPersona({ ...input, ports: await loadContextPorts() }), onDelta),
+  } : TURNS), [project, loadContextPorts]);
 }
 
 /** What the answer says once a modification's write has been attempted. */

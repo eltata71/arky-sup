@@ -29,10 +29,10 @@
  */
 
 import type { Settings } from '../../types';
-import type { Artifact, ArtifactConversationDigest } from '../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { ChatMessage } from '../chat';
-import { assembleArtifactContext, bundleItems, buildBasePrompt } from '../ai';
+import { assembleArtifactContext, bundleItems, buildBasePrompt, buildBusinessMotivationBlock } from '../ai';
 import { compactBullet } from '../memory';
 
 export type { AgentPersonaBriefing } from './agentPersonaBriefing';
@@ -120,7 +120,8 @@ export function getAgentBaseMemory(settings: Settings | null | undefined): strin
 // System instruction composition
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface BuildAgentSystemInstructionOptions {
+/** The ports carry the initiative, the conversation and the deliverables (7.3b, 7.3d). */
+export interface BuildAgentSystemInstructionOptions extends ArtifactContextPorts {
   project: Project;
   activeArtifact: Artifact | null;
   settings: Settings;
@@ -130,8 +131,6 @@ export interface BuildAgentSystemInstructionOptions {
   budget?: Partial<ContextBudget>;
   /** Optional specialist persona for this turn. See `AgentPersonaBriefing`. */
   persona?: AgentPersonaBriefing;
-  /** What the conversation settled — read even when the history itself is not sent (7.3b). */
-  conversation?: ArtifactConversationDigest;
 }
 
 /**
@@ -163,7 +162,7 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
   // One assembly for every scope (plan de calidad de artefactos, 7.2): the
   // same ranking, hierarchy and de-duplication artifact generation reads.
   const bundle = assembleArtifactContext(
-    { project, settings, artifact: activeArtifact, agentMemory: getAgentBaseMemory(settings), query: userQuery, conversation: opts.conversation },
+    { project, settings, artifact: activeArtifact, agentMemory: getAgentBaseMemory(settings), query: userQuery, conversation: opts.conversation, deliverables: opts.deliverables },
     {
       name: 'consult',
       limits: {
@@ -172,11 +171,14 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
         capturaInicial: budget.initialCaptureMax,
         memoriaProyecto: budget.projectAgentMax,
         conversacion: budget.projectAgentMax,
+        entregable: 2,
+        // The two siblings most relevant to the question, excerpted: names and decisions to stay consistent with.
+        hermanos: 2,
         global: budget.globalMax,
         agente: budget.agentBaseMax,
       },
       noteChars: budget.bulletCharCap,
-      excerptChars: 0,
+      excerptChars: 600,
       totalChars: Number.MAX_SAFE_INTEGER,
     },
   );
@@ -244,6 +246,13 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
   if (conversationDecisions.length > 0) {
     sections.push(['Decisiones recientes de la conversación (acordadas en el chat):', ...conversationDecisions.map((b) => `- ${b}`)].join('\n'));
   }
+  // 6-quater. Los entregables en curso y la razón de negocio del proyecto (7.3d).
+  const deliverables = bundleItems(bundle, 'entregable');
+  if (deliverables.length > 0) sections.push(['Entregables en curso del proyecto:', ...deliverables.map((b) => `- ${b}`)].join('\n'));
+  const siblings = bundleItems(bundle, 'hermanos');
+  if (siblings.length > 0) sections.push(['Extractos de los artefactos relacionados más relevantes:', ...siblings].join('\n'));
+  const motivation = buildBusinessMotivationBlock(opts.businessMotivation);
+  if (motivation) sections.push(motivation);
 
 
   // 6-bis. Inventario de artefactos del proyecto — the agent must always be
