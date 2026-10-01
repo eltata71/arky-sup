@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Marked } from 'marked';
-import type { Artifact } from '../../lib/artifacts';
+import { decorateContextCitationsHtml, type Artifact } from '../../lib/artifacts';
 import { sanitizeGeneratedHtml } from '../../lib/security';
 import { extractMermaidCode } from '../../utils/diagram/extractMermaid';
 import { highlightCode, escapeHtml, resolveHighlightLanguage } from '../../lib/codeHighlight';
@@ -136,6 +136,7 @@ export const useDocumentRendering = (artifact: Artifact): UseDocumentRenderingRe
   const [markdownHtml, setMarkdownHtml] = useState('');
   const [toc, setToc] = useState<DocumentTocEntry[]>([]);
   const isMounted = useRef(true);
+  const contextManifest = artifact.generationTrace?.contextManifest;
 
   useEffect(() => {
     isMounted.current = true;
@@ -161,14 +162,15 @@ export const useDocumentRendering = (artifact: Artifact): UseDocumentRenderingRe
         contentToParse = `### Diagrama\n\`\`\`mermaid\n${artifact.content}\n\`\`\``;
       }
       const rendered = await renderDocumentMarkdown(contentToParse);
-      const html = sanitizeGeneratedHtml(rendered.html);
+      // 7.5b: a citation reads as the entity it points to, resolved against the recorded context.
+      const html = sanitizeGeneratedHtml(decorateContextCitationsHtml(rendered.html, contextManifest));
       if (isMounted.current) {
         setMarkdownHtml(html);
         setToc(rendered.toc);
       }
     };
     parse();
-  }, [artifact.content, artifact.representation, artifact.type]);
+  }, [artifact.content, artifact.representation, artifact.type, contextManifest]);
 
   const mermaidCode = useMemo(
     () => extractMermaidCode(artifact.content, artifact.representation),

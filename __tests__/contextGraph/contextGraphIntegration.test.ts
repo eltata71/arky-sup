@@ -41,6 +41,9 @@ describe('contextGraphIntegration — records the context it renders (7.5a)', ()
     expect(records[0].sources[0]).toEqual({ id: project.id, label: project.name, revision: project.revision });
     expect(records[0].sections[0].items[0].text).toBe(pack.markdown);
     expect(records[0].omitted).toHaveLength(pack.ignoredSignals.length);
+    // 7.5b: every tag the model is asked to cite is recorded with the entity it names.
+    expect(records[0].citations?.map((citation) => citation.tag)).toEqual(pack.entities.map((entity) => entity.citation));
+    expect(records[0].citations?.[0].label).toBe(pack.entities[0].label);
   });
 
   it('captures nothing when nothing was rendered', () => {

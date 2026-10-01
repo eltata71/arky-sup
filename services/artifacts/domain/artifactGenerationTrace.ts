@@ -11,6 +11,7 @@
 
 import type { ArtifactTemplate } from '../../../types';
 import type { ArtifactGenerationTrace, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
+import { describeCitationReview, reviewContextCitations } from '../../../lib/artifacts';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import type { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
 import type { buildArtifactGenerationGraphContext } from '../../architectureKnowledgeGraph';
@@ -128,6 +129,9 @@ export function buildGenerationTrace({
 }: BuildGenerationTraceInput): ArtifactGenerationTrace {
     const traceDecisions = log.decisions;
     const traceErrors = log.errors;
+    // 7.5b: a citation of context that was never sent is named here, against the recorded manifest.
+    const citationWarning = describeCitationReview(reviewContextCitations(persistedContent, contextManifest));
+    if (citationWarning) traceErrors.push(makeTraceStep('validation', 'warning', citationWarning));
     const completedAt = new Date().toISOString();
     return {
         contextManifest,

@@ -6,6 +6,15 @@ export interface ContextManifestSource {
   revision?: number;
 }
 
+/** A `[ctx:*]` tag as the pack that numbered it defined it (7.5b). */
+export interface ContextManifestCitation {
+  tag: string;
+  label: string;
+  entityType: string;
+  /** Labels of the sources the entity was extracted from. */
+  sources: string[];
+}
+
 export interface ContextManifestRecord {
   label: string;
   profile?: string;
@@ -15,6 +24,8 @@ export interface ContextManifestRecord {
     items: Array<{ text: string; sourceId?: string; truncated?: boolean }>;
   }>;
   omitted: Array<{ scope: string; count: number; reason: string }>;
+  /** Present when the record numbered context the model was asked to cite. */
+  citations?: ContextManifestCitation[];
 }
 
 export interface ContextManifest {

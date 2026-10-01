@@ -48,6 +48,8 @@ import { processAssistantChat } from '../../../services/agent/agentConversation'
 import { interpretArtifactModification } from '../../../services/agent/artifactModificationCall';
 import { validateArtifactContent } from '../../../services/agent/agentContentValidation';
 import { checkDocumentFidelity } from '../../../services/artifacts/application/documentFidelity';
+import { createContextManifestRecorder, renderCitationsForExport, reviewContextCitations } from '../../../lib/artifacts';
+import { renderContextGraphReinforcement } from '../../../services/contextGraph';
 
 export const CORPUS_DIR = join(process.cwd(), 'tests', 'fixtures', 'artifact-evals');
 
@@ -348,6 +350,8 @@ export interface ArtifactEvalCaseResult {
     contrato: Array<{ seccion: string; detectada: boolean }>;
     /** Proporción de comprobaciones de fidelidad cumplidas por la respuesta (7.4c); null si no aplica. */
     fidelidad: number | null;
+    /** 7.5b: citas contra el contexto registrado; null si el caso no es un documento. */
+    procedencia: { resueltas: boolean; informada: boolean; exportLimpia: boolean } | null;
 }
 
 const scopesFor = (path: EvalPath): Scope[] =>
@@ -427,13 +431,37 @@ function measureContract(testCase: ArtifactEvalCase): Array<{ seccion: string; d
     }));
 }
 
+/**
+ * 7.5b. The document cites two entities of the pack really sent for this case
+ * and one that was never sent. Provenance holds when the real ones resolve
+ * against the recorded manifest, the invented one is reported, and the export
+ * carries no `[ctx:*]` tag at all.
+ */
+function measureProvenance(testCase: ArtifactEvalCase): ArtifactEvalCaseResult['procedencia'] {
+    if (testCase.artefacto.representacion === 'diagram' || testCase.caminos.includes('presentar')) return null;
+    const artifact = artifactFor(testCase);
+    const recorder = createContextManifestRecorder(NOW);
+    renderContextGraphReinforcement(projectFor(testCase, artifact), settingsFor(testCase), { artifactType: artifact.type, intent: artifact.objective, language: 'es' }, undefined, recorder.capture);
+    const manifest = recorder.manifest();
+    const sent = (manifest?.records ?? []).flatMap((record) => record.citations ?? []).slice(0, 2).map((citation) => citation.tag);
+    const cited = testCase.respuestaModelo.replace(/^(## .+\n+[^\n#][^\n]*)/m, `$1 ${sent.join(' ')} [ctx:inventada-99]`)
+        + `\n\n## Contexto utilizado\n\n${[...sent, '[ctx:inventada-99]'].map((tag) => `- ${tag}`).join('\n')}\n`;
+    const review = reviewContextCitations(cited, manifest);
+    const exported = renderCitationsForExport(cited, manifest);
+    return {
+        resueltas: sent.length > 0 && review.references.filter((ref) => ref.key !== 'inventada-99').every((ref) => ref.status === 'resolved'),
+        informada: review.references.some((ref) => ref.key === 'inventada-99' && ref.status === 'unresolved') && exported.removed.includes('inventada-99'),
+        exportLimpia: !/\[ctx:/i.test(exported.content.replace(/```[\s\S]*?```/g, '')),
+    };
+}
+
 export async function runEvalCase(testCase: ArtifactEvalCase): Promise<ArtifactEvalCaseResult> {
     const caminos: PathResult[] = [];
     for (const path of testCase.caminos) caminos.push(await measurePath(testCase, path));
     const fidelidad = testCase.artefacto.representacion === 'diagram' || testCase.caminos.includes('presentar')
         ? null
         : checkDocumentFidelity({ templateName: testCase.plantilla, content: testCase.respuestaModelo }).score;
-    return { id: testCase.id, caminos, ediciones: measureEdits(testCase), contrato: measureContract(testCase), fidelidad };
+    return { id: testCase.id, caminos, ediciones: measureEdits(testCase), contrato: measureContract(testCase), fidelidad, procedencia: measureProvenance(testCase) };
 }
 
 export function loadCorpus(): ArtifactEvalCase[] {
@@ -464,6 +492,8 @@ export interface ArtifactEvalSummary {
     contratoDetecta: number;
     /** Media de fidelidad de las respuestas de documento: lo que la disciplina exige y está (7.4c). */
     fidelidad: number;
+    /** 7.5b: % de documentos cuyas citas resuelven, cuya cita inventada se informa y cuya exportación sale sin etiquetas. */
+    procedencia: number;
     /** Cada celda camino·ámbito entregada: la línea base no puede perder ninguna. */
     celdasEntregadas: string[];
 }
@@ -496,6 +526,10 @@ export function summarize(results: ArtifactEvalCaseResult[]): ArtifactEvalSummar
             const scores = results.map((result) => result.fidelidad).filter((score): score is number => score !== null);
             return scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 1000) / 10 : 100;
         })(),
+        procedencia: (() => {
+            const cases = results.map((result) => result.procedencia).filter((value): value is NonNullable<typeof value> => value !== null);
+            return pct(cases.filter((value) => value.resueltas && value.informada && value.exportLimpia).length, cases.length);
+        })(),
         celdasEntregadas: [...new Set(results.flatMap((result) => result.caminos.flatMap((path) =>
             Object.entries(path.ambitos).filter(([, hit]) => hit).map(([scope]) => `${result.id}·${path.path}·${scope}`))))].sort(),
     };
@@ -522,5 +556,6 @@ export function renderReport(results: ArtifactEvalCaseResult[], summary: Artifac
         `Vista completa: ${summary.vistaCompleta} % · Cercado: ${summary.cercado} %`,
         `Conservación bajo edición: ${summary.conservacion} % · El contrato detecta lo que falta: ${summary.contratoDetecta} %`,
         `Fidelidad de los documentos (lo que su disciplina exige y está): ${summary.fidelidad} %`,
+        `Procedencia (citas resueltas, la inventada informada, exportación sin etiquetas): ${summary.procedencia} %`,
     ].join('\n');
 }

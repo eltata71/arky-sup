@@ -321,7 +321,8 @@ política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
 | 7.4b — parches semánticos de documento: el cambio puntual del copiloto opera sobre secciones y tablas, sin reescribir ni límite de longitud | #131 | Fusionada |
 | 7.4c — fidelidad de documentos contra la solicitud, una sola corrección con parche y aviso de lo que falta (banco: fidelidad 73,7 % medida antes de corregir) | #132 | Fusionada |
 | 7.3d — iniciativa, entregables y conversación llegan también a revisar, sugerir, presentar, convertir y al copiloto (contexto entregado 83,6 → 100 %) | #133 | Fusionada |
-| 7.5a — `ContextManifest` en `generationTrace`: cada compositor registra el contexto que envía (con la revisión de su fuente y lo que quedó fuera), el agente y la Oficina graban su propia traza, y «Contexto usado» lee lo registrado en vez de reconstruirlo | — | En revisión |
+| 7.5a — `ContextManifest` en `generationTrace`: cada compositor registra el contexto que envía (con la revisión de su fuente y lo que quedó fuera), el agente y la Oficina graban su propia traza, y «Contexto usado» lee lo registrado en vez de reconstruirlo | #136 | Fusionada |
+| 7.5b — las citas `[ctx:*]` se verifican contra el manifiesto, se ven como chips con la entidad en el lienzo y salen de toda exportación como notas numeradas o retiradas (procedencia 0 → 100 %) | — | En revisión |
 
 **«Contexto usado» ya no reconstruye nada (7.5a).** El panel construía el grafo
 de contexto del proyecto *actual* al abrirse, así que editar el proyecto después
@@ -335,6 +336,22 @@ histórico») en vez de inventarse uno. Las mejoras, sugerencias y parches del
 agente no son generaciones y conservan la traza de la que partieron; regenerar
 y crear graban la suya. `buildContextUsageReport` y `buildContextReportText`,
 que sólo servían al panel antiguo, se retiraron.
+
+**Una cita significa algo sólo frente al paquete que la numeró (7.5b).** El
+grafo de contexto registra cada etiqueta con su entidad en el manifiesto, y
+`lib/artifacts/contextCitations.ts` responde todo desde ahí, nunca desde el
+proyecto de hoy: reconstruir el paquete lo renumeraría y `[ctx:tech-1]` pasaría
+a señalar otra tecnología. Al generar, una cita que no resuelve —o que dos
+registros numeran distinto— se nombra en la traza y se avisa; en el lienzo cada
+cita es un chip con el nombre de la entidad (y su fuente al pasar el cursor), y
+la que no resuelve se marca; `exportArtifact` convierte, antes de cualquier
+adaptador, las citas resueltas en notas numeradas bajo «Fuentes de contexto»,
+sustituye la nota «Contexto utilizado» del modelo, retira el resto y lo anota en
+la traza de exportación. Un diagrama y una versión de publicación pierden las
+etiquetas sin recibir notas. El código no se toca nunca. Dos decisiones: el JSON
+técnico conserva el manifiesto, que es justo la tabla que define cada etiqueta,
+y «Copiar» del lienzo copia el texto fuente tal cual, porque es una edición y
+no una exportación.
 
 **El enlace artefacto → tarea no se duplicó.** Ya existe como arista canónica
 (`OfficeTask.producedArtifactId`, resuelta por `services/portfolioGraph`); un
