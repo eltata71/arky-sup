@@ -1,0 +1,57 @@
+{
+  "id": "salud-flujo-ejecutivo-reclamacion",
+  "dominio": "salud",
+  "proposito": "Un flujo para el comité ejecutivo con límites: mover un nodo en la vista ejecutiva no debe borrar los que esa vista agrupa (8.1a).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Reclamaciones Digitales",
+    "descripcion": "Digitalización de punta a punta del trámite de reclamaciones médicas.",
+    "contexto": [
+      "El asegurado presenta la reclamación desde la app",
+      "Las reglas de adjudicación deciden el pago automático"
+    ]
+  },
+  "solicitud": {
+    "texto": "Necesito un diagrama del recorrido de una reclamación digital para presentarlo al comité ejecutivo",
+    "audiencia": "executive",
+    "criterios": [
+      "Mostrar dónde decide la adjudicación automática"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Recorrido de una Reclamación",
+    "tipo": "mermaid-graph",
+    "objetivo": "Explicar al comité cómo viaja una reclamación digital.",
+    "conceptosClave": [
+      {
+        "term": "Adjudicación automática",
+        "definition": "Pago decidido por reglas sin intervención manual"
+      }
+    ]
+  },
+  "respuestaModelo": "flowchart LR\n    asegurado((Asegurado)) -->|Presenta reclamación| app[App del asegurado]\n    subgraph Recepcion[Recepción]\n        app -->|Envía documentos| captura[Captura de documentos]\n        captura -->|Extrae datos| validacion[Validación de cobertura]\n    end\n    subgraph Decision[Decisión]\n        validacion -->|Aplica reglas| adjudicacion[Adjudicación automática]\n        adjudicacion -->|Casos complejos| revision[Revisión manual]\n    end\n    adjudicacion -->|Ordena pago| tesoreria[(Tesorería)]\n    revision -->|Ordena pago| tesoreria",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Asegurado"
+      ],
+      [
+        "App del asegurado"
+      ],
+      [
+        "Captura de documentos"
+      ],
+      [
+        "Adjudicación automática"
+      ],
+      [
+        "Revisión manual"
+      ],
+      [
+        "Tesorería"
+      ]
+    ],
+    "metadatos": []
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "vida-flujo-suscripcion-evidencia",
+  "dominio": "vida",
+  "proposito": "Un ciclo de negocio legítimo (pedir evidencia hasta que baste) no es un reintento técnico (8.1b).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Suscripción de Vida Individual",
+    "descripcion": "Evaluación de riesgo para pólizas de vida individuales.",
+    "contexto": [
+      "El suscriptor pide evidencia médica adicional cuando la existente no basta",
+      "La decisión puede ser aceptar, aceptar con extraprima o rechazar"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Proceso de Suscripción con Evidencia",
+    "tipo": "mermaid-graph",
+    "objetivo": "Describir el ciclo de evaluación de riesgo de una solicitud de vida.",
+    "conceptosClave": [
+      {
+        "term": "Evidencia médica",
+        "definition": "Exámenes y declaraciones de salud"
+      }
+    ]
+  },
+  "respuestaModelo": "flowchart TD\n    solicitud[Recibe solicitud] --> evalua[Evalúa riesgo]\n    evalua --> suficiente{¿Evidencia suficiente?}\n    suficiente -->|No| pide[Solicita evidencia médica]\n    pide -->|Llega evidencia| evalua\n    suficiente -->|Sí| decide[Emite decisión de suscripción]\n    decide -->|Acepta| emite[Emite póliza]\n    decide -->|Rechaza| notifica[Notifica rechazo]",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Evalúa riesgo"
+      ],
+      [
+        "Solicita evidencia médica"
+      ],
+      [
+        "Emite decisión de suscripción"
+      ],
+      [
+        "Emite póliza"
+      ]
+    ],
+    "metadatos": []
+  }
+}

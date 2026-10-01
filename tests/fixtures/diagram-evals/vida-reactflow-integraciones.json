@@ -1,0 +1,47 @@
+{
+  "id": "vida-reactflow-integraciones",
+  "dominio": "vida",
+  "proposito": "React Flow: hasta la 8.0 ningún caso del banco lo cubría.",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Integraciones de Emisión de Vida",
+    "descripcion": "Componentes que intervienen en la emisión de pólizas de vida.",
+    "contexto": [
+      "El cotizador consulta el MIB antes de cotizar",
+      "El core persiste la póliza emitida"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Mapa de Integraciones de Emisión",
+    "tipo": "react-flow-graph",
+    "objetivo": "Mostrar los componentes de emisión y sus integraciones.",
+    "conceptosClave": [
+      {
+        "term": "MIB",
+        "definition": "Bureau de información médica"
+      }
+    ]
+  },
+  "respuestaModelo": "{\"nodes\": [{\"id\": \"portal\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Portal de Agentes\", \"type\": \"React\", \"description\": \"Cotiza y emite pólizas\", \"group\": \"Canales\"}}, {\"id\": \"cotizador\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Cotizador de Vida\", \"type\": \"Spring Boot\", \"description\": \"Calcula primas\", \"group\": \"Core\"}}, {\"id\": \"core\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Core de Pólizas\", \"type\": \"Java\", \"description\": \"Administra pólizas\", \"group\": \"Core\"}}, {\"id\": \"mib\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"MIB\", \"type\": \"External\", \"description\": \"Historial de solicitudes de seguro\"}}, {\"id\": \"bd\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Base de Pólizas\", \"type\": \"PostgreSQL\", \"shape\": \"cylinder\", \"group\": \"Core\"}}], \"edges\": [{\"id\": \"e1\", \"source\": \"portal\", \"target\": \"cotizador\", \"label\": \"Solicita cotización\", \"type\": \"custom\"}, {\"id\": \"e2\", \"source\": \"cotizador\", \"target\": \"mib\", \"label\": \"Consulta historial\", \"type\": \"custom\"}, {\"id\": \"e3\", \"source\": \"portal\", \"target\": \"core\", \"label\": \"Emite póliza\", \"type\": \"custom\"}, {\"id\": \"e4\", \"source\": \"core\", \"target\": \"bd\", \"label\": \"Persiste póliza\", \"type\": \"custom\"}]}",
+  "esperado": {
+    "dialecto": "{",
+    "entidades": [
+      [
+        "Portal de Agentes"
+      ],
+      [
+        "Cotizador de Vida"
+      ],
+      [
+        "Core de Pólizas"
+      ],
+      [
+        "MIB"
+      ],
+      [
+        "Base de Pólizas"
+      ]
+    ],
+    "metadatos": []
+  }
+}

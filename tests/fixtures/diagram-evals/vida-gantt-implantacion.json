@@ -1,0 +1,32 @@
+{
+  "id": "vida-gantt-implantacion",
+  "dominio": "vida",
+  "proposito": "Gantt: el parser lo lee como un diagrama de flujo (hallazgo 4 del plan, 8.3b).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Implantación del Nuevo Core de Vida",
+    "descripcion": "Plan de implantación del sistema de administración de pólizas de vida.",
+    "contexto": [
+      "La migración de pólizas va después de la configuración de productos",
+      "El piloto con un canal antecede al despliegue general"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Cronograma de Implantación",
+    "tipo": "mermaid-gantt",
+    "objetivo": "Planificar las fases de implantación del core de vida.",
+    "conceptosClave": [
+      {
+        "term": "Migración",
+        "definition": "Traslado de pólizas vigentes al core nuevo"
+      }
+    ]
+  },
+  "respuestaModelo": "gantt\n    title Implantación del core de vida\n    dateFormat YYYY-MM-DD\n    section Preparación\n    Configuración de productos :conf, 2026-11-02, 45d\n    Integración con reaseguro  :integ, after conf, 30d\n    section Migración\n    Migración de pólizas vigentes :mig, after conf, 60d\n    section Despliegue\n    Piloto con canal bancaseguros :piloto, after mig, 30d\n    Despliegue general :gral, after piloto, 20d",
+  "esperado": {
+    "dialecto": "gantt",
+    "entidades": [],
+    "metadatos": [],
+    "defectoConocido": "8.3b"
+  }
+}

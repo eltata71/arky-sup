@@ -1,0 +1,44 @@
+{
+  "id": "salud-secuencia-autorizacion-fragmentos",
+  "dominio": "salud",
+  "proposito": "Secuencia con alt, loop, note y autonumber: el lienzo descarta los fragmentos y un arrastre la convierte en flowchart (8.1a, 8.3b).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Autorización Previa de Procedimientos",
+    "descripcion": "Solicitud de autorización previa entre proveedor y aseguradora.",
+    "contexto": [
+      "El proveedor envía la solicitud por X12 278",
+      "Si faltan datos clínicos, la aseguradora los pide hasta completarlos"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Secuencia de Autorización Previa",
+    "tipo": "mermaid-sequence",
+    "objetivo": "Mostrar el intercambio de mensajes de una autorización previa.",
+    "conceptosClave": [
+      {
+        "term": "X12 278",
+        "definition": "Transacción EDI de autorización"
+      }
+    ]
+  },
+  "respuestaModelo": "sequenceDiagram\n    autonumber\n    participant Prov as Proveedor\n    participant Pasarela as Pasarela EDI\n    participant Motor as Motor de Autorizaciones\n    participant Clin as Revisor Clínico\n    Prov->>Pasarela: Envía solicitud 278\n    Pasarela->>Motor: Normaliza solicitud\n    loop Hasta completar datos clínicos\n        Motor->>Prov: Pide datos clínicos\n        Prov-->>Motor: Envía datos clínicos\n    end\n    alt Cumple criterios automáticos\n        Motor-->>Pasarela: Aprueba\n    else Requiere revisión\n        Motor->>Clin: Escala caso\n        Clin-->>Motor: Dictamina\n        Motor-->>Pasarela: Responde dictamen\n    end\n    Note over Motor,Clin: El dictamen queda auditado\n    Pasarela-->>Prov: Devuelve respuesta 278",
+  "esperado": {
+    "dialecto": "sequenceDiagram",
+    "entidades": [
+      [
+        "Proveedor"
+      ],
+      [
+        "Pasarela EDI"
+      ],
+      [
+        "Motor de Autorizaciones"
+      ],
+      [
+        "Revisor Clínico"
+      ]
+    ],
+    "metadatos": []
+  }
+}

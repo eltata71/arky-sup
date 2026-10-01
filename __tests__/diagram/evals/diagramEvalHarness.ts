@@ -32,12 +32,18 @@ import { validateInsuranceCompliance } from '../../../services/diagram/insurance
 import { legacyTransport } from '../../../services/ai/generation/legacyTransport';
 import { runArtifactGeneration } from '../../../services/artifacts/application/artifactGenerationRun';
 import { isSkeletonFallbackContent } from '../../../services/artifacts/domain/deterministicArtifactFallbacks';
+import { planCanvasEdit } from '../../../services/artifacts/application/diagramCanvasEdit';
+import { extractIRFromArtifact, resolveRenderableDiagram } from '../../../services/diagram';
+import { resolveGroupSemanticStyle } from '../../../services/diagram/groupSemantics';
+import { computeLayoutQuality, type GroupRect, type NodeRect } from '../../../services/diagram/layoutQualityService';
 
 export const CORPUS_DIR = join(process.cwd(), 'tests', 'fixtures', 'diagram-evals');
 
 export interface DiagramEvalCase {
     id: string;
     dominio: 'salud' | 'vida';
+    /** Por qué existe el caso, cuando mide un defecto concreto (plan de diagramas, 8.0). */
+    proposito?: string;
     origenRespuesta: string;
     proyecto: {
         nombre: string;
@@ -79,6 +85,12 @@ export interface DiagramEvalCase {
         /** Códigos que el validador de dominio debe encontrar, y los que no. */
         hallazgosDominio?: string[];
         sinHallazgosDominio?: string[];
+        /**
+         * La tarea del plan de diagramas que corrige un defecto que este caso
+         * expone hoy (8.0). Sus garantías por caso no se exigen hasta entonces;
+         * los agregados sí lo cuentan, que es lo que lo hace visible.
+         */
+        defectoConocido?: string;
     };
 }
 
@@ -100,6 +112,7 @@ export interface DiagramEvalCaseResult {
     /** `null` cuando el modelo no escribió historia. */
     historiaConservada: boolean | null;
     esqueleto: boolean;
+    defectoConocido?: string;
     calidad: number | null;
     llamadasModelo: number;
     /** Lo que el prompt debía llevar (idioma, solicitud, criterios, necesidad, nivel superior, cercado). */
@@ -121,6 +134,47 @@ export interface DiagramEvalCaseResult {
     paquetesEsperados?: string[];
     hallazgosEsperados: string[];
     hallazgosProhibidos: string[];
+    /** Lo que el pipeline cambió por su cuenta respecto a la respuesta del modelo (8.0b); `null` sin respuesta comparable. */
+    integridad: IntegrityMetrics | null;
+    /** Lo que ocurre al mover un nodo en el lienzo (8.0b). */
+    edicion: CanvasEditMetrics | null;
+    /** La geometría del primer render, el síncrono que ve el usuario (8.0b). */
+    geometria: GeometryMetrics | null;
+}
+
+/** Lo que el pipeline añadió o cambió sin que el modelo ni la persona lo pidieran. */
+export interface IntegrityMetrics {
+    /** Nodos guardados que no estaban en la respuesta del modelo. */
+    elementosInventados: string[];
+    /** Grupos guardados que el modelo no declaró. */
+    gruposInventados: string[];
+    /** Relaciones del modelo que no se guardaron con sus extremos y su etiqueta. */
+    aristasAlteradas: string[];
+    /** Nodos que el modelo dejó sin descripción y se guardaron con una. */
+    descripcionesSinteticas: number;
+    /** Nodos que el lienzo pinta (vista técnica) y no existen en lo guardado. */
+    nodosRenderNoGuardados: string[];
+}
+
+export interface CanvasEditMetrics {
+    /** El texto sigue en su dialecto tras mover un nodo en la vista técnica. */
+    dialectoTrasEdicion: boolean;
+    dialectoGuardadoTrasEdicion: string;
+    /** Nodos guardados que desaparecen del IR al mover un nodo, por audiencia. */
+    nodosPerdidos: { tecnica: string[]; ejecutiva: string[] };
+    /** Nodos que aparecen en el IR al mover un nodo, por audiencia. */
+    nodosAnadidos: { tecnica: string[]; ejecutiva: string[] };
+}
+
+export interface GeometryMetrics {
+    solapesNodos: number;
+    solapesGrupos: number;
+    /**
+     * Aristas cuyo segmento recto entre centros atraviesa otro nodo. Es una
+     * aproximación: el lienzo dibuja curvas de asa a asa; mide la misma
+     * disposición, no el trazo exacto.
+     */
+    aristasQueAtraviesanNodos: number;
 }
 
 export interface DiagramEvalSummary {
@@ -144,6 +198,23 @@ export interface DiagramEvalSummary {
     paquetesCorrectos: number;
     /** Hallazgos de dominio esperados que el validador encontró, y ausentes los que no debía (6.4). */
     hallazgosDominioCorrectos: number;
+    // ── 8.0b: integridad y presentación. Los contadores sólo pueden bajar. ──
+    /** Nodos que el pipeline añadió por su cuenta, sumados en todo el corpus. */
+    elementosInventados: number;
+    gruposInventados: number;
+    aristasAlteradas: number;
+    descripcionesSinteticas: number;
+    /** Nodos que el lienzo pinta y no están guardados. */
+    nodosRenderNoGuardados: number;
+    /** Fracción de casos cuyo texto conserva el dialecto tras mover un nodo. */
+    dialectoTrasEdicion: number;
+    /** Nodos guardados que se pierden al mover un nodo (técnica + ejecutiva). */
+    nodosPerdidosPorEdicion: number;
+    /** Nodos que aparecen en el IR al mover un nodo (técnica + ejecutiva). */
+    nodosAnadidosPorEdicion: number;
+    solapesNodos: number;
+    solapesGrupos: number;
+    aristasQueAtraviesanNodos: number;
 }
 
 export function loadCorpus(): DiagramEvalCase[] {
@@ -185,6 +256,8 @@ export function savedDialect(content: string): string {
 
 const dialectMatches = (saved: string, expected: string): boolean =>
     saved.toLowerCase() === expected.toLowerCase()
+    // React Flow se guarda como JSON: su «dialecto» es abrir un objeto.
+    || (expected === '{' && saved.startsWith('{'))
     // `graph` y `flowchart` son el mismo dialecto de Mermaid.
     || (expected === 'flowchart' && saved.toLowerCase() === 'graph');
 
@@ -246,6 +319,147 @@ function templateFor(testCase: DiagramEvalCase): ArtifactTemplate {
     } as ArtifactTemplate;
 }
 
+// ── 8.0b: integridad, edición en el lienzo y geometría ─────────────────────
+
+/** El diagrama tal y como lo devolvió el modelo, para compararlo con lo guardado. */
+function modelIRFor(testCase: DiagramEvalCase): DiagramIR | null {
+    const response = testCase.respuestaModelo;
+    let ir: DiagramIR | null;
+    if (typeof response !== 'string') {
+        if ('error' in response) return null;
+        ir = { ...response, groups: response.groups ?? [] };
+    } else {
+        const template = templateFor(testCase);
+        ir = extractIRFromArtifact({ content: response, representation: template.representation, type: template.type });
+    }
+    return ir ? withRecordedCorrection(ir, testCase.respuestaCorreccion) : null;
+}
+
+/** Lo que añade la corrección grabada también lo escribió el modelo: no cuenta como invención. */
+function withRecordedCorrection(ir: DiagramIR, correction: unknown): DiagramIR {
+    const operations = (correction as { operations?: Array<{ op?: string; node?: DiagramIRNode; edge?: DiagramIR['edges'][number] }> } | undefined)?.operations ?? [];
+    return {
+        ...ir,
+        nodes: [...ir.nodes, ...operations.flatMap((o) => (o.op === 'add-node' && o.node ? [o.node] : []))],
+        edges: [...ir.edges, ...operations.flatMap((o) => (o.op === 'add-edge' && o.edge ? [o.edge] : []))],
+    };
+}
+
+const labelKey = (node: { label?: string; id: string } | undefined): string =>
+    normalize(node?.label || node?.id);
+
+export function measureIntegrity(
+    modelIR: DiagramIR,
+    savedIR: DiagramIR,
+    renderIR: DiagramIR | null,
+): IntegrityMetrics {
+    const modelLabels = new Set(modelIR.nodes.map(labelKey));
+    const modelIds = new Set(modelIR.nodes.map((n) => n.id));
+    const elementosInventados = savedIR.nodes
+        .filter((n) => !modelIds.has(n.id) && !modelLabels.has(labelKey(n)))
+        .map((n) => n.label || n.id);
+
+    const modelGroups = new Set((modelIR.groups ?? []).map((g) => normalize(g.label)));
+    // Un subgraph de Mermaid nombra su grupo en los nodos aunque no lo declare aparte.
+    for (const node of modelIR.nodes) if (node.group) modelGroups.add(normalize(node.group));
+    const gruposInventados = (savedIR.groups ?? [])
+        .filter((g) => !modelGroups.has(normalize(g.label)))
+        .map((g) => g.label);
+
+    const labelOf = (ir: DiagramIR, id: string) => labelKey(ir.nodes.find((n) => n.id === id) ?? { id });
+    const savedEdges = new Set(savedIR.edges.map((e) => `${labelOf(savedIR, e.source)}→${labelOf(savedIR, e.target)}::${normalize(e.label)}`));
+    const aristasAlteradas = modelIR.edges
+        .filter((e) => !savedEdges.has(`${labelOf(modelIR, e.source)}→${labelOf(modelIR, e.target)}::${normalize(e.label)}`))
+        .map((e) => `${labelOf(modelIR, e.source)} → ${labelOf(modelIR, e.target)} «${e.label ?? ''}»`);
+
+    const undescribed = new Set(modelIR.nodes.filter((n) => !n.description?.trim()).map(labelKey));
+    const descripcionesSinteticas = savedIR.nodes
+        .filter((n) => undescribed.has(labelKey(n)) && Boolean(n.description?.trim())).length;
+
+    const savedIds = new Set(savedIR.nodes.map((n) => n.id));
+    const nodosRenderNoGuardados = (renderIR?.nodes ?? [])
+        .filter((n) => !savedIds.has(n.id))
+        .map((n) => n.label || n.id);
+
+    return { elementosInventados, gruposInventados, aristasAlteradas, descripcionesSinteticas, nodosRenderNoGuardados };
+}
+
+/** Mueve el primer nodo del lienzo 40 px, como un arrastre, y aplica lo que escribe la pantalla. */
+function simulateDrag(artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>, audience: 'technical' | 'executive') {
+    const rendered = resolveRenderableDiagram(artifact, { audience });
+    const nodes = rendered.reactFlow.nodes
+        .filter((n) => n.type !== 'groupZone')
+        .map((n, index) => (index === 0 ? { ...n, position: { x: n.position.x + 40, y: n.position.y } } : n));
+    return planCanvasEdit(artifact, { nodes, edges: rendered.reactFlow.edges });
+}
+
+export function measureCanvasEdit(
+    artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>,
+    expectedDialect: string,
+): CanvasEditMetrics {
+    const savedIds = new Set((artifact.ir?.nodes ?? []).map((n) => n.id));
+    const diff = (patchIR: DiagramIR | undefined) => {
+        const after = new Set((patchIR?.nodes ?? []).map((n) => n.id));
+        return {
+            perdidos: [...savedIds].filter((id) => !after.has(id)),
+            anadidos: [...after].filter((id) => !savedIds.has(id)),
+        };
+    };
+    const technical = simulateDrag(artifact, 'technical');
+    const executive = simulateDrag(artifact, 'executive');
+    const t = diff(technical.ir);
+    const e = diff(executive.ir);
+    const dialectoGuardadoTrasEdicion = savedDialect(technical.content ?? artifact.content);
+    return {
+        dialectoTrasEdicion: dialectMatches(dialectoGuardadoTrasEdicion, expectedDialect),
+        dialectoGuardadoTrasEdicion,
+        nodosPerdidos: { tecnica: t.perdidos, ejecutiva: e.perdidos },
+        nodosAnadidos: { tecnica: t.anadidos, ejecutiva: e.anadidos },
+    };
+}
+
+/** Geometría del render síncrono (dagre), con las zonas de grupo que pinta el lienzo. */
+export function measureGeometry(
+    artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>,
+): GeometryMetrics | null {
+    const rendered = resolveRenderableDiagram(artifact, { audience: 'technical' });
+    const content = rendered.reactFlow.nodes.filter((n) => n.type !== 'groupZone');
+    if (!rendered.ir || content.length === 0) return null;
+    const dims = (n: (typeof content)[number]) => {
+        const data = (n.data ?? {}) as { width?: number; height?: number };
+        return { width: data.width ?? n.width ?? 240, height: data.height ?? n.height ?? 96 };
+    };
+    const nodeRects: NodeRect[] = content.map((n) => ({ id: String(n.id), x: n.position.x, y: n.position.y, ...dims(n) }));
+    const byGroup = new Map<string, NodeRect[]>();
+    content.forEach((n, index) => {
+        const group = (n.data as { group?: string } | undefined)?.group;
+        if (!group) return;
+        byGroup.set(group, [...(byGroup.get(group) ?? []), nodeRects[index]]);
+    });
+    const kinds = new Map((rendered.ir.groups ?? []).map((g) => [g.label, g.kind] as const));
+    let fallback = 0;
+    const groupRects: GroupRect[] = [...byGroup.entries()].map(([label, members]) => {
+        const kind = kinds.get(label);
+        const style = resolveGroupSemanticStyle(kind, fallback);
+        if (!kind) fallback++;
+        const minX = Math.min(...members.map((r) => r.x)) - style.padX;
+        const minY = Math.min(...members.map((r) => r.y)) - style.padTop;
+        const maxX = Math.max(...members.map((r) => r.x + r.width)) + style.padX;
+        const maxY = Math.max(...members.map((r) => r.y + r.height)) + style.padBottom;
+        return { id: label, label, x: minX, y: minY, width: maxX - minX, height: maxY - minY, memberIds: members.map((r) => r.id) };
+    });
+    const centre = new Map(nodeRects.map((r) => [r.id, { x: r.x + r.width / 2, y: r.y + r.height / 2 }] as const));
+    const edgeSegments = rendered.reactFlow.edges
+        .filter((e) => centre.has(String(e.source)) && centre.has(String(e.target)))
+        .map((e) => ({ id: String(e.id), source: String(e.source), target: String(e.target), waypoints: [centre.get(String(e.source))!, centre.get(String(e.target))!] }));
+    const metrics = computeLayoutQuality({ ir: rendered.ir, nodeRects, groupRects, edgeSegments });
+    return {
+        solapesNodos: metrics.overlappingNodePairs.length,
+        solapesGrupos: metrics.overlappingGroupPairs.length,
+        aristasQueAtraviesanNodos: metrics.edgesCrossingNodes.length,
+    };
+}
+
 /** Ejecuta un caso por el pipeline real, con el modelo sustituido por su respuesta. */
 export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEvalCaseResult> {
     const response = typeof testCase.respuestaModelo === 'string'
@@ -299,6 +513,22 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             }
         }
 
+        const esqueleto = Boolean(result.skeletonFallbackError) || isSkeletonFallbackContent(result.persistedContent);
+        const saved = {
+            id: `eval-${testCase.id}`,
+            type: testCase.plantilla.tipo,
+            content: result.persistedContent,
+            representation: templateFor(testCase).representation,
+            ir: ir ?? undefined,
+        } as Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>;
+        const modelIR = modelIRFor(testCase);
+        const comparable = Boolean(ir && modelIR && !esqueleto && !testCase.esperado.degradado);
+        const integridad = comparable
+            ? measureIntegrity(modelIR!, ir!, resolveRenderableDiagram(saved, { audience: 'technical' }).ir)
+            : null;
+        const edicion = comparable ? measureCanvasEdit(saved, testCase.esperado.dialecto) : null;
+        const geometria = comparable ? measureGeometry(saved) : null;
+
         const [, , firstPrompt, firstConfig] = transport.mock.calls[0] ?? [];
         const prompt = `${String((firstConfig as { systemInstruction?: string } | undefined)?.systemInstruction ?? '')}\n${String(firstPrompt ?? '')}`;
         const { contexto, contradicciones } = checkPrompt(testCase, prompt);
@@ -332,7 +562,11 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             },
             tecnologias,
             historiaConservada,
-            esqueleto: Boolean(result.skeletonFallbackError) || isSkeletonFallbackContent(result.persistedContent),
+            esqueleto,
+            defectoConocido: testCase.esperado.defectoConocido,
+            integridad,
+            edicion,
+            geometria,
             calidad: result.generationTrace.quality?.score ?? null,
             llamadasModelo: transport.mock.calls.length,
         };
@@ -415,8 +649,41 @@ export function summarize(all: DiagramEvalCaseResult[]): DiagramEvalSummary {
                 + r.hallazgosProhibidos.filter((code) => !r.hallazgosDominio.includes(code)).length, 0),
             all.reduce((acc, r) => acc + r.hallazgosEsperados.length + r.hallazgosProhibidos.length, 0),
         )),
+        ...summarizeIntegrity(results),
     };
 }
+
+function summarizeIntegrity(results: DiagramEvalCaseResult[]) {
+    const total = (pick: (r: DiagramEvalCaseResult) => number) => results.reduce((acc, r) => acc + pick(r), 0);
+    const edited = results.filter((r) => r.edicion);
+    return {
+        elementosInventados: total((r) => r.integridad?.elementosInventados.length ?? 0),
+        gruposInventados: total((r) => r.integridad?.gruposInventados.length ?? 0),
+        aristasAlteradas: total((r) => r.integridad?.aristasAlteradas.length ?? 0),
+        descripcionesSinteticas: total((r) => r.integridad?.descripcionesSinteticas ?? 0),
+        nodosRenderNoGuardados: total((r) => r.integridad?.nodosRenderNoGuardados.length ?? 0),
+        dialectoTrasEdicion: round(ratio(edited.filter((r) => r.edicion!.dialectoTrasEdicion).length, edited.length)),
+        nodosPerdidosPorEdicion: total((r) => (r.edicion?.nodosPerdidos.tecnica.length ?? 0) + (r.edicion?.nodosPerdidos.ejecutiva.length ?? 0)),
+        nodosAnadidosPorEdicion: total((r) => (r.edicion?.nodosAnadidos.tecnica.length ?? 0) + (r.edicion?.nodosAnadidos.ejecutiva.length ?? 0)),
+        solapesNodos: total((r) => r.geometria?.solapesNodos ?? 0),
+        solapesGrupos: total((r) => r.geometria?.solapesGrupos ?? 0),
+        aristasQueAtraviesanNodos: total((r) => r.geometria?.aristasQueAtraviesanNodos ?? 0),
+    };
+}
+
+/** Los contadores de 8.0b que sólo pueden bajar, y la fracción que sólo puede subir. */
+export const INTEGRITY_COUNTERS = [
+    'elementosInventados',
+    'gruposInventados',
+    'aristasAlteradas',
+    'descripcionesSinteticas',
+    'nodosRenderNoGuardados',
+    'nodosPerdidosPorEdicion',
+    'nodosAnadidosPorEdicion',
+    'solapesNodos',
+    'solapesGrupos',
+    'aristasQueAtraviesanNodos',
+] as const;
 
 /** Tabla legible para `npm run eval:diagrams`. */
 export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramEvalSummary): string {
@@ -438,11 +705,27 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.hallazgosDominio.join(',') || '—',
     ].join(' | '));
     const missing = results.flatMap((r) => r.contexto.filter((c) => !c.ok).map((c) => `  ${r.id}: falta ${c.que}`));
+    const integrityRows = results.filter((r) => r.integridad || r.edicion || r.geometria).map((r) => [
+        r.id,
+        r.integridad?.elementosInventados.join(', ') || '—',
+        r.integridad?.gruposInventados.join(', ') || '—',
+        r.integridad?.aristasAlteradas.length ?? '—',
+        r.integridad?.descripcionesSinteticas ?? '—',
+        r.integridad?.nodosRenderNoGuardados.join(', ') || '—',
+        r.edicion ? `${r.edicion.dialectoTrasEdicion ? 'sí' : 'NO'} (${r.edicion.dialectoGuardadoTrasEdicion})` : '—',
+        r.edicion ? `${r.edicion.nodosPerdidos.tecnica.length}/${r.edicion.nodosPerdidos.ejecutiva.length}` : '—',
+        r.edicion ? `${r.edicion.nodosAnadidos.tecnica.length}/${r.edicion.nodosAnadidos.ejecutiva.length}` : '—',
+        r.geometria ? `${r.geometria.solapesNodos}/${r.geometria.solapesGrupos}/${r.geometria.aristasQueAtraviesanNodos}` : '—',
+    ].join(' | '));
     return [
         'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | hallazgos de dominio',
         ...rows,
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
+        'Integridad y presentación (8.0b)',
+        'caso | inventados | grupos inventados | aristas alteradas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos',
+        ...integrityRows,
+        '',
         JSON.stringify(summary, null, 2),
     ].join('\n');
 }
