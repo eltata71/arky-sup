@@ -13,7 +13,7 @@
  * a different identity depending on whether the UI streamed.
  */
 import type { Settings } from '../../types';
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import { extractConversationDecisions, type ChatMessage } from '../chat';
 import { assistantService, type AgentTurnResult } from '../ai';
@@ -32,11 +32,16 @@ export interface AgentConversationTurn {
   settings: Settings;
   /** The specialist for this turn. Absent → the agent's own voice. */
   persona?: AgentPersonaBriefing;
+  /** Initiative, deliverables and conversation, from the screen (7.3d). */
+  ports?: ArtifactContextPorts;
 }
 
-const composeTurn = ({ project, activeArtifact, history, question, settings, persona }: AgentConversationTurn) => ({
+const composeTurn = ({ project, activeArtifact, history, question, settings, persona, ports }: AgentConversationTurn) => ({
   systemInstruction: buildAgentSystemInstruction({
-    project, activeArtifact, settings, userQuery: question, persona, conversation: extractConversationDecisions(history),
+    project, activeArtifact, settings, userQuery: question, persona,
+    ...ports,
+    // The turn's own history is the freshest reading of the conversation.
+    conversation: extractConversationDecisions(history),
   }),
   history: prepareChatHistoryForModel({
     history,

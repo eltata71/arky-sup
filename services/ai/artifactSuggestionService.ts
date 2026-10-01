@@ -7,7 +7,8 @@
  * {@link ArtifactSuggestionReport}.
  */
 import type { Settings } from '../../types';
-import type { Artifact } from '../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../lib/artifacts';
+import { buildBusinessMotivationBlock } from './prompts/diagramGenerationBrief';
 import type { Project } from '../architectureProjects';
 import { suggestArtifactImprovements } from './generation/artifactSuggestions';
 import { assembleArtifactContext } from './prompts/artifactContext';
@@ -54,6 +55,8 @@ export interface BuildSuggestionContextInput {
   qualitySummary: string | null;
   /** Outstanding quality findings, when available. */
   qualityIssues: string[];
+  /** Initiative, conversation and deliverables, from the screen (7.3d). */
+  ports?: ArtifactContextPorts;
 }
 
 /**
@@ -108,10 +111,13 @@ export const buildArtifactSuggestionContext = (
     refinementHistory,
     language: settings.language === 'en' ? 'en' : 'es',
     // What the suggestions are judged against: the same context a review reads (7.3a).
-    contextBlock: renderArtifactContextBundle(assembleArtifactContext(
-      { project, settings, artifact, query: `${artifact.name}. ${artifact.objective ?? ''}` },
-      'review',
-    )),
+    contextBlock: [
+      renderArtifactContextBundle(assembleArtifactContext(
+        { project, settings, artifact, query: `${artifact.name}. ${artifact.objective ?? ''}`, conversation: input.ports?.conversation, deliverables: input.ports?.deliverables },
+        'review',
+      )),
+      buildBusinessMotivationBlock(input.ports?.businessMotivation),
+    ].filter(Boolean).join('\n\n'),
   };
 };
 

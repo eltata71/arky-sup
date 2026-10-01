@@ -80,7 +80,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
   // duplicates the chat function-call path; this is purely an
   // intent-routed UX layer over `geminiService` + `createArtifactVersion`.
   const agent = useAgentActions();
-  const assistantTurns = useAssistantTurns();
+  const assistantTurns = useAssistantTurns(project);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const isMounted = useRef(true);
@@ -210,7 +210,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         // card. Only when no plan is already pending — we don't want to
         // distract the user mid-confirmation.
         if (activeArtifact && !agent.pendingPlan) agent.scanForProactiveSuggestion(finalResponse);
-        agent.offerDecisionMemory({ userText: text, project }); // a stated decision, offered as memory (7.3b)
+        agent.offerDecisionMemory({ userText: text, project }); // decision → memory (7.3b)
 
         assistantTurns.extractContextNote(baseMessages, text, finalResponse, settings)
             .then(newContextNote => {

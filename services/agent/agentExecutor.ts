@@ -113,6 +113,7 @@ export interface AgentExecutorInput {
  */
 export async function executeAgentAction(input: AgentExecutorInput): Promise<AgentActionResult> {
   const { plan, artifact, project, settings, history, store } = input;
+  const ports = agentGenerationOptions(input.resolvePersona, input.businessMotivation, history);
   const target = input.targetOverride ?? plan.target;
   const traceId = plan.traceId;
 
@@ -155,7 +156,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
         emit('preparing', 'Preparando mejoras…');
         const reviewSuggestions = mapPendingSuggestionsToReview(input.pendingSuggestions, plan.intent.userInstruction);
         emit('generating', 'Generando mejoras con IA…');
-        newContent = await artifactGenerationService.applyArtifactImprovements(artifact, reviewSuggestions, project, settings);
+        newContent = await artifactGenerationService.applyArtifactImprovements(artifact, reviewSuggestions, project, settings, ports);
         appliedChanges.push(`Mejora aplicada según: "${plan.intent.userInstruction}"`);
         break;
       }
@@ -174,7 +175,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
         }
         emit('preparing', 'Preparando aplicación de sugerencias…');
         emit('generating', 'Reescribiendo contenido con sugerencias seleccionadas…');
-        newContent = await artifactGenerationService.applyArtifactImprovements(artifact, reviewSuggestions, project, settings);
+        newContent = await artifactGenerationService.applyArtifactImprovements(artifact, reviewSuggestions, project, settings, ports);
         appliedChanges.push(`Sugerencias aplicadas (${reviewSuggestions.length}).`);
         break;
       }
@@ -202,7 +203,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
           objective: `${template.objective}\n\nInstrucciones adicionales del Arquitecto: ${plan.intent.userInstruction}`,
         };
         emit('generating', 'Regenerando artefacto con la IA…');
-        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, agentGenerationOptions(input.resolvePersona, input.businessMotivation, input.history));
+        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, ports);
         appliedChanges.push(`Regenerado a partir de: "${truncate(plan.intent.userInstruction, 140)}"`);
         break;
       }

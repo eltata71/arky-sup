@@ -13,7 +13,8 @@ export interface UseArtifactSuggestionsInput {
   artifactId: string;
   settings: Settings;
   /** Lazily builds the AI context — invoked only when a request fires. */
-  buildContext: () => ArtifactSuggestionContext;
+  /** May be async: the context reads the conversation when the request starts (7.3d). */
+  buildContext: () => ArtifactSuggestionContext | Promise<ArtifactSuggestionContext>;
 }
 
 export interface UseArtifactSuggestionsResult {
@@ -69,27 +70,23 @@ export const useArtifactSuggestions = ({
     setStatus('loading');
     setError(null);
 
-    let context: ArtifactSuggestionContext;
-    try {
-      context = buildContextRef.current();
-    } catch (err) {
-      inFlight.current = false;
-      setStatus('error');
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'No se pudo preparar el contexto del artefacto.',
-      );
-      return;
-    }
-
-    void requestArtifactSuggestions(context, settings)
-      .then((next) => {
+    void (async () => {
+      let context: ArtifactSuggestionContext;
+      try {
+        context = await buildContextRef.current();
+      } catch (err) {
+        inFlight.current = false;
+        if (!isMounted.current) return;
+        setStatus('error');
+        setError(err instanceof Error ? err.message : 'No se pudo preparar el contexto del artefacto.');
+        return;
+      }
+      try {
+        const next = await requestArtifactSuggestions(context, settings);
         if (!isMounted.current) return;
         setReport(next);
         setStatus('success');
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if (!isMounted.current) return;
         setStatus('error');
         setError(
@@ -97,10 +94,10 @@ export const useArtifactSuggestions = ({
             ? err.message
             : 'No se pudieron generar sugerencias. Reintenta en unos segundos.',
         );
-      })
-      .finally(() => {
+      } finally {
         inFlight.current = false;
-      });
+      }
+    })();
   }, [settings]);
 
   return { status, report, error, request, reset };

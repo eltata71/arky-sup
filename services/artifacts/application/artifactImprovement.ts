@@ -16,7 +16,7 @@
  */
 
 import type { Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import type { Project } from '../../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../../review';
@@ -151,12 +151,12 @@ export const documentFromDiagramDraft = (source: Artifact, content: string): New
 });
 
 /** **Llama a un modelo.** Genera los casos de prueba y devuelve el borrador. */
-export const draftTestCases = async (artifact: Artifact, project: Project, settings: Settings): Promise<NewArtifactDraft> =>
-  testCasesDraft(artifact, await artifactGenerationService.generateTestCases(artifact, project, settings));
+export const draftTestCases = async (artifact: Artifact, project: Project, settings: Settings, ports: ArtifactContextPorts = {}): Promise<NewArtifactDraft> =>
+  testCasesDraft(artifact, await artifactGenerationService.generateTestCases(artifact, project, settings, ports));
 
 /** **Llama a un modelo.** Describe el diagrama como documento y devuelve el borrador. */
-export const draftDocumentFromDiagram = async (artifact: Artifact, project: Project, settings: Settings): Promise<NewArtifactDraft> =>
-  documentFromDiagramDraft(artifact, await documentGenerationService.convertDiagramToDocument(artifact, project, settings));
+export const draftDocumentFromDiagram = async (artifact: Artifact, project: Project, settings: Settings, ports: ArtifactContextPorts = {}): Promise<NewArtifactDraft> =>
+  documentFromDiagramDraft(artifact, await documentGenerationService.convertDiagramToDocument(artifact, project, settings, ports));
 
 // ──────────────────────────────────────────── mejorar con las sugerencias
 
@@ -203,12 +203,15 @@ export const improveWithSuggestions = async (
   suggestions: readonly ArtifactSuggestionForImprovement[],
   project: Project,
   settings: Settings,
+  /** Initiative, conversation and deliverables, from the screen (7.3d). */
+  ports: ArtifactContextPorts = {},
 ): Promise<string | null> => {
   const content = await artifactGenerationService.applyArtifactImprovements(
     artifact,
     toReviewSuggestions(suggestions),
     project,
     settings,
+    ports,
   );
   const trimmed = (content ?? '').trim();
   if (!trimmed || trimmed === artifact.content.trim()) return null;

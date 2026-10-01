@@ -167,6 +167,8 @@ export {
   type ArtifactContextSources,
 } from './prompts/artifactContext';
 export { renderArtifactContextBundle } from './prompts/artifactContextRender';
+// La razón de negocio como la lee un prompt; el chat la añade a su contexto (7.3d).
+export { buildBusinessMotivationBlock } from './prompts/diagramGenerationBrief';
 export {
   DEFAULT_TEXT_MODEL,
   listCurrentGeminiModels,

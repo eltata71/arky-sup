@@ -47,12 +47,7 @@ import {
   type NodeRect,
   type ViewportRect,
 } from '../services/artifacts/application/artifactAssessment';
-import {
-  draftDocumentFromDiagram,
-  draftTestCases,
-  improveWithSuggestions,
-  planDiagramAutoImprove,
-} from '../services/artifacts/application/artifactImprovement';
+import { planDiagramAutoImprove } from '../services/artifacts/application/artifactImprovement';
 import { useArtifactViewMode } from '../hooks/artifacts/useArtifactViewMode';
 import { useGenerationDiagnostic } from '../hooks/artifacts/useGenerationDiagnostic';
 import { useDocumentRendering } from '../hooks/artifacts/useDocumentRendering';
@@ -308,7 +303,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
   // El contexto que se le manda al modelo lo compone la capa de aplicación:
   // qué parte del informe de calidad viaja con la pregunta es una decisión de
   // producto, no de renderizado.
-  const { buildSuggestionContext } = assessment;
+  const { buildSuggestionContext, modelCalls } = assessment;
 
   const suggestions = useArtifactSuggestions({
     artifactId: artifact.id,
@@ -406,7 +401,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     if (isGeneratingTests) return;
     setIsGeneratingTests(true);
     try {
-      const newArtifact = createArtifact(project.id, await draftTestCases(artifact, project, settings));
+      const newArtifact = createArtifact(project.id, await modelCalls.draftTestCases(artifact));
       if (isMounted.current) setActiveArtifactId(newArtifact.id);
     } catch (error) {
       console.error('Error generating test cases:', error);
@@ -414,13 +409,13 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     } finally {
       if (isMounted.current) setIsGeneratingTests(false);
     }
-  }, [isGeneratingTests, artifact, project, settings, createArtifact, setActiveArtifactId, addToast]);
+  }, [isGeneratingTests, artifact, project, modelCalls, createArtifact, setActiveArtifactId, addToast]);
 
   const handleConvertToDoc = useCallback(async () => {
     if (isConvertingToDoc) return;
     setIsConvertingToDoc(true);
     try {
-      const newArtifact = createArtifact(project.id, await draftDocumentFromDiagram(artifact, project, settings));
+      const newArtifact = createArtifact(project.id, await modelCalls.draftDocumentFromDiagram(artifact));
       if (isMounted.current) setActiveArtifactId(newArtifact.id);
     } catch (error) {
       console.error('Error converting to document:', error);
@@ -428,7 +423,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     } finally {
       if (isMounted.current) setIsConvertingToDoc(false);
     }
-  }, [isConvertingToDoc, artifact, project, settings, createArtifact, setActiveArtifactId, addToast]);
+  }, [isConvertingToDoc, artifact, project, modelCalls, createArtifact, setActiveArtifactId, addToast]);
 
   /** Opens the Sugerencias panel and triggers the analysis on first open. */
   const handleOpenSuggestions = useCallback(() => {
@@ -445,7 +440,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     if (list.length === 0 || isApplyingSuggestions) return;
     setIsApplyingSuggestions(true);
     try {
-      const newContent = await improveWithSuggestions(artifact, list, project, settings);
+      const newContent = await modelCalls.improveWithSuggestions(artifact, list);
       if (!isMounted.current) return;
       if (newContent === null) {
         addToast('La IA no propuso cambios aplicables. Revisa las sugerencias manualmente.', 'warning');
@@ -461,7 +456,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     } finally {
       if (isMounted.current) setIsApplyingSuggestions(false);
     }
-  }, [suggestions.report, isApplyingSuggestions, artifact, project, settings, restoreArtifactVersion, setActiveArtifactId, addToast]);
+  }, [suggestions.report, isApplyingSuggestions, artifact, project, modelCalls, restoreArtifactVersion, setActiveArtifactId, addToast]);
 
   // Gap 13 / Gap 3: the Sugerencias panel's action dispatcher lives in
   // `useSuggestionActionRunner`, which mutates the IR deterministically and

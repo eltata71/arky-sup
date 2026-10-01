@@ -20,6 +20,8 @@ import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 import type { DiagramIR } from '../../lib/diagram';
+import { useArtifactContextPorts } from '../useArtifactContextPorts';
+import { useArtifactModelCalls } from './useArtifactModelCalls';
 import {
   assessCompilationFreshness,
   assessDiagramQuality,
@@ -101,9 +103,12 @@ export function useArtifactAssessment(input: UseArtifactAssessmentInput) {
     [artifact, activeExportView],
   );
 
+  // Initiative, conversation and deliverables, read when the request starts (7.3d).
+  const loadContextPorts = useArtifactContextPorts(project);
+  const modelCalls = useArtifactModelCalls(project, settings);
   const suggestionContext = useMemo(
-    () => () => buildSuggestionContext({ artifact, project, quality: reportedQuality, settings }),
-    [artifact, project, reportedQuality, settings],
+    () => async () => buildSuggestionContext({ artifact, project, quality: reportedQuality, settings, ports: await loadContextPorts() }),
+    [artifact, project, reportedQuality, settings, loadContextPorts],
   );
 
   return {
@@ -115,6 +120,8 @@ export function useArtifactAssessment(input: UseArtifactAssessmentInput) {
     exportFormatOptions,
     artifactQualitySnapshot,
     buildSuggestionContext: suggestionContext,
+    /** The canvas's model calls, with the same context ports the suggestions read (7.3d). */
+    modelCalls,
     compilationFreshness: assessCompilationFreshness(artifact),
   };
 }

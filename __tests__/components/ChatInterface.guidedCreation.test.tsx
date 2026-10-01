@@ -33,6 +33,10 @@ vi.mock('../../context/AppContext', () => ({
   }),
 }));
 
+// The chat reads initiative, deliverables and conversation for the agent's
+// turns (7.3d); this suite is about guided creation, which reads none of them.
+vi.mock('../../hooks/useArtifactContextPorts', () => ({ useArtifactContextPorts: () => async () => ({}) }));
+
 vi.mock('../../hooks/useLMS', () => ({
   useLMS: () => ({ courses: [] }),
 }));

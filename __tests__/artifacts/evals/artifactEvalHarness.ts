@@ -255,6 +255,12 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
     const project = projectFor(testCase, artifact);
     const template = templateFor(testCase);
     const text = vi.spyOn(legacyTransport, 'generateTextWithFallback').mockResolvedValue(testCase.respuestaModelo);
+    // Lo que hoy pasan las pantallas a cada camino: iniciativa, entregables y conversación (7.3d).
+    const ports = {
+        businessMotivation: motivationFor(testCase),
+        conversation: extractConversationDecisions(conversationFor(testCase)),
+        deliverables: deliverablesFor(testCase),
+    };
     const content = vi.spyOn(legacyTransport, 'generateContentWithFallback')
         .mockResolvedValue({ text: path === 'sugerir' ? '{}' : path === 'revisar' ? '[]' : testCase.respuestaModelo });
     try {
@@ -283,19 +289,19 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
                 break;
             }
             case 'revisar':
-                await artifactGenerationService.reviewArtifact(artifact, project, settings);
+                await artifactGenerationService.reviewArtifact(artifact, project, settings, ports);
                 break;
             case 'sugerir':
                 await suggestArtifactImprovements(
-                    buildArtifactSuggestionContext({ artifact, project, qualityScore: 70, qualitySummary: null, qualityIssues: [] }, settings),
+                    buildArtifactSuggestionContext({ artifact, project, qualityScore: 70, qualitySummary: null, qualityIssues: [], ports }, settings),
                     settings,
                 );
                 break;
             case 'presentar':
-                await generatePresentationDeck(project, template, settings);
+                await generatePresentationDeck(project, template, settings, undefined, ports);
                 break;
             case 'convertir':
-                await convertDiagramToDocument(artifact, project, settings);
+                await convertDiagramToDocument(artifact, project, settings, ports);
                 break;
             case 'copiloto':
                 await processAssistantChat({
@@ -304,6 +310,7 @@ async function runPath(testCase: ArtifactEvalCase, path: EvalPath): Promise<stri
                     history: conversationFor(testCase),
                     question: 'Revisa el documento y dime qué le falta.',
                     settings,
+                    ports,
                 });
                 break;
         }
