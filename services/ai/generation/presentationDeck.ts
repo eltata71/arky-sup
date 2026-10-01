@@ -14,6 +14,7 @@
 import type { ArtifactTemplate, Settings } from '../../../types';
 import type { Project } from '../../architectureProjects';
 import type { ArtifactContextPorts } from '../../../lib/artifacts';
+import { captureContextBlocks } from '../prompts/contextManifestCapture';
 import {
   buildPresentationPromptInstructions,
   parsePresentationDeck,
@@ -50,6 +51,7 @@ export async function generatePresentationDeck(
     contextBlock,
     language: settings.language,
   });
+  captureContextBlocks(project, ports.onContextCaptured, { 'Contexto de la presentación': contextBlock });
   const fullPrompt = `${basePrompt}\n\n${instructions}\n\nTASK: Create the deck for "${template.name}" matching the contract above. Return JSON only.`;
   const modelConfig: Record<string, unknown> = {
     temperature: Math.min(userTemp, 0.7),

@@ -40,6 +40,7 @@
  * sentence, and the diagram is exactly as it was.
  */
 
+import type { ArtifactContextPorts } from '../../../../lib/artifacts';
 import type { DiagramIR, DiagramPatch, DiagramPatchResult } from '../../../../lib/diagram';
 import { resolveEffectiveModel } from '../../../../lib/ai/modelCatalog';
 // Through the barrel, not the file: this vertical is lazy, and the engine's
@@ -55,7 +56,7 @@ import type { Settings } from '../../../../types';
  *  edit and becomes a rewrite with extra steps. */
 export const MAX_PATCH_OPERATIONS = 12;
 
-export interface DiagramEditRequest {
+export interface DiagramEditRequest extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
     ir: DiagramIR;
     /** What the architect asked for, in their own words. */
     instruction: string;
@@ -167,11 +168,21 @@ const describeDiagram = (ir: DiagramIR): string => [
         : ['- (ninguna)']),
 ].join('\n');
 
-const buildPrompt = (request: DiagramEditRequest): string => [
+const buildPrompt = (request: DiagramEditRequest): string => {
+    const diagram = describeDiagram(request.ir);
+    request.onContextCaptured?.({
+        label: 'Corrección semántica del diagrama', profile: 'diagram-patch', sources: [],
+        sections: [
+            { scope: 'diagrama', items: [{ text: diagram }] },
+            { scope: 'solicitud', items: [{ text: request.instruction.trim() }] },
+            ...(request.context ? [{ scope: 'proyecto', items: [{ text: request.context }] }] : []),
+        ], omitted: [],
+    });
+    return [
     'Eres un arquitecto que edita un diagrama existente. NO lo regeneres: propón el cambio MÍNIMO que cumpla lo que se te pide.',
     '',
     'DIAGRAMA ACTUAL:',
-    describeDiagram(request.ir),
+    diagram,
     ...(request.context ? ['', 'CONTEXTO:', request.context] : []),
     '',
     `PETICIÓN: ${request.instruction.trim()}`,
@@ -187,6 +198,7 @@ const buildPrompt = (request: DiagramEditRequest): string => [
     'Responde EXCLUSIVAMENTE con este JSON:',
     '{ "rationale": "una línea explicando el cambio", "operations": [{ "op": "…", … }] }',
 ].join('\n');
+};
 
 const buildPatchId = (): string => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return `dp-${crypto.randomUUID()}`;

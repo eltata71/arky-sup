@@ -7,6 +7,8 @@
  * 2–4.
  */
 export * from './artifactModel';
+export type { ContextManifest, ContextManifestRecord, ContextManifestSource } from './contextManifest';
+export { createContextManifestRecorder } from './contextManifest';
 export { emitGenerationPhase } from './generationPhase';
 export type { ArtifactBusinessMotivation, ArtifactContextPorts, ArtifactConversationDigest, ArtifactDeliverableContext, ArtifactGenerationOptions, ArtifactPersonaComposer } from './artifactPersona';
 export * from './artifactCompilationSummary';

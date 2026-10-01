@@ -11,7 +11,7 @@
  * stays, and what is still missing is told to the person in one sentence.
  */
 import type { ArtifactTemplate, Settings } from '../../../types';
-import type { Artifact, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts, ArtifactGenerationTraceStep } from '../../../lib/artifacts';
 import { checkContentPreservation } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { makeTraceStep } from '../domain/artifactGenerationTrace';
@@ -43,6 +43,7 @@ export async function reviewDocumentFidelity(params: {
   content: string;
   project: Project;
   settings: Settings;
+  onContextCaptured?: ArtifactContextPorts['onContextCaptured'];
 }): Promise<DocumentFidelityReview | null> {
   const { template, project, settings } = params;
   if (!isReviewableDocument(template)) return null;
@@ -66,7 +67,7 @@ export async function reviewDocumentFidelity(params: {
   const instruction = describeFidelityGaps(report);
   if (instruction) {
     const stub = { name: template.name, objective: template.objective, representation: 'document', content } as Artifact;
-    const outcome = await proposeDocumentModification({ artifact: stub, instruction, project }, settings);
+    const outcome = await proposeDocumentModification({ artifact: stub, instruction, project }, settings, { onContextCaptured: params.onContextCaptured });
     if (outcome.kind === 'proposal') {
       const after = check(outcome.content);
       const preserved = checkContentPreservation(content, outcome.content, { mode: 'document' });

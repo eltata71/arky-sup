@@ -6,15 +6,16 @@
  *  - map a `Project` + `Settings` into a decoupled `ContextGraphInput`,
  *  - build a graph and a query-shaped `ContextPack`,
  *  - render a prompt-ready reinforcement block (used by `geminiService`),
- *  - produce a `ContextUsageReport` so every generation can explain the
- *    context it relied on,
- *  - render a copy-pasteable plain-text context report for the UI.
+ *  - hand the rendered pack to `onContextCaptured`, so the generation records
+ *    the context it relied on (plan artefactos 7.5a) instead of the UI
+ *    rebuilding it later from a project that has since changed.
  *
  * Every entry point is defensive: a failure here must never break generation,
  * so the prompt-facing helper degrades to an empty string.
  */
 
 import type { ArtifactRequestContext, Settings } from '../../types';
+import type { ArtifactContextPorts } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import { getLatestArtifacts } from '../../utils';
 import {
@@ -23,7 +24,6 @@ import {
   type ContextPack,
   type ContextPackQuery,
   type ContextSource,
-  type ContextUsageReport,
 } from './contextGraphTypes';
 import { contextGraphBuilder } from './contextGraphBuilder';
 import { contextPackBuilder } from './contextPackBuilder';
@@ -112,10 +112,21 @@ export function renderContextGraphReinforcement(
   settings: Settings | undefined,
   query: ContextPackQuery,
   requestContext?: ArtifactRequestContext,
+  onContextCaptured?: ArtifactContextPorts['onContextCaptured'],
 ): string {
   try {
     const pack = buildContextPackForProject(project, settings, query, requestContext);
-    return renderContextReinforcement(pack);
+    const block = renderContextReinforcement(pack);
+    if (block) onContextCaptured?.({
+      label: 'Grafo de contexto',
+      sources: [
+        { id: project.id, label: project.name, revision: project.revision },
+        ...uniqueSources(pack.entities.flatMap((entity) => entity.sources)).map(({ id, label }) => ({ id, label })),
+      ],
+      sections: [{ scope: 'Entidades, relaciones y citas', items: [{ text: pack.markdown }] }],
+      omitted: pack.ignoredSignals.map((signal) => ({ scope: signal.label, count: 1, reason: signal.reason })),
+    });
+    return block;
   } catch (_error) {
     return '';
   }
@@ -131,99 +142,3 @@ const uniqueSources = (sources: ContextSource[]): ContextSource[] => {
   }
   return out;
 };
-
-/**
- * Build a traceability report explaining which context an artifact generation
- * used. Lets every generated artifact answer "what did you rely on?".
- */
-export function buildContextUsageReport(pack: ContextPack, artifactId?: string): ContextUsageReport {
-  const labelById = new Map(pack.entities.map((e) => [e.id, e.label]));
-
-  return {
-    packId: pack.id,
-    projectId: pack.projectId,
-    artifactId,
-    generatedAt: new Date().toISOString(),
-    usedEntities: pack.entities.map((e) => ({
-      id: e.id,
-      label: e.label,
-      type: e.type,
-      citation: e.citation,
-      relevance: e.relevance,
-    })),
-    usedRelationships: pack.relationships.map((r) => ({
-      id: r.id,
-      type: r.type,
-      fromLabel: labelById.get(r.fromId) ?? r.fromId,
-      toLabel: labelById.get(r.toId) ?? r.toId,
-    })),
-    usedDecisions: pack.decisions.map((d) => ({ id: d.id, label: d.label })),
-    consideredRisks: pack.risks.map((r) => ({ id: r.id, label: r.label })),
-    appliedConstraints: pack.constraints.map((c) => ({ id: c.id, label: c.label })),
-    usedDataEntities: pack.dataEntities.map((d) => ({ id: d.id, label: d.label })),
-    usedIntegrations: pack.integrations.map((i) => ({ id: i.id, label: i.label })),
-    ignoredSignals: pack.ignoredSignals,
-    conflicts: pack.conflicts,
-    staleSignals: pack.entities
-      .filter((e) => e.freshness.stale)
-      .map((e) => ({ id: e.id, label: e.label, ageDays: e.freshness.ageDays })),
-    sources: uniqueSources(pack.entities.flatMap((e) => e.sources)),
-  };
-}
-
-/** Render a human-readable, copy-pasteable context report for the UI. */
-export function buildContextReportText(
-  graph: ArchitectureContextGraph,
-  pack?: ContextPack,
-): string {
-  const lines: string[] = [];
-  lines.push(`# Reporte de contexto — ${graph.projectName ?? graph.projectId}`);
-  lines.push(`Generado: ${graph.generatedAt}`);
-  lines.push(
-    `Entidades: ${graph.stats.entityCount} · Relaciones: ${graph.stats.relationshipCount} · ` +
-      `Señales: ${graph.stats.signalCount} · Conflictos: ${graph.stats.conflictCount} · ` +
-      `Obsoletas: ${graph.stats.staleCount}`,
-  );
-
-  lines.push('', '## Entidades principales');
-  const topEntities = (pack?.entities ?? graph.entities).slice(0, 25);
-  for (const entity of topEntities) {
-    const cite = 'citation' in entity ? `${(entity as { citation: string }).citation} ` : '';
-    const stale = entity.freshness.stale ? ' [obsoleto]' : '';
-    lines.push(`- ${cite}(${entity.type}) ${entity.label}${stale}`);
-  }
-
-  const relationships = pack?.relationships ?? graph.relationships;
-  if (relationships.length > 0) {
-    lines.push('', '## Relaciones principales');
-    const entityLabel = new Map(graph.entities.map((e) => [e.id, e.label]));
-    for (const rel of relationships.slice(0, 25)) {
-      lines.push(
-        `- ${entityLabel.get(rel.fromId) ?? rel.fromId} --${rel.type}--> ` +
-          `${entityLabel.get(rel.toId) ?? rel.toId}`,
-      );
-    }
-  }
-
-  lines.push('', '## Fuentes');
-  for (const source of graph.sources.slice(0, 30)) {
-    lines.push(`- [${source.type}] ${source.label}`);
-  }
-
-  if (graph.conflicts.length > 0) {
-    lines.push('', '## Conflictos de contexto');
-    for (const conflict of graph.conflicts) {
-      lines.push(`- (${conflict.severity}) ${conflict.description}`);
-    }
-  }
-
-  const stale = graph.entities.filter((e) => e.freshness.stale);
-  if (stale.length > 0) {
-    lines.push('', '## Señales posiblemente obsoletas');
-    for (const entity of stale) {
-      lines.push(`- ${entity.label} (${entity.freshness.ageDays ?? '?'} días)`);
-    }
-  }
-
-  return lines.join('\n');
-}

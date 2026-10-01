@@ -26,6 +26,7 @@ import type {
   MemoryEntry,
 } from '../../types';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR, DiagramTheme } from '../diagram';
+import type { ContextManifest } from './contextManifest';
 
 /**
  * Workflow status of an artifact within the review/approval cycle. Stored on
@@ -161,6 +162,8 @@ export interface ArtifactGenerationGraphUsage {
 }
 
 export interface ArtifactGenerationTrace {
+  /** Context captured during this generation; absent on historical artifacts. */
+  contextManifest?: ContextManifest;
   id: string;
   /** Stable end-to-end operation id shared by UI phase events, generation trace, persistence and render diagnostics. */
   operationId?: string;

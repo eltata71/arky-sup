@@ -4,7 +4,7 @@
  * of the engine in F5-01 (corte 6); prompts, schemas and budgets unchanged.
  */
 import type { Settings } from '../../../../types';
-import type { Artifact } from '../../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../../lib/artifacts';
 import type { DiagramAudience, DiagramFailureReason, DiagramIR } from '../../../../lib/diagram';
 import type { Project } from '../../../architectureProjects';
 import { resolveModelForSettings } from '../../catalog';
@@ -24,6 +24,7 @@ export async function generateDiagramIR(
     project: Project,
     settings: Settings,
     opts: {
+        onContextCaptured?: ArtifactContextPorts['onContextCaptured'];
         audience?: DiagramAudience;
         previousIR?: DiagramIR;
         brief?: string;
@@ -50,6 +51,7 @@ export async function generateDiagramIR(
         settings,
         previousIR: opts.previousIR,
         brief: opts.brief,
+        onContextCaptured: opts.onContextCaptured,
     });
 
     const modelName = resolveModelForSettings('default', settings).id;
@@ -97,7 +99,7 @@ export async function generateDiagramIRWithSelfHealing(
     artifact: Artifact,
     project: Project,
     settings: Settings,
-    opts: { audience?: DiagramAudience; previousIR?: DiagramIR; skipCorrective?: boolean; brief?: string } = {},
+    opts: Pick<ArtifactContextPorts, 'onContextCaptured'> & { audience?: DiagramAudience; previousIR?: DiagramIR; skipCorrective?: boolean; brief?: string } = {},
 ): Promise<{
     ir: DiagramIR;
     attempts: number;
@@ -117,7 +119,7 @@ export async function generateDiagramIRWithSelfHealing(
     if (!opts.skipCorrective) {
         let declineReason: string | undefined;
         const first = await generateDiagramIR(artifact, project, settings, {
-            audience, previousIR: opts.previousIR, brief: opts.brief, onDecline: (reason) => { declineReason = reason; }, onDropped,
+            audience, previousIR: opts.previousIR, brief: opts.brief, onContextCaptured: opts.onContextCaptured, onDecline: (reason) => { declineReason = reason; }, onDropped,
         });
         if (first && first.nodes.length > 0) {
             return { ir: first, attempts: 1, fallback: 'none', warnings, dropped };
@@ -148,7 +150,7 @@ export async function generateDiagramIRWithSelfHealing(
     const lastFailureReason = opts.skipCorrective
         ? (artifact.lastDiagramError?.reason ?? 'empty-ir')
         : 'empty-ir';
-    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason, opts.brief, onDropped);
+    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason, opts.brief, onDropped, opts.onContextCaptured);
     if (correctiveIR && correctiveIR.nodes.length > 0) {
         warnings.push('[diagram-retry] attempt 2 (corrective) succeeded');
         return { ir: correctiveIR, attempts: opts.skipCorrective ? 1 : 2, fallback: 'none', warnings, lastReason: lastFailureReason, dropped };
@@ -180,6 +182,7 @@ async function generateDiagramIRCorrective(
     lastFailureReason: DiagramFailureReason,
     brief?: string,
     onDropped?: (dropped: string[]) => void,
+    onContextCaptured?: ArtifactContextPorts['onContextCaptured'],
 ): Promise<DiagramIR | null> {
     const dialect = buildDialectInstruction(artifact.type);
     const responseSchema = buildDiagramIRSchema();
@@ -196,6 +199,7 @@ async function generateDiagramIRCorrective(
         lastFailureReason,
         previousResponseSample: artifact.lastDiagramError?.sample,
         brief,
+        onContextCaptured,
     });
     const modelName = resolveModelForSettings('default', settings).id;
     try {

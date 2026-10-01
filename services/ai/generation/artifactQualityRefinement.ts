@@ -50,6 +50,7 @@ const refinementContext = (request: ArtifactContentCritiqueRequest): string =>
         businessMotivation: request.businessMotivation,
         conversation: request.conversation,
         deliverables: request.deliverables,
+        onContextCaptured: request.onContextCaptured,
     });
 
 const fencedContent = (content: string, maxChars: number): string =>
