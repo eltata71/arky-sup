@@ -27,7 +27,7 @@ describe('Iconography continuity — render-time gate is non-destructive', () =>
         }
     });
 
-    it('aggressive gate (auto-improve / generation) DOES fill descriptions', () => {
+    it('the full gate (auto-improve, a person\'s click) DOES fill descriptions', () => {
         const code = `flowchart LR
     a[Service A] --> b[Service B]`;
         const ir = mermaidToIR(code);
@@ -35,6 +35,7 @@ describe('Iconography continuity — render-time gate is non-destructive', () =>
             artifact: { type: 'mermaid-graph', name: 'Test' },
             audience: 'technical',
             aggressive: true,
+            scope: 'full',
         });
         for (const node of gate.ir.nodes) {
             expect((node.description ?? '').length).toBeGreaterThan(0);

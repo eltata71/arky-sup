@@ -180,3 +180,16 @@ export function buildGenerationTrace({
         architectureGraph,
     };
 }
+
+/**
+ * What the quality gate would still change and did not, for the trace
+ * (plan de diagramas, 8.1b): the generation saves what the model wrote, and
+ * «Auto-mejora» applies these only when a person asks. `null` when none.
+ */
+export const describeGateProposals = (proposals: ReadonlyArray<{ description: string }>): ArtifactGenerationTraceStep | null =>
+    proposals.length === 0 ? null : makeTraceStep(
+        'quality-gate',
+        'success',
+        `${proposals.length} mejora(s) automática(s) propuesta(s) y no aplicada(s): «Auto-mejora» las aplica si la persona lo pide.`,
+        proposals.slice(0, 6).map((change) => change.description).join(' · '),
+    );

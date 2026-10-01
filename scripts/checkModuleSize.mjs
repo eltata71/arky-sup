@@ -102,7 +102,7 @@ export const BYTE_CEILINGS = {
   'pages/SettingsPage.tsx': 30973,
   'hooks/artifacts/useDiagramRendering.ts': 29282, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
-  'services/diagram/qualityRepair.ts': 28460,
+  'services/diagram/qualityRepair.ts': 29201, // plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
   'components/LucidchartViewer.tsx': 27773,
   'services/diagram/layoutQualityService.ts': 27648,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 27231, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -127,7 +127,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
   'services/export/adapters/pptxExporter.ts': 21273,
-  'services/artifacts/application/artifactGenerationRun.ts': 24508, // plan artefactos 7.5a: +283, graba el manifiesto de contexto en generationTrace · plan artefactos 7.4c: +330, la revisión de fidelidad de documentos y su corrección única · plan artefactos 7.3c: los puertos de contexto viajan como un objeto (ArtifactContextPorts) · 7.3b · plan artefactos 7.3a: +32, la motivación llega al refinamiento · plan diagramas 6.3: +753, veredicto de fidelidad y canal de degradación hacia el usuario (la lógica está en `diagramFidelityReview`) · plan diagramas 6.2: +226, pasa `businessMotivation` a la generación · plan diagramas 6.1: +1132, conserva el IR que produjo el modelo en vez de reextraerlo del texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona) · F6-03 corte 4: rutas de `domain/`/`application/`
+  'services/artifacts/application/artifactGenerationRun.ts': 24692, // plan diagramas 8.1b: +184, la traza dice qué mejoras propone la puerta sin aplicarlas · plan artefactos 7.5a: +283, graba el manifiesto de contexto en generationTrace · plan artefactos 7.4c: +330, la revisión de fidelidad de documentos y su corrección única · plan artefactos 7.3c: los puertos de contexto viajan como un objeto (ArtifactContextPorts) · 7.3b · plan artefactos 7.3a: +32, la motivación llega al refinamiento · plan diagramas 6.3: +753, veredicto de fidelidad y canal de degradación hacia el usuario (la lógica está en `diagramFidelityReview`) · plan diagramas 6.2: +226, pasa `businessMotivation` a la generación · plan diagramas 6.1: +1132, conserva el IR que produjo el modelo en vez de reextraerlo del texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona) · F6-03 corte 4: rutas de `domain/`/`application/`
   'context/LMSContext.tsx': 21111,
   'services/observability/observabilityService.ts': 20937,
   /**
@@ -199,7 +199,7 @@ export const CEILINGS = {
   'services/diagram/suggestionActionExecutors.ts': 760,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,
-  'services/diagram/qualityRepair.ts': 705,
+  'services/diagram/qualityRepair.ts': 708, // plan diagramas 8.1b: +3, el alcance `structural`
   'hooks/artifacts/useDiagramRendering.ts': 685,
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
   'services/architectureOffice/domain/officePortfolio.ts': 680,

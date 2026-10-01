@@ -42,7 +42,12 @@ export interface QualityRepairResult {
     applied: QualityRepairChange[];
 }
 
+/** `structural` repairs, `full` also decides — see `QualityGateOptions.scope` (8.1b). */
+export type QualityRepairScope = 'structural' | 'full';
+
 export interface QualityRepairOptions {
+    /** `full` by default here; the gate defaults to `structural`. */
+    scope?: QualityRepairScope;
     /**
      * Source artifact context. Only `type` is required because some call sites
      * (e.g. the resolver, which doesn't always have full artifact metadata in
@@ -270,7 +275,7 @@ function reclassifyKind(node: DiagramIRNode, applied: QualityRepairChange[]): bo
     return true;
 }
 
-function repairNodeLabels(ir: DiagramIR, applied: QualityRepairChange[], opts: { humanise: boolean }): void {
+function repairNodeLabels(ir: DiagramIR, applied: QualityRepairChange[], opts: { humanise: boolean; shorten: boolean }): void {
     for (const node of ir.nodes) {
         const label = (node.label ?? '').trim();
         if (!label) {
@@ -294,7 +299,8 @@ function repairNodeLabels(ir: DiagramIR, applied: QualityRepairChange[], opts: {
                 targetIds: [node.id],
             });
         }
-        if (node.label.length > NODE_LABEL_MAX) {
+        // Only on request: the card already truncates visually (8.1b).
+        if (opts.shorten && node.label.length > NODE_LABEL_MAX) {
             const original = node.label;
             node.label = shortenLabel(node.label, NODE_LABEL_MAX);
             applied.push({
@@ -655,6 +661,12 @@ export function autoRepairDiagramIR(
 
     // 1) Drop dangling edges first so subsequent passes operate on a coherent graph.
     dropDanglingEdges(next, applied);
+    if ((options.scope ?? 'full') === 'structural') {
+        repairKinds(next, applied);
+        repairNodeLabels(next, applied, { humanise: false, shorten: false });
+        repairMetadata(next, applied, options);
+        return finishRepair(next, applied);
+    }
     // 2) Normalise ids — opt-in. Defaults off because renaming ids visually
     //    breaks any cached external references (selectors, deep links).
     if (normaliseIds) repairIds(next, applied);
@@ -662,7 +674,7 @@ export function autoRepairDiagramIR(
     repairKinds(next, applied);
     // 4) Node labels (shorten / fill blanks; humanise only when explicitly
     //    requested by the caller).
-    repairNodeLabels(next, applied, { humanise: humaniseLabels });
+    repairNodeLabels(next, applied, { humanise: humaniseLabels, shorten: true });
     // 5) Node descriptions — opt-in. The generation pipeline and the manual
     //    "Auto-mejorar" button enable this; the render-time gate does not so
     //    persisted diagrams keep their original visual texture.
@@ -676,6 +688,10 @@ export function autoRepairDiagramIR(
     // 9) Fill metadata (title, audience, theme, density, narrative).
     repairMetadata(next, applied, options);
 
+    return finishRepair(next, applied);
+}
+
+function finishRepair(next: DiagramIR, applied: QualityRepairChange[]): QualityRepairResult {
     if (applied.length > 0) {
         next.metadata = next.metadata ?? {};
         const history = Array.isArray(next.metadata.repairHistory) ? [...next.metadata.repairHistory] : [];

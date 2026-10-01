@@ -105,8 +105,8 @@ llamadas: queda marcado `defectoConocido: 8.3b` y entra en los agregados.
 | Tarea | Estado | PR |
 |---|---|---|
 | 8.0 Banco ampliado y métricas de integridad | Hecha: 22 casos, once tipos, ocho métricas nuevas; la edición del lienzo sale a `diagramCanvasEdit` sin cambiar su comportamiento | #138 |
-| 8.1a Edición del lienzo sin pérdida | Hecha: la diferencia del lienzo se aplica como parche al IR guardado y el texto sólo cambia por `rewriteDiagramContent`; lo mismo para «Guardar» (que convertía todo en React Flow), «Modificar diagrama» y «Auto-mejora». Banco: dialecto tras editar 73,7 % → 100 %, nodos perdidos 57 → 0 | (esta PR) |
-| 8.1b Reparar ≠ proponer | Pendiente | — |
+| 8.1a Edición del lienzo sin pérdida | Hecha (#139): la diferencia del lienzo se aplica como parche al IR guardado y el texto sólo cambia por `rewriteDiagramContent`; lo mismo para «Guardar» (que convertía todo en React Flow), «Modificar diagrama» y «Auto-mejora». Banco: dialecto tras editar 73,7 % → 100 %, nodos perdidos 57 → 0 | #139 |
+| 8.1b Reparar ≠ proponer | Hecha: alcance `structural` por defecto y `full` sólo desde «Auto-mejora»; la traza lista lo propuesto y no aplicado. Banco: inventados, grupos, aristas alteradas e inventadas y descripciones sintéticas → 0; calidad media 75,3 → 72,9 a propósito (la rúbrica pagaba las invenciones, 8.4a) | (esta PR) |
 | 8.1c Render = guardado | Pendiente | — |
 | 8.1d Abrir no escribe | Pendiente | — |
 | 8.2a–d | Pendiente | — |
