@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * El banco de evaluación de diagramas, como gate (plan de diagramas, 6.1).
  *
@@ -171,6 +172,15 @@ describe('banco de evaluación de diagramas', () => {
         },
     );
 
+    // Plan de diagramas 8.2a: lo que se guarda lo acepta la gramática que lo va a dibujar.
+    it.each(corpus.filter((c) => !c.esperado.degradado && c.plantilla.tipo !== 'react-flow-graph').map((c) => c.id))(
+        '%s se guarda en un texto que Mermaid acepta',
+        (id) => {
+            const r = resultOf(id);
+            expect(r.sintaxis, r.sintaxisError).toBe('valid');
+        },
+    );
+
     it('el agregado no empeora respecto a la línea base', () => {
         const actual = baseline.actual;
         expect(summary.casos).toBeGreaterThanOrEqual(actual.casos);
@@ -192,6 +202,7 @@ describe('banco de evaluación de diagramas', () => {
         // 8.0b: lo que el pipeline cambia por su cuenta y lo que rompe una edición en el lienzo.
         for (const key of INTEGRITY_COUNTERS) expect(summary[key], key).toBeLessThanOrEqual(actual[key]);
         expect(summary.dialectoTrasEdicion).toBeGreaterThanOrEqual(actual.dialectoTrasEdicion);
+        expect(summary.sintaxisValida).toBeGreaterThanOrEqual(actual.sintaxisValida ?? 0);
         expect(summary.casosConContradicciones).toBeLessThanOrEqual(actual.casosConContradicciones);
         // La puntuación la calcula un motor heurístico que evoluciona por su
         // cuenta; se tolera un punto para no convertir cada ajuste suyo en un

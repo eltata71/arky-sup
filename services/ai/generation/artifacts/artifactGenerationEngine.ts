@@ -42,7 +42,8 @@ import { renderContextGraphReinforcement } from '../../../contextGraph';
 import { captureContextBlocks } from '../../prompts/contextManifestCapture';
 import { assessDocumentArtifact } from '../../../quality';
 import { buildMinimalPresentationDeck } from '../../../presentation';
-import { extractDiagramSignals, mermaidToIR, renderDiagramSignals } from '../../../diagram';
+import { extractDiagramSignals, renderDiagramSignals } from '../../../diagram';
+import { assessDiagramText, isRenderableDiagramText } from '../diagram/diagramTextAssessment';
 import {
     buildArchitectureKnowledgeGraphForProject,
     buildArtifactGenerationGraphContext,
@@ -159,7 +160,7 @@ class ArtifactGenerationEngine {
             emitGenerationPhase(onPhase, event, stageTimings);
         const raw = await this._generateArtifactContentInternal(project, template, settings, previousArtifact, opts);
         try {
-            return this.gateRenderableDiagramContent(raw, project, template, support, emit);
+            return await this.gateRenderableDiagramContent(raw, project, template, support, emit);
         } catch (gateErr) {
             // The gate must NEVER block persistence. If something throws
             // unexpectedly inside it, log and return the raw content so the
@@ -482,7 +483,7 @@ MERMAID DIAGRAM QUALITY STANDARDS (mandatory):
 - Use semantic node shapes: [(Cylinder)] for databases, {Diamond} for decisions, ((Circle)) for actors.
 - Include descriptive labels on ALL edges with protocols or actions.
 - Aim for 8-15 nodes for optimal readability.
-- Output ONLY valid Mermaid v10.9+ syntax inside the fence. Do not add explanations inside the fence.
+- Output ONLY valid Mermaid 11 syntax inside the fence. Do not add explanations inside the fence.
 ${dialectGuidance}
 `;
             formatInstructions += buildMermaidQualityReinforcement();
@@ -560,7 +561,7 @@ DDD DIAGRAM QUALITY STANDARDS:
 - In graph TD, mark subdomains with the class names core / support / generic and aggregates with aggregate — names only, never colour values.
 - Label all relationships with their DDD pattern type (e.g., "ACL", "Shared Kernel", "Open Host Service").
 - Show cardinality on classDiagram associations.
-- Output ONLY valid Mermaid v10.9+ syntax inside the fence.
+- Output ONLY valid Mermaid 11 syntax inside the fence.
 
 ## 5. Domain Events
 List significant domain events (past tense, e.g., PolicyIssued, ClaimApproved).
@@ -595,7 +596,7 @@ SEQUENCE DIAGRAM QUALITY STANDARDS:
 - Use alt/else/end blocks to show conditional event flows (success vs error paths).
 - Use rect rgb(...) blocks to visually group related command-event pairs.
 - Label every message with the event/command name (past tense for events, imperative for commands).
-- Output ONLY valid Mermaid v10.9+ sequenceDiagram syntax inside the fence.
+- Output ONLY valid Mermaid 11 sequenceDiagram syntax inside the fence.
 ${sddSkillMarkdownGuidance}`;
         } else if (template.type === 'sdd-glossary') {
             formatInstructions = `Generate a comprehensive Ubiquitous Language Glossary for DDD.
@@ -978,7 +979,7 @@ ${catalogDocumentReinforcement}
         // increasingly explicit fallback instructions.  React-Flow JSON is
         // already schema-validated by the SDK.
         if (template.type.startsWith('mermaid') || template.type === 'hybrid-text-diagram') {
-            const firstAssessment = this.assessMermaidArtifact(raw, template.type);
+            const firstAssessment = await assessDiagramText(raw, template.type);
             if (firstAssessment.ok) return raw;
 
             console.warn(
@@ -997,7 +998,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
  - Do NOT include invalid Mermaid comments or explanatory prose inside the diagram block.`;
             try {
                 const retry = await this.generateTextWithFallback(settings, modelName, reinforcedPrompt, modelConfig);
-                const retryAssessment = this.assessMermaidArtifact(retry, template.type);
+                const retryAssessment = await assessDiagramText(retry, template.type);
                 if (retryAssessment.ok) return retry;
                 console.warn(
                     `[artifactGenerationEngine] Diagram retry still invalid (${retryAssessment.reason}); attempting flowchart fallback.`,
@@ -1014,7 +1015,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                         const normalizedFallback = template.type === 'hybrid-text-diagram'
                             ? buildHybridMarkdownFromMermaid(template, fallback)
                             : fallback;
-                        const fallbackAssessment = this.assessMermaidArtifact(normalizedFallback, template.type === 'hybrid-text-diagram' ? 'hybrid-text-diagram' : 'mermaid-graph');
+                        const fallbackAssessment = await assessDiagramText(normalizedFallback, template.type === 'hybrid-text-diagram' ? 'hybrid-text-diagram' : 'mermaid-graph');
                         if (fallbackAssessment.ok) {
                             opts.onDegraded?.(`El modelo no produjo un ${template.type} válido dos veces; se guardó como diagrama de flujo para no dejar el lienzo vacío.`);
                             return normalizedFallback;
@@ -1131,13 +1132,13 @@ Regenerate the COMPLETE artifact ensuring:
      * skeleton (which is unit-tested as parseable). Only diagram artifacts go
      * through here; document/yaml/markdown content is untouched.
      */
-    private gateRenderableDiagramContent(
+    private async gateRenderableDiagramContent(
         raw: string,
         project: Project,
         template: ArtifactTemplate,
         support: ArtifactGenerationSupport,
         emit: (event: Omit<ArtifactGenerationPhaseEvent, 'at'>) => ArtifactGenerationPhaseEvent,
-    ): string {
+    ): Promise<string> {
         const isDiagramArtifact = isDiagramArtifactType(template.type);
         if (!isDiagramArtifact) return raw;
         if (template.type === 'react-flow-graph') {
@@ -1163,17 +1164,15 @@ Regenerate the COMPLETE artifact ensuring:
             if (match && match[1]) body = match[1];
         }
         try {
-            const ir = mermaidToIR(body);
-            const nodeCount = ir?.nodes?.length ?? 0;
-            const edgeCount = ir?.edges?.length ?? 0;
-            // Treat <2 nodes as unrenderable. Even a system-context diagram
-            // needs at least an actor + system to be meaningful.
-            if (nodeCount < 2) {
+            // A dialect the IR cannot read is renderable when Mermaid accepts it (8.2a).
+            const verdict = await isRenderableDiagramText(body);
+            const { nodeCount, edgeCount } = verdict;
+            if (!verdict.ok) {
                 const skeleton = support.deterministicDiagramSkeleton(project, template);
                 emit({
                     stage: 'validation',
                     status: 'warning',
-                    message: `Compuerta de renderabilidad: contenido parseó a ${nodeCount} nodo(s). Sustituyendo por skeleton determinista para evitar canvas vacío.`,
+                    message: `Compuerta de renderabilidad: ${verdict.reason}. Sustituyendo por skeleton determinista para evitar canvas vacío.`,
                     detail: `nodeCount=${nodeCount} edgeCount=${edgeCount} contentLen=${raw.length}`,
                     meta: { nodeCount, edgeCount, fallback: 'skeleton' },
                 });
@@ -1181,8 +1180,10 @@ Regenerate the COMPLETE artifact ensuring:
             }
             emit({
                 stage: 'validation',
-                status: 'success',
-                message: `Compuerta de renderabilidad superada: ${nodeCount} nodos, ${edgeCount} aristas.`,
+                status: verdict.unverified ? 'warning' : 'success',
+                message: verdict.unverified
+                    ? 'Compuerta de renderabilidad superada sin poder consultar la gramática de Mermaid.'
+                    : `Compuerta de renderabilidad superada: ${nodeCount} nodos, ${edgeCount} aristas.`,
                 meta: { nodeCount, edgeCount },
             });
             return raw;
@@ -1230,66 +1231,11 @@ Produce ONLY raw Mermaid using the flowchart dialect. Mandatory shape:
 - Output the diagram only — no fences, no commentary.`;
     }
 
-    /**
-     * Inspect a Mermaid (or hybrid) artifact and report whether it is usable.
-     * Returns a structured assessment so callers can log meaningful diagnostics
-     * and decide whether to retry / fall back.
-     */
-    private assessMermaidArtifact(
-        raw: string,
-        templateType: string,
-    ): { ok: boolean; reason?: string; nodeCount: number; edgeCount: number } {
-        if (!raw) {
-            return { ok: false, reason: 'empty response', nodeCount: 0, edgeCount: 0 };
-        }
-        let body = raw;
-        if (templateType === 'hybrid-text-diagram') {
-            const match = raw.match(/```mermaid\s*([\s\S]*?)\s*```/i);
-            if (!match) {
-                return { ok: false, reason: 'hybrid response missing ```mermaid fence', nodeCount: 0, edgeCount: 0 };
-            }
-            body = match[1];
-        } else {
-            // Diagram artifacts: tolerate a stray fence the AI may add anyway.
-            const fenced = raw.match(/```(?:mermaid)?\s*([\s\S]*?)```/i);
-            if (fenced && /^(graph|flowchart|sequenceDiagram|classDiagram|C4|stateDiagram|erDiagram|gantt|journey|mindmap)/im.test(fenced[1])) {
-                body = fenced[1];
-            }
-        }
-
-        let ir;
-        try {
-            ir = mermaidToIR(body);
-        } catch (err) {
-            return { ok: false, reason: `parser threw: ${(err as Error).message}`, nodeCount: 0, edgeCount: 0 };
-        }
-
-        const nodeCount = ir.nodes.length;
-        const edgeCount = ir.edges.length;
-
-        // C4 / container / component / context / deployment diagrams are useless
-        // with a single node — require at least 2 nodes AND 1 edge.
-        const requiresRichGraph = templateType.startsWith('mermaid-c4-')
-            || templateType === 'hybrid-text-diagram'
-            || templateType === 'react-flow-graph';
-        const minNodes = requiresRichGraph ? 2 : 1;
-        const minEdges = requiresRichGraph ? 1 : 0;
-
-        if (nodeCount < minNodes) {
-            return { ok: false, reason: `parsed only ${nodeCount} node(s); need ≥ ${minNodes}`, nodeCount, edgeCount };
-        }
-        if (edgeCount < minEdges) {
-            return { ok: false, reason: `parsed ${nodeCount} nodes but only ${edgeCount} edge(s); need ≥ ${minEdges}`, nodeCount, edgeCount };
-        }
-
-        return { ok: true, reason: undefined, nodeCount, edgeCount };
-    }
-
     private getMermaidFormatInstructions(type: string): string {
         const crossCuttingGuidance = `
 
 CRITICAL QUALITY STANDARDS (apply to ALL Mermaid diagrams):
-- Output ONLY valid Mermaid v10.9+ syntax. Do NOT use deprecated directives.
+- Output ONLY valid Mermaid 11 syntax. Do NOT use deprecated directives.
 - Do NOT wrap output in markdown fences (\`\`\`mermaid). The application handles fencing.
 - Escape special characters in labels: use #quot; for quotes, #lpar; #rpar; for parentheses inside labels if needed.
 - Aim for 8-20 nodes/elements for optimal readability. Prioritize clarity over completeness.
@@ -1522,7 +1468,7 @@ ${crossCuttingGuidance}`;
 
             default:
                 // Fallback for any future mermaid-* types
-                return ` The content should be valid Mermaid v10.9+ syntax for a ${type.split('-').slice(1).join(' ')} diagram. Use role class names (service, database, queue, external…) instead of colour values, subgraph for grouping, and descriptive labels on all relationships.${crossCuttingGuidance}`;
+                return ` The content should be valid Mermaid 11 syntax for a ${type.split('-').slice(1).join(' ')} diagram. Use role class names (service, database, queue, external…) instead of colour values, subgraph for grouping, and descriptive labels on all relationships.${crossCuttingGuidance}`;
         }
     }
 

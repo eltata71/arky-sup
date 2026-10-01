@@ -104,7 +104,7 @@
     { "name": "services/businessInitiatives", "path": "services/businessInitiatives", "layer": "domain", "api": ["services/businessInitiatives/index.ts", "services/businessInitiatives/domain/index.ts", "services/businessInitiatives/commands.ts"] },
     { "name": "services/chat", "path": "services/chat", "layer": "domain", "api": "services/chat/index.ts" },
     { "name": "services/contextGraph", "path": "services/contextGraph", "layer": "domain", "api": "services/contextGraph/index.ts" },
-    { "name": "services/diagram", "path": "services/diagram", "layer": "domain", "api": ["services/diagram/index.ts", "services/diagram/diagramDiff.ts"] },
+    { "name": "services/diagram", "path": "services/diagram", "layer": "domain", "api": ["services/diagram/index.ts", "services/diagram/diagramDiff.ts", "services/diagram/mermaidSyntax.ts"] },
     { "name": "services/export", "path": "services/export", "layer": "domain", "api": "services/export/index.ts" },
     { "name": "services/identity", "path": "services/identity", "layer": "domain", "api": "services/identity/index.ts" },
     { "name": "services/learning", "path": "services/learning", "layer": "domain", "api": "services/learning/index.ts" },

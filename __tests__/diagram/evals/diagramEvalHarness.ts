@@ -34,6 +34,7 @@ import { runArtifactGeneration } from '../../../services/artifacts/application/a
 import { isSkeletonFallbackContent } from '../../../services/artifacts/domain/deterministicArtifactFallbacks';
 import { planCanvasEdit } from '../../../services/artifacts/application/diagramCanvasEdit';
 import { extractIRFromArtifact, resolveRenderableDiagram } from '../../../services/diagram';
+import { checkMermaidSyntax } from '../../../services/diagram/mermaidSyntax';
 import { resolveGroupSemanticStyle } from '../../../services/diagram/groupSemantics';
 import { computeLayoutQuality, type GroupRect, type NodeRect } from '../../../services/diagram/layoutQualityService';
 
@@ -112,6 +113,9 @@ export interface DiagramEvalCaseResult {
     /** `null` cuando el modelo no escribió historia. */
     historiaConservada: boolean | null;
     esqueleto: boolean;
+    /** Lo que dice la gramática de Mermaid del texto guardado (8.2a); `null` en React Flow. */
+    sintaxis: 'valid' | 'invalid' | 'unavailable' | null;
+    sintaxisError?: string;
     defectoConocido?: string;
     calidad: number | null;
     llamadasModelo: number;
@@ -218,6 +222,8 @@ export interface DiagramEvalSummary {
     solapesNodos: number;
     solapesGrupos: number;
     aristasQueAtraviesanNodos: number;
+    /** Fracción de textos guardados que la gramática de Mermaid acepta (8.2a). */
+    sintaxisValida: number;
 }
 
 export function loadCorpus(): DiagramEvalCase[] {
@@ -531,6 +537,10 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             representation: templateFor(testCase).representation,
             ir: ir ?? undefined,
         } as Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>;
+        const savedBlock = testCase.plantilla.tipo === 'react-flow-graph'
+            ? null
+            : result.persistedContent.match(/```mermaid\s*([\s\S]*?)```/i)?.[1] ?? result.persistedContent;
+        const verdict = savedBlock === null ? null : await checkMermaidSyntax(savedBlock);
         const modelIR = modelIRFor(testCase);
         const comparable = Boolean(ir && modelIR && !esqueleto && !testCase.esperado.degradado);
         const integridad = comparable
@@ -573,6 +583,8 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             tecnologias,
             historiaConservada,
             esqueleto,
+            sintaxis: verdict?.status ?? null,
+            ...(verdict?.status === 'invalid' ? { sintaxisError: verdict.message } : {}),
             defectoConocido: testCase.esperado.defectoConocido,
             integridad,
             edicion,
@@ -660,6 +672,10 @@ export function summarize(all: DiagramEvalCaseResult[]): DiagramEvalSummary {
             all.reduce((acc, r) => acc + r.hallazgosEsperados.length + r.hallazgosProhibidos.length, 0),
         )),
         ...summarizeIntegrity(results),
+        sintaxisValida: round(ratio(
+            all.filter((r) => r.sintaxis === 'valid').length,
+            all.filter((r) => r.sintaxis === 'valid' || r.sintaxis === 'invalid').length,
+        )),
     };
 }
 
@@ -714,6 +730,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.llamadasCorreccion,
         r.avisos.length ? r.avisos.join(' / ').slice(0, 140) : '—',
         r.paquetes.join(',') || '—',
+        r.sintaxis === 'invalid' ? `NO: ${r.sintaxisError?.split('\n')[0]}` : r.sintaxis ?? '—',
         r.hallazgosDominio.join(',') || '—',
     ].join(' | '));
     const missing = results.flatMap((r) => r.contexto.filter((c) => !c.ok).map((c) => `  ${r.id}: falta ${c.que}`));
@@ -731,7 +748,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.geometria ? `${r.geometria.solapesNodos}/${r.geometria.solapesGrupos}/${r.geometria.aristasQueAtraviesanNodos}` : '—',
     ].join(' | '));
     return [
-        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | hallazgos de dominio',
+        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | hallazgos de dominio',
         ...rows,
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
