@@ -7,7 +7,9 @@
  * 2–4.
  */
 export * from './artifactModel';
-export type { ContextManifest, ContextManifestRecord, ContextManifestSource } from './contextManifest';
+export type { ContextManifest, ContextManifestCitation, ContextManifestRecord, ContextManifestSource } from './contextManifest';
+export type { CitationExport, ContextCitationReference, ContextCitationReview, ContextCitationStatus } from './contextCitations';
+export { decorateContextCitationsHtml, describeCitationReview, renderCitationsForExport, reviewContextCitations, stripContextCitations } from './contextCitations';
 export { createContextManifestRecorder } from './contextManifest';
 export { emitGenerationPhase } from './generationPhase';
 export type { ArtifactBusinessMotivation, ArtifactContextPorts, ArtifactConversationDigest, ArtifactDeliverableContext, ArtifactGenerationOptions, ArtifactPersonaComposer } from './artifactPersona';

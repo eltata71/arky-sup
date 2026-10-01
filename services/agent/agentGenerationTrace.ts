@@ -1,5 +1,5 @@
 import type { ArtifactGenerationTrace } from '../../lib/artifacts';
-import { createContextManifestRecorder } from '../../lib/artifacts';
+import { createContextManifestRecorder, describeCitationReview, reviewContextCitations } from '../../lib/artifacts';
 
 /** Agent generations have their own trace; never inherit one from the prior text. */
 export function recordAgentGeneration(operationId: string, source: ArtifactGenerationTrace['source']) {
@@ -13,13 +13,14 @@ export function recordAgentGeneration(operationId: string, source: ArtifactGener
     },
     trace: (content: string): ArtifactGenerationTrace => {
       const contextManifest = recorder.manifest();
+      const citationWarning = describeCitationReview(reviewContextCitations(content, contextManifest));
       return {
         id: `${operationId}-generation`, operationId, source,
-        status: degradations.length ? 'fallback' : contextManifest ? 'clean' : 'warning',
+        status: degradations.length ? 'fallback' : contextManifest && !citationWarning ? 'clean' : 'warning',
         startedAt, completedAt: new Date().toISOString(),
         decisions: [], errors: [], contentLength: content.length,
         ...(contextManifest ? { contextManifest } : {}),
-        warnings: [...degradations, ...(!contextManifest ? ['No se registró el contexto de esta generación.'] : [])],
+        warnings: [...degradations, ...(citationWarning ? [citationWarning] : []), ...(!contextManifest ? ['No se registró el contexto de esta generación.'] : [])],
       };
     },
   };

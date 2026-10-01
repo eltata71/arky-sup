@@ -43,6 +43,10 @@ export const ContextGraphPanel: React.FC<ContextGraphPanelProps> = ({ artifact }
               </ul>
             </details>
           ))}
+          {record.citations?.length ? <details className="text-sm text-gray-800 dark:text-gray-100">
+            <summary className="cursor-pointer font-medium">Citas numeradas ({record.citations.length})</summary>
+            <ul className="mt-2 space-y-1 text-xs">{record.citations.map((citation) => <li key={citation.tag}><code>{citation.tag}</code> {citation.label}{citation.sources.length > 0 && <span className="text-gray-500 dark:text-gray-400"> · {citation.sources.join(', ')}</span>}</li>)}</ul>
+          </details> : null}
           {record.omitted.length > 0 && <div className="text-xs text-gray-500 dark:text-gray-400">
             <p className="font-medium">Contexto excluido</p>
             <ul>{record.omitted.map((item, omissionIndex) => <li key={omissionIndex}>{item.scope}: {item.count} · {item.reason}</li>)}</ul>

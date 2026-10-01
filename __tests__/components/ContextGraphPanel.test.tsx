@@ -23,6 +23,7 @@ const withManifest = (text: string): Artifact => ({
         sources: [{ id: 'p', label: 'Proyecto Salud', revision: 4 }, { id: 'settings', label: 'Estándares' }],
         sections: [{ scope: 'proyecto', items: [{ text, truncated: true }] }],
         omitted: [{ scope: 'hermanos', count: 2, reason: 'Sin relevancia' }],
+        citations: [{ tag: '[ctx:tech-1]', label: 'Kafka', entityType: 'technology', sources: ['Notas'] }],
       }],
     },
   } as unknown as Artifact['generationTrace'],
@@ -37,6 +38,8 @@ describe('ContextGraphPanel — «Contexto usado» lee lo registrado (7.5a)', ()
     expect(screen.getByText('Servicio de pólizas')).toBeInTheDocument();
     expect(screen.getByText('Fuente recortada para esta operación')).toBeInTheDocument();
     expect(screen.getByText(/hermanos: 2 · Sin relevancia/)).toBeInTheDocument();
+    expect(screen.getByText('Citas numeradas (1)')).toBeInTheDocument();
+    expect(screen.getByText('[ctx:tech-1]')).toBeInTheDocument();
   });
 
   it('un artefacto sin registro lo dice, en vez de reconstruir el contexto del proyecto actual', () => {

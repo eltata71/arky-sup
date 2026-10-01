@@ -125,6 +125,12 @@ export function renderContextGraphReinforcement(
       ],
       sections: [{ scope: 'Entidades, relaciones y citas', items: [{ text: pack.markdown }] }],
       omitted: pack.ignoredSignals.map((signal) => ({ scope: signal.label, count: 1, reason: signal.reason })),
+      citations: pack.entities.map((entity) => ({
+        tag: entity.citation,
+        label: entity.label,
+        entityType: entity.type,
+        sources: uniqueSources(entity.sources).map((source) => source.label),
+      })),
     });
     return block;
   } catch (_error) {

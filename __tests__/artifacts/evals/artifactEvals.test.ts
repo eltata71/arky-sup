@@ -83,6 +83,12 @@ describe('banco de evaluación de artefactos', () => {
         }
     });
 
+    it('7.5b: ningún documento exporta una etiqueta [ctx:*] y la cita inventada siempre se informa', () => {
+        const cases = results.filter((r) => r.procedencia !== null);
+        expect(cases.length).toBeGreaterThan(0);
+        for (const r of cases) expect(r.procedencia, r.id).toEqual({ resueltas: true, informada: true, exportLimpia: true });
+    });
+
     it('ningún agregado baja de la línea base', () => {
         const before = baseline();
         for (const key of ['contextoEntregado', 'vistaCompleta', 'cercado', 'conservacion', 'contratoDetecta'] as const) {
@@ -90,6 +96,7 @@ describe('banco de evaluación de artefactos', () => {
         }
         // 7.4c: la fidelidad entra en la línea base; una anterior que no la tenía no la exige.
         expect(summary.fidelidad).toBeGreaterThanOrEqual(before.fidelidad ?? 0);
+        expect(summary.procedencia).toBeGreaterThanOrEqual(before.procedencia ?? 0);
         for (const [path, value] of Object.entries(before.porCamino)) {
             expect(summary.porCamino[path as keyof typeof summary.porCamino] ?? 0, path).toBeGreaterThanOrEqual(value ?? 0);
         }

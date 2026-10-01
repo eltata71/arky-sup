@@ -161,6 +161,8 @@ export interface ExportTrace {
   success: boolean;
   errorMessage?: string;
   technicalDetails?: string;
+  /** 7.5b: `[ctx:*]` tags turned into numbered notes, and those removed because they resolved to nothing. */
+  citations?: { notes: number; removed: string[] };
   publication?: {
     exportedAsPublication: boolean;
     mode?: PublicationExportMode;

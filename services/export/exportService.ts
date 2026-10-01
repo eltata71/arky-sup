@@ -2,6 +2,7 @@ import type { ExportAdapter, ExportContext, ExportFormat, ExportQualityTrace, Ex
 import { ExportError } from './exportTypes';
 import { validateExportRequest, validateExportedBlob } from './exportValidation';
 import { startExportTrace, completeExportTrace } from './exportTrace';
+import { prepareCitationsForExport } from './exportCitations';
 import {
   buildArtifactExportabilityState,
   evaluateExportQualityGate,
@@ -47,7 +48,8 @@ const buildExportQualityTrace = (context: ExportContext, format: ExportFormat): 
   };
 };
 
-export async function exportArtifact(context: ExportContext, format: ExportFormat): Promise<ExportServiceResult> {
+export async function exportArtifact(requested: ExportContext, format: ExportFormat): Promise<ExportServiceResult> {
+  const { context, citations } = prepareCitationsForExport(requested); // 7.5b
   const validation = validateExportRequest(context, format);
   const trace = startExportTrace(context, format, validation);
   let quality: ExportQualityTrace | undefined;
@@ -67,7 +69,7 @@ export async function exportArtifact(context: ExportContext, format: ExportForma
     const file = await adapter.export(context);
     await validateExportedBlob(format, file.blob);
     console.info(context.exportAsPublication ? '[presentation.export.publication]' : '[presentation.export.original]', { format, size: file.blob.size });
-    const completed = completeExportTrace(trace, { success: true, blobSize: file.blob.size, mimeType: file.mimeType, filename: file.filename, technicalDetails: file.technicalDetails, quality, publication: file.publication ?? trace.publication });
+    const completed = completeExportTrace(trace, { success: true, blobSize: file.blob.size, mimeType: file.mimeType, filename: file.filename, technicalDetails: file.technicalDetails, quality, publication: file.publication ?? trace.publication, citations });
     console.info('[presentation.export.completed]', completed);
     return { file, trace: completed };
   } catch (error) {

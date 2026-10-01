@@ -96,6 +96,23 @@ describe('buildGenerationTrace — status precedence', () => {
     });
 });
 
+describe('buildGenerationTrace — citas de contexto (7.5b)', () => {
+    const contextManifest = {
+        version: 1 as const, capturedAt: '2026-10-01T00:00:00Z',
+        records: [{ label: 'Grafo de contexto', sources: [], sections: [], omitted: [], citations: [{ tag: '[ctx:tech-1]', label: 'Kafka', entityType: 'technology', sources: [] }] }],
+    };
+
+    it('stays clean when every citation resolves against what was sent', () => {
+        expect(buildTrace({ contextManifest, persistedContent: '# ADR\n\nKafka [ctx:tech-1].' }).status).toBe('clean');
+    });
+
+    it('names the citation that resolves to nothing, and warns', () => {
+        const trace = buildTrace({ contextManifest, persistedContent: '# ADR\n\nKafka [ctx:tech-1] y [ctx:sys-3].' });
+        expect(trace.status).toBe('warning');
+        expect(trace.warnings).toContain('Una cita del documento no corresponde al contexto enviado al modelo: ctx:sys-3.');
+    });
+});
+
 describe('mapRequestAudienceToDiagramAudience', () => {
     it('keeps executive, and biases mixed and unset towards technical', () => {
         expect(mapRequestAudienceToDiagramAudience('executive')).toBe('executive');
