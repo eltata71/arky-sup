@@ -19,7 +19,7 @@ import {
   resolveNodeDetailLink,
 } from '../../../services/artifacts/application/diagramDetailLinks';
 import { planCanvasDiagramSave } from '../../../services/artifacts/application/diagramModification';
-import { irToReactFlow, mergeIRMetadata, toDiagramIR } from '../../../services/diagram';
+import { irToReactFlow, mergeIRMetadata, resolveRenderableDiagram, toDiagramIR } from '../../../services/diagram';
 
 const contextIR = (overrides: Partial<DiagramIR['nodes'][number]> = {}): DiagramIR => ({
   nodes: [
@@ -147,19 +147,32 @@ describe('el enlace sobrevive al lienzo', () => {
   });
 });
 
-describe('guardar el lienzo', () => {
-  it('reemplaza el bloque de un híbrido literalmente, aunque el JSON lleve «$»', () => {
-    const hybrid = { content: 'Texto\n```mermaid\ngraph TD; a-->b\n```\nFin', type: 'hybrid-text-diagram' as const, representation: 'hybrid' as const };
-    const flow = { nodes: [{ id: 'a', data: { label: 'Coste $1 y $&' } }], edges: [] };
-    const saved = planCanvasDiagramSave(hybrid, flow);
-    expect(saved.content).toContain('"label": "Coste $1 y $&"');
-    expect(saved.content.startsWith('Texto\n```json')).toBe(true);
+describe('guardar el lienzo (plan de diagramas, 8.1a)', () => {
+  const canvas = (artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>) => {
+    const { reactFlow } = resolveRenderableDiagram(artifact, { audience: 'technical' });
+    return { nodes: reactFlow.nodes.filter((n) => n.type !== 'groupZone'), edges: reactFlow.edges };
+  };
+
+  it('un híbrido conserva su prosa y su bloque Mermaid, y una etiqueta con «$» llega literal', () => {
+    const hybrid = { id: 'h', content: 'Texto\n```mermaid\ngraph TD\n  a[Inicio] --> b[Fin]\n```\nFin', type: 'hybrid-text-diagram' as const, representation: 'hybrid' as const };
+    const before = canvas(hybrid);
+    const after = { ...before, nodes: before.nodes.map((n) => (n.id === 'a' ? { ...n, data: { ...n.data, label: 'Coste $1 y $&' } } : n)) };
+    const saved = planCanvasDiagramSave(hybrid, { before, after });
+    expect(saved.content.startsWith('Texto\n```mermaid\n')).toBe(true);
+    expect(saved.content).toContain('Coste $1 y $&');
     expect(saved.content.endsWith('```\nFin')).toBe(true);
+    expect(saved.content).not.toContain('```json');
     expect(saved.type).toBe('hybrid-text-diagram');
   });
 
-  it('convierte cualquier otro diagrama en un grafo de ReactFlow', () => {
-    const saved = planCanvasDiagramSave({ content: 'graph TD', type: 'mermaid-graph', representation: 'diagram' }, { nodes: [], edges: [] });
-    expect(saved).toEqual({ content: JSON.stringify({ nodes: [], edges: [] }, null, 2), type: 'react-flow-graph', representation: 'diagram' });
+  it('cualquier otro diagrama conserva su tipo y su notación: una secuencia sigue siendo una secuencia', () => {
+    const sequence = { id: 's', content: 'sequenceDiagram\n  A->>B: Pide\n  B-->>A: Responde', type: 'mermaid-sequence' as const, representation: 'diagram' as const };
+    const before = canvas(sequence);
+    const after = { ...before, nodes: before.nodes.map((n, i) => (i === 0 ? { ...n, position: { x: n.position.x + 30, y: n.position.y } } : n)) };
+    const saved = planCanvasDiagramSave(sequence, { before, after });
+    expect(saved.type).toBe('mermaid-sequence');
+    expect(saved.representation).toBe('diagram');
+    expect(saved.content).toBe(sequence.content);
+    expect(saved.notice).toBeNull();
   });
 });

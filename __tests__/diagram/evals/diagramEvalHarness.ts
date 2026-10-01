@@ -384,13 +384,15 @@ export function measureIntegrity(
     return { elementosInventados, gruposInventados, aristasAlteradas, descripcionesSinteticas, nodosRenderNoGuardados };
 }
 
-/** Mueve el primer nodo del lienzo 40 px, como un arrastre, y aplica lo que escribe la pantalla. */
-function simulateDrag(artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>, audience: 'technical' | 'executive') {
+/** Mueve el primer nodo del lienzo 40 px, como un arrastre, y devuelve lo que escribe la pantalla. */
+function simulateDrag(artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>, audience: 'technical' | 'executive'): Partial<Artifact> {
     const rendered = resolveRenderableDiagram(artifact, { audience });
-    const nodes = rendered.reactFlow.nodes
-        .filter((n) => n.type !== 'groupZone')
-        .map((n, index) => (index === 0 ? { ...n, position: { x: n.position.x + 40, y: n.position.y } } : n));
-    return planCanvasEdit(artifact, { nodes, edges: rendered.reactFlow.edges });
+    const before = { nodes: rendered.reactFlow.nodes.filter((n) => n.type !== 'groupZone'), edges: rendered.reactFlow.edges };
+    const after = {
+        ...before,
+        nodes: before.nodes.map((n, index) => (index === 0 ? { ...n, position: { x: n.position.x + 40, y: n.position.y } } : n)),
+    };
+    return planCanvasEdit(artifact, { before, after }).patch ?? {};
 }
 
 export function measureCanvasEdit(
@@ -399,7 +401,8 @@ export function measureCanvasEdit(
 ): CanvasEditMetrics {
     const savedIds = new Set((artifact.ir?.nodes ?? []).map((n) => n.id));
     const diff = (patchIR: DiagramIR | undefined) => {
-        const after = new Set((patchIR?.nodes ?? []).map((n) => n.id));
+        // Sin IR en la escritura, el modelo guardado no cambió.
+        const after = new Set((patchIR ?? artifact.ir)?.nodes.map((n) => n.id) ?? []);
         return {
             perdidos: [...savedIds].filter((id) => !after.has(id)),
             anadidos: [...after].filter((id) => !savedIds.has(id)),
