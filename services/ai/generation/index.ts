@@ -55,6 +55,8 @@ export { recommendationService } from './recommendationService';
 export type { RecommendationService } from './recommendationService';
 export { captureAssistantService } from './capture/captureAssistantService';
 export { diagramEditService, MAX_PATCH_OPERATIONS } from './diagramEdit/diagramEditService';
+export { documentEditService, MAX_DOCUMENT_PATCH_OPERATIONS } from './documentEdit/documentEditService';
+export type { DocumentEditRequest, DocumentEditProposal } from './documentEdit/documentEditService';
 export type { DiagramEditRequest, DiagramEditResult, DiagramEditService } from './diagramEdit/diagramEditService';
 export type { CaptureAssistantService } from './capture/captureAssistantService';
 export { platformGuideService } from './platformGuide/platformGuideService';

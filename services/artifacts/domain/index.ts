@@ -34,3 +34,4 @@ export * from './diagnostics';
 export * from './diagramPresentationCompiler';
 export * from './hybridPresentationCompiler';
 export * from './markdownPresentationCompiler';
+export * from './documentPatchEngine';

@@ -23,3 +23,4 @@ export * from './artifactSuggestions';
 export { buildDocumentIR } from './documentIR';
 export * from './contentPreservation';
 export { DOCUMENT_DISCIPLINES, disciplineForTemplate, type DocumentDiscipline, type DisciplineRule, type DisciplineSection } from './documentDisciplines';
+export * from './documentPatch';

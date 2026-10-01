@@ -64,6 +64,7 @@ export {
   compactChatMessages,
   documentGenerationService,
   diagramEditService,
+  documentEditService,
   initiativeAssistantService,
   diagramGenerationService,
   isQuizQuestion,

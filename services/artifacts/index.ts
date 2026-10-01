@@ -95,3 +95,4 @@ export {
 // Tipos que otros módulos ya usaban entrando por ruta de fichero: se publican
 // aquí, en la puerta, sin coste en el bundle (se borran al compilar).
 export type { ArtifactRecommendationCandidate } from './domain/artifactRecommendationService';
+export { isPatchableDocument, proposeDocumentModification, type DocumentModificationOutcome } from './application/documentModification';
