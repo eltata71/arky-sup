@@ -35,6 +35,8 @@ export interface UseDiagramRenderingInput {
   setViewMode: (next: ArtifactViewMode) => void;
   /** Called after auto-fix rewrites the artifact content. */
   onContentFixed: (content: string) => void;
+  /** Told when a canvas edit was partly refused or its text could not follow (8.1a). */
+  onEditNotice?: (message: string) => void;
 }
 
 export interface UseDiagramRenderingResult {
@@ -47,6 +49,8 @@ export interface UseDiagramRenderingResult {
   /** Nodes/edges actually mounted on the canvas. */
   displayFlowNodes: Node[];
   displayFlowEdges: Edge[];
+  /** What the canvas was given: the «before» of every edit it reports (8.1a). */
+  canvasFlow: { nodes: Node[]; edges: Edge[] };
   /** Provenance of the displayed graph (canonical IR vs. legacy parse). */
   displayedFlowSource: string;
   /** True when the canonical resolver produced renderable nodes. */
@@ -105,6 +109,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     getArtifact,
     setViewMode,
     onContentFixed,
+    onEditNotice,
   } = input;
 
   const [flowData, setFlowData] = useState<DiagramFlowData | null>(null);
@@ -322,6 +327,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
   const displayFlowNodes = hasRenderableNodes ? stableFlowNodes : legacyFlowNodes;
   const displayFlowEdges = hasRenderableNodes ? stableFlowEdges : legacyFlowEdges;
   const displayedFlowSource = hasRenderableNodes ? renderable.source : 'generated.ir';
+  const canvasFlow = useMemo(() => ({ nodes: displayFlowNodes, edges: displayFlowEdges }), [displayFlowNodes, displayFlowEdges]);
 
   // Generate diagram with a safety timeout.
   useEffect(() => {
@@ -468,17 +474,21 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
   }, [renderable, isLoading, error]);
 
   /**
-   * Round-trip hook: every visual edit refreshes `Artifact.ir` and — for
-   * non-C4 Mermaid artifacts — rewrites `Artifact.content` so the artifact
-   * stays portable.
+   * Every visual edit is applied to the stored model, never to what the
+   * canvas shows (plan de diagramas, 8.1a): the difference between what the
+   * canvas was given and what it reports becomes patch operations on the
+   * full IR, and the text follows only in a dialect that can hold it.
    */
   const canvasChange = useCallback((flow: DiagramFlowData) => {
     try {
-      updateArtifact(project.id, artifact.id, planCanvasEdit(artifact, flow));
+      const plan = planCanvasEdit(artifact, { before: canvasFlow, after: flow });
+      if (plan.rejected.length > 0) onEditNotice?.(`No se aplicó parte del cambio: ${plan.rejected.join(' · ')}`);
+      if (plan.notice) onEditNotice?.(plan.notice);
+      if (plan.patch) updateArtifact(project.id, artifact.id, plan.patch);
     } catch (err) {
       console.warn('[useDiagramRendering] round-trip IR update failed', err);
     }
-  }, [artifact, project.id, updateArtifact]);
+  }, [artifact, canvasFlow, onEditNotice, project.id, updateArtifact]);
 
   const applyIssueFix = useCallback((issueId: string) => {
     // Gap 8: when the canvas is rendered straight from the canonical IR
@@ -640,6 +650,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     renderableSignature,
     displayFlowNodes,
     displayFlowEdges,
+    canvasFlow,
     displayedFlowSource,
     hasRenderableNodes,
     isLoading,

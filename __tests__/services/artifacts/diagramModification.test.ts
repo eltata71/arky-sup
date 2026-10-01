@@ -196,11 +196,20 @@ describe('planDiagramModification', () => {
     expect(plan.draft.ir!.metadata?.layoutMode).toBe('manual');
   });
 
-  it('no reescribe el texto de un C4, que no se regenera desde el IR', () => {
+  it('reescribe el texto de un C4 en C4, nunca como flowchart (8.1a)', () => {
     const source = artifact({ type: 'mermaid-c4-container', content: 'C4Container\n  title X' });
     const plan = planDiagramModification({ artifact: source, proposal: proposalFor(source, renamePatch()) });
     if (plan.kind !== 'version') throw new Error(plan.kind);
-    expect(plan.draft.content).toBe('C4Container\n  title X');
+    expect(plan.draft.content.trimStart()).toMatch(/^C4Container/);
+    expect(plan.draft.content).not.toMatch(/^(flowchart|graph)\b/m);
+  });
+
+  it('una secuencia conserva su texto: el cambio vive en el IR (8.1a)', () => {
+    const content = 'sequenceDiagram\n  A->>B: Pide';
+    const source = artifact({ type: 'mermaid-sequence', content });
+    const plan = planDiagramModification({ artifact: source, proposal: proposalFor(source, renamePatch()) });
+    if (plan.kind !== 'version') throw new Error(plan.kind);
+    expect(plan.draft.content).toBe(content);
   });
 
   it('aplica sobre el IR actual: un nodo movido después de proponer se queda donde se movió', () => {

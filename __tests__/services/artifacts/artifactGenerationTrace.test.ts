@@ -145,4 +145,9 @@ describe('replaceMermaidBlock', () => {
     it('returns the diagram itself when there is no prose to keep', () => {
         expect(replaceMermaidBlock('graph TD\n  A --> B', 'graph LR\n  C --> D')).toBe('graph LR\n  C --> D');
     });
+
+    it('reemplaza literalmente aunque una etiqueta lleve «$»', () => {
+        const next = replaceMermaidBlock('Texto\n```mermaid\ngraph TD; a-->b\n```\nFin', 'graph TD\n  a["Coste $1 y $&"]');
+        expect(next).toBe('Texto\n```mermaid\ngraph TD\n  a["Coste $1 y $&"]\n```\nFin');
+    });
 });

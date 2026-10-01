@@ -164,6 +164,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     getArtifact,
     setViewMode,
     onContentFixed: editing.setEditedContent,
+    onEditNotice: addToast,
   });
   const { renderable } = diagram;
 
@@ -354,11 +355,11 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
 
   const handleSaveDiagram = useCallback(() => {
     if (!reactFlowRef.current) return;
-    const saved = planCanvasDiagramSave(artifact, reactFlowRef.current.getFlowData());
+    const { notice, ...saved } = planCanvasDiagramSave(artifact, { before: diagram.canvasFlow, after: reactFlowRef.current.getFlowData() });
     const newVersion = restoreArtifactVersion(project.id, { ...artifact, ...saved });
     setActiveArtifactId(newVersion.id);
-    addToast('Diagrama guardado como nueva versión.', 'success');
-  }, [artifact, project.id, restoreArtifactVersion, setActiveArtifactId, addToast]);
+    addToast(notice ?? 'Diagrama guardado como nueva versión.', notice ? 'info' : 'success');
+  }, [artifact, diagram.canvasFlow, project.id, restoreArtifactVersion, setActiveArtifactId, addToast]);
 
   // 4.1: abre el nivel siguiente; un enlace roto se dice.
   const handleNodeDoubleClick = useCallback((nodeId: string) => {

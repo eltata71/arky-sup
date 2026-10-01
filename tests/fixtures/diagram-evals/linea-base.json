@@ -1,5 +1,5 @@
 {
-  "_nota": "Agregados del banco de evaluación de diagramas. 'antes' se midió sobre main e15e1d5 antes de la 6.1; 'antes62' sobre df9b18b antes de la 6.2; 'antes63' sobre 91fd382 antes de la 6.3; 'antes64' sobre 397c259 antes de la 6.4 (con el validador que main ejecutaba), cada uno con el corpus de su ola; 'antes65' sobre 335ca5d antes de la 6.5 (la puntuación juzgaba el código Mermaid como documento y el ERD perdía sus relaciones); 'actual' es el suelo que la prueba exige y sólo puede mejorar. Actualizar con `npm run eval:diagrams` en el mismo commit que cambia las cifras. Los casos diseñados para degradarse no entran en los agregados de conservación. 'antes8' es el 'actual' de la 6.5 con su corpus de 14 casos; la 8.0 amplió el corpus a 22 (todos los tipos de diagrama) y añadió las métricas de integridad y presentación —lo que el pipeline cambia por su cuenta, lo que rompe una edición en el lienzo y la geometría del primer render—, cuyos contadores sólo pueden bajar. El 'actual' de la 8.0 registra los defectos que la ola 8.1 corrige.",
+  "_nota": "Agregados del banco de evaluación de diagramas. 'antes' se midió sobre main e15e1d5 antes de la 6.1; 'antes62' sobre df9b18b antes de la 6.2; 'antes63' sobre 91fd382 antes de la 6.3; 'antes64' sobre 397c259 antes de la 6.4 (con el validador que main ejecutaba), cada uno con el corpus de su ola; 'antes65' sobre 335ca5d antes de la 6.5 (la puntuación juzgaba el código Mermaid como documento y el ERD perdía sus relaciones); 'actual' es el suelo que la prueba exige y sólo puede mejorar. Actualizar con `npm run eval:diagrams` en el mismo commit que cambia las cifras. Los casos diseñados para degradarse no entran en los agregados de conservación. 'antes8' es el 'actual' de la 6.5 con su corpus de 14 casos; la 8.0 amplió el corpus a 22 (todos los tipos de diagrama) y añadió las métricas de integridad y presentación —lo que el pipeline cambia por su cuenta, lo que rompe una edición en el lienzo y la geometría del primer render—, cuyos contadores sólo pueden bajar. El 'actual' de la 8.0 registra los defectos que la ola 8.1 corrige. 'antes81a' es el 'actual' de la 8.0, antes de que la edición del lienzo dejara de reescribir el texto como flowchart y de borrar lo que la vista ejecutiva agrupa.",
   "antes": {
     "casos": 10,
     "dialectoConservado": 0.1,
@@ -84,7 +84,7 @@
     "paquetesCorrectos": 1,
     "hallazgosDominioCorrectos": 1
   },
-  "actual": {
+  "antes81a": {
     "casos": 20,
     "dialectoConservado": 0.95,
     "coberturaEntidades": 1,
@@ -107,6 +107,33 @@
     "dialectoTrasEdicion": 0.737,
     "nodosPerdidosPorEdicion": 57,
     "nodosAnadidosPorEdicion": 19,
+    "solapesNodos": 0,
+    "solapesGrupos": 0,
+    "aristasQueAtraviesanNodos": 7
+  },
+  "actual": {
+    "casos": 20,
+    "dialectoConservado": 0.95,
+    "coberturaEntidades": 1,
+    "metadatosConservados": 1,
+    "tecnologiasConservadas": 1,
+    "historiaConservada": 1,
+    "tasaEsqueleto": 0.05,
+    "calidadMedia": 75.238,
+    "contextoEntregado": 1,
+    "casosConContradicciones": 0,
+    "fidelidadMedia": 0.871,
+    "degradacionesAvisadas": 1,
+    "paquetesCorrectos": 1,
+    "hallazgosDominioCorrectos": 1,
+    "elementosInventados": 1,
+    "gruposInventados": 9,
+    "aristasAlteradas": 113,
+    "descripcionesSinteticas": 12,
+    "nodosRenderNoGuardados": 0,
+    "dialectoTrasEdicion": 1,
+    "nodosPerdidosPorEdicion": 0,
+    "nodosAnadidosPorEdicion": 0,
     "solapesNodos": 0,
     "solapesGrupos": 0,
     "aristasQueAtraviesanNodos": 7

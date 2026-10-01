@@ -24,9 +24,9 @@ import {
   documentFromDiagramDraft,
   improveWithSuggestions,
   planDiagramAutoImprove,
-  replaceMermaidBlock,
   toReviewSuggestions,
 } from '../../../services/artifacts/application/artifactImprovement';
+import { replaceMermaidBlock } from '../../../services/artifacts/domain/artifactGenerationTrace';
 
 const weakIR: DiagramIR = {
   nodes: [
@@ -69,8 +69,15 @@ describe('planDiagramAutoImprove', () => {
     expect(typeof plan.patch.content).toBe('string');
   });
 
-  it('en C4 no regenera el texto: su código no sale del IR', () => {
-    const plan = planDiagramAutoImprove({ artifact: artifact({ type: 'mermaid-c4-container' as Artifact['type'] }), ir: weakIR, audience: 'technical', beforeScore: 0 });
+  it('en C4 regenera el texto en C4, nunca como flowchart (8.1a)', () => {
+    const plan = planDiagramAutoImprove({ artifact: artifact({ type: 'mermaid-c4-container' as Artifact['type'], content: 'C4Container\n  title X' }), ir: weakIR, audience: 'technical', beforeScore: 0 });
+    if (plan.kind !== 'patch') throw new Error('unreachable');
+    expect(plan.patch.content?.trimStart()).toMatch(/^C4Container/);
+  });
+
+  it('en una secuencia conserva el texto: la mejora vive en el IR (8.1a)', () => {
+    const content = 'sequenceDiagram\n  A->>B: Pide';
+    const plan = planDiagramAutoImprove({ artifact: artifact({ type: 'mermaid-sequence' as Artifact['type'], content }), ir: weakIR, audience: 'technical', beforeScore: 0 });
     if (plan.kind !== 'patch') throw new Error('unreachable');
     expect(plan.patch).not.toHaveProperty('content');
   });

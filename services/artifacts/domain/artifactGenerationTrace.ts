@@ -54,7 +54,8 @@ export const resolveRefinementMode = (template: ArtifactTemplate): ArtifactRefin
 export const replaceMermaidBlock = (content: string, mermaid: string): string => {
     const fenced = /```mermaid\s*[\s\S]*?```/m;
     if (fenced.test(content)) {
-        return content.replace(fenced, `\`\`\`mermaid\n${mermaid}\n\`\`\``);
+        // A function, not a string: `$&`, `$1` or `$$` in a label would be read as patterns.
+        return content.replace(fenced, () => `\`\`\`mermaid\n${mermaid}\n\`\`\``);
     }
     return mermaid;
 };

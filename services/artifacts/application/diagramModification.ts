@@ -28,8 +28,9 @@ import type { Project } from '../../architectureProjects';
 import type { Artifact, ArtifactChangeNote } from '../../../lib/artifacts';
 import type { DiagramIR, DiagramPatch, PatchApplication, PatchRejection } from '../../../lib/diagram';
 import { assembleArtifactContext, diagramEditService, renderArtifactContextBundle } from '../../ai';
-import { applySemanticPatch, irToMermaid, reconcileIRWithContent, resolveEditableDiagramIR } from '../../diagram';
-import { replaceMermaidBlock } from './artifactImprovement';
+import { applySemanticPatch, reconcileIRWithContent, resolveEditableDiagramIR } from '../../diagram';
+import { rewriteDiagramContent } from './diagramContentRewrite';
+import { planCanvasEdit, type CanvasEdit } from './diagramCanvasEdit';
 
 type EditableSource = Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>;
 
@@ -161,20 +162,11 @@ export const planDiagramModification = (params: {
   const { qualityReview: _staleReview, ...metadata } = result.ir.metadata ?? { qualityReview: undefined };
   const ir: DiagramIR = { ...result.ir, metadata };
 
-  let content = artifact.content;
-  if (!artifact.type.startsWith('mermaid-c4-')) {
-    try {
-      if (artifact.type === 'hybrid-text-diagram') {
-        content = replaceMermaidBlock(artifact.content, irToMermaid(ir));
-      } else if (artifact.type.startsWith('mermaid') && artifact.representation === 'diagram') {
-        content = irToMermaid(ir);
-      }
-    } catch (err) {
-      // El IR es la fuente del lienzo: si el texto no se pudo regenerar, se
-      // guarda el cambio igual y el código queda como estaba.
-      console.warn('[diagramModification] no se pudo serializar a Mermaid', err);
-    }
-  }
+  // Only a dialect that can hold the IR is rewritten (plan de diagramas, 8.1a):
+  // a sequence or an ERD keeps its text and the change lives in the IR.
+  const content = artifact.representation === 'document'
+    ? artifact.content
+    : rewriteDiagramContent(artifact.content, ir, artifact.type, artifact.type === 'hybrid-text-diagram').content;
 
   const summary = result.applied.map((entry) => entry.description);
   const changeNote: ArtifactChangeNote = {
@@ -223,28 +215,27 @@ export const withDiagramContent = (
 };
 
 /**
- * Lo que se guarda cuando la persona pulsa «Guardar» en el lienzo interactivo.
+ * Lo que se guarda cuando la persona pulsa «Guardar» en el lienzo interactivo
+ * (plan de diagramas, 8.1a).
  *
- * Un híbrido conserva su texto y cambia sólo el bloque del diagrama —el
- * Mermaid o el JSON que hubiera— por el JSON del lienzo. Cualquier otro
- * artefacto pasa a ser un grafo de ReactFlow.
- *
- * El reemplazo usa una función y no una cadena: con una cadena, `replace`
- * interpreta `$&`, `$1` o `$$` dentro del JSON —una etiqueta «Coste $1» basta—
- * y guarda un bloque corrupto.
+ * Antes, cualquier diagrama pasaba a ser un grafo de ReactFlow —un C4, una
+ * secuencia o un ERD dejaban su tipo— y un híbrido cambiaba su bloque Mermaid
+ * por el JSON del lienzo, que además era la proyección de la audiencia en
+ * pantalla. Ahora es lo mismo que una edición del lienzo: la diferencia entre
+ * lo que se le dio y lo que devuelve, aplicada al modelo guardado. El artefacto
+ * conserva su tipo y su representación, y el texto sólo cambia en una notación
+ * que se puede escribir desde el IR.
  */
 export const planCanvasDiagramSave = (
-  artifact: Pick<Artifact, 'content' | 'type' | 'representation'>,
-  flowData: unknown,
-): Pick<Artifact, 'content' | 'type' | 'representation'> => {
-  const json = JSON.stringify(flowData, null, 2);
-  if (artifact.representation !== 'hybrid') {
-    return { content: json, type: 'react-flow-graph', representation: 'diagram' };
-  }
-  const block = `\`\`\`json\n${json}\n\`\`\``;
-  const existing = artifact.content.match(/```mermaid\s*([\s\S]*?)\s*```/) ?? artifact.content.match(/```json\s*([\s\S]*?)\s*```/);
-  const content = existing
-    ? artifact.content.replace(existing[0], () => block)
-    : `${artifact.content}\n\n${block}`;
-  return { content, type: artifact.type, representation: artifact.representation };
+  artifact: Pick<Artifact, 'content' | 'type' | 'representation' | 'ir'>,
+  edit: CanvasEdit,
+): Pick<Artifact, 'content' | 'type' | 'representation' | 'ir'> & { notice: string | null } => {
+  const plan = planCanvasEdit(artifact, edit);
+  return {
+    content: plan.patch?.content ?? artifact.content,
+    type: artifact.type,
+    representation: artifact.representation,
+    ir: plan.patch?.ir ?? artifact.ir,
+    notice: plan.notice,
+  };
 };

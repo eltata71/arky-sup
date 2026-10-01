@@ -22,7 +22,7 @@ import type { Project } from '../../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../../review';
 import { artifactGenerationService, documentGenerationService } from '../../ai';
 import type { ArtifactSuggestionGapType } from '../../ai';
-import { irToMermaid } from '../../diagram';
+import { rewriteDiagramContent } from './diagramContentRewrite';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
 import type { NewArtifactDraft } from '../domain/artifactFactory';
 
@@ -40,19 +40,12 @@ export type DiagramAutoImprovePlan =
       readonly reachedTarget: boolean;
     };
 
-/** Reemplaza (o añade) el bloque ```mermaid``` de un contenido. */
-export const replaceMermaidBlock = (content: string, mermaid: string): string => {
-  const fenced = /```mermaid\s*[\s\S]*?```/m;
-  if (fenced.test(content)) return content.replace(fenced, `\`\`\`mermaid\n${mermaid}\n\`\`\``);
-  return mermaid;
-};
-
 /**
  * La «auto-mejora» del lienzo: la puerta de calidad determinista, sin modelo.
  *
- * Guarda el IR reparado con su revisión de calidad en los metadatos y, si el
- * diagrama se representa en Mermaid —y no es C4, cuyo texto no se regenera
- * desde el IR—, también el código. Si la puerta no cambió nada y la nota no
+ * Guarda el IR reparado con su revisión de calidad en los metadatos y, si la
+ * notación del diagrama se puede escribir desde el IR (flowchart y C4, 8.1a),
+ * también el código; una secuencia o un ERD conservan su texto. Si la puerta no cambió nada y la nota no
  * subió, lo dice en vez de guardar: una versión idéntica anunciada como mejora
  * es una mentira pequeña que el usuario descubre comparando.
  */
@@ -97,19 +90,10 @@ export const planDiagramAutoImprove = (params: {
   };
 
   const patch: Partial<Artifact> = { ir: improvedIR };
-  if (!artifact.type.startsWith('mermaid-c4-')) {
-    try {
-      const code = irToMermaid(improvedIR);
-      if (artifact.type === 'hybrid-text-diagram') {
-        patch.content = replaceMermaidBlock(artifact.content, code);
-      } else if (artifact.type.startsWith('mermaid') && artifact.representation === 'diagram') {
-        patch.content = code;
-      }
-    } catch (err) {
-      // El IR reparado se guarda igual: perder la reparación porque el texto no
-      // se pudo regenerar sería peor que guardar el texto anterior.
-      console.warn('[artifactImprovement] auto-improve failed to serialize Mermaid', err);
-    }
+  // Only a dialect that can hold the IR is rewritten (plan de diagramas, 8.1a).
+  if (artifact.representation !== 'document') {
+    const rewrite = rewriteDiagramContent(artifact.content, improvedIR, artifact.type, artifact.type === 'hybrid-text-diagram');
+    if (rewrite.rewritten) patch.content = rewrite.content;
   }
 
   return {
