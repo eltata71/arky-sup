@@ -196,3 +196,5 @@ export type { AIJsonSchema, ParseStructuredResult } from './structuredOutput';
 // aquí, en la puerta, sin coste en el bundle (se borran al compilar).
 export type { ArtifactSuggestion, ArtifactSuggestionAction } from './artifactSuggestionTypes';
 export type { ArtifactSuggestionGapType } from './artifactSuggestionService';
+
+export { captureArtifactContext } from './prompts/contextManifestCapture';

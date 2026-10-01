@@ -9,9 +9,9 @@
  * content-preservation policy still judges the result.
  */
 import type { Settings } from '../../../types';
-import type { Artifact, DocumentPatchRejection } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts, DocumentPatchRejection } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
-import { assembleArtifactContext, documentEditService, renderArtifactContextBundle } from '../../ai';
+import { assembleArtifactContext, captureArtifactContext, documentEditService, renderArtifactContextBundle } from '../../ai';
 import { applyDocumentPatch, outlineOfDocument } from '../domain/documentPatchEngine';
 
 export type DocumentModificationOutcome =
@@ -35,13 +35,13 @@ export const isPatchableDocument = (artifact: Pick<Artifact, 'representation' | 
 export const proposeDocumentModification = async (
   params: { readonly artifact: Artifact; readonly instruction: string; readonly project?: Project },
   settings: Settings,
-  options: { readonly signal?: AbortSignal } = {},
+  options: { readonly signal?: AbortSignal; readonly onContextCaptured?: ArtifactContextPorts['onContextCaptured'] } = {},
 ): Promise<DocumentModificationOutcome> => {
   const { artifact, instruction, project } = params;
   const content = artifact.content ?? '';
-  const context = project
-    ? renderArtifactContextBundle(assembleArtifactContext({ project, settings, artifact, query: instruction }, 'edit'))
-    : undefined;
+  const bundle = project ? assembleArtifactContext({ project, settings, artifact, query: instruction }, 'edit') : undefined;
+  if (project && bundle) captureArtifactContext({ project, settings, artifact }, bundle, options.onContextCaptured);
+  const context = bundle ? renderArtifactContextBundle(bundle) : undefined;
   const proposal = await documentEditService.proposeEdit(
     { content, outline: outlineOfDocument(content), instruction, context },
     settings,

@@ -43,6 +43,7 @@ import type { AgentArtifactStore } from './agentExecutorContracts';
 import { runArtifactPatch } from './agentPatchAction';
 import type { AgentPersonaBriefing } from './agentContextComposer';
 import { agentGenerationOptions } from './agentPersonaComposer';
+import { recordAgentGeneration } from './agentGenerationTrace';
 export type { AgentArtifactStore } from './agentExecutorContracts';
 
 /** Callback fired as the action moves through phases. */
@@ -116,6 +117,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
   const ports = agentGenerationOptions(input.resolvePersona, input.businessMotivation, history);
   const target = input.targetOverride ?? plan.target;
   const traceId = plan.traceId;
+  const generation = recordAgentGeneration(traceId, 'regeneration');
 
   const emit = (phase: AgentExecutionPhase, message: string, meta?: Record<string, unknown>) => {
     logAgentEvent({ traceId, phase, level: 'info', message, meta });
@@ -144,12 +146,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
 
     switch (plan.actionType) {
       case 'artifact.create': {
-        // Brand-new artifact creation. Path:
-        //   1. Resolve a template (catalog match → fallback to custom template).
-        //   2. Generate content via the existing pipeline (`generateArtifactContent`).
-        //   3. Persist via `store.createArtifact` (NOT `createArtifactVersion`).
-        // Returns directly because the single-artifact persistence path below
-        // assumes a pre-existing artifact to version off.
+        // New artifacts use the same generation engine and open their own version group.
         return await executeArtifactCreate({ ...input, emit, target });
       }
       case 'artifact.improve': {
@@ -203,7 +200,7 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
           objective: `${template.objective}\n\nInstrucciones adicionales del Arquitecto: ${plan.intent.userInstruction}`,
         };
         emit('generating', 'Regenerando artefacto con la IA…');
-        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, ports);
+        newContent = await artifactGenerationService.generateArtifactContent(project, augmentedTemplate, settings, artifact, { ...ports, ...generation.options });
         appliedChanges.push(`Regenerado a partir de: "${truncate(plan.intent.userInstruction, 140)}"`);
         break;
       }
@@ -281,19 +278,18 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
 
     emit('persisting', 'Persistiendo nueva versión…');
     let newVersionId: string | null = null;
+    const generatedTrace = plan.actionType === 'artifact.regenerate' ? { generationTrace: generation.trace(newContent) } : {};
     try {
       if (target === 'current') {
-        store.updateArtifact(project.id, artifact.id, { content: newContent });
+        store.updateArtifact(project.id, artifact.id, { content: newContent, ...generatedTrace });
       } else {
         const { id: _omitId, version: _omitVersion, versionGroupId: _omitGroup, createdAt: _omitDate, ...rest } = artifact;
         const newVersion = store.createArtifactVersion(project.id, artifact.versionGroupId, {
           ...rest,
           content: newContent,
+          ...generatedTrace,
         });
-        // Verify the store contract: `createArtifactVersion` must return a
-        // real artifact with an id. If the contract is broken we fail loudly
-        // instead of declaring success and leaving the user staring at the
-        // old version in the Hub.
+        // The store must return the version it created before we report success.
         if (!newVersion || !newVersion.id) {
           throw new Error('La creación de nueva versión no devolvió un artefacto válido.');
         }
@@ -520,6 +516,7 @@ async function executeArtifactCreate(
   const { plan, project, settings, store, emit } = input;
   const traceId = plan.traceId;
   const userInstruction = plan.intent.userInstruction;
+  const generation = recordAgentGeneration(traceId, 'on-demand');
 
   const result: AgentActionResult = {
     status: 'failed',
@@ -593,7 +590,7 @@ async function executeArtifactCreate(
     generatedContent = await artifactGenerationService.generateArtifactContent(
       project,
       generationTemplate,
-      settings, undefined, agentGenerationOptions(input.resolvePersona, input.businessMotivation, input.history),
+      settings, undefined, { ...agentGenerationOptions(input.resolvePersona, input.businessMotivation, input.history), ...generation.options },
     );
   } catch (err) {
     const friendly = err instanceof AIServiceError ? err : classifyAIError(err);
@@ -703,6 +700,7 @@ async function executeArtifactCreate(
       keyConcepts: baseTemplate.keyConcepts,
       representation: baseTemplate.representation,
       content: finalContent,
+      generationTrace: generation.trace(finalContent),
     }, deterministicId ?? undefined);
     // Defensive: verify the store contract. If the persistence path is
     // broken (offline Firestore, optimistic update rolled back, …) we
@@ -900,4 +898,3 @@ const findTemplateForArtifact = (artifact: Artifact): ArtifactTemplate | undefin
   if (byNameAndType) return byNameAndType;
   return ARTIFACT_TEMPLATES.find((t) => t.type === artifact.type);
 };
-

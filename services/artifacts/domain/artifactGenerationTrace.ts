@@ -88,6 +88,7 @@ export const createTraceLog = (initial: ArtifactGenerationTraceStep[] = []): Tra
 });
 
 export interface BuildGenerationTraceInput {
+    contextManifest?: ArtifactGenerationTrace['contextManifest'];
     log: TraceLog;
     template: ArtifactTemplate;
     action: ArtifactGenerationAction;
@@ -108,6 +109,7 @@ export interface BuildGenerationTraceInput {
 }
 
 export function buildGenerationTrace({
+    contextManifest,
     log,
     template,
     action,
@@ -128,6 +130,7 @@ export function buildGenerationTrace({
     const traceErrors = log.errors;
     const completedAt = new Date().toISOString();
     return {
+        contextManifest,
         id: `trace-${Date.now()}`,
         operationId: operationId,
         source: template.requestContext ? 'on-demand' : action === 'new_version' || action === 'replace' ? 'regeneration' : 'catalog',

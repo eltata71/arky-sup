@@ -15,10 +15,11 @@
  */
 
 import type { ArtifactType, Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
+import { captureDiagramProjectBlock, captureDiagramRequest } from './contextManifestCapture';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
 import { ARCHITECTURE_SIGNAL_PATTERN } from './artifactContext';
@@ -330,7 +331,7 @@ export function buildDiagramIRSchema(): unknown {
 // IR-direct generation prompt (replaces Mermaid hallucinations end-to-end)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface IRDirectGenerateOptions {
+export interface IRDirectGenerateOptions extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
     artifact: Artifact;
     project: Project;
     audience: DiagramAudience;
@@ -356,7 +357,8 @@ export function buildIRDirectGenerationPrompt(opts: IRDirectGenerateOptions): st
     // integrations / data / messaging / processes) so the model anchors the
     // diagram in real project signals instead of generic placeholders.
     const signalsBlock = renderDiagramSignals(extractDiagramSignals(project), artifact.type);
-    return `${buildProjectContextBlock(project, artifact, { settings: opts.settings })}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
+    captureDiagramRequest(opts.onContextCaptured, { corrective: false, project, artifact, audience: opts.audience }, { signals: signalsBlock, brief: opts.brief, previous: evolveBlock });
+    return `${buildProjectContextBlock(project, artifact, { settings: opts.settings, onContextCaptured: opts.onContextCaptured })}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
 
 Artifact: ${artifact.name} — ${artifact.type}
 Objective: ${artifact.objective ?? ''}
@@ -392,7 +394,7 @@ Emit the artifact as a DiagramIR JSON object obeying the schema you have been gi
 Apply the audience sizing rules from the system instruction.${evolveBlock}`;
 }
 
-export interface CorrectiveDiagramPromptOptions {
+export interface CorrectiveDiagramPromptOptions extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
     artifact: Artifact;
     project: Project;
     audience: DiagramAudience;
@@ -414,7 +416,8 @@ export function buildCorrectiveDiagramPrompt(opts: CorrectiveDiagramPromptOption
         ? `\n\nExcerpt of your previous (invalid) response:\n"""\n${previousResponseSample.slice(0, 240)}\n"""`
         : '';
     const signalsBlock = renderDiagramSignals(extractDiagramSignals(project), artifact.type);
-    return `${buildProjectContextBlock(project, artifact, { maxContextItems: 6, maxKeyConcepts: 0, maxDescriptionChars: 400 })}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
+    captureDiagramRequest(opts.onContextCaptured, { corrective: true, project, artifact, audience: opts.audience }, { signals: signalsBlock, brief: opts.brief, previous: sampleBlock });
+    return `${buildProjectContextBlock(project, artifact, { maxContextItems: 6, maxKeyConcepts: 0, maxDescriptionChars: 400, onContextCaptured: opts.onContextCaptured })}${signalsBlock}${opts.brief ? `\n\n${opts.brief}` : ''}
 
 CORRECTIVE RETRY — your previous response failed: ${lastFailureReason}.
 Emit ONLY a valid DiagramIR JSON object. No prose, no Mermaid, no Markdown fences.
@@ -627,7 +630,7 @@ export function prioritizeProjectContext(rawItems: readonly string[], opts: { li
     return top.map((c) => c.item);
 }
 
-export interface ProjectContextBlockOptions {
+export interface ProjectContextBlockOptions extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
     /** Cap for projectContext bullets. Defaults to 12. */
     maxContextItems?: number;
     /** Cap for keyConcepts glossary. Defaults to 10. */
@@ -674,9 +677,10 @@ export function buildProjectContextBlock(
             for (const item of glossary) lines.push(`    • ${item}`);
         }
     }
+    captureDiagramProjectBlock(opts.onContextCaptured, { corrective: !opts.settings, project, artifact, text: lines.join('\n') }, { maxContextItems, maxKeyConcepts, maxDescriptionChars });
     // Written by people and by document analysis, not by the app: fenced
     // (plan de diagramas, 6.2). The rules about it stay outside the fence.
-    const bundle = opts.settings ? renderDiagramContextBundle(project, opts.settings, artifact) : '';
+    const bundle = opts.settings ? renderDiagramContextBundle(project, opts.settings, artifact, opts.onContextCaptured) : '';
     return `PROJECT CONTEXT — its constraints bind the diagram and its ubiquitous-language terms are used verbatim.
 ${wrapUntrustedContent('proyecto', lines.join('\n'))}${bundle ? `\n${bundle}` : ''}`;
 }

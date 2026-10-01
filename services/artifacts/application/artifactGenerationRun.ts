@@ -19,6 +19,7 @@
 
 import type { ArtifactTemplate, Settings } from '../../../types';
 import type { Artifact, ArtifactContextPorts, ArtifactGenerationPhaseListener, ArtifactGenerationTrace, ArtifactPersonaComposer } from '../../../lib/artifacts';
+import { createContextManifestRecorder } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
 import { artifactGenerationService } from '../../ai';
@@ -114,7 +115,8 @@ export async function runArtifactGeneration({
     deliverables,
     onWarning,
 }: ArtifactGenerationRunInput): Promise<ArtifactGenerationRunResult> {
-    const ports: ArtifactContextPorts = { businessMotivation, conversation, deliverables };
+    const contextRecorder = createContextManifestRecorder(startedAt);
+    const ports: ArtifactContextPorts = { businessMotivation, conversation, deliverables, onContextCaptured: contextRecorder.capture };
     const log = createTraceLog([
         makeTraceStep(
             template.requestContext ? 'recommendation' : 'prompt',
@@ -404,7 +406,7 @@ export async function runArtifactGeneration({
 
     // From here on, persist `draft.resolvedContent` (skeleton when AI failed,
     // original/refined content otherwise) and the matching `draft.ir`.
-    const documentFidelity = await reviewDocumentFidelity({ template, content: draft.resolvedContent, project, settings }); // 7.4c
+    const documentFidelity = await reviewDocumentFidelity({ template, content: draft.resolvedContent, project, settings, onContextCaptured: contextRecorder.capture }); // 7.4c
     const persistedContent = documentFidelity?.content ?? draft.resolvedContent;
     const fidelity = isDiagramTemplate ? reviewDiagramFidelity(template, persistedContent, draft.ir, Boolean(draft.skeletonFallbackError), modelOutput.degradations) : documentFidelity;
     if (fidelity) {
@@ -427,6 +429,7 @@ export async function runArtifactGeneration({
         modelPreference: settings.aiConfig?.model,
         generationModel,
         architectureGraph: graphGenerationContext.usage,
+        contextManifest: contextRecorder.manifest(),
     });
 
     const persistedEnvelope = refinedEnvelopeForPersistence ?? normalizeArtifactEnvelope({

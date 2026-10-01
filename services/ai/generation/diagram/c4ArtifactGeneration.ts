@@ -15,7 +15,7 @@
  *   model and the database.
  */
 import type { ArtifactTemplate, Settings } from '../../../../types';
-import type { Artifact } from '../../../../lib/artifacts';
+import type { Artifact, ContextManifestSource } from '../../../../lib/artifacts';
 import type { DiagramAudience } from '../../../../lib/diagram';
 import type { Project } from '../../../architectureProjects';
 import { resolveDomainPacks } from '../../../../lib/domainPacks';
@@ -40,7 +40,7 @@ const MAX_UPPER_ELEMENTS = 24;
  * names a detail has to reuse. Its persisted IR when it has one — that is the
  * model's, with technologies — and its text otherwise.
  */
-function resolveUpperLevel(project: Project, level: C4DiagramLevel, ownGroupId?: string): UpperLevelDiagram | null {
+function resolveUpperLevel(project: Project, level: C4DiagramLevel, ownGroupId?: string): (UpperLevelDiagram & { source: ContextManifestSource }) | null {
     const parentType = PARENT_LEVEL[level];
     if (!parentType) return null;
     const parent = (project.artifacts ?? [])
@@ -52,7 +52,7 @@ function resolveUpperLevel(project: Project, level: C4DiagramLevel, ownGroupId?:
         const elements = nodes
             .slice(0, MAX_UPPER_ELEMENTS)
             .map((node) => (node.technology ? `${node.label} [${node.technology}]` : node.label));
-        return elements.length ? { name: parent.name, elements } : null;
+        return elements.length ? { name: parent.name, elements, source: { id: parent.id, label: parent.name, revision: parent.revision } } : null;
     } catch {
         return null;
     }
@@ -100,6 +100,7 @@ ${controlledContext}`
         id: previousArtifact?.id ?? `stub-${template.name}-${Date.now()}`,
         versionGroupId: previousArtifact?.versionGroupId ?? `stub-${template.name}`,
         version: previousArtifact?.version ?? 1,
+        revision: previousArtifact?.revision,
         createdAt: previousArtifact?.createdAt ?? now,
         name: template.name,
         type: template.type,
@@ -133,11 +134,12 @@ export async function generateC4ArtifactContent(
     // The same context every other path gets, which this one used to skip
     // by returning before the engine resolved it (plan de diagramas, 6.2).
     const request = template.requestContext?.userRequest ?? template.objective;
+    const upperLevel = resolveUpperLevel(project, level, previousArtifact?.versionGroupId);
     const brief = buildDiagramGenerationBrief({
         template,
         language: settings.language,
         businessMotivation: opts.businessMotivation,
-        upperLevel: resolveUpperLevel(project, level, previousArtifact?.versionGroupId),
+        upperLevel,
         architectureGraphBlock: opts.architectureGraphPromptBlock,
         personaInstruction: opts.composePersonaInstruction?.('', request),
         domainPacks: resolveDomainPacks({
@@ -146,7 +148,9 @@ export async function generateC4ArtifactContent(
         }),
     });
     // A regeneration evolves the diagram it replaces instead of re-rolling it.
-    const result = await generateDiagramIRWithSelfHealing(stub, project, settings, { brief, previousIR: previousArtifact?.ir });
+    const result = await generateDiagramIRWithSelfHealing(stub, project, settings, { brief, previousIR: previousArtifact?.ir, onContextCaptured: opts.onContextCaptured ? (record) => opts.onContextCaptured?.({
+        ...record, sources: [...record.sources, ...(upperLevel && record.sections.some((section) => section.scope === 'brief') ? [upperLevel.source] : [])],
+    }) : undefined });
     if (result.fallback === 'skeleton') {
         throw new C4SelfHealingError(
             result.declineReason
@@ -182,6 +186,7 @@ export async function generateC4ArtifactContent(
             audience: template.requestContext.audience,
         } : undefined,
         context: `${project.name}: ${template.objective}`,
+        onContextCaptured: opts.onContextCaptured,
     }, settings);
     opts.onPhase?.({
         stage: 'refinement',

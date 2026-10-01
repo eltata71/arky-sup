@@ -30,11 +30,12 @@
  * change is reported in the generation trace.
  */
 import type { ArtifactType, Settings } from '../../../../types';
+import type { ArtifactContextPorts } from '../../../../lib/artifacts';
 import type { DiagramAudience, DiagramIR } from '../../../../lib/diagram';
 import { analyzeDiagramQuality, checkRequestFidelity, detectArchitecturalViolations } from '../../../diagram';
 import { diagramEditService } from '../diagramEdit/diagramEditService';
 
-export interface SelfCorrectionInput {
+export interface SelfCorrectionInput extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
     artifactType: ArtifactType;
     audience: DiagramAudience;
     request?: {
@@ -94,6 +95,7 @@ export async function correctDiagramOnce(
             ...findings.map((finding) => `- ${finding}`),
         ].join('\n'),
         context: input.context,
+        onContextCaptured: input.onContextCaptured,
     }, settings);
     if (!proposal.ok || !proposal.preview) {
         return { ir, corrected: false, note: `No se aplicó corrección: ${proposal.reason || 'sin propuesta'}.`, findings, calls: 1 };

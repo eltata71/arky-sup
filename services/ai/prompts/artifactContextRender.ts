@@ -6,9 +6,10 @@
  * may reach here.
  */
 import type { Settings } from '../../../types';
-import type { Artifact } from '../../../lib/artifacts';
+import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
+import { captureArtifactContext } from './contextManifestCapture';
 import { assembleArtifactContext, type ArtifactContextBundle, type ArtifactContextScope } from './artifactContext';
 
 /** How each scope is titled in a prompt. The chat's composer uses the same words. */
@@ -50,8 +51,9 @@ export function renderArtifactContextBundle(bundle: ArtifactContextBundle): stri
 }
 
 /** A diagram's context, ranked against the artifact it will draw (the IR path, 7.2b). */
-export const renderDiagramContextBundle = (project: Project, settings: Settings, artifact?: Artifact): string =>
-  renderArtifactContextBundle(assembleArtifactContext(
-    { project, settings, artifact, query: artifact ? `${artifact.name}. ${artifact.objective ?? ''}` : undefined },
-    'diagram',
-  ));
+export const renderDiagramContextBundle = (project: Project, settings: Settings, artifact?: Artifact, capture?: ArtifactContextPorts['onContextCaptured']): string => {
+  const sources = { project, settings, artifact, query: artifact ? `${artifact.name}. ${artifact.objective ?? ''}` : undefined };
+  const bundle = assembleArtifactContext(sources, 'diagram');
+  captureArtifactContext(sources, bundle, capture);
+  return renderArtifactContextBundle(bundle);
+};

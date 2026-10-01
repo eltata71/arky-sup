@@ -370,24 +370,3 @@ export interface ContextPack {
 /* Traceability                                                              */
 /* ------------------------------------------------------------------------- */
 
-/**
- * Explains which context an artifact generation actually used. Built from a
- * `ContextPack` so every generated artifact can answer "what did you rely on?".
- */
-export interface ContextUsageReport {
-  packId: string;
-  projectId: string;
-  artifactId?: string;
-  generatedAt: string;
-  usedEntities: Array<{ id: string; label: string; type: ContextEntityType; citation: string; relevance: number }>;
-  usedRelationships: Array<{ id: string; type: ContextRelationshipType; fromLabel: string; toLabel: string }>;
-  usedDecisions: Array<{ id: string; label: string }>;
-  consideredRisks: Array<{ id: string; label: string }>;
-  appliedConstraints: Array<{ id: string; label: string }>;
-  usedDataEntities: Array<{ id: string; label: string }>;
-  usedIntegrations: Array<{ id: string; label: string }>;
-  ignoredSignals: IgnoredContextSignal[];
-  conflicts: ContextConflict[];
-  staleSignals: Array<{ id: string; label: string; ageDays?: number }>;
-  sources: ContextSource[];
-}

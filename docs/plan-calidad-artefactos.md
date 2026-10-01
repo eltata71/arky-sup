@@ -320,7 +320,21 @@ política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
 | 7.4a — un contrato por plantilla para los 18 documentos del catálogo, una sola fuente para prompt y validador (el contrato detecta lo que falta: 0 → 100 %) | #130 | Fusionada |
 | 7.4b — parches semánticos de documento: el cambio puntual del copiloto opera sobre secciones y tablas, sin reescribir ni límite de longitud | #131 | Fusionada |
 | 7.4c — fidelidad de documentos contra la solicitud, una sola corrección con parche y aviso de lo que falta (banco: fidelidad 73,7 % medida antes de corregir) | #132 | Fusionada |
-| 7.3d — iniciativa, entregables y conversación llegan también a revisar, sugerir, presentar, convertir y al copiloto (contexto entregado 83,6 → 100 %) | — | En revisión |
+| 7.3d — iniciativa, entregables y conversación llegan también a revisar, sugerir, presentar, convertir y al copiloto (contexto entregado 83,6 → 100 %) | #133 | Fusionada |
+| 7.5a — `ContextManifest` en `generationTrace`: cada compositor registra el contexto que envía (con la revisión de su fuente y lo que quedó fuera), el agente y la Oficina graban su propia traza, y «Contexto usado» lee lo registrado en vez de reconstruirlo | — | En revisión |
+
+**«Contexto usado» ya no reconstruye nada (7.5a).** El panel construía el grafo
+de contexto del proyecto *actual* al abrirse, así que editar el proyecto después
+de generar cambiaba lo que decía haber usado una generación pasada. Ahora cada
+compositor —prompt base, IR, C4, autocorrección, edición de diagrama, crítica,
+refinamiento, presentación, fidelidad, modificación de documento y grafo de
+contexto— entrega a `onContextCaptured` exactamente lo que envía, el grabador
+lo copia en el momento (`createContextManifestRecorder`) y el manifiesto viaja
+en `generationTrace`. Un artefacto anterior a la 7.5a lo dice («Sin registro
+histórico») en vez de inventarse uno. Las mejoras, sugerencias y parches del
+agente no son generaciones y conservan la traza de la que partieron; regenerar
+y crear graban la suya. `buildContextUsageReport` y `buildContextReportText`,
+que sólo servían al panel antiguo, se retiraron.
 
 **El enlace artefacto → tarea no se duplicó.** Ya existe como arista canónica
 (`OfficeTask.producedArtifactId`, resuelta por `services/portfolioGraph`); un

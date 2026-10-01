@@ -23,6 +23,8 @@ import type { Artifact, ArtifactBusinessMotivation, ArtifactConversationDigest, 
 import type { Project } from '../../architectureProjects';
 import { ARTIFACT_CONTEXT_PROFILES, assembleArtifactContext, type ArtifactContextProfileName } from './artifactContext';
 import { renderArtifactContextBundle } from './artifactContextRender';
+import { captureArtifactContext } from './contextManifestCapture';
+import type { ArtifactContextPorts } from '../../../lib/artifacts';
 // Por el barril: `services/memory` ya publica esta función y es un módulo de
 // declaraciones puras —ningún chunk pesado detrás—, así que no hay razón de
 // bundle que justifique entrar por el fichero.
@@ -104,7 +106,7 @@ Arquitectura empresarial en seguros, modernización de sistemas core (pólizas, 
 
 export type BasePromptMode = 'document' | 'diagram';
 
-export interface BasePromptOptions {
+export interface BasePromptOptions extends ArtifactContextPorts {
   /**
    * `document` (default) preserves the historical behavior — full project
    * context, full description. `diagram` applies a tight cap to avoid
@@ -173,13 +175,18 @@ export function buildBasePrompt(project: Project, settings: Settings, opts: Base
     { ...profileDef, limits },
   );
 
+  const motivation = motivationBlock(opts, project);
+  captureArtifactContext({ project, settings, artifact: opts.artifact }, bundle, opts.onContextCaptured, [
+    { scope: 'Proyecto', items: [{ text: `Project Name: ${project.name}\nProject Description: ${trimmedDescription}`, sourceId: project.id, truncated: description.length > maxChars }] },
+    ...(motivation ? [{ scope: 'Motivación y disciplina', items: [{ text: motivation }] }] : []),
+  ]);
   // What people wrote about the project is data, fenced (6.2).
   return `${buildGlobalPrompt(settings, { includeGlobalContext: false })}
 
 ${wrapUntrustedContent('proyecto', `Project Name: ${project.name}
 Project Description: ${trimmedDescription}`)}
 ${renderArtifactContextBundle(bundle)}
-${motivationBlock(opts, project)}`;
+${motivation}`;
 }
 
 const motivationBlock = (opts: BasePromptOptions, project?: Project): string => {

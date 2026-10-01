@@ -39,6 +39,7 @@ import { legacyTransport, type LegacyGenerationOptions } from '../legacyTranspor
 import { C4SelfHealingError, classifyAIError } from '../../errors';
 import { generatePresentationDeck } from '../presentationDeck';
 import { renderContextGraphReinforcement } from '../../../contextGraph';
+import { captureContextBlocks } from '../../prompts/contextManifestCapture';
 import { assessDocumentArtifact } from '../../../quality';
 import { buildMinimalPresentationDeck } from '../../../presentation';
 import { extractDiagramSignals, mermaidToIR, renderDiagramSignals } from '../../../diagram';
@@ -299,7 +300,7 @@ class ArtifactGenerationEngine {
         const isDiagramTemplate = isDiagramArtifactType(template.type);
         const requestedBy = template.requestContext?.userRequest ?? template.objective;
         // The persona is handed in, never looked up: the Office imports this layer (corte 13).
-        const baseInstruction = buildBasePromptUtil(project, settings, { mode: isDiagramTemplate ? 'diagram' : 'document', businessMotivation: opts.businessMotivation, conversation: opts.conversation, deliverables: opts.deliverables, query: `${template.name}. ${requestedBy}`, artifact: previousArtifact, excludeVersionGroupId: previousArtifact?.versionGroupId });
+        const baseInstruction = buildBasePromptUtil(project, settings, { ...opts, mode: isDiagramTemplate ? 'diagram' : 'document', query: `${template.name}. ${requestedBy}`, artifact: previousArtifact, excludeVersionGroupId: previousArtifact?.versionGroupId });
         const basePrompt = opts.composePersonaInstruction?.(baseInstruction, requestedBy) ?? baseInstruction;
         // Sibling excerpts come ranked in the base prompt's context bundle (7.2b).
         const artifactsContext = buildArtifactsContextUtil(project, isDiagramTemplate ? { mode: 'diagram' } : {});
@@ -798,6 +799,7 @@ ${!isDiagramArtifact ? buildOnDemandDocumentReinforcement(template) : ''}
                 relatedArtifactIds: previousArtifact ? [previousArtifact.id] : undefined,
             },
             template.requestContext,
+            opts.onContextCaptured,
         );
 
         // Architecture Knowledge Graph reinforcement: the canonical, persisted
@@ -849,6 +851,7 @@ ${!isDiagramArtifact ? buildOnDemandDocumentReinforcement(template) : ''}
             const siblingDiagramsBlock = buildSiblingDiagramsPromptBlockUtil(project, {
                 excludeVersionGroupId: previousArtifact?.versionGroupId,
             });
+            captureContextBlocks(project, opts.onContextCaptured, { 'Diagramas relacionados': siblingDiagramsBlock });
             formatInstructions += `
 
 DOCUMENT VISUAL & STRUCTURE STANDARD (world-class deliverable, on par with TOGAF/consulting-grade outputs):
@@ -864,6 +867,7 @@ DOCUMENT VISUAL & STRUCTURE STANDARD (world-class deliverable, on par with TOGAF
 ${siblingDiagramsBlock}`;
         }
 
+        captureContextBlocks(project, opts.onContextCaptured, { Inventario: promptArtifactsContext, Solicitud: requestContextInstructions, 'Selección controlada': controlledContextPromptBlock, 'Señales del diagrama': diagramSignalsBlock, 'Grafo de conocimiento': architectureGraphBlock, Consistencia: consistencyInstructions });
         const fullPrompt = `
 ${basePrompt}
 ${promptArtifactsContext}

@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildArchitectureContextGraph,
-  buildContextPackForProject,
-  buildContextReportText,
-  buildContextUsageReport,
-  renderContextGraphReinforcement,
-} from '../../services/contextGraph';
+import type { ContextManifestRecord } from '../../lib/artifacts';
+import { buildContextPackForProject, renderContextGraphReinforcement } from '../../services/contextGraph';
 import { makeProject, makeRichProject, makeSettings } from './fixtures';
 
 const settings = makeSettings();
@@ -32,37 +27,26 @@ describe('contextGraphIntegration — prompt reinforcement', () => {
   });
 });
 
-describe('contextGraphIntegration — traceability of context used', () => {
-  it('builds a usage report explaining which context an artifact relied on', () => {
+describe('contextGraphIntegration — records the context it renders (7.5a)', () => {
+  it('captures the rendered pack, its project revision and what relevance left out', () => {
     const project = makeRichProject();
-    const pack = buildContextPackForProject(project, settings, {
-      artifactType: 'sdd-brd',
-      audience: 'mixed',
-      intent: 'Requisitos de negocio del asegurado',
-      detailLevel: 'standard',
-    });
-    const report = buildContextUsageReport(pack, 'artifact-42');
+    const records: ContextManifestRecord[] = [];
+    const query = { artifactType: 'sdd-brd' as const, audience: 'mixed' as const, intent: 'Requisitos de negocio del asegurado', detailLevel: 'standard' as const };
+    const block = renderContextGraphReinforcement(project, settings, query, undefined, (record) => records.push(record));
+    const pack = buildContextPackForProject(project, settings, query);
 
-    expect(report.packId).toBe(pack.id);
-    expect(report.projectId).toBe(project.id);
-    expect(report.artifactId).toBe('artifact-42');
-    expect(report.usedEntities.length).toBeGreaterThan(0);
-    expect(report.usedEntities.every((e) => e.citation.startsWith('[ctx:'))).toBe(true);
-    expect(report.sources.length).toBeGreaterThan(0);
-    // The report exposes ignored signals and conflicts for an honest trace.
-    expect(Array.isArray(report.ignoredSignals)).toBe(true);
-    expect(Array.isArray(report.conflicts)).toBe(true);
-    expect(Array.isArray(report.appliedConstraints)).toBe(true);
-    expect(Array.isArray(report.consideredRisks)).toBe(true);
+    expect(block).not.toBe('');
+    expect(records).toHaveLength(1);
+    expect(records[0].label).toBe('Grafo de contexto');
+    expect(records[0].sources[0]).toEqual({ id: project.id, label: project.name, revision: project.revision });
+    expect(records[0].sections[0].items[0].text).toBe(pack.markdown);
+    expect(records[0].omitted).toHaveLength(pack.ignoredSignals.length);
   });
 
-  it('renders a copy-pasteable context report', () => {
-    const project = makeRichProject();
-    const graph = buildArchitectureContextGraph(project, settings);
-    const text = buildContextReportText(graph);
-
-    expect(text).toContain('# Reporte de contexto');
-    expect(text).toContain('## Entidades principales');
-    expect(text).toContain('## Fuentes');
+  it('captures nothing when nothing was rendered', () => {
+    const records: ContextManifestRecord[] = [];
+    const empty = makeProject({ name: '', description: '', projectContext: [] });
+    renderContextGraphReinforcement(empty, settings, { artifactType: 'markdown' }, undefined, (record) => records.push(record));
+    expect(records).toHaveLength(0);
   });
 });

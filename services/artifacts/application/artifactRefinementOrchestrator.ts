@@ -440,8 +440,8 @@ const runAIRefinement = async (
   const startedAt = now();
   const warnings: string[] = [];
   const issues = issueMessages(report, 8);
-  const { project, template, settings, previousArtifact, businessMotivation, conversation, deliverables, mode } = request;
-  const call = { project, template, settings, previousArtifact, businessMotivation, conversation, deliverables, content, mode, score: report.score.value, issues };
+  const { project, template, settings, previousArtifact, businessMotivation, conversation, deliverables, onContextCaptured, mode } = request;
+  const call = { project, template, settings, previousArtifact, businessMotivation, conversation, deliverables, onContextCaptured, content, mode, score: report.score.value, issues };
   const critique = await artifactGenerationService.critiqueArtifactContent(call);
   const refined = await artifactGenerationService.refineArtifactContent({ ...call, critique });
   if (!refined.trim()) warnings.push('La IA devolvió contenido vacío durante refinamiento; se descartará por seguridad.');

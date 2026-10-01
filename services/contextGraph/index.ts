@@ -42,7 +42,5 @@ export {
   buildContextPackForProject,
   renderContextReinforcement,
   renderContextGraphReinforcement,
-  buildContextUsageReport,
-  buildContextReportText,
 } from './contextGraphIntegration';
 export type { ContextGraphBuildOptions } from './contextGraphIntegration';

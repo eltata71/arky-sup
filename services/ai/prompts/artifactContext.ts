@@ -143,6 +143,9 @@ export interface ArtifactContextItem {
   text: string;
   /** What two scopes are compared by when deciding a duplicate. */
   key: string;
+  /** Records a shortened source without keeping its discarded content. */
+  truncated?: boolean;
+  sourceId?: string;
 }
 
 export interface ArtifactContextSection {
@@ -215,7 +218,7 @@ function memoryCandidates(
     extraScore: ranking.noteBoost,
   });
   return {
-    items: ranked.map((note) => ({ text: note.rendered, key: normalizeKey(note.entry.text) })),
+    items: ranked.map((note) => ({ text: note.rendered, key: normalizeKey(note.entry.text), truncated: note.entry.text.length > ranking.noteChars })),
     available: Math.max(meaningful.length, ranked.length),
     noise: present.length - meaningful.length,
   };
@@ -244,6 +247,8 @@ function siblingCandidates(sources: ArtifactContextSources, limit: number, excer
     items: ranked.map(({ artifact }) => ({
       text: `### «${artifact.name}» (${artifact.type})\n${excerptOf(artifact.content, excerptChars)}`,
       key: `artefacto:${artifact.versionGroupId}`,
+      sourceId: artifact.id,
+      truncated: artifact.content.length > excerptChars,
     })),
     available: siblings.length,
   };

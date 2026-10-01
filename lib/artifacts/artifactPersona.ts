@@ -13,6 +13,7 @@
  */
 import type { DiagramIR } from '../diagram';
 import type { ArtifactGenerationPhaseListener } from './artifactModel';
+import type { ContextManifestRecord } from './contextManifest';
 
 export type ArtifactPersonaComposer = (baseInstruction: string, request: string) => string;
 
@@ -91,6 +92,8 @@ export interface ArtifactConversationDigest {
  * layer that passes it on.
  */
 export interface ArtifactContextPorts {
+  /** Captures exactly the context composed for this operation (7.5a). */
+  onContextCaptured?: (record: ContextManifestRecord) => void;
   /** The initiatives the project answers, with what this project moves in each. */
   businessMotivation?: readonly ArtifactBusinessMotivation[];
   /** What the conversation with the agent settled (7.3b). */
