@@ -94,8 +94,11 @@ const STOPWORDS = new Set([
 export const normalizeFidelityText = (value: string): string =>
     value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-const words = (value: string): string[] =>
+/** The words of a criterion worth looking for: five letters or more, no stop words. */
+export const fidelityTerms = (value: string): string[] =>
     normalizeFidelityText(value).split(/[^a-z0-9]+/).filter((w) => w.length >= 5 && !STOPWORDS.has(w));
+
+const words = fidelityTerms;
 
 /** Everything a reader of the diagram can see or open, as one searchable text. */
 function diagramText(ir: DiagramIR | null, content: string): string {

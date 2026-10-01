@@ -318,7 +318,8 @@ política de 7.1a, y 7.5 necesita el manifiesto que produce el bundle.
 | 7.3b — las decisiones del chat llegan a generar, refinar, criticar y al copiloto, y se ofrecen como memoria con un clic (contexto 72,3 → 78,9 %) | #128 | Fusionada |
 | 7.3c — entregables en curso y contribución del proyecto a su iniciativa (contexto 78,9 → 83,6 %) | #129 | Fusionada |
 | 7.4a — un contrato por plantilla para los 18 documentos del catálogo, una sola fuente para prompt y validador (el contrato detecta lo que falta: 0 → 100 %) | #130 | Fusionada |
-| 7.4b — parches semánticos de documento: el cambio puntual del copiloto opera sobre secciones y tablas, sin reescribir ni límite de longitud | — | En revisión |
+| 7.4b — parches semánticos de documento: el cambio puntual del copiloto opera sobre secciones y tablas, sin reescribir ni límite de longitud | #131 | Fusionada |
+| 7.4c — fidelidad de documentos contra la solicitud, una sola corrección con parche y aviso de lo que falta (banco: fidelidad 73,7 % medida antes de corregir) | — | En revisión |
 
 **El enlace artefacto → tarea no se duplicó.** Ya existe como arista canónica
 (`OfficeTask.producedArtifactId`, resuelta por `services/portfolioGraph`); un
