@@ -22,9 +22,21 @@ import {
     buildDeterministicDiagramSkeleton,
     isSkeletonFallbackContent,
 } from '../domain/deterministicArtifactFallbacks';
-import { extractIRFromArtifact } from '../../diagram';
+import { extractIRFromArtifact, mermaidDialectOf } from '../../diagram';
+import { isTextOnlyDialect } from '../../diagram/mermaidSyntax';
 import { irToReactFlow } from '../../diagram/irToReactFlow';
 import { makeTraceStep, type TraceLog } from '../domain/artifactGenerationTrace';
+
+/**
+ * A Gantt, a journey or a mindmap has no IR and needs none: Mermaid draws it
+ * from its text, which the engine already checked against Mermaid's grammar
+ * (plan de diagramas, 8.2a). Its empty IR is not a failure to replace.
+ */
+export function isDrawnFromText(content: string): boolean {
+    if (isSkeletonFallbackContent(content)) return false;
+    const body = content.match(/```mermaid\s*([\s\S]*?)```/i)?.[1] ?? content;
+    return isTextOnlyDialect(mermaidDialectOf(body));
+}
 
 export interface DiagramFallbackContext {
     project: Project;
@@ -128,7 +140,7 @@ export function ensureRenderableDiagram(
             message: 'La generación produjo o requirió un esqueleto local renderizable; revisar la traza técnica antes de continuar.',
         };
     }
-    if (isDiagramTemplate && (!ir || ir.nodes.length === 0)) {
+    if (isDiagramTemplate && (!ir || ir.nodes.length === 0) && !isDrawnFromText(resolvedContent)) {
         console.warn(
             '[artifactGeneration] Diagram artifact has no parseable IR — substituting deterministic skeleton.',
             {
@@ -205,7 +217,7 @@ export function measureRenderCounters(
     let { resolvedContent, ir, skeletonFallbackError } = draft;
     let renderCounters: { nodes: number; edges: number } | undefined;
     if (isDiagramTemplate) {
-        if (!ir || ir.nodes.length === 0) {
+        if ((!ir || ir.nodes.length === 0) && !isDrawnFromText(resolvedContent)) {
             const skeleton = buildDeterministicDiagramSkeleton(project, template);
             const skeletonIR = extractIRFromArtifact({ content: skeleton, representation: template.representation, type: template.type });
             if (skeletonIR?.nodes.length) {

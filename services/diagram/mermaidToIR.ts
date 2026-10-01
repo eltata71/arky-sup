@@ -5,9 +5,9 @@
  * hop #2) with a pure-TypeScript parser that never depends on an LLM.  The
  * parser is intentionally pragmatic — it accepts the dialects Arky 10 emits
  * today (flowchart, graph, sequenceDiagram, classDiagram, erDiagram, C4*,
- * stateDiagram) and degrades gracefully for exotica: unknown headers yield a
- * single synthesized node with the raw text as description, so downstream
- * renderers can still show *something* while surfacing a quality lint issue.
+ * stateDiagram) and degrades gracefully for exotica: an unknown header is
+ * read as a flowchart. Gantt, journey and mindmap are known and are not
+ * graphs: they yield an empty IR and are drawn from their text (8.2a).
  *
  * The parser does NOT use mermaid's own parse API because mermaid ships as a
  * heavy DOM-bound module and we only need the minimal AST.  Keeping the
@@ -821,6 +821,8 @@ export function mermaidToIRWithDiagnostics(code: string): { ir: DiagramIR; diagn
     else if (lower === 'erdiagram') parseErDiagram(body, ctx);
     else if (lower.startsWith('c4')) parseC4(body, ctx);
     else if (lower.startsWith('statediagram')) parseState(body, ctx);
+    // Not graphs: read as flowcharts they became boxes of task lines (8.2a).
+    else if (lower === 'gantt' || lower === 'journey' || lower === 'mindmap') { /* no graph to read */ }
     else {
         parseFlowchart(body, ctx);
     }

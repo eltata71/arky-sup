@@ -1,7 +1,7 @@
 {
   "id": "vida-gantt-implantacion",
   "dominio": "vida",
-  "proposito": "Gantt: el parser lo lee como un diagrama de flujo (hallazgo 4 del plan, 8.3b).",
+  "proposito": "Gantt: hasta la 8.2a se rechazaba con el parser de grafos y se guardaba como esqueleto tras tres llamadas; ahora lo juzga la gramática de Mermaid y se guarda como Gantt.",
   "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
   "proyecto": {
     "nombre": "Implantación del Nuevo Core de Vida",
@@ -26,7 +26,6 @@
   "esperado": {
     "dialecto": "gantt",
     "entidades": [],
-    "metadatos": [],
-    "defectoConocido": "8.3b"
+    "metadatos": []
   }
 }
