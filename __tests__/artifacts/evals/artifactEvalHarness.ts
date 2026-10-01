@@ -47,6 +47,7 @@ import { compileArtifact } from '../../../services/artifactCompiler';
 import { processAssistantChat } from '../../../services/agent/agentConversation';
 import { interpretArtifactModification } from '../../../services/agent/artifactModificationCall';
 import { validateArtifactContent } from '../../../services/agent/agentContentValidation';
+import { checkDocumentFidelity } from '../../../services/artifacts/application/documentFidelity';
 
 export const CORPUS_DIR = join(process.cwd(), 'tests', 'fixtures', 'artifact-evals');
 
@@ -338,6 +339,8 @@ export interface ArtifactEvalCaseResult {
     ediciones: EditResult[];
     /** Secciones omitidas a propósito → si el validador de contratos lo detectó. */
     contrato: Array<{ seccion: string; detectada: boolean }>;
+    /** Proporción de comprobaciones de fidelidad cumplidas por la respuesta (7.4c); null si no aplica. */
+    fidelidad: number | null;
 }
 
 const scopesFor = (path: EvalPath): Scope[] =>
@@ -420,7 +423,10 @@ function measureContract(testCase: ArtifactEvalCase): Array<{ seccion: string; d
 export async function runEvalCase(testCase: ArtifactEvalCase): Promise<ArtifactEvalCaseResult> {
     const caminos: PathResult[] = [];
     for (const path of testCase.caminos) caminos.push(await measurePath(testCase, path));
-    return { id: testCase.id, caminos, ediciones: measureEdits(testCase), contrato: measureContract(testCase) };
+    const fidelidad = testCase.artefacto.representacion === 'diagram' || testCase.caminos.includes('presentar')
+        ? null
+        : checkDocumentFidelity({ templateName: testCase.plantilla, content: testCase.respuestaModelo }).score;
+    return { id: testCase.id, caminos, ediciones: measureEdits(testCase), contrato: measureContract(testCase), fidelidad };
 }
 
 export function loadCorpus(): ArtifactEvalCase[] {
@@ -449,6 +455,8 @@ export interface ArtifactEvalSummary {
     conservacion: number;
     /** % de secciones omitidas que el contrato detecta. */
     contratoDetecta: number;
+    /** Media de fidelidad de las respuestas de documento: lo que la disciplina exige y está (7.4c). */
+    fidelidad: number;
     /** Cada celda camino·ámbito entregada: la línea base no puede perder ninguna. */
     celdasEntregadas: string[];
 }
@@ -477,6 +485,10 @@ export function summarize(results: ArtifactEvalCaseResult[]): ArtifactEvalSummar
         cercado: pct(onArtifact.filter((path) => path.cercado).length, onArtifact.length),
         conservacion: pct(verdicts.filter(Boolean).length, verdicts.length),
         contratoDetecta: pct(contract.filter((entry) => entry.detectada).length, contract.length),
+        fidelidad: (() => {
+            const scores = results.map((result) => result.fidelidad).filter((score): score is number => score !== null);
+            return scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 1000) / 10 : 100;
+        })(),
         celdasEntregadas: [...new Set(results.flatMap((result) => result.caminos.flatMap((path) =>
             Object.entries(path.ambitos).filter(([, hit]) => hit).map(([scope]) => `${result.id}·${path.path}·${scope}`))))].sort(),
     };
@@ -502,5 +514,6 @@ export function renderReport(results: ArtifactEvalCaseResult[], summary: Artifac
         `Por ámbito: ${perScope}`,
         `Vista completa: ${summary.vistaCompleta} % · Cercado: ${summary.cercado} %`,
         `Conservación bajo edición: ${summary.conservacion} % · El contrato detecta lo que falta: ${summary.contratoDetecta} %`,
+        `Fidelidad de los documentos (lo que su disciplina exige y está): ${summary.fidelidad} %`,
     ].join('\n');
 }

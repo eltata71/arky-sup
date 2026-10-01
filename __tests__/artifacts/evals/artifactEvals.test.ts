@@ -88,6 +88,8 @@ describe('banco de evaluación de artefactos', () => {
         for (const key of ['contextoEntregado', 'vistaCompleta', 'cercado', 'conservacion', 'contratoDetecta'] as const) {
             expect(summary[key], key).toBeGreaterThanOrEqual(before[key]);
         }
+        // 7.4c: la fidelidad entra en la línea base; una anterior que no la tenía no la exige.
+        expect(summary.fidelidad).toBeGreaterThanOrEqual(before.fidelidad ?? 0);
         for (const [path, value] of Object.entries(before.porCamino)) {
             expect(summary.porCamino[path as keyof typeof summary.porCamino] ?? 0, path).toBeGreaterThanOrEqual(value ?? 0);
         }

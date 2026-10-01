@@ -26,6 +26,8 @@ import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
 import { extractIRFromArtifact, type FidelityReport } from '../../diagram';
 import { rewriteDiagramContent } from './diagramContentRewrite';
 import { reviewDiagramFidelity } from './diagramFidelityReview';
+import { reviewDocumentFidelity } from './documentFidelityReview';
+import type { DocumentFidelityReport } from './documentFidelity';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
 import { irToReactFlow } from '../../diagram/irToReactFlow';
 import {
@@ -92,8 +94,8 @@ export interface ArtifactGenerationRunResult {
     persistedEnvelope: ReturnType<typeof normalizeArtifactEnvelope>;
     /** Non-null when a deterministic skeleton stood in for the AI output. */
     skeletonFallbackError: DiagramErrorRecord | null;
-    /** Does the diagram answer the request? `null` for non-diagram artifacts (6.3). */
-    fidelity: FidelityReport | null;
+    /** Does it answer the request? A diagram's (6.3) or a document's (7.4c) check. */
+    fidelity: FidelityReport | DocumentFidelityReport | null;
 }
 
 export async function runArtifactGeneration({
@@ -402,8 +404,9 @@ export async function runArtifactGeneration({
 
     // From here on, persist `draft.resolvedContent` (skeleton when AI failed,
     // original/refined content otherwise) and the matching `draft.ir`.
-    const persistedContent = draft.resolvedContent;
-    const fidelity = isDiagramTemplate ? reviewDiagramFidelity(template, persistedContent, draft.ir, Boolean(draft.skeletonFallbackError), modelOutput.degradations) : null;
+    const documentFidelity = await reviewDocumentFidelity({ template, content: draft.resolvedContent, project, settings }); // 7.4c
+    const persistedContent = documentFidelity?.content ?? draft.resolvedContent;
+    const fidelity = isDiagramTemplate ? reviewDiagramFidelity(template, persistedContent, draft.ir, Boolean(draft.skeletonFallbackError), modelOutput.degradations) : documentFidelity;
     if (fidelity) {
         for (const step of fidelity.steps) (step.status === 'warning' ? traceErrors : traceDecisions).push(step);
         if (fidelity.warning) onWarning?.(fidelity.warning);

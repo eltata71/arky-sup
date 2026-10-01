@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-09-30",
+  "fecha": "2026-10-01",
   "actual": {
     "contextoEntregado": 83.6,
     "porCamino": {
@@ -28,6 +28,7 @@
     "cercado": 100,
     "conservacion": 100,
     "contratoDetecta": 100,
+    "fidelidad": 73.7,
     "celdasEntregadas": [
       "salud-adr-autorizacion-previa·copiloto·agenteBase",
       "salud-adr-autorizacion-previa·copiloto·capturaInicial",
