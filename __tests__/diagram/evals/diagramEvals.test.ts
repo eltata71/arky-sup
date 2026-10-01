@@ -17,6 +17,7 @@ import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
     CORPUS_DIR,
+    INTEGRITY_COUNTERS,
     loadCorpus,
     renderReport,
     runEvalCase,
@@ -61,8 +62,22 @@ describe('banco de evaluación de diagramas', () => {
         for (const c of corpus) expect(c.origenRespuesta, c.id).toMatch(/redactada-a-mano|capturada/);
     });
 
+    // Plan de diagramas 8.0a: ningún tipo de diagrama queda sin caso.
+    it('cubre cada tipo de diagrama del producto', () => {
+        expect(corpus.length).toBeGreaterThanOrEqual(22);
+        const types = new Set(corpus.map((c) => c.plantilla.tipo));
+        for (const type of [
+            'mermaid-c4-context', 'mermaid-c4-container', 'mermaid-c4-component', 'mermaid-c4-deployment',
+            'mermaid-graph', 'mermaid-sequence', 'mermaid-erd', 'mermaid-state', 'mermaid-gantt',
+            'react-flow-graph', 'hybrid-text-diagram',
+        ]) expect(types.has(type as never), type).toBe(true);
+        for (const c of corpus.filter((x) => x.esperado.defectoConocido)) {
+            expect(c.esperado.defectoConocido, c.id).toMatch(/^8\.\d[a-d]?$/);
+        }
+    });
+
     it('no llama al modelo más de una vez por caso cuando la respuesta es válida', () => {
-        for (const r of results.filter((x) => !x.degradado)) expect(r.llamadasModelo, r.id).toBe(1);
+        for (const r of results.filter((x) => !x.degradado && !x.defectoConocido)) expect(r.llamadasModelo, r.id).toBe(1);
     });
 
     // Plan de diagramas 6.3: lo diseñado para degradarse se le dice al usuario.
@@ -147,7 +162,7 @@ describe('banco de evaluación de diagramas', () => {
         expect(r.contradicciones).toEqual([]);
     });
 
-    it.each(corpus.filter((c) => !c.plantilla.tipo.startsWith('mermaid-c4-') && !c.esperado.degradado).map((c) => c.id))(
+    it.each(corpus.filter((c) => !c.plantilla.tipo.startsWith('mermaid-c4-') && !c.esperado.degradado && !c.esperado.defectoConocido).map((c) => c.id))(
         '%s conserva su dialecto y las entidades pedidas',
         (id) => {
             const r = resultOf(id);
@@ -174,6 +189,9 @@ describe('banco de evaluación de diagramas', () => {
             expect(summary[key], key).toBeGreaterThanOrEqual(actual[key]);
         }
         expect(summary.tasaEsqueleto).toBeLessThanOrEqual(actual.tasaEsqueleto);
+        // 8.0b: lo que el pipeline cambia por su cuenta y lo que rompe una edición en el lienzo.
+        for (const key of INTEGRITY_COUNTERS) expect(summary[key], key).toBeLessThanOrEqual(actual[key]);
+        expect(summary.dialectoTrasEdicion).toBeGreaterThanOrEqual(actual.dialectoTrasEdicion);
         expect(summary.casosConContradicciones).toBeLessThanOrEqual(actual.casosConContradicciones);
         // La puntuación la calcula un motor heurístico que evoluciona por su
         // cuenta; se tolera un punto para no convertir cada ajuste suyo en un

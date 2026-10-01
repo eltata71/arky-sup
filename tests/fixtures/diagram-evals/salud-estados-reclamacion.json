@@ -1,0 +1,51 @@
+{
+  "id": "salud-estados-reclamacion",
+  "dominio": "salud",
+  "proposito": "Diagrama de estados: hasta la 8.0 ningún caso del banco lo cubría.",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Ciclo de Vida de Reclamaciones",
+    "descripcion": "Estados por los que pasa una reclamación médica.",
+    "contexto": [
+      "Una reclamación puede quedar pendiente de información y volver a revisión",
+      "Las reclamaciones rechazadas pueden apelarse"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Estados de la Reclamación",
+    "tipo": "mermaid-state",
+    "objetivo": "Modelar los estados de una reclamación médica y sus transiciones.",
+    "conceptosClave": [
+      {
+        "term": "Adjudicación",
+        "definition": "Decisión sobre el pago de la reclamación"
+      }
+    ]
+  },
+  "respuestaModelo": "stateDiagram-v2\n    [*] --> Recibida\n    Recibida --> EnRevision : Valida elegibilidad\n    EnRevision --> PendienteInformacion : Solicita documentos\n    PendienteInformacion --> EnRevision : Recibe documentos\n    EnRevision --> Aprobada : Adjudica\n    EnRevision --> Rechazada : Deniega\n    Rechazada --> EnApelacion : Asegurado apela\n    EnApelacion --> Aprobada : Revierte decisión\n    Aprobada --> Pagada : Liquida pago\n    Pagada --> [*]",
+  "esperado": {
+    "dialecto": "stateDiagram-v2",
+    "entidades": [
+      [
+        "Recibida"
+      ],
+      [
+        "EnRevision",
+        "En Revision"
+      ],
+      [
+        "PendienteInformacion"
+      ],
+      [
+        "Aprobada"
+      ],
+      [
+        "Rechazada"
+      ],
+      [
+        "Pagada"
+      ]
+    ],
+    "metadatos": []
+  }
+}

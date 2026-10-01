@@ -246,3 +246,7 @@ Actualizar esta tabla en la PR de cada tarea.
 | 6.3 Verificar y corregir, ola 3 | Hecha: veredicto de fidelidad en cada generación con aviso al usuario, una corrección por parche en C4, rechazo del modelo sin reintento y con su motivo, caída de notación avisada, esqueletos sin nombres inventados | #115 |
 | 6.4 Dominio de seguros y salida estructurada, ola 4 | Hecha: paquetes de salud y vida como fuente única de prompt y validador, validador de vida, lectura tipada de la respuesta del modelo con descartes informados | #116 |
 | 6.5 Motivación en todos los caminos y puntuación sin sesgo, ola 5 | Hecha: motivación en agente, Oficina y SDD; ER con relaciones; los diagramas dejan de ser juzgados como documentos | #117 |
+
+**Fase 8** (revisión del 2026-10-01: integridad tras la respuesta del modelo,
+presentación fiel a cada notación y medición honesta) continúa en
+`docs/plan-diagramas-fase-8.md`, con su propia tabla de seguimiento.

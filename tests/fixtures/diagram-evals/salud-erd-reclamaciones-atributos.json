@@ -1,0 +1,44 @@
+{
+  "id": "salud-erd-reclamaciones-atributos",
+  "dominio": "salud",
+  "proposito": "ERD con atributos PK/FK: el lienzo los descarta y la puerta añade «· JDBC» a sus relaciones (8.1b, 8.3b).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Modelo de Datos de Reclamaciones",
+    "descripcion": "Entidades del dominio de reclamaciones médicas.",
+    "contexto": [
+      "Cada reclamación pertenece a un asegurado y tiene una o varias líneas",
+      "Cada línea referencia un código de procedimiento"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Modelo Entidad-Relación de Reclamaciones",
+    "tipo": "mermaid-erd",
+    "objetivo": "Modelar las entidades de reclamaciones y sus claves.",
+    "conceptosClave": [
+      {
+        "term": "Línea de reclamación",
+        "definition": "Servicio facturado dentro de una reclamación"
+      }
+    ]
+  },
+  "respuestaModelo": "erDiagram\n    ASEGURADO ||--o{ RECLAMACION : presenta\n    RECLAMACION ||--|{ LINEA_RECLAMACION : contiene\n    PROCEDIMIENTO ||--o{ LINEA_RECLAMACION : codifica\n    ASEGURADO {\n        string id_asegurado PK\n        string nombre\n    }\n    RECLAMACION {\n        string id_reclamacion PK\n        string id_asegurado FK\n        date fecha_servicio\n    }\n    LINEA_RECLAMACION {\n        string id_linea PK\n        string id_reclamacion FK\n        string codigo_cpt FK\n        decimal monto\n    }\n    PROCEDIMIENTO {\n        string codigo_cpt PK\n        string descripcion\n    }",
+  "esperado": {
+    "dialecto": "erDiagram",
+    "entidades": [
+      [
+        "ASEGURADO"
+      ],
+      [
+        "RECLAMACION"
+      ],
+      [
+        "LINEA_RECLAMACION"
+      ],
+      [
+        "PROCEDIMIENTO"
+      ]
+    ],
+    "metadatos": []
+  }
+}

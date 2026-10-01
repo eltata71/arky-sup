@@ -1,0 +1,47 @@
+{
+  "id": "salud-flujo-auditor-historial",
+  "dominio": "salud",
+  "proposito": "Una persona que consulta un almacén de datos: la puerta de calidad no debe interponer un servicio que nadie pidió (8.1b).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Auditoría Médica de Reclamaciones",
+    "descripcion": "Revisión clínica de reclamaciones de alto costo.",
+    "contexto": [
+      "El auditor médico consulta el historial clínico del asegurado",
+      "Las reclamaciones de alto costo pasan por auditoría antes de pagarse"
+    ]
+  },
+  "plantilla": {
+    "nombre": "Flujo de Auditoría Médica",
+    "tipo": "mermaid-graph",
+    "objetivo": "Mostrar cómo el auditor médico revisa una reclamación de alto costo.",
+    "conceptosClave": [
+      {
+        "term": "Auditoría médica",
+        "definition": "Revisión clínica previa al pago"
+      }
+    ]
+  },
+  "respuestaModelo": "flowchart LR\n    auditor((Auditor médico)) -->|Abre caso| bandeja[Bandeja de auditoría]\n    bandeja -->|Muestra reclamación| auditor\n    auditor -->|Consulta antecedentes| historial[(Historial clínico)]\n    auditor -->|Registra dictamen| dictamen[Dictamen médico]\n    dictamen -->|Libera pago| pagos[Liquidación de reclamaciones]",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Auditor médico"
+      ],
+      [
+        "Bandeja de auditoría"
+      ],
+      [
+        "Historial clínico"
+      ],
+      [
+        "Dictamen médico"
+      ],
+      [
+        "Liquidación de reclamaciones"
+      ]
+    ],
+    "metadatos": []
+  }
+}

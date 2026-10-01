@@ -7,9 +7,9 @@ import type { DiagramAudience } from '../../lib/diagram';
 import type { ArtifactViewMode } from '../../lib/artifacts/contracts';
 import type { RenderableDiagramResolution } from '../../services/diagram';
 import { diagramGenerationService } from '../../services/ai';
-import { isDiagramAIFallbackEnabled, mermaidToReactFlow as mermaidToReactFlowDeterministic, resolveRenderableDiagram, toDiagramIR as reactFlowToIR, mergeIRMetadata } from '../../services/diagram';
+import { isDiagramAIFallbackEnabled, mermaidToReactFlow as mermaidToReactFlowDeterministic, resolveRenderableDiagram } from '../../services/diagram';
 import { hasManualLayout, irToReactFlowSmart } from '../../services/diagram/irToReactFlow';
-import { irToMermaid } from '../../services/diagram/irToMermaid';
+import { planCanvasEdit } from '../../services/artifacts/application/diagramCanvasEdit';
 import { isDiagramFlowData, type DiagramFlowData } from '../../components/artifacts/diagram/diagramFlow';
 import type { LayoutPlan } from '../../lib/layoutSelector';
 
@@ -474,26 +474,11 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
    */
   const canvasChange = useCallback((flow: DiagramFlowData) => {
     try {
-      // Phase 2: round-trip preservation. `reactFlowToIR` recovers the
-      // canvas state but the canvas does not surface every semantic field
-      // (narrative, audience, layoutPlan, group.kind, owner, compliance,
-      // …). We merge the fresh IR on top of the previously persisted one
-      // so visual edits never degrade the IR to a poor structural model.
-      const fresh = reactFlowToIR(flow.nodes, flow.edges);
-      const ir = mergeIRMetadata(fresh, artifact.ir);
-      // The edit snapshotted the current canvas geometry: from now on the
-      // persisted positions drive the layout (until an explicit re-layout).
-      ir.metadata = { ...(ir.metadata ?? {}), layoutMode: 'manual' };
-      const patch: Partial<Artifact> = { ir };
-      const isC4 = artifact.type.startsWith('mermaid-c4-');
-      if (artifact.type.startsWith('mermaid') && !isC4 && artifact.representation === 'diagram') {
-        patch.content = irToMermaid(ir);
-      }
-      updateArtifact(project.id, artifact.id, patch);
+      updateArtifact(project.id, artifact.id, planCanvasEdit(artifact, flow));
     } catch (err) {
       console.warn('[useDiagramRendering] round-trip IR update failed', err);
     }
-  }, [artifact.id, artifact.type, artifact.representation, artifact.ir, project.id, updateArtifact]);
+  }, [artifact, project.id, updateArtifact]);
 
   const applyIssueFix = useCallback((issueId: string) => {
     // Gap 8: when the canvas is rendered straight from the canonical IR
