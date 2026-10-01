@@ -6,7 +6,8 @@ import { extractIRFromArtifact, mermaidToIR, renderIRToReactFlow } from './index
 import { projectIR } from './audienceProjector';
 import { analyzeDiagramQuality, toDiagramIR } from './quality/diagramQualityService';
 import { migrateDiagramIROrSelf } from './irMigration';
-import { runDiagramQualityGate, type QualityGateChange } from './qualityGate';
+import type { QualityGateChange } from './qualityGate';
+import { repairDiagramIRSemantics } from '../../lib/semanticRoleResolver';
 import { annotateDiagramType } from './diagramTypeInference';
 
 export type RenderableSource = 'artifact.ir' | 'content.mermaid' | 'content.reactflow' | 'generated.ir' | 'fallback';
@@ -40,9 +41,9 @@ export interface RenderableDiagramResolution {
         renderNodes: number;
         validEdges: number;
     };
-    /** Changes the deterministic quality gate applied to the IR before render. */
+    /** Always empty since 8.1c: the render applies no gate. Kept for the diagnostics contract. */
     qualityGateChanges: QualityGateChange[];
-    /** True when the quality gate brought the IR to ≥ 90/100. */
+    /** True when the stored diagram scores ≥ 90/100. */
     qualityGateReachedTarget: boolean;
 }
 
@@ -294,42 +295,13 @@ export function resolveRenderableDiagram(
         };
     }
 
-    // ── Quality gate ───────────────────────────────────────────────────────
-    // Always runs in CONSERVATIVE mode (no description fill, no label
-    // humanisation, no id rewriting) so existing diagrams keep their visual
-    // identity. The pass only fixes structural issues that would prevent
-    // rendering: dangling edges, orphan nodes, missing groups, missing
-    // metadata. Errors are caught so a broken pass can never blank the
-    // canvas.
-    //
-    // Persisted IRs (`source === 'artifact.ir'`) that already declare a
-    // quality score >= 90 skip the gate entirely (already polished by the
-    // generation pipeline).
-    const skipGate = source === 'artifact.ir'
-        && (baseIR.metadata?.qualityReview?.score ?? 0) >= 90;
-    let gateResult: ReturnType<typeof runDiagramQualityGate> | null = null;
-    if (!skipGate) {
-        try {
-            const candidate = runDiagramQualityGate(baseIR, {
-                artifact: { name: artifact.id, type: artifact.type, audience: options.audience },
-                audience: options.audience,
-                targetScore: 90,
-                maxPasses: 1,
-                aggressive: false,
-            });
-            // Defensive: never let the gate strip nodes from the IR.
-            if (candidate.ir.nodes.length >= baseIR.nodes.length) {
-                gateResult = candidate;
-                baseIR = candidate.ir;
-            } else {
-                warnings.push('Quality gate produjo menos nodos; usando IR base.');
-            }
-        } catch (err) {
-            // Quality-gate exceptions must never blank the canvas. Log and
-            // keep the original IR so the user sees the diagram regardless.
-            console.warn('[resolveRenderableDiagram] quality gate threw; using base IR', err);
-        }
-    }
+    // ── What is drawn is what is stored (plan de diagramas, 8.1c) ──────────
+    // The quality gate used to run here on every render, so the canvas could
+    // show relations, groups or labels the artifact did not contain —and,
+    // until 8.1a, a canvas edit saved them. Only the semantic classification
+    // stays: it decides icons and shapes, never content, and older stored IRs
+    // predate it. Dangling edges and blank labels are `sanitizeIR`'s job.
+    baseIR = repairDiagramIRSemantics(baseIR, { diagramKind: baseIR.metadata?.sourceFormat }).ir;
 
     const projected = sanitizeIR(projectIR(baseIR, options.audience));
     let renderIR = projected;
@@ -381,7 +353,7 @@ export function resolveRenderableDiagram(
                 renderNodes: placeholderRender.nodes.length,
                 validEdges: placeholder.edges.length,
             },
-            qualityGateChanges: gateResult?.changes ?? [],
+            qualityGateChanges: [],
             qualityGateReachedTarget: false,
         };
     }
@@ -404,7 +376,7 @@ export function resolveRenderableDiagram(
             renderNodes,
             validEdges,
         },
-        qualityGateChanges: gateResult?.changes ?? [],
-        qualityGateReachedTarget: gateResult?.reachedTarget ?? quality.score >= 90,
+        qualityGateChanges: [],
+        qualityGateReachedTarget: quality.score >= 90,
     };
 }
