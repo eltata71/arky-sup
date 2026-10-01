@@ -142,8 +142,11 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
 
   // Phase 2: async ELK pass. Kicks off once we have a stable IR with at
   // least one node and replaces the synchronous dagre positions when it
-  // resolves. Failures are swallowed — the canvas keeps the dagre render
-  // so the user always sees something.
+  // resolves. The plan it picks stays in memory (`layoutPlan`): opening an
+  // artifact never writes to it (plan de diagramas, 8.1d) — only a person's
+  // explicit choice is stored, through `applyLayoutOverride`. Failures are
+  // swallowed — the canvas keeps the dagre render so the user always sees
+  // something.
   //
   // Disabled when the IR comes from the placeholder fallback (we don't
   // want to waste a layout pass on the warning card) or when the env flag
@@ -180,7 +183,6 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
           // positions: the dagre result we already render IS the plan.
           setLayoutPlan(result.plan);
           setElkPositions(null);
-          persistLayoutPlan(result.plan);
           return;
         }
         const positions = new Map<string, { x: number; y: number }>();
@@ -197,7 +199,6 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
         }
         setLayoutPlan(result.plan);
         setElkPositions(positions);
-        persistLayoutPlan(result.plan);
       } catch (err) {
         // ELK can fail in browsers without WASM support, in jsdom or when
         // the bundle was tree-shaken out. The synchronous dagre render is
@@ -213,52 +214,6 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     // IR reference directly would re-run on every memoised resolve.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artifact.id, artifact.type, renderable.ir, renderable.status]);
-
-  /**
-   * Persist the layout plan on `artifact.ir.metadata.layoutPlan` so the
-   * preflight, export frame and observability panels can read it without
-   * re-running ELK. Guarded against no-op writes so we never create an
-   * infinite update loop when the plan didn't change.
-   */
-  const persistLayoutPlan = useCallback((plan: LayoutPlan) => {
-    const currentIR = artifact.ir;
-    if (!currentIR) return;
-    const previous = currentIR.metadata?.layoutPlan;
-    // Gap 3: preserve the userOverride marker across persistence so a
-    // suggestion-action choice (LR / compact / spacious) survives an ELK
-    // re-pass. Without this, every layout commit would silently strip the
-    // sticky preference back to the heuristic default.
-    const next = {
-      backend: plan.backend,
-      algorithm: plan.algorithm,
-      direction: plan.direction,
-      density: plan.density,
-      orthogonal: plan.orthogonal,
-      rationale: plan.rationale,
-      computedAt: new Date().toISOString(),
-      userOverride: plan.userOverride || previous?.userOverride || false,
-    } as const;
-    if (
-      previous
-      && previous.backend === next.backend
-      && previous.algorithm === next.algorithm
-      && previous.direction === next.direction
-      && previous.density === next.density
-      && previous.orthogonal === next.orthogonal
-      && previous.rationale === next.rationale
-      && (previous.userOverride ?? false) === next.userOverride
-    ) {
-      return; // no semantic change, skip to avoid the persist loop
-    }
-    const updatedIR = {
-      ...currentIR,
-      metadata: {
-        ...(currentIR.metadata ?? {}),
-        layoutPlan: next,
-      },
-    };
-    updateArtifact(project.id, artifact.id, { ir: updatedIR });
-  }, [artifact.id, artifact.ir, project.id, updateArtifact]);
 
   // Stabilize the reactFlow node/edge arrays: `resolveRenderableDiagram`
   // always returns fresh references. The signature includes IDs, labels,

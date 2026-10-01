@@ -100,7 +100,7 @@ export const BYTE_CEILINGS = {
   // F6-05: +18 bytes, the import path to the model-directory door instead of
   // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
   'pages/SettingsPage.tsx': 30973,
-  'hooks/artifacts/useDiagramRendering.ts': 29282, // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'hooks/artifacts/useDiagramRendering.ts': 27386, // plan diagramas 8.1d: −1 896, abrir ya no escribe el plan de layout · F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
   'services/diagram/qualityRepair.ts': 29201, // plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
   'components/LucidchartViewer.tsx': 27773,
@@ -200,7 +200,7 @@ export const CEILINGS = {
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,
   'services/diagram/qualityRepair.ts': 708, // plan diagramas 8.1b: +3, el alcance `structural`
-  'hooks/artifacts/useDiagramRendering.ts': 685,
+  'hooks/artifacts/useDiagramRendering.ts': 630, // plan diagramas 8.1d: 685 → 630
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
   'services/architectureOffice/domain/officePortfolio.ts': 680,
   'components/memory/ChatHistoryPanel.tsx': 650,
