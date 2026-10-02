@@ -279,7 +279,7 @@ export const DEEP_IMPORT_BUDGET = {
   'hooks -> services/agent': 2,
   'hooks -> services/ai': 1,
   'hooks -> services/artifacts': 3,
-  'hooks -> services/diagram': 3,
+  'hooks -> services/diagram': 2,
   'hooks -> services/export': 2,
   'pages -> services/architectureOffice': 6, // F5-02: `InitiativesPage` y `ProjectsPage` salen por hooks
   // `services (raíz) -> …` — cinco pares, 16 imports profundos — se fueron con

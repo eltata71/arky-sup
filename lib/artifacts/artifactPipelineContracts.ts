@@ -22,7 +22,7 @@ import type { ArtifactType } from '../../types';
 import type { DiagramAudience } from '../diagram';
 
 export type ArtifactIntent = 'catalog' | 'on-demand' | 'regeneration';
-export type ArtifactViewMode = 'diagram' | 'split' | 'document' | 'markdown' | 'publication' | 'excalidraw' | 'lucidchart' | 'fable' | 'table';
+export type ArtifactViewMode = 'notation' | 'diagram' | 'split' | 'document' | 'markdown' | 'publication' | 'excalidraw' | 'lucidchart' | 'fable' | 'table';
 export type ArtifactPayloadKind = 'raw' | 'markdown' | 'mermaid' | 'json' | 'react-flow' | 'excalidraw' | 'lucidchart' | 'text';
 export type ArtifactPipelineStage =
   | 'request'

@@ -144,13 +144,13 @@ export const assessPreflight = (
 /**
  * Qué vista de exportación corresponde al modo en pantalla.
  *
- * Excalidraw, Lucidchart y Fable son formas distintas de enseñar el mismo
+ * La notación nativa, Excalidraw, Lucidchart y Fable son formas distintas de enseñar el mismo
  * diagrama, así que exportan como diagrama; la vista de publicación exporta
  * como documento. Estaba escrito en una expresión ternaria anidada dentro del
  * cuerpo del componente.
  */
 export const resolveExportView = (viewMode: string): ArtifactView => {
-  if (viewMode === 'excalidraw' || viewMode === 'lucidchart' || viewMode === 'fable') return 'diagram';
+  if (viewMode === 'notation' || viewMode === 'excalidraw' || viewMode === 'lucidchart' || viewMode === 'fable') return 'diagram';
   if (viewMode === 'publication') return 'document';
   return viewMode as ArtifactView;
 };

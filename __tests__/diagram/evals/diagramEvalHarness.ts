@@ -33,6 +33,8 @@ import { legacyTransport } from '../../../services/ai/generation/legacyTransport
 import { runArtifactGeneration } from '../../../services/artifacts/application/artifactGenerationRun';
 import { isSkeletonFallbackContent } from '../../../services/artifacts/domain/deterministicArtifactFallbacks';
 import { planCanvasEdit } from '../../../services/artifacts/application/diagramCanvasEdit';
+import { getArtifactViewCapabilities } from '../../../services/artifacts/application/artifactGenerationPipeline';
+import type { ArtifactViewMode } from '../../../lib/artifacts/artifactPipelineContracts';
 import { extractIRFromArtifact, resolveRenderableDiagram } from '../../../services/diagram';
 import { checkMermaidSyntax } from '../../../services/diagram/mermaidSyntax';
 import { resolveGroupSemanticStyle } from '../../../services/diagram/groupSemantics';
@@ -115,6 +117,8 @@ export interface DiagramEvalCaseResult {
     /** `null` cuando el modelo no escribió historia. */
     historiaConservada: boolean | null;
     esqueleto: boolean;
+    /** La vista con la que se abre lo guardado, y la que corresponde a su dialecto (8.3a). */
+    vista: { inicial: ArtifactViewMode; esperada: ArtifactViewMode };
     /** Lo que dice la gramática de Mermaid del texto guardado (8.2a); `null` en React Flow. */
     sintaxis: 'valid' | 'invalid' | 'unavailable' | null;
     sintaxisError?: string;
@@ -226,6 +230,8 @@ export interface DiagramEvalSummary {
     aristasQueAtraviesanNodos: number;
     /** Fracción de textos guardados que la gramática de Mermaid acepta (8.2a). */
     sintaxisValida: number;
+    /** Fracción de casos que abren en la superficie de su dialecto guardado: notación o lienzo (8.3a). */
+    vistaFiel: number;
 }
 
 export function loadCorpus(): DiagramEvalCase[] {
@@ -264,6 +270,11 @@ export function savedDialect(content: string): string {
     }
     return '';
 }
+
+/** Secuencia, Gantt y estados no son grafos: abren en su notación; el resto, en el lienzo (8.3a). */
+const NATIVE_NOTATION_DIALECTS = new Set(['sequencediagram', 'gantt', 'statediagram', 'statediagram-v2', 'journey', 'mindmap']);
+const expectedViewFor = (dialect: string): ArtifactViewMode =>
+    NATIVE_NOTATION_DIALECTS.has(dialect.toLowerCase()) ? 'notation' : 'diagram';
 
 const dialectMatches = (saved: string, expected: string): boolean =>
     saved.toLowerCase() === expected.toLowerCase()
@@ -594,6 +605,10 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             tecnologias,
             historiaConservada,
             esqueleto,
+            vista: {
+                inicial: getArtifactViewCapabilities({ ...saved, name: testCase.id, version: 1 } as Artifact).preferredView,
+                esperada: expectedViewFor(dialectoGuardado),
+            },
             sintaxis: verdict?.status ?? null,
             ...(verdict?.status === 'invalid' ? { sintaxisError: verdict.message } : {}),
             defectoConocido: testCase.esperado.defectoConocido,
@@ -698,6 +713,7 @@ export function summarize(all: DiagramEvalCaseResult[]): DiagramEvalSummary {
             all.filter((r) => r.sintaxis === 'valid').length,
             all.filter((r) => r.sintaxis === 'valid' || r.sintaxis === 'invalid').length,
         )),
+        vistaFiel: round(ratio(all.filter((r) => r.vista.inicial === r.vista.esperada).length, all.length)),
     };
 }
 
@@ -753,6 +769,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.avisos.length ? r.avisos.join(' / ').slice(0, 140) : '—',
         r.paquetes.join(',') || '—',
         r.sintaxis === 'invalid' ? `NO: ${r.sintaxisError?.split('\n')[0]}` : r.sintaxis ?? '—',
+        r.vista.inicial === r.vista.esperada ? r.vista.inicial : `NO: ${r.vista.inicial} (debía ${r.vista.esperada})`,
         r.hallazgosDominio.join(',') || '—',
     ].join(' | '));
     const missing = results.flatMap((r) => r.contexto.filter((c) => !c.ok).map((c) => `  ${r.id}: falta ${c.que}`));
@@ -770,7 +787,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.geometria ? `${r.geometria.solapesNodos}/${r.geometria.solapesGrupos}/${r.geometria.aristasQueAtraviesanNodos}` : '—',
     ].join(' | '));
     return [
-        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | hallazgos de dominio',
+        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | vista | hallazgos de dominio',
         ...rows,
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),

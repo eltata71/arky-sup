@@ -5,6 +5,7 @@ import { ArtifactStatusBadge } from '../ArtifactStatusBadge';
 import {
   ArrowLeftIcon,
   ArrowUpTrayIcon,
+  DiagramIcon,
   DocumentTextIcon,
   LightBulbIcon,
   MagnifyingGlassIcon,
@@ -33,7 +34,11 @@ export interface ArtifactTopToolbarProps {
   onOpenDetailLinks?: () => void;
 }
 
+// «Notación» is the diagram drawn by Mermaid in its own dialect (8.3a); it
+// is offered whenever there is Mermaid text, and preferred for sequence,
+// Gantt and state diagrams, which the canvas would flatten.
 const PRIMARY_VIEWS: Array<{ value: ArtifactViewMode; label: string; icon: React.ReactNode }> = [
+  { value: 'notation', label: 'Notación', icon: <DiagramIcon className="h-3.5 w-3.5" /> },
   { value: 'diagram', label: 'Diagrama', icon: <Squares2X2Icon className="h-3.5 w-3.5" /> },
   { value: 'document', label: 'Documento', icon: <DocumentTextIcon className="h-3.5 w-3.5" /> },
   { value: 'split', label: 'Híbrido', icon: <ViewColumnsIcon className="h-3.5 w-3.5" /> },
@@ -41,7 +46,7 @@ const PRIMARY_VIEWS: Array<{ value: ArtifactViewMode; label: string; icon: React
 
 /**
  * Always-visible top toolbar of the artifact canvas. Holds only the primary
- * actions: the view switcher (Diagrama / Documento / Híbrido) and the
+ * actions: the view switcher (Notación / Diagrama / Documento / Híbrido) and the
  * Modificar (diagrams only), Sugerencias, Inspeccionar and Exportar buttons. Every secondary or
  * technical control lives in {@link ArtifactBottomToolbar}.
  */
