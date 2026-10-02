@@ -23,6 +23,7 @@ import { computeGroupSeparationOffsets } from './groupZoneSeparation';
 import { layoutGroupedIR } from './groupedDiagramLayout';
 import { attachEngineRoutes } from './edgeRoutes';
 import { assignEdgeAnchors } from './edgeHandleAssignment';
+import { c4NodePresentation } from './notationContract';
 
 export interface IRToReactFlowResult {
     nodes: Node[];
@@ -387,6 +388,7 @@ function materializeGridFallback(ir: DiagramIR): IRToReactFlowResult {
             subtitle: labelDecision.subtitle,
             fullLabel: node.label,
             labelTooltip: labelDecision.tooltip,
+            ...c4NodePresentation(ir, node),
             },
         };
     });
@@ -455,6 +457,7 @@ function buildNode(ir: DiagramIR, node: DiagramIRNode, layout: LayoutResult): No
             hierarchyLevel: hierarchy.level,
             hierarchyEmphasis: hierarchy.emphasis,
             hideByDefault: hierarchy.hideByDefault,
+            ...c4NodePresentation(ir, node), // 8.4c
         },
     };
 }

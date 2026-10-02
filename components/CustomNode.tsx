@@ -4,7 +4,7 @@ import { getNodeIcon } from './NodeIcons';
 import type { DiagramDensity, DiagramNodeData, NodeShape } from '../lib/diagram';
 import { detectSemanticRole, ELEVATION_TOKENS, focusElevation, NODE_CHROME_TOKENS, paletteFor, TYPOGRAPHY_TOKENS, type SemanticRole } from '../lib/diagramTokens';
 import { detectTechBadge } from '../lib/diagramTechBadges';
-import { detectC4Ribbon } from '../lib/diagramC4Levels';
+import { resolveNodeRibbon } from '../lib/diagramC4Levels';
 import { evaluateNodeContrast } from '../lib/colorContrast';
 import { detectBpmnElement, BPMN_PALETTE, type BpmnElement } from '../lib/diagramBpmn';
 
@@ -183,14 +183,13 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
     // Pass every available semantic signal to the icon resolver so the
     // keyword matcher can still find the right glyph after we replaced the
     // raw `type` field with the human-readable category label. The icon
-    // matcher only does `string.includes(keyword)`, so concatenating the
-    // candidates is safe and inexpensive.
+    // matcher only does `string.includes(keyword)`, so concatenating is safe.
     const iconSignal = nodeData.icon
         ?? [nodeData.kind, nodeData.label, nodeData.technology, nodeData.type, nodeData.semanticType]
             .filter(Boolean)
             .join(' ');
     const icon = getNodeIcon(iconSignal, 5);
-    const c4Ribbon = detectC4Ribbon(nodeData.kind ?? nodeData.type);
+    const c4Ribbon = resolveNodeRibbon(nodeData.kind ?? nodeData.type, nodeData.stereotype);
     const techBadge = detectTechBadge(
         nodeData.label,
         nodeData.technology ?? nodeData.type,
@@ -518,7 +517,7 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
             {/* C4 kind ribbon */}
             {c4Ribbon && shape !== 'tab-box' && (
                 <div
-                    className={`absolute -top-2.5 left-4 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-[0.14em] shadow-sm z-20 ${c4Ribbon.bg} ${c4Ribbon.darkBg} ${c4Ribbon.text} ${c4Ribbon.darkText}`}
+                    className={`absolute -top-2.5 left-4 px-2 py-0.5 rounded-md text-[9px] font-bold ${c4Ribbon.textCase} shadow-sm z-20 ${c4Ribbon.bg} ${c4Ribbon.darkBg} ${c4Ribbon.text} ${c4Ribbon.darkText}`}
                 >
                     {c4Ribbon.label}
                 </div>

@@ -53,6 +53,14 @@ export interface ArtifactQualityScore {
   tier: ArtifactQualityTier;
   /** Friendly one-liner describing the tier. */
   summary: string;
+  /**
+   * Why the profile could not measure this artifact (plan de diagramas,
+   * 8.4c). A Gantt, a journey or a mindmap has no graph: the diagram profile
+   * has nothing to read and its source is not prose. `value` is then the
+   * profile's neutral default, never a finding — nothing may report it as a
+   * score or act on it.
+   */
+  unmeasured?: string;
 }
 
 export interface ArtifactQualityIssue {

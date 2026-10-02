@@ -364,7 +364,8 @@ export async function runArtifactGeneration({
         if (refinement.warnings.length > 0) {
             traceErrors.push(makeTraceStep('refinement', 'warning', 'Refinamiento completado con advertencias observables.', refinement.warnings.join(' | ').slice(0, 800)));
         }
-        qualityGateSummary = {
+        // 8.4c: an unmeasured report is not a score; the trace carries none.
+        if (!refinement.qualityReport?.score.unmeasured) qualityGateSummary = {
             ...(qualityGateSummary ?? {}),
             score: refinement.finalScore,
             reachedTarget: refinement.finalScore >= (template.requestContext ? (isDiagramTemplate ? 92 : 90) : (isDiagramTemplate ? 90 : 85)),

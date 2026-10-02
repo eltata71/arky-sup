@@ -49,7 +49,8 @@ export interface CanvasExportDeps {
     };
     fitView: (options?: { padding?: number; duration?: number }) => unknown;
     canvasBg: { bg: string };
-    presentation?: { ir?: DiagramIR } | null;
+    /** `title` is the artifact's name: the frame's title when the IR carries none (8.4c). */
+    presentation?: { ir?: DiagramIR; title?: string } | null;
     isDark: boolean;
 }
 
@@ -167,7 +168,7 @@ export interface CanvasExportDeps {
                 // contract is preserved. Skipped entirely when the caller
                 // disabled the frame from the export modal.
                 if (wantFrame && presentation?.ir) {
-                    const metadata = defaultFrameMetadataFromIR(presentation.ir, { isDark });
+                    const metadata = defaultFrameMetadataFromIR(presentation.ir, { isDark, fallbackTitle: presentation.title });
                     // Honour the legend toggle: when the user disabled the
                     // legend we drop it from the frame metadata so the
                     // footer stays minimal (date + confidentiality only).

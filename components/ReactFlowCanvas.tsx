@@ -22,7 +22,6 @@ import { XMarkIcon, ChevronDownIcon, ArrowUturnLeftIcon, ArrowPathIcon, Viewfind
 import { Dropdown, type DropdownItem } from './ui/Dropdown';
 import { CANVAS_BACKGROUND, DIAGRAM_SNAP_GRID, MARKER_TOKENS } from '../lib/diagramTokens';
 import type { DiagramDensity, DiagramIR, DiagramTheme } from '../lib/diagram';
-import type { EdgeSemanticType, NodeSemanticType } from '../lib/diagramCategoryLabels';
 import { EdgeInspector, NodeInspector } from './diagram/DiagramInspectorSection';
 import { applySmartFit } from '../services/diagram/smartFit';
 import { computeSmartViewportDecision } from '../services/diagram/smartViewportFit';
@@ -51,6 +50,7 @@ import {
 import {
     AUTO_MINIMAP_THRESHOLD,
     DiagramLegend,
+    buildLegendData,
     GroupZoneNode,
     NODE_HEIGHT,
     NODE_WIDTH,
@@ -382,25 +382,7 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
     // Compute the legend rows from the types actually present on the canvas
     // so the legend never advertises categories the user can't see. Keeps a
     // stable reference so the legend doesn't re-render on hover / pan.
-    const legendData = useMemo<{ nodeTypes: NodeSemanticType[]; edgeRelations: string[]; edgeTypes: EdgeSemanticType[] }>(() => {
-        const nodeTypes = new Set<NodeSemanticType>();
-        for (const node of nodes) {
-            const data = (node.data ?? {}) as { semanticType?: NodeSemanticType };
-            if (data.semanticType) nodeTypes.add(data.semanticType);
-        }
-        const edgeRelations = new Set<string>();
-        const edgeTypes = new Set<EdgeSemanticType>();
-        for (const edge of edges) {
-            const data = (edge.data ?? {}) as { edgeType?: string; semanticType?: EdgeSemanticType };
-            edgeRelations.add(data.edgeType ?? 'default');
-            if (data.semanticType) edgeTypes.add(data.semanticType);
-        }
-        return {
-            nodeTypes: Array.from(nodeTypes),
-            edgeRelations: Array.from(edgeRelations),
-            edgeTypes: Array.from(edgeTypes),
-        };
-    }, [nodes, edges]);
+    const legendData = useMemo(() => buildLegendData(nodes, edges), [nodes, edges]);
 
     // Group-kind hints lifted from the IR: maps `group.label` → semantic
     // kind so the renderer can paint each boundary with its semantic

@@ -22,9 +22,12 @@ const TIER_CLASSES: Record<string, string> = {
 export const ArtifactQualityBadge: React.FC<ArtifactQualityBadgeProps> = ({ score, onClick, compact }) => {
   const cls = TIER_CLASSES[score.tier];
   const label = tierLabel(score.tier);
-  const content = compact
-    ? `${score.value}/100`
-    : `Calidad ${score.value}/100 · ${label}`;
+  // 8.4c: an unmeasured artifact shows no figure — a neutral default is not a score.
+  const content = score.unmeasured
+    ? (compact ? 'Sin medir' : 'Calidad: sin medir')
+    : compact
+      ? `${score.value}/100`
+      : `Calidad ${score.value}/100 · ${label}`;
   if (!onClick) {
     return (
       <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold ${cls}`}>

@@ -153,7 +153,12 @@ export const buildArtifactQualityReport = (artifact: Artifact): ArtifactQualityR
   // Mermaid source is not prose: judging it as a document charged every
   // diagram for missing headings, and the dialects with the least prose in
   // their source (ERD, sequence) most.
-  const contentIsDiagramSource = Boolean(diagram) && artifact.representation === 'diagram';
+  // A diagram drawn from text (Gantt, journey, mindmap) has no IR: there is
+  // no graph to score and its source is not prose either (8.4c).
+  const unmeasured = !diagram && artifact.representation === 'diagram' && profile.family.startsWith('diagram')
+    ? 'El diagrama no tiene un grafo guardado (un Gantt, un journey o un mindmap no lo tienen): el perfil de diagramas no tiene qué medir.'
+    : undefined;
+  const contentIsDiagramSource = (Boolean(diagram) || Boolean(unmeasured)) && artifact.representation === 'diagram';
   const allIssues: ArtifactQualityIssue[] = [...(contentIsDiagramSource ? [] : doc.issues), ...(diag?.issues ?? [])];
   const baseScore = weightedAverage(dimensions);
   const penalty = penaltyForIssues(allIssues);
@@ -168,11 +173,9 @@ export const buildArtifactQualityReport = (artifact: Artifact): ArtifactQualityR
   const overallScope = diagram && artifact.content.trim() ? 'hybrid'
     : diagram ? 'diagram'
     : 'document';
-  const score: ArtifactQualityScore = {
-    value: rawScore,
-    tier,
-    summary: `${tierLabel(tier)} · ${tierSummary(tier, overallScope)}`,
-  };
+  const score: ArtifactQualityScore = unmeasured
+    ? { value: rawScore, tier, summary: `Sin medir · ${unmeasured}`, unmeasured }
+    : { value: rawScore, tier, summary: `${tierLabel(tier)} · ${tierSummary(tier, overallScope)}` };
 
   const sortedIssues = [...allIssues].sort((a, b) => {
     const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 } as const;

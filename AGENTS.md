@@ -540,7 +540,12 @@ Reglas que no se negocian al trabajar aquí:
     preparación técnica de una secuencia, un ERD o un diagrama de estados leen
     `DiagramIR.notation` (`services/diagram/quality/dialectScoring.ts`), nunca
     grupos ni protocolos; *geometría* puntúa las posiciones reales sólo cuando
-    el lienzo las midió. El banco
+    el lienzo las midió; un diagrama sin IR (Gantt) sale «sin medir»
+    (`ArtifactQualityScore.unmeasured`), nunca con una cifra por defecto. **Y
+    un C4 presenta su notación en todas partes** (8.4c): título, leyenda de
+    tipos de elemento y estereotipo por nodo salen de
+    `services/diagram/notationContract.ts` —sobre `c4MacroFor`, la macro del
+    texto C4— para el lienzo y la exportación por igual. El banco
     `diagram-evals` (`npm run eval:diagrams`) lo mide contra `linea-base.json`,
     que sólo puede mejorar. Ver *A diagram keeps its dialect* en `CLAUDE.md`.
     **Y todo camino de diagrama recibe el mismo contexto** (6.2):

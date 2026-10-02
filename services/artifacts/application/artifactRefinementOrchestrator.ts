@@ -518,6 +518,11 @@ export const refineArtifactBeforePersistence = async (request: ArtifactRefinemen
     meta: { operationId: request.operationId, score: initialReport.score.value, mode: request.mode },
   });
 
+  if (initialReport.score.unmeasured) { // 8.4c: no signal to refine on
+    diagnostics.push(traceStep('skipped', 'refinement.unmeasured', initialReport.score.unmeasured));
+    return baseResult({ acceptanceReason: 'Sin medida: no hay señal sobre la que refinar.' });
+  }
+
   if (!isArtifactRefinementEnabled()) {
     diagnostics.push(traceStep('skipped', 'refinement.skipped', 'Feature flag VITE_ARTIFACT_REFINEMENT_ENABLED deshabilitado.'));
     return baseResult({ acceptanceReason: 'Refinamiento deshabilitado por feature flag.' });
