@@ -11,6 +11,7 @@ import { buildArtifactQualityReport } from '../../quality/artifactQualityService
 import type { ArtifactQualityDimension, ArtifactQualityReport } from '../../quality';
 import { buildArtifactExportabilityState } from '../../quality/artifactQualityGateService';
 import { extractIRFromArtifact, mergeIRMetadata } from '../../diagram';
+import { describeFidelityLoss } from './diagramFidelityReview';
 import { rewriteDiagramContent } from './diagramContentRewrite';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
 import { irToReactFlow } from '../../diagram/irToReactFlow';
@@ -368,6 +369,10 @@ export const isRefinedCandidateSafe = (candidateContent: string, context: Candid
     if (!assertRenderableDiagram(candidateIR)) {
       return { ok: false, reason: 'La mejora propuesta no pasa validación ReactFlow.', envelope, ir: candidateIR, warnings };
     }
+    // Compare the IR we persist, including semantic metadata absent from text.
+    candidateIR = mergeIRMetadata(candidateIR, context.baselineIR);
+    const lost = describeFidelityLoss(context.template, context.baselineContent, context.baselineIR, candidateContent, candidateIR);
+    if (lost) return { ok: false, reason: lost, envelope, ir: candidateIR, warnings };
   }
 
   if (context.mode === 'hybrid' && !hasSingleMermaidBlock(candidateContent)) {

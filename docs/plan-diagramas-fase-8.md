@@ -109,7 +109,8 @@ llamadas: queda marcado `defectoConocido: 8.3b` y entra en los agregados.
 | 8.1b Reparar ≠ proponer | Hecha (#140): alcance `structural` por defecto y `full` sólo desde «Auto-mejora»; la traza lista lo propuesto y no aplicado. Banco: inventados, grupos, aristas alteradas e inventadas y descripciones sintéticas → 0; calidad media 75,3 → 72,9 a propósito (la rúbrica pagaba las invenciones, 8.4a) | #140 |
 | 8.1c Render = guardado | Hecha (#141): el render ya no corre la puerta; sólo la clasificación semántica de tipos (iconos y formas), y `renderShowsStored.test.ts` lo fija | #141 |
 | 8.1d Abrir no escribe | Hecha (#141): el plan de ELK queda en memoria (`layoutPlan`); sólo `applyLayoutOverride`, la elección de una persona, se guarda | #141 |
-| 8.2a Juez sintáctico | Hecha: `checkMermaidSyntax` (gramática de Mermaid, diferida) juzga el texto en el motor y en la compuerta de renderabilidad; el reintento recibe el error real; Gantt, journey y mindmap no se leen como grafos. Banco en jsdom: el Gantt se guarda como Gantt, esqueletos 4,8 % → 0, dialecto 95,2 % → 100 %, fidelidad 0,877 → 0,93 | (esta PR) |
-| 8.2b–d | Pendiente | — |
+| 8.2a Juez sintáctico | Hecha: `checkMermaidSyntax` (gramática de Mermaid, diferida) juzga el texto en el motor y en la compuerta de renderabilidad; el reintento recibe el error real; Gantt, journey y mindmap no se leen como grafos. Banco en jsdom: el Gantt se guarda como Gantt, esqueletos 4,8 % → 0, dialecto 95,2 % → 100 %, fidelidad 0,877 → 0,93 | #142 |
+| 8.2d Refinamiento fiel | Hecha: `isRefinedCandidateSafe` rechaza un candidato que deja de cumplir algo que se cumplía (`fidelityLosses`), aunque puntúe más; compara el IR con los metadatos que persistirá y el banco fija un caso que pierde un criterio. La lectura de la solicitud es una sola (`diagramFidelityReport`). | (esta PR) |
+| 8.2b–c | Pendiente | — |
 | 8.3a–d | Pendiente | — |
 | 8.4a–c | Pendiente | — |

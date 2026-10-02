@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { DiagramIR } from '../../lib/diagram';
-import { checkRequestFidelity, requestedNames } from '../../services/diagram/requestFidelity';
+import { checkRequestFidelity, fidelityLosses, requestedNames, type FidelityCheck } from '../../services/diagram/requestFidelity';
 
 const ir: DiagramIR = {
     nodes: [
@@ -70,5 +70,29 @@ describe('checkRequestFidelity', () => {
 
     it('sin nada que comprobar no inventa una nota', () => {
         expect(checkRequestFidelity({ artifactType: 'react-flow-graph', content: '{}', ir: null }).score).toBeNull();
+    });
+});
+
+// Plan de diagramas 8.2d: lo que un cambio perdería frente a la solicitud.
+describe('fidelityLosses', () => {
+    const report = (checks: Array<[FidelityCheck['kind'], string, FidelityCheck['status']]>) => ({
+        checks: checks.map(([kind, target, status]) => ({ kind, target, status, message: target })),
+        score: null,
+        warnings: [],
+    });
+
+    it('devuelve lo que se cumplía y ya no', () => {
+        const losses = fidelityLosses(
+            report([['entity', 'Core de pólizas', 'ok'], ['criterion', 'Mostrar el pago', 'warning']]),
+            report([['entity', 'Core de pólizas', 'warning'], ['criterion', 'Mostrar el pago', 'warning']]),
+        );
+        expect(losses.map((l) => l.target)).toEqual(['Core de pólizas']);
+    });
+
+    it('lo que ya faltaba, o lo que se gana, no es una pérdida', () => {
+        expect(fidelityLosses(
+            report([['entity', 'A', 'warning']]),
+            report([['entity', 'A', 'ok'], ['audience', 'audiencia técnica', 'warning']]),
+        )).toEqual([]);
     });
 });
