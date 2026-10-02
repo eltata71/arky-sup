@@ -180,12 +180,14 @@ describe('ArtifactExportModal — configuración de imagen', () => {
     objective: 'Diagrama de referencia para tests.',
     keyConcepts: [],
     representation: 'diagram',
+    // A clean, described diagram: this suite is about the image options, and
+    // since 8.4a the rubric no longer pays for content a repair would fill in.
     ir: {
       nodes: [
-        { id: 'a', label: 'API', kind: 'service' },
-        { id: 'b', label: 'DB', kind: 'data' },
+        { id: 'a', label: 'Portal', kind: 'service', description: 'Portal de autoservicio del asegurado.' },
+        { id: 'b', label: 'API de pólizas', kind: 'service', description: 'Expone la consulta de pólizas.' },
       ],
-      edges: [{ id: 'e', source: 'a', target: 'b', label: 'lee' }],
+      edges: [{ id: 'e', source: 'a', target: 'b', label: 'Consulta pólizas', protocol: 'REST/HTTPS' }],
       groups: [],
     },
   };

@@ -28,14 +28,15 @@ import { edgeHasProtocolHint, isActionableEdgeLabel, nodeHasTechBadge } from './
  * fills that field on every diagram it touches, so the rubric was paying for
  * its own repair. Graduated credit is the fix: a written story with scenes and
  * callouts is worth full marks, a written summary most of them, and a topology
- * description the repair composed a little, because it is shown to the reader
- * and is still not an argument about the architecture.
+ * description the repair composed nothing (8.4a; it used to be worth a little).
  */
 function narrativeDepth(ir: DiagramIR): number {
     const narrative = ir.metadata?.narrative;
     if (!narrative) return 0;
     if (typeof narrative === 'string') return narrative.trim().length > 0 ? 0.3 : 0;
-    if (narrative.source === 'derived') return (narrative.summary ?? '').trim().length > 0 ? 0.3 : 0;
+    // 8.4a: a narrative the repair composed is not scored at all —
+    // `withoutDerived` drops it before the rubric runs; this is the guard.
+    if (narrative.source === 'derived') return 0;
     const hasGuidedWalk = (narrative.scenes ?? []).length > 0 || (narrative.callouts ?? []).length > 0;
     if (hasGuidedWalk) return 1;
     return (narrative.summary ?? '').trim().length > 0 ? 0.65 : 0;

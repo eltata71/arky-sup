@@ -12,7 +12,7 @@ const baseArtifact = {
 };
 
 describe('autoRepairDiagramIR', () => {
-    it('connects orphan nodes to a meaningful hub', () => {
+    it('connects orphan nodes to a meaningful hub, and the rubric still reports them (8.4a)', () => {
         const ir: DiagramIR = {
             nodes: [
                 { id: 'svc', label: 'Order Service', kind: 'service' },
@@ -27,9 +27,14 @@ describe('autoRepairDiagramIR', () => {
         expect(orphanIssue).toBeTruthy();
 
         const result = autoRepairDiagramIR(ir, { artifact: baseArtifact });
-        const after = analyzeDiagramQuality(result.ir);
-        expect(after.issues.filter((i) => i.code === 'ORPHAN_NODE')).toHaveLength(0);
         expect(result.applied.find((c) => c.code === 'ORPHAN_RECONNECTED')).toBeTruthy();
+        const added = result.ir.edges.find((e) => e.source === 'orphan');
+        expect(added).toBeTruthy();
+        // The relation is the repair's guess, not the author's: it is recorded
+        // as derived, and the orphan is still what the rubric reports.
+        expect(result.ir.metadata?.derived?.addedEdges).toContain(added!.id);
+        const after = analyzeDiagramQuality(result.ir);
+        expect(after.issues.filter((i) => i.code === 'ORPHAN_NODE')).toHaveLength(1);
     });
 
     it('replaces empty/generic edge labels with verb-driven phrases', () => {
@@ -114,7 +119,7 @@ describe('autoRepairDiagramIR', () => {
     });
 
 
-    it('splits dense existing groups to improve visual hierarchy', () => {
+    it('splits dense existing groups, without scoring itself for it (8.4a)', () => {
         const nodes = Array.from({ length: 14 }, (_, index) => ({
             id: `n${index + 1}`,
             label: `Paso ${index + 1}`,
@@ -135,7 +140,8 @@ describe('autoRepairDiagramIR', () => {
         const after = analyzeDiagramQuality(result.ir);
 
         expect(result.ir.groups.every((group) => group.nodeIds.length <= 8)).toBe(true);
-        expect(after.breakdown.jerarquiaVisual).toBeGreaterThan(before.breakdown.jerarquiaVisual);
+        expect(result.ir.metadata?.derived?.groups?.before.map((g) => g.id)).toEqual(['mega']);
+        expect(after.breakdown.jerarquiaVisual).toBe(before.breakdown.jerarquiaVisual);
         expect(result.applied.find((change) => change.code === 'DENSE_GROUP_SPLIT')).toBeTruthy();
     });
 

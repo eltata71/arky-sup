@@ -186,7 +186,11 @@ export function runDiagramQualityGate(
         // Keep the best variant we've seen.  Defence: if a pass somehow
         // regresses the score, we still return the best snapshot rather than
         // the last one.
-        if (quality.score > bestQuality.score) {
+        // A tie keeps the repaired variant: since 8.4a what a repair fills in
+        // scores nothing, so "better" would discard every repair — and
+        // «Auto-mejora» would apply none. A pass that lowers the score is still
+        // rejected.
+        if (quality.score >= bestQuality.score) {
             bestIR = working;
             bestQuality = quality;
             bestPass = pass;
