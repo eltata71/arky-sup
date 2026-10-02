@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Node } from 'reactflow';
 import type { DiagramIR } from '../../lib/diagram';
+import type { EdgeRoute } from '../../lib/edgeRoute';
 import { layoutIRWithELK } from '../../lib/elkLayoutEngine';
 import { mermaidToIR } from '../../services/diagram';
 import { irToReactFlowSmart } from '../../services/diagram/irToReactFlow';
@@ -140,6 +141,31 @@ describe('ELK jerárquico: los límites son nodos compuestos (8.3c)', () => {
                 expect(m.y).toBeGreaterThanOrEqual(box.y);
                 expect(m.x + m.width).toBeLessThanOrEqual(box.x + box.width + 0.5);
                 expect(m.y + m.height).toBeLessThanOrEqual(box.y + box.height + 0.5);
+            }
+        }
+    });
+
+    it.each(cases)('%s: cada arista lleva la ruta ortogonal de ELK y no atraviesa ningún nodo (8.3d)', async (_name, source, type) => {
+        const ir = mermaidToIR(source);
+        const result = await irToReactFlowSmart(ir, type);
+        const rects = new Map(result.nodes.map((n) => [String(n.id), rectOf(n)] as const));
+        for (const edge of result.edges) {
+            const route = (edge.data as { route?: EdgeRoute }).route;
+            expect(route, String(edge.id)).toBeDefined();
+            expect(route!.sourceAt).toEqual(result.nodes.find((n) => n.id === edge.source)!.position);
+            // Ortogonal: cada tramo es horizontal o vertical.
+            for (let i = 1; i < route!.points.length; i++) {
+                const [a, b] = [route!.points[i - 1], route!.points[i]];
+                expect(Math.abs(a.x - b.x) < 0.5 || Math.abs(a.y - b.y) < 0.5, `${String(edge.id)} tramo ${i}`).toBe(true);
+            }
+            // Ningún tramo entra en un nodo que no sea uno de sus extremos.
+            for (const [id, r] of rects) {
+                if (id === edge.source || id === edge.target) continue;
+                for (let i = 1; i < route!.points.length; i++) {
+                    const [a, b] = [route!.points[i - 1], route!.points[i]];
+                    const seg = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(a.x - b.x) || 0.01, height: Math.abs(a.y - b.y) || 0.01 };
+                    expect(overlaps(seg, r), `${String(edge.id)} atraviesa ${id}`).toBe(false);
+                }
             }
         }
     });

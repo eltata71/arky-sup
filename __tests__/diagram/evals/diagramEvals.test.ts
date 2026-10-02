@@ -148,6 +148,14 @@ describe('banco de evaluación de diagramas', () => {
         for (const r of notated) expect(r.notacionSinPerdida, `${r.id} (${r.dialectoGuardado})`).toBe(true);
     });
 
+    it('el layout final no solapa nodos ni zonas, y ninguna arista atraviesa un nodo (8.3c, 8.3d)', () => {
+        const measured = results.filter((r) => r.geometriaFinal);
+        expect(measured.length).toBeGreaterThanOrEqual(15);
+        for (const r of measured) {
+            expect(r.geometriaFinal, r.id).toMatchObject({ solapesNodos: 0, solapesGrupos: 0, aristasQueAtraviesanNodos: 0 });
+        }
+    });
+
     it('la corrección sólo gasta una llamada cuando hay hallazgos', () => {
         for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
     });

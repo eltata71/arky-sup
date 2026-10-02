@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { EdgeProps, getBezierPath, getSmoothStepPath, EdgeLabelRenderer, BaseEdge, useStore } from 'reactflow';
+import type { EdgeRoute } from '../lib/edgeRoute';
+import { useEngineRoute } from '../hooks/useEngineRoute';
 import { EDGE_CHROME_TOKENS, EDGE_TOKENS, TYPOGRAPHY_TOKENS } from '../lib/diagramTokens';
 import { BPMN_FLOW_TOKENS, detectBpmnFlowType, type BpmnFlowType } from '../lib/diagramBpmn';
 import { slotOffsetPx, type EdgeLabelSlot } from '../services/diagram/edgeLabelSlots';
@@ -89,7 +91,7 @@ export function shortenEdgeLabel(raw: string, limit = EDGE_LABEL_VISIBLE_LIMIT):
 }
 
 const CustomEdge: React.FC<EdgeProps> = ({
-    id, sourceX, sourceY, targetX, targetY,
+    id, source, target, sourceX, sourceY, targetX, targetY,
     sourcePosition, targetPosition, label, data, style,
     markerEnd, markerStart, selected,
 }) => {
@@ -126,8 +128,10 @@ const CustomEdge: React.FC<EdgeProps> = ({
         fullLabel?: string;
         labelTooltip?: string;
         labelSlot?: EdgeLabelSlot;
+        route?: EdgeRoute;
     };
     const zoom = useStore(zoomSelector);
+    const engineRoute = useEngineRoute(edgeData.route, source, target); // 8.3d
     const relation = detectEdgeType(label as string, edgeData.edgeType);
     const bpmnFlow: BpmnFlowType | null = detectBpmnFlowType({
         bpmnFlowType: edgeData.bpmnFlowType,
@@ -255,7 +259,9 @@ const CustomEdge: React.FC<EdgeProps> = ({
     // diagrams keep their friendlier feel. 'bezier' is handled by the curve
     // path below.
     const smoothStepBorderRadius = routingStyle === 'orthogonal' ? 0 : 18;
-    const [edgePath, rawLabelX, rawLabelY] = usesSmoothStep
+    const [edgePath, rawLabelX, rawLabelY] = engineRoute
+        ? [engineRoute.path, engineRoute.labelX, engineRoute.labelY]
+        : usesSmoothStep
         ? getSmoothStepPath({
             sourceX, sourceY, targetX, targetY,
             sourcePosition, targetPosition,

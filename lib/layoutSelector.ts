@@ -3,10 +3,9 @@
  * shape and artifact type.
  *
  * The selector is heuristic-based and conservative:
- *   - Sequence/state diagrams stay on dagre (the canonical pipeline already
- *     ships excellent results).
+ *   - Sequence/state diagrams → ELK layered orthogonal (8.3d).
  *   - C4 Context with a clear "central system" surrounded by people/external
- *     systems → ELK radial.
+ *     systems → ELK layered orthogonal, top to bottom (8.3d; was radial).
  *   - ERD / domain models → ELK force (organic, no spurious hierarchy).
  *   - Microservice meshes (≥ 12 nodes, several services) → ELK mrtree.
  *   - Anything else → ELK layered when ELK is available, dagre as fallback.
@@ -129,6 +128,25 @@ function applyUserOverride(plan: LayoutPlan, ir: DiagramIR): LayoutPlan {
     };
 }
 
+/**
+ * A C4 Context with a central system (plan de diagramas 8.3d). It used to be
+ * ELK `radial`, whose edges are straight lines from the hub: with seven
+ * nodes one already crossed a node and two cards overlapped. Layered and
+ * orthogonal, top to bottom, reads the way a C4 Context is drawn — people
+ * above, the system in the middle, external systems below — and every edge
+ * is routed around the nodes.
+ */
+function hubContextPlan(extraWarnings: string): LayoutPlan {
+    return {
+        backend: 'elk',
+        algorithm: 'layered',
+        direction: 'TB',
+        orthogonal: true,
+        density: 'spacious',
+        rationale: `C4 Context con sistema central → ELK layered ortogonal de arriba abajo (personas, sistema, externos; aristas rodeando los nodos).${extraWarnings}`,
+    };
+}
+
 export function selectLayoutPlan(input: LayoutSelectionInput): LayoutPlan {
     return applyUserOverride(selectLayoutPlanRaw(input), input.ir);
 }
@@ -137,32 +155,36 @@ function selectLayoutPlanRaw(input: LayoutSelectionInput): LayoutPlan {
     const { ir, artifactType } = input;
     const { policy, warnings } = resolveSemanticLayoutPolicy(ir);
 
-    // Sequence and state diagrams stick with the dagre canonical pipeline —
-    // their renderers expect the existing waypoint conventions.
-    if (artifactType === 'mermaid-sequence' || artifactType === 'mermaid-state' || artifactType === 'mermaid-gantt') {
+    // A Gantt has no graph to lay out (8.2a).
+    if (artifactType === 'mermaid-gantt') {
         return {
             backend: 'dagre',
             algorithm: 'layered',
             direction: 'LR',
             orthogonal: false,
             density: 'normal',
-            rationale: 'Diagramas secuenciales/estado conservan dagre por compatibilidad con waypoints.',
+            rationale: 'Gantt: no es un grafo; se dibuja desde su texto.',
+        };
+    }
+    // Sequence and state diagrams open in their own notation (8.3a); on the
+    // canvas they are graphs like any other, and an orthogonal ELK pass is
+    // what routes their edges around the nodes (8.3d). They stayed on dagre
+    // "for its waypoint conventions", which nothing read any more.
+    if (artifactType === 'mermaid-sequence' || artifactType === 'mermaid-state') {
+        return {
+            backend: 'elk',
+            algorithm: 'layered',
+            direction: 'LR',
+            orthogonal: true,
+            density: 'normal',
+            rationale: 'Secuencia/estados en el lienzo: ELK layered ortogonal (aristas rodeando los nodos).',
         };
     }
 
     // Semantic policy is the primary source for diagram-type layout intent.
     if (policy.diagramType !== 'generic') {
         const extraWarnings = warnings.length > 0 ? ` Advertencias: ${warnings.join(' ')}` : '';
-        if (policy.diagramType === 'c4-context' && hasRadialTopology(ir)) {
-            return {
-                backend: 'elk',
-                algorithm: 'radial',
-                direction: 'LR',
-                orthogonal: false,
-                density: 'spacious',
-                rationale: `C4 Context con sistema central → ELK radial (sistema en el centro, actores orbitando).${extraWarnings}`,
-            };
-        }
+        if (policy.diagramType === 'c4-context' && hasRadialTopology(ir)) return hubContextPlan(extraWarnings);
         return {
             backend: policy.backend,
             algorithm: policy.algorithm,
@@ -174,16 +196,7 @@ function selectLayoutPlanRaw(input: LayoutSelectionInput): LayoutPlan {
     }
 
     // C4 Context with hub topology ⇒ radial layout for instant impact.
-    if (artifactType === 'mermaid-c4-context' && hasRadialTopology(ir)) {
-        return {
-            backend: 'elk',
-            algorithm: 'radial',
-            direction: 'LR',
-            orthogonal: false,
-            density: 'spacious',
-            rationale: 'Contexto C4 con sistema central → ELK radial (sistema en el centro, actores orbitando).',
-        };
-    }
+    if (artifactType === 'mermaid-c4-context' && hasRadialTopology(ir)) return hubContextPlan('');
 
     // ERD / domain models → force layout to avoid spurious hierarchies.
     if (

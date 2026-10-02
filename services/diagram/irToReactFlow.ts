@@ -21,6 +21,7 @@ import { resolveEdgeLabelDecision, resolveNodeLabelDecision } from './labelPolic
 import { computeEdgeLabelSlots } from './edgeLabelSlots';
 import { computeGroupSeparationOffsets } from './groupZoneSeparation';
 import { layoutGroupedIR } from './groupedDiagramLayout';
+import { attachEngineRoutes } from './edgeRoutes';
 import { assignEdgeAnchors } from './edgeHandleAssignment';
 
 export interface IRToReactFlowResult {
@@ -170,9 +171,9 @@ function materializeEmptyPlaceholder(): IRToReactFlowResult {
  * Async layout-aware variant that consults the layout selector.  When the
  * selector picks ELK, we await the ELK pass; otherwise we fall back to the
  * synchronous dagre engine.  All call sites that can `await` should prefer
- * this entry point because it produces world-class layouts (radial for C4
- * Context, force for ERD, mrtree for service meshes, layered everywhere
- * else).
+ * this entry point because it produces world-class layouts (compound zones
+ * and orthogonal routes for grouped diagrams and C4 Context, force for ERD,
+ * mrtree for service meshes, layered everywhere else).
  */
 export async function irToReactFlowSmart(
     ir: DiagramIR,
@@ -196,7 +197,8 @@ export async function irToReactFlowSmart(
     // Grouped diagrams: each zone is an ELK compound node (8.3c).
     if (ir.nodes.some((n) => n.group)) {
         const grouped = await layoutGroupedIR(ir, plan, densityScale);
-        return { ...materialize(ir, grouped.layout, { separateGroups: grouped.plan.backend !== 'elk' }), plan: grouped.plan };
+        const elk = grouped.plan.backend === 'elk';
+        return { ...materialize(ir, grouped.layout, { separateGroups: !elk, routes: elk }), plan: grouped.plan };
     }
     if (plan.backend === 'elk') {
         try {
@@ -208,7 +210,7 @@ export async function irToReactFlowSmart(
                 densityScale,
                 nodeDims: (node) => estimateNodeDims(node, plan.density),
             });
-            return { ...materialize(ir, layout), plan };
+            return { ...materialize(ir, layout, { routes: plan.orthogonal && plan.algorithm === 'layered' }), plan };
         } catch (err) {
             // ELK failures (WASM not initialised, browser sandbox issues) fall
             // back to the deterministic dagre path so the canvas always renders.
@@ -235,7 +237,7 @@ export async function irToReactFlowSmart(
 function materialize(
     ir: DiagramIR,
     layout: LayoutResult,
-    opts: { separateGroups?: boolean } = {},
+    opts: { separateGroups?: boolean; routes?: boolean } = {},
 ): IRToReactFlowResult {
     let nodes: Node[] = ir.nodes.map((node) => buildNode(ir, node, layout));
     // Group-zone overlap guard: automatic layouts (dagre flat pass, ELK)
@@ -338,7 +340,9 @@ function materialize(
     });
     // Geometric anchors: each edge leaves/enters through the node side that
     // faces its counterpart, killing the hub "starburst" of long curves.
-    return { nodes, edges: assignEdgeAnchors(nodes, enrichedEdges) };
+    const anchored = assignEdgeAnchors(nodes, enrichedEdges);
+    // 8.3d: an orthogonal ELK layout keeps the routes it computed.
+    return { nodes, edges: opts.routes ? attachEngineRoutes(nodes, anchored, ir.edges, layout) : anchored };
 }
 
 /**
