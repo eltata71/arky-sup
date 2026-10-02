@@ -1,5 +1,7 @@
 /**
- * The ten scoring dimensions, their weights, and the caps.
+ * The ten scoring dimensions —eleven when the canvas measured the layout—,
+ * their weights, and the caps. Three of them read a sequence, an ERD or a
+ * state diagram in its own notation (8.4b, `dialectScoring`).
  *
  * Each dimension answers one question about the diagram and returns 0–100.
  * They are deliberately independent: a diagram can be legible and still be
@@ -19,6 +21,14 @@ import { detectSemanticRole } from '../../../lib/diagramTokens';
 // rule that flags their absence must agree on what counts as one, or the score
 // and the issue list contradict each other in the same report.
 import { edgeHasProtocolHint, isActionableEdgeLabel, nodeHasTechBadge } from './diagramLintRules';
+import type { LayoutQualityMetrics } from '../layoutQualityService';
+import {
+    dialectRichness,
+    scoreDialectHierarchy,
+    scoreDialectTechnical,
+    scoreGeometria,
+    scoringDialectOf,
+} from './dialectScoring';
 
 /**
  * How much of a story the diagram actually carries, 0–1.
@@ -74,6 +84,8 @@ export function scoreConsistenciaArquitectonica(ir: DiagramIR): number {
 }
 
 export function scoreJerarquiaVisual(ir: DiagramIR): number {
+    const dialect = scoringDialectOf(ir);
+    if (dialect !== 'graph') return scoreDialectHierarchy(ir, dialect);
     const n = ir.nodes.length || 1;
     const groupCount = ir.groups.length;
     const idealGroups = Math.max(1, Math.ceil(n / 6));
@@ -110,7 +122,12 @@ export function scoreNarrativa(ir: DiagramIR): number {
 export function scoreAtractivoVisual(ir: DiagramIR): number {
     const themed = ir.metadata?.theme ? 12 : 0;
     const densityBonus = ir.metadata?.density ? 4 : 0;
-    const groupBonus = ir.groups.length > 0 ? 10 : 0;
+    // 8.4b: a dialect without groups is rewarded for using its own notation
+    // (fragments, attributes, composite states), never for having a group.
+    const dialect = scoringDialectOf(ir);
+    const groupBonus = dialect === 'graph'
+        ? (ir.groups.length > 0 ? 10 : 0)
+        : Math.round(dialectRichness(ir, dialect) * 10);
     // Implicit palette variety derived from semantic roles actually present.
     const roleDiversity = new Set(ir.nodes.map(n => detectSemanticRole(n.label ?? '', n.kind))).size;
     const roleBonus = Math.min(20, roleDiversity * 3);
@@ -136,6 +153,8 @@ export function scorePreparacionEjecutiva(ir: DiagramIR): number {
 
 export function scorePreparacionTecnica(ir: DiagramIR): number {
     if (ir.nodes.length === 0) return 0;
+    const dialect = scoringDialectOf(ir);
+    if (dialect !== 'graph') return scoreDialectTechnical(ir, dialect);
     const describedRatio = ir.nodes.filter(n => hasText(n.description)).length / ir.nodes.length;
     const techBadgeRatio = ir.nodes.filter(nodeHasTechBadge).length / ir.nodes.length;
     const protocolRatio = ir.edges.length > 0
@@ -172,7 +191,7 @@ export function scoreMantenibilidadPipeline(ir: DiagramIR): number {
     return clamp(Math.round(score));
 }
 
-export const DIMENSION_WEIGHTS: Record<keyof DiagramScoreBreakdown, number> = {
+export const DIMENSION_WEIGHTS: Record<Exclude<keyof DiagramScoreBreakdown, 'geometria'>, number> = {
     claridadSemantica: 15,
     consistenciaArquitectonica: 12,
     jerarquiaVisual: 10,
@@ -185,8 +204,18 @@ export const DIMENSION_WEIGHTS: Record<keyof DiagramScoreBreakdown, number> = {
     mantenibilidadPipeline: 7,
 };
 
-export function buildBreakdown(ir: DiagramIR): DiagramScoreBreakdown {
+/**
+ * *Geometría* (8.4b) weighs as much as *jerarquía visual*, and only when the
+ * canvas measured the real positions: the other ten keep their proportions
+ * and the total is renormalised, so a report without geometry is not
+ * penalised for a measurement nobody could take.
+ */
+export const GEOMETRIA_WEIGHT = 10;
+
+export function buildBreakdown(ir: DiagramIR, layout?: LayoutQualityMetrics | null): DiagramScoreBreakdown {
+    const geometry = layout?.hasLayout ? { geometria: scoreGeometria(layout) } : {};
     return {
+        ...geometry,
         claridadSemantica: scoreClaridadSemantica(ir),
         consistenciaArquitectonica: scoreConsistenciaArquitectonica(ir),
         jerarquiaVisual: scoreJerarquiaVisual(ir),
@@ -200,6 +229,14 @@ export function buildBreakdown(ir: DiagramIR): DiagramScoreBreakdown {
     };
 }
 
+
+/** The weighted 0–100 total of a breakdown, with *geometría* only when it was measured. */
+export function weightedBreakdownScore(breakdown: DiagramScoreBreakdown): number {
+    const base = Object.entries(DIMENSION_WEIGHTS).reduce((acc, [k, weight]) =>
+        acc + (breakdown[k as keyof typeof DIMENSION_WEIGHTS] * weight) / 100, 0);
+    if (breakdown.geometria === undefined) return base;
+    return (base + (breakdown.geometria * GEOMETRIA_WEIGHT) / 100) * (100 / (100 + GEOMETRIA_WEIGHT));
+}
 
 export function applyQualityCaps(ir: DiagramIR, issues: DiagramLintIssue[], rawScore: number): number {
     if (ir.nodes.length === 0) return 0;

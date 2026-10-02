@@ -27,6 +27,7 @@
  */
 
 import type { DiagramIR, DiagramIREdge, DiagramIRNode } from '../../lib/diagram';
+import { notationArchetype } from './quality/dialectScoring';
 
 export type DiagramArchetype =
     | 'context'
@@ -70,17 +71,16 @@ export interface DiagramSuggestion {
 }
 
 /**
- * Heuristic detection of the archetype from the IR. Reads `metadata.title`,
- * the C4 kinds present, and the predominant `semanticType` distribution.
- *
- * Returns `'generic'` when there's no strong signal — the caller can then
- * skip archetype-specific checks and rely on the general quality rules.
+ * The archetype of the IR: its notation's, when it has one (8.4b); otherwise
+ * read from `metadata.title`, the C4 kinds and the `semanticType` mix.
+ * `'generic'` means no strong signal: only the general rules apply.
  */
 export function detectDiagramArchetype(ir: DiagramIR): DiagramArchetype {
+    const declared = notationArchetype(ir);
+    if (declared) return declared;
     const title = (ir.metadata?.title ?? '').toLowerCase();
 
-    // Title-based heuristic — wins when the user (or the AI) declared the
-    // intent explicitly. Spanish wording first (the app is primarily in ES).
+    // The title next, when it declares the intent. Spanish wording first.
     if (/(contexto|context)/.test(title) && !/conten/.test(title)) return 'context';
     if (/(contenedor|container)/.test(title)) return 'container';
     if (/(componente|component)/.test(title)) return 'component';

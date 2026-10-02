@@ -40,7 +40,7 @@ const VISUAL_GATE_BADGE: Record<'ready' | 'warnings' | 'blocked', string> = {
   blocked: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
 };
 
-// Friendly labels for the 10-dimension breakdown so the UI does not surface
+// Friendly labels for the 10-dimension breakdown (11 with geometry, 8.4b) so the UI does not surface
 // camelCase identifiers to architects.
 const DIMENSION_LABEL_ES: Record<string, string> = {
   claridadSemantica: 'Claridad semántica',
@@ -53,6 +53,7 @@ const DIMENSION_LABEL_ES: Record<string, string> = {
   preparacionTecnica: 'Preparación técnica',
   exportabilidad: 'Exportabilidad',
   mantenibilidadPipeline: 'Mantenibilidad',
+  geometria: 'Geometría del lienzo',
 };
 
 export interface DiagramQualityPanelProps {

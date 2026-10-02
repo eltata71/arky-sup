@@ -1294,6 +1294,21 @@ repaired variant on a tie, so repairs still apply; only the score stops
 rewarding them. The bench (`inflacionEstructural`, `inflacionCompleta`) holds
 both at zero. Any new repair that fills a value must call `noteDerived*`.
 
+**And each dialect is scored in its own notation** (8.4b). Three dimensions
+measured graph structure: *jerarquía visual* counted groups, *atractivo
+visual* paid ten points for having any, *preparación técnica* counted
+protocols on edges. A sequence has lifelines, an ERD attributes and
+cardinalities, a state diagram composite states — so a correct ERD lost
+points for not being an integration diagram, and a meaningless group raised
+a sequence's score. `services/diagram/quality/dialectScoring.ts` reads those
+three from `DiagramIR.notation` (`scoringDialectOf`: notation first, declared
+type next), and the notation decides the archetype before any title
+heuristic. The eleventh dimension, *geometría*, scores the canvas's real
+positions — overlaps, edges through nodes, crossings, boundary breaches — and
+exists only when the caller measured them; the total is renormalised, so a
+report without it is not penalised. The bench's `puntosPorGrupo` holds the
+group gain at zero. A Gantt has no IR, so this rubric never sees it.
+
 The generator can finally produce one: `services/ai/prompts/diagramStorySchema.ts`
 carries the structured narrative in the schema the request enforces and in the
 instructions that travel with it. (It used to print the same shape a second
