@@ -45,6 +45,7 @@ import { buildMinimalPresentationDeck } from '../../../presentation';
 import { extractDiagramSignals, renderDiagramSignals } from '../../../diagram';
 import { assessDiagramText, isRenderableDiagramText } from '../diagram/diagramTextAssessment';
 import { buildDiagramTextBrief } from '../diagram/diagramTextBrief';
+import { generateStructuredDiagramArtifactContent } from '../diagram/structuredDiagramArtifactGeneration';
 import {
     buildArchitectureKnowledgeGraphForProject,
     buildArtifactGenerationGraphContext,
@@ -265,6 +266,17 @@ class ArtifactGenerationEngine {
             }
         }
 
+        if (template.type === 'mermaid-graph' || template.type === 'react-flow-graph') {
+            try {
+                return await generateStructuredDiagramArtifactContent(project, template, settings, previousArtifact, opts);
+            } catch (err) {
+                const detail = err instanceof Error ? err.message : String(err);
+                emit({ stage: 'ai-generation', status: 'warning', message: 'Falló la ruta IR estructurada; se guardó un esqueleto.', detail });
+                opts.onDegraded?.('La generación estructurada falló y se guardó un esqueleto base.');
+                return support.deterministicDiagramSkeleton(project, template);
+            }
+        }
+
         // Presentation artefacts get their own generation path: a JSON deck
         // matching `PresentationDeck` instead of the long markdown document
         // the document path would otherwise produce. This is the fix for the
@@ -327,7 +339,7 @@ SDD Markdown Quality Standard (Skill-ready):
         const temperature = isDiagramArtifact
             ? diagramTemperature(userTemp)
             : userTemp;
-        let modelConfig: Record<string, unknown> & {
+        const modelConfig: Record<string, unknown> & {
             temperature: number;
             thinkingConfig?: { thinkingBudget: number };
             topP?: number;
@@ -350,86 +362,6 @@ SDD Markdown Quality Standard (Skill-ready):
         if (template.type.startsWith('mermaid')) {
             formatInstructions += this.getMermaidFormatInstructions(template.type);
             formatInstructions += mermaidQualityReinforcement;
-        } else if (template.type === 'react-flow-graph') {
-            formatInstructions = `Generate a valid JSON object with 'nodes' and 'edges' arrays for React Flow.
-
-NODE REQUIREMENTS:
-- type: always 'custom'
-- position: {x, y} (initial coordinates, layout engine will reposition)
-- data.label: The display name of the component
-- data.type: Technology or role keyword that determines the visual icon and color. Use SPECIFIC technology names when possible (e.g., 'PostgreSQL', 'Kafka', 'React', 'API Gateway', 'Lambda', 'Docker', 'Redis'). For actors use 'Person', 'User', 'Admin'. For databases use 'Database', 'PostgreSQL', 'MongoDB', etc.
-- data.description: Brief description of what this component does (1-2 sentences)
-- data.shape (OPTIONAL): Visual shape hint. Use 'cylinder' for databases/storage, 'hexagon' for microservices/functions, 'cloud' for cloud/external services, 'person' for actors/users, 'diamond' for gateways/routers/decisions, 'tab-box' for containers/namespaces. Default is 'rectangle'.
-- data.group (OPTIONAL): Logical zone name to group related nodes (e.g., 'Cloud Infrastructure', 'On-Premise', 'DMZ', 'Frontend Layer', 'Data Layer')
-- data.icon (OPTIONAL): Specific technology hint for icon selection (e.g., 'kafka', 'postgresql', 'kubernetes', 'react', 'nginx')
-
-EDGE REQUIREMENTS:
-- id, source, target: Required identifiers
-- label: Descriptive label for the connection (e.g., 'REST/HTTPS', 'Pub/Sub events', 'SQL queries', 'gRPC')
-- edgeType (OPTIONAL): Relationship classification. Use 'sync' for HTTP/REST/gRPC calls, 'async' for events/messages/queues, 'data-flow' for data streams/ETL, 'dependency' for imports/references. Default renders as a standard arrow.
-
-VISUAL STORYTELLING GUIDELINES:
-- Create a clear visual hierarchy: primary systems prominent, supporting systems secondary
-- Use descriptive labels on edges to show what data/commands flow between components
-- Group related nodes logically (all databases together, all frontend components together, etc.)
-- Keep every requested element and choose a readable size for the requested audience
-- Every edge should have a meaningful label describing the interaction
-
-Respond ONLY with the JSON object.` + mermaidQualityReinforcement;
-
-            // Enhanced schema with optional visual metadata
-            modelConfig = {
-                ...modelConfig,
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: 'object',
-                    properties: {
-                        nodes: {
-                            type: 'array',
-                            items: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'string' },
-                                    type: { type: 'string' },
-                                    position: {
-                                        type: 'object',
-                                        properties: { x: { type: 'number' }, y: { type: 'number' } },
-                                        required: ['x', 'y'],
-                                    },
-                                    data: {
-                                        type: 'object',
-                                        properties: {
-                                            label: { type: 'string' },
-                                            type: { type: 'string' },
-                                            description: { type: 'string' },
-                                            shape: { type: 'string' },
-                                            group: { type: 'string' },
-                                            icon: { type: 'string' }
-                                        },
-                                        required: ['label', 'type', 'description']
-                                    }
-                                },
-                                required: ['id', 'type', 'position', 'data']
-                            }
-                        },
-                        edges: {
-                            type: 'array',
-                            items: {
-                                type: 'object',
-                                properties: {
-                                    id: { type: 'string' },
-                                    source: { type: 'string' },
-                                    target: { type: 'string' },
-                                    label: { type: 'string' },
-                                    edgeType: { type: 'string' }
-                                },
-                                required: ['id', 'source', 'target']
-                            }
-                        }
-                    },
-                    required: ['nodes', 'edges']
-                }
-            };
         } else if (template.type === 'hybrid-text-diagram') {
             const tname = (template.name ?? '').toLowerCase();
             const isVSM = /flujo\s+de\s+valor|value\s+stream|vsm/.test(tname);

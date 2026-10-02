@@ -11,6 +11,10 @@
       "La decisión puede ser aceptar, aceptar con extraprima o rechazar"
     ]
   },
+  "solicitud": {
+    "texto": "Mostrar el ciclo de suscripción e incluir la «Revisión Humana» cuando el riesgo exige una decisión manual",
+    "audiencia": "technical"
+  },
   "plantilla": {
     "nombre": "Proceso de Suscripción con Evidencia",
     "tipo": "mermaid-graph",
@@ -23,6 +27,13 @@
     ]
   },
   "respuestaModelo": "flowchart TD\n    solicitud[Recibe solicitud] --> evalua[Evalúa riesgo]\n    evalua --> suficiente{¿Evidencia suficiente?}\n    suficiente -->|No| pide[Solicita evidencia médica]\n    pide -->|Llega evidencia| evalua\n    suficiente -->|Sí| decide[Emite decisión de suscripción]\n    decide -->|Acepta| emite[Emite póliza]\n    decide -->|Rechaza| notifica[Notifica rechazo]",
+  "respuestaCorreccion": {
+    "rationale": "La revisión humana solicitada debe estar en el flujo.",
+    "operations": [
+      { "op": "add-node", "node": { "id": "revision-humana", "label": "Revisión Humana", "kind": "process" } },
+      { "op": "add-edge", "edge": { "id": "e-revision", "source": "decide", "target": "revision-humana", "label": "Escala decisión" } }
+    ]
+  },
   "esperado": {
     "dialecto": "flowchart",
     "entidades": [
@@ -37,8 +48,12 @@
       ],
       [
         "Emite póliza"
+      ],
+      [
+        "Revisión Humana"
       ]
     ],
-    "metadatos": []
+    "metadatos": [],
+    "correccionAplicada": true
   }
 }

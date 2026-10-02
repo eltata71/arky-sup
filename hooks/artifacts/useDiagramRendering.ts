@@ -212,7 +212,6 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     return () => { cancelled = true; };
     // We depend on the IR identity + the artifact id; using the renderable
     // IR reference directly would re-run on every memoised resolve.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artifact.id, artifact.type, renderable.ir, renderable.status]);
 
   // Stabilize the reactFlow node/edge arrays: `resolveRenderableDiagram`

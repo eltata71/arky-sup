@@ -333,7 +333,7 @@ export function templateFor(testCase: DiagramEvalCase): ArtifactTemplate {
 // ── 8.0b: integridad, edición en el lienzo y geometría ─────────────────────
 
 /** El diagrama tal y como lo devolvió el modelo, para compararlo con lo guardado. */
-function modelIRFor(testCase: DiagramEvalCase): DiagramIR | null {
+function responseIRFor(testCase: DiagramEvalCase): DiagramIR | null {
     const response = testCase.respuestaModelo;
     let ir: DiagramIR | null;
     if (typeof response !== 'string') {
@@ -343,16 +343,22 @@ function modelIRFor(testCase: DiagramEvalCase): DiagramIR | null {
         const template = templateFor(testCase);
         ir = extractIRFromArtifact({ content: response, representation: template.representation, type: template.type });
     }
+    return ir;
+}
+
+function modelIRFor(testCase: DiagramEvalCase): DiagramIR | null {
+    const ir = responseIRFor(testCase);
     return ir ? withRecordedCorrection(ir, testCase.respuestaCorreccion) : null;
 }
 
 /** Lo que añade la corrección grabada también lo escribió el modelo: no cuenta como invención. */
 function withRecordedCorrection(ir: DiagramIR, correction: unknown): DiagramIR {
-    const operations = (correction as { operations?: Array<{ op?: string; node?: DiagramIRNode; edge?: DiagramIR['edges'][number] }> } | undefined)?.operations ?? [];
+    const operations = (correction as { operations?: Array<{ op?: string; node?: DiagramIRNode; edge?: DiagramIR['edges'][number]; edgeId?: string }> } | undefined)?.operations ?? [];
+    const removedEdges = new Set(operations.filter((o) => o.op === 'remove-edge').map((o) => o.edgeId));
     return {
         ...ir,
         nodes: [...ir.nodes, ...operations.flatMap((o) => (o.op === 'add-node' && o.node ? [o.node] : []))],
-        edges: [...ir.edges, ...operations.flatMap((o) => (o.op === 'add-edge' && o.edge ? [o.edge] : []))],
+        edges: [...ir.edges.filter((edge) => !removedEdges.has(edge.id)), ...operations.flatMap((o) => (o.op === 'add-edge' && o.edge ? [o.edge] : []))],
     };
 }
 
@@ -480,9 +486,12 @@ export function measureGeometry(
 
 /** Ejecuta un caso por el pipeline real, con el modelo sustituido por su respuesta. */
 export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEvalCaseResult> {
-    const response = typeof testCase.respuestaModelo === 'string'
-        ? testCase.respuestaModelo
-        : JSON.stringify(testCase.respuestaModelo);
+    const structured = testCase.plantilla.tipo === 'mermaid-graph' || testCase.plantilla.tipo === 'react-flow-graph';
+    const response = structured
+        ? JSON.stringify(responseIRFor(testCase))
+        : typeof testCase.respuestaModelo === 'string'
+            ? testCase.respuestaModelo
+            : JSON.stringify(testCase.respuestaModelo);
     const transport = vi.spyOn(legacyTransport, 'generateTextWithFallback').mockResolvedValue(response);
     // La corrección llega por `aiGateway`; sin respuesta grabada, falla como un
     // proveedor caído — nunca sale a la red.

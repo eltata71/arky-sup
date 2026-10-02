@@ -138,6 +138,13 @@ describe('banco de evaluación de diagramas', () => {
         for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
     });
 
+    it('la corrección única funciona en C4, flujo y React Flow', () => {
+        const corrected = corpus.filter((c) => c.esperado.correccionAplicada && resultOf(c.id).llamadasCorreccion === 1);
+        expect(new Set(corrected.map((c) => c.plantilla.tipo))).toEqual(new Set([
+            'mermaid-c4-container', 'mermaid-graph', 'react-flow-graph',
+        ]));
+    });
+
     it.each(corpus.filter((c) => c.respuestaRefinamiento).map((c) => c.id))(
         '%s rechaza un refinamiento que borra algo pedido',
         (id) => {
