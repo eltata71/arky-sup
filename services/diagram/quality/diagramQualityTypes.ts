@@ -39,6 +39,12 @@ export interface DiagramScoreBreakdown {
     preparacionTecnica: number;
     exportabilidad: number;
     mantenibilidadPipeline: number;
+    /**
+     * 8.4b: what the canvas measured when it drew the diagram — overlaps,
+     * edges through nodes, crossings, boundary breaches. Present only when
+     * the caller supplied the real positions.
+     */
+    geometria?: number;
 }
 
 export interface DiagramQualityReport {

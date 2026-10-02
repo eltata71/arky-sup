@@ -170,6 +170,12 @@ export interface DiagramEvalCaseResult {
      * calidad del diagrama.
      */
     inflacion: { estructural: number; completa: number } | null;
+    /**
+     * Cuántos puntos gana una secuencia, un ERD o un diagrama de estados
+     * guardado si se le añade un grupo sin sentido (8.4b). Su notación no
+     * tiene grupos: si la nota sube, la rúbrica lo está juzgando como grafo.
+     */
+    puntosPorGrupo: number | null;
 }
 
 /** Lo que el pipeline añadió o cambió sin que el modelo ni la persona lo pidieran. */
@@ -257,6 +263,8 @@ export interface DiagramEvalSummary {
     /** Puntos que la reparación estructural y la completa suman en todo el corpus (8.4a). */
     inflacionEstructural: number;
     inflacionCompleta: number;
+    /** Puntos que un grupo sin sentido suma a las secuencias, ERD y estados del corpus (8.4b). */
+    puntosPorGrupo: number;
     /** Fracción de textos guardados que la gramática de Mermaid acepta (8.2a). */
     sintaxisValida: number;
     /** Fracción de casos que abren en la superficie de su dialecto guardado: notación o lienzo (8.3a). */
@@ -582,6 +590,19 @@ function measureRepairInflation(modelIR: DiagramIR, type: ArtifactType): { estru
     return { estructural: gain(structural), completa: gain(full) };
 }
 
+const DIALECTS_WITHOUT_GROUPS = /^(sequenceDiagram|erDiagram|stateDiagram(-v2)?)$/;
+
+/** Lo que sube la nota al añadir un grupo que no dice nada a un dialecto sin grupos (8.4b). */
+function measureGroupGain(ir: DiagramIR, dialect: string): number | null {
+    if (!DIALECTS_WITHOUT_GROUPS.test(dialect) || ir.nodes.length < 2) return null;
+    const grouped: DiagramIR = {
+        ...ir,
+        groups: [...ir.groups, { id: 'grupo-sin-sentido', label: 'Grupo', nodeIds: ir.nodes.slice(0, 2).map((n) => n.id) }],
+    } as DiagramIR;
+    const gain = analyzeDiagramQuality(grouped).score - analyzeDiagramQuality(ir).score;
+    return Math.round(Math.max(0, gain) * 10) / 10;
+}
+
 /** Ejecuta un caso por el pipeline real, con el modelo sustituido por su respuesta. */
 export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEvalCaseResult> {
     const structured = testCase.plantilla.tipo === 'mermaid-graph' || testCase.plantilla.tipo === 'react-flow-graph';
@@ -660,6 +681,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
         const geometria = comparable ? measureGeometry(saved) : null;
         const geometriaFinal = comparable ? await measureFinalGeometry(saved) : null;
         const inflacion = comparable ? measureRepairInflation(modelIR!, testCase.plantilla.tipo) : null;
+        const puntosPorGrupo = ir && !esqueleto ? measureGroupGain(ir, dialectoGuardado) : null;
 
         const [, , firstPrompt, firstConfig] = transport.mock.calls[0] ?? [];
         const prompt = `${String((firstConfig as { systemInstruction?: string } | undefined)?.systemInstruction ?? '')}\n${String(firstPrompt ?? '')}`;
@@ -708,6 +730,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             geometria,
             geometriaFinal,
             inflacion,
+            puntosPorGrupo,
             calidad: result.generationTrace.quality?.score ?? null,
             llamadasModelo: transport.mock.calls.length,
         };
@@ -835,6 +858,7 @@ function summarizeIntegrity(results: DiagramEvalCaseResult[]) {
         aristasQueAtraviesanNodosFinal: total((r) => r.geometriaFinal?.aristasQueAtraviesanNodos ?? 0),
         inflacionEstructural: Math.round(total((r) => r.inflacion?.estructural ?? 0) * 10) / 10,
         inflacionCompleta: Math.round(total((r) => r.inflacion?.completa ?? 0) * 10) / 10,
+        puntosPorGrupo: Math.round(total((r) => r.puntosPorGrupo ?? 0) * 10) / 10,
     };
 }
 
@@ -856,6 +880,7 @@ export const INTEGRITY_COUNTERS = [
     'aristasQueAtraviesanNodosFinal',
     'inflacionEstructural',
     'inflacionCompleta',
+    'puntosPorGrupo',
 ] as const;
 
 /** Tabla legible para `npm run eval:diagrams`. */
@@ -895,6 +920,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.geometria ? `${r.geometria.solapesNodos}/${r.geometria.solapesGrupos}/${r.geometria.aristasQueAtraviesanNodos}` : '—',
         r.geometriaFinal ? `${r.geometriaFinal.motor}: ${r.geometriaFinal.solapesNodos}/${r.geometriaFinal.solapesGrupos}/${r.geometriaFinal.aristasQueAtraviesanNodos}` : '—',
         r.inflacion ? `+${r.inflacion.estructural} / +${r.inflacion.completa}` : '—',
+        r.puntosPorGrupo === null ? '—' : `+${r.puntosPorGrupo}`,
     ].join(' | '));
     return [
         'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | vista | notación sin pérdida | hallazgos de dominio',
@@ -902,7 +928,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
         'Integridad y presentación (8.0b)',
-        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos | final (motor: nodos/grupos/aristas) | inflación estructural / completa',
+        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos | final (motor: nodos/grupos/aristas) | inflación estructural / completa | puntos por un grupo sin sentido',
         ...integrityRows,
         '',
         JSON.stringify(summary, null, 2),

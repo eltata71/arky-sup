@@ -47,6 +47,7 @@ import {
     DIMENSION_WEIGHTS,
     applyQualityCaps,
     buildBreakdown,
+    weightedBreakdownScore,
     issuePenalty,
 } from '../quality/diagramScoring';
 import {
@@ -222,12 +223,8 @@ export const analyzeDiagramQuality = (
         ...c4IssuesToLints(c4Issues),
     ]);
 
-    const breakdown = buildBreakdown(diagram);
-
-    const weightedScore = Object.entries(DIMENSION_WEIGHTS).reduce((acc, [k, weight]) => {
-        const key = k as keyof DiagramScoreBreakdown;
-        return acc + ((breakdown[key] * weight) / 100);
-    }, 0);
+    const breakdown = buildBreakdown(diagram, layoutMetrics);
+    const weightedScore = weightedBreakdownScore(breakdown);
 
     const penalty = issuePenalty(issues);
     const uncappedScore = clamp(Math.round(weightedScore - penalty));
