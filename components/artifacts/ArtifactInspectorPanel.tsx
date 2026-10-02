@@ -241,7 +241,7 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
                     Reporte de calidad formal
                 </p>
                 <div className="text-4xl font-bold text-gray-900 dark:text-white tabular-nums">
-                    {score}<span className="text-lg text-gray-400">/100</span>
+                    {report.score.unmeasured ? 'Sin medir' : <>{score}<span className="text-lg text-gray-400">/100</span></>}
                 </div>
                 <div className="mt-1 flex items-center justify-center gap-2">
                     <Badge tone={tone} size="sm">{describeQualityTier(report.score.tier)}</Badge>

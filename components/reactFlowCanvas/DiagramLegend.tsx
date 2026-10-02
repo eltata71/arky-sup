@@ -3,6 +3,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { C4_BOUNDARY_LEGEND } from '../../lib/diagramC4Levels';
 import { getEdgeCategoryLabel, getNodeCategoryLabel, type EdgeSemanticType, type NodeSemanticType } from '../../lib/diagramCategoryLabels';
 
 // Diagram Legend Component
@@ -75,6 +76,48 @@ export interface LegendData {
     nodeTypes: NodeSemanticType[];
     edgeRelations: string[];
     edgeTypes: EdgeSemanticType[];
+    /**
+     * 8.4c: the C4 element types on the canvas («Contenedor», «Sistema
+     * externo»…), from the same notation contract the export frame reads.
+     * When present they replace the generic element rows: a C4 is read by
+     * its element types, and two taxonomies side by side contradict each other.
+     */
+    c4Elements?: Array<{ label: string; color: string; dash?: string }>;
+}
+
+/**
+ * The legend rows from the types actually present on the canvas, so the
+ * legend never advertises categories the user can't see. Pure: the canvas
+ * memoises it on its nodes and edges.
+ */
+export function buildLegendData(
+    nodes: ReadonlyArray<{ type?: string; data?: unknown }>,
+    edges: ReadonlyArray<{ data?: unknown }>,
+): LegendData {
+    const nodeTypes = new Set<NodeSemanticType>();
+    const c4Elements = new Map<string, { label: string; color: string; dash?: string }>(); // 8.4c
+    for (const node of nodes) {
+        const data = (node.data ?? {}) as { semanticType?: NodeSemanticType; c4Element?: { label: string; color: string } };
+        if (data.semanticType) nodeTypes.add(data.semanticType);
+        if (data.c4Element) c4Elements.set(data.c4Element.label, data.c4Element);
+    }
+    // A C4's boundaries are drawn as zones; the legend says what they are.
+    if (c4Elements.size > 0 && nodes.some((n) => n.type === 'groupZone')) {
+        c4Elements.set(C4_BOUNDARY_LEGEND.label, C4_BOUNDARY_LEGEND);
+    }
+    const edgeRelations = new Set<string>();
+    const edgeTypes = new Set<EdgeSemanticType>();
+    for (const edge of edges) {
+        const data = (edge.data ?? {}) as { edgeType?: string; semanticType?: EdgeSemanticType };
+        edgeRelations.add(data.edgeType ?? 'default');
+        if (data.semanticType) edgeTypes.add(data.semanticType);
+    }
+    return {
+        nodeTypes: Array.from(nodeTypes),
+        edgeRelations: Array.from(edgeRelations),
+        edgeTypes: Array.from(edgeTypes),
+        c4Elements: Array.from(c4Elements.values()),
+    };
 }
 
 export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; legendData: LegendData }> = ({ show, onToggle, legendData }) => {
@@ -82,13 +125,14 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
     // taller than the canvas. Stable ordering keeps the panel from flickering
     // between renders.
     const rows = useMemo(() => {
-        const dedupedNodeTypes = Array.from(new Set(legendData.nodeTypes)).slice(0, 12);
+        const c4Elements = legendData.c4Elements ?? [];
+        const dedupedNodeTypes = c4Elements.length > 0 ? [] : Array.from(new Set(legendData.nodeTypes)).slice(0, 12);
         const dedupedRelations = Array.from(new Set(legendData.edgeRelations)).slice(0, 6);
         const dedupedEdgeTypes = Array.from(new Set(legendData.edgeTypes)).filter((t) => t !== 'generic').slice(0, 8);
-        return { dedupedNodeTypes, dedupedRelations, dedupedEdgeTypes };
+        return { c4Elements, dedupedNodeTypes, dedupedRelations, dedupedEdgeTypes };
     }, [legendData]);
 
-    const showFallback = rows.dedupedNodeTypes.length === 0 && rows.dedupedRelations.length === 0;
+    const showFallback = rows.c4Elements.length === 0 && rows.dedupedNodeTypes.length === 0 && rows.dedupedRelations.length === 0;
 
     return (
         <div className="absolute bottom-20 right-4 z-20">
@@ -104,6 +148,22 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
             </button>
             {show && (
                 <div className="absolute bottom-full right-0 mb-2 w-64 max-h-[60vh] overflow-y-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 animate-fade-in">
+                    {rows.c4Elements.length > 0 && (
+                        <>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Elementos C4</p>
+                            <div className="space-y-1.5 mb-3">
+                                {rows.c4Elements.map((entry) => (
+                                    <div key={entry.label} className="flex items-center gap-2">
+                                        <span
+                                            className={`w-4 h-4 rounded flex-shrink-0 ${entry.dash ? 'border-2 border-dashed' : ''}`}
+                                            style={entry.dash ? { borderColor: entry.color } : { backgroundColor: entry.color }}
+                                        />
+                                        <span className="text-[11px] text-gray-600 dark:text-gray-300">{entry.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                     {rows.dedupedNodeTypes.length > 0 && (
                         <>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Tipos de elemento</p>

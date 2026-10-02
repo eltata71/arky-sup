@@ -417,7 +417,7 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
       <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
           <span className="block text-gray-500 dark:text-gray-400">Calidad global</span>
-          <strong className={`text-base ${scoreTone(report.score.value)}`}>{report.score.value}/100</strong>
+          <strong className={`text-base ${scoreTone(report.score.value)}`}>{report.score.unmeasured ? 'Sin medir' : `${report.score.value}/100`}</strong>
           <span className="block text-[10px] text-gray-500 dark:text-gray-400">{describeQualityTier(report.score.tier)}</span>
         </div>
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">

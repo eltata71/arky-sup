@@ -89,8 +89,12 @@ function traitsOf(node: DiagramIRNode): NodeTraits {
  *
  * Only the forms `mermaidToIR` accepts are emitted — there is no
  * `SystemDb_Ext` here, because the parser would drop the element.
+ *
+ * The canvas and the export name the element from this same answer
+ * (`notationContract`, 8.4c), so the stereotype a node shows is the macro its
+ * text is written with.
  */
-function macroFor(node: DiagramIRNode, level: C4DiagramLevel): string {
+export function c4MacroFor(node: DiagramIRNode, level: C4DiagramLevel): string {
     const t = traitsOf(node);
     if (t.person) return t.external ? 'Person_Ext' : 'Person';
 
@@ -124,7 +128,7 @@ function buildAliases(ir: DiagramIR): Map<string, string> {
 }
 
 function renderElement(node: DiagramIRNode, level: C4DiagramLevel, alias: string): string {
-    const macro = macroFor(node, level);
+    const macro = c4MacroFor(node, level);
     const takesTechnology = /^(Container|Component)/.test(macro);
     if (takesTechnology && node.technology) {
         // A four-argument call is how the parser tells technology from

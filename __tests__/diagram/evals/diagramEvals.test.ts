@@ -256,6 +256,7 @@ describe('banco de evaluación de diagramas', () => {
         expect(summary.sintaxisValida).toBeGreaterThanOrEqual(actual.sintaxisValida ?? 0);
         expect(summary.vistaFiel).toBeGreaterThanOrEqual(actual.vistaFiel ?? 0);
         expect(summary.notacionSinPerdida).toBeGreaterThanOrEqual(actual.notacionSinPerdida ?? 0);
+        expect(summary.contratoNotacion).toBeGreaterThanOrEqual(actual.contratoNotacion ?? 0);
         expect(summary.casosConContradicciones).toBeLessThanOrEqual(actual.casosConContradicciones);
         // La puntuación la calcula un motor heurístico que evoluciona por su
         // cuenta; se tolera un punto para no convertir cada ajuste suyo en un

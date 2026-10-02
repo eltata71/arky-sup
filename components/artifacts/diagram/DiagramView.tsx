@@ -181,7 +181,7 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
             density={audience === 'executive' ? 'compact' : 'standard'}
             onChange={onCanvasChange}
             ref={reactFlowRef}
-            presentation={{ ir: renderable.ir ?? undefined }}
+            presentation={{ ir: renderable.ir ?? undefined, title: artifact.name }}
             showMiniMap={showMiniMap}
             preserveExternalLayout={hasExternalPositions}
             externalLayoutPlan={layoutPlan ?? renderable.ir?.metadata?.layoutPlan ?? null}

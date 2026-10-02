@@ -63,6 +63,13 @@ export interface DiagramNodeData {
   /** Technology hint (e.g. "PostgreSQL 15") surfaced as a tech badge. */
   technology?: string;
   /**
+   * 8.4c: the C4 stereotype the node shows («Contenedor: Node.js») and its
+   * element type for the canvas legend. Set by `irToReactFlow` from the
+   * notation contract; absent outside C4.
+   */
+  stereotype?: string;
+  c4Element?: { label: string; color: string };
+  /**
    * Canonical semantic role pre-computed by the IR pipeline. CustomNode
    * trusts this when present (avoids re-running the heuristic at render
    * time) and falls back to deriving it from `kind` / `label` otherwise.

@@ -92,7 +92,7 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
                 Calidad del artefacto
               </p>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {report.score.value}/100 · {tierLabel(report.score.tier)}
+                {report.score.unmeasured ? 'Sin medir' : `${report.score.value}/100 · ${tierLabel(report.score.tier)}`}
               </h3>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
                 Perfil: {report.profile.label}

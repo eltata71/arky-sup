@@ -1307,7 +1307,21 @@ heuristic. The eleventh dimension, *geometría*, scores the canvas's real
 positions — overlaps, edges through nodes, crossings, boundary breaches — and
 exists only when the caller measured them; the total is renormalised, so a
 report without it is not penalised. The bench's `puntosPorGrupo` holds the
-group gain at zero. A Gantt has no IR, so this rubric never sees it.
+group gain at zero. A Gantt has no IR, so this rubric never sees it — and
+the artifact report says so: `ArtifactQualityScore.unmeasured` carries the
+reason, the source is not judged as prose, the refinement spends no pass on
+it and the trace records no figure. A neutral default is not a score.
+
+**And a C4 presents its notation on every surface** (8.4c).
+`services/diagram/notationContract.ts` is the one answer to what a C4 must
+show: a title that names it (the IR's, then the artifact's name, never the
+generic fallback), a legend with every element type present, and each
+element's stereotype in Spanish with its technology («Contenedor: Node.js»).
+The stereotype comes from `c4MacroFor` — the macro the C4 text is written
+with — so the canvas ribbon (`resolveNodeRibbon`), the canvas legend
+(`buildLegendData`) and the export frame (`defaultFrameMetadataFromIR`)
+cannot name an element three ways. `checkNotationContract` is the verdict,
+and the bench's `contratoNotacion` holds every C4 case to it.
 
 The generator can finally produce one: `services/ai/prompts/diagramStorySchema.ts`
 carries the structured narrative in the schema the request enforces and in the

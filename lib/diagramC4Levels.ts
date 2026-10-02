@@ -40,3 +40,25 @@ export function detectC4Ribbon(kind?: string): C4Ribbon | null {
     if (!clean || clean.toLowerCase() === 'unknown' || clean.toLowerCase() === 'component') return null;
     return C4_RIBBONS.find(r => r.match.test(clean)) ?? null;
 }
+
+/**
+ * The ribbon a node shows (plan de diagramas, 8.4c). A C4 node carries its
+ * stereotype, in Spanish and with its technology, and keeps the palette its
+ * kind would have picked; without one, the kind decides as before. The
+ * stereotype is written in normal case: «Node.js» in capitals is not Node.js.
+ */
+export function resolveNodeRibbon(kind?: string, stereotype?: string): (C4Ribbon & { textCase: string }) | null {
+    if (stereotype) {
+        const palette = detectC4Ribbon(kind) ?? C4_RIBBONS[2];
+        return { ...palette, label: stereotype, textCase: 'normal-case tracking-normal' };
+    }
+    const ribbon = detectC4Ribbon(kind);
+    return ribbon ? { ...ribbon, textCase: 'uppercase tracking-[0.14em]' } : null;
+}
+
+/**
+ * The legend entry for a C4 boundary, drawn dashed on every surface (8.4c).
+ * A constant with no behaviour, so it lives here and both the canvas legend
+ * and `services/diagram/notationContract` read it.
+ */
+export const C4_BOUNDARY_LEGEND: { label: string; color: string; dash: string } = { label: 'Límite', color: '#444444', dash: '6 4' };

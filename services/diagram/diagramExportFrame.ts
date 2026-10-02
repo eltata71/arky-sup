@@ -24,6 +24,9 @@
  * (SSR, jsdom in tests, etc.) so the export still works.
  */
 
+import type { DiagramIR } from '../../lib/diagram';
+import { describeNotationPresentation, GENERIC_DIAGRAM_TITLE } from './notationContract';
+
 export interface LegendEntry {
     /** Short label such as "Sincrónico (REST)". */
     label: string;
@@ -70,9 +73,12 @@ export interface FrameOptions {
     maxLegendEntries?: number;
 }
 
+/** How many legend entries the footer draws, PNG and SVG alike (8.4c: a C4's element types come first). */
+export const FRAME_LEGEND_LIMIT = 8;
+
 const DEFAULT_OPTIONS: Required<FrameOptions> = {
     pixelRatio: 2,
-    maxLegendEntries: 6,
+    maxLegendEntries: FRAME_LEGEND_LIMIT,
 };
 
 const HEADER_HEIGHT = 72;
@@ -168,7 +174,7 @@ function drawHeader(
     ctx.font = `${18 * pr}px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    const title = metadata.title || 'Diagrama de arquitectura';
+    const title = metadata.title || GENERIC_DIAGRAM_TITLE;
     ctx.fillText(title, padX, 20 * pr);
 
     // Subtitle (smaller, muted)
@@ -316,13 +322,13 @@ export async function applySvgExportFrame(
 
     const totalH = innerHeight + headerH + footerH;
     const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const headerTitle = escape(metadata.title || 'Diagrama de arquitectura');
+    const headerTitle = escape(metadata.title || GENERIC_DIAGRAM_TITLE);
     const subtitle = metadata.subtitle ? escape(metadata.subtitle) : '';
     const owner = metadata.owner ? escape(metadata.owner) : '';
     const version = metadata.version ? escape(metadata.version) : '';
     const dateStr = formatDate(metadata.date ?? new Date().toISOString());
     const confidentiality = metadata.confidentiality ? escape(metadata.confidentiality) : '';
-    const legendEntries = (metadata.legend ?? []).slice(0, 6);
+    const legendEntries = (metadata.legend ?? []).slice(0, FRAME_LEGEND_LIMIT);
 
     // Strip the outer <svg ...> opening tag and re-emit it inside a wrapper.
     const innerSvg = svgText.replace(/<\?xml[^?]*\?>/, '').trim();
@@ -366,11 +372,17 @@ export async function applySvgExportFrame(
 }
 
 export function defaultFrameMetadataFromIR(
-    ir: { metadata?: { title?: string; audience?: string; theme?: string }; edges: Array<{ relation?: string }> },
-    options: { owner?: string; version?: string; confidentiality?: string; isDark?: boolean } = {},
+    ir: { edges: Array<{ relation?: string }> } & Partial<Pick<DiagramIR, 'nodes' | 'groups' | 'metadata'>>,
+    options: { owner?: string; version?: string; confidentiality?: string; isDark?: boolean; fallbackTitle?: string } = {},
 ): FrameMetadata {
+    // 8.4c: the title and a C4 legend of element types come from the notation
+    // contract the canvas reads too; the relation styles follow them.
+    const notation = describeNotationPresentation(
+        { ...ir, nodes: ir.nodes ?? [], groups: ir.groups ?? [] } as DiagramIR,
+        { fallbackTitle: options.fallbackTitle },
+    );
     const presentRelations = new Set(ir.edges.map((e) => e.relation ?? 'default'));
-    const legend: LegendEntry[] = [];
+    const legend: LegendEntry[] = [...notation.elementLegend];
     const legendByRelation: Record<string, LegendEntry> = {
         sync:        { label: 'Sincrónico (REST)',           color: '#6366f1' },
         async:       { label: 'Asíncrono (evento)',          color: '#f59e0b', dash: '6 4' },
@@ -385,7 +397,7 @@ export function defaultFrameMetadataFromIR(
     }
 
     return {
-        title: ir.metadata?.title ?? 'Diagrama de arquitectura',
+        title: notation.title ?? GENERIC_DIAGRAM_TITLE,
         subtitle: ir.metadata?.audience
             ? `Audiencia ${ir.metadata.audience} · Tema ${ir.metadata.theme ?? 'editorial'}`
             : undefined,

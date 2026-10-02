@@ -36,7 +36,9 @@ import { planCanvasEdit } from '../../../services/artifacts/application/diagramC
 import { getArtifactViewCapabilities } from '../../../services/artifacts/application/artifactGenerationPipeline';
 import type { ArtifactViewMode } from '../../../lib/artifacts/artifactPipelineContracts';
 import { extractIRFromArtifact, resolveRenderableDiagram } from '../../../services/diagram';
-import { irToReactFlowSmart } from '../../../services/diagram/irToReactFlow';
+import { irToReactFlow, irToReactFlowSmart } from '../../../services/diagram/irToReactFlow';
+import { defaultFrameMetadataFromIR, FRAME_LEGEND_LIMIT } from '../../../services/diagram/diagramExportFrame';
+import { c4LevelOfIR, checkNotationContract } from '../../../services/diagram/notationContract';
 import type { Edge, Node } from 'reactflow';
 import { checkMermaidSyntax } from '../../../services/diagram/mermaidSyntax';
 import { runDiagramQualityGate } from '../../../services/diagram/qualityGate';
@@ -176,6 +178,13 @@ export interface DiagramEvalCaseResult {
      * tiene grupos: si la nota sube, la rúbrica lo está juzgando como grafo.
      */
     puntosPorGrupo: number | null;
+    /**
+     * Lo que un C4 presenta incumpliendo su contrato de notación (8.4c): sin
+     * título que lo nombre en la exportación, sin leyenda de los tipos de
+     * elemento o sin el estereotipo de cada nodo en el lienzo. `null` cuando
+     * el caso no es C4.
+     */
+    contratoNotacion: string[] | null;
 }
 
 /** Lo que el pipeline añadió o cambió sin que el modelo ni la persona lo pidieran. */
@@ -265,6 +274,8 @@ export interface DiagramEvalSummary {
     inflacionCompleta: number;
     /** Puntos que un grupo sin sentido suma a las secuencias, ERD y estados del corpus (8.4b). */
     puntosPorGrupo: number;
+    /** Fracción de C4 cuyo lienzo y exportación cumplen el contrato de notación (8.4c). */
+    contratoNotacion: number;
     /** Fracción de textos guardados que la gramática de Mermaid acepta (8.2a). */
     sintaxisValida: number;
     /** Fracción de casos que abren en la superficie de su dialecto guardado: notación o lienzo (8.3a). */
@@ -603,6 +614,23 @@ function measureGroupGain(ir: DiagramIR, dialect: string): number | null {
     return Math.round(Math.max(0, gain) * 10) / 10;
 }
 
+/**
+ * El contrato de notación de un C4 sobre lo que de verdad se presenta (8.4c):
+ * los nodos que pinta el lienzo y el marco con que se exporta, construidos por
+ * las mismas funciones que usan el lienzo y la exportación.
+ */
+function measureNotationContract(saved: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>, artifactName: string): string[] | null {
+    const ir = resolveRenderableDiagram(saved, { audience: 'technical' }).ir;
+    if (!ir || !c4LevelOfIR(ir)) return null;
+    const nodes = irToReactFlow(ir).nodes;
+    const frame = defaultFrameMetadataFromIR(ir, { fallbackTitle: artifactName });
+    return checkNotationContract(ir, {
+        title: frame.title,
+        legendLabels: (frame.legend ?? []).slice(0, FRAME_LEGEND_LIMIT).map((entry) => entry.label),
+        stereotypes: Object.fromEntries(nodes.map((n) => [n.id, (n.data as { stereotype?: string }).stereotype])),
+    }).map((issue) => issue.code);
+}
+
 /** Ejecuta un caso por el pipeline real, con el modelo sustituido por su respuesta. */
 export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEvalCaseResult> {
     const structured = testCase.plantilla.tipo === 'mermaid-graph' || testCase.plantilla.tipo === 'react-flow-graph';
@@ -682,6 +710,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
         const geometriaFinal = comparable ? await measureFinalGeometry(saved) : null;
         const inflacion = comparable ? measureRepairInflation(modelIR!, testCase.plantilla.tipo) : null;
         const puntosPorGrupo = ir && !esqueleto ? measureGroupGain(ir, dialectoGuardado) : null;
+        const contratoNotacion = comparable ? measureNotationContract(saved, testCase.plantilla.nombre) : null;
 
         const [, , firstPrompt, firstConfig] = transport.mock.calls[0] ?? [];
         const prompt = `${String((firstConfig as { systemInstruction?: string } | undefined)?.systemInstruction ?? '')}\n${String(firstPrompt ?? '')}`;
@@ -731,6 +760,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             geometriaFinal,
             inflacion,
             puntosPorGrupo,
+            contratoNotacion,
             calidad: result.generationTrace.quality?.score ?? null,
             llamadasModelo: transport.mock.calls.length,
         };
@@ -840,6 +870,7 @@ export function summarize(all: DiagramEvalCaseResult[]): DiagramEvalSummary {
 function summarizeIntegrity(results: DiagramEvalCaseResult[]) {
     const total = (pick: (r: DiagramEvalCaseResult) => number) => results.reduce((acc, r) => acc + pick(r), 0);
     const edited = results.filter((r) => r.edicion);
+    const c4 = results.filter((r) => r.contratoNotacion);
     return {
         elementosInventados: total((r) => r.integridad?.elementosInventados.length ?? 0),
         gruposInventados: total((r) => r.integridad?.gruposInventados.length ?? 0),
@@ -859,6 +890,7 @@ function summarizeIntegrity(results: DiagramEvalCaseResult[]) {
         inflacionEstructural: Math.round(total((r) => r.inflacion?.estructural ?? 0) * 10) / 10,
         inflacionCompleta: Math.round(total((r) => r.inflacion?.completa ?? 0) * 10) / 10,
         puntosPorGrupo: Math.round(total((r) => r.puntosPorGrupo ?? 0) * 10) / 10,
+        contratoNotacion: round(ratio(c4.filter((r) => r.contratoNotacion!.length === 0).length, c4.length)),
     };
 }
 
@@ -921,6 +953,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.geometriaFinal ? `${r.geometriaFinal.motor}: ${r.geometriaFinal.solapesNodos}/${r.geometriaFinal.solapesGrupos}/${r.geometriaFinal.aristasQueAtraviesanNodos}` : '—',
         r.inflacion ? `+${r.inflacion.estructural} / +${r.inflacion.completa}` : '—',
         r.puntosPorGrupo === null ? '—' : `+${r.puntosPorGrupo}`,
+        r.contratoNotacion === null ? '—' : r.contratoNotacion.length === 0 ? 'cumple' : r.contratoNotacion.join(','),
     ].join(' | '));
     return [
         'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | vista | notación sin pérdida | hallazgos de dominio',
@@ -928,7 +961,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
         'Integridad y presentación (8.0b)',
-        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos | final (motor: nodos/grupos/aristas) | inflación estructural / completa | puntos por un grupo sin sentido',
+        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos | final (motor: nodos/grupos/aristas) | inflación estructural / completa | puntos por un grupo sin sentido | contrato de notación',
         ...integrityRows,
         '',
         JSON.stringify(summary, null, 2),
