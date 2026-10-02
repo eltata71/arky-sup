@@ -142,15 +142,15 @@ describe('generation degrades through the port it is handed', () => {
     failEveryModelCall();
     const support = fakeSupport();
 
+    const onDegraded = vi.fn();
+
     const content = await artifactGenerationEngine.generateArtifactContent(project, diagramTemplate, settings, undefined, {
       architectureGraphPromptBlock: '',
       support,
+      onDegraded,
     });
 
     expect(content.trim().length).toBeGreaterThan(0);
-    expect(
-      vi.mocked(support.deterministicArtifact).mock.calls.length
-        + vi.mocked(support.deterministicDiagramSkeleton).mock.calls.length,
-    ).toBeGreaterThan(0);
+    expect(onDegraded).toHaveBeenCalled();
   });
 });

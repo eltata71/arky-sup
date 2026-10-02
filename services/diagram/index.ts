@@ -86,7 +86,7 @@ export function mermaidToExcalidraw(code: string, isDark = false): ExcalidrawBun
 
 export { mermaidToIR, irToReactFlow, irToExcalidraw, irToMermaid };
 export { irToMermaidC4, c4LevelOfArtifactType, type C4DiagramLevel } from './irToMermaidC4';
-export { mermaidDialectOf, serializeIRPreservingDialect } from './dialectSerialization';
+export { mermaidDialectOf, serializeFlowArtifact, serializeIRPreservingDialect } from './dialectSerialization';
 export * from './requestFidelity';
 
 /**

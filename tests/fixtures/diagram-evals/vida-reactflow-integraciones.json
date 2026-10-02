@@ -11,6 +11,10 @@
       "El core persiste la póliza emitida"
     ]
   },
+  "solicitud": {
+    "texto": "Mostrar las integraciones de emisión e incluir el «Motor de Fraude» antes de persistir la póliza",
+    "audiencia": "technical"
+  },
   "plantilla": {
     "nombre": "Mapa de Integraciones de Emisión",
     "tipo": "react-flow-graph",
@@ -23,6 +27,15 @@
     ]
   },
   "respuestaModelo": "{\"nodes\": [{\"id\": \"portal\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Portal de Agentes\", \"type\": \"React\", \"description\": \"Cotiza y emite pólizas\", \"group\": \"Canales\"}}, {\"id\": \"cotizador\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Cotizador de Vida\", \"type\": \"Spring Boot\", \"description\": \"Calcula primas\", \"group\": \"Core\"}}, {\"id\": \"core\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Core de Pólizas\", \"type\": \"Java\", \"description\": \"Administra pólizas\", \"group\": \"Core\"}}, {\"id\": \"mib\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"MIB\", \"type\": \"External\", \"description\": \"Historial de solicitudes de seguro\"}}, {\"id\": \"bd\", \"type\": \"custom\", \"position\": {\"x\": 0, \"y\": 0}, \"data\": {\"label\": \"Base de Pólizas\", \"type\": \"PostgreSQL\", \"shape\": \"cylinder\", \"group\": \"Core\"}}], \"edges\": [{\"id\": \"e1\", \"source\": \"portal\", \"target\": \"cotizador\", \"label\": \"Solicita cotización\", \"type\": \"custom\"}, {\"id\": \"e2\", \"source\": \"cotizador\", \"target\": \"mib\", \"label\": \"Consulta historial\", \"type\": \"custom\"}, {\"id\": \"e3\", \"source\": \"portal\", \"target\": \"core\", \"label\": \"Emite póliza\", \"type\": \"custom\"}, {\"id\": \"e4\", \"source\": \"core\", \"target\": \"bd\", \"label\": \"Persiste póliza\", \"type\": \"custom\"}]}",
+  "respuestaCorreccion": {
+    "rationale": "El motor de fraude forma parte de la emisión solicitada.",
+    "operations": [
+      { "op": "add-node", "node": { "id": "motor-fraude", "label": "Motor de Fraude", "kind": "service" } },
+      { "op": "remove-edge", "edgeId": "e4" },
+      { "op": "add-edge", "edge": { "id": "e-fraude", "source": "core", "target": "motor-fraude", "label": "Evalúa fraude" } },
+      { "op": "add-edge", "edge": { "id": "e-fraude-persistencia", "source": "motor-fraude", "target": "bd", "label": "Autoriza persistencia" } }
+    ]
+  },
   "esperado": {
     "dialecto": "{",
     "entidades": [
@@ -40,8 +53,12 @@
       ],
       [
         "Base de Pólizas"
+      ],
+      [
+        "Motor de Fraude"
       ]
     ],
-    "metadatos": []
+    "metadatos": [],
+    "correccionAplicada": true
   }
 }

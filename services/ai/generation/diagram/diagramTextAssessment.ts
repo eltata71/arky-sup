@@ -69,8 +69,8 @@ export async function assessDiagramText(raw: string, templateType: string): Prom
             : { ok: true, nodeCount: 1, edgeCount: 0 };
     }
 
-    let nodeCount = 0;
-    let edgeCount = 0;
+    let nodeCount: number;
+    let edgeCount: number;
     try {
         const ir = mermaidToIR(body);
         nodeCount = ir.nodes.length;
