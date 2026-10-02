@@ -36,6 +36,8 @@ import { planCanvasEdit } from '../../../services/artifacts/application/diagramC
 import { getArtifactViewCapabilities } from '../../../services/artifacts/application/artifactGenerationPipeline';
 import type { ArtifactViewMode } from '../../../lib/artifacts/artifactPipelineContracts';
 import { extractIRFromArtifact, resolveRenderableDiagram } from '../../../services/diagram';
+import { irToReactFlowSmart } from '../../../services/diagram/irToReactFlow';
+import type { Edge, Node } from 'reactflow';
 import { checkMermaidSyntax } from '../../../services/diagram/mermaidSyntax';
 import { notationFingerprint, serializeNotation } from '../../../services/diagram/notation';
 import { mermaidToIR } from '../../../services/diagram';
@@ -157,6 +159,8 @@ export interface DiagramEvalCaseResult {
     edicion: CanvasEditMetrics | null;
     /** La geometría del primer render, el síncrono que ve el usuario (8.0b). */
     geometria: GeometryMetrics | null;
+    /** La geometría del layout final, tras la pasada asíncrona (8.3c). */
+    geometriaFinal: GeometryMetrics | null;
 }
 
 /** Lo que el pipeline añadió o cambió sin que el modelo ni la persona lo pidieran. */
@@ -194,6 +198,8 @@ export interface GeometryMetrics {
      * disposición, no el trazo exacto.
      */
     aristasQueAtraviesanNodos: number;
+    /** Motor que produjo el layout final (8.3c); ausente en el primer render. */
+    motor?: 'dagre' | 'elk';
 }
 
 export interface DiagramEvalSummary {
@@ -235,6 +241,10 @@ export interface DiagramEvalSummary {
     solapesNodos: number;
     solapesGrupos: number;
     aristasQueAtraviesanNodos: number;
+    /** Lo mismo en el layout final, el que queda en pantalla (8.3c). */
+    solapesNodosFinal: number;
+    solapesGruposFinal: number;
+    aristasQueAtraviesanNodosFinal: number;
     /** Fracción de textos guardados que la gramática de Mermaid acepta (8.2a). */
     sintaxisValida: number;
     /** Fracción de casos que abren en la superficie de su dialecto guardado: notación o lienzo (8.3a). */
@@ -485,8 +495,26 @@ export function measureGeometry(
     artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>,
 ): GeometryMetrics | null {
     const rendered = resolveRenderableDiagram(artifact, { audience: 'technical' });
-    const content = rendered.reactFlow.nodes.filter((n) => n.type !== 'groupZone');
-    if (!rendered.ir || content.length === 0) return null;
+    if (!rendered.ir) return null;
+    return geometryOf(rendered.ir, rendered.reactFlow.nodes, rendered.reactFlow.edges);
+}
+
+/**
+ * La geometría del layout final (8.3c): el que el lienzo muestra cuando
+ * termina la pasada asíncrona (ELK, o el dagre que el selector elija). Es lo
+ * que la persona mira; el primer render síncrono sólo dura lo que tarda ésta.
+ */
+export async function measureFinalGeometry(
+    artifact: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>,
+): Promise<GeometryMetrics | null> {
+    const rendered = resolveRenderableDiagram(artifact, { audience: 'technical' });
+    if (!rendered.ir || rendered.ir.nodes.length < 2) return null;
+    const smart = await irToReactFlowSmart(rendered.ir, artifact.type);
+    return { ...geometryOf(rendered.ir, smart.nodes, smart.edges), motor: smart.plan.backend };
+}
+
+function geometryOf(ir: DiagramIR, nodes: Node[], edges: Edge[]): GeometryMetrics {
+    const content = nodes.filter((n) => n.type !== 'groupZone');
     const dims = (n: (typeof content)[number]) => {
         const data = (n.data ?? {}) as { width?: number; height?: number };
         return { width: data.width ?? n.width ?? 240, height: data.height ?? n.height ?? 96 };
@@ -498,7 +526,7 @@ export function measureGeometry(
         if (!group) return;
         byGroup.set(group, [...(byGroup.get(group) ?? []), nodeRects[index]]);
     });
-    const kinds = new Map((rendered.ir.groups ?? []).map((g) => [g.label, g.kind] as const));
+    const kinds = new Map((ir.groups ?? []).map((g) => [g.label, g.kind] as const));
     let fallback = 0;
     const groupRects: GroupRect[] = [...byGroup.entries()].map(([label, members]) => {
         const kind = kinds.get(label);
@@ -511,10 +539,20 @@ export function measureGeometry(
         return { id: label, label, x: minX, y: minY, width: maxX - minX, height: maxY - minY, memberIds: members.map((r) => r.id) };
     });
     const centre = new Map(nodeRects.map((r) => [r.id, { x: r.x + r.width / 2, y: r.y + r.height / 2 }] as const));
-    const edgeSegments = rendered.reactFlow.edges
+    // Con ruta del motor (8.3d) se mide la polilínea que se dibuja; sin ella,
+    // el segmento recto entre centros, como aproximación.
+    const edgeSegments = edges
         .filter((e) => centre.has(String(e.source)) && centre.has(String(e.target)))
-        .map((e) => ({ id: String(e.id), source: String(e.source), target: String(e.target), waypoints: [centre.get(String(e.source))!, centre.get(String(e.target))!] }));
-    const metrics = computeLayoutQuality({ ir: rendered.ir, nodeRects, groupRects, edgeSegments });
+        .map((e) => {
+            const route = (e.data as { route?: { points?: Array<{ x: number; y: number }> } } | undefined)?.route?.points;
+            return {
+                id: String(e.id),
+                source: String(e.source),
+                target: String(e.target),
+                waypoints: route && route.length >= 2 ? route : [centre.get(String(e.source))!, centre.get(String(e.target))!],
+            };
+        });
+    const metrics = computeLayoutQuality({ ir, nodeRects, groupRects, edgeSegments });
     return {
         solapesNodos: metrics.overlappingNodePairs.length,
         solapesGrupos: metrics.overlappingGroupPairs.length,
@@ -598,6 +636,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             : null;
         const edicion = comparable ? measureCanvasEdit(saved, testCase.esperado.dialecto) : null;
         const geometria = comparable ? measureGeometry(saved) : null;
+        const geometriaFinal = comparable ? await measureFinalGeometry(saved) : null;
 
         const [, , firstPrompt, firstConfig] = transport.mock.calls[0] ?? [];
         const prompt = `${String((firstConfig as { systemInstruction?: string } | undefined)?.systemInstruction ?? '')}\n${String(firstPrompt ?? '')}`;
@@ -644,6 +683,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             integridad,
             edicion,
             geometria,
+            geometriaFinal,
             calidad: result.generationTrace.quality?.score ?? null,
             llamadasModelo: transport.mock.calls.length,
         };
@@ -766,6 +806,9 @@ function summarizeIntegrity(results: DiagramEvalCaseResult[]) {
         solapesNodos: total((r) => r.geometria?.solapesNodos ?? 0),
         solapesGrupos: total((r) => r.geometria?.solapesGrupos ?? 0),
         aristasQueAtraviesanNodos: total((r) => r.geometria?.aristasQueAtraviesanNodos ?? 0),
+        solapesNodosFinal: total((r) => r.geometriaFinal?.solapesNodos ?? 0),
+        solapesGruposFinal: total((r) => r.geometriaFinal?.solapesGrupos ?? 0),
+        aristasQueAtraviesanNodosFinal: total((r) => r.geometriaFinal?.aristasQueAtraviesanNodos ?? 0),
     };
 }
 
@@ -782,6 +825,9 @@ export const INTEGRITY_COUNTERS = [
     'solapesNodos',
     'solapesGrupos',
     'aristasQueAtraviesanNodos',
+    'solapesNodosFinal',
+    'solapesGruposFinal',
+    'aristasQueAtraviesanNodosFinal',
 ] as const;
 
 /** Tabla legible para `npm run eval:diagrams`. */
@@ -819,6 +865,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.edicion ? `${r.edicion.nodosPerdidos.tecnica.length}/${r.edicion.nodosPerdidos.ejecutiva.length}` : '—',
         r.edicion ? `${r.edicion.nodosAnadidos.tecnica.length}/${r.edicion.nodosAnadidos.ejecutiva.length}` : '—',
         r.geometria ? `${r.geometria.solapesNodos}/${r.geometria.solapesGrupos}/${r.geometria.aristasQueAtraviesanNodos}` : '—',
+        r.geometriaFinal ? `${r.geometriaFinal.motor}: ${r.geometriaFinal.solapesNodos}/${r.geometriaFinal.solapesGrupos}/${r.geometriaFinal.aristasQueAtraviesanNodos}` : '—',
     ].join(' | '));
     return [
         'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | vista | notación sin pérdida | hallazgos de dominio',
@@ -826,7 +873,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
         'Integridad y presentación (8.0b)',
-        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos',
+        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos | final (motor: nodos/grupos/aristas)',
         ...integrityRows,
         '',
         JSON.stringify(summary, null, 2),

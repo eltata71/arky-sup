@@ -237,7 +237,7 @@ describe('banco de evaluación de diagramas', () => {
         }
         expect(summary.tasaEsqueleto).toBeLessThanOrEqual(actual.tasaEsqueleto);
         // 8.0b: lo que el pipeline cambia por su cuenta y lo que rompe una edición en el lienzo.
-        for (const key of INTEGRITY_COUNTERS) expect(summary[key], key).toBeLessThanOrEqual(actual[key]);
+        for (const key of INTEGRITY_COUNTERS) expect(summary[key], key).toBeLessThanOrEqual(actual[key] ?? Number.POSITIVE_INFINITY);
         expect(summary.dialectoTrasEdicion).toBeGreaterThanOrEqual(actual.dialectoTrasEdicion);
         expect(summary.sintaxisValida).toBeGreaterThanOrEqual(actual.sintaxisValida ?? 0);
         expect(summary.vistaFiel).toBeGreaterThanOrEqual(actual.vistaFiel ?? 0);
