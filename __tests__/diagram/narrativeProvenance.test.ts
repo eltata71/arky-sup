@@ -63,7 +63,7 @@ describe('the planner refuses to present a synthesis as an authored story', () =
 });
 
 describe('the rubric grades the story, not the presence of the field', () => {
-    it('pays a written walk more than a written summary, and both more than a synthesis', () => {
+    it('pays a written walk more than a written summary, and a synthesis nothing (8.4a)', () => {
         const walk = scoreNarrativa(base({
             summary: 'Resumen.',
             scenes: [{ id: 's1', title: 'Paso', focusNodeIds: ['a'], focusEdgeIds: [] }],
@@ -73,7 +73,7 @@ describe('the rubric grades the story, not the presence of the field', () => {
         const nothing = scoreNarrativa(base());
         expect(walk).toBeGreaterThan(summary);
         expect(summary).toBeGreaterThan(synthesised);
-        expect(synthesised).toBeGreaterThan(nothing);
+        expect(synthesised).toBe(nothing);
     });
 
     it('no longer awards a repaired diagram the same credit as an authored one', () => {

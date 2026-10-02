@@ -39,6 +39,8 @@ import { extractIRFromArtifact, resolveRenderableDiagram } from '../../../servic
 import { irToReactFlowSmart } from '../../../services/diagram/irToReactFlow';
 import type { Edge, Node } from 'reactflow';
 import { checkMermaidSyntax } from '../../../services/diagram/mermaidSyntax';
+import { runDiagramQualityGate } from '../../../services/diagram/qualityGate';
+import { analyzeDiagramQuality } from '../../../services/diagram/quality/diagramQualityService';
 import { notationFingerprint, serializeNotation } from '../../../services/diagram/notation';
 import { mermaidToIR } from '../../../services/diagram';
 import { resolveGroupSemanticStyle } from '../../../services/diagram/groupSemantics';
@@ -161,6 +163,13 @@ export interface DiagramEvalCaseResult {
     geometria: GeometryMetrics | null;
     /** La geometría del layout final, tras la pasada asíncrona (8.3c). */
     geometriaFinal: GeometryMetrics | null;
+    /**
+     * Cuántos puntos gana la respuesta del modelo sólo por pasar por la
+     * reparación (8.4a): la estructural, que corre al generar, y la completa
+     * de «Auto-mejora». Lo que la reparación escribe por su cuenta no es
+     * calidad del diagrama.
+     */
+    inflacion: { estructural: number; completa: number } | null;
 }
 
 /** Lo que el pipeline añadió o cambió sin que el modelo ni la persona lo pidieran. */
@@ -245,6 +254,9 @@ export interface DiagramEvalSummary {
     solapesNodosFinal: number;
     solapesGruposFinal: number;
     aristasQueAtraviesanNodosFinal: number;
+    /** Puntos que la reparación estructural y la completa suman en todo el corpus (8.4a). */
+    inflacionEstructural: number;
+    inflacionCompleta: number;
     /** Fracción de textos guardados que la gramática de Mermaid acepta (8.2a). */
     sintaxisValida: number;
     /** Fracción de casos que abren en la superficie de su dialecto guardado: notación o lienzo (8.3a). */
@@ -560,6 +572,16 @@ function geometryOf(ir: DiagramIR, nodes: Node[], edges: Edge[]): GeometryMetric
     };
 }
 
+/** Los puntos que la reparación añade a la respuesta del modelo, sin contar lo que quita. */
+function measureRepairInflation(modelIR: DiagramIR, type: ArtifactType): { estructural: number; completa: number } {
+    const before = analyzeDiagramQuality(modelIR).score;
+    const artifact = { type, name: 'Diagrama de evaluación' };
+    const structural = runDiagramQualityGate(modelIR, { artifact }).quality.score;
+    const full = runDiagramQualityGate(modelIR, { artifact, scope: 'full', aggressive: true, targetScore: 90, maxPasses: 4 }).quality.score;
+    const gain = (after: number) => Math.round(Math.max(0, after - before) * 10) / 10;
+    return { estructural: gain(structural), completa: gain(full) };
+}
+
 /** Ejecuta un caso por el pipeline real, con el modelo sustituido por su respuesta. */
 export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEvalCaseResult> {
     const structured = testCase.plantilla.tipo === 'mermaid-graph' || testCase.plantilla.tipo === 'react-flow-graph';
@@ -637,6 +659,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
         const edicion = comparable ? measureCanvasEdit(saved, testCase.esperado.dialecto) : null;
         const geometria = comparable ? measureGeometry(saved) : null;
         const geometriaFinal = comparable ? await measureFinalGeometry(saved) : null;
+        const inflacion = comparable ? measureRepairInflation(modelIR!, testCase.plantilla.tipo) : null;
 
         const [, , firstPrompt, firstConfig] = transport.mock.calls[0] ?? [];
         const prompt = `${String((firstConfig as { systemInstruction?: string } | undefined)?.systemInstruction ?? '')}\n${String(firstPrompt ?? '')}`;
@@ -684,6 +707,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             edicion,
             geometria,
             geometriaFinal,
+            inflacion,
             calidad: result.generationTrace.quality?.score ?? null,
             llamadasModelo: transport.mock.calls.length,
         };
@@ -809,6 +833,8 @@ function summarizeIntegrity(results: DiagramEvalCaseResult[]) {
         solapesNodosFinal: total((r) => r.geometriaFinal?.solapesNodos ?? 0),
         solapesGruposFinal: total((r) => r.geometriaFinal?.solapesGrupos ?? 0),
         aristasQueAtraviesanNodosFinal: total((r) => r.geometriaFinal?.aristasQueAtraviesanNodos ?? 0),
+        inflacionEstructural: Math.round(total((r) => r.inflacion?.estructural ?? 0) * 10) / 10,
+        inflacionCompleta: Math.round(total((r) => r.inflacion?.completa ?? 0) * 10) / 10,
     };
 }
 
@@ -828,6 +854,8 @@ export const INTEGRITY_COUNTERS = [
     'solapesNodosFinal',
     'solapesGruposFinal',
     'aristasQueAtraviesanNodosFinal',
+    'inflacionEstructural',
+    'inflacionCompleta',
 ] as const;
 
 /** Tabla legible para `npm run eval:diagrams`. */
@@ -866,6 +894,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.edicion ? `${r.edicion.nodosAnadidos.tecnica.length}/${r.edicion.nodosAnadidos.ejecutiva.length}` : '—',
         r.geometria ? `${r.geometria.solapesNodos}/${r.geometria.solapesGrupos}/${r.geometria.aristasQueAtraviesanNodos}` : '—',
         r.geometriaFinal ? `${r.geometriaFinal.motor}: ${r.geometriaFinal.solapesNodos}/${r.geometriaFinal.solapesGrupos}/${r.geometriaFinal.aristasQueAtraviesanNodos}` : '—',
+        r.inflacion ? `+${r.inflacion.estructural} / +${r.inflacion.completa}` : '—',
     ].join(' | '));
     return [
         'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | vista | notación sin pérdida | hallazgos de dominio',
@@ -873,7 +902,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),
         'Integridad y presentación (8.0b)',
-        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos | final (motor: nodos/grupos/aristas)',
+        'caso | inventados | grupos inventados | aristas alteradas | aristas inventadas | descripciones sintéticas | render no guardado | dialecto tras editar | perdidos téc/ejec | añadidos téc/ejec | solapes nodos/grupos/aristas por nodos | final (motor: nodos/grupos/aristas) | inflación estructural / completa',
         ...integrityRows,
         '',
         JSON.stringify(summary, null, 2),

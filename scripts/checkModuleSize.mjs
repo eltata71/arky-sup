@@ -102,12 +102,12 @@ export const BYTE_CEILINGS = {
   'pages/SettingsPage.tsx': 30973,
   'hooks/artifacts/useDiagramRendering.ts': 24203, // plan diagramas 8.3d: −3 183, la pasada de ELK sale a `useElkLayoutPass` · plan diagramas 8.1d: −1 896, abrir ya no escribe el plan de layout · F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
-  'services/diagram/qualityRepair.ts': 29336, // plan diagramas 8.3b: +135, el clon del IR conserva `notation` · plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
+  'services/diagram/qualityRepair.ts': 27154, // plan diagramas 8.4a: la reagrupación sale a `qualityRepairGrouping.ts` y cada reparación anota lo que escribe · plan diagramas 8.3b: +135, el clon del IR conserva `notation` · plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
   'components/LucidchartViewer.tsx': 27773,
   'services/diagram/layoutQualityService.ts': 27648,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 27231, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/artifactCompiler/profiles/contractDefinitions.ts': 26764,
-  'services/diagram/quality/diagramQualityService.ts': 26442,
+  'services/diagram/quality/diagramQualityService.ts': 26699, // plan diagramas 8.4a: +257, el análisis puntúa sin lo derivado y siempre clasificado
   'services/publicationPipeline/PublicationPreflightService.ts': 26117, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/artifacts/ArtifactInspectorPanel.tsx': 24735, // F4-05: la coordinación salió a `services/artifacts/application`
   'pages/LMS/CourseView.tsx': 24691,
@@ -199,7 +199,7 @@ export const CEILINGS = {
   'services/diagram/suggestionActionExecutors.ts': 760,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,
-  'services/diagram/qualityRepair.ts': 710, // plan diagramas 8.3b: +2, el clon del IR conserva `notation` · plan diagramas 8.1b: +3, el alcance `structural`
+  'services/diagram/qualityRepair.ts': 642, // plan diagramas 8.4a: 710 → 642 · plan diagramas 8.3b: +2, el clon del IR conserva `notation` · plan diagramas 8.1b: +3, el alcance `structural`
   'hooks/artifacts/useDiagramRendering.ts': 561, // plan diagramas 8.3d: 630 → 561 · plan diagramas 8.1d: 685 → 630
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
   'services/architectureOffice/domain/officePortfolio.ts': 680,

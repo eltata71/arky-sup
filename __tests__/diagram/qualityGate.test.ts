@@ -12,7 +12,7 @@ const artifact = {
 };
 
 describe('runDiagramQualityGate', () => {
-    it('lifts a low-quality IR over the world-class threshold when context allows', () => {
+    it('repairs a low-quality IR without paying itself for the repair (8.4a)', () => {
         const ir: DiagramIR = {
             nodes: [
                 { id: 'cliente', label: 'cliente', kind: 'person' },
@@ -33,10 +33,14 @@ describe('runDiagramQualityGate', () => {
         };
         const before = analyzeDiagramQuality(ir);
         const result = runDiagramQualityGate(ir, { artifact, audience: 'technical', targetScore: 90, scope: 'full' });
-        expect(result.quality.score).toBeGreaterThan(before.score);
-        // The gate produced repair history.
+        // The gate repaired (labels, protocols, metadata) and kept the repaired
+        // variant, with every change recorded as derived…
         expect(result.changes.length).toBeGreaterThan(0);
         expect(result.history.length).toBeGreaterThan(1);
+        expect(result.ir.edges.every((e) => e.label.length > 0)).toBe(true);
+        expect(Object.keys(result.ir.metadata?.derived?.edgeLabels ?? {}).length).toBeGreaterThan(0);
+        // …and the score is the author's diagram's, not the repair's.
+        expect(result.quality.score).toBe(before.score);
     });
 
     it('returns the input unchanged when score already meets target', () => {
@@ -103,7 +107,9 @@ describe('runDiagramQualityGate', () => {
 
         expect(result.ir.edges.every((edge) => edge.protocol && edge.protocol.length > 0)).toBe(true);
         expect(result.ir.edges.every((edge) => /http|rest|kafka|jdbc/i.test(`${edge.label} ${edge.protocol}`))).toBe(true);
-        expect(result.quality.breakdown.preparacionTecnica).toBeGreaterThanOrEqual(85);
+        // 8.4a: an inferred protocol is the repair's guess and scores nothing.
+        expect(result.ir.metadata?.derived?.edgeProtocols).toBeDefined();
+        expect(result.quality.breakdown.preparacionTecnica).toBe(analyzeDiagramQuality(ir).breakdown.preparacionTecnica);
         expect(result.changes.some((change) => change.code === 'EDGE_PROTOCOL_INFERRED')).toBe(true);
     });
 

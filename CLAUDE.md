@@ -1280,6 +1280,20 @@ rubric was paying for its own repair. Credit is graduated now. `narrativeHasText
 and `narrativeIsAuthored` (`lib/diagram`) are the one definition of each
 question; the repair and the planner had drifted apart on it.
 
+**And nothing a repair writes on its own is scored** (8.4a). The narrative
+was one case of a general defect: the rubric paid for the theme, audience,
+density and title the structural repair filled on every generation, and for
+the descriptions, edge verbs, inferred protocols, orphan reconnections and
+role groups «Auto-mejora» invented — 80 and 263 points across the evaluation
+corpus. Every repair now records what it wrote and what was there in
+`metadata.derived` (`lib/diagram/derivedContent.ts`, recorded through
+`services/diagram/quality/derivedContent.ts`), and `analyzeDiagramQuality`
+scores `withoutDerived(ir)`, always classified as the canvas reads it. A value
+someone edits after the repair is theirs and counts. The gate keeps a
+repaired variant on a tie, so repairs still apply; only the score stops
+rewarding them. The bench (`inflacionEstructural`, `inflacionCompleta`) holds
+both at zero. Any new repair that fills a value must call `noteDerived*`.
+
 The generator can finally produce one: `services/ai/prompts/diagramStorySchema.ts`
 carries the structured narrative in the schema the request enforces and in the
 instructions that travel with it. (It used to print the same shape a second

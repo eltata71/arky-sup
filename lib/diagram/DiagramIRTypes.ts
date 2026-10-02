@@ -8,12 +8,14 @@
  * file was recompiled when an edge label slot changed, the Training Center
  * included.
  *
- * Nothing here imports anything but the dialect notation, its sibling leaf. The IR is deliberately closed over itself:
+ * Nothing here imports anything but its sibling leaves: the dialect notation
+ * and the record of derived content. The IR is deliberately closed over itself:
  * that is what lets the pipeline stay deterministic and what makes it possible
  * to move it at all.
  */
 
 import type { DiagramNotation } from './notationModel';
+import type { DiagramDerivedContent } from './derivedContent';
 
 export type DiagramAudience = 'executive' | 'technical' | 'operations';
 
@@ -404,6 +406,8 @@ export interface DiagramIR {
      * to regenerate with more context.
      */
     fallback?: 'skeleton';
+    /** What the repair passes wrote on their own; the rubric does not score it (8.4a). */
+    derived?: DiagramDerivedContent;
     repairHistory?: Array<{
       at: string;
       reason: string;

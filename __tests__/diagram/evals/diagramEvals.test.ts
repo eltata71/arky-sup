@@ -156,6 +156,12 @@ describe('banco de evaluación de diagramas', () => {
         }
     });
 
+    it('reparar no sube la puntuación de ningún caso (8.4a)', () => {
+        const measured = results.filter((r) => r.inflacion);
+        expect(measured.length).toBeGreaterThanOrEqual(15);
+        for (const r of measured) expect(r.inflacion, r.id).toEqual({ estructural: 0, completa: 0 });
+    });
+
     it('la corrección sólo gasta una llamada cuando hay hallazgos', () => {
         for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
     });

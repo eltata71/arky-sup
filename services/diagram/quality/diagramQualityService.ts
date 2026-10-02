@@ -1,3 +1,5 @@
+import { withoutDerived } from './derivedContent';
+import { repairDiagramIRSemantics } from '../../../lib/semanticRoleResolver';
 import type { DiagramIR } from '../../../lib/diagram';
 import { buildArchetypeSuggestions, detectDiagramArchetype } from '../diagramTypeQualityGates';
 import { collectVisualLints, type VisualLintIssue } from '../diagramVisualLints';
@@ -137,9 +139,12 @@ export interface AnalyzeDiagramQualityOptions {
 }
 
 export const analyzeDiagramQuality = (
-    diagram: DiagramIR,
+    analysed: DiagramIR,
     options: AnalyzeDiagramQualityOptions = {},
 ): DiagramQualityReport => {
+    // 8.4a: judged without what a repair wrote on its own, and always
+    // classified as the canvas reads it (8.1c) — classifying is reading.
+    const diagram = repairDiagramIRSemantics(withoutDerived(analysed)).ir;
     const baseIssues = collectIssues(diagram);
 
     // Archetype-specific gates layer on top of the base issues so the score

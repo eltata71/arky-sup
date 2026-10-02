@@ -532,7 +532,10 @@ Reglas que no se negocian al trabajar aquí:
     algo que el lector no representa nunca se reescribe, y quien clone un IR
     campo a campo conserva `notation`
     (`serializeIRPreservingDialect`, aplicado en `rewriteDiagramContent`); el IR
-    del modelo llega por `onDiagramIR` y no se reextrae del texto. El banco
+    del modelo llega por `onDiagramIR` y no se reextrae del texto. **Y lo que
+    una reparación escribe por su cuenta no puntúa** (8.4a): cada reparación lo
+    anota en `metadata.derived` con `noteDerived*` y la rúbrica puntúa
+    `withoutDerived(ir)`; lo que una persona edita después cuenta. El banco
     `diagram-evals` (`npm run eval:diagrams`) lo mide contra `linea-base.json`,
     que sólo puede mejorar. Ver *A diagram keeps its dialect* en `CLAUDE.md`.
     **Y todo camino de diagrama recibe el mismo contexto** (6.2):

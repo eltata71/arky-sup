@@ -23,6 +23,7 @@
  */
 
 import type { DiagramIR, DiagramIREdge, DiagramIRGroup, DiagramIRNode } from '../../lib/diagram';
+import { noteDerived, noteDerivedAdditions, noteDerivedGroups } from './quality/derivedContent';
 import { detectSemanticRole } from '../../lib/diagramTokens';
 import type { ArchitecturalViolation } from './guardrails';
 
@@ -107,6 +108,7 @@ function repairGenericLabels(
         if (!edge) continue;
         const newLabel = buildRepairLabel(nodeMap.get(edge.source), nodeMap.get(edge.target));
         if (!newLabel || newLabel === edge.label) continue;
+        noteDerived(ir, 'edgeLabels', edge.id, edge.label, newLabel);
         edge.label = newLabel;
         fixed.push(id);
     }
@@ -129,9 +131,12 @@ function repairMissingProtocols(
     for (const id of violation.targetIds) {
         const edge = ir.edges.find((e) => e.id === id);
         if (!edge || edge.protocol) continue;
+        noteDerived(ir, 'edgeProtocols', edge.id, edge.protocol, 'HTTPS/JSON');
         edge.protocol = 'HTTPS/JSON';
         if (edge.label && !/\b(http|grpc|jdbc|amqp|kafka|sql)\b/i.test(edge.label)) {
-            edge.label = `${edge.label} (HTTPS)`.slice(0, 60);
+            const labelled = `${edge.label} (HTTPS)`.slice(0, 60);
+            noteDerived(ir, 'edgeLabels', edge.id, edge.label, labelled);
+            edge.label = labelled;
         }
         fixed.push(id);
     }
@@ -176,8 +181,12 @@ function repairLayerViolation(
     const inboundLabel = buildRepairLabel(sourceNode, { id: newId, label: newLabel, kind: newKind });
     const outboundLabel = buildRepairLabel({ id: newId, label: newLabel, kind: newKind }, targetNode);
 
+    noteDerived(ir, 'edgeTargets', edge.id, edge.target, newId);
     edge.target = newId;
-    if (!edge.label || edge.label === 'Interactúa') edge.label = inboundLabel;
+    if (!edge.label || edge.label === 'Interactúa') {
+        noteDerived(ir, 'edgeLabels', edge.id, edge.label, inboundLabel);
+        edge.label = inboundLabel;
+    }
 
     const outboundId = uniqueId(`${newId}-to`, edgeIdSet);
     const outboundEdge: DiagramIREdge = {
@@ -188,6 +197,7 @@ function repairLayerViolation(
         relation: 'sync',
     };
     ir.edges.push(outboundEdge);
+    noteDerivedAdditions(ir, { nodes: [newId], edges: [outboundId] });
 
     applied.push({
         code: violation.code,
@@ -222,6 +232,7 @@ function repairMissingGrouping(
         });
     }
     if (!groups.length) return false;
+    noteDerivedGroups(ir, ir.groups, groups.map((g) => g.id));
     ir.groups.push(...groups);
     applied.push({
         code: violation.code,
@@ -255,9 +266,12 @@ function repairCycle(
     for (const id of violation.targetIds) {
         const edge = ir.edges.find((e) => e.id === id);
         if (!edge) continue;
+        noteDerived(ir, 'edgeRelations', edge.id, edge.relation, 'async');
         edge.relation = 'async';
         if (!/\b(retry|reintenta|fallback|reintento)\b/i.test(edge.label ?? '')) {
-            edge.label = `Reintenta · ${edge.label ?? ''}`.trim().slice(0, 60);
+            const relabelled = `Reintenta · ${edge.label ?? ''}`.trim().slice(0, 60);
+            noteDerived(ir, 'edgeLabels', edge.id, edge.label, relabelled);
+            edge.label = relabelled;
         }
         fixed.push(id);
     }
