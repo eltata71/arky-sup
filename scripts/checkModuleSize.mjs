@@ -60,7 +60,7 @@ export const BYTE_CEILINGS = {
    * trace attribute a per-agent decision to the user's own preference.
    */
   // F6-01: fuera sus delegados públicos y su fábrica de cliente, que sólo leían las pruebas (94 962 → 92638)
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 84259, // plan diagramas 8.2a: −2 248, la evaluación del texto sale a `diagram/diagramTextAssessment` · plan artefactos 7.5a: +415, registra los bloques complementarios en el manifiesto de contexto · plan diagramas 6.3: 86 126 → 86092 · plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 85101, // plan diagramas 8.2b: +842, el brief de texto y las reglas de formato sustituyen instrucciones de tamaño y protocolos que se contradecían · plan diagramas 8.2a: −2 248, la evaluación del texto sale a `diagram/diagramTextAssessment` · plan artefactos 7.5a: +415, registra los bloques complementarios en el manifiesto de contexto · plan diagramas 6.3: 86 126 → 86092 · plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
   'components/ReactFlowCanvas.tsx': 110112, // plan diagramas 4.1: +237, `onNodeDoubleClick` para abrir el nivel C4 siguiente // plan diagramas 3.3: +91, rejilla de 8 px al arrastrar (ADR-007) // 2.3: −122, `exportImage` nombra `CanvasExportOptions`
   'components/ProjectHub.tsx': 78777, // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/ai/prompts/diagramPrompts.ts': 44938, // plan artefactos 7.5a: +673, el puerto onContextCaptured llega a los tres constructores (la captura vive en contextManifestCapture) · plan diagramas 6.4: 52 524 → 44265, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
@@ -169,7 +169,7 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1514, // plan diagramas 8.2a: 1 568 → 1 514 · plan diagramas 6.3: 1 571 → 1568 · plan diagramas 6.2: 1 592 → 1571 · plan diagramas 6.1: 1 723 → 1 592, el camino C4 salió a la vertical de diagramas · F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1520, // plan diagramas 8.2b: +6 líneas para incluir el brief común y atender a la audiencia · plan diagramas 8.2a: 1 568 → 1 514 · plan diagramas 6.3: 1 571 → 1568 · plan diagramas 6.2: 1 592 → 1571 · plan diagramas 6.1: 1 723 → 1 592, el camino C4 salió a la vertical de diagramas · F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 962, // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975

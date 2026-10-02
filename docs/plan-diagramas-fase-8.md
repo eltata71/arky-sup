@@ -110,7 +110,8 @@ llamadas: queda marcado `defectoConocido: 8.3b` y entra en los agregados.
 | 8.1c Render = guardado | Hecha (#141): el render ya no corre la puerta; sólo la clasificación semántica de tipos (iconos y formas), y `renderShowsStored.test.ts` lo fija | #141 |
 | 8.1d Abrir no escribe | Hecha (#141): el plan de ELK queda en memoria (`layoutPlan`); sólo `applyLayoutOverride`, la elección de una persona, se guarda | #141 |
 | 8.2a Juez sintáctico | Hecha: `checkMermaidSyntax` (gramática de Mermaid, diferida) juzga el texto en el motor y en la compuerta de renderabilidad; el reintento recibe el error real; Gantt, journey y mindmap no se leen como grafos. Banco en jsdom: el Gantt se guarda como Gantt, esqueletos 4,8 % → 0, dialecto 95,2 % → 100 %, fidelidad 0,877 → 0,93 | #142 |
-| 8.2d Refinamiento fiel | Hecha: `isRefinedCandidateSafe` rechaza un candidato que deja de cumplir algo que se cumplía (`fidelityLosses`), aunque puntúe más; compara el IR con los metadatos que persistirá y el banco fija un caso que pierde un criterio. La lectura de la solicitud es una sola (`diagramFidelityReport`). | (esta PR) |
-| 8.2b–c | Pendiente | — |
+| 8.2b Brief en ruta de texto | Hecha: secuencia, ERD, estados, Gantt, flujo, híbrido y React Flow reciben el mismo `buildDiagramGenerationBrief` que C4. La audiencia pedida gobierna tamaño y nivel técnico; el banco exige el brief y detecta mandatos ejecutivos contradictorios. | (esta PR) |
+| 8.2c Ruta IR para flujo y React Flow | Pendiente | — |
+| 8.2d Refinamiento fiel | Hecha: `isRefinedCandidateSafe` rechaza un candidato que deja de cumplir algo que se cumplía (`fidelityLosses`), aunque puntúe más; compara el IR con los metadatos que persistirá y el banco fija un caso que pierde un criterio. La lectura de la solicitud es una sola (`diagramFidelityReport`). | #143 |
 | 8.3a–d | Pendiente | — |
 | 8.4a–c | Pendiente | — |

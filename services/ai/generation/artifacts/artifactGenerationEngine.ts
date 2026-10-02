@@ -44,6 +44,7 @@ import { assessDocumentArtifact } from '../../../quality';
 import { buildMinimalPresentationDeck } from '../../../presentation';
 import { extractDiagramSignals, renderDiagramSignals } from '../../../diagram';
 import { assessDiagramText, isRenderableDiagramText } from '../diagram/diagramTextAssessment';
+import { buildDiagramTextBrief } from '../diagram/diagramTextBrief';
 import {
     buildArchitectureKnowledgeGraphForProject,
     buildArtifactGenerationGraphContext,
@@ -319,6 +320,10 @@ SDD Markdown Quality Standard (Skill-ready):
         const modelName = resolveModelForSettings('default', settings).id;
         const userTemp = settings.aiConfig?.temperature ?? 0.7;
         const isDiagramArtifact = isDiagramArtifactType(template.type);
+        const mermaidQualityReinforcement = buildMermaidQualityReinforcement({
+            audience: template.requestContext?.audience === 'executive' || template.requestContext?.audience === 'technical'
+                ? template.requestContext.audience : undefined,
+        });
         const temperature = isDiagramArtifact
             ? diagramTemperature(userTemp)
             : userTemp;
@@ -344,7 +349,7 @@ SDD Markdown Quality Standard (Skill-ready):
 
         if (template.type.startsWith('mermaid')) {
             formatInstructions += this.getMermaidFormatInstructions(template.type);
-            formatInstructions += buildMermaidQualityReinforcement();
+            formatInstructions += mermaidQualityReinforcement;
         } else if (template.type === 'react-flow-graph') {
             formatInstructions = `Generate a valid JSON object with 'nodes' and 'edges' arrays for React Flow.
 
@@ -367,10 +372,10 @@ VISUAL STORYTELLING GUIDELINES:
 - Create a clear visual hierarchy: primary systems prominent, supporting systems secondary
 - Use descriptive labels on edges to show what data/commands flow between components
 - Group related nodes logically (all databases together, all frontend components together, etc.)
-- Aim for 8-20 nodes for optimal readability
+- Keep every requested element and choose a readable size for the requested audience
 - Every edge should have a meaningful label describing the interaction
 
-Respond ONLY with the JSON object.` + buildMermaidQualityReinforcement();
+Respond ONLY with the JSON object.` + mermaidQualityReinforcement;
 
             // Enhanced schema with optional visual metadata
             modelConfig = {
@@ -455,7 +460,7 @@ VALUE STREAM MAP — DIALECT REQUIREMENTS (MANDATORY):
 - Use ((Cliente)) / ((Proveedor)) for actors at the boundaries.
 - Mark bottlenecks/improvement opportunities in the step label ("⚠ Cuello de botella"); never write colour values — the renderer applies the design tokens.
 - Every edge MUST carry a verb (Solicita / Aprueba / Produce / Empaca / Entrega) and the time metric when known.
-- Aim for 6–14 process steps grouped in 3–6 subgraphs.`
+- Keep the requested process steps and group only where it improves comprehension.`
                 : isBPMN
                     ? `
 BPMN-STYLE PROCESS — DIALECT REQUIREMENTS (MANDATORY):
@@ -481,12 +486,12 @@ MERMAID DIAGRAM QUALITY STANDARDS (mandatory):
 - Use subgraph blocks or composite states for logical grouping of related elements.
 - Declare each node's role with a class name from this vocabulary — service, gateway, database, queue, external, person, process (e.g. "class api,worker service"). Names only: never write fill/stroke/color values; the renderer applies the design tokens.
 - Use semantic node shapes: [(Cylinder)] for databases, {Diamond} for decisions, ((Circle)) for actors.
-- Include descriptive labels on ALL edges with protocols or actions.
-- Aim for 8-15 nodes for optimal readability.
+- Include descriptive action labels on ALL edges; show protocols only when the request calls for technical detail.
+- Keep every requested element and make the diagram readable for its audience.
 - Output ONLY valid Mermaid 11 syntax inside the fence. Do not add explanations inside the fence.
 ${dialectGuidance}
 `;
-            formatInstructions += buildMermaidQualityReinforcement();
+            formatInstructions += mermaidQualityReinforcement;
         } else if (template.type === 'sdd-brd') {
             formatInstructions = `Generate a comprehensive Business Requirements Document (BRD) following IEEE 830 standard structure.
 Use Markdown format with these MANDATORY sections:
@@ -741,7 +746,7 @@ ON-DEMAND QUALITY BAR:
 - Build the artifact as an architect-ready deliverable, not a first draft. Use project-specific actors, systems, decisions, risks and integration points from the available project context.
 - If the contract has selected sources, use only mandatory/optional sources listed in the controlled context section as evidence. Do not use excluded sources.
 - Explicitly cover every acceptance criterion and preserve the intended audience, purpose, detail level and output format.
-- For process/workflow diagrams, prefer a left-to-right readable flow with 8-14 meaningful nodes, explicit decision branches, short verb-led labels and grouped lanes/boundaries. Avoid tall single-column diagrams unless the user explicitly asks for that orientation.
+- For process/workflow diagrams, prefer a left-to-right readable flow with every requested step, explicit decision branches, short verb-led labels and useful lanes/boundaries. Avoid tall single-column diagrams unless the user explicitly asks for that orientation.
 - For hybrid artifacts, keep the narrative concise and structured: purpose, scope, key decisions/assumptions, diagram, quality notes and next validation steps.
 - Make traceability visible: cite which context signals or existing artifacts influenced the artifact and what assumptions should be validated by the architect.
 ${!isDiagramArtifact ? buildOnDemandDocumentReinforcement(template) : ''}
@@ -868,11 +873,12 @@ DOCUMENT VISUAL & STRUCTURE STANDARD (world-class deliverable, on par with TOGAF
 ${siblingDiagramsBlock}`;
         }
 
-        captureContextBlocks(project, opts.onContextCaptured, { Inventario: promptArtifactsContext, Solicitud: requestContextInstructions, 'Selección controlada': controlledContextPromptBlock, 'Señales del diagrama': diagramSignalsBlock, 'Grafo de conocimiento': architectureGraphBlock, Consistencia: consistencyInstructions });
+        const diagramTextBrief = isDiagramArtifact ? buildDiagramTextBrief(project, template, settings, opts) : '';
+        captureContextBlocks(project, opts.onContextCaptured, { Inventario: promptArtifactsContext, Solicitud: requestContextInstructions, 'Brief del diagrama': diagramTextBrief, 'Selección controlada': controlledContextPromptBlock, 'Señales del diagrama': diagramSignalsBlock, 'Grafo de conocimiento': architectureGraphBlock, Consistencia: consistencyInstructions });
         const fullPrompt = `
 ${basePrompt}
 ${promptArtifactsContext}
-${requestContextInstructions}${controlledContextPromptBlock}${dialectBlock}${diagramSignalsBlock}${contextGraphBlock}${architectureGraphBlock}
+${requestContextInstructions}${controlledContextPromptBlock}${dialectBlock}${diagramSignalsBlock}${contextGraphBlock}${isDiagramArtifact ? diagramTextBrief : architectureGraphBlock}
 
 Task: Create Artifact
 - Name: "${template.name}"
@@ -1227,7 +1233,7 @@ Produce ONLY raw Mermaid using the flowchart dialect. Mandatory shape:
 - Include subgraph blocks for boundaries (e.g. "subgraph SB[Sistema]").
 - Assign role class names (service, gateway, database, queue, external, person, process) with "class"; never colour values.
 - Every edge must have a verb-action label (\`-->|"Verbo objeto"|\`).
-- 6 to 14 nodes, 5 to 18 edges.
+- Preserve every requested element; keep the layout readable for the requested audience.
 - Output the diagram only — no fences, no commentary.`;
     }
 
@@ -1238,8 +1244,8 @@ CRITICAL QUALITY STANDARDS (apply to ALL Mermaid diagrams):
 - Output ONLY valid Mermaid 11 syntax. Do NOT use deprecated directives.
 - Do NOT wrap output in markdown fences (\`\`\`mermaid). The application handles fencing.
 - Escape special characters in labels: use #quot; for quotes, #lpar; #rpar; for parentheses inside labels if needed.
-- Aim for 8-20 nodes/elements for optimal readability. Prioritize clarity over completeness.
-- Use descriptive labels on ALL relationships/edges — include protocols, data types, or actions.
+- Keep every requested element while preserving readability for the intended audience.
+- Use descriptive action labels on ALL relationships/edges; show protocols only when the request needs technical detail and the source establishes them.
 - Use %% comments sparingly for diagram metadata or section separators.
 - Validate that the output is syntactically correct before responding.`;
 
@@ -1356,7 +1362,7 @@ PROFESSIONAL QUALITY:
 - Use loop ... end for retry logic or polling
 - Use opt ... end for optional flows
 - Use par ... and ... end for parallel processing
-- Include protocol details in messages: A->>B: POST /api/orders [JSON]
+- Include protocol details in messages only when the request needs technical detail and the source establishes them.
 - Show error/exception paths: A-->>B: 401 Unauthorized
 - Use break ... end for exception flows that terminate the sequence
 - Keep participant declarations ordered left-to-right matching the typical flow direction
@@ -1404,7 +1410,7 @@ MANDATORY STRUCTURE:
 PROFESSIONAL QUALITY — STYLING IS MANDATORY:
 - Declare each node's role with a class name from this vocabulary — service, gateway, database, queue, external, person, process (e.g. "class api,worker service"). Names only: never write fill/stroke/color values; the renderer applies the design tokens.
 - Use subgraph blocks with styled titles for logical grouping (e.g., "Frontend Layer", "Data Layer")
-- Use descriptive edge labels with protocols: A -->|"REST/HTTPS"| B
+- Use descriptive action labels on edges; add a known protocol only for a technical audience.
 - Use dotted arrows for async: A -.->|"Event"| B
 - Use thick arrows for critical paths: A ==>|"Main flow"| B
 - Style subgraphs to be visually distinct zones
@@ -1462,7 +1468,7 @@ PROFESSIONAL QUALITY:
 - Include audit fields where relevant: created_at, updated_at, created_by
 - Model junction/bridge tables for many-to-many relationships
 - Include enum/type entities for domain-specific classifications
-- Show 6-15 entities for optimal readability — focus on the core domain model
+- Show the requested entities and relationships; focus on the core domain model.
 - Group related entities visually (Mermaid handles auto-layout, but declare related entities near each other)
 ${crossCuttingGuidance}`;
 
