@@ -82,4 +82,12 @@ describe('ArtifactTopToolbar', () => {
     expect(screen.queryByRole('tab', { name: 'Diagrama' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Híbrido' })).not.toBeInTheDocument();
   });
+  it('offers «Notación» when the artifact has Mermaid text (8.3a)', () => {
+    const onSelectView = vi.fn();
+    render(<ArtifactTopToolbar {...baseProps} viewMode="notation" onSelectView={onSelectView} availableViews={['notation', 'diagram', 'document']} />);
+    const tab = screen.getByRole('tab', { name: 'Notación' });
+    expect(tab).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: 'Diagrama' }));
+    expect(onSelectView).toHaveBeenCalledWith('diagram');
+  });
 });

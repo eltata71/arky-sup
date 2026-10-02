@@ -34,8 +34,11 @@ export const useArtifactViewMode = (
   const capabilities = useMemo(() => getArtifactViewCapabilities(artifact), [artifact]);
 
   const computeInitial = useCallback((): ArtifactViewMode => {
+    // A hybrid opens split only when its diagram belongs on the canvas: a
+    // sequence or a Gantt opens in its own notation (8.3a).
     if (
-      capabilities.hasRenderableDiagram
+      capabilities.preferredView !== 'notation'
+      && capabilities.hasRenderableDiagram
       && capabilities.hasRenderableDocument
       && artifact.representation === 'hybrid'
       && !isNarrowViewport

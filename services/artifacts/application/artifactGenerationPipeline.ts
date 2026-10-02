@@ -212,21 +212,70 @@ export interface ArtifactViewCapabilities {
 
 const uniqueViews = (views: ArtifactViewMode[]): ArtifactViewMode[] => Array.from(new Set(views));
 
+/**
+ * Dialectos de Mermaid cuya notación no es un grafo de cajas y flechas (8.3a).
+ *
+ * Una secuencia son líneas de vida, activaciones y fragmentos `alt`/`loop`;
+ * un Gantt es un eje de tiempo; un diagrama de estados tiene estados
+ * compuestos y pseudoestados. El lienzo los aplana a nodos y aristas, así que
+ * abren en su notación nativa. Flujo, C4 y ERD siguen abriendo en el lienzo,
+ * donde su forma sí es un grafo.
+ */
+const NATIVE_NOTATION_HEADERS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^sequencediagram\b/i, 'sequence'],
+  [/^gantt\b/i, 'gantt'],
+  [/^statediagram(-v2)?\b/i, 'state'],
+  [/^journey\b/i, 'journey'],
+  [/^mindmap\b/i, 'mindmap'],
+];
+
+/**
+ * El dialecto nativo de un texto Mermaid, o `null` si su notación es un grafo.
+ * Salta el bloque de configuración (`---`…`---`) y las directivas `%%`.
+ */
+export const nativeNotationDialect = (source: string | null | undefined): string | null => {
+  if (!source) return null;
+  let inFrontmatter = false;
+  for (const raw of source.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line === '---') {
+      inFrontmatter = !inFrontmatter;
+      continue;
+    }
+    if (inFrontmatter || line.startsWith('%%')) continue;
+    const match = NATIVE_NOTATION_HEADERS.find(([pattern]) => pattern.test(line));
+    return match ? match[1] : null;
+  }
+  return null;
+};
+
+const diagramMermaidSource = (artifact: Artifact): string | null => {
+  if (artifact.representation === 'document' || artifact.type === 'react-flow-graph') return null;
+  const extracted = extractMermaid(artifact.content, artifact.representation === 'diagram' ? 'diagram' : 'hybrid');
+  return extracted.ok ? extracted.code : null;
+};
+
 export const getArtifactViewCapabilities = (artifact: Artifact): ArtifactViewCapabilities => {
   const content = artifact.content.trim();
   const irDiagnostic = extractIRDiagnostic({ content: artifact.content, representation: artifact.representation, type: artifact.type });
   const hasRenderableIR = Boolean(artifact.ir?.nodes?.length) || irDiagnostic.status === 'ok';
   const hasRenderableDocument = content.length > 0;
+  const mermaidSource = diagramMermaidSource(artifact);
+  const prefersNotation = nativeNotationDialect(mermaidSource) !== null;
   const availableViews = uniqueViews([
+    ...(mermaidSource ? ['notation'] as ArtifactViewMode[] : []),
     ...(hasRenderableIR ? ['diagram', 'split', 'excalidraw', 'lucidchart', 'fable'] as ArtifactViewMode[] : []),
     ...(hasRenderableDocument ? ['document', 'markdown'] as ArtifactViewMode[] : []),
     ...(hasRenderableDocument && isPublicationViewEnabled() ? ['publication'] as ArtifactViewMode[] : []),
   ]);
-  const preferredView: ArtifactViewMode = hasRenderableIR
-    ? 'diagram'
-    : hasRenderableDocument
-      ? (/(^|\n)#{1,6}\s+/.test(content) ? 'markdown' : 'document')
-      : 'document';
+  const preferredView: ArtifactViewMode = prefersNotation
+    ? 'notation'
+    : hasRenderableIR
+      ? 'diagram'
+      : hasRenderableDocument
+        ? (/(^|\n)#{1,6}\s+/.test(content) ? 'markdown' : 'document')
+        : 'document';
   return {
     availableViews,
     preferredView,

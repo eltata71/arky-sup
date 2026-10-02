@@ -36,6 +36,7 @@ export { DocumentPaper } from './document/DocumentPaper';
 export type { DocumentPaperProps } from './document/DocumentPaper';
 
 export { DiagramView } from './diagram/DiagramView';
+export { MermaidNotationView } from './diagram/MermaidNotationView';
 export type { DiagramViewProps } from './diagram/DiagramView';
 export { DiagramSkeleton, LoadingOverlay } from './diagram/DiagramSkeleton';
 export { isDiagramFlowData } from './diagram/diagramFlow';

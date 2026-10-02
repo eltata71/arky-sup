@@ -134,6 +134,14 @@ describe('banco de evaluación de diagramas', () => {
         },
     );
 
+    it('cada diagrama abre en la superficie de su dialecto: notación o lienzo (8.3a)', () => {
+        // Una secuencia abre con líneas de vida y bloques, no aplanada a cajas.
+        const sequences = results.filter((r) => r.dialectoGuardado === 'sequenceDiagram');
+        expect(sequences.length).toBeGreaterThan(0);
+        for (const r of sequences) expect(r.vista.inicial, r.id).toBe('notation');
+        for (const r of results) expect(r.vista.inicial, `${r.id} (${r.dialectoGuardado})`).toBe(r.vista.esperada);
+    });
+
     it('la corrección sólo gasta una llamada cuando hay hallazgos', () => {
         for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
     });
@@ -226,6 +234,7 @@ describe('banco de evaluación de diagramas', () => {
         for (const key of INTEGRITY_COUNTERS) expect(summary[key], key).toBeLessThanOrEqual(actual[key]);
         expect(summary.dialectoTrasEdicion).toBeGreaterThanOrEqual(actual.dialectoTrasEdicion);
         expect(summary.sintaxisValida).toBeGreaterThanOrEqual(actual.sintaxisValida ?? 0);
+        expect(summary.vistaFiel).toBeGreaterThanOrEqual(actual.vistaFiel ?? 0);
         expect(summary.casosConContradicciones).toBeLessThanOrEqual(actual.casosConContradicciones);
         // La puntuación la calcula un motor heurístico que evoluciona por su
         // cuenta; se tolera un punto para no convertir cada ajuste suyo en un

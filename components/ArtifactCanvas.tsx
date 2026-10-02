@@ -23,6 +23,7 @@ import {
   GenerationTracePanel,
   DocumentView,
   DiagramView,
+  MermaidNotationView,
   MarkdownView,
   ExcalidrawArtifactView,
   LucidchartArtifactView,
@@ -788,6 +789,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
                 }}
               />
             )}
+            {viewMode === 'notation' && <MermaidNotationView source={mermaidCode} artifactName={artifact.name} onViewText={() => setViewMode('document')} />}
             {viewMode === 'publication' && !isFullscreen && (
               <PresentationErrorBoundary panelName="Presentación">
               <ArtifactPresentationView
