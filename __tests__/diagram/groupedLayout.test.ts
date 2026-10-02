@@ -120,11 +120,12 @@ describe('layoutIR — two-level grouped layout', () => {
     });
 });
 
-describe('irToReactFlowSmart — grouped diagrams bypass ELK', () => {
-    it('uses the grouped dagre layout and reports it in the plan', async () => {
+describe('irToReactFlowSmart — grouped diagrams use hierarchical ELK (8.3c)', () => {
+    it('lays the groups out as compound nodes and reports it in the plan', async () => {
         const result = await irToReactFlowSmart(buildGroupedIR(), 'mermaid-graph');
-        expect(result.plan.backend).toBe('dagre');
-        expect(result.plan.rationale).toContain('agrupaciones');
+        expect(result.plan.backend).toBe('elk');
+        expect(result.plan.orthogonal).toBe(true);
+        expect(result.plan.rationale).toContain('nodo compuesto');
         // Groups stay disjoint after materialization too.
         const byId = new Map(result.nodes.map((n) => [String(n.id), n] as const));
         const box = (ids: string[]): Box => {

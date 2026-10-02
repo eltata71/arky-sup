@@ -54,7 +54,23 @@ export interface ElkLayoutOptions {
      * appropriate for `layered`/`box`. ELK ignores this flag for `force`.
      */
     orthogonal?: boolean;
+    /**
+     * Plan de diagramas 8.3c — the zone a node is drawn inside (its
+     * `group`). When any node has one, the graph is laid out hierarchically:
+     * each zone becomes an ELK compound node, so its members stay together
+     * and two zones can never overlap — ELK reserves the space instead of a
+     * pass that pushes clusters apart afterwards. Forces `layered`.
+     */
+    groupOf?: (node: DiagramIR['nodes'][number]) => string | undefined;
+    /**
+     * The padding the renderer draws around a zone's members. ELK reserves
+     * exactly that rectangle, so the zone on screen is the one ELK separated.
+     */
+    groupPadding?: (group: string) => { top: number; left: number; bottom: number; right: number };
 }
+
+/** Prefix of the ELK compound node that stands for a zone; never a node id. */
+const GROUP_PREFIX = '__elk_group__:';
 
 const elk = new ELK();
 
@@ -103,7 +119,15 @@ function elkDirection(direction: LayoutDirection): string {
 export async function layoutIRWithELK(ir: DiagramIR, opts: ElkLayoutOptions): Promise<LayoutResult> {
     const preset = LAYOUT_PRESETS[opts.preset];
     const direction = opts.direction ?? inferDirection(ir);
-    const algorithm: ElkAlgorithm = opts.algorithm ?? 'layered';
+    const zoneOf = new Map<string, string>();
+    for (const node of ir.nodes) {
+        const zone = opts.groupOf?.(node);
+        if (zone) zoneOf.set(node.id, zone);
+    }
+    const hierarchical = zoneOf.size > 0;
+    // Compound nodes are honoured by `layered` with INCLUDE_CHILDREN; the
+    // other algorithms would lay each zone out on its own and lose the edges.
+    const algorithm: ElkAlgorithm = hierarchical ? 'layered' : opts.algorithm ?? 'layered';
     const densityScale = opts.densityScale ?? 1;
     const labelDims = opts.edgeLabelDims ?? ((label) => estimateLabelDims(label, 11));
 
@@ -115,21 +139,51 @@ export async function layoutIRWithELK(ir: DiagramIR, opts: ElkLayoutOptions): Pr
         'elk.spacing.edgeNode': String(preset.spacing.edgeSep),
         'elk.padding': `[top=${preset.spacing.marginY},left=${preset.spacing.marginX},bottom=${preset.spacing.marginY},right=${preset.spacing.marginX}]`,
     };
-    if (opts.orthogonal && algorithm === 'layered') {
+    if ((opts.orthogonal || hierarchical) && algorithm === 'layered') {
         layoutOptions['elk.edgeRouting'] = 'ORTHOGONAL';
+    }
+    if (hierarchical) {
+        layoutOptions['elk.hierarchyHandling'] = 'INCLUDE_CHILDREN';
+        // Absolute coordinates for every shape and edge, so nothing has to
+        // add up parent offsets afterwards.
+        layoutOptions['elk.json.shapeCoords'] = 'ROOT';
+        layoutOptions['elk.json.edgeCoords'] = 'ROOT';
+    }
+
+    const leaf = (node: DiagramIR['nodes'][number]) => {
+        const dims = opts.nodeDims?.(node);
+        return {
+            id: node.id,
+            width: dims?.width ?? preset.node.width,
+            height: dims?.height ?? preset.node.height,
+        };
+    };
+    const zones = new Map<string, Array<ReturnType<typeof leaf>>>();
+    const topLevel: Array<Record<string, unknown>> = [];
+    for (const node of ir.nodes) {
+        const zone = zoneOf.get(node.id);
+        if (!zone) {
+            topLevel.push(leaf(node));
+            continue;
+        }
+        if (!zones.has(zone)) zones.set(zone, []);
+        zones.get(zone)!.push(leaf(node));
+    }
+    for (const [zone, members] of zones) {
+        const pad = opts.groupPadding?.(zone) ?? { top: 44, left: 32, bottom: 30, right: 32 };
+        topLevel.push({
+            id: `${GROUP_PREFIX}${zone}`,
+            layoutOptions: {
+                'elk.padding': `[top=${pad.top},left=${pad.left},bottom=${pad.bottom},right=${pad.right}]`,
+            },
+            children: members,
+        });
     }
 
     const elkGraph = {
         id: 'root',
         layoutOptions,
-        children: ir.nodes.map((node) => {
-            const dims = opts.nodeDims?.(node);
-            return {
-                id: node.id,
-                width: dims?.width ?? preset.node.width,
-                height: dims?.height ?? preset.node.height,
-            };
-        }),
+        children: topLevel,
         edges: ir.edges
             .filter((e) =>
                 ir.nodes.some((n) => n.id === e.source) &&
@@ -148,37 +202,51 @@ export async function layoutIRWithELK(ir: DiagramIR, opts: ElkLayoutOptions): Pr
             }),
     };
 
-    type ElkNode = {
-        children?: Array<{ id: string; x?: number; y?: number; width?: number; height?: number }>;
-        edges?: Array<{
-            id: string; sources: string[]; targets: string[];
-            sections?: Array<{
-                startPoint: { x: number; y: number };
-                endPoint: { x: number; y: number };
-                bendPoints?: Array<{ x: number; y: number }>;
-            }>;
+    type ElkEdge = {
+        id: string; sources: string[]; targets: string[];
+        sections?: Array<{
+            startPoint: { x: number; y: number };
+            endPoint: { x: number; y: number };
+            bendPoints?: Array<{ x: number; y: number }>;
         }>;
-        width?: number;
-        height?: number;
+    };
+    type ElkNode = {
+        id?: string;
+        x?: number; y?: number; width?: number; height?: number;
+        children?: ElkNode[];
+        edges?: ElkEdge[];
     };
 
     const laidOut = (await elk.layout(elkGraph as never)) as ElkNode;
 
     const positions = new Map<string, PositionedNode>();
+    const groupBoxes = new Map<string, PositionedNode>();
+    const elkEdges: ElkEdge[] = [];
     let maxX = 0;
     let maxY = 0;
-    for (const child of laidOut.children ?? []) {
-        const x = child.x ?? 0;
-        const y = child.y ?? 0;
-        const w = child.width ?? preset.node.width;
-        const h = child.height ?? preset.node.height;
-        positions.set(child.id, { id: child.id, x, y, width: w, height: h });
-        if (x + w > maxX) maxX = x + w;
-        if (y + h > maxY) maxY = y + h;
-    }
+    const visit = (container: ElkNode) => {
+        elkEdges.push(...(container.edges ?? []));
+        for (const child of container.children ?? []) {
+            const id = child.id ?? '';
+            const x = child.x ?? 0;
+            const y = child.y ?? 0;
+            const w = child.width ?? preset.node.width;
+            const h = child.height ?? preset.node.height;
+            if (x + w > maxX) maxX = x + w;
+            if (y + h > maxY) maxY = y + h;
+            if (id.startsWith(GROUP_PREFIX)) {
+                const zone = id.slice(GROUP_PREFIX.length);
+                groupBoxes.set(zone, { id: zone, x, y, width: w, height: h });
+                visit(child);
+            } else {
+                positions.set(id, { id, x, y, width: w, height: h });
+            }
+        }
+    };
+    visit(laidOut);
 
     const edgeWaypoints = new Map<string, { x: number; y: number }[]>();
-    for (const elkEdge of laidOut.edges ?? []) {
+    for (const elkEdge of elkEdges) {
         const irEdge = ir.edges.find((e) => e.id === elkEdge.id);
         if (!irEdge) continue;
         const section = elkEdge.sections?.[0];
@@ -196,6 +264,7 @@ export async function layoutIRWithELK(ir: DiagramIR, opts: ElkLayoutOptions): Pr
         nodeSize: { width: preset.node.width, height: preset.node.height },
         positions,
         edgeWaypoints,
+        ...(hierarchical ? { groupBoxes } : {}),
         bbox: {
             width:  Math.max(maxX, laidOut.width ?? 0) + preset.spacing.marginX,
             height: Math.max(maxY, laidOut.height ?? 0) + preset.spacing.marginY,

@@ -20,6 +20,7 @@ import { resolveNodeHierarchy, resolveEdgeHierarchy } from './visualHierarchyPol
 import { resolveEdgeLabelDecision, resolveNodeLabelDecision } from './labelPolicy';
 import { computeEdgeLabelSlots } from './edgeLabelSlots';
 import { computeGroupSeparationOffsets } from './groupZoneSeparation';
+import { layoutGroupedIR } from './groupedDiagramLayout';
 import { assignEdgeAnchors } from './edgeHandleAssignment';
 
 export interface IRToReactFlowResult {
@@ -192,28 +193,10 @@ export async function irToReactFlowSmart(
     }
     const plan = selectLayoutPlan({ ir, artifactType });
     const densityScale = DENSITY_SCALE[plan.density];
-    // Grouped diagrams: ELK has no cluster support here, so its layered pass
-    // scatters group members across the canvas and the translucent zones
-    // inflate until they cover half the viewport. Route them through the
-    // two-level grouped dagre layout instead (members contiguous, zones
-    // content-sized, no overlaps) while keeping the selector's direction
-    // and density decisions.
-    const distinctGroups = new Set(ir.nodes.map((n) => n.group).filter(Boolean));
-    if (distinctGroups.size >= 2) {
-        const layout = layoutIR(ir, {
-            preset: 'flow',
-            direction: plan.direction,
-            density: plan.density,
-            nodeDims: (node) => estimateNodeDims(node, plan.density),
-        });
-        const groupedPlan: LayoutPlan = {
-            ...plan,
-            backend: 'dagre',
-            algorithm: 'layered',
-            orthogonal: false,
-            rationale: `Diagrama con ${distinctGroups.size} agrupaciones: layout jerárquico por grupos (miembros contiguos, zonas sin solapamiento).`,
-        };
-        return { ...materialize(ir, layout), plan: groupedPlan };
+    // Grouped diagrams: each zone is an ELK compound node (8.3c).
+    if (ir.nodes.some((n) => n.group)) {
+        const grouped = await layoutGroupedIR(ir, plan, densityScale);
+        return { ...materialize(ir, grouped.layout, { separateGroups: grouped.plan.backend !== 'elk' }), plan: grouped.plan };
     }
     if (plan.backend === 'elk') {
         try {

@@ -67,6 +67,8 @@ export interface LayoutResult {
     edgeWaypoints: Map<string, { x: number; y: number }[]>;
     /** Total bounding box of the laid-out diagram, useful for export sizing. */
     bbox: { width: number; height: number };
+    /** 8.3c: each zone's reserved rectangle, by group label, when ELK laid zones out as compound nodes. */
+    groupBoxes?: Map<string, PositionedNode>;
 }
 
 /** Stable key for {@link LayoutResult.edgeWaypoints}. */
