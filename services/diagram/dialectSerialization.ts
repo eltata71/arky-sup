@@ -18,7 +18,6 @@
 
 import type { DiagramIR } from '../../lib/diagram';
 import { irToMermaid } from './irToMermaid';
-import { irToReactFlow } from './irToReactFlow';
 import { c4LevelOfArtifactType, irToMermaidC4 } from './irToMermaidC4';
 
 /** The first statement of a Mermaid text: its dialect keyword (`flowchart`, `erDiagram`…). */
@@ -53,9 +52,4 @@ export function serializeIRPreservingDialect(
     const dialect = mermaidDialectOf(currentMermaid);
     if (dialect === 'flowchart' || dialect === 'graph' || dialect === '') return irToMermaid(ir);
     return null;
-}
-
-/** The IR written for a flowchart (`mermaid-graph`, as Mermaid) or a React Flow artifact (as its JSON). */
-export function serializeFlowArtifact(ir: DiagramIR, artifactType: 'mermaid-graph' | 'react-flow-graph'): string {
-    return artifactType === 'react-flow-graph' ? JSON.stringify(irToReactFlow(ir)) : irToMermaid(ir);
 }

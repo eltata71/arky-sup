@@ -3,7 +3,6 @@ import type { ArtifactTemplate, Settings } from '../../../../types';
 import type { Artifact } from '../../../../lib/artifacts';
 import type { DiagramAudience, DiagramIR } from '../../../../lib/diagram';
 import type { Project } from '../../../architectureProjects';
-import { serializeFlowArtifact } from '../../../diagram';
 import type { ArtifactContentGenerationOptions } from '../artifacts/artifactGenerationSupport';
 import { buildDiagramTextBrief } from './diagramTextBrief';
 import { generateDiagramIRWithSelfHealing } from './diagramIRGeneration';
@@ -15,7 +14,9 @@ function requestedAudience(template: ArtifactTemplate, previous?: Artifact): Dia
     return previous?.audience ?? 'technical';
 }
 
-function serializeDiagram(ir: DiagramIR, type: ArtifactTemplate['type']): string {
+// Lazy: React Flow's layout (ELK, dagre) must not enter the routes that only open the engine.
+async function serializeDiagram(ir: DiagramIR, type: ArtifactTemplate['type']): Promise<string> {
+    const { serializeFlowArtifact } = await import('../../../diagram/flowArtifactSerialization');
     return serializeFlowArtifact(ir, type === 'react-flow-graph' ? 'react-flow-graph' : 'mermaid-graph');
 }
 
@@ -63,7 +64,7 @@ export async function generateStructuredDiagramArtifactContent(
             ? `El modelo indicó que falta información: ${result.declineReason}. Se guardó un esqueleto base.`
             : 'El modelo no produjo un diagrama válido tras dos intentos: se guardó un esqueleto base.');
         opts.onDiagramIR?.(result.ir);
-        const content = serializeDiagram(result.ir, template.type);
+        const content = await serializeDiagram(result.ir, template.type);
         return template.type === 'mermaid-graph' ? opts.support.markSkeleton(content) : content;
     }
     const correction = await correctDiagramOnce(result.ir, {
@@ -86,5 +87,5 @@ export async function generateStructuredDiagramArtifactContent(
         at: new Date().toISOString(),
     });
     opts.onDiagramIR?.(correction.ir);
-    return serializeDiagram(correction.ir, template.type);
+    return await serializeDiagram(correction.ir, template.type);
 }
