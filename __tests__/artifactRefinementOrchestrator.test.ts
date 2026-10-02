@@ -313,6 +313,50 @@ describe('isRefinedCandidateSafe — safety gate', () => {
     const safety = isRefinedCandidateSafe(validMermaid, diagramContext());
     expect(safety.ok).toBe(true);
   });
+  // Plan de diagramas 8.2d: una puntuación mejor no compra un diagrama de otra cosa.
+  describe('fidelidad a la solicitud', () => {
+    const asked: ArtifactTemplate = {
+      ...diagramTemplate,
+      requestContext: { userRequest: 'Diagrama del flujo hacia el «Core de pólizas» desde el portal', audience: 'technical' },
+    };
+    const askedContext = () => ({ ...diagramContext(), template: asked, baselineEnvelope: envelopeFor(asked, validMermaid) });
+
+    it('rechaza un candidato que pierde el elemento que la solicitud nombra', () => {
+      const renamed = `graph LR
+  Usuario[Usuario asegurado] -->|Inicia sesión HTTPS| Portal[Portal digital]
+  Portal -->|Consulta pólizas REST| API[API de integración]
+  API -->|Lee pólizas JDBC| Core[Sistema central]
+`;
+      const safety = isRefinedCandidateSafe(renamed, askedContext());
+      expect(safety.ok).toBe(false);
+      expect(safety.reason).toMatch(/deja de cumplir lo pedido: «Core de pólizas»/);
+    });
+
+    it('acepta un candidato que conserva lo pedido y mejora lo demás', () => {
+      const labelled = `graph LR
+  Usuario[Usuario asegurado] -->|Inicia sesión HTTPS| Portal[Portal digital]
+  Portal -->|Consulta pólizas REST| API[API de integración]
+  API -->|Lee pólizas JDBC| Core[Core de pólizas]
+`;
+      expect(isRefinedCandidateSafe(labelled, askedContext()).ok).toBe(true);
+    });
+
+    it('conserva la evidencia de fidelidad que persiste en los metadatos', () => {
+      const template: ArtifactTemplate = {
+        ...diagramTemplate,
+        requestContext: { userRequest: 'Mostrar «Decisión de cobertura» en el diagrama', audience: 'technical' },
+      };
+      const baselineIR = diagramContext().baselineIR!;
+      const safety = isRefinedCandidateSafe(validMermaid, {
+        ...diagramContext(),
+        template,
+        baselineIR: { ...baselineIR, metadata: { ...baselineIR.metadata, title: 'Decisión de cobertura' } },
+      });
+      expect(safety.reason).toBe('Mejora segura.');
+      expect(safety.ok).toBe(true);
+      expect(safety.ir?.metadata?.title).toBe('Decisión de cobertura');
+    });
+  });
 });
 
 describe('artifactRefinementOrchestrator — fallback safety', () => {

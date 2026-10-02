@@ -23,9 +23,12 @@ import {
     renderReport,
     runEvalCase,
     summarize,
+    templateFor,
     type DiagramEvalCaseResult,
     type DiagramEvalSummary,
 } from './diagramEvalHarness';
+import { extractIRFromArtifact } from '../../../services/diagram';
+import { describeFidelityLoss } from '../../../services/artifacts/application/diagramFidelityReview';
 
 const corpus = loadCorpus();
 const baseline = JSON.parse(readFileSync(join(CORPUS_DIR, 'linea-base.json'), 'utf8')) as {
@@ -134,6 +137,19 @@ describe('banco de evaluación de diagramas', () => {
     it('la corrección sólo gasta una llamada cuando hay hallazgos', () => {
         for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
     });
+
+    it.each(corpus.filter((c) => c.respuestaRefinamiento).map((c) => c.id))(
+        '%s rechaza un refinamiento que borra algo pedido',
+        (id) => {
+            const fixture = corpus.find((c) => c.id === id)!;
+            const baseline = fixture.respuestaModelo as string;
+            const candidate = fixture.respuestaRefinamiento!;
+            const template = templateFor(fixture);
+            const parse = (content: string) => extractIRFromArtifact({ content, type: template.type, representation: template.representation });
+            expect(describeFidelityLoss(template, baseline, parse(baseline), candidate, parse(candidate)))
+                .toMatch(/deja de cumplir lo pedido/);
+        },
+    );
 
     describe.each(corpus.filter((c) => c.plantilla.tipo.startsWith('mermaid-c4-') && !c.esperado.degradado).map((c) => c.id))('C4 %s', (id) => {
         it('se guarda en el dialecto C4 que nombra su tipo, no como flowchart', () => {

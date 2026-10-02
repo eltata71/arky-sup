@@ -219,3 +219,16 @@ export function checkRequestFidelity(input: FidelityInput): FidelityReport {
         warnings,
     };
 }
+
+/**
+ * What a change would lose against the request (plan de diagramas, 8.2d): the
+ * checks that held before and no longer do. A refinement that scores higher
+ * on the rubric and drops an element the request names is a better-drawn
+ * diagram of something else — the one outcome a refinement must not have.
+ * Checks are matched by kind and target; a check the change introduces is
+ * not a loss.
+ */
+export function fidelityLosses(before: FidelityReport, after: FidelityReport): FidelityCheck[] {
+    const held = new Set(before.checks.filter((c) => c.status === 'ok').map((c) => `${c.kind}::${c.target}`));
+    return after.checks.filter((c) => c.status === 'warning' && held.has(`${c.kind}::${c.target}`));
+}

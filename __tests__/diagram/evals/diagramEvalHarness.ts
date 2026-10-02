@@ -65,6 +65,8 @@ export interface DiagramEvalCase {
     };
     /** El IR (camino C4) o el texto (Mermaid, híbrido) que devolvió el modelo. */
     respuestaModelo: DiagramIR | string | { error: string };
+    /** Candidate rewrite that must lose a requested element (8.2d). */
+    respuestaRefinamiento?: string;
     /** El parche que propone el modelo cuando se le pide corregir (plan 6.3). */
     respuestaCorreccion?: unknown;
     esperado: {
@@ -308,7 +310,7 @@ function projectFor(testCase: DiagramEvalCase): Project {
     } as unknown as Project;
 }
 
-function templateFor(testCase: DiagramEvalCase): ArtifactTemplate {
+export function templateFor(testCase: DiagramEvalCase): ArtifactTemplate {
     const type = testCase.plantilla.tipo;
     return {
         name: testCase.plantilla.nombre,

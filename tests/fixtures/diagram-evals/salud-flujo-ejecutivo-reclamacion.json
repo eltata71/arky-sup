@@ -30,6 +30,7 @@
     ]
   },
   "respuestaModelo": "flowchart LR\n    asegurado((Asegurado)) -->|Presenta reclamación| app[App del asegurado]\n    subgraph Recepcion[Recepción]\n        app -->|Envía documentos| captura[Captura de documentos]\n        captura -->|Extrae datos| validacion[Validación de cobertura]\n    end\n    subgraph Decision[Decisión]\n        validacion -->|Aplica reglas| adjudicacion[Adjudicación automática]\n        adjudicacion -->|Casos complejos| revision[Revisión manual]\n    end\n    adjudicacion -->|Ordena pago| tesoreria[(Tesorería)]\n    revision -->|Ordena pago| tesoreria",
+  "respuestaRefinamiento": "flowchart LR\n    asegurado((Asegurado)) -->|Presenta reclamación| app[App del asegurado]\n    subgraph Recepcion[Recepción]\n        app -->|Envía documentos| captura[Captura de documentos]\n        captura -->|Extrae datos| validacion[Validación de cobertura]\n    end\n    subgraph Decision[Decisión]\n        validacion -->|Aplica reglas| adjudicacion[Motor de reglas]\n        adjudicacion -->|Casos complejos| revision[Revisión manual]\n    end\n    adjudicacion -->|Ordena pago| tesoreria[(Tesorería)]\n    revision -->|Ordena pago| tesoreria",
   "esperado": {
     "dialecto": "flowchart",
     "entidades": [

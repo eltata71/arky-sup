@@ -334,7 +334,7 @@ export const mergeIRMetadata = (fresh: DiagramIR, previous: DiagramIR | undefine
             // narrative, diagramType, layoutPlan, qualityReview, audience
             // and theme survive the visual edit.
             ...(previous.metadata ?? {}),
-            ...(fresh.metadata ?? {}),
+            ...Object.fromEntries(Object.entries(fresh.metadata ?? {}).filter(([, value]) => value !== undefined)),
         },
     };
 };
