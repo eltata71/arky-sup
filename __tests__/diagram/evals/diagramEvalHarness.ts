@@ -613,6 +613,9 @@ export function checkPrompt(testCase: DiagramEvalCase, prompt: string): { contex
     ];
     if (testCase.solicitud) {
         contexto.push({ que: 'solicitud literal', ok: has(testCase.solicitud.texto) });
+        if (!testCase.plantilla.tipo.startsWith('mermaid-c4-')) {
+            contexto.push({ que: 'brief de solicitud en ruta de texto', ok: prompt.includes('SOLICITUD DEL USUARIO') });
+        }
         const audience = testCase.solicitud.audiencia;
         if (audience === 'executive' || audience === 'technical') {
             contexto.push({ que: `audiencia ${audience}`, ok: new RegExp(`audience:?\\s*${audience}`).test(text) });
@@ -629,6 +632,14 @@ export function checkPrompt(testCase: DiagramEvalCase, prompt: string): { contex
     if (/fill:#|stroke:#/i.test(prompt)) contradicciones.push('pide colores hex y el system prompt los prohíbe');
     if (testCase.plantilla.tipo.startsWith('mermaid-c4-') && /\bRel\(|argument/.test(prompt)) {
         contradicciones.push('pide sintaxis Mermaid C4 en un camino que devuelve JSON');
+    }
+    if (testCase.solicitud?.audiencia === 'executive' && !testCase.plantilla.tipo.startsWith('mermaid-c4-')) {
+        if (/arquitectos senior|aim for 8-20 nodes|8-14 meaningful nodes|aim for 8-15 nodes/i.test(prompt)) {
+            contradicciones.push('la ruta ejecutiva impone tamaño o audiencia técnica');
+        }
+        if (/every edge must carry[^\n]*protocol|protocol details on every edge/i.test(prompt)) {
+            contradicciones.push('la ruta ejecutiva exige protocolos en todas las relaciones');
+        }
     }
     return { contexto, contradicciones };
 }

@@ -55,8 +55,8 @@ export function buildMermaidQualityReinforcement(opts: { audience?: DiagramAudie
             ? 'Audiencia objetivo: comité ejecutivo (≤ 8 nodos, labels de negocio, cero jerga).'
             : opts.audience === 'operations'
                 ? 'Audiencia objetivo: operaciones (resaltar colas, jobs, timers, reintentos).'
-                : 'Audiencia objetivo: arquitectos e ingenieros (detalle técnico con protocolos).'
-        : 'Audiencia objetivo: arquitectos senior (nivel técnico, detalle con protocolos).';
+                : 'Audiencia objetivo: arquitectos e ingenieros (detalle técnico y protocolos sólo si constan en las fuentes).'
+        : 'Audiencia objetivo: respeta la solicitud; si no indica audiencia, usa etiquetas claras para una audiencia mixta.';
 
     return `
 
@@ -147,14 +147,14 @@ ARKY 10-DIMENSION RUBRIC (0-10 each, 0-100 weighted)
 ────────────────────────────────────────────────────────────────────
 HARD RULES (apply to every artifact)
 ────────────────────────────────────────────────────────────────────
-• Every edge MUST carry an actionable verb label with an explicit protocol/channel
-  ("Autentica · HTTPS", "Consulta catálogo · REST/HTTPS", "Publica evento · Kafka"). Avoid generic nouns like "data" / "call".
-• Node labels ≤ 24 characters when possible; expand acronyms on first use.
+• Every edge MUST carry an actionable verb label.
+  Include a protocol/channel only when the source establishes it and the
+  audience needs technical detail.
+  For an executive audience, use business verbs and omit protocols and jargon.
 • Group / boundary blocks are mandatory when there are ≥ 5 nodes.
-• Audience-aware sizing:
-    – executive  : 4–8 nodes, no jargon, business verbs only.
-    – technical  : 8–24 nodes, protocol/channel details on every edge and technology hints on platform nodes.
-    – operations : 6–18 nodes, surface queues, retries, schedules.
+• Follow the requested audience, scope and element count. If no count was
+  requested, keep the diagram readable without dropping required elements.
+  For operations, surface known queues, retries and schedules.
 • Use deterministic, kebab/snake-cased ids — never timestamps or UUIDs.
 • If the input is genuinely insufficient, emit ONLY {"error":"<reason>"}.
 
