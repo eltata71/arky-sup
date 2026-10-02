@@ -37,6 +37,8 @@ import { getArtifactViewCapabilities } from '../../../services/artifacts/applica
 import type { ArtifactViewMode } from '../../../lib/artifacts/artifactPipelineContracts';
 import { extractIRFromArtifact, resolveRenderableDiagram } from '../../../services/diagram';
 import { checkMermaidSyntax } from '../../../services/diagram/mermaidSyntax';
+import { notationFingerprint, serializeNotation } from '../../../services/diagram/notation';
+import { mermaidToIR } from '../../../services/diagram';
 import { resolveGroupSemanticStyle } from '../../../services/diagram/groupSemantics';
 import { computeLayoutQuality, type GroupRect, type NodeRect } from '../../../services/diagram/layoutQualityService';
 
@@ -117,6 +119,11 @@ export interface DiagramEvalCaseResult {
     /** `null` cuando el modelo no escribió historia. */
     historiaConservada: boolean | null;
     esqueleto: boolean;
+    /**
+     * Secuencia, ERD o estados: si el texto guardado se reescribe desde su IR
+     * sin perder nada (8.3b). `null` en los demás dialectos.
+     */
+    notacionSinPerdida: boolean | null;
     /** La vista con la que se abre lo guardado, y la que corresponde a su dialecto (8.3a). */
     vista: { inicial: ArtifactViewMode; esperada: ArtifactViewMode };
     /** Lo que dice la gramática de Mermaid del texto guardado (8.2a); `null` en React Flow. */
@@ -232,6 +239,8 @@ export interface DiagramEvalSummary {
     sintaxisValida: number;
     /** Fracción de casos que abren en la superficie de su dialecto guardado: notación o lienzo (8.3a). */
     vistaFiel: number;
+    /** Fracción de secuencias, ERD y estados cuyo texto se reescribe desde el IR sin pérdida (8.3b). */
+    notacionSinPerdida: number;
 }
 
 export function loadCorpus(): DiagramEvalCase[] {
@@ -269,6 +278,24 @@ export function savedDialect(content: string): string {
         return line.split(/\s+/)[0];
     }
     return '';
+}
+
+const NOTATION_DIALECTS = new Set(['sequencediagram', 'erdiagram', 'statediagram', 'statediagram-v2']);
+
+/**
+ * Lee el texto guardado, lo escribe desde su IR y lo vuelve a leer (8.3b): sin
+ * pérdida si el IR guardado lleva la notación, la gramática de Mermaid acepta
+ * lo escrito y lo escrito dice lo mismo.
+ * Antes de la 8.3b el IR no tenía notación y ninguno de estos textos podía
+ * escribirse sin cambiar de dialecto.
+ */
+async function measureNotationRoundTrip(text: string, savedIR: DiagramIR | null | undefined): Promise<boolean | null> {
+    if (!NOTATION_DIALECTS.has(savedDialect(text).toLowerCase())) return null;
+    if (!savedIR?.notation) return false;
+    const ir = mermaidToIR(text);
+    const written = serializeNotation(ir);
+    if (!written || (await checkMermaidSyntax(written)).status !== 'valid') return false;
+    return notationFingerprint(mermaidToIR(written)) === notationFingerprint(ir);
 }
 
 /** Secuencia, Gantt y estados no son grafos: abren en su notación; el resto, en el lienzo (8.3a). */
@@ -563,6 +590,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             ? null
             : result.persistedContent.match(/```mermaid\s*([\s\S]*?)```/i)?.[1] ?? result.persistedContent;
         const verdict = savedBlock === null ? null : await checkMermaidSyntax(savedBlock);
+        const notacionSinPerdida = savedBlock === null ? null : await measureNotationRoundTrip(savedBlock, ir);
         const modelIR = modelIRFor(testCase);
         const comparable = Boolean(ir && modelIR && !esqueleto && !testCase.esperado.degradado);
         const integridad = comparable
@@ -605,6 +633,7 @@ export async function runEvalCase(testCase: DiagramEvalCase): Promise<DiagramEva
             tecnologias,
             historiaConservada,
             esqueleto,
+            notacionSinPerdida,
             vista: {
                 inicial: getArtifactViewCapabilities({ ...saved, name: testCase.id, version: 1 } as Artifact).preferredView,
                 esperada: expectedViewFor(dialectoGuardado),
@@ -714,6 +743,10 @@ export function summarize(all: DiagramEvalCaseResult[]): DiagramEvalSummary {
             all.filter((r) => r.sintaxis === 'valid' || r.sintaxis === 'invalid').length,
         )),
         vistaFiel: round(ratio(all.filter((r) => r.vista.inicial === r.vista.esperada).length, all.length)),
+        notacionSinPerdida: round(ratio(
+            all.filter((r) => r.notacionSinPerdida === true).length,
+            all.filter((r) => r.notacionSinPerdida !== null).length,
+        )),
     };
 }
 
@@ -770,6 +803,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.paquetes.join(',') || '—',
         r.sintaxis === 'invalid' ? `NO: ${r.sintaxisError?.split('\n')[0]}` : r.sintaxis ?? '—',
         r.vista.inicial === r.vista.esperada ? r.vista.inicial : `NO: ${r.vista.inicial} (debía ${r.vista.esperada})`,
+        r.notacionSinPerdida === null ? '—' : r.notacionSinPerdida ? 'sí' : 'NO',
         r.hallazgosDominio.join(',') || '—',
     ].join(' | '));
     const missing = results.flatMap((r) => r.contexto.filter((c) => !c.ok).map((c) => `  ${r.id}: falta ${c.que}`));
@@ -787,7 +821,7 @@ export function renderReport(results: DiagramEvalCaseResult[], summary: DiagramE
         r.geometria ? `${r.geometria.solapesNodos}/${r.geometria.solapesGrupos}/${r.geometria.aristasQueAtraviesanNodos}` : '—',
     ].join(' | '));
     return [
-        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | vista | hallazgos de dominio',
+        'caso | dialecto | entidades | metadatos | tecnologías | historia | esqueleto | calidad | contexto | contradicciones | fidelidad | correcciones | avisos al usuario | paquetes | sintaxis | vista | notación sin pérdida | hallazgos de dominio',
         ...rows,
         '',
         ...(missing.length ? ['Contexto que no llegó al modelo:', ...missing, ''] : []),

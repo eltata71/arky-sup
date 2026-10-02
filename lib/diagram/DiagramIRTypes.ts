@@ -8,10 +8,12 @@
  * file was recompiled when an edge label slot changed, the Training Center
  * included.
  *
- * Nothing here imports anything. The IR is deliberately closed over itself:
+ * Nothing here imports anything but the dialect notation, its sibling leaf. The IR is deliberately closed over itself:
  * that is what lets the pipeline stay deterministic and what makes it possible
  * to move it at all.
  */
+
+import type { DiagramNotation } from './notationModel';
 
 export type DiagramAudience = 'executive' | 'technical' | 'operations';
 
@@ -371,6 +373,12 @@ export interface DiagramIR {
   nodes: DiagramIRNode[];
   edges: DiagramIREdge[];
   groups: DiagramIRGroup[];
+  /**
+   * What the dialect says beyond the graph — message order and fragments,
+   * entity attributes and cardinalities, composite states (8.3b). Optional:
+   * see `notationModel.ts`.
+   */
+  notation?: DiagramNotation;
   metadata?: {
     sourceFormat?: 'react-flow' | 'mermaid' | 'excalidraw' | 'unknown';
     audience?: DiagramAudience;

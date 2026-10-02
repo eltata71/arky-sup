@@ -126,8 +126,26 @@ describe('planCanvasEdit — cambios estructurales', () => {
         expect(plan.patch?.content).toContain('API de Siniestros');
     });
 
-    it('borrar un participante de una secuencia cambia el modelo, conserva el texto y lo dice', () => {
+    it('borrar un participante de una secuencia la reescribe en su dialecto, sin él ni el fragmento que queda vacío (8.3b)', () => {
         const artifact = artifactOf('mermaid-sequence', SEQUENCE);
+        const before = canvasOf(artifact);
+        const victim = before.nodes.find((n) => String((n.data as { label?: string }).label).includes('Revisor'))!;
+        const after = { nodes: before.nodes.filter((n) => n.id !== victim.id), edges: before.edges.filter((e) => e.source !== victim.id && e.target !== victim.id) };
+        const plan = planCanvasEdit(artifact, { before, after });
+        expect(plan.patch?.ir?.nodes.some((n) => n.id === victim.id)).toBe(false);
+        expect(plan.patch?.content).toBe([
+            'sequenceDiagram',
+            '    autonumber',
+            '    participant Prov as Proveedor',
+            '    participant Motor as Motor de Autorizaciones',
+            '    Prov->>Motor: Envía solicitud',
+            '    Motor-->>Prov: Responde',
+        ].join('\n'));
+        expect(plan.notice).toBeNull();
+    });
+
+    it('borrar un participante de una secuencia que el modelo no sabe reescribir conserva el texto y lo dice', () => {
+        const artifact = artifactOf('mermaid-sequence', SEQUENCE.replace('    autonumber', '    box Aseguradora\n    end'));
         const before = canvasOf(artifact);
         const victim = before.nodes.find((n) => String((n.data as { label?: string }).label).includes('Revisor'))!;
         const after = { nodes: before.nodes.filter((n) => n.id !== victim.id), edges: before.edges.filter((e) => e.source !== victim.id && e.target !== victim.id) };

@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    actor Af as Afiliado
+    participant Portal as Portal del Afiliado
+    participant Motor as Motor de Autorizaciones
+    participant Clin as Revisor Clínico
+    Af->>Portal: Solicita autorización
+    Portal->>+Motor: Envía solicitud 278
+    loop Hasta completar datos clínicos
+        Motor->>Portal: Pide datos clínicos
+        Portal-->>Motor: Envía datos clínicos
+    end
+    alt Cumple criterios automáticos
+        Motor-->>Portal: Aprueba
+    else Requiere revisión
+        Motor->>Clin: Escala caso
+        activate Clin
+        Clin-->>Motor: Dictamina
+        deactivate Clin
+    else Datos insuficientes
+        Motor-)Portal: Rechaza por falta de datos
+    end
+    opt El afiliado lo pidió
+        Portal->>Af: Notifica por correo
+    end
+    par Registro
+        Motor->>Motor: Registra auditoría
+    and Notificación
+        Motor--)Portal: Publica evento
+    end
+    critical Conexión con el núcleo
+        Motor->>Clin: Confirma
+    option Caída del núcleo
+        Motor-xPortal: Error de núcleo
+    end
+    break Fraude detectado
+        Motor-->Portal: Bloquea solicitud
+    end
+    rect rgb(240, 240, 255)
+        Note over Motor,Clin: El dictamen queda auditado
+    end
+    Note right of Af: Recibe la respuesta en el portal
+    Motor-->>-Portal: Devuelve respuesta 278
+    Portal->Af: Muestra resultado

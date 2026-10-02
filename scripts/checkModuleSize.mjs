@@ -88,7 +88,7 @@ export const BYTE_CEILINGS = {
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 35451, // plan diagramas 8.2d: +148, compara la fidelidad con el IR que persistirá, incluidos sus metadatos · plan artefactos 7.5a: +38, la crítica y el refinamiento reciben onContextCaptured · plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35990, // plan diagramas 4.1: +186, marca «Detalle» y su texto accesible
-  'services/diagram/mermaidToIR.ts': 35536, // plan diagramas 8.2a: +172, Gantt, journey y mindmap dejan de leerse como flowchart · 6.5: +6, el ER conserva sus relaciones; antes: plan diagramas 2.1: +1 063, leer `:::clase` y `class` (la lógica vive en `mermaidClasses.ts`)
+  'services/diagram/mermaidToIR.ts': 29875, // plan diagramas 8.3b: −5 661, los lectores de secuencia, ER y estados salen a `notation/` · plan diagramas 8.2a: +172, Gantt, journey y mindmap dejan de leerse como flowchart · 6.5: +6, el ER conserva sus relaciones; antes: plan diagramas 2.1: +1 063, leer `:::clase` y `class` (la lógica vive en `mermaidClasses.ts`)
   'pages/LMS/LMSDashboard.tsx': 34123,
   'services/diagram/suggestionActionExecutors.ts': 33643,
   'components/memory/ChatHistoryPanel.tsx': 32783,
@@ -102,7 +102,7 @@ export const BYTE_CEILINGS = {
   'pages/SettingsPage.tsx': 30973,
   'hooks/artifacts/useDiagramRendering.ts': 27386, // plan diagramas 8.1d: −1 896, abrir ya no escribe el plan de layout · F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
-  'services/diagram/qualityRepair.ts': 29201, // plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
+  'services/diagram/qualityRepair.ts': 29336, // plan diagramas 8.3b: +135, el clon del IR conserva `notation` · plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
   'components/LucidchartViewer.tsx': 27773,
   'services/diagram/layoutQualityService.ts': 27648,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 27231, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -185,7 +185,7 @@ export const CEILINGS = {
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
   'services/agent/agentExecutor.ts': 904, // 7.3d: los puertos, una vez para todas las llamadas · 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
   'pages/ProjectsPage.tsx': 890, // F5-02
-  'services/diagram/mermaidToIR.ts': 873, // plan diagramas 8.2a: +2 · plan diagramas 2.1
+  'services/diagram/mermaidToIR.ts': 740, // plan diagramas 8.3b: 873 → 740 · plan diagramas 8.2a: +2 · plan diagramas 2.1
   'components/artifacts/export/ArtifactExportModal.tsx': 596, // plan diagramas 3.4: 844 → 596
   'components/CustomArtifactBriefWizard.tsx': 845,
   'components/CustomArtifactRequestModal.tsx': 845,
@@ -199,7 +199,7 @@ export const CEILINGS = {
   'services/diagram/suggestionActionExecutors.ts': 760,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,
-  'services/diagram/qualityRepair.ts': 708, // plan diagramas 8.1b: +3, el alcance `structural`
+  'services/diagram/qualityRepair.ts': 710, // plan diagramas 8.3b: +2, el clon del IR conserva `notation` · plan diagramas 8.1b: +3, el alcance `structural`
   'hooks/artifacts/useDiagramRendering.ts': 630, // plan diagramas 8.1d: 685 → 630
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
   'services/architectureOffice/domain/officePortfolio.ts': 680,

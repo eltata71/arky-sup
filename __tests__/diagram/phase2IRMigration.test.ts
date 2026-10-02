@@ -3,8 +3,8 @@ import type { DiagramIR } from '../../lib/diagram';
 import { migrateDiagramIR, IR_SCHEMA_VERSION } from '../../services/diagram/irMigration';
 
 describe('Phase 2 — IR migration v3', () => {
-    it('bumps schemaVersion to 3', () => {
-        expect(IR_SCHEMA_VERSION).toBe(3);
+    it('bumps schemaVersion past 3 (4 since 8.3b: the dialect notation)', () => {
+        expect(IR_SCHEMA_VERSION).toBe(4);
     });
 
     it('migrates a legacy v1 IR without losing the new optional fields', () => {

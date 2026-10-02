@@ -113,6 +113,9 @@
     "services/ports/**/*.ts",
     "services/adapters/**/*.ts",
     "services/architectureProjects/infrastructure/projectCache.ts",
-    "services/settings/**/*.ts"
+    "services/settings/**/*.ts",
+    // Plan de diagramas 8.3b: los lectores y escritores de notación sólo
+    // dependen del vocabulario de `lib/diagram`, y nacen dentro.
+    "services/diagram/notation/**/*.ts"
   ]
 }

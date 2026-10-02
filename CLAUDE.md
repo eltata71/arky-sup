@@ -1308,7 +1308,19 @@ Three rules now hold it:
   `null` for anything else — the caller keeps the model's text and the repairs
   live in the IR. `rewriteDiagramContent`
   (`services/artifacts/application/diagramContentRewrite.ts`) is the one place
-  the run and the refinement apply it.
+  the run and the refinement apply it. **Since 8.3b sequence, ER and state
+  diagrams can hold their IR too**: `DiagramIR.notation`
+  (`lib/diagram/notationModel.ts`) keeps what they say beyond the graph —
+  message order, `alt`/`loop`/`par` fragments, notes and activations; entity
+  attributes and written cardinalities; composite states with their own `[*]`,
+  pseudostates and notes — by reference to node and edge ids. Each dialect is
+  read and written in `services/diagram/notation/`. Three guards: a text with
+  a statement the reader cannot represent (`unsupported`) is never rewritten;
+  an IR that still says what the text says keeps the model's text; and what is
+  written must read back as the same graph, checked, not assumed. An ERD
+  relation without a written cardinality refuses the rewrite rather than
+  inventing a business rule. Any function that rebuilds an IR field by field
+  must carry `notation` along — three clones dropped it until 8.3b.
 - **The model's IR is handed over, never re-parsed.** `onDiagramIR` on the
   generation options receives it; `runArtifactGeneration` persists it and
   hands it to the refinement as `draftIR`, which returns the accepted IR.

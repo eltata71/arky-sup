@@ -1,0 +1,33 @@
+stateDiagram-v2
+    direction LR
+    state "Recibida en el portal" as Recibida
+    state Decision <<choice>>
+    state Bifurca <<fork>>
+    state Une <<join>>
+    [*] --> Recibida
+    Recibida --> Revision : Valida elegibilidad
+    state Revision {
+        [*] --> Clinica
+        Clinica --> Administrativa : Dictamen clínico
+        state Administrativa {
+            [*] --> Documentos
+            Documentos --> [*]
+        }
+        Administrativa --> [*]
+    }
+    Revision --> Decision
+    Decision --> Aprobada : Cumple
+    Decision --> Rechazada : No cumple
+    Aprobada --> Bifurca
+    Bifurca --> Pago
+    Bifurca --> Notificacion
+    Pago --> Une
+    Notificacion --> Une
+    Une --> [*]
+    Rechazada --> [*]
+    Pago : Liquidación del siniestro
+    note right of Rechazada : El asegurado puede apelar
+    note left of Aprobada
+        Se registra la decisión
+        en el expediente
+    end note
