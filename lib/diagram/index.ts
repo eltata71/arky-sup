@@ -12,3 +12,4 @@
 export * from './DiagramIRTypes';
 export * from './storyPlan';
 export * from './semanticPatch';
+export * from './notationModel';

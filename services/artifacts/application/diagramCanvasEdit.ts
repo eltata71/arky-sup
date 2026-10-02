@@ -95,7 +95,7 @@ export function planCanvasEdit(artifact: ArtifactForEdit, edit: CanvasEdit): Can
     if (result.changed && artifact.representation !== 'document') {
         const rewrite = rewriteDiagramContent(artifact.content, ir, artifact.type, artifact.representation === 'hybrid');
         if (rewrite.rewritten) patch.content = rewrite.content;
-        else notice = `El cambio se guardó en el modelo del diagrama; el texto ${rewrite.dialect || 'Mermaid'} se conserva como estaba porque esa notación no se puede reescribir desde el lienzo.`;
+        else notice = `El cambio se guardó en el modelo del diagrama; el texto ${rewrite.dialect || 'Mermaid'} se conserva como estaba porque reescribirlo desde el modelo perdería parte de lo que dice.`;
     }
     return { patch, rejected, notice };
 }

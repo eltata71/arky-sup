@@ -526,7 +526,11 @@ Reglas que no se negocian al trabajar aquí:
     nodo enlaza al diagrama que lo detalla por `detailArtifactGroupId` (4.1), y
     la coherencia entre niveles avisa sin bloquear (4.2). Ver *A diagram is
     changed, not regenerated* en `CLAUDE.md`. **Y conserva su dialecto** (6.1):
-    un texto sólo se reescribe desde el IR en C4 o flowchart
+    un texto sólo se reescribe desde el IR en C4, flowchart y —desde la 8.3b—
+    secuencia, ERD y estados, cuyo orden, fragmentos, atributos y compuestos
+    viajan en `DiagramIR.notation` (`services/diagram/notation/`); un texto con
+    algo que el lector no representa nunca se reescribe, y quien clone un IR
+    campo a campo conserva `notation`
     (`serializeIRPreservingDialect`, aplicado en `rewriteDiagramContent`); el IR
     del modelo llega por `onDiagramIR` y no se reextrae del texto. El banco
     `diagram-evals` (`npm run eval:diagrams`) lo mide contra `linea-base.json`,

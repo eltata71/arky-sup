@@ -29,8 +29,14 @@ import { detectSemanticRole } from '../../lib/diagramTokens';
  *       The migration is purely additive: every legacy IR is still valid
  *       under v3 because all new fields are optional. We bump the marker so
  *       persistence layers can short-circuit when they encounter a v3 IR.
+ *  - 4  Plan de diagramas 8.3b: `DiagramIR.notation` — what a sequence, ER or
+ *       state diagram says beyond the graph. Additive and optional again: a
+ *       v3 IR is a valid v4 IR without a notation. The notation cannot be
+ *       invented from the graph, so the migration does not try; it is
+ *       recovered from the diagram's text by `attachNotationFromSource` when
+ *       the text is at hand and its ids still match the IR.
  */
-export const IR_SCHEMA_VERSION = 3 as const;
+export const IR_SCHEMA_VERSION = 4 as const;
 
 const CANONICAL_KINDS = new Set([
     'person', 'system', 'gateway', 'data', 'messaging',
@@ -213,6 +219,10 @@ export function migrateDiagramIR(input: DiagramIR): MigrationResult {
         changes,
     };
 }
+
+// `attachNotationFromSource` lives with the notation (`./notation`): the
+// rewrite path needs it without the taxonomy this migration carries.
+export { attachNotationFromSource } from './notation';
 
 /** Convenience: returns the migrated IR or the original when nothing changed. */
 export function migrateDiagramIROrSelf(ir: DiagramIR): DiagramIR {

@@ -14,13 +14,17 @@
  * parser in our own tree also lets us evolve the IR freely.
  */
 
-import type { DiagramIR, DiagramIREdge, DiagramIRGroup, DiagramIRNode, NodeShape } from '../../lib/diagram';
+import type { DiagramIR, DiagramIREdge, DiagramIRGroup, DiagramIRNode, DiagramNotation, NodeShape } from '../../lib/diagram';
 import {
     canonicalKindForRole,
     resolveSemanticRole,
     repairDiagramIRSemantics,
 } from '../../lib/semanticRoleResolver';
 import { applyClassRoles, parseClassStatement, recordClasses, takeClassSuffix } from './mermaidClasses';
+import type { NotationParseApi } from './notation/notationParseApi';
+import { parseSequenceNotation } from './notation/sequenceNotation';
+import { parseErdNotation } from './notation/erdNotation';
+import { parseStateNotation } from './notation/stateNotation';
 
 const SHAPE_SYNTAX: Array<{ open: string; close: string; shape: NodeShape }> = [
     { open: '[[', close: ']]', shape: 'tab-box' },
@@ -153,15 +157,17 @@ function upsertNode(ctx: ParseContext, id: string, label?: string, shape?: NodeS
     return node;
 }
 
-function pushEdge(ctx: ParseContext, sourceId: string, targetId: string, label: string | undefined, relation: Relation) {
+function pushEdge(ctx: ParseContext, sourceId: string, targetId: string, label: string | undefined, relation: Relation): DiagramIREdge {
     ctx.edgeCounter += 1;
-    ctx.edges.push({
+    const edge: DiagramIREdge = {
         id: `e${ctx.edgeCounter}`,
         source: sourceId.trim(),
         target: targetId.trim(),
         label: label?.trim() || 'Relaciona',
         relation,
-    });
+    };
+    ctx.edges.push(edge);
+    return edge;
 }
 
 function detectRelationFromOp(op: string): Relation {
@@ -255,94 +261,6 @@ function parseFlowchart(body: string, ctx: ParseContext) {
     }
 }
 
-function normalizeSequenceEndpoint(raw: string, aliases: Map<string, string>, ctx: ParseContext): string {
-    const token = stripQuotes(raw.trim());
-    const aliased = aliases.get(token) ?? aliases.get(normalizeLooseKey(token));
-    if (aliased) return aliased;
-
-    // Mermaid sequence diagrams often omit explicit participant declarations.
-    // When the endpoint is a quoted/display label or contains spaces, create a
-    // stable canvas-safe id and preserve the human label on the node.
-    const id = /^[A-Za-z0-9_.:-]+$/.test(token)
-        ? token
-        : `seq_${token
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '_')
-            .replace(/^_+|_+$/g, '') || `node_${ctx.nodes.size + 1}`}`;
-    aliases.set(token, id);
-    aliases.set(normalizeLooseKey(token), id);
-    upsertNode(ctx, id, token);
-    return id;
-}
-
-function normalizeLooseKey(value: string): string {
-    return stripQuotes(value)
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-function parseSequenceParticipant(line: string): { idToken: string; label: string; shape: NodeShape } | null {
-    const match = line.match(/^(participant|actor)\s+(.+)$/i);
-    if (!match) return null;
-    const keyword = match[1].toLowerCase();
-    const body = match[2].trim();
-    const asMatch = body.match(/^(.+?)\s+as\s+(.+)$/i);
-    const idToken = stripQuotes((asMatch ? asMatch[1] : body).trim());
-    const label = stripQuotes((asMatch ? asMatch[2] : body).trim());
-    return { idToken, label, shape: keyword === 'actor' ? 'person' : 'rectangle' };
-}
-
-function parseSequenceMessage(line: string): { src: string; op: string; tgt: string; label: string } | null {
-    // Supports Mermaid activation suffixes (`A->>+B`, `B-->>-A`) and relaxed
-    // endpoint tokens so AI output with quoted labels or hyphenated ids still
-    // becomes a visible IR instead of an empty canvas.
-    const match = line.match(/^(.+?)\s*(-->>|->>|--\)|-\)|->|-->)([+-]?)\s*(.+?)\s*:\s*(.+)$/);
-    if (!match) return null;
-    return {
-        src: match[1].trim(),
-        op: match[2],
-        tgt: match[4].trim(),
-        label: stripQuotes(match[5].trim()),
-    };
-}
-
-function parseSequence(body: string, ctx: ParseContext) {
-    const lines = body.split('\n');
-    const aliases = new Map<string, string>();
-    for (const rawLine of lines) {
-        const line = rawLine.replace(/\s*%%.*$/, '').trim();
-        if (!line) continue;
-        if (/^(autonumber|activate|deactivate|note\b|rect\b|end\b|alt\b|else\b|opt\b|loop\b|par\b|and\b|critical\b|break\b)/i.test(line)) {
-            continue;
-        }
-
-        const participant = parseSequenceParticipant(line);
-        if (participant) {
-            const id = normalizeSequenceEndpoint(participant.idToken, aliases, ctx);
-            aliases.set(participant.idToken, id);
-            aliases.set(participant.label, id);
-            aliases.set(normalizeLooseKey(participant.idToken), id);
-            aliases.set(normalizeLooseKey(participant.label), id);
-            const node = upsertNode(ctx, id, participant.label, participant.shape);
-            node.label = participant.label;
-            node.shape = participant.shape;
-            continue;
-        }
-
-        const message = parseSequenceMessage(line);
-        if (message) {
-            const src = normalizeSequenceEndpoint(message.src, aliases, ctx);
-            const tgt = normalizeSequenceEndpoint(message.tgt, aliases, ctx);
-            pushEdge(ctx, src, tgt, message.label, detectRelationFromOp(message.op));
-        }
-    }
-}
-
 function parseClassDiagram(body: string, ctx: ParseContext) {
     for (const rawLine of body.split('\n')) {
         const line = rawLine.replace(/\s*%%.*$/, '').trim();
@@ -355,35 +273,6 @@ function parseClassDiagram(body: string, ctx: ParseContext) {
             upsertNode(ctx, a);
             upsertNode(ctx, b);
             pushEdge(ctx, a, b, lbl, op.includes('<|') || op.includes('|>') ? 'inheritance' : 'dependency');
-        }
-    }
-}
-
-function parseErDiagram(body: string, ctx: ParseContext) {
-    // Each cardinality end is two characters from `|`, `o`, `{`, `}` (`||--o{`,
-    // `}o..|{`); `--`/`..` is identifying/non-identifying. The cardinality goes
-    // into the edge label so it is visible on the canvas.
-    const ER_REL = /^([A-Za-z0-9_]+)\s+([|o{}]{1,2})([-.]{2})([|o{}]{1,2})\s+([A-Za-z0-9_]+)\s*:\s*(.+)$/;
-    const ER_CARDINALITY: Record<string, string> = {
-        '||': '1', '|o': '0..1', 'o|': '0..1', '}o': '0..*', 'o{': '0..*', '}|': '1..*', '|{': '1..*',
-    };
-
-    for (const rawLine of body.split('\n')) {
-        const line = rawLine.replace(/\s*%%.*$/, '').trim();
-        if (!line) continue;
-        const entityBlock = line.match(/^([A-Za-z0-9_]+)\s*\{.*$/);
-        if (entityBlock) {
-            upsertNode(ctx, entityBlock[1], entityBlock[1], 'rectangle');
-            continue;
-        }
-        const rel = line.match(ER_REL);
-        if (rel) {
-            const [, a, left, , right, b, rawLabel] = rel;
-            const lbl = rawLabel.replace(/^"(.*)"$/, '$1').trim();
-            const cardinality = `${ER_CARDINALITY[left] ?? left} → ${ER_CARDINALITY[right] ?? right}`;
-            upsertNode(ctx, a);
-            upsertNode(ctx, b);
-            pushEdge(ctx, a, b, `${lbl} (${cardinality})`, 'data-flow');
         }
     }
 }
@@ -710,39 +599,6 @@ function parseC4(body: string, ctx: ParseContext) {
     }
 }
 
-function parseState(body: string, ctx: ParseContext) {
-    for (const rawLine of body.split('\n')) {
-        const line = rawLine.replace(/\s*%%.*$/, '').trim();
-        if (!line) continue;
-        // Skip composite-state braces and standalone keywords; they're declarative
-        // wrappers, not transitions or nodes we render directly.
-        if (/^state\s+/i.test(line) && line.endsWith('{')) {
-            const m = line.match(/^state\s+([A-Za-z0-9_]+)/i);
-            if (m) upsertNode(ctx, m[1], m[1], 'tab-box');
-            continue;
-        }
-        if (/^\}$/.test(line)) continue;
-        if (/^(direction|note|hide|<<choice>>|<<fork>>|<<join>>)/i.test(line)) continue;
-        // Choice / fork pseudo-states: declared with `<<choice>>` syntax. We
-        // surface them as diamond-shaped nodes so the renderer differentiates
-        // decisions visually. Force-override any previously inferred shape (a
-        // transition line may have already created the node as a rectangle).
-        const choice = line.match(/^([A-Za-z0-9_]+)\s*<<\s*(choice|fork|join)\s*>>$/i);
-        if (choice) {
-            const node = upsertNode(ctx, choice[1], choice[1], 'diamond');
-            node.shape = 'diamond';
-            continue;
-        }
-        const trans = line.match(/^\[?\s*([A-Za-z0-9_[\]*]+)\s*\]?\s*-->\s*\[?\s*([A-Za-z0-9_[\]*]+)\s*\]?(?:\s*:\s*(.+))?$/);
-        if (trans) {
-            const [, from, to, lbl] = trans;
-            upsertNode(ctx, from, from, 'rectangle');
-            upsertNode(ctx, to, to, 'rectangle');
-            pushEdge(ctx, from, to, lbl, 'default');
-        }
-    }
-}
-
 function detectHeader(code: string): { kind: string; body: string; title?: string } {
     const lines = code.split('\n').map(l => l.trimEnd());
     let title: string | undefined;
@@ -815,12 +671,22 @@ export function mermaidToIRWithDiagnostics(code: string): { ir: DiagramIR; diagn
     ctx.diagramKind = kind;
 
     const lower = kind.toLowerCase();
+    // Sequence, ER and state readers keep what their dialect says beyond the
+    // graph — order, fragments, attributes, composites (8.3b).
+    const api: NotationParseApi = {
+        upsertNode: (id, label, shape) => upsertNode(ctx, id, label, shape),
+        pushEdge: (source, target, label, relation) => pushEdge(ctx, source, target, label, relation),
+        nodeCount: () => ctx.nodes.size,
+    };
+    let notation: DiagramNotation | undefined;
     if (lower.startsWith('flowchart') || lower.startsWith('graph')) parseFlowchart(body, ctx);
-    else if (lower === 'sequencediagram') parseSequence(body, ctx);
+    else if (lower === 'sequencediagram') notation = parseSequenceNotation(body, api);
     else if (lower === 'classdiagram') parseClassDiagram(body, ctx);
-    else if (lower === 'erdiagram') parseErDiagram(body, ctx);
+    else if (lower === 'erdiagram') notation = parseErdNotation(body, api);
     else if (lower.startsWith('c4')) parseC4(body, ctx);
-    else if (lower.startsWith('statediagram')) parseState(body, ctx);
+    else if (lower.startsWith('statediagram')) {
+        notation = parseStateNotation(lower === 'statediagram' ? 'stateDiagram' : 'stateDiagram-v2', body, api, ctx.groups);
+    }
     // Not graphs: read as flowcharts they became boxes of task lines (8.2a).
     else if (lower === 'gantt' || lower === 'journey' || lower === 'mindmap') { /* no graph to read */ }
     else {
@@ -832,6 +698,7 @@ export function mermaidToIRWithDiagnostics(code: string): { ir: DiagramIR; diagn
         nodes: Array.from(ctx.nodes.values()),
         edges: ctx.edges,
         groups: ctx.groups,
+        ...(notation ? { notation } : {}),
         metadata: {
             sourceFormat: 'mermaid',
             generatedAt: new Date().toISOString(),

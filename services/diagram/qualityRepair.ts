@@ -162,6 +162,8 @@ function deepCloneIR(ir: DiagramIR): DiagramIR {
         edges: ir.edges.map((e) => ({ ...e })),
         groups: ir.groups.map((g) => ({ ...g, nodeIds: [...g.nodeIds] })),
         metadata: { ...(ir.metadata ?? {}) },
+        // The dialect notation is read-only here: it travels as is (8.3b).
+        ...(ir.notation ? { notation: ir.notation } : {}),
     };
 }
 

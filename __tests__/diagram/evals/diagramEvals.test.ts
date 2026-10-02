@@ -142,6 +142,12 @@ describe('banco de evaluación de diagramas', () => {
         for (const r of results) expect(r.vista.inicial, `${r.id} (${r.dialectoGuardado})`).toBe(r.vista.esperada);
     });
 
+    it('secuencias, ERD y estados se reescriben desde su IR sin pérdida (8.3b)', () => {
+        const notated = results.filter((r) => r.notacionSinPerdida !== null);
+        expect(notated.length).toBeGreaterThanOrEqual(5);
+        for (const r of notated) expect(r.notacionSinPerdida, `${r.id} (${r.dialectoGuardado})`).toBe(true);
+    });
+
     it('la corrección sólo gasta una llamada cuando hay hallazgos', () => {
         for (const r of results) expect(r.llamadasCorreccion, r.id).toBeLessThanOrEqual(1);
     });
@@ -235,6 +241,7 @@ describe('banco de evaluación de diagramas', () => {
         expect(summary.dialectoTrasEdicion).toBeGreaterThanOrEqual(actual.dialectoTrasEdicion);
         expect(summary.sintaxisValida).toBeGreaterThanOrEqual(actual.sintaxisValida ?? 0);
         expect(summary.vistaFiel).toBeGreaterThanOrEqual(actual.vistaFiel ?? 0);
+        expect(summary.notacionSinPerdida).toBeGreaterThanOrEqual(actual.notacionSinPerdida ?? 0);
         expect(summary.casosConContradicciones).toBeLessThanOrEqual(actual.casosConContradicciones);
         // La puntuación la calcula un motor heurístico que evoluciona por su
         // cuenta; se tolera un punto para no convertir cada ajuste suyo en un

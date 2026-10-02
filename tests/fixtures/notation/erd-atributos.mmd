@@ -1,0 +1,26 @@
+erDiagram
+    ASEGURADO ||--o{ POLIZA : contrata
+    POLIZA ||--|{ COBERTURA : incluye
+    POLIZA }o..o| AGENTE : "es vendida por"
+    COBERTURA }|--|| PRODUCTO : instancia
+    ASEGURADO {
+        string id_asegurado PK
+        string nombre
+        date fecha_nacimiento "Fecha de nacimiento declarada"
+    }
+    POLIZA {
+        string numero PK
+        string id_asegurado FK
+        string id_agente FK "Agente de venta"
+        decimal suma_asegurada
+    }
+    COBERTURA {
+        string id PK
+        string numero_poliza FK
+        string codigo_producto FK, UK
+    }
+    AGENTE {
+        string id_agente PK, UK
+    }
+    PRODUCTO {
+    }
