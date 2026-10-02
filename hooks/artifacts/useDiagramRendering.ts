@@ -7,11 +7,11 @@ import type { DiagramAudience } from '../../lib/diagram';
 import type { ArtifactViewMode } from '../../lib/artifacts/contracts';
 import type { RenderableDiagramResolution } from '../../services/diagram';
 import { diagramGenerationService } from '../../services/ai';
-import { isDiagramAIFallbackEnabled, mermaidToReactFlow as mermaidToReactFlowDeterministic, resolveRenderableDiagram } from '../../services/diagram';
-import { hasManualLayout, irToReactFlowSmart } from '../../services/diagram/irToReactFlow';
+import { hasManualLayout, isDiagramAIFallbackEnabled, mermaidToReactFlow as mermaidToReactFlowDeterministic, resolveRenderableDiagram } from '../../services/diagram';
 import { planCanvasEdit } from '../../services/artifacts/application/diagramCanvasEdit';
 import { isDiagramFlowData, type DiagramFlowData } from '../../components/artifacts/diagram/diagramFlow';
 import type { LayoutPlan } from '../../lib/layoutSelector';
+import { useElkLayoutPass } from './useElkLayoutPass';
 
 // Aligns with the gemini timeout (180s) plus slack; prevents false timeouts
 // on complex diagrams.
@@ -116,17 +116,9 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
-  // Phase 2: positions produced by the async ELK pass + the layout plan
-  // metadata. When `null` the sync dagre render is used as-is so the
-  // canvas is never blocked behind ELK.
-  const [elkPositions, setElkPositions] = useState<Map<string, { x: number; y: number }> | null>(null);
-  const [layoutPlan, setLayoutPlan] = useState<LayoutPlan | null>(null);
   const flowDataCache = useRef<Map<string, DiagramFlowData>>(new Map());
   const isMounted = useRef(true);
   const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Tracks the IR signature ELK was asked for, so we can ignore stale
-  // resolves that arrive after the IR has already changed.
-  const elkRequestRef = useRef<string>('');
 
   useEffect(() => {
     isMounted.current = true;
@@ -140,79 +132,9 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     [artifact, audience, flowData],
   );
 
-  // Phase 2: async ELK pass. Kicks off once we have a stable IR with at
-  // least one node and replaces the synchronous dagre positions when it
-  // resolves. The plan it picks stays in memory (`layoutPlan`): opening an
-  // artifact never writes to it (plan de diagramas, 8.1d) — only a person's
-  // explicit choice is stored, through `applyLayoutOverride`. Failures are
-  // swallowed — the canvas keeps the dagre render so the user always sees
-  // something.
-  //
-  // Disabled when the IR comes from the placeholder fallback (we don't
-  // want to waste a layout pass on the warning card) or when the env flag
-  // explicitly opts out (`VITE_DIAGRAM_ELK=off`).
-  useEffect(() => {
-    const ir = renderable.ir;
-    if (!ir || ir.nodes.length < 2) {
-      setElkPositions(null);
-      setLayoutPlan(null);
-      return;
-    }
-    if (ir.metadata?.degradationReason === 'no-parseable-content') return;
-    // Manual layout: the architect's persisted canvas positions are the
-    // source of truth — never let an async ELK pass move the nodes back.
-    if (hasManualLayout(ir)) {
-      setElkPositions(null);
-      return;
-    }
-    const elkOptOut = ((import.meta.env.VITE_DIAGRAM_ELK ?? 'on') as string).toLowerCase() === 'off';
-    if (elkOptOut) return;
-
-    const signature = `${artifact.id}::${ir.nodes.length}::${ir.edges.length}::${ir.metadata?.diagramType ?? ''}`;
-    elkRequestRef.current = signature;
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const result = await irToReactFlowSmart(ir, artifact.type);
-        // Stale-result guard: another IR landed before ELK finished.
-        if (cancelled || !isMounted.current || elkRequestRef.current !== signature) return;
-        if (result.plan.backend === 'dagre') {
-          // ELK was not even attempted (sequence/state diagrams stick to
-          // dagre via the selector). Surface the plan but don't override
-          // positions: the dagre result we already render IS the plan.
-          setLayoutPlan(result.plan);
-          setElkPositions(null);
-          return;
-        }
-        const positions = new Map<string, { x: number; y: number }>();
-        for (const node of result.nodes) {
-          if (node.position && Number.isFinite(node.position.x) && Number.isFinite(node.position.y)) {
-            positions.set(String(node.id), { x: node.position.x, y: node.position.y });
-          }
-        }
-        if (positions.size === 0) {
-          // ELK returned zero positions — treat it as a failure and stick
-          // to the dagre canvas instead of moving every node to (0,0).
-          console.warn('[useDiagramRendering] ELK returned no positions; keeping dagre render.');
-          return;
-        }
-        setLayoutPlan(result.plan);
-        setElkPositions(positions);
-      } catch (err) {
-        // ELK can fail in browsers without WASM support, in jsdom or when
-        // the bundle was tree-shaken out. The synchronous dagre render is
-        // already on screen, so we just log.
-        if (!cancelled) {
-          console.warn('[useDiagramRendering] ELK pass failed, keeping dagre render', err);
-        }
-      }
-    })();
-
-    return () => { cancelled = true; };
-    // We depend on the IR identity + the artifact id; using the renderable
-    // IR reference directly would re-run on every memoised resolve.
-  }, [artifact.id, artifact.type, renderable.ir, renderable.status]);
+  // The async ELK pass, its routes and the wait that keeps the canvas from
+  // flickering (8.3d) — see `useElkLayoutPass`.
+  const { elkPositions, elkRoutes, layoutPlan, layoutPending } = useElkLayoutPass(artifact.id, artifact.type, renderable.ir);
 
   // Stabilize the reactFlow node/edge arrays: `resolveRenderableDiagram`
   // always returns fresh references. The signature includes IDs, labels,
@@ -270,9 +192,18 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     [renderableSignature, elkPositions],
   );
   const stableFlowEdges = useMemo(
-    () => renderable.reactFlow.edges,
+    () => {
+      // 8.3d: with ELK positions applied, each edge carries the route ELK
+      // computed for them; CustomEdge draws it while the nodes stay put.
+      const base = renderable.reactFlow.edges;
+      if (!elkPositions || !elkRoutes) return base;
+      return base.map((e) => {
+        const route = elkRoutes.get(String(e.id));
+        return route ? { ...e, data: { ...(e.data ?? {}), route } } : e;
+      });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [renderableSignature],
+    [renderableSignature, elkPositions, elkRoutes],
   );
 
   const hasRenderableNodes = stableFlowNodes.length > 0;
@@ -607,9 +538,9 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     canvasFlow,
     displayedFlowSource,
     hasRenderableNodes,
-    isLoading,
+    isLoading: isLoading || layoutPending,
     error,
-    loadingMessage,
+    loadingMessage: !isLoading && layoutPending ? 'Calculando la disposición del diagrama…' : loadingMessage,
     cancelLoading,
     autoFix,
     applyIssueFix,

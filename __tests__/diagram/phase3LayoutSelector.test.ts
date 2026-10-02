@@ -51,11 +51,12 @@ describe('Phase 3 — layoutSelector diagramType awareness', () => {
         expect(plan.orthogonal).toBe(true);
     });
 
-    it('keeps dagre for sequence diagrams regardless of diagramType metadata', () => {
+    it('routes sequence diagrams with orthogonal ELK regardless of diagramType metadata (8.3d)', () => {
         const plan = selectLayoutPlan({
             ir: ir({ metadata: { diagramType: 'sequence' } }),
             artifactType: 'mermaid-sequence',
         });
-        expect(plan.backend).toBe('dagre');
+        expect(plan.backend).toBe('elk');
+        expect(plan.orthogonal).toBe(true);
     });
 });

@@ -16,7 +16,7 @@
 import type { Artifact } from '../../lib/artifacts';
 import type { DiagramIR, NodeShape } from '../../lib/diagram';
 import { mermaidToIR, mermaidToIRWithDiagnostics } from './mermaidToIR';
-import { irToReactFlow, IRToReactFlowResult } from './irToReactFlow';
+import { irToReactFlow, IRToReactFlowResult, hasManualLayout } from './irToReactFlow';
 import { irToExcalidraw, ExcalidrawBundle } from './irToExcalidraw';
 import { irToMermaid } from './irToMermaid';
 import { extractMermaid } from '../../utils/diagram/extractMermaid';
@@ -84,7 +84,7 @@ export function mermaidToExcalidraw(code: string, isDark = false): ExcalidrawBun
     return renderIRToExcalidraw(parseMermaidDeterministic(code), isDark);
 }
 
-export { mermaidToIR, irToReactFlow, irToExcalidraw, irToMermaid };
+export { mermaidToIR, irToReactFlow, irToExcalidraw, irToMermaid, hasManualLayout };
 export { irToMermaidC4, c4LevelOfArtifactType, type C4DiagramLevel } from './irToMermaidC4';
 export { mermaidDialectOf, serializeIRPreservingDialect } from './dialectSerialization';
 export * from './requestFidelity';

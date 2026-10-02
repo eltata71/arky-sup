@@ -18,7 +18,7 @@ function meshIR(serviceCount: number): DiagramIR {
 }
 
 describe('layoutSelector', () => {
-    it('picks ELK radial for C4 Context with hub topology', () => {
+    it('picks ELK layered orthogonal, top to bottom, for C4 Context with hub topology (8.3d; was radial)', () => {
         const ir: DiagramIR = {
             nodes: [
                 { id: 'sys', label: 'Sistema', kind: 'system' },
@@ -39,7 +39,9 @@ describe('layoutSelector', () => {
         };
         const plan = selectLayoutPlan({ ir, artifactType: 'mermaid-c4-context' });
         expect(plan.backend).toBe('elk');
-        expect(plan.algorithm).toBe('radial');
+        expect(plan.algorithm).toBe('layered');
+        expect(plan.orthogonal).toBe(true);
+        expect(plan.direction).toBe('TB');
     });
 
     it('picks ELK force for ERD diagrams', () => {
@@ -66,12 +68,13 @@ describe('layoutSelector', () => {
         expect(plan.algorithm).toBe('mrtree');
     });
 
-    it('falls back to dagre for sequence diagrams', () => {
+    it('routes sequence diagrams on the canvas with orthogonal ELK (8.3d)', () => {
         const plan = selectLayoutPlan({
             ir: { nodes: [{ id: 'a', label: 'A', kind: 'service' }], edges: [], groups: [] },
             artifactType: 'mermaid-sequence',
         });
-        expect(plan.backend).toBe('dagre');
+        expect(plan.backend).toBe('elk');
+        expect(plan.orthogonal).toBe(true);
     });
 
     it('applies semantic policy for BPMN as ELK layered LR', () => {

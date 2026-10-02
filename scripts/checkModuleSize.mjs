@@ -94,13 +94,13 @@ export const BYTE_CEILINGS = {
   'components/memory/ChatHistoryPanel.tsx': 32783,
   'components/copilot/ProjectCopilotChatModal.tsx': 24453, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
-  'components/CustomEdge.tsx': 32023,
+  'components/CustomEdge.tsx': 32345, // plan diagramas 8.3d: +322, dibuja la ruta ortogonal de ELK (la decisión vive en `hooks/useEngineRoute`)
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
   'services/agent/agentContextComposer.ts': 23023, // plan artefactos 7.3d: +775, entregables en curso, razón de negocio y extractos de hermanos en el copiloto · plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
   // F6-05: +18 bytes, the import path to the model-directory door instead of
   // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
   'pages/SettingsPage.tsx': 30973,
-  'hooks/artifacts/useDiagramRendering.ts': 27386, // plan diagramas 8.1d: −1 896, abrir ya no escribe el plan de layout · F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'hooks/artifacts/useDiagramRendering.ts': 24203, // plan diagramas 8.3d: −3 183, la pasada de ELK sale a `useElkLayoutPass` · plan diagramas 8.1d: −1 896, abrir ya no escribe el plan de layout · F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
   'services/diagram/qualityRepair.ts': 29336, // plan diagramas 8.3b: +135, el clon del IR conserva `notation` · plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
   'components/LucidchartViewer.tsx': 27773,
@@ -200,7 +200,7 @@ export const CEILINGS = {
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,
   'services/diagram/qualityRepair.ts': 710, // plan diagramas 8.3b: +2, el clon del IR conserva `notation` · plan diagramas 8.1b: +3, el alcance `structural`
-  'hooks/artifacts/useDiagramRendering.ts': 630, // plan diagramas 8.1d: 685 → 630
+  'hooks/artifacts/useDiagramRendering.ts': 561, // plan diagramas 8.3d: 630 → 561 · plan diagramas 8.1d: 685 → 630
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
   'services/architectureOffice/domain/officePortfolio.ts': 680,
   'components/memory/ChatHistoryPanel.tsx': 650,

@@ -256,6 +256,15 @@ export async function layoutIRWithELK(ir: DiagramIR, opts: ElkLayoutOptions): Pr
             for (const bp of section.bendPoints ?? []) points.push({ x: bp.x, y: bp.y });
             points.push({ x: section.endPoint.x, y: section.endPoint.y });
         }
+        // Crossing a compound boundary, ELK can leave a sub-pixel jog
+        // (150.5 → 151) in an orthogonal route; align it with the segment
+        // before so the line drawn is straight.
+        if (layoutOptions['elk.edgeRouting'] === 'ORTHOGONAL') {
+            for (let i = 1; i < points.length; i++) {
+                if (Math.abs(points[i].x - points[i - 1].x) < 1) points[i].x = points[i - 1].x;
+                if (Math.abs(points[i].y - points[i - 1].y) < 1) points[i].y = points[i - 1].y;
+            }
+        }
         edgeWaypoints.set(edgeWaypointKey(irEdge.source, irEdge.target, irEdge.id), points);
     }
 
