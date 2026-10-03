@@ -66,6 +66,8 @@ export class DocumentRenderer {
   readonly pages: Page[] = [];
   readonly headings: PdfHeadingRecord[] = [];
   readonly root = structElem('Document');
+  /** Tablas del contenido, sin la de la portada (recibo de 9.4). */
+  contentTables = 0;
   cursorY = PAGE_H - MARGIN_TOP;
   private list: StructElem | null = null;
 
@@ -343,7 +345,7 @@ export class DocumentRenderer {
         case 'diagram': this.code(block.code.split('\n')); break;
         case 'image': this.image(block.image); break;
         case 'chart': drawChart(this, block.spec, (text, level) => this.heading(text, level)); break;
-        case 'table': this.table(block.headers, block.rows); break;
+        case 'table': this.table(block.headers, block.rows); this.contentTables += 1; break;
         case 'rule':
           this.ensureSpace(14);
           this.cursorY -= 7;

@@ -70,12 +70,11 @@ export const AriaAnnouncerProvider: React.FC<{ children: ReactNode }> = ({ child
  * Returns the announcer. Outside the provider, returns a no-op announcer so
  * tests and isolated components can call `announce()` without crashing.
  */
+/** Uno solo, para que un efecto que depende de `announce` no se repita en cada render fuera del proveedor. */
+const NO_OP_ANNOUNCER: AriaAnnouncerContextValue = { announce: () => undefined };
+
 export function useAriaAnnouncer(): AriaAnnouncerContextValue {
-    const ctx = useContext(AriaAnnouncerContext);
-    if (!ctx) {
-        return { announce: () => undefined };
-    }
-    return ctx;
+    return useContext(AriaAnnouncerContext) ?? NO_OP_ANNOUNCER;
 }
 
 export default useAriaAnnouncer;

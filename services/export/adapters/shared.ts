@@ -36,6 +36,7 @@ export const buildFile = (
   format: keyof typeof EXPORT_DEFINITIONS,
   blob: Blob,
   details?: string,
+  receipt?: ExportedFile['receipt'],
 ): ExportedFile => {
   const definition = EXPORT_DEFINITIONS[format];
   return {
@@ -45,6 +46,7 @@ export const buildFile = (
     extension: definition.extension,
     format,
     technicalDetails: details,
+    ...(receipt ? { receipt } : {}),
     publication: buildPublicationFileMeta(context),
   };
 };

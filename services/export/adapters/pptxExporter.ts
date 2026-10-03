@@ -1,9 +1,9 @@
-import type { ExportAdapter, ExportContext } from '../exportTypes';
+import type { ExportAdapter, ExportContext, ExportReceipt } from '../exportTypes';
 import { EXPORT_DEFINITIONS } from '../exportRegistry';
 import { createStoredZip, type ZipEntryInput } from '../utils/zip';
 import { buildFile } from './shared';
 import { parsePresentationDeck } from '../../presentation';
-import type { PresentationDeck, PresentationDiagramContent } from '../../presentation';
+import type { PresentationDeck, PresentationDiagramContent, PresentationSlide } from '../../presentation';
 import { rasterizeMermaidToPng, type RasterizedDiagram } from '../utils/mermaidRaster';
 import { LAYOUT_ORDER, layoutSpecFor } from './pptx/branding';
 import { buildSlideLayoutRels, buildSlideLayoutXml, buildSlideMasterRels, buildSlideMasterXml } from './pptx/layouts';
@@ -97,6 +97,38 @@ export const collectSlideMermaid = (deck: PresentationDeck): Map<number, string>
   return out;
 };
 
+/** Las primeras líneas de una diapositiva: su mensaje, viñetas y textos, en orden. */
+const slideLines = (slide: PresentationSlide): string[] => {
+  const lines: string[] = slide.keyMessage ? [slide.keyMessage] : [];
+  for (const block of slide.contentBlocks) {
+    if (typeof block.content === 'string') lines.push(block.content);
+    else if (Array.isArray(block.content)) lines.push(...block.content.map((item) => (typeof item === 'string' ? item : `${item.label}: ${item.value}`)));
+  }
+  return lines.map((line) => line.trim()).filter(Boolean).slice(0, 6);
+};
+
+/**
+ * El recibo del deck (plan de clase mundial 9.4), contado sobre lo que
+ * `buildPptx` acaba de escribir: cada tabla es un `a:tbl`, cada diagrama
+ * rasterizado una imagen, y cada diagrama que no se pudo dibujar, una pérdida.
+ */
+export const pptxReceipt = (deck: PresentationDeck, slideDiagrams: ReadonlyMap<number, RasterizedDiagram>, usedFallback: boolean): ExportReceipt => {
+  const losses: string[] = [];
+  if (usedFallback) losses.push('El contenido no era un deck válido: se exportó una presentación mínima con su texto.');
+  for (const idx of collectSlideMermaid(deck).keys()) {
+    if (!slideDiagrams.has(idx)) losses.push(`El diagrama de la diapositiva ${idx + 1} no se pudo dibujar en este navegador y se conserva como texto.`);
+  }
+  const first = deck.slides[0];
+  return {
+    slides: deck.slides.length,
+    slidesWithNotes: deck.slides.filter((slide) => slide.speakerNotes?.trim()).length,
+    tables: deck.slides.reduce((sum, slide) => sum + slide.contentBlocks.filter((block) => block.type === 'table').length, 0),
+    diagrams: slideDiagrams.size,
+    losses,
+    preview: first ? { kind: 'slide', title: first.title, subtitle: first.subtitle, lines: slideLines(first) } : undefined,
+  };
+};
+
 export const pptxExporter: ExportAdapter = {
   format: 'pptx',
   async export(context: ExportContext) {
@@ -111,6 +143,6 @@ export const pptxExporter: ExportAdapter = {
     }
     const blobBytes = buildPptx(parsed.deck, slideDiagrams);
     const blob = new Blob([blobBytes.slice().buffer], { type: EXPORT_DEFINITIONS.pptx.mimeType });
-    return buildFile(context, 'pptx', blob);
+    return buildFile(context, 'pptx', blob, undefined, pptxReceipt(parsed.deck, slideDiagrams, parsed.usedFallback));
   },
 };

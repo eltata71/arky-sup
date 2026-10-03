@@ -106,6 +106,34 @@ export interface ArtifactValidationResult {
   checks: ArtifactValidationCheck[];
   blockingScopes: ValidationScope[];
 }
+/**
+ * La primera página o diapositiva, tal como la escribió el exportador (plan de
+ * clase mundial 9.4): lo que la persona ve antes de descargar.
+ */
+export interface ExportPreview {
+  readonly kind: 'page' | 'slide';
+  readonly title: string;
+  readonly subtitle?: string;
+  /** Las primeras líneas de contenido, en el orden en que aparecen. */
+  readonly lines: readonly string[];
+}
+
+/**
+ * Lo que el exportador **hizo**, contado por él mismo mientras escribía el
+ * fichero (9.4). No se recalcula después: un recibo que volviera a leer el
+ * artefacto diría lo que debería haber salido, no lo que salió.
+ */
+export interface ExportReceipt {
+  readonly pages?: number;
+  readonly slides?: number;
+  readonly slidesWithNotes?: number;
+  readonly tables: number;
+  readonly diagrams: number;
+  /** Cada pérdida o degradación, en una frase. Vacío = nada se perdió. */
+  readonly losses: readonly string[];
+  readonly preview?: ExportPreview;
+}
+
 export interface ExportedFile {
   blob: Blob;
   filename: string;
@@ -113,6 +141,8 @@ export interface ExportedFile {
   extension: string;
   format: ExportFormat;
   technicalDetails?: string;
+  /** El recibo de los formatos que lo escriben (DOCX, PPTX y PDF). */
+  receipt?: ExportReceipt;
   publication?: {
     exportedAsPublication: boolean;
     mode?: PublicationExportMode;

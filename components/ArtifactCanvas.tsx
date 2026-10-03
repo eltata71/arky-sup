@@ -872,7 +872,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         artifact={artifact}
         activeView={activeExportView}
         formatOptions={exportFormatOptions}
-        onExportFormat={(format, options) => { void exportActions.exportFormat(format, options); }}
+        {...exportActions.modalHandlers}
         preflightReport={preflightReport}
         presentationModel={presentationModel}
         visualGateState={visualGateState}

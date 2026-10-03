@@ -133,3 +133,26 @@ Para regenerar las fuentes (otro rango, otra versión):
 `node scripts/buildPdfFonts.mjs <carpeta con los .ttf originales>`; la cabecera
 del script dice de dónde sale cada una. El banco `export-evals` mide el PDF
 leyendo su `ToUnicode` (`__tests__/export/pdfTextReader.ts`).
+
+## La exportación dice lo que hizo (plan de clase mundial 9.4)
+
+Antes, exportar descargaba el fichero y cerraba el modal; lo que el exportador
+no pudo incluir quedaba, como mucho, en los detalles técnicos que nadie abre.
+Ahora:
+
+- **El recibo lo escribe el exportador.** DOCX, PPTX y PDF (también el PDF
+  vectorial de un diagrama) devuelven `ExportedFile.receipt` (`ExportReceipt`
+  en `lib/artifacts/exportContracts.ts`): páginas o diapositivas, cuántas con
+  notas, tablas, diagramas, cada pérdida en una frase y la vista previa de la
+  primera página o diapositiva. Se cuenta mientras se escribe el fichero; no se
+  recalcula leyendo el artefacto, porque eso diría lo que debía salir y no lo
+  que salió.
+- **Preparar no es descargar.** `useArtifactExportActions.prepareExport`
+  genera el fichero; `ArtifactExportModal` enseña `ExportReceiptPanel` —las
+  pérdidas antes que el botón, el foco en su título, un único anuncio por
+  `useAriaAnnouncer`— y `downloadExport` descarga con un segundo clic
+  («Descargar de todos modos» si hubo pérdidas). «Volver a los formatos»
+  descarta el fichero. PNG y SVG siguen descargándose al momento.
+- **Una frase.** `describeExportReceipt` («3 páginas, 2 tablas, 1 diagrama»)
+  y `announceExportReceipt` son la única redacción del recibo.
+

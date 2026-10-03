@@ -1,4 +1,4 @@
-import type { ExportAdapter, ExportContext } from '../exportTypes';
+import type { ExportAdapter, ExportContext, ExportReceipt } from '../exportTypes';
 import { EXPORT_DEFINITIONS } from '../exportRegistry';
 import { createStoredZip, type ZipEntryInput } from '../utils/zip';
 import { escapeHtml, stripMarkdown } from '../utils/text';
@@ -27,7 +27,7 @@ const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
 </Types>`;
 
-interface BuiltDocx { blob: Blob; warnings: string[] }
+interface BuiltDocx { blob: Blob; warnings: string[]; receipt: ExportReceipt }
 
 async function buildDocx(context: ExportContext): Promise<BuiltDocx> {
   const exportContent = shouldExportPublication(context) ? publicationMarkdown(context) : context.artifact.content;
@@ -78,7 +78,18 @@ async function buildDocx(context: ExportContext): Promise<BuiltDocx> {
     { path: 'docProps/app.xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Arky Pro</Application></Properties>` },
     ...state.images.map((image) => ({ path: `word/media/image${image.number}.png`, content: image.bytes })),
   ];
-  return { blob: new Blob([createStoredZip(entries)], { type: EXPORT_DEFINITIONS.docx.mimeType }), warnings: state.warnings };
+  const receipt: ExportReceipt = {
+    tables: state.tables,
+    diagrams: state.images.length,
+    losses: state.warnings,
+    preview: {
+      kind: 'page',
+      title: context.presentationModel?.title || context.artifact.name,
+      subtitle: context.presentationModel?.purpose || context.artifact.objective || undefined,
+      lines: state.headings.slice(0, 6),
+    },
+  };
+  return { blob: new Blob([createStoredZip(entries)], { type: EXPORT_DEFINITIONS.docx.mimeType }), warnings: state.warnings, receipt };
 }
 
 export async function buildDocxBlob(context: ExportContext): Promise<Blob> {
@@ -90,6 +101,6 @@ export const docxExporter: ExportAdapter = {
   async export(context) {
     const result = await buildDocx(context);
     const details = `DOCX OOXML con estilos, numeración, índice y diagramas incrustados.${result.warnings.length ? ` ${result.warnings.join(' ')}` : ''}`;
-    return buildFile(context, 'docx', result.blob, details);
+    return buildFile(context, 'docx', result.blob, details, result.receipt);
   },
 };

@@ -1,9 +1,9 @@
-import { useCallback, useState, type RefObject } from 'react';
+import { useCallback, useMemo, useState, type RefObject } from 'react';
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { ArtifactPresentationModel, PublicationExportMode } from '../../lib/artifacts/artifactPresentationModel';
 import { buildAccessibleSummary, toDiagramIR, type DiagramPreflightReport } from '../../services/diagram';
-import { type ArtifactView, type DiagramSnapshot, type ExportFormat, snapshotFromFlow, validateArtifactForExport } from '../../services/export';
+import { type ArtifactView, type DiagramSnapshot, type ExportedFile, type ExportFormat, snapshotFromFlow, validateArtifactForExport } from '../../services/export';
 import { exportArtifact } from '../../services/export/exportService';
 import { downloadFile } from '../../services/export/downloadService';
 import type { ReactFlowCanvasHandle } from '../../components/ReactFlowCanvas';
@@ -31,6 +31,20 @@ export interface UseArtifactExportActionsInput {
 export interface UseArtifactExportActionsResult {
   /** Export the artifact in `format`; routes image formats to the fast path. */
   exportFormat: (format: ExportFormat, options?: ArtifactExportOptions) => Promise<void>;
+  /**
+   * Genera el fichero sin descargarlo, para que el modal enseñe su recibo y su
+   * vista previa antes (plan de clase mundial 9.4). `null` si no se pudo: el
+   * motivo ya se dijo en un aviso. Las imágenes no pasan por aquí.
+   */
+  prepareExport: (format: ExportFormat, options?: ArtifactExportOptions) => Promise<ExportedFile | null>;
+  /** Descarga un fichero ya preparado. */
+  downloadExport: (file: ExportedFile) => Promise<void>;
+  /** Los tres manejadores que el modal de exportación recibe, juntos. */
+  modalHandlers: {
+    onExportFormat: (format: ExportFormat, options?: ArtifactExportOptions) => Promise<void>;
+    onPrepareExport: (format: ExportFormat, options?: ArtifactExportOptions) => Promise<ExportedFile | null>;
+    onDownloadExport: (file: ExportedFile) => Promise<void>;
+  };
   /** Convenience wrapper that exports the artifact as Markdown. */
   exportMarkdown: () => Promise<void>;
   /** Copy the raw artifact content to the clipboard. */
@@ -134,23 +148,14 @@ export const useArtifactExportActions = (
     }
   }, [activeView, artifact, publicationPackages, reactFlowRef]);
 
-  const exportFormat = useCallback(async (format: ExportFormat, options?: ArtifactExportOptions) => {
+  const prepareExport = useCallback(async (format: ExportFormat, options?: ArtifactExportOptions): Promise<ExportedFile | null> => {
     const selectedPresentationModel = options?.presentationModel ?? presentationModel ?? null;
     const selectedPublication = Boolean(options?.exportAsPublication ?? exportAsPublication);
     const selectedMode = options?.publicationMode ?? publicationMode;
     const validation = validateArtifactForExport({ artifact, activeView, format, diagramPreflight: preflightReport, presentationModel: selectedPresentationModel, exportAsPublication: selectedPublication, publicationMode: selectedMode });
     if (!validation.canExport) {
       addToast(validation.suggestedAction ? `${validation.message} ${validation.suggestedAction}` : validation.message, 'error');
-      return;
-    }
-    if (format === 'png' || format === 'svg') {
-      await captureImage(format, {
-        view: options?.imageExportView,
-        scale: options?.imageExportScale,
-        frame: options?.imageExportFrame,
-        legend: options?.imageExportLegend,
-      });
-      return;
+      return null;
     }
     try {
       const result = await exportArtifact({
@@ -168,13 +173,42 @@ export const useArtifactExportActions = (
         publicationMode: selectedMode,
         diagramSnapshot: diagramSnapshotFor(format),
       }, format);
-      const download = await downloadFile(result.file);
-      addToast(`Archivo descargado: ${download.filename} (${Math.round(download.size / 1024)} KB)`, 'success');
+      return result.file;
     } catch (err) {
       console.error('[useArtifactExportActions] export failed', err);
       addToast(err instanceof Error ? err.message : 'La exportación falló inesperadamente.', 'error');
+      return null;
     }
-  }, [artifact, activeView, settings, preflightReport, captureImage, addToast, presentationModel, exportAsPublication, publicationMode, diagramSnapshotFor]);
+  }, [artifact, activeView, settings, preflightReport, addToast, presentationModel, exportAsPublication, publicationMode, diagramSnapshotFor]);
+
+  const downloadExport = useCallback(async (file: ExportedFile) => {
+    try {
+      const download = await downloadFile(file);
+      addToast(`Archivo descargado: ${download.filename} (${Math.round(download.size / 1024)} KB)`, 'success');
+    } catch (err) {
+      console.error('[useArtifactExportActions] download failed', err);
+      addToast(err instanceof Error ? err.message : 'La descarga falló inesperadamente.', 'error');
+    }
+  }, [addToast]);
+
+  const exportFormat = useCallback(async (format: ExportFormat, options?: ArtifactExportOptions) => {
+    if (format === 'png' || format === 'svg') {
+      const validation = validateArtifactForExport({ artifact, activeView, format, diagramPreflight: preflightReport, presentationModel: options?.presentationModel ?? presentationModel ?? null, exportAsPublication: Boolean(options?.exportAsPublication ?? exportAsPublication), publicationMode: options?.publicationMode ?? publicationMode });
+      if (!validation.canExport) {
+        addToast(validation.suggestedAction ? `${validation.message} ${validation.suggestedAction}` : validation.message, 'error');
+        return;
+      }
+      await captureImage(format, {
+        view: options?.imageExportView,
+        scale: options?.imageExportScale,
+        frame: options?.imageExportFrame,
+        legend: options?.imageExportLegend,
+      });
+      return;
+    }
+    const file = await prepareExport(format, options);
+    if (file) await downloadExport(file);
+  }, [artifact, activeView, preflightReport, captureImage, addToast, presentationModel, exportAsPublication, publicationMode, prepareExport, downloadExport]);
 
   const exportMarkdown = useCallback(async () => {
     await exportFormat('md');
@@ -191,5 +225,10 @@ export const useArtifactExportActions = (
     }
   }, [artifact.content, addToast]);
 
-  return { exportFormat, exportMarkdown, copyMarkdown, markdownCopied };
+  const modalHandlers = useMemo(
+    () => ({ onExportFormat: exportFormat, onPrepareExport: prepareExport, onDownloadExport: downloadExport }),
+    [exportFormat, prepareExport, downloadExport],
+  );
+
+  return { exportFormat, prepareExport, downloadExport, modalHandlers, exportMarkdown, copyMarkdown, markdownCopied };
 };

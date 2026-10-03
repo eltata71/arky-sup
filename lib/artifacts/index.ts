@@ -16,6 +16,7 @@ export type { ArtifactBusinessMotivation, ArtifactContextPorts, ArtifactConversa
 export * from './artifactCompilationSummary';
 export * from './contracts';
 export * from './exportContracts';
+export * from './exportReceipt';
 // Artifact classification and the presentation contract. Both were pure
 // declaration files under `services/artifacts/`, which meant `services/export`
 // had to import the artifacts module to know what a deck looks like while

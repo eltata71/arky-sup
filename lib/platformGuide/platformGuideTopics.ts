@@ -134,7 +134,7 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
   topic({
     id: 'publicacion',
     question: '¿Cómo entrego lo que hemos producido?',
-    answer: 'Con el centro de publicación del proyecto: reúne los artefactos en un paquete, pasa una comprobación previa —accesibilidad, versiones, aprobaciones— y produce el entregable con su manifiesto y su rastro de auditoría. También puedes exportar un artefacto suelto a Markdown, HTML, PDF, Word, PowerPoint o Excel.',
+    answer: 'Con el centro de publicación del proyecto: reúne los artefactos en un paquete, pasa una comprobación previa —accesibilidad, versiones, aprobaciones— y produce el entregable con su manifiesto y su rastro de auditoría. También puedes exportar un artefacto suelto a Markdown, HTML, PDF, Word, PowerPoint o Excel: antes de descargar verás la primera página o diapositiva y un recibo con lo que lleva el fichero y cualquier cosa que no se pudo incluir.',
     where: 'Proyecto → Publicación, o el botón de exportar de cada artefacto.',
     keywords: ['publicar', 'entregar', 'exportar', 'paquete', 'pdf', 'word', 'powerpoint', 'manifiesto'],
   }),

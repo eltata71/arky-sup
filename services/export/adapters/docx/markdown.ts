@@ -6,9 +6,13 @@ export interface DocxRenderState {
   images: DocxImage[];
   links: DocxLink[];
   warnings: string[];
+  /** Tablas del contenido escritas como `w:tbl` (el recibo de 9.4 las cuenta aquí). */
+  tables: number;
+  /** Títulos del contenido en el orden en que se escribieron: el comienzo de la vista previa. */
+  headings: string[];
 }
 
-export const createDocxRenderState = (): DocxRenderState => ({ images: [], links: [], warnings: [] });
+export const createDocxRenderState = (): DocxRenderState => ({ images: [], links: [], warnings: [], tables: 0, headings: [] });
 
 const run = (text: string, decoration = ''): string =>
   `<w:r>${decoration ? `<w:rPr>${decoration}</w:rPr>` : ''}<w:t xml:space="preserve">${escapeHtml(text)}</w:t></w:r>`;
@@ -117,10 +121,14 @@ export async function renderMarkdownXml(content: string, state: DocxRenderState)
       index += 2;
       while (index < lines.length && (lines[index] ?? '').includes('|')) { rows.push(splitCells(lines[index] ?? '')); index += 1; }
       blocks.push(tableXml(headers, rows, state));
+      state.tables += 1;
       continue;
     }
     const heading = /^(#{1,3})\s+(.+)$/.exec(line);
-    if (heading) blocks.push(paragraphXml(heading[2] ?? '', state, `Heading${heading[1]?.length ?? 1}`));
+    if (heading) {
+      blocks.push(paragraphXml(heading[2] ?? '', state, `Heading${heading[1]?.length ?? 1}`));
+      state.headings.push((heading[2] ?? '').replace(/[*_`]/g, '').trim());
+    }
     else {
       const list = /^(\s*)([-*+]|\d+[.)])\s+(.+)$/.exec(line);
       if (list) blocks.push(listParagraph(list[3] ?? '', state, /^\d/.test(list[2] ?? ''), Math.floor((list[1]?.length ?? 0) / 2)));
