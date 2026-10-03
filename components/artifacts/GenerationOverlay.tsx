@@ -41,14 +41,8 @@ export function GenerationOverlay({ pendingOpenArtifactId, generatingMessage, ge
           <div className="h-full w-full progress-indeterminate" />
         </div>
         {!pendingOpenArtifactId && (
-          <div className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-left dark:border-gray-800 dark:bg-gray-950/60">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Estado resiliente</span>
-              <span className="font-mono text-2xs text-gray-500">{generationElapsedSec}s</span>
-            </div>
-            <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-              Puedes liberar la pantalla sin perder trazabilidad. Si el proveedor IA se demora o falla, el sistema mostrará diagnóstico y opción de reintento.
-            </p>
+          <div className="mt-4 w-full text-center">
+            <span className="font-mono text-2xs text-gray-500">{generationElapsedSec}s transcurridos</span>
             {generationElapsedSec >= 20 && (
               <button
                 type="button"

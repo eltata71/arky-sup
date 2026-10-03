@@ -11,18 +11,18 @@ export interface GenerationPhaseCopy {
 
 /** Único vocabulario de las fases de generación que ve la persona. */
 export const GENERATION_PHASE_COPY: Record<ArtifactGenerationStage, GenerationPhaseCopy> = {
-  recommendation: { label: 'Buscando el artefacto adecuado', description: 'Comparamos tu solicitud con el catálogo de artefactos.', icon: '◇' },
-  prompt: { label: 'Leyendo el contexto del proyecto', description: 'Reunimos la solicitud y el contexto necesario para escribir.', icon: '▤' },
-  'ai-generation': { label: 'Escribiendo', description: 'Estamos preparando el contenido del artefacto.', icon: '✎' },
-  validation: { label: 'Comprobando el contenido', description: 'Revisamos que el resultado cumpla las reglas del artefacto.', icon: '✓' },
-  'quality-gate': { label: 'Revisando la calidad', description: 'Comprobamos si el resultado está listo para guardarse.', icon: '✦' },
-  fallback: { label: 'Preparando una alternativa', description: 'Buscamos una salida útil tras un problema de generación.', icon: '↻' },
+  recommendation: { label: 'Buscando el artefacto adecuado', description: 'Comparamos tu solicitud con el catálogo.', icon: '◇' },
+  prompt: { label: 'Leyendo el contexto del proyecto', description: 'Reunimos el contexto para escribir.', icon: '▤' },
+  'ai-generation': { label: 'Escribiendo', description: 'Preparamos el contenido del artefacto.', icon: '✎' },
+  validation: { label: 'Comprobando el contenido', description: 'Revisamos las reglas del artefacto.', icon: '✓' },
+  'quality-gate': { label: 'Revisando la calidad', description: 'Comprobamos si está listo para guardar.', icon: '✦' },
+  fallback: { label: 'Preparando una alternativa', description: 'Buscamos una salida tras el fallo.', icon: '↻' },
   persistence: { label: 'Guardando', description: 'Guardamos el artefacto y su historial.', icon: '▣' },
-  render: { label: 'Preparando la vista', description: 'Ajustamos el resultado para mostrarlo en el lienzo.', icon: '▧' },
-  parsing: { label: 'Leyendo la respuesta', description: 'Interpretamos el contenido recibido para poder comprobarlo.', icon: '⌕' },
-  normalization: { label: 'Ordenando el contenido', description: 'Damos al resultado una estructura consistente.', icon: '≡' },
+  render: { label: 'Preparando la vista', description: 'Mostramos el resultado en el lienzo.', icon: '▧' },
+  parsing: { label: 'Leyendo la respuesta', description: 'Interpretamos el contenido recibido.', icon: '⌕' },
+  normalization: { label: 'Ordenando el contenido', description: 'Damos estructura al resultado.', icon: '≡' },
   export: { label: 'Preparando la descarga', description: 'Convertimos el artefacto al formato elegido.', icon: '⇩' },
-  refinement: { label: 'Puliendo el resultado', description: 'Aplicamos mejoras sin perder el contenido válido.', icon: '✧' },
+  refinement: { label: 'Puliendo el resultado', description: 'Mejoramos el contenido válido.', icon: '✧' },
 };
 
 export const GENERATION_STATUS_COPY: Record<ArtifactGenerationStepStatus, string> = {
