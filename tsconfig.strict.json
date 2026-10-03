@@ -116,6 +116,14 @@
     "services/settings/**/*.ts",
     // Plan de diagramas 8.3b: los lectores y escritores de notación sólo
     // dependen del vocabulario de `lib/diagram`, y nacen dentro.
-    "services/diagram/notation/**/*.ts"
+    "services/diagram/notation/**/*.ts",
+    // Plan de clase mundial 9.3: las piezas del PDF que no dependen del resto de
+    // la exportación —fuentes, escritor, estructura— nacen dentro.
+    "services/export/adapters/pdf/trueType.ts",
+    "services/export/adapters/pdf/pdfWriter.ts",
+    "services/export/adapters/pdf/pdfFonts.ts",
+    "services/export/adapters/pdf/pdfStructure.ts",
+    "services/export/adapters/pdf/pageGeometry.ts",
+    "services/export/adapters/pdf/documentBlocks.ts"
   ]
 }

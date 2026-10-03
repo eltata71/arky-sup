@@ -129,4 +129,23 @@ describe('controles del PDF', () => {
         expect(metrics.caracteresPerdidosPdf?.logrado).toBe(1);
         expect(metrics.encabezadosConEstilo).toEqual({ logrado: 0, esperado: 1 });
     });
+
+    it('el texto Identity-H se lee con el ToUnicode de su fuente, como al copiar en un visor', () => {
+        const source = '# Base → objetivo\n';
+        // <0001>=B <0002>=a <0003>=s <0004>=e <0005>=espacio <0006>=→ ... «objetivo» letra a letra.
+        const map: Array<[number, string]> = [...'Base →objtiv'].map((ch, i) => [i + 1, ch]);
+        const code = (text: string) => Array.from(text, (ch) => (map.find(([, c]) => c === ch)?.[0] ?? 0).toString(16).padStart(4, '0')).join('');
+        const cmap = `1 beginbfchar\n${map.map(([cid, ch]) => `<${cid.toString(16).padStart(4, '0')}> <${ch.charCodeAt(0).toString(16).padStart(4, '0')}>`).join('\n')}\nendbfchar`.replace('1 beginbfchar', `${map.length} beginbfchar`);
+        const stream = `BT /F2 22 Tf 72 700 Td <${code('Base → objetivo')}> Tj ET`;
+        const text = [
+            '%PDF-1.4',
+            '1 0 obj\n<< /Type /Page /Resources << /Font << /F2 3 0 R >> >> /Contents 2 0 R >>\nendobj',
+            `2 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}\nendstream\nendobj`,
+            '3 0 obj\n<< /Type /Font /Subtype /Type0 /BaseFont /ABCDEF+Inter-Bold /Encoding /Identity-H /ToUnicode 4 0 R >>\nendobj',
+            `4 0 obj\n<< /Length ${cmap.length} >>\nstream\n${cmap}\nendstream\nendobj`,
+        ].join('\n');
+        const { metrics, perdidos } = measurePdf(Uint8Array.from(text, (ch) => ch.charCodeAt(0) & 0xff), readSourceDocument(source), source);
+        expect(perdidos).toEqual({});
+        expect(metrics.encabezadosConEstilo).toEqual({ logrado: 1, esperado: 1 });
+    });
 });
