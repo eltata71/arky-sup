@@ -17,7 +17,7 @@ Tres decisiones que conviene conocer antes de escribir un recorrido:
 
 - **Los recorridos autenticados y `chunks.spec.ts` corren sólo en Chromium
   de escritorio.** La sesión de Auth en WebKit contra el stack local no es
-  fiable, y el smoke sin sesión cubre iPad. De ahí que haya 36 casos y 19 se
+  fiable, y el smoke sin sesión cubre iPad. De ahí que haya 38 casos y 20 se
   ejecuten.
 - **No hay proveedor de IA.** Un recorrido que necesita un modelo lo
   sustituye detrás de `/api/ai` (`fakeAiProvider` en `e2e/support/backend.ts`).
@@ -27,6 +27,21 @@ Tres decisiones que conviene conocer antes de escribir un recorrido:
   `e2e/support/backend.ts`. Usa la sesión del usuario y la clave publicable,
   nunca `service_role`. Una escritura que sólo se ve en el estado de React de
   la pestaña que la hizo no es una escritura.
+
+## El recorrido de generación, medido (plan de clase mundial 10.0)
+
+`e2e/generation-experience.spec.ts` no afirma cifras: las mide y las publica.
+Usa `fakeStreamingAiProvider` (`e2e/support/backend.ts`), que sustituye
+`fetch` en la página para que el proveedor tarde lo que un modelo —primer
+fragmento a 1,5 s y ocho fragmentos cada 0,4 s, por SSE si se pidió
+*streaming*—, porque `route.fulfill` entrega el cuerpo de una vez. Mide en la
+página, desde el clic en «Crear Artefacto», el primer indicador, la primera
+fase con nombre (un elemento con `data-generation-phase`), el primer
+contenido visible y el final, más si la navegación del raíl recibe un clic
+mientras tanto y el peor retraso del bucle de eventos. El informe va a
+`e2e-report/` y el workflow lo sube **siempre** como artefacto
+`generation-experience` (30 días): son las cifras de partida de la ola 10, y
+cada tarea de la ola las compara.
 
 ## Las cuentas sembradas, y por qué hay cuatro
 

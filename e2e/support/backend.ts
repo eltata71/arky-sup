@@ -124,3 +124,69 @@ export async function rpc<T = unknown>(
   expect(response.ok(), `rpc ${name} → ${response.status()}: ${text.slice(0, 300)}`).toBe(true);
   return (text ? JSON.parse(text) : null) as T;
 }
+
+/** Los retardos del proveedor simulado con streaming (10.0). */
+export interface StreamingTiming {
+  /** Hasta el primer fragmento: lo que tarda un modelo en empezar a escribir. */
+  readonly firstChunkMs: number;
+  /** Entre fragmentos. */
+  readonly chunkMs: number;
+  /** En cuántos fragmentos se parte el documento. */
+  readonly chunks: number;
+  /** Lo que tarda una petición que pide JSON (crítica, sugerencias). */
+  readonly jsonMs: number;
+}
+
+export const REALISTIC_TIMING: StreamingTiming = { firstChunkMs: 1_500, chunkMs: 400, chunks: 8, jsonMs: 300 };
+
+/**
+ * El proveedor simulado **con tiempo** (plan de clase mundial 10.0).
+ *
+ * `fakeAiProvider` contesta al instante y de una vez, que es lo correcto para
+ * afirmar qué se guarda y lo incorrecto para medir una espera: con él el
+ * recorrido entero dura lo que tarda la aplicación, y nunca lo que tarda un
+ * modelo. Éste sustituye `fetch` en la página —`route.fulfill` de Playwright
+ * entrega el cuerpo entero de una vez y no puede emitir por partes— y responde
+ * como un modelo: el primer fragmento tarde, los demás poco a poco, por SSE si
+ * la petición pidió `stream` y entero al final si no. Sólo sustituye al
+ * proveedor: el motor, el transporte y las guardas siguen siendo los reales.
+ */
+export async function fakeStreamingAiProvider(page: Page, timing: StreamingTiming = REALISTIC_TIMING): Promise<{ calls: () => Promise<number> }> {
+  await page.addInitScript(({ document, timing: t }) => {
+    const original = window.fetch.bind(window);
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const w = window as unknown as { __arkyAiCalls: number };
+    w.__arkyAiCalls = 0;
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (!/\/api\/ai(\?|$)/.test(url)) return original(input, init);
+      w.__arkyAiCalls += 1;
+      let body: Record<string, unknown>;
+      try { body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as Record<string, unknown>; } catch { body = {}; }
+      if (body.responseMimeType === 'application/json') {
+        await sleep(t.jsonMs);
+        return new Response(JSON.stringify({ requestId: 'e2e-json', text: '{}', provider: 'gemini', model: 'e2e-fake-model' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      const size = Math.ceil(document.length / t.chunks);
+      const pieces = Array.from({ length: t.chunks }, (_, i) => document.slice(i * size, (i + 1) * size)).filter(Boolean);
+      if (body.stream === true) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            await sleep(t.firstChunkMs);
+            for (const [i, piece] of pieces.entries()) {
+              if (i > 0) await sleep(t.chunkMs);
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: piece })}\n\n`));
+            }
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          },
+        });
+        return new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
+      }
+      await sleep(t.firstChunkMs + t.chunkMs * (pieces.length - 1));
+      return new Response(JSON.stringify({ requestId: 'e2e-text', text: document, provider: 'gemini', model: 'e2e-fake-model' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    };
+  }, { document: FAKE_DOCUMENT, timing });
+  return { calls: () => page.evaluate(() => (window as unknown as { __arkyAiCalls?: number }).__arkyAiCalls ?? 0) };
+}
