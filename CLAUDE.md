@@ -656,7 +656,7 @@ estado.
 | `npm run test:coverage` | **67,66 % statements / 58,51 branches / 60,56 functions / 69,63 lines**, por encima de todos los suelos de `vite.config.ts` |
 | `npm run check:bundle-budget` | **carga inicial 310,1 KB gz de 340**, y desde F6-05 **cada ruta con su techo** (`ROUTE_BUDGETS_GZIP_KB`): Dashboard 48,8 de 60, Configuración 20,4 de 30, Agentes 42,0 de 50; las ocho rutas que cargan IA al abrirse, en su cifra de hoy (~600) |
 | `npm run check:bundle-secrets` | limpio, con la forma `sk-ant-` incluida |
-| `e2e/` (sólo CI) | **36 casos, 19 se ejecutan**: los recorridos autenticados y `chunks.spec.ts` —que evalúa los 151 chunks del build— corren sólo en Chromium de escritorio, a propósito; contra `dist/` y Supabase local |
+| `e2e/` (sólo CI) | **38 casos, 20 se ejecutan**: los recorridos autenticados y `chunks.spec.ts` —que evalúa los 151 chunks del build— corren sólo en Chromium de escritorio, a propósito; contra `dist/` y Supabase local. `generation-experience.spec.ts` (10.0) mide el recorrido de generación con un proveedor que tarda lo que un modelo y publica el informe como artefacto de CI |
 | `supabase.yml` (sólo CI) | **18 contratos pgTAP** sobre 45 migraciones, contra una base real |
 
 ### CI

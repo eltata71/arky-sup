@@ -145,6 +145,17 @@ jobs:
           CI: 'true'
         run: npm run e2e -- --reporter=line
 
+      # Plan de clase mundial 10.0: el recorrido de generación medido se publica
+      # siempre —no sólo si falla—, porque sus cifras son la línea base de la ola 10.
+      - name: Upload the generation experience report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: generation-experience
+          path: e2e-report
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Upload Playwright HTML report on failure
         if: failure()
         uses: actions/upload-artifact@v7

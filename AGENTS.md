@@ -584,6 +584,10 @@ Reglas que no se negocian al trabajar aquí:
     y PDF devuelven un `ExportReceipt` contado por el propio exportador
     (páginas o diapositivas, tablas, diagramas, pérdidas y vista previa), y el
     modal lo enseña —pérdidas primero— antes del clic de descarga.
+    **Y el recorrido de generación se mide antes de cambiarlo** (10.0):
+    `e2e/generation-experience.spec.ts`, con `fakeStreamingAiProvider`
+    (tarda lo que un modelo y emite por partes), publica el informe
+    `generation-experience` como artefacto de CI.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
