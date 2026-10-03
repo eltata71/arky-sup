@@ -12,7 +12,6 @@ import { htmlExporter } from './adapters/htmlExporter';
 import { txtExporter } from './adapters/txtExporter';
 import { csvExporter } from './adapters/csvExporter';
 import { jsonExporter } from './adapters/jsonExporter';
-import { docxExporter } from './adapters/docxExporter';
 import { pdfExporter } from './adapters/pdfExporter';
 import { xlsxExporter } from './adapters/xlsxExporter';
 import { mermaidExporter, diagramJsonExporter } from './adapters/diagramExporter';
@@ -24,7 +23,6 @@ const adapters: Partial<Record<ExportFormat, ExportAdapter>> = {
   txt: txtExporter,
   csv: csvExporter,
   json: jsonExporter,
-  docx: docxExporter,
   pdf: pdfExporter,
   xlsx: xlsxExporter,
   mermaid: mermaidExporter,
@@ -64,7 +62,9 @@ export async function exportArtifact(requested: ExportContext, format: ExportFor
       console.warn('[presentation.export.blocked]', validation);
       throw new ExportError(validation.message, validation.suggestedAction);
     }
-    const adapter = adapters[format];
+    const adapter = format === 'docx'
+      ? (await import('./adapters/docxExporter')).docxExporter
+      : adapters[format];
     if (!adapter) throw new ExportError('Formato no disponible.', `No existe adapter para ${format}.`);
     const file = await adapter.export(context);
     await validateExportedBlob(format, file.blob);

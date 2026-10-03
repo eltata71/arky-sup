@@ -151,7 +151,7 @@ registra en su PR.
 
 | Métrica | Hoy | Objetivo | Cómo se mide |
 |---|---|---|---|
-| Fidelidad de exportación (DOCX/PPTX/PDF) | DOCX: filas 79,6 %, títulos con estilo 0 %, diagramas 0 %. PPTX: tablas y filas 0 %, notas 0 %, *layouts* 0/14. PDF: filas 81,6 %, diagramas 0 % (9.0) | 100 % de tablas, filas, diagramas y notas preservados | `npm run eval:exports` |
+| Fidelidad de exportación (DOCX/PPTX/PDF) | DOCX: filas, tablas, títulos y diagramas 100 % (9.1). PPTX: tablas y filas 0 %, notas 0 %, *layouts* 0/14. PDF: filas 81,6 %, diagramas 0 % (9.0) | 100 % de tablas, filas, diagramas y notas preservados | `npm run eval:exports` |
 | Caracteres perdidos en el PDF | 27 en el corpus (9.0) | 0 en el corpus | `npm run eval:exports` |
 | Fases visibles en la generación principal | 0 de 12 | 100 %, con nombre en español | Prueba de componente |
 | Tiempo hasta el primer contenido visible al generar | fin de la generación | menos de 3 s con proveedor simulado | E2E con `page.route('**/api/ai')` |
@@ -267,6 +267,12 @@ preservación en los tres formatos, y H1–H5 están cerrados.
   y diagramas. El fichero se abre sin reparación en Word y en LibreOffice (se
   valida contra el esquema con una prueba que comprueba `[Content_Types]`,
   relaciones y partes). La prueba de H2 falla con el código anterior.
+- **Medido (2026-10-03):** filas, tablas nativas, encabezados con estilo y
+  diagramas incrustados llegan al 100 % en el corpus. Un DOCX con tabla
+  irregular, lista, enlace y diagrama se abrió y renderizó en LibreOffice sin
+  reparación; el banco retira H1–H3 de DOCX de `defectosConocidos`.
+  El adaptador se carga al pedir DOCX: Workspace pasa de 1 138,9 a
+  1 138,0 KB gz de descarga por ruta, sin subir el techo.
 
 #### 9.2 PPTX nativo *(corrección · L)*
 - **Objetivo:** cada *layout* y cada tipo de bloque tiene su forma nativa en
@@ -771,7 +777,7 @@ presupuesto que consumirán las olas 11 y 12.
 | Tarea | Estado | PR |
 |---|---|---|
 | 9.0 Banco de exportación | Hecha | #154 |
-| 9.1 DOCX nativo | Pendiente | |
+| 9.1 DOCX nativo | En revisión | |
 | 9.2 PPTX nativo | Pendiente | |
 | 9.3 PDF sin pérdidas | Pendiente | |
 | 9.4 Recibo de exportación | Pendiente | |

@@ -1,5 +1,16 @@
 # Export hardening — Arky Pro
 
+## DOCX nativo (ola 9.1)
+
+El DOCX define sus propios estilos `Title`, `Heading1`–`Heading3`, `Caption`,
+`Quote` y `TableGrid`, incluye numeración para listas y un campo de índice.
+Las tablas permanecen en la sección donde aparecen y conservan todas las
+celdas de las filas irregulares. La exportación incrusta los diagramas Mermaid
+como PNG con sus relaciones OOXML; si el navegador no puede rasterizar uno,
+el código queda en el fichero y `technicalDetails` informa de la pérdida.
+`npm run eval:exports` abre los paquetes generados y mide lo preservado. El
+adaptador DOCX se importa al exportar; no se descarga al abrir Workspace.
+
 ## Causa raíz encontrada
 
 El flujo anterior declaraba formatos Office/PDF que no siempre generaban archivos reales: DOCX se construía con HTML dentro de un Blob con extensión `.docx`, PDF abría HTML para impresión y XLSX se producía como HTML compatible con Excel. En iPad/Safari/Apple Files esto se manifiesta como `OfficeImportErrorDomain 912` porque Word/Files espera un paquete ZIP OOXML válido y recibe texto/HTML renombrado.
@@ -82,4 +93,3 @@ arranque.
 **Los bytes del PDF son Latin-1** (`latin1` en `pdfExporter`). Las fuentes se
 declaran WinAnsi, un byte por carácter; hasta #104 el escritor codificaba en
 UTF-8 y cada «ó» salía como «Ã³». Toda escritura de un PDF pasa por `latin1`.
-
