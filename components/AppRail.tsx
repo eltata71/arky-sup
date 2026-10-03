@@ -53,6 +53,7 @@ import { RAIL_GROUP_LABELS, RAIL_ITEMS } from './navigation/appRailItems';
 import { AppRailFooter } from './navigation/AppRailFooter';
 import { RailRevealedText } from './navigation/RailRevealedText';
 import { PRODUCT_NAME } from '../lib/eaTerminology';
+import { useGenerationQueue } from '../hooks/artifacts/useGenerationQueue';
 
 const RAIL_COLLAPSED = 72;
 const RAIL_EXPANDED = 264;
@@ -81,6 +82,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
     const reducedMotion = useReducedMotion();
     const { pinned, setPinned } = useRailExpansion();
     const modality = useKeyboardModality();
+    const { jobs, setPanelOpen } = useGenerationQueue();
 
     const [hovered, setHovered] = useState(false);
     const [focusWithin, setFocusWithin] = useState(false);
@@ -248,6 +250,9 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                         );
                     })}
                 </nav>
+                <button type="button" onClick={() => setPanelOpen(true)} aria-label="Abrir centro de generaciones" className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-gray-800">
+                    <span aria-hidden>✦</span>{expanded && <span>Generaciones</span>}{jobs.some(job => job.status === 'running' || job.status === 'queued') && <span className="rounded-full bg-primary-600 px-1.5 text-xs text-white">{jobs.filter(job => job.status === 'running' || job.status === 'queued').length}</span>}
+                </button>
             </div>
 
             <AppRailFooter

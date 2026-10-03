@@ -13,6 +13,9 @@ vi.mock('../../context/AuthContext', () => ({
 vi.mock('../../context/CommandPaletteContext', () => ({
   useCommandPalette: () => ({ setOpen: vi.fn() }),
 }));
+vi.mock('../../hooks/artifacts/useGenerationQueue', () => ({
+  useGenerationQueue: () => ({ jobs: [], setPanelOpen: vi.fn() }),
+}));
 
 /**
  * El tema tiene una sola fuente —`settings.theme`— así que el raíl lo lee del
@@ -54,6 +57,7 @@ describe('AppRail', () => {
       'Centro de Formación',
       'Configuración',
       'Seguridad',
+      'Abrir centro de generaciones',
       'Búsqueda global',
       'Cambiar a modo oscuro',
       'Fijar el menú abierto',

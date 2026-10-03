@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useOffice } from '../context/OfficeContext';
 import { useToast } from '../context/ToastContext';
 import { ArtifactTemplate } from '../types';
-import type { Artifact, ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener, ArtifactGenerationStage } from '../lib/artifacts';
-import { GenerationOverlay } from '../components/artifacts/GenerationOverlay';
+import type { Artifact, ArtifactGenerationPhaseListener } from '../lib/artifacts';
 import { ArtifactCanvas } from '../components/ArtifactCanvas';
 import { ProjectHub } from '../components/ProjectHub';
 import { ProjectContextBar } from '../components/navigation';
@@ -18,12 +17,10 @@ import { CopilotSidebar } from '../components/CopilotSidebar';
 import { ArtifactReadinessModal } from '../components/ArtifactReadinessModal';
 import { useRegisterCommands, type Command } from '../context/CommandPaletteContext';
 import { validateArtifactReadiness, type ReadinessResult } from '../lib/artifacts/artifactGovernance';
-import { observabilityService } from '../services/observability';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { useArtifactPersona } from '../hooks/useArtifactPersona';
 import { useArtifactContextPorts } from '../hooks/useArtifactContextPorts';
-import { runArtifactGeneration } from '../services/artifacts/application/artifactGenerationRun';
-import { describeGenerationFailure } from '../services/artifacts/application/generationFailure';
+import { useGenerationQueue } from '../hooks/artifacts/useGenerationQueue';
 
 interface WorkspaceProps {
   projectId: string;
@@ -33,19 +30,12 @@ interface IntegrityCheckResult {
   corruptArtifacts: Artifact[];
 }
 
-interface GenerationFailureState {
-  artifactName: string;
-  headline: string;
-  userMessage: string;
-  technicalMessage: string;
-  onRetry: () => void;
-}
-
 const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   // The portfolio loads an index, not the documents. This screen edits their
   // content, so it asks for the real artifacts on mount.
   useProjectArtifacts(projectId);
-  const { projects, t, createArtifact, createArtifactVersion, updateArtifact, deleteArtifact, settings, findLatestArtifactByName, removeCorruptArtifacts, isLoading: isGlobalLoading } = useAppContext();
+  const { projects, t, deleteArtifact, settings, findLatestArtifactByName, removeCorruptArtifacts, isLoading: isGlobalLoading } = useAppContext();
+  const { enqueue } = useGenerationQueue();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,10 +63,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   const [deepLinkError, setDeepLinkError] = useState<string | null>(null);
 
   // States for creation
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatingMessage, setGeneratingMessage] = useState('');
-  const [generationStage, setGenerationStage] = useState<ArtifactGenerationStage | null>(null);
-  const [generationElapsedSec, setGenerationElapsedSec] = useState(0);
   const [versionConflict, setVersionConflict] = useState<{ template: ArtifactTemplate, existingArtifact: Artifact } | null>(null);
   
   // Integrity check
@@ -85,9 +71,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   // Confirm delete state
   const [deleteConfirm, setDeleteConfirm] = useState<{ artifactId: string; name: string } | null>(null);
   const [readinessResult, setReadinessResult] = useState<(ReadinessResult & { artifactName: string }) | null>(null);
-  const [generationFailure, setGenerationFailure] = useState<GenerationFailureState | null>(null);
-
-  const isMounted = useRef(true);
 
   // Sync active artifact object
   useEffect(() => {
@@ -149,36 +132,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     return () => window.clearTimeout(timeout);
   }, [pendingOpenArtifactId, setSearchParams]);
 
-  useEffect(() => {
-    isMounted.current = true;
-    return () => { isMounted.current = false; };
-  }, []);
-
-  useEffect(() => {
-    if (!isGenerating) return;
-    const startedAt = Date.now();
-    const interval = window.setInterval(() => {
-      setGenerationElapsedSec(Math.max(1, Math.floor((Date.now() - startedAt) / 1000)));
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [isGenerating]);
-
-  const handleDismissGenerationOverlay = useCallback(() => {
-    setIsGenerating(false);
-    setGeneratingMessage('');
-    addToast('La generación sigue protegida por trazabilidad. Si termina correctamente, el artefacto se abrirá automáticamente; si falla, verás el diagnóstico.', 'warning', { durationMs: 7000 });
-    observabilityService.trackEvent({
-        severity: 'warning',
-        source: 'user-action',
-        status: 'observed',
-        title: 'Overlay de generación cerrado manualmente',
-        message: 'El usuario recuperó acceso al workspace mientras la operación asincrónica seguía en curso.',
-        recoverable: true,
-        userVisible: true,
-        metadata: { projectId: project?.id, elapsedSec: generationElapsedSec },
-    });
-  }, [addToast, generationElapsedSec, project?.id]);
-
   const handleConfirmCleanup = () => {
       if (project && integrityCheckResult) {
           const idsToRemove = integrityCheckResult.corruptArtifacts.map(a => a.id).filter(id => id);
@@ -196,205 +149,11 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
         onPhase?: ArtifactGenerationPhaseListener,
   ): Promise<boolean> => {
     if (!project) return false;
-    setIsGenerating(true);
-    setGenerationElapsedSec(0);
-    setGenerationFailure(null);
-    setGeneratingMessage(t('generatingArtifact', {artifactName: template.name}));
-    setGenerationStage('prompt');
-    const reportPhase = (event: ArtifactGenerationPhaseEvent): void => {
-        if (isMounted.current) setGenerationStage(event.stage);
-        onPhase?.(event);
-    };
-    const startedAt = new Date().toISOString();
-    const startedMs = Date.now();
-    const generationOperationId = `gen-${project.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const observedOperation = observabilityService.startOperation('Generación de artefacto', {
-        operationId: generationOperationId,
-        projectId: project.id,
-        artifactName: template.name,
-        artifactType: template.type,
-        action,
-    });
-    try {
-        const {
-            generatedContent,
-            persistedContent,
-            ir,
-            persistedAudience,
-            generationTrace,
-            persistedEnvelope,
-            skeletonFallbackError,
-        } = await runArtifactGeneration({
-            project,
-            template,
-            settings,
-            existingArtifact,
-            action,
-            operationId: generationOperationId,
-            startedAt,
-            startedMs,
-            onPhase: reportPhase, composePersonaInstruction, ...(await loadContextPorts()),
-            onWarning: message => {
-                if (isMounted.current) addToast(message, 'warning', { durationMs: 8000 });
-            },
-        });
-
-        reportPhase({
-            stage: 'persistence',
-            status: 'in-progress',
-            message: 'Persistiendo artefacto y preparando el canvas.',
-            at: new Date().toISOString(),
-            meta: {
-                operationId: generationOperationId,
-                action,
-                hasIR: Boolean(ir),
-                contentLength: persistedContent.length,
-                fallback: skeletonFallbackError ? 'skeleton' : 'none',
-            },
-        });
-
-        if (isMounted.current) {
-            if (action === 'replace' && existingArtifact) {
-                updateArtifact(project.id, existingArtifact.id, {
-                    content: persistedContent,
-                    ...(ir ? { ir } : {}),
-                    ...(persistedAudience ? { audience: persistedAudience } : {}),
-                    generationTrace,
-                    rawResponse: generatedContent,
-                    artifactEnvelope: persistedEnvelope,
-                    ...(skeletonFallbackError ? { lastDiagramError: skeletonFallbackError } : { lastDiagramError: undefined }),
-                });
-                setActiveArtifactId(existingArtifact.id);
-            } else if (action === 'new_version' && existingArtifact) {
-                const newArtifactData = {
-                    name: template.name,
-                    type: template.type,
-                    phase: template.phase,
-                    architecturalView: template.architecturalView,
-                    content: persistedContent,
-                    objective: template.objective,
-                    keyConcepts: template.keyConcepts,
-                    representation: template.representation,
-                    isFavorite: false,
-                    ...(ir ? { ir } : {}),
-                    ...(persistedAudience ? { audience: persistedAudience } : {}),
-                    generationTrace,
-                    rawResponse: generatedContent,
-                    artifactEnvelope: persistedEnvelope,
-                    ...(skeletonFallbackError ? { lastDiagramError: skeletonFallbackError } : {}),
-                };
-                const addedArtifact = createArtifactVersion(project.id, existingArtifact.versionGroupId, newArtifactData);
-                // Bridge against the project-sync useEffect race: createArtifactVersion returns
-                // a fully-formed artifact synchronously, but the global `projects` state may
-                // not have flushed yet (Firestore-backed updates are async). Setting
-                // `activeArtifact` directly guarantees the canvas mounts immediately, and the
-                // project-sync useEffect will overwrite it as soon as the new artifact is
-                // visible in `project.artifacts`.
-                setActiveArtifact(addedArtifact);
-                setActiveArtifactId(addedArtifact.id);
-            } else {
-                const newArtifactData = {
-                    name: template.name,
-                    type: template.type,
-                    phase: template.phase,
-                    architecturalView: template.architecturalView,
-                    content: persistedContent,
-                    objective: template.objective,
-                    keyConcepts: template.keyConcepts,
-                    representation: template.representation,
-                    isFavorite: false,
-                    ...(ir ? { ir } : {}),
-                    ...(persistedAudience ? { audience: persistedAudience } : {}),
-                    generationTrace,
-                    rawResponse: generatedContent,
-                    artifactEnvelope: persistedEnvelope,
-                    ...(skeletonFallbackError ? { lastDiagramError: skeletonFallbackError } : {}),
-                };
-                const addedArtifact = createArtifact(project.id, newArtifactData);
-                // See note above on createArtifactVersion: prevent the canvas from
-                // missing the just-created artifact during the React/Firestore round-trip.
-                setActiveArtifact(addedArtifact);
-                setActiveArtifactId(addedArtifact.id);
-            }
-        }
-        reportPhase({
-            stage: 'persistence',
-            status: 'success',
-            message: 'Artefacto persistido y abriendo el canvas.',
-            at: new Date().toISOString(),
-            meta: { operationId: generationOperationId, durationMs: Date.now() - startedMs },
-        });
-        observedOperation.succeed(
-            skeletonFallbackError
-                ? `"${template.name}" se generó con fallback determinístico renderizable.`
-                : `"${template.name}" se generó y abrió correctamente.`,
-            {
-                durationMs: Date.now() - startedMs,
-                artifactName: template.name,
-                artifactType: template.type,
-                operationId: generationOperationId,
-                traceStatus: generationTrace.status,
-            },
-        );
-        return true;
-    } catch (error) {
-        // Map raw Gemini errors to a friendly message + retry affordance.
-        // First-attempt 503 / network errors are common during peak hours;
-        // surfacing a one-tap retry instead of a stack trace keeps the
-        // architect productive without having to redo their click chain.
-        const failure = describeGenerationFailure(error);
-        console.error('[Workspace] generation failed', {
-            artifactName: template.name,
-            category: failure.category,
-            status: failure.status,
-            message: failure.message,
-        });
-        observedOperation.fail(failure.message, {
-            title: failure.headline,
-            message: failure.userMessage,
-            detail: failure.technicalDetail,
-            severity: failure.severity,
-            recoverable: failure.retryable,
-            metadata: {
-                artifactName: template.name,
-                artifactType: template.type,
-                operationId: generationOperationId,
-                category: failure.category,
-                status: failure.status,
-            },
-        });
-        if (isMounted.current) {
-            const retry = () => proceedWithGeneration(template, action, existingArtifact);
-            setGenerationFailure({
-                artifactName: template.name,
-                headline: failure.headline,
-                userMessage: failure.userMessage,
-                technicalMessage: failure.technicalDetail,
-                onRetry: retry,
-            });
-            addToast(
-                `${failure.headline} al generar "${template.name}". ${failure.userMessage}`,
-                failure.severity,
-                failure.retryable
-                    ? {
-                        action: {
-                            label: 'Reintentar',
-                            onClick: retry,
-                        },
-                        durationMs: 8000,
-                    }
-                    : undefined,
-            );
-        }
-        return false;
-    } finally {
-        if (isMounted.current) {
-            setIsGenerating(false);
-            setGenerationElapsedSec(0);
-            setGeneratingMessage('');
-        }
-    }
-  }, [project, settings, t, createArtifact, createArtifactVersion, updateArtifact, addToast, composePersonaInstruction, loadContextPorts]);
+    enqueue({ project, template, settings, action, existingArtifact,
+      composePersonaInstruction, loadContextPorts, onPhase });
+    addToast(`«${template.name}» está en la cola de generación.`, 'info');
+    return true;
+  }, [project, settings, enqueue, composePersonaInstruction, loadContextPorts, addToast]);
 
   const handleCreateArtifact = useCallback(async (
         template: ArtifactTemplate,
@@ -421,7 +180,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   }, [project, findLatestArtifactByName, proceedWithGeneration, addToast]);
 
   const handleGenerateWorldClassArtifact = useCallback((artifact: Artifact) => {
-    if (!project || isGenerating) return;
+    if (!project) return;
 
     const template: ArtifactTemplate = {
         name: artifact.name,
@@ -447,7 +206,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
 
     addToast(`Iniciando generación de clase mundial para "${artifact.name}"…`, 'info');
     void proceedWithGeneration(template, 'new_version', artifact);
-  }, [project, isGenerating, proceedWithGeneration, addToast]);
+  }, [project, proceedWithGeneration, addToast]);
 
   const handleResolveConflict = (action: 'generate' | 'replace') => {
     if (!versionConflict) return;
@@ -547,15 +306,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden min-h-0 md:pl-14">
 
-        {(isGenerating || pendingOpenArtifactId) && (
-            <GenerationOverlay
-                pendingOpenArtifactId={pendingOpenArtifactId}
-                generatingMessage={generatingMessage}
-                generationStage={generationStage}
-                generationElapsedSec={generationElapsedSec}
-                onDismiss={handleDismissGenerationOverlay}
-            />
-        )}
+        {pendingOpenArtifactId && <p role="status" className="mx-4 mt-3 text-sm text-gray-600">Abriendo artefacto…</p>}
 
         {/* Workspace shell: main canvas/hub on the left, persistent copilot on the right */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -659,42 +410,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
                 onClose={() => setReadinessResult(null)}
             />
         )}
-        {generationFailure && (
-            <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" role="alertdialog" aria-modal="true" aria-labelledby="generation-failure-title">
-                <div className="w-full max-w-lg rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl dark:border-rose-900/60 dark:bg-gray-900">
-                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">
-                        <SparklesIcon className="h-6 w-6" />
-                    </div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600 dark:text-rose-300">Generación interrumpida</p>
-                    <h2 id="generation-failure-title" className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
-                        {generationFailure.headline}: {generationFailure.artifactName}
-                    </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-                        {generationFailure.userMessage}
-                    </p>
-                    <details className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
-                        <summary className="cursor-pointer text-xs font-semibold text-gray-600 dark:text-gray-300">Detalle técnico observable</summary>
-                        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[11px] text-gray-700 dark:text-gray-300">{generationFailure.technicalMessage}</pre>
-                    </details>
-                    <div className="mt-5 flex flex-wrap justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setGenerationFailure(null)}
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                        >
-                            Cerrar
-                        </button>
-                        <button
-                            type="button"
-                            onClick={generationFailure.onRetry}
-                            className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700"
-                        >
-                            Reintentar generación
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
+
     </div>
   );
 };
