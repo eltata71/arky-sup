@@ -781,7 +781,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 9.2 PPTX nativo | Hecha | #157 |
 | 9.3 PDF sin pérdidas | Hecha | #158 |
 | 9.4 Recibo de exportación | Hecha | #159 |
-| 10.0 Medición del recorrido de generación | En revisión | rama `clase-mundial/10.0-medicion-generacion` |
+| 10.0 Medición del recorrido de generación | En revisión | #160 |
 | 10.1 Vocabulario único de fases | Pendiente | |
 | 10.2 Cola en segundo plano | Pendiente | |
 | 10.3 *Streaming* | Pendiente | |
