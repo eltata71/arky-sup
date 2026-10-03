@@ -13,13 +13,17 @@
  *
  * Se carga con `import()` desde el adaptador PDF: `services/export` está en el
  * arranque, y esto sólo lo necesita quien exporta un diagrama.
+ *
+ * Desde 9.3 escribe con las mismas fuentes incrustadas que el PDF documental:
+ * una etiqueta «Solicitud → Emisión» conserva su flecha.
  */
 
 import type { DiagramSnapshot, DiagramSnapshotNode } from '../diagramSnapshot';
 import type { ExportContext, ExportedFile } from '../exportTypes';
 import { buildFile } from './shared';
 import { EXPORT_DEFINITIONS } from '../exportRegistry';
-import { escapePdfString, latin1, measure, sanitizeForPdf } from './pdfExporter';
+import { PdfFontSet, type FontStyle } from './pdf/pdfFonts';
+import { PdfWriter, ascii, pdfTextString } from './pdf/pdfWriter';
 
 // Carta apaisada, en puntos.
 const PAGE_W = 792;
@@ -43,10 +47,14 @@ export interface DiagramPdfInput {
 }
 
 const num = (value: number): string => String(Math.round(value * 100) / 100);
-const clean = (value: string): string => sanitizeForPdf(value).replace(/\s+/g, ' ').trim();
+const clean = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+/** Las fuentes del documento en curso; se cargan antes de dibujar. */
+let fonts: PdfFontSet;
+const measure = (text: string, size: number, font: FontStyle): number => fonts.measure(text, size, font);
 
 const textOp = (font: 'F1' | 'F2', size: number, x: number, y: number, value: string, rgb = INK): string =>
-  `${rgb} rg BT /${font} ${num(size)} Tf ${num(x)} ${num(y)} Td (${escapePdfString(value)}) Tj ET`;
+  `${rgb} rg BT ${num(x)} ${num(y)} Td ${fonts.showText(value, Math.round(size * 100) / 100, font === 'F2' ? 'bold' : 'reg')} ET`;
 
 /** Parte un texto en líneas que caben en `maxWidth`; una palabra demasiado larga se corta. */
 function wrap(value: string, size: number, maxWidth: number, font: 'reg' | 'bold' = 'reg'): string[] {
@@ -197,45 +205,33 @@ function drawSummary(summary: readonly string[]): string[] {
 }
 
 /** El PDF de dos páginas: el diagrama en vectores y su resumen accesible. */
-export function buildDiagramPdfBlob(input: DiagramPdfInput): Blob {
+export async function buildDiagramPdfBlob(input: DiagramPdfInput): Promise<Blob> {
+  const text = [input.title, input.owner ?? '', input.confidentiality ?? '', ...input.snapshot.nodes.map((n) => n.label),
+    ...input.snapshot.edges.map((e) => e.label ?? ''), ...input.snapshot.summary].join('\n');
+  fonts = await PdfFontSet.load(new Set<FontStyle>(['reg', 'bold']), text);
   const pages = [
     [...header(input, 1, 2), ...drawDiagram(input.snapshot)],
     [...header(input, 2, 2), ...drawSummary(input.snapshot.summary)],
   ];
-  const objects: string[] = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',
-  ];
-  const fonts = '<< /F1 7 0 R /F2 8 0 R >>';
+  const writer = new PdfWriter();
+  const catalog = writer.reserve();
+  const pagesId = writer.reserve();
+  const pageIds = pages.map(() => writer.reserve());
+  const fontDict = fonts.writeFonts(writer);
   pages.forEach((ops, index) => {
-    const stream = ops.join('\n');
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Resources << /Font ${fonts} >> /Contents ${4 + index * 2} 0 R >>`);
-    objects.push(`<< /Length ${latin1(stream).length} >>\nstream\n${stream}\nendstream`);
+    const contents = writer.addStream('<< >>', ascii(ops.join('\n')));
+    writer.set(pageIds[index], `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Resources << /Font ${fontDict} >> /Contents ${contents} 0 R >>`);
   });
-  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
-  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
-  objects.push(`<< /Title (${escapePdfString(clean(input.title))}) /Producer (Arky) >>`);
-
-  const chunks: Uint8Array[] = [latin1('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n')];
-  const offsets: number[] = [];
-  let cursor = chunks[0].length;
-  objects.forEach((obj, index) => {
-    offsets.push(cursor);
-    const bytes = latin1(`${index + 1} 0 obj\n${obj}\nendobj\n`);
-    chunks.push(bytes);
-    cursor += bytes.length;
-  });
-  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (const offset of offsets) xref += `${String(offset).padStart(10, '0')} 00000 n \n`;
-  chunks.push(latin1(xref));
-  chunks.push(latin1(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info ${objects.length} 0 R >>\nstartxref\n${cursor}\n%%EOF`));
-  return new Blob(chunks as BlobPart[], { type: EXPORT_DEFINITIONS.pdf.mimeType });
+  writer.set(pagesId, `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`);
+  writer.set(catalog, `<< /Type /Catalog /Pages ${pagesId} 0 R /Lang (es-ES) /ViewerPreferences << /DisplayDocTitle true >> >>`);
+  const info = writer.add(`<< /Title ${pdfTextString(clean(input.title))} /Producer (Arky) >>`);
+  return new Blob([writer.toBytes(catalog, info) as BlobPart], { type: EXPORT_DEFINITIONS.pdf.mimeType });
 }
 
 /** La exportación PDF de un diagrama desde el lienzo: el adaptador PDF delega aquí si hay instantánea. */
 export async function exportDiagramPdf(context: ExportContext): Promise<ExportedFile> {
   const snapshot = context.diagramSnapshot!;
-  const blob = buildDiagramPdfBlob({
+  const blob = await buildDiagramPdfBlob({
     title: context.artifact.name,
     version: context.artifact.version,
     date: (context.generatedAt ?? new Date()).toISOString(),

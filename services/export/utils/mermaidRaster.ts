@@ -60,7 +60,9 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
     return bytes;
 }
 
-async function svgToPng(svg: string, background: string): Promise<RasterizedDiagram | null> {
+type RasterMime = 'image/png' | 'image/jpeg';
+
+async function svgToRaster(svg: string, background: string, mime: RasterMime): Promise<{ bytes: Uint8Array; width: number; height: number } | null> {
     if (typeof document === 'undefined' || typeof Image === 'undefined') return null;
     const dims = parseSvgDimensions(svg);
     const scale = Math.min(
@@ -96,14 +98,40 @@ async function svgToPng(svg: string, background: string): Promise<RasterizedDiag
 
     let dataUrl: string;
     try {
-        dataUrl = canvas.toDataURL('image/png');
+        dataUrl = mime === 'image/jpeg' ? canvas.toDataURL(mime, 0.92) : canvas.toDataURL(mime);
     } catch {
         return null; // canvas tainted or unsupported (jsdom)
     }
-    if (!dataUrl.startsWith('data:image/png')) return null;
-    const pngBytes = dataUrlToBytes(dataUrl);
-    if (pngBytes.length < 100) return null; // jsdom stub canvases emit ~empty data
-    return { pngBytes, width, height };
+    if (!dataUrl.startsWith(`data:${mime}`)) return null;
+    const bytes = dataUrlToBytes(dataUrl);
+    if (bytes.length < 100) return null; // jsdom stub canvases emit ~empty data
+    return { bytes, width, height };
+}
+
+/** Mermaid → SVG; `null` (never throws) when the environment cannot render. */
+async function renderMermaidSvg(code: string): Promise<string | null> {
+    const trimmed = (code ?? '').trim();
+    if (!trimmed) return null;
+    if (typeof document === 'undefined') return null;
+    // jsdom and other non-layout DOMs expose `document` but lack the SVG
+    // geometry API Mermaid requires. Fail fast before the expensive dynamic
+    // import; under a parallel full suite that import can otherwise exhaust
+    // the test timeout before Mermaid reaches its own render timeout.
+    if (typeof SVGGraphicsElement === 'undefined' || typeof SVGGraphicsElement.prototype.getBBox !== 'function') return null;
+    const mermaidModule = await import('mermaid');
+    const mermaid = mermaidModule.default;
+    mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'loose',
+        theme: 'neutral',
+        fontFamily: 'Inter, sans-serif',
+    });
+    renderCounter += 1;
+    const { svg } = await withTimeout(
+        mermaid.render(`export-raster-${Date.now().toString(36)}-${renderCounter}`, trimmed),
+        RENDER_TIMEOUT_MS,
+    );
+    return svg && svg.includes('<svg') ? svg : null;
 }
 
 /**
@@ -114,30 +142,33 @@ export async function rasterizeMermaidToPng(
     code: string,
     opts: { background?: string } = {},
 ): Promise<RasterizedDiagram | null> {
-    const trimmed = (code ?? '').trim();
-    if (!trimmed) return null;
-    if (typeof document === 'undefined') return null;
-    // jsdom and other non-layout DOMs expose `document` but lack the SVG
-    // geometry API Mermaid requires. Fail fast before the expensive dynamic
-    // import; under a parallel full suite that import can otherwise exhaust
-    // the test timeout before Mermaid reaches its own render timeout.
-    if (typeof SVGGraphicsElement === 'undefined' || typeof SVGGraphicsElement.prototype.getBBox !== 'function') return null;
     try {
-        const mermaidModule = await import('mermaid');
-        const mermaid = mermaidModule.default;
-        mermaid.initialize({
-            startOnLoad: false,
-            securityLevel: 'loose',
-            theme: 'neutral',
-            fontFamily: 'Inter, sans-serif',
-        });
-        renderCounter += 1;
-        const { svg } = await withTimeout(
-            mermaid.render(`export-raster-${Date.now().toString(36)}-${renderCounter}`, trimmed),
-            RENDER_TIMEOUT_MS,
-        );
-        if (!svg || !svg.includes('<svg')) return null;
-        return await svgToPng(svg, opts.background ?? '#ffffff');
+        const svg = await renderMermaidSvg(code);
+        const raster = svg ? await svgToRaster(svg, opts.background ?? '#ffffff', 'image/png') : null;
+        return raster ? { pngBytes: raster.bytes, width: raster.width, height: raster.height } : null;
+    } catch (err) {
+        console.warn('[mermaidRaster] rasterization failed; export keeps text fallback.', err);
+        return null;
+    }
+}
+
+/** A diagram as JPEG bytes, which a PDF embeds as-is (`/DCTDecode`). */
+export interface JpegDiagram {
+    jpegBytes: Uint8Array;
+    width: number;
+    height: number;
+}
+
+/**
+ * Rasterize Mermaid source to JPEG on a white background (plan de clase
+ * mundial, 9.3). The PDF embeds JPEG without decoding it; a PNG from a canvas
+ * carries an alpha channel the PDF would have to inflate and split first.
+ */
+export async function rasterizeMermaidToJpeg(code: string): Promise<JpegDiagram | null> {
+    try {
+        const svg = await renderMermaidSvg(code);
+        const raster = svg ? await svgToRaster(svg, '#ffffff', 'image/jpeg') : null;
+        return raster ? { jpegBytes: raster.bytes, width: raster.width, height: raster.height } : null;
     } catch (err) {
         console.warn('[mermaidRaster] rasterization failed; export keeps text fallback.', err);
         return null;

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildPdfBlob, computeTocPageCount } from '../../../services/export/adapters/pdfExporter';
+import { buildPdfDocument, computeTocPageCount } from '../../../services/export/adapters/pdf/documentPdf';
+import type { ExportContext } from '../../../services/export/exportTypes';
+import { readPdf, type PdfReading } from '../../export/pdfTextReader';
 import type { Artifact } from '../../../lib/artifacts';
 
 const artifact = (content: string, overrides: Partial<Artifact> = {}): Artifact => ({
@@ -18,12 +20,8 @@ const artifact = (content: string, overrides: Partial<Artifact> = {}): Artifact 
   ...overrides,
 });
 
-const readText = async (blob: Blob): Promise<string> => {
-  const buffer = new Uint8Array(await blob.arrayBuffer());
-  let out = '';
-  for (let i = 0; i < buffer.length; i += 1) out += String.fromCharCode(buffer[i]);
-  return out;
-};
+const read = async (context: ExportContext): Promise<PdfReading> => readPdf((await buildPdfDocument(context)).bytes);
+const texts = (pdf: PdfReading): string[] => pdf.runs.map((run) => run.text);
 
 const longSection = (n: number) =>
   `## Seccion ${n}\n\n${`Contenido extenso de la seccion ${n} para forzar paginacion real. `.repeat(20)}\n\n`;
@@ -43,24 +41,25 @@ describe('computeTocPageCount', () => {
 
 describe('pdfExporter — table of contents', () => {
   it('renders a "Contenido" page with dot leaders for structured documents', async () => {
-    const text = await readText(buildPdfBlob({ activeView: 'document', artifact: artifact(structuredDoc) }));
-    expect(text).toContain('(Contenido) Tj');
+    const pdf = await read({ activeView: 'document', artifact: artifact(structuredDoc) });
+    expect(texts(pdf)).toContain('Contenido');
     // Dot leaders between entry text and page number.
-    expect(text).toMatch(/\(\.{6,}\) Tj/);
-    // Entries reference the shifted page numbers (some page > 2 exists).
-    expect(text).toMatch(/\(Seccion 8\) Tj/);
+    expect(texts(pdf).some((t) => /^\.{6,}$/.test(t))).toBe(true);
+    expect(texts(pdf)).toContain('Seccion 8');
+    expect(pdf.raw).toContain('/S /TOC ');
+    expect(pdf.raw).toContain('/S /TOCI ');
   });
 
   it('skips the TOC for short documents (< 4 headings)', async () => {
-    const text = await readText(buildPdfBlob({
+    const pdf = await read({
       activeView: 'document',
       artifact: artifact('# Unico\n\nParrafo corto sin mas estructura.'),
-    }));
-    expect(text).not.toContain('(Contenido) Tj');
+    });
+    expect(texts(pdf)).not.toContain('Contenido');
   });
 
   it('keeps the Pages /Count consistent with the actual Page objects', async () => {
-    const text = await readText(buildPdfBlob({ activeView: 'document', artifact: artifact(structuredDoc) }));
+    const text = (await read({ activeView: 'document', artifact: artifact(structuredDoc) })).raw;
     const pageMatches = text.match(/\/Type \/Page[^s]/g) ?? [];
     const count = /\/Type \/Pages \/Kids \[[^\]]+\] \/Count (\d+)/.exec(text);
     expect(Number(count?.[1])).toBe(pageMatches.length);
@@ -69,7 +68,7 @@ describe('pdfExporter — table of contents', () => {
 
 describe('pdfExporter — outline bookmarks', () => {
   it('emits a navigable outline with H1 parents and H2 children', async () => {
-    const text = await readText(buildPdfBlob({ activeView: 'document', artifact: artifact(structuredDoc) }));
+    const text = (await read({ activeView: 'document', artifact: artifact(structuredDoc) })).raw;
     expect(text).toContain('/Type /Outlines');
     expect(text).toContain('/PageMode /UseOutlines');
     expect(text).toContain('/Title (Vision General)');
@@ -81,52 +80,61 @@ describe('pdfExporter — outline bookmarks', () => {
   });
 
   it('omits the outline when the document has no headings', async () => {
-    const text = await readText(buildPdfBlob({
+    const text = (await read({
       activeView: 'document',
       artifact: artifact('Parrafo plano sin encabezados de ningun tipo.'),
-    }));
+    })).raw;
     expect(text).not.toContain('/Type /Outlines');
+  });
+
+  it('a heading outside ASCII is titled in UTF-16, so the bookmark keeps its accent and arrow', async () => {
+    const text = (await read({ activeView: 'document', artifact: artifact('# Visión → objetivo\n\nTexto.') })).raw;
+    const hex = Array.from('Visión → objetivo', (ch) => ch.charCodeAt(0).toString(16).padStart(4, '0').toUpperCase()).join('');
+    expect(text).toContain(`/Title <FEFF${hex}>`);
   });
 });
 
 describe('pdfExporter — smart page breaks', () => {
   it('splits a code block taller than a page instead of overflowing', async () => {
     const hugeCode = ['```', ...Array.from({ length: 180 }, (_, i) => `linea_codigo_${i + 1}();`), '```'].join('\n');
-    const text = await readText(buildPdfBlob({
+    const pdf = await read({
       activeView: 'document',
       artifact: artifact(`# Codigo\n\n${hugeCode}`),
-    }));
-    const pageMatches = text.match(/\/Type \/Page[^s]/g) ?? [];
+    });
+    const pageMatches = pdf.raw.match(/\/Type \/Page[^s]/g) ?? [];
     expect(pageMatches.length).toBeGreaterThanOrEqual(3);
     // The last code line must still be rendered (nothing silently dropped).
-    expect(text).toContain('linea_codigo_180');
+    expect(texts(pdf)).toContain('linea_codigo_180();');
   });
 });
 
 describe('pdfExporter — native charts and callouts', () => {
   it('renders ```chart bar specs as native vector bars with palette colors', async () => {
     const chartDoc = `# Datos\n\n\`\`\`chart\n{ "type": "bar", "title": "Esfuerzo", "labels": ["Diseno", "Build"], "series": [{ "name": "Semanas", "values": [4, 9] }], "unit": " sem" }\n\`\`\``;
-    const text = await readText(buildPdfBlob({ activeView: 'document', artifact: artifact(chartDoc) }));
+    const pdf = await read({ activeView: 'document', artifact: artifact(chartDoc) });
     // Palette color #6366f1 -> "0.388 0.400 0.945 rg" fills.
-    expect(text).toContain('0.388 0.400 0.945 rg');
-    expect(text).toContain('(9 sem) Tj');
-    expect(text).toContain('(Esfuerzo) Tj');
+    expect(pdf.raw).toContain('0.388 0.400 0.945 rg');
+    expect(texts(pdf)).toContain('9 sem');
+    expect(texts(pdf)).toContain('Esfuerzo');
     // No raw JSON dump of the spec.
-    expect(text).not.toContain('"series"');
+    expect(pdf.text).not.toContain('"series"');
+    // The chart is a figure whose alternative text carries every value.
+    expect(pdf.raw).toContain('/S /Figure ');
+    expect(pdf.raw).toMatch(/\/Alt <FEFF[0-9A-F]+>/);
   });
 
   it('degrades line charts to a clean data table', async () => {
     const lineDoc = `# Tendencia\n\n\`\`\`chart\n{ "type": "line", "labels": ["Q1", "Q2"], "series": [{ "name": "Reclamos", "values": [120, 180] }] }\n\`\`\``;
-    const text = await readText(buildPdfBlob({ activeView: 'document', artifact: artifact(lineDoc) }));
-    expect(text).toContain('(Reclamos) Tj');
-    expect(text).toContain('(Q2) Tj');
+    const pdf = await read({ activeView: 'document', artifact: artifact(lineDoc) });
+    expect(texts(pdf)).toContain('Reclamos');
+    expect(texts(pdf)).toContain('Q2');
   });
 
   it('renders GitHub-style admonitions as labelled callout cards', async () => {
     const calloutDoc = `# Decisiones\n\n> [!WARNING] El core legado no soporta TLS 1.3 en produccion.`;
-    const text = await readText(buildPdfBlob({ activeView: 'document', artifact: artifact(calloutDoc) }));
-    expect(text).toContain('(ATENCION) Tj');
-    expect(text).toContain('TLS 1.3');
-    expect(text).not.toContain('[!WARNING]');
+    const pdf = await read({ activeView: 'document', artifact: artifact(calloutDoc) });
+    expect(texts(pdf)).toContain('ATENCIÓN');
+    expect(pdf.text).toContain('TLS 1.3');
+    expect(pdf.text).not.toContain('[!WARNING]');
   });
 });

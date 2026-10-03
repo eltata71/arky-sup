@@ -574,6 +574,12 @@ Reglas que no se negocian al trabajar aquí:
     línea base sólo mejora, y toda cifra bajo su objetivo está nombrada como
     `defectosConocidos` (H1–H5): la tarea que cierra uno quita su entrada en el
     mismo commit. Ver *Export evaluation bench* en `CLAUDE.md`.
+    **Y el PDF escribe con fuentes incrustadas, nunca con «?»** (9.3):
+    `services/export/adapters/pdf/` se carga con `import()`; `PdfFontSet`
+    apila Inter, Noto Sans Mono y Noto Sans Symbols 2 (OFL, subconjunto por
+    documento, `Identity-H` con `ToUnicode`), y un carácter que ninguna dibuja
+    se informa en los detalles del fichero. Diagramas como imagen, filas
+    completas, marcadores, metadatos y estructura etiquetada.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;

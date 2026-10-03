@@ -15,40 +15,11 @@
       "layoutsRespetados": 14
     },
     "pdf": {
-      "filasPreservadas": 81.6,
-      "encabezadosConEstilo": 98,
-      "diagramasIncrustados": 0,
-      "caracteresPerdidosPdf": 27
+      "filasPreservadas": 100,
+      "encabezadosConEstilo": 100,
+      "diagramasIncrustados": 100,
+      "caracteresPerdidosPdf": 0
     }
   },
-  "defectosConocidos": [
-    {
-      "id": "H5",
-      "tarea": "9.3",
-      "formato": "pdf",
-      "metrica": "caracteresPerdidosPdf",
-      "descripcion": "Helvetica Type1 con WinAnsi: todo carácter fuera de Latin-1 se escribe como «?»."
-    },
-    {
-      "id": "H5",
-      "tarea": "9.3",
-      "formato": "pdf",
-      "metrica": "encabezadosConEstilo",
-      "descripcion": "Un título con una flecha llega con «?» en su lugar («Línea base ? objetivo»)."
-    },
-    {
-      "id": "H2",
-      "tarea": "9.3 (hallado en 9.0, sin tarea en el plan)",
-      "formato": "pdf",
-      "metrica": "filasPreservadas",
-      "descripcion": "El PDF trunca sin aviso las celdas sobrantes de una fila más larga que la cabecera, y las filas con caracteres fuera de Latin-1 pierden texto (H5)."
-    },
-    {
-      "id": "H3",
-      "tarea": "9.3 (hallado en 9.0, sin tarea en el plan)",
-      "formato": "pdf",
-      "metrica": "diagramasIncrustados",
-      "descripcion": "El PDF de un documento imprime el código Mermaid como bloque de código; sólo el PDF desde el lienzo dibuja el diagrama."
-    }
-  ]
+  "defectosConocidos": []
 }

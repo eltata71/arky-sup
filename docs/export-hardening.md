@@ -102,6 +102,34 @@ el resumen accesible. Sin instantánea (otra vista, o sin lienzo), el PDF es el
 de siempre. `diagramPdf` se carga con `import()`: `services/export` está en el
 arranque.
 
-**Los bytes del PDF son Latin-1** (`latin1` en `pdfExporter`). Las fuentes se
-declaran WinAnsi, un byte por carácter; hasta #104 el escritor codificaba en
-UTF-8 y cada «ó» salía como «Ã³». Toda escritura de un PDF pasa por `latin1`.
+## PDF sin pérdidas (plan de clase mundial 9.3)
+
+Hasta 9.3 el PDF escribía con Helvetica WinAnsi, un byte por carácter, y
+`sanitizeForPdf` convertía en «?» todo lo que no era Latin-1: «Suma ≤ 150 000»
+llegaba como «Suma ? 150 000», que en una regla de suscripción cambia la regla.
+Ahora:
+
+- **Fuentes incrustadas.** `pdf/pdfFonts.ts` (`PdfFontSet`) apila, por estilo,
+  Inter (texto), Noto Sans Mono (código) y Noto Sans Symbols 2 (pictogramas y
+  emoji básico), todas OFL (`pdf/fonts/LICENSES.txt`). Se descargan sólo al
+  exportar un PDF, y sólo las que el documento usa; cada una se recorta a los
+  glifos usados (`pdf/trueType.ts`) y se incrusta como `Type0`/`CIDFontType2`
+  con `Identity-H` y `ToUnicode`: el texto se selecciona, se copia y se busca.
+- **Lo que no se puede dibujar se dice.** Un carácter que ninguna fuente
+  contiene no se sustituye: aparece, con su punto de código, en los detalles
+  técnicos del fichero. Igual un diagrama que no se pudo rasterizar.
+- **Diagramas.** Los bloques ```mermaid de un documento se rasterizan con la
+  ruta del DOCX y el PPTX (`rasterizeMermaidToJpeg`) y se incrustan como JPEG.
+- **Nada se recorta.** Una fila con más celdas que la cabecera ensancha la
+  tabla; una línea de código larga se parte; una palabra que no cabe en su
+  celda se corta en vez de invadir la siguiente.
+- **Es un documento.** Marcadores por título (en UTF-16 si hace falta),
+  metadatos (`/Title`, `/Subject`, `/CreationDate`), `/Lang (es-ES)` y
+  estructura etiquetada (`pdf/pdfStructure.ts`): títulos, párrafos, listas,
+  tablas con TH/TD, código, citas, índice y figuras con texto alternativo; la
+  decoración es `/Artifact`.
+
+Para regenerar las fuentes (otro rango, otra versión):
+`node scripts/buildPdfFonts.mjs <carpeta con los .ttf originales>`; la cabecera
+del script dice de dónde sale cada una. El banco `export-evals` mide el PDF
+leyendo su `ToUnicode` (`__tests__/export/pdfTextReader.ts`).

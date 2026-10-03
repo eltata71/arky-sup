@@ -69,7 +69,6 @@ export const BYTE_CEILINGS = {
   'constants.ts': 49197,
   'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
-  'services/export/adapters/pdfExporter.ts': 44157, // plan diagramas 2.4: +248, publica sus ayudas de texto y delega el diagrama en `diagramPdf` // +395: `latin1`, los PDF escribían los acentos en UTF-8 sobre fuentes WinAnsi («Ã³»)
   'components/artifacts/export/ArtifactExportModal.tsx': 30805, // plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42447, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
@@ -175,7 +174,6 @@ export const CEILINGS = {
   'components/ArtifactCanvas.tsx': 962, // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
   'pages/Workspace.tsx': 732, // plan artefactos 7.3c: los puertos de contexto por un solo hook · plan diagramas 6.2: +2, la motivación de negocio (import y hook) · F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   'services/ai/prompts/diagramPrompts.ts': 831, // plan artefactos 7.5a: el import de la captura de contexto · plan diagramas 6.4: 1 030 → 830, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 1 145 → 1030
-  'services/export/adapters/pdfExporter.ts': 1131, // plan diagramas 2.4: +2 // +4: `latin1`
   'components/ProjectHub.tsx': 1060, // F6-03 corte 2b // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/MemoryCenterModal.tsx': 1017, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   // 1001 → 988 el 2026-09-22. No es trabajo nuevo: las extracciones de la fase 2

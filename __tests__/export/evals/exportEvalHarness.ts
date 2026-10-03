@@ -38,10 +38,11 @@
  * fija, porque jsdom no pinta: lo que se mide es si el exportador **incrusta**
  * la imagen que recibe, no cómo la dibuja Mermaid.
  *
- * Límites que la tarea que los toque tiene que ampliar aquí, no esquivar:
- * el lector de PDF decodifica cadenas literales `( ) Tj` sin compresión. Si
- * 9.3 pasa a Identity-H con `ToUnicode`, o comprime los flujos, el lector se
- * amplía en el mismo cambio —y la cifra de antes se conserva como línea base—.
+ * El PDF se lee con `../pdfTextReader`: cadenas literales `( ) Tj` sobre
+ * WinAnsi y, desde 9.3, cadenas hexadecimales sobre fuentes Identity-H,
+ * traducidas con su `ToUnicode` —como las lee un visor al copiar o buscar—.
+ * No descomprime: si un exportador comprime sus flujos, el lector se amplía
+ * en el mismo cambio.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -52,6 +53,7 @@ import { pptxExporter } from '../../../services/export/adapters/pptxExporter';
 import { pdfExporter } from '../../../services/export/adapters/pdfExporter';
 import type { ExportContext } from '../../../services/export/exportTypes';
 import { parsePresentationDeck, type PresentationDeck, type PresentationTableContent } from '../../../services/presentation';
+import { readPdf } from '../pdfTextReader';
 
 export const CORPUS_DIR = join(process.cwd(), 'tests', 'fixtures', 'export-evals');
 
@@ -414,85 +416,6 @@ export const measurePptx = (bytes: Uint8Array, deck: PresentationDeck): { metric
     };
 };
 
-interface PdfRun { font: string; size: number; text: string }
-
-/** Decodifica una cadena literal de PDF a partir de la posición del paréntesis de apertura. */
-const readPdfLiteral = (source: string, start: number): { text: string; end: number } => {
-    let depth = 0;
-    let text = '';
-    for (let i = start; i < source.length; i += 1) {
-        const ch = source[i] ?? '';
-        if (ch === '\\') {
-            const next = source[i + 1] ?? '';
-            const octal = /^[0-7]{1,3}/.exec(source.slice(i + 1, i + 4));
-            if (octal) {
-                text += String.fromCharCode(parseInt(octal[0], 8));
-                i += octal[0].length;
-            } else {
-                text += next === 'n' ? '\n' : next === 'r' ? '\r' : next === 't' ? '\t' : next;
-                i += 1;
-            }
-            continue;
-        }
-        if (ch === '(') {
-            depth += 1;
-            if (depth === 1) continue;
-        } else if (ch === ')') {
-            depth -= 1;
-            if (depth === 0) return { text, end: i };
-        }
-        text += ch;
-    }
-    return { text, end: source.length };
-};
-
-/** Las cadenas que el PDF pinta (`Tj`), con la fuente y el cuerpo vigentes. */
-export const extractPdfRuns = (bytes: Uint8Array): PdfRun[] => {
-    let raw = '';
-    for (let i = 0; i < bytes.length; i += 1) raw += String.fromCharCode(bytes[i] ?? 0);
-    const runs: PdfRun[] = [];
-    for (const stream of raw.matchAll(/stream\n([\s\S]*?)\nendstream/g)) {
-        const body = stream[1] ?? '';
-        let font = '';
-        let size = 0;
-        let i = 0;
-        while (i < body.length) {
-            const ch = body[i];
-            if (ch === '(') {
-                const literal = readPdfLiteral(body, i);
-                const after = body.slice(literal.end + 1, literal.end + 6);
-                if (/^\s*Tj/.test(after)) runs.push({ font, size, text: literal.text });
-                i = literal.end + 1;
-                continue;
-            }
-            if (ch === '/') {
-                const tf = /^\/(\w+)\s+([\d.]+)\s+Tf/.exec(body.slice(i, i + 32));
-                if (tf) {
-                    font = tf[1] ?? '';
-                    size = Number(tf[2]);
-                    i += tf[0].length;
-                    continue;
-                }
-            }
-            i += 1;
-        }
-    }
-    return runs;
-};
-
-/** La fuente negrita de un PDF: la que declara un `BaseFont` con «Bold». */
-const boldFontIds = (bytes: Uint8Array): Set<string> => {
-    let raw = '';
-    for (let i = 0; i < bytes.length; i += 1) raw += String.fromCharCode(bytes[i] ?? 0);
-    const ids = new Set<string>();
-    const resources = /\/Font\s*<<([^>]*)>>/.exec(raw)?.[1] ?? '';
-    for (const ref of resources.matchAll(/\/(\w+)\s+(\d+)\s+0\s+R/g)) {
-        const object = new RegExp(`(?:^|\\n)${ref[2]} 0 obj\\n([\\s\\S]*?)\\nendobj`).exec(raw)?.[1] ?? '';
-        if (/\/BaseFont\s*\/[\w+-]*Bold/.test(object)) ids.add(ref[1] ?? '');
-    }
-    return ids;
-};
-
 /** Los cuerpos de título del PDF empiezan en 13 pt; el texto del cuerpo es 11. */
 const PDF_HEADING_MIN_PT = 13;
 
@@ -501,10 +424,8 @@ export const measurePdf = (
     source: SourceDocument,
     content: string,
 ): { metrics: Partial<Record<EvalMetric, MetricCount>>; perdidos: Record<string, number> } => {
-    let raw = '';
-    for (let i = 0; i < bytes.length; i += 1) raw += String.fromCharCode(bytes[i] ?? 0);
-    const runs = extractPdfRuns(bytes);
-    const bold = boldFontIds(bytes);
+    const { raw, runs, baseFonts } = readPdf(bytes);
+    const bold = new Set([...baseFonts].filter(([, name]) => /Bold/.test(name)).map(([id]) => id));
     // Un título largo se parte en varias líneas: se leen seguidas las cadenas
     // consecutivas en negrita a cuerpo de título, y el título se busca dentro.
     const headingLines: string[] = [];
