@@ -1,0 +1,26 @@
+{
+  "id": "vida-hoja-ruta-transicion-core",
+  "dominio": "vida",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H2",
+    "H5"
+  ],
+  "artefacto": {
+    "nombre": "Hoja de ruta de transición del core de pólizas",
+    "tipo": "markdown",
+    "objetivo": "Planificar la transición del core de pólizas de vida en tres olas.",
+    "contenido": "# Hoja de ruta de transición del core de pólizas\n\n## Línea base → objetivo\nEl core actual (mainframe, COBOL) ⇒ plataforma de pólizas en la nube con API publicadas.\n\n## Brechas\n| Brecha | Línea base | Objetivo | Ola |\n|---|---|---|---|\n| Emisión | Lotes nocturnos | Tiempo real | Ola 1 |\n| Productos | Codificados en COBOL | Configurables | Ola 2 |\n| Integración | Ficheros planos | API REST | Ola 1 | También eventos de póliza |\n| Datos | Copia diaria |\n\n## Olas\n1. Ola 1 → emisión en tiempo real e integración por API.\n2. Ola 2 → configurador de productos.\n3. Ola 3 → retiro del mainframe ✓ cuando el volumen migrado sea ≥ 95 %.\n\n## Supuestos\n- El presupuesto de la ola 2 depende del resultado de la ola 1.\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 1,
+    "filas": 4,
+    "encabezados": 5,
+    "diagramas": 0,
+    "caracteresEspeciales": 7
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "vida-nfr-suscripcion-digital",
+  "dominio": "vida",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H1",
+    "H2"
+  ],
+  "artefacto": {
+    "nombre": "Requisitos no funcionales de la suscripción digital",
+    "tipo": "sdd-nfr",
+    "objetivo": "Especificar los requisitos no funcionales del canal de suscripción digital.",
+    "contenido": "# Requisitos no funcionales: suscripción digital\n\n## Rendimiento\n| ID | Requisito | Métrica | Objetivo |\n|---|---|---|---|\n| RNF-01 | Tiempo de respuesta de la cotización | Percentil 95 | 2 segundos |\n| RNF-02 | Emisión automática de póliza | Percentil 95 | 30 segundos |\n| RNF-03 | Carga documental | Tamaño máximo | 20 MB |\n\n## Seguridad\n| ID | Requisito | Control |\n|---|---|---|\n| RNF-10 | Cifrado de datos médicos en reposo | AES-256 con claves gestionadas |\n| RNF-11 | Autenticación del solicitante | Factor doble | Biometría opcional en móvil |\n| RNF-12 | Registro de accesos a evidencia médica |\n\n## Disponibilidad\nEl canal opera con disponibilidad mensual de 99,9 % fuera de la ventana de mantenimiento del domingo.\n\n### Supuestos\n- El proveedor de identidad mantiene su propio acuerdo de nivel de servicio.\n- La evidencia médica se custodia en el gestor documental corporativo.\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 2,
+    "filas": 6,
+    "encabezados": 5,
+    "diagramas": 0,
+    "caracteresEspeciales": 0
+  }
+}

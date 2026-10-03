@@ -19,6 +19,7 @@
     "test:ci": "vitest run",
     "eval:diagrams": "ARKY_DIAGRAM_EVAL_REPORT=1 vitest run __tests__/diagram/evals && cat .vitest/eval-diagramas.md",
     "eval:artifacts": "ARKY_ARTIFACT_EVAL_REPORT=1 vitest run __tests__/artifacts/evals && cat .vitest/eval-artefactos.md",
+    "eval:exports": "ARKY_EXPORT_EVAL_REPORT=1 vitest run __tests__/export/evals && cat .vitest/eval-exportacion.md",
     "test:coverage": "vitest run --coverage",
     "test:shard": "vitest run --coverage --reporter=blob",
     "test:merge-reports": "vitest --merge-reports --coverage",

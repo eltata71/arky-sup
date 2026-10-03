@@ -620,6 +620,7 @@ npm run lint:fix       # ESLint --fix
 npm test               # Vitest watch mode
 npm run test:ci        # Vitest single run
 npm run eval:diagrams  # The diagram evaluation bench, with its table (see *A diagram keeps its dialect*)
+npm run eval:exports   # The export evaluation bench: DOCX/PPTX/PDF opened and counted (see *Export evaluation bench*)
 npm run test:coverage  # Vitest + v8 coverage (applies the thresholds)
 npm run test:shard -- --shard=1/4   # One CI shard: coverage into a blob report
 npm run test:merge-reports          # Merge the shards' blobs and enforce the thresholds
@@ -1509,6 +1510,33 @@ the scene operations — writing the story is the presenter's job, through
 | Architecture Office | `services/architectureOffice/` | **Engagement engine**: 13 executable agent personas, deterministic charter planning, task DAG with cross-review, ARB governance, gates and validators | `docs/oficina-arquitectura.md` |
 | Team coordination | `services/architectureOffice/officeCoordination.ts` | Every assistant request runs through the office **as a team** — coordinator, specialists, consolidator — and emits an observable event stream the UI animates | `docs/oficina-arquitectura.md` |
 | Context graph | `services/contextGraph/` | Builds and ranks the project context sent to the model | — |
+
+### Export evaluation bench
+
+What leaves Arky is measured by opening the file, never by reading the
+exporter. `tests/fixtures/export-evals/` holds twelve hand-written artifacts
+from health and life insurance —irregular tables, non-Latin-1 symbols, an ADR,
+an NFR, two hybrids and two decks that between them use all fourteen
+`PresentationLayout`s and all seven block kinds— and
+`__tests__/export/evals/` exports each with the production adapter, unzips the
+DOCX and PPTX and reads their XML, and reads the PDF operator by operator
+(`npm run eval:exports` prints the table). Seven metrics: `filasPreservadas`,
+`tablasNativas`, `encabezadosConEstilo` (a DOCX style counts only if
+`word/styles.xml` defines it), `diagramasIncrustados`, `notasOrador`,
+`layoutsRespetados` and `caracteresPerdidosPdf`. The Mermaid rasteriser is the
+only thing replaced, because jsdom does not paint: the bench measures whether
+the exporter embeds the image it is given.
+
+Three rules hold it. **The baseline only improves** (`linea-base.json`).
+**Every figure below its target is named** in `defectosConocidos` with the
+finding (H1–H5) and the task that closes it, and **a defect that is no longer
+measured below target fails the bench until its entry is removed** — a fixed
+defect left on the list is an excuse available to the next regression. And
+**the reader has positive controls** (`exportEvalHarness.test.ts`): a
+hand-built correct DOCX, PPTX and PDF measure 100 %, so a zero is the
+exporter's and not the bench's. The PDF reader decodes literal `( ) Tj`
+strings without compression; the task that moves the PDF to Identity-H with
+`ToUnicode`, or compresses its streams, extends the reader in the same change.
 
 `components/ArtifactCanvas.tsx` is the central canvas. It has been decomposed: rendering, export, editing, speech, fullscreen, view mode, suggestions and diagnostics all live in `hooks/artifacts/*`, and the per-format views live in `components/artifacts/<format>/`. **When extending the canvas, add a hook or a subview — do not grow `ArtifactCanvas.tsx`.**
 

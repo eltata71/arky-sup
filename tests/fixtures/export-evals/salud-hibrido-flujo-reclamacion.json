@@ -1,0 +1,25 @@
+{
+  "id": "salud-hibrido-flujo-reclamacion",
+  "dominio": "salud",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H3"
+  ],
+  "artefacto": {
+    "nombre": "Proceso de adjudicación de reclamaciones",
+    "tipo": "hybrid-text-diagram",
+    "objetivo": "Describir el proceso de adjudicación de reclamaciones médicas con su flujo y su contexto.",
+    "contenido": "# Proceso de adjudicación de reclamaciones\n\n## Contexto\nLa reclamación llega del prestador, se valida contra la póliza y se adjudica con reglas clínicas y de cobertura.\n\n```mermaid\nflowchart LR\n  Prestador[Prestador] --> Recepcion[Recepción EDI 837]\n  Recepcion --> Validacion[Validación de póliza]\n  Validacion --> Adjudicacion[Motor de adjudicación]\n  Adjudicacion --> Pago[Pago al prestador]\n```\n\n## Actores\n| Actor | Responsabilidad |\n|---|---|\n| Prestador | Envía la reclamación |\n| Analista de reclamaciones | Resuelve los casos referidos |\n| Motor de adjudicación | Aplica reglas de cobertura |\n\n## Secuencia de pago\n```mermaid\nsequenceDiagram\n  participant M as Motor de adjudicación\n  participant T as Tesorería\n  M->>T: Orden de pago aprobada\n  T-->>M: Confirmación de transferencia\n```\n\n## Indicadores\n- Tasa de adjudicación automática.\n- Días promedio hasta el pago.\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 1,
+    "filas": 3,
+    "encabezados": 5,
+    "diagramas": 2,
+    "caracteresEspeciales": 0
+  }
+}

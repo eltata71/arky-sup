@@ -1,0 +1,25 @@
+{
+  "id": "salud-brd-portal-asegurado",
+  "dominio": "salud",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H1"
+  ],
+  "artefacto": {
+    "nombre": "BRD del portal del asegurado",
+    "tipo": "sdd-brd",
+    "objetivo": "Definir los requisitos de negocio del portal de autoservicio del asegurado.",
+    "contenido": "# Documento de requisitos de negocio: portal del asegurado\n\n## Objetivo de negocio\nReducir en un treinta por ciento las llamadas al centro de contacto por consultas de cobertura y estado de reclamaciones.\n\n## Partes interesadas\n| Parte interesada | Interés |\n|---|---|\n| Asegurados | Consultar coberturas y reclamaciones sin llamar |\n| Centro de contacto | Menos llamadas repetitivas |\n| Cumplimiento | Acceso controlado a datos de salud |\n\n## Requisitos de negocio\n### Consultas\n| ID | Requisito | Prioridad |\n|---|---|---|\n| RN-01 | Consultar coberturas vigentes | Alta |\n| RN-02 | Consultar estado de reclamaciones | Alta |\n| RN-03 | Descargar constancias de cobertura | Media |\n\n### Trámites\n| ID | Requisito | Prioridad |\n|---|---|---|\n| RN-10 | Solicitar reembolso con carga de facturas | Alta |\n| RN-11 | Actualizar datos de contacto | Media |\n\n## Fuera de alcance\n- Venta de pólizas nuevas.\n- Cambios de plan.\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 3,
+    "filas": 8,
+    "encabezados": 7,
+    "diagramas": 0,
+    "caracteresEspeciales": 0
+  }
+}

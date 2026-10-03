@@ -1,0 +1,25 @@
+{
+  "id": "vida-hibrido-contexto-pago-siniestro",
+  "dominio": "vida",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H3"
+  ],
+  "artefacto": {
+    "nombre": "Contexto del pago de siniestros de vida",
+    "tipo": "hybrid-text-diagram",
+    "objetivo": "Mostrar el contexto del pago de siniestros con sus controles.",
+    "contenido": "# Contexto del pago de siniestros de vida\n\n## Vista de contexto\n```mermaid\nflowchart TB\n  Beneficiario[Beneficiario] --> Portal[Portal de siniestros]\n  Portal --> Siniestros[Sistema de siniestros]\n  Siniestros --> Listas[Listas restrictivas]\n  Siniestros --> Tesoreria[Tesorería]\n```\n\n## Controles del pago\n| Control | Momento | Evidencia |\n|---|---|---|\n| Verificación de identidad del beneficiario | Antes de liquidar | Resultado de validación |\n| Cruce con listas restrictivas | Antes de liquidar | Constancia de búsqueda |\n| Doble aprobación | Pago mayor a 50 000 USD | Firma de dos apoderados |\n\n## Riesgos\n1. Pago a un beneficiario no verificado.\n2. Pago sin cruce de listas restrictivas.\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 1,
+    "filas": 3,
+    "encabezados": 4,
+    "diagramas": 1,
+    "caracteresEspeciales": 0
+  }
+}

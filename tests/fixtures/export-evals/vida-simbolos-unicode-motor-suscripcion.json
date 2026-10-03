@@ -1,0 +1,25 @@
+{
+  "id": "vida-simbolos-unicode-motor-suscripcion",
+  "dominio": "vida",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H5"
+  ],
+  "artefacto": {
+    "nombre": "Reglas del motor de suscripción",
+    "tipo": "markdown",
+    "objetivo": "Documentar las reglas de decisión del motor de suscripción automática.",
+    "contenido": "# Reglas del motor de suscripción\n\n## Flujo de decisión\nSolicitud → Validación de identidad → Evaluación de riesgo ⇒ Emisión automática o referencia a suscriptor.\n\n## Umbrales\n| Regla | Condición | Resultado |\n|---|---|---|\n| Capital asegurado | Suma ≤ 150 000 USD | ✓ Emisión automática |\n| Capital asegurado | Suma ≥ 150 001 USD | ✗ Referencia manual |\n| Índice de masa corporal | IMC ≥ 35 | ✗ Requiere evidencia médica |\n| Edad | 18 ≤ edad ≤ 60 | ✓ Tabla estándar |\n\n## Parámetros del modelo de riesgo\nEl modelo combina la puntuación α (antecedentes declarados) con la puntuación β (hábitos) y aplica el factor Δ de la tabla actuarial vigente.\n\n## Señales de la revisión\n- ✓ Reglas versionadas en el repositorio de decisiones.\n- ✗ Falta registrar el motivo de cada referencia manual.\n- ⚠ El umbral de capital no distingue moneda.\n- Siguiente revisión → comité actuarial 🗓️ trimestral.\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 1,
+    "filas": 4,
+    "encabezados": 5,
+    "diagramas": 0,
+    "caracteresEspeciales": 20
+  }
+}
