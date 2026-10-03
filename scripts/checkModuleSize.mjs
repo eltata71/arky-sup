@@ -70,7 +70,7 @@ export const BYTE_CEILINGS = {
   'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
   'components/artifacts/export/ArtifactExportModal.tsx': 28422, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
-  'components/CustomArtifactRequestModal.tsx': 42447, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
+  'components/CustomArtifactRequestModal.tsx': 42394, // 10.1: las etiquetas de fase salen al catálogo · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'context/OfficeContext.tsx': 20370, // 6.5: la motivación de la iniciativa llega a la producción del encargo (lectura diferida del portafolio)
   'pages/SDDProcessView.tsx': 41644, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
@@ -83,7 +83,7 @@ export const BYTE_CEILINGS = {
    */
   'services/agent/agentExecutor.ts': 37846, // plan artefactos 7.3d: +31, las mejoras del agente reciben motivación y conversación · plan artefactos 7.4b: −503, el cambio puntual sale a `agentPatchAction` (parche de documento o reescritura) · plan artefactos 7.3b: +30, las generaciones del agente reciben las decisiones de su historial · 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente · 7.1a: −4 125, la validación de contenido salió a `agentContentValidation` · 7.1b: +228, el cambio puntual se niega si el modelo no puede ver el artefacto entero
   'components/AssistantPanel.tsx': 36676, // plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
-  'pages/Workspace.tsx': 36572, // plan artefactos 7.3c: −236, los puertos de contexto (motivación, entregables, conversación) llegan por un solo hook, useArtifactContextPorts · plan diagramas 6.2: +194, entrega a la generación la motivación de negocio del proyecto (`useProjectBusinessMotivation`) · F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina · F6-03 corte 4: rutas de `domain/`/`application/`
+  'pages/Workspace.tsx': 33921, // 10.1: la superposición de generación sale a GenerationOverlay · plan artefactos 7.3c: los puertos de contexto llegan por un solo hook · plan diagramas 6.2: entrega la motivación de negocio · F5-01 corte 13: el llamante entrega la persona
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 35725, // plan diagramas 8.4c: +274, sin medida no hay pasadas de refinamiento · plan diagramas 8.2d: +148, compara la fidelidad con el IR que persistirá, incluidos sus metadatos · plan artefactos 7.5a: +38, la crítica y el refinamiento reciben onContextCaptured · plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
   'components/CustomNode.tsx': 35990, // plan diagramas 4.1: +186, marca «Detalle» y su texto accesible
@@ -171,7 +171,7 @@ export const CEILINGS = {
   'components/ReactFlowCanvas.tsx': 1950,
   'services/diagram/quality/diagramQualityService.ts': 575,
   'components/ArtifactCanvas.tsx': 962, // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
-  'pages/Workspace.tsx': 732, // plan artefactos 7.3c: los puertos de contexto por un solo hook · plan diagramas 6.2: +2, la motivación de negocio (import y hook) · F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
+  'pages/Workspace.tsx': 703, // 10.1: la superposición de generación sale a GenerationOverlay · plan artefactos 7.3c: los puertos de contexto por un solo hook
   'services/ai/prompts/diagramPrompts.ts': 831, // plan artefactos 7.5a: el import de la captura de contexto · plan diagramas 6.4: 1 030 → 830, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 1 145 → 1030
   'components/ProjectHub.tsx': 1060, // F6-03 corte 2b // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/MemoryCenterModal.tsx': 1017, // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -185,7 +185,7 @@ export const CEILINGS = {
   'services/diagram/mermaidToIR.ts': 740, // plan diagramas 8.3b: 873 → 740 · plan diagramas 8.2a: +2 · plan diagramas 2.1
   'components/artifacts/export/ArtifactExportModal.tsx': 564, // plan de clase mundial 9.4: 596 → 564 // plan diagramas 3.4: 844 → 596
   'components/CustomArtifactBriefWizard.tsx': 845,
-  'components/CustomArtifactRequestModal.tsx': 845,
+  'components/CustomArtifactRequestModal.tsx': 831, // 10.1: las etiquetas de fase salen al catálogo
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
   'constants.ts': 805,
   'components/AssistantPanel.tsx': 732, // plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02

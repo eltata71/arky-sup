@@ -162,6 +162,10 @@ Reglas que no se negocian al trabajar aquí:
 
 ## Reglas de operación (Codex/Koder y Claude)
 
+En este entorno están disponibles las CLI autenticadas de GitHub (`gh`),
+Supabase (`supabase`) y Vercel (`vercel`). Úsalas para verificar el estado real
+de PR, esquema y despliegues cuando la tarea lo requiera.
+
 1. **El backend es Supabase, y Firebase ya no existe (F9, 2026-09-19).**
    Identidad (Supabase Auth), datos (PostgreSQL con RLS y RPC `SECURITY
    DEFINER`) y archivos (Storage privado) viven allí; la única pieza de servidor
