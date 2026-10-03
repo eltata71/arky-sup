@@ -151,8 +151,8 @@ registra en su PR.
 
 | Métrica | Hoy | Objetivo | Cómo se mide |
 |---|---|---|---|
-| Fidelidad de exportación (DOCX/PPTX/PDF) | sin banco | 100 % de tablas, filas, diagramas y notas preservados | Banco nuevo `export-evals` (9.0) |
-| Caracteres perdidos en el PDF | sin medir | 0 en el corpus | `export-evals` |
+| Fidelidad de exportación (DOCX/PPTX/PDF) | DOCX: filas 79,6 %, títulos con estilo 0 %, diagramas 0 %. PPTX: tablas y filas 0 %, notas 0 %, *layouts* 0/14. PDF: filas 81,6 %, diagramas 0 % (9.0) | 100 % de tablas, filas, diagramas y notas preservados | `npm run eval:exports` |
+| Caracteres perdidos en el PDF | 27 en el corpus (9.0) | 0 en el corpus | `npm run eval:exports` |
 | Fases visibles en la generación principal | 0 de 12 | 100 %, con nombre en español | Prueba de componente |
 | Tiempo hasta el primer contenido visible al generar | fin de la generación | menos de 3 s con proveedor simulado | E2E con `page.route('**/api/ai')` |
 | Generaciones en paralelo sin bloquear | 1, bloqueante | cola de N (por defecto 3) y navegación libre | E2E |
@@ -235,6 +235,17 @@ preservación en los tres formatos, y H1–H5 están cerrados.
 - **CA:** el banco corre en CI con `test:ci`; la línea base registra los
   defectos actuales (H1–H5) como `defectoConocido`; el informe se imprime con
   `eval:exports`.
+- **Medido (2026-10-03):** DOCX filas 79,6 %, tablas nativas 100 %, títulos
+  con estilo 0 %, diagramas 0 %; PPTX filas 0 %, tablas nativas 0 %, diagramas
+  100 %, notas 0 %, *layouts* 0/14; PDF filas 81,6 %, títulos 98 %, diagramas
+  0 %, 27 caracteres perdidos. Cada cifra bajo su objetivo está en
+  `defectosConocidos` con la tarea que la cierra.
+- **Hallado al medir, sin tarea en el plan:** el PDF de un documento (1)
+  **trunca sin aviso** las celdas sobrantes de una fila más larga que la
+  cabecera —el mismo defecto que H2, en otro formato— y (2) **imprime el código
+  Mermaid** en vez del diagrama; sólo el PDF desde el lienzo lo dibuja. Como el
+  cierre de la ola exige el 100 % en los tres formatos, se proponen para el
+  alcance de 9.3; queda registrado en la línea base como H2 y H3 del PDF.
 
 #### 9.1 DOCX nativo *(corrección · L)*
 - **Objetivo:** un DOCX que Word abre con estilos, índice, listas, énfasis,
@@ -276,8 +287,8 @@ preservación en los tres formatos, y H1–H5 están cerrados.
   `layoutsRespetados` = 14/14. Ningún bloque se exporta como `a | b`. Se abre
   sin reparación en PowerPoint, Keynote y LibreOffice.
 
-#### 9.3 PDF sin caracteres perdidos *(corrección · M)*
-- **Objetivo:** cero `?` en el PDF.
+#### 9.3 PDF sin pérdidas *(corrección · L)*
+- **Objetivo:** cero caracteres y contenido perdidos en el PDF.
 - **Cambios:** se incrusta un subconjunto de una fuente TrueType libre (Inter o
   Noto Sans, con licencia OFL) con codificación Identity-H y `ToUnicode`, para
   que el texto se pueda copiar y buscar. La fuente se carga con `import()` desde
@@ -285,10 +296,14 @@ preservación en los tres formatos, y H1–H5 están cerrados.
   por `?`, y lo que siga sin poder representarse se informa. Además: marcadores
   (*outline*) por encabezado, metadatos de documento y PDF etiquetado básico
   (`/StructTreeRoot` para títulos, párrafos y tablas), en línea con
-  `docs/publication-accessibility.md`.
+  `docs/publication-accessibility.md`. Las filas con más celdas que la cabecera
+  conservan todas sus celdas o notifican cualquier truncado antes de descargar.
+  Los diagramas Mermaid de un documento se incrustan como imagen mediante la
+  misma ruta de rasterización que usa la exportación desde el lienzo.
 - **CA:** `caracteresPerdidosPdf` = 0 en el corpus (→ ⇒ ≥ ≤ ✓ ✗ α β, emoji
-  básico); el texto se puede seleccionar y buscar; hay *outline* presente; la
-  carga inicial no cambia, y la ruta Workspace sube como máximo lo medido y
+  básico); `filasPreservadas` = 100 % y `diagramasIncrustados` = 100 % en PDF;
+  el texto se puede seleccionar y buscar; hay *outline* presente; la carga
+  inicial no cambia, y la ruta Workspace sube como máximo lo medido y
   justificado.
 
 #### 9.4 La exportación dice lo que hizo *(experiencia · S)*
@@ -755,10 +770,10 @@ presupuesto que consumirán las olas 11 y 12.
 
 | Tarea | Estado | PR |
 |---|---|---|
-| 9.0 Banco de exportación | Pendiente | |
+| 9.0 Banco de exportación | Hecha | #154 |
 | 9.1 DOCX nativo | Pendiente | |
 | 9.2 PPTX nativo | Pendiente | |
-| 9.3 PDF sin caracteres perdidos | Pendiente | |
+| 9.3 PDF sin pérdidas | Pendiente | |
 | 9.4 Recibo de exportación | Pendiente | |
 | 10.0 Medición del recorrido de generación | Pendiente | |
 | 10.1 Vocabulario único de fases | Pendiente | |

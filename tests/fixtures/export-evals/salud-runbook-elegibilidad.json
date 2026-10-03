@@ -1,0 +1,26 @@
+{
+  "id": "salud-runbook-elegibilidad",
+  "dominio": "salud",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H1",
+    "H3"
+  ],
+  "artefacto": {
+    "nombre": "Runbook del servicio de elegibilidad",
+    "tipo": "markdown",
+    "objetivo": "Guiar la respuesta ante la caída del servicio de elegibilidad.",
+    "contenido": "# Runbook: servicio de elegibilidad\n\n## Síntomas\n- El portal responde «No fue posible validar la cobertura».\n- La cola de transacciones X12 270 crece por encima de 500 mensajes.\n\n## Diagnóstico\n1. Revisar el tablero de latencia del servicio.\n2. Consultar los errores del conector con el padrón de afiliados.\n3. Confirmar si el padrón está en ventana de carga nocturna.\n\n## Recuperación\n1. Activar el modo degradado con la caché de afiliación del día anterior.\n2. Reprocesar la cola en lotes de 50 transacciones.\n3. Desactivar el modo degradado y verificar la conciliación.\n\n## Contactos\n| Rol | Equipo | Horario |\n|---|---|---|\n| Guardia primaria | Plataforma de Afiliaciones | 24x7 |\n| Escalamiento | Arquitectura de Integración | Horario laboral |\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 1,
+    "filas": 2,
+    "encabezados": 5,
+    "diagramas": 0,
+    "caracteresEspeciales": 0
+  }
+}

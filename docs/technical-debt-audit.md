@@ -489,3 +489,19 @@ El build y `check:bundle-budget` pasan (308,6/340,0 KB gzip eager), pero Rollup
 avisa de un posible orden de ejecución roto. Revisar las importaciones del
 barril en el trabajo de fronteras/IA; F4-01 sólo midió Proyecto–Artefacto y no
 modificó ese módulo. Salida y comandos: `docs/ddd-transformacion/evidencias/f4-01-proyecto-artefacto.md`.
+
+## Excepción temporal de auditoría: GHSA-vfj7-8cjw-p6xm (2026-10-03)
+
+La PR #154 encontró un aviso alto sin versión corregida para `braces` 3.0.3.
+Llega sólo por `tailwindcss` 3 y sus herramientas de compilación (`chokidar`,
+`micromatch` y `fast-glob`); las cinco entradas están marcadas como `dev` en
+`package-lock.json`. El usuario de Arky no controla los patrones de búsqueda
+que procesa el build. [El aviso de GitHub](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+indica que aún no hay versión parcheada.
+
+`scripts/auditHighSeverity.mjs` permite sólo esa cadena y sólo hasta
+2026-11-03. Un aviso alto o crítico nuevo, una ruta de producción, un cambio
+en el aviso raíz o el vencimiento hace fallar CI. Cuando se publique una
+versión corregida de `braces`, se actualizan las dependencias y se retira la
+excepción. En la misma PR se actualizó DOMPurify a 3.4.16, que corrige
+[GHSA-p98j-92pf-mc4p](https://github.com/advisories/GHSA-p98j-92pf-mc4p).

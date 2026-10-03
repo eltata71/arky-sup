@@ -1,0 +1,26 @@
+{
+  "id": "salud-adr-mensajeria-autorizacion",
+  "dominio": "salud",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H1",
+    "H3"
+  ],
+  "artefacto": {
+    "nombre": "ADR-014 Mensajería para autorización previa",
+    "tipo": "markdown",
+    "objetivo": "Registrar la decisión de desacoplar la autorización previa con eventos.",
+    "contenido": "# ADR-014: Mensajería para las solicitudes de autorización previa\n\n## Estado\nPropuesta, pendiente de decisión del comité de arquitectura.\n\n## Contexto\nLas solicitudes llegan por el portal de prestadores, el centro de llamadas y **EDI X12 278**, y se procesan con llamadas síncronas encadenadas al *Motor de Coberturas*. En campaña la cadena supera los 40 segundos.\n\n## Decisión\nSe adopta un bus de eventos gestionado. Cada solicitud se publica como `AutorizacionSolicitada` y un orquestador consolida los resultados.\n\n## Alternativas consideradas\n| Alternativa | Ventaja | Desventaja |\n|---|---|---|\n| Mantener llamadas síncronas | Sin cambios | No escala en campaña |\n| Cola punto a punto | Simple | Acopla consumidores |\n| Bus de eventos gestionado | Desacopla y audita | Requiere gobierno de esquemas |\n\n## Consecuencias\n1. Cada consumidor publica su resultado con correlación.\n2. El rastro auditable sale del propio bus.\n3. Hace falta un registro de esquemas versionado.\n\n> La decisión se revisa a los seis meses con las métricas de latencia.\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 1,
+    "filas": 3,
+    "encabezados": 6,
+    "diagramas": 0,
+    "caracteresEspeciales": 0
+  }
+}

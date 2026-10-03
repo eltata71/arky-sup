@@ -1,0 +1,26 @@
+{
+  "id": "vida-matriz-riesgos-suscripcion",
+  "dominio": "vida",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H1",
+    "H2"
+  ],
+  "artefacto": {
+    "nombre": "Matriz de riesgos de la suscripción automática",
+    "tipo": "markdown",
+    "objetivo": "Evaluar los riesgos de automatizar la suscripción de vida.",
+    "contenido": "# Matriz de riesgos de la suscripción automática\n\n## Riesgos evaluados\n| ID | Riesgo | Probabilidad | Impacto | Mitigación |\n|---|---|---|---|---|\n| R-01 | Antiselección por declaración incompleta | Media | Alto | Cruce con historial de solicitudes |\n| R-02 | Sesgo en el modelo de riesgo | Baja | Alto | Auditoría semestral del modelo |\n| R-03 | Caída del proveedor de evidencia médica | Media | Medio |\n| R-04 | Fraude documental | Media | Alto | Validación biométrica | Revisión manual aleatoria del dos por ciento |\n| R-05 | Incumplimiento de protección de datos | Baja | Muy alto | Clasificación y cifrado de datos médicos |\n\n## Responsables\n| Riesgo | Responsable |\n|---|---|\n| R-01 | Suscripción |\n| R-02 | Ciencia de Datos |\n| R-05 | Oficial de Privacidad |\n"
+  },
+  "formatos": [
+    "docx",
+    "pdf"
+  ],
+  "esperado": {
+    "tablas": 2,
+    "filas": 8,
+    "encabezados": 3,
+    "diagramas": 0,
+    "caracteresEspeciales": 0
+  }
+}

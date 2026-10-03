@@ -121,12 +121,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Fails on high and critical only. Auditing at `moderate` on a front-end
-      # tree means failing on advisories against build-time packages that never
-      # reach a browser, and a gate that fails for reasons nobody can act on
-      # gets switched off. Dependabot handles the rest on its own schedule.
+      # Fails on high and critical. The checker has one expiring exception for
+      # the unpatched braces advisory in Tailwind's build-only dependency chain.
+      # Any new advisory, production path, or expiry fails closed.
       - name: npm audit (high and critical)
-        run: npm audit --audit-level=high
+        run: node scripts/auditHighSeverity.mjs
 
       # An SBOM per run, so "which version of what did that release ship?" is
       # answerable after the fact rather than reconstructed from a lockfile

@@ -54,6 +54,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'agentRegistry', rule: 'el registro es la única puerta a los agentes' },
   { anchor: 'serializeIRPreservingDialect', rule: 'un diagrama conserva su dialecto al guardarse (plan de diagramas 6.1)' },
   { anchor: 'diagram-evals', rule: 'el banco de evaluación de diagramas y su línea base monótona (6.1)' },
+  { anchor: 'export-evals', rule: 'el banco de exportación abre el fichero y nombra cada defecto (clase mundial 9.0)' },
   { anchor: 'buildDiagramGenerationBrief', rule: 'todo camino de diagrama recibe el mismo contexto, cercado (6.2)' },
   { anchor: 'checkRequestFidelity', rule: 'un diagrama se verifica contra la solicitud (6.3)' },
   { anchor: 'correctDiagramOnce', rule: 'la autocorrección es un parche, una vez, y sólo si no empeora (6.3)' },

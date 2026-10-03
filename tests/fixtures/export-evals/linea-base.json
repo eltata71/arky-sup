@@ -1,0 +1,103 @@
+{
+  "fecha": "2026-10-03",
+  "actual": {
+    "docx": {
+      "filasPreservadas": 79.6,
+      "tablasNativas": 100,
+      "encabezadosConEstilo": 0,
+      "diagramasIncrustados": 0
+    },
+    "pptx": {
+      "filasPreservadas": 0,
+      "tablasNativas": 0,
+      "diagramasIncrustados": 100,
+      "notasOrador": 0,
+      "layoutsRespetados": 0
+    },
+    "pdf": {
+      "filasPreservadas": 81.6,
+      "encabezadosConEstilo": 98,
+      "diagramasIncrustados": 0,
+      "caracteresPerdidosPdf": 27
+    }
+  },
+  "defectosConocidos": [
+    {
+      "id": "H1",
+      "tarea": "9.1",
+      "formato": "docx",
+      "metrica": "encabezadosConEstilo",
+      "descripcion": "El DOCX cita Heading1–3 y no lleva word/styles.xml: Word los pinta como Normal."
+    },
+    {
+      "id": "H2",
+      "tarea": "9.1",
+      "formato": "docx",
+      "metrica": "filasPreservadas",
+      "descripcion": "El DOCX descarta sin aviso las filas con un número de celdas distinto al de la cabecera."
+    },
+    {
+      "id": "H3",
+      "tarea": "9.1",
+      "formato": "docx",
+      "metrica": "diagramasIncrustados",
+      "descripcion": "El DOCX escribe el código Mermaid como párrafos; no hay ningún w:drawing."
+    },
+    {
+      "id": "H4",
+      "tarea": "9.2",
+      "formato": "pptx",
+      "metrica": "tablasNativas",
+      "descripcion": "El PPTX aplana las tablas a líneas «a | b»; no hay a:tbl."
+    },
+    {
+      "id": "H4",
+      "tarea": "9.2",
+      "formato": "pptx",
+      "metrica": "filasPreservadas",
+      "descripcion": "Sin a:tbl, ninguna fila llega como fila."
+    },
+    {
+      "id": "H4",
+      "tarea": "9.2",
+      "formato": "pptx",
+      "metrica": "notasOrador",
+      "descripcion": "El PPTX no escribe notesSlide: las speakerNotes se pierden."
+    },
+    {
+      "id": "H4",
+      "tarea": "9.2",
+      "formato": "pptx",
+      "metrica": "layoutsRespetados",
+      "descripcion": "Todas las diapositivas usan un único slideLayout «Title and Content»."
+    },
+    {
+      "id": "H5",
+      "tarea": "9.3",
+      "formato": "pdf",
+      "metrica": "caracteresPerdidosPdf",
+      "descripcion": "Helvetica Type1 con WinAnsi: todo carácter fuera de Latin-1 se escribe como «?»."
+    },
+    {
+      "id": "H5",
+      "tarea": "9.3",
+      "formato": "pdf",
+      "metrica": "encabezadosConEstilo",
+      "descripcion": "Un título con una flecha llega con «?» en su lugar («Línea base ? objetivo»)."
+    },
+    {
+      "id": "H2",
+      "tarea": "9.3 (hallado en 9.0, sin tarea en el plan)",
+      "formato": "pdf",
+      "metrica": "filasPreservadas",
+      "descripcion": "El PDF trunca sin aviso las celdas sobrantes de una fila más larga que la cabecera, y las filas con caracteres fuera de Latin-1 pierden texto (H5)."
+    },
+    {
+      "id": "H3",
+      "tarea": "9.3 (hallado en 9.0, sin tarea en el plan)",
+      "formato": "pdf",
+      "metrica": "diagramasIncrustados",
+      "descripcion": "El PDF de un documento imprime el código Mermaid como bloque de código; sólo el PDF desde el lienzo dibuja el diagrama."
+    }
+  ]
+}

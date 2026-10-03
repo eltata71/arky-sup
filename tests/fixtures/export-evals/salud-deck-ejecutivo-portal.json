@@ -1,0 +1,33 @@
+{
+  "id": "salud-deck-ejecutivo-portal",
+  "dominio": "salud",
+  "origen": "redactada-a-mano: artefacto representativo escrito para el banco; no es una salida capturada de un modelo",
+  "ejercita": [
+    "H4"
+  ],
+  "artefacto": {
+    "nombre": "Portal del asegurado: propuesta ejecutiva",
+    "tipo": "presentation-executive",
+    "objetivo": "Portal del asegurado: propuesta ejecutiva",
+    "contenido": "{\n  \"kind\": \"presentation\",\n  \"version\": \"1.0.0\",\n  \"title\": \"Portal del asegurado: propuesta ejecutiva\",\n  \"audience\": \"executive\",\n  \"theme\": \"light\",\n  \"slides\": [\n    {\n      \"id\": \"s1\",\n      \"slideNumber\": 1,\n      \"title\": \"Portal del asegurado\",\n      \"layout\": \"titleSlide\",\n      \"contentBlocks\": [\n        {\n          \"type\": \"text\",\n          \"content\": \"Propuesta para el comité de dirección\"\n        }\n      ],\n      \"speakerNotes\": \"Presentar el objetivo en una frase y pedir la decisión al final.\",\n      \"subtitle\": \"Comité de dirección, octubre\"\n    },\n    {\n      \"id\": \"s2\",\n      \"slideNumber\": 2,\n      \"title\": \"Resumen ejecutivo\",\n      \"layout\": \"executiveSummary\",\n      \"contentBlocks\": [\n        {\n          \"type\": \"bullets\",\n          \"content\": [\n            \"Treinta por ciento menos llamadas por consultas\",\n            \"Inversión recuperada en dieciocho meses\",\n            \"Riesgo regulatorio controlado\"\n          ]\n        }\n      ],\n      \"speakerNotes\": \"Las tres cifras salen del caso de negocio aprobado por Finanzas.\",\n      \"keyMessage\": \"El portal paga su inversión en año y medio.\"\n    },\n    {\n      \"id\": \"s3\",\n      \"slideNumber\": 3,\n      \"title\": \"El problema y la propuesta\",\n      \"layout\": \"problemSolution\",\n      \"contentBlocks\": [\n        {\n          \"type\": \"text\",\n          \"content\": \"Hoy cada consulta de cobertura es una llamada.\"\n        },\n        {\n          \"type\": \"callout\",\n          \"content\": {\n            \"tone\": \"info\",\n            \"title\": \"Propuesta\",\n            \"body\": \"Autoservicio con datos de cobertura y reclamaciones en línea.\"\n          }\n        }\n      ],\n      \"speakerNotes\": \"Insistir en que el problema es de volumen, no de calidad de atención.\"\n    },\n    {\n      \"id\": \"s4\",\n      \"slideNumber\": 4,\n      \"title\": \"Indicadores esperados\",\n      \"layout\": \"metricsKpi\",\n      \"contentBlocks\": [\n        {\n          \"type\": \"kpi\",\n          \"content\": [\n            {\n              \"label\": \"Llamadas por consulta\",\n              \"value\": \"-30 %\",\n              \"trend\": \"down\",\n              \"detail\": \"Primer año\"\n            },\n            {\n              \"label\": \"Satisfacción\",\n              \"value\": \"+12 puntos\",\n              \"trend\": \"up\"\n            },\n            {\n              \"label\": \"Costo por contacto\",\n              \"value\": \"Estable\",\n              \"trend\": \"flat\"\n            }\n          ]\n        }\n      ],\n      \"speakerNotes\": \"La satisfacción se mide con la encuesta trimestral existente.\"\n    },\n    {\n      \"id\": \"s5\",\n      \"slideNumber\": 5,\n      \"title\": \"Opciones evaluadas\",\n      \"layout\": \"comparisonTable\",\n      \"contentBlocks\": [\n        {\n          \"type\": \"table\",\n          \"content\": {\n            \"headers\": [\n              \"Opción\",\n              \"Costo\",\n              \"Plazo\",\n              \"Riesgo\"\n            ],\n            \"rows\": [\n              [\n                \"Construir sobre el portal actual\",\n                \"Bajo\",\n                \"6 meses\",\n                \"Alto\"\n              ],\n              [\n                \"Plataforma de mercado\",\n                \"Medio\",\n                \"4 meses\",\n                \"Medio\"\n              ],\n              [\n                \"Desarrollo nuevo\",\n                \"Alto\",\n                \"12 meses\",\n                \"Bajo\"\n              ]\n            ],\n            \"caption\": \"Comparación de alternativas\"\n          }\n        }\n      ],\n      \"speakerNotes\": \"La plataforma de mercado es la recomendada por equilibrio entre plazo y riesgo.\"\n    },\n    {\n      \"id\": \"s6\",\n      \"slideNumber\": 6,\n      \"title\": \"Decisión solicitada\",\n      \"layout\": \"decisionSlide\",\n      \"contentBlocks\": [\n        {\n          \"type\": \"callout\",\n          \"content\": {\n            \"tone\": \"warning\",\n            \"title\": \"Decisión\",\n            \"body\": \"Aprobar la opción de plataforma de mercado y el presupuesto de la fase 1.\"\n          }\n        },\n        {\n          \"type\": \"bullets\",\n          \"content\": [\n            \"Presupuesto de fase 1\",\n            \"Patrocinio de Operaciones\"\n          ]\n        }\n      ],\n      \"speakerNotes\": \"Pedir la decisión explícitamente; no cerrar sin ella.\",\n      \"keyMessage\": \"Necesitamos la aprobación hoy para llegar a la campaña.\"\n    },\n    {\n      \"id\": \"s7\",\n      \"slideNumber\": 7,\n      \"title\": \"Gracias\",\n      \"layout\": \"closingSlide\",\n      \"contentBlocks\": [\n        {\n          \"type\": \"text\",\n          \"content\": \"Preguntas y próximos pasos\"\n        }\n      ],\n      \"speakerNotes\": \"Recordar la fecha del siguiente comité.\"\n    }\n  ]\n}"
+  },
+  "formatos": [
+    "pptx"
+  ],
+  "esperado": {
+    "tablas": 1,
+    "filas": 3,
+    "encabezados": 0,
+    "diagramas": 0,
+    "notas": 7,
+    "layouts": [
+      "closingSlide",
+      "comparisonTable",
+      "decisionSlide",
+      "executiveSummary",
+      "metricsKpi",
+      "problemSolution",
+      "titleSlide"
+    ]
+  }
+}
