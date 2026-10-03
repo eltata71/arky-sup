@@ -770,7 +770,7 @@ presupuesto que consumirán las olas 11 y 12.
 
 | Tarea | Estado | PR |
 |---|---|---|
-| 9.0 Banco de exportación | Hecha | esta PR |
+| 9.0 Banco de exportación | Hecha | #154 |
 | 9.1 DOCX nativo | Pendiente | |
 | 9.2 PPTX nativo | Pendiente | |
 | 9.3 PDF sin pérdidas | Pendiente | |
