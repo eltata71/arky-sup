@@ -109,7 +109,7 @@ const THRESHOLDS = {
  * `e2e/` holds Playwright specs: they need a real browser and run through
  * `npm run e2e`. Collecting them here would fail on the first import.
  */
-const SHARED_EXCLUDE = ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**'];
+const SHARED_EXCLUDE = ['node_modules', 'dist', '.idea', '.git', '.cache', '.claude/worktrees/**', 'e2e/**'];
 
 export default defineConfig(({ mode }) => {
   if (mode === 'production') {

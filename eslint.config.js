@@ -23,6 +23,7 @@ export default [
       'node_modules/**',
       'coverage/**',
       '.vercel/**',
+      '.claude/worktrees/**',
       // Build configuration read by PostCSS/Tailwind from the root. The
       // eleven legacy scaffolding scripts that used to need this exemption are
       // gone; `scripts/checkOrphanScripts.mjs` keeps them from returning, and

@@ -2,10 +2,10 @@
   "fecha": "2026-10-03",
   "actual": {
     "docx": {
-      "filasPreservadas": 79.6,
+      "filasPreservadas": 100,
       "tablasNativas": 100,
-      "encabezadosConEstilo": 0,
-      "diagramasIncrustados": 0
+      "encabezadosConEstilo": 100,
+      "diagramasIncrustados": 100
     },
     "pptx": {
       "filasPreservadas": 0,
@@ -22,27 +22,6 @@
     }
   },
   "defectosConocidos": [
-    {
-      "id": "H1",
-      "tarea": "9.1",
-      "formato": "docx",
-      "metrica": "encabezadosConEstilo",
-      "descripcion": "El DOCX cita Heading1–3 y no lleva word/styles.xml: Word los pinta como Normal."
-    },
-    {
-      "id": "H2",
-      "tarea": "9.1",
-      "formato": "docx",
-      "metrica": "filasPreservadas",
-      "descripcion": "El DOCX descarta sin aviso las filas con un número de celdas distinto al de la cabecera."
-    },
-    {
-      "id": "H3",
-      "tarea": "9.1",
-      "formato": "docx",
-      "metrica": "diagramasIncrustados",
-      "descripcion": "El DOCX escribe el código Mermaid como párrafos; no hay ningún w:drawing."
-    },
     {
       "id": "H4",
       "tarea": "9.2",
