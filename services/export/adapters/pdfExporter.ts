@@ -21,6 +21,6 @@ export const pdfExporter: ExportAdapter = {
     const result = await buildPdfDocument(context);
     const blob = new Blob([result.bytes as BlobPart], { type: EXPORT_DEFINITIONS.pdf.mimeType });
     const details = 'PDF con fuentes incrustadas (texto seleccionable y buscable), marcadores, metadatos, estructura etiquetada y diagramas como imagen.';
-    return buildFile(context, 'pdf', blob, result.warnings.length ? `${details} ${result.warnings.join(' ')}` : details);
+    return buildFile(context, 'pdf', blob, result.warnings.length ? `${details} ${result.warnings.join(' ')}` : details, result.receipt);
   },
 };

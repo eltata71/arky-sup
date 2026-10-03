@@ -14,7 +14,7 @@
  *   metadatos, idioma declarado y estructura etiquetada para lectores de
  *   pantalla (`docs/publication-accessibility.md`).
  */
-import type { ExportContext } from '../../exportTypes';
+import type { ExportContext, ExportReceipt } from '../../exportTypes';
 import { artifactTables, buildMetadata, publicationMarkdown, shouldExportPublication } from '../shared';
 import { buildArtifactQualityReport } from '../../../quality/artifactQualityService';
 import { renderQualityReportMarkdown } from '../../../quality/qualityReportRenderer';
@@ -35,6 +35,8 @@ export interface BuiltPdf {
   readonly bytes: Uint8Array;
   /** Lo que el PDF no pudo representar, en frases para quien exporta. */
   readonly warnings: string[];
+  /** Lo que el PDF contiene, contado por el renderizador que lo dibujó (9.4). */
+  readonly receipt: ExportReceipt;
 }
 
 interface Image { name: string; bytes: Uint8Array; width: number; height: number }
@@ -173,5 +175,17 @@ export async function buildPdfDocument(context: ExportContext): Promise<BuiltPdf
     const listed = [...fonts.missing].map(([ch, count]) => `«${ch}» (U+${(ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')})${count > 1 ? ` ×${count}` : ''}`);
     warnings.push(`El PDF no pudo dibujar ${fonts.missing.size === 1 ? 'un carácter' : `${fonts.missing.size} caracteres`} que ninguna de sus fuentes contiene: ${listed.join(', ')}.`);
   }
-  return { bytes: writer.toBytes(catalog, info), warnings };
+  const receipt: ExportReceipt = {
+    pages: renderer.pages.length,
+    tables: renderer.contentTables,
+    diagrams: images.length,
+    losses: warnings,
+    preview: {
+      kind: 'page',
+      title: context.presentationModel?.title || artifact.name || 'Documento',
+      subtitle: artifact.objective || undefined,
+      lines: renderer.headings.map((heading) => heading.text).slice(0, 6),
+    },
+  };
+  return { bytes: writer.toBytes(catalog, info), warnings, receipt };
 }

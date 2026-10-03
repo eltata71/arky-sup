@@ -124,6 +124,8 @@
     "services/export/adapters/pdf/pdfFonts.ts",
     "services/export/adapters/pdf/pdfStructure.ts",
     "services/export/adapters/pdf/pageGeometry.ts",
-    "services/export/adapters/pdf/documentBlocks.ts"
+    "services/export/adapters/pdf/documentBlocks.ts",
+    // 9.4: la redacción del recibo de exportación es una hoja sin dependencias.
+    "lib/artifacts/exportReceipt.ts"
   ]
 }

@@ -1555,6 +1555,16 @@ UTF-16 bookmarks and metadata, `/Lang`, and a tagged structure
 (`pdfStructure.ts`) with decoration marked as `/Artifact`. `diagramPdf` writes
 with the same fonts.
 
+**And an export says what it did, before the download** (9.4). DOCX, PPTX and
+PDF return an `ExportReceipt` on the `ExportedFile` — pages or slides (and how
+many carry notes), tables, diagrams, every loss as a sentence, and a preview of
+the first page or slide — **counted by the exporter while it wrote the file**,
+never recomputed from the artifact afterwards. `ArtifactExportModal` now
+generates through `prepareExport`, shows `ExportReceiptPanel` (losses first,
+focus on its title, announced once through `useAriaAnnouncer`) and downloads
+only on a second click (`downloadExport`); images keep their direct path.
+`describeExportReceipt` (`lib/artifacts/exportReceipt.ts`) is the one sentence.
+
 `components/ArtifactCanvas.tsx` is the central canvas. It has been decomposed: rendering, export, editing, speech, fullscreen, view mode, suggestions and diagnostics all live in `hooks/artifacts/*`, and the per-format views live in `components/artifacts/<format>/`. **When extending the canvas, add a hook or a subview — do not grow `ArtifactCanvas.tsx`.**
 
 ---

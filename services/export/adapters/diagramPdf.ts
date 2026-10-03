@@ -239,6 +239,15 @@ export async function exportDiagramPdf(context: ExportContext): Promise<Exported
     confidentiality: snapshot.confidentiality,
     snapshot,
   });
-  return buildFile(context, 'pdf', blob, 'PDF vectorial del diagrama, con su resumen accesible.');
+  const losses = fonts.missing.size > 0
+    ? [`El PDF no pudo dibujar ${fonts.missing.size === 1 ? 'un carácter' : `${fonts.missing.size} caracteres`} de las etiquetas: ${[...fonts.missing.keys()].map((ch) => `«${ch}»`).join(', ')}.`]
+    : [];
+  return buildFile(context, 'pdf', blob, ['PDF vectorial del diagrama, con su resumen accesible.', ...losses].join(' '), {
+    pages: 2,
+    tables: 0,
+    diagrams: 1,
+    losses,
+    preview: { kind: 'page', title: context.artifact.name, subtitle: 'Diagrama vectorial y resumen accesible', lines: snapshot.summary.slice(0, 6) },
+  });
 }
 

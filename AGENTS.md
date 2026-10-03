@@ -580,6 +580,10 @@ Reglas que no se negocian al trabajar aquí:
     documento, `Identity-H` con `ToUnicode`), y un carácter que ninguna dibuja
     se informa en los detalles del fichero. Diagramas como imagen, filas
     completas, marcadores, metadatos y estructura etiquetada.
+    **Y la exportación dice lo que hizo antes de descargar** (9.4): DOCX, PPTX
+    y PDF devuelven un `ExportReceipt` contado por el propio exportador
+    (páginas o diapositivas, tablas, diagramas, pérdidas y vista previa), y el
+    modal lo enseña —pérdidas primero— antes del clic de descarga.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;

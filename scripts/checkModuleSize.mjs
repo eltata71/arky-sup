@@ -69,7 +69,7 @@ export const BYTE_CEILINGS = {
   'constants.ts': 49197,
   'pages/ProjectsPage.tsx': 43870, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
-  'components/artifacts/export/ArtifactExportModal.tsx': 30805, // plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
+  'components/artifacts/export/ArtifactExportModal.tsx': 28422, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42447, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'context/OfficeContext.tsx': 20370, // 6.5: la motivación de la iniciativa llega a la producción del encargo (lectura diferida del portafolio)
@@ -125,7 +125,6 @@ export const BYTE_CEILINGS = {
   'services/diagram/diagramTypeQualityGates.ts': 22356,
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
-  'services/export/adapters/pptxExporter.ts': 21273,
   'services/artifacts/application/artifactGenerationRun.ts': 24819, // plan diagramas 8.4c: +127, una medida que no existe no entra en la traza · plan diagramas 8.1b: +184, la traza dice qué mejoras propone la puerta sin aplicarlas · plan artefactos 7.5a: +283, graba el manifiesto de contexto en generationTrace · plan artefactos 7.4c: +330, la revisión de fidelidad de documentos y su corrección única · plan artefactos 7.3c: los puertos de contexto viajan como un objeto (ArtifactContextPorts) · 7.3b · plan artefactos 7.3a: +32, la motivación llega al refinamiento · plan diagramas 6.3: +753, veredicto de fidelidad y canal de degradación hacia el usuario (la lógica está en `diagramFidelityReview`) · plan diagramas 6.2: +226, pasa `businessMotivation` a la generación · plan diagramas 6.1: +1132, conserva el IR que produjo el modelo en vez de reextraerlo del texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F5-01 corte 14: entrega también `artifactGenerationSupport`, el puerto que deja al motor vivir en `services/ai` (13: la persona) · F6-03 corte 4: rutas de `domain/`/`application/`
   'context/LMSContext.tsx': 21111,
   'services/observability/observabilityService.ts': 20937,
@@ -184,7 +183,7 @@ export const CEILINGS = {
   'services/agent/agentExecutor.ts': 904, // 7.3d: los puertos, una vez para todas las llamadas · 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
   'pages/ProjectsPage.tsx': 890, // F5-02
   'services/diagram/mermaidToIR.ts': 740, // plan diagramas 8.3b: 873 → 740 · plan diagramas 8.2a: +2 · plan diagramas 2.1
-  'components/artifacts/export/ArtifactExportModal.tsx': 596, // plan diagramas 3.4: 844 → 596
+  'components/artifacts/export/ArtifactExportModal.tsx': 564, // plan de clase mundial 9.4: 596 → 564 // plan diagramas 3.4: 844 → 596
   'components/CustomArtifactBriefWizard.tsx': 845,
   'components/CustomArtifactRequestModal.tsx': 845,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,

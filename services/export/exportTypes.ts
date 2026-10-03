@@ -20,6 +20,8 @@ export type {
   ExportQualityTrace,
   ExportTrace,
   ExportedFile,
+  ExportPreview,
+  ExportReceipt,
 } from '../../lib/artifacts/exportContracts';
 import type {
   ArtifactView,
