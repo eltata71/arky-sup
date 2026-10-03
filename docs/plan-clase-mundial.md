@@ -780,7 +780,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 9.1 DOCX nativo | Hecha | #156 |
 | 9.2 PPTX nativo | Hecha | #157 |
 | 9.3 PDF sin pérdidas | Hecha | #158 |
-| 9.4 Recibo de exportación | En revisión | rama `clase-mundial/9.4-recibo-exportacion` |
+| 9.4 Recibo de exportación | En revisión | #159 |
 | 10.0 Medición del recorrido de generación | Pendiente | |
 | 10.1 Vocabulario único de fases | Pendiente | |
 | 10.2 Cola en segundo plano | Pendiente | |
