@@ -3,7 +3,8 @@ import { Modal } from './Modal';
 import { useAppContext, type Project } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { ArtifactTemplate, CustomArtifactRecommendation } from '../types';
-import type { ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener, ArtifactGenerationStage } from '../lib/artifacts';
+import type { ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../lib/artifacts';
+import { GENERATION_PHASE_COPY, GENERATION_STATUS_COPY } from '../lib/artifacts/generationPhaseCopy';
 import { recommendationService, classifyAIError, AIServiceError } from '../services/ai';
 import { buildDeterministicArtifactBrief } from '../services/artifacts/domain/artifactBriefService';
 import { extractArtifactBriefWithAI } from '../services/artifacts/application/artifactBriefExtractionService';
@@ -26,21 +27,6 @@ const MIN_IDEA_LENGTH = 20;
 const MAX_PHASE_HISTORY = 30;
 const GENERATION_STALL_WARNING_MS = 45000;
 const GENERATION_LONG_RUNNING_MS = 120000;
-
-const STAGE_LABELS: Record<ArtifactGenerationStage, string> = {
-  recommendation: 'Recomendación',
-  prompt: 'Prompt',
-  'ai-generation': 'Generación IA',
-  validation: 'Validación',
-  parsing: 'Parsing',
-  normalization: 'Normalización',
-  'quality-gate': 'Quality gate',
-  fallback: 'Fallback',
-  persistence: 'Persistencia',
-  render: 'Render',
-  export: 'Exportación',
-  refinement: 'Refinamiento',
-};
 
 const STATUS_STYLE: Record<string, { dot: string; chip: string; ring: string }> = {
   'in-progress': {
@@ -141,7 +127,6 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
     }
   }, [isOpen]);
 
-  // Focus the idea textarea when the wizard opens — supports keyboard-first flow.
   useEffect(() => {
     if (!isOpen || generationContract) return;
     const handle = window.setTimeout(() => ideaInputRef.current?.focus(), 80);
@@ -155,7 +140,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
       const next = [...prev, event];
       return next.length > MAX_PHASE_HISTORY ? next.slice(next.length - MAX_PHASE_HISTORY) : next;
     });
-    setGenerationPhase(event.message);
+    setGenerationPhase(GENERATION_PHASE_COPY[event.stage].description);
   };
 
   useEffect(() => {
@@ -591,6 +576,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
         {generationPhase && (
           <StatusBanner
             phase={generationPhase}
+            stage={phaseEvents[phaseEvents.length - 1]?.stage}
             durationLabel={totalDuration !== null ? formatDuration(totalDuration) : null}
             tone={generationError ? 'error' : isAnalyzing || isGenerating ? 'info' : 'success'}
           />
@@ -733,18 +719,19 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
 
 interface StatusBannerProps {
   phase: string;
+  stage?: ArtifactGenerationPhaseEvent['stage'];
   durationLabel: string | null;
   tone: 'info' | 'success' | 'error';
 }
 
-const StatusBanner: React.FC<StatusBannerProps> = ({ phase, durationLabel, tone }) => {
+const StatusBanner: React.FC<StatusBannerProps> = ({ phase, stage, durationLabel, tone }) => {
   const palette = tone === 'error'
     ? 'border-rose-200 bg-rose-50/80 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100'
     : tone === 'success'
       ? 'border-emerald-200 bg-emerald-50/80 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100'
       : 'border-blue-200 bg-blue-50/80 text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200';
   return (
-    <div className={`rounded-xl border p-4 text-sm ${palette}`} role="status" aria-live="polite">
+    <div className={`rounded-xl border p-4 text-sm ${palette}`} role="status" aria-live="polite" data-generation-phase={stage}>
       <div className="flex items-center justify-between gap-3">
         <p className="font-semibold">Estado</p>
         {durationLabel && (
@@ -800,7 +787,7 @@ const TechnicalTimelineDisclosure: React.FC<TechnicalTimelineDisclosureProps> = 
       <ol className="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1">
         {events.map((event, index) => {
           const styles = stageStyle(event.status);
-          const stageLabel = STAGE_LABELS[event.stage] ?? event.stage;
+          const copy = GENERATION_PHASE_COPY[event.stage];
           const duration = formatDuration(event.durationMs);
           return (
             <li
@@ -812,19 +799,21 @@ const TechnicalTimelineDisclosure: React.FC<TechnicalTimelineDisclosureProps> = 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-xs font-semibold text-gray-900 dark:text-white">
-                      {stageLabel}
+                      <span aria-hidden className="mr-1.5">{copy.icon}</span>
+                      {copy.label}
                       <span className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${styles.chip}`}>
-                        {event.status}
+                        {GENERATION_STATUS_COPY[event.status]}
                       </span>
                     </p>
                     {duration && (
                       <span className="whitespace-nowrap text-[10px] text-gray-500 dark:text-gray-400">{duration}</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-xs leading-snug text-gray-700 dark:text-gray-300">{event.message}</p>
-                  {event.detail && (
+                  <p className="mt-0.5 text-xs leading-snug text-gray-700 dark:text-gray-300">{copy.description}</p>
+                  {showTechnical && event.detail && (
                     <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">{event.detail}</p>
                   )}
+                  {showTechnical && <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{event.message}</p>}
                   {showTechnical && event.meta && Object.keys(event.meta).length > 0 && (
                     <pre className="mt-1 max-h-24 overflow-auto rounded bg-gray-50 p-1.5 text-[10px] text-gray-700 dark:bg-gray-950 dark:text-gray-300">
 {JSON.stringify(event.meta, null, 2)}

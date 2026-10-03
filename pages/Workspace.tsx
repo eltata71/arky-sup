@@ -4,7 +4,8 @@ import { useAppContext } from '../context/AppContext';
 import { useOffice } from '../context/OfficeContext';
 import { useToast } from '../context/ToastContext';
 import { ArtifactTemplate } from '../types';
-import type { Artifact, ArtifactGenerationPhaseListener } from '../lib/artifacts';
+import type { Artifact, ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener, ArtifactGenerationStage } from '../lib/artifacts';
+import { GenerationOverlay } from '../components/artifacts/GenerationOverlay';
 import { ArtifactCanvas } from '../components/ArtifactCanvas';
 import { ProjectHub } from '../components/ProjectHub';
 import { ProjectContextBar } from '../components/navigation';
@@ -74,6 +75,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   // States for creation
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingMessage, setGeneratingMessage] = useState('');
+  const [generationStage, setGenerationStage] = useState<ArtifactGenerationStage | null>(null);
   const [generationElapsedSec, setGenerationElapsedSec] = useState(0);
   const [versionConflict, setVersionConflict] = useState<{ template: ArtifactTemplate, existingArtifact: Artifact } | null>(null);
   
@@ -198,6 +200,11 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     setGenerationElapsedSec(0);
     setGenerationFailure(null);
     setGeneratingMessage(t('generatingArtifact', {artifactName: template.name}));
+    setGenerationStage('prompt');
+    const reportPhase = (event: ArtifactGenerationPhaseEvent): void => {
+        if (isMounted.current) setGenerationStage(event.stage);
+        onPhase?.(event);
+    };
     const startedAt = new Date().toISOString();
     const startedMs = Date.now();
     const generationOperationId = `gen-${project.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -226,13 +233,13 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
             operationId: generationOperationId,
             startedAt,
             startedMs,
-            onPhase, composePersonaInstruction, ...(await loadContextPorts()),
+            onPhase: reportPhase, composePersonaInstruction, ...(await loadContextPorts()),
             onWarning: message => {
                 if (isMounted.current) addToast(message, 'warning', { durationMs: 8000 });
             },
         });
 
-        onPhase?.({
+        reportPhase({
             stage: 'persistence',
             status: 'in-progress',
             message: 'Persistiendo artefacto y preparando el canvas.',
@@ -310,7 +317,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
                 setActiveArtifactId(addedArtifact.id);
             }
         }
-        onPhase?.({
+        reportPhase({
             stage: 'persistence',
             status: 'success',
             message: 'Artefacto persistido y abriendo el canvas.',
@@ -540,50 +547,14 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden min-h-0 md:pl-14">
 
-        {/* Loading Overlay — branded as "AI Architect en acción". */}
         {(isGenerating || pendingOpenArtifactId) && (
-            <div className="fixed inset-0 bg-black/55 backdrop-blur-md flex flex-col items-center justify-center z-[200] animate-fade-in" role="dialog" aria-modal="true" aria-label="Procesando">
-                <div className="bg-white dark:bg-gray-900 px-8 py-7 rounded-2xl shadow-pop flex flex-col items-center max-w-sm w-full mx-6 border border-gray-100 dark:border-gray-800 animate-slide-up">
-                    <div className="relative mb-5 ai-orbit rounded-full p-1">
-                        <div className="relative h-14 w-14 rounded-full bg-ai-gradient flex items-center justify-center shadow-glow-ai">
-                            <SparklesIcon className="h-7 w-7 text-white" />
-                        </div>
-                    </div>
-                    <p className="text-2xs uppercase tracking-widest-2 text-ai-600 dark:text-ai-300 font-semibold mb-1">
-                        {pendingOpenArtifactId ? 'Lienzo' : 'AI Architect'}
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mb-1.5 text-center">
-                      {pendingOpenArtifactId ? 'Abriendo lienzo' : 'Generando artefacto'}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4 leading-relaxed">
-                      {pendingOpenArtifactId ? 'Preparando la vista del artefacto recién generado…' : generatingMessage}
-                    </p>
-                    {/* Indeterminate progress strip */}
-                    <div className="w-full h-1 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                        <div className="h-full w-full progress-indeterminate" />
-                    </div>
-                    {!pendingOpenArtifactId && (
-                        <div className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-left dark:border-gray-800 dark:bg-gray-950/60">
-                            <div className="flex items-center justify-between gap-3">
-                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Estado resiliente</span>
-                                <span className="font-mono text-2xs text-gray-500">{generationElapsedSec}s</span>
-                            </div>
-                            <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                                Puedes liberar la pantalla sin perder trazabilidad. Si el proveedor IA se demora o falla, el sistema mostrará diagnóstico y opción de reintento.
-                            </p>
-                            {generationElapsedSec >= 20 && (
-                                <button
-                                    type="button"
-                                    onClick={handleDismissGenerationOverlay}
-                                    className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-white dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
-                                >
-                                    Recuperar acceso al workspace
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
+            <GenerationOverlay
+                pendingOpenArtifactId={pendingOpenArtifactId}
+                generatingMessage={generatingMessage}
+                generationStage={generationStage}
+                generationElapsedSec={generationElapsedSec}
+                onDismiss={handleDismissGenerationOverlay}
+            />
         )}
 
         {/* Workspace shell: main canvas/hub on the left, persistent copilot on the right */}
