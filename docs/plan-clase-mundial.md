@@ -151,7 +151,7 @@ registra en su PR.
 
 | Métrica | Hoy | Objetivo | Cómo se mide |
 |---|---|---|---|
-| Fidelidad de exportación (DOCX/PPTX/PDF) | DOCX: filas, tablas, títulos y diagramas 100 % (9.1). PPTX: tablas y filas 0 %, notas 0 %, *layouts* 0/14. PDF: filas 81,6 %, diagramas 0 % (9.0) | 100 % de tablas, filas, diagramas y notas preservados | `npm run eval:exports` |
+| Fidelidad de exportación (DOCX/PPTX/PDF) | DOCX: filas, tablas, títulos y diagramas 100 % (9.1). PPTX: tablas, filas y notas 100 %, *layouts* 14/14 (9.2). PDF: filas 81,6 %, diagramas 0 % (9.0) | 100 % de tablas, filas, diagramas y notas preservados | `npm run eval:exports` |
 | Caracteres perdidos en el PDF | 27 en el corpus (9.0) | 0 en el corpus | `npm run eval:exports` |
 | Fases visibles en la generación principal | 0 de 12 | 100 %, con nombre en español | Prueba de componente |
 | Tiempo hasta el primer contenido visible al generar | fin de la generación | menos de 3 s con proveedor simulado | E2E con `page.route('**/api/ai')` |
@@ -777,8 +777,8 @@ presupuesto que consumirán las olas 11 y 12.
 | Tarea | Estado | PR |
 |---|---|---|
 | 9.0 Banco de exportación | Hecha | #154 |
-| 9.1 DOCX nativo | En revisión | #156 |
-| 9.2 PPTX nativo | Pendiente | |
+| 9.1 DOCX nativo | Hecha | #156 |
+| 9.2 PPTX nativo | En revisión | rama `clase-mundial/9.2-pptx-nativo` |
 | 9.3 PDF sin pérdidas | Pendiente | |
 | 9.4 Recibo de exportación | Pendiente | |
 | 10.0 Medición del recorrido de generación | Pendiente | |
