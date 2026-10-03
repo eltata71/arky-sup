@@ -1,5 +1,17 @@
 # Export hardening — Arky Pro
 
+## PPTX nativo (ola 9.2)
+
+El PPTX es un paquete PresentationML: un patrón de diapositivas con 14
+*layouts* —uno por `PresentationLayout`, nombrado por su id—, tablas `a:tbl`
+(filas completadas al ancho de la mayor), KPI y avisos como formas (la
+tendencia lleva glifo y palabra, el aviso su tono: nunca solo color), línea de
+tiempo dibujada, notas del orador en partes `notesSlide` y el diagrama como
+imagen con pie; sin raster conserva `[diagrama]` y el Mermaid. Las partes se
+construyen en `services/export/adapters/pptx/` y el adaptador se importa al
+exportar. `npm run eval:exports` lo mide: tablas, filas y notas 100 %, 14/14
+*layouts*. La comprobación manual en PowerPoint/Keynote queda a cargo del propietario.
+
 ## DOCX nativo (ola 9.1)
 
 El DOCX define sus propios estilos `Title`, `Heading1`–`Heading3`, `Caption`,

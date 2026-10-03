@@ -8,11 +8,11 @@
       "diagramasIncrustados": 100
     },
     "pptx": {
-      "filasPreservadas": 0,
-      "tablasNativas": 0,
+      "filasPreservadas": 100,
+      "tablasNativas": 100,
       "diagramasIncrustados": 100,
-      "notasOrador": 0,
-      "layoutsRespetados": 0
+      "notasOrador": 100,
+      "layoutsRespetados": 14
     },
     "pdf": {
       "filasPreservadas": 81.6,
@@ -22,34 +22,6 @@
     }
   },
   "defectosConocidos": [
-    {
-      "id": "H4",
-      "tarea": "9.2",
-      "formato": "pptx",
-      "metrica": "tablasNativas",
-      "descripcion": "El PPTX aplana las tablas a líneas «a | b»; no hay a:tbl."
-    },
-    {
-      "id": "H4",
-      "tarea": "9.2",
-      "formato": "pptx",
-      "metrica": "filasPreservadas",
-      "descripcion": "Sin a:tbl, ninguna fila llega como fila."
-    },
-    {
-      "id": "H4",
-      "tarea": "9.2",
-      "formato": "pptx",
-      "metrica": "notasOrador",
-      "descripcion": "El PPTX no escribe notesSlide: las speakerNotes se pierden."
-    },
-    {
-      "id": "H4",
-      "tarea": "9.2",
-      "formato": "pptx",
-      "metrica": "layoutsRespetados",
-      "descripcion": "Todas las diapositivas usan un único slideLayout «Title and Content»."
-    },
     {
       "id": "H5",
       "tarea": "9.3",

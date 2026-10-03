@@ -15,7 +15,6 @@ import { jsonExporter } from './adapters/jsonExporter';
 import { pdfExporter } from './adapters/pdfExporter';
 import { xlsxExporter } from './adapters/xlsxExporter';
 import { mermaidExporter, diagramJsonExporter } from './adapters/diagramExporter';
-import { pptxExporter } from './adapters/pptxExporter';
 
 const adapters: Partial<Record<ExportFormat, ExportAdapter>> = {
   md: markdownExporter,
@@ -27,7 +26,6 @@ const adapters: Partial<Record<ExportFormat, ExportAdapter>> = {
   xlsx: xlsxExporter,
   mermaid: mermaidExporter,
   'diagram-json': diagramJsonExporter,
-  pptx: pptxExporter,
 };
 
 /** Build the quality traceability payload recorded on every export attempt. */
@@ -64,7 +62,9 @@ export async function exportArtifact(requested: ExportContext, format: ExportFor
     }
     const adapter = format === 'docx'
       ? (await import('./adapters/docxExporter')).docxExporter
-      : adapters[format];
+      : format === 'pptx'
+        ? (await import('./adapters/pptxExporter')).pptxExporter
+        : adapters[format];
     if (!adapter) throw new ExportError('Formato no disponible.', `No existe adapter para ${format}.`);
     const file = await adapter.export(context);
     await validateExportedBlob(format, file.blob);
