@@ -106,10 +106,14 @@ test('el recorrido de generación, medido', async ({ page, request }) => {
   await expect.poll(async () => { const g = await progress(); return g.indicator !== null || g.final !== null; }, {
     timeout: 30_000, message: 'No apareció ningún indicador de que se estaba generando',
   }).toBe(true);
-  const railLink = page.getByRole('navigation').first().getByRole('link').first();
+  const railLink = page.locator('aside[aria-label="Navegación principal"]').getByRole('button', { name: /Proyectos/ });
   const navegacionRespondeDuranteGeneracion = (await progress()).final === null
     ? await railLink.click({ trial: true, timeout: 1_000 }).then(() => true, () => false)
     : null;
+
+  // 10.2 leaves the architect on the current screen. The finished card offers
+  // the explicit transition to the canvas, so the timeline includes that tap.
+  await page.getByRole('complementary', { name: 'Centro de generaciones' }).getByRole('button', { name: 'Abrir' }).click({ timeout: 150_000 });
 
   await expect.poll(() => page.evaluate(() => (window as unknown as { __gen: { final: number | null } }).__gen.final), {
     timeout: 150_000, message: 'La generación no terminó en pantalla',
@@ -158,4 +162,70 @@ test('el recorrido de generación, medido', async ({ page, request }) => {
   // Lo único que se afirma es que el recorrido se completó y pasó por el proveedor.
   expect(report.llamadasAlProveedor).toBeGreaterThan(0);
   expect(timeline.primerContenidoMs).not.toBeNull();
+});
+
+test('tres generaciones continúan al navegar', async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await signInE2E(page);
+  await fakeStreamingAiProvider(page);
+  const initiativeId = await createInitiative(page, `Cola E2E ${uniqueSuffix()}`);
+  const projectId = await createProjectFor(page, request, initiativeId);
+  await page.goto(`/workspace/${projectId}`);
+  await page.getByRole('button', { name: /Catálogo/ }).first().click();
+  for (const name of ['Visión de la Arquitectura', 'Principios de Arquitectura', 'Análisis de Stakeholders']) {
+    const card = page.locator('div').filter({ has: page.getByRole('heading', { level: 4, name, exact: true }) })
+      .filter({ has: page.getByRole('button', { name: /Crear Artefacto/ }) }).last();
+    await card.getByRole('button', { name: /Crear Artefacto/ }).click();
+    await page.getByRole('button', { name: 'Cerrar centro de generaciones' }).click();
+  }
+  await page.getByRole('button', { name: 'Abrir centro de generaciones' }).click();
+  const center = page.getByRole('complementary', { name: 'Centro de generaciones' });
+  await expect(center.getByRole('listitem')).toHaveCount(3);
+  await page.locator('aside[aria-label="Navegación principal"]').getByRole('button', { name: /Proyectos/ }).click();
+  await expect(page).toHaveURL('/projects');
+  await expect(center.getByRole('listitem')).toHaveCount(3);
+  await expect(center.getByRole('button', { name: 'Abrir' })).toHaveCount(3, { timeout: 150_000 });
+
+});
+
+test('cancelar una generación no persiste un artefacto', async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await signInE2E(page);
+  await fakeStreamingAiProvider(page);
+  const initiativeId = await createInitiative(page, `Cancelación E2E ${uniqueSuffix()}`);
+  const projectId = await createProjectFor(page, request, initiativeId);
+  await page.goto(`/workspace/${projectId}`);
+  await page.getByRole('button', { name: /Catálogo/ }).first().click();
+  const card = page.locator('div').filter({ has: page.getByRole('heading', { level: 4, name: 'Visión de la Arquitectura', exact: true }) })
+    .filter({ has: page.getByRole('button', { name: /Crear Artefacto/ }) }).last();
+  await card.getByRole('button', { name: /Crear Artefacto/ }).click();
+  const center = page.getByRole('complementary', { name: 'Centro de generaciones' });
+  await center.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(center).toContainText('Cancelado');
+  await page.waitForTimeout(REALISTIC_TIMING.firstChunkMs + REALISTIC_TIMING.chunks * REALISTIC_TIMING.chunkMs + 1000);
+  await page.reload();
+  await page.getByRole('button', { name: /Catálogo/ }).first().click();
+  await expect(card.getByRole('button', { name: /Crear Artefacto/ })).toBeVisible();
+});
+
+test('una recarga informa los trabajos interrumpidos sin restaurar trabajos fantasma', async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await signInE2E(page);
+  await fakeStreamingAiProvider(page);
+  const initiativeId = await createInitiative(page, `Interrupción E2E ${uniqueSuffix()}`);
+  const projectId = await createProjectFor(page, request, initiativeId);
+  await page.goto(`/workspace/${projectId}`);
+  await page.getByRole('button', { name: /Catálogo/ }).first().click();
+  for (const name of ['Visión de la Arquitectura', 'Principios de Arquitectura']) {
+    const card = page.locator('div').filter({ has: page.getByRole('heading', { level: 4, name, exact: true }) })
+      .filter({ has: page.getByRole('button', { name: /Crear Artefacto/ }) }).last();
+    await card.getByRole('button', { name: /Crear Artefacto/ }).click();
+    await page.getByRole('button', { name: 'Cerrar centro de generaciones' }).click();
+  }
+  await page.getByRole('button', { name: 'Abrir centro de generaciones' }).click();
+  await expect(page.getByRole('complementary', { name: 'Centro de generaciones' }).getByRole('listitem')).toHaveCount(2);
+  await page.reload();
+  await expect(page.getByText('2 generaciones interrumpidas', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir centro de generaciones' }).click();
+  await expect(page.getByRole('complementary', { name: 'Centro de generaciones' }).getByRole('listitem')).toHaveCount(0);
 });

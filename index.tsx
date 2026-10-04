@@ -15,6 +15,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ObservabilityProvider } from './context/ObservabilityContext';
 import { AriaAnnouncerProvider } from './hooks/useAriaAnnouncer';
 import { observabilityService } from './services/observability';
+import { GenerationQueueProvider } from './hooks/artifacts/useGenerationQueue';
 
 // Vite validates the same contract during build. Keeping a runtime assertion
 // protects deployments produced by non-standard build wrappers as well.
@@ -62,7 +63,7 @@ const app = (
                     <AriaAnnouncerProvider>
                       <BrowserRouter>
                         <CommandPaletteProvider>
-                          <App />
+                          <GenerationQueueProvider><App /></GenerationQueueProvider>
                         </CommandPaletteProvider>
                       </BrowserRouter>
                     </AriaAnnouncerProvider>
