@@ -38,6 +38,7 @@ import {
 } from './artifacts';
 import { isPresentationArtifactType } from '../lib/artifacts/artifactKind';
 import { useArtifactSuggestions } from '../hooks/artifacts/useArtifactSuggestions';
+import { useAiUndo } from '../hooks/artifacts/useAiUndo';
 import {
   assessHardBlockContext,
   assessVisualGate,
@@ -93,6 +94,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
 }) => {
   const { restoreArtifactVersion, settings, createArtifact, updateArtifact, getArtifact } = useAppContext();
   const { addToast } = useToast();
+  const { offerVersionUndo } = useAiUndo();
   const { profile } = useAuth();
   const isMobile = useIsMobile();
 
@@ -451,14 +453,14 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
       const newVersion = restoreArtifactVersion(project.id, { ...artifact, ...withDiagramContent(artifact, newContent) });
       setActiveArtifactId(newVersion.id);
       setShowSuggestions(false);
-      addToast('Mejoras aplicadas con IA como nueva versión.', 'success');
+      offerVersionUndo(artifact, newVersion, 'mejoras con IA', 'Mejoras aplicadas con IA.', setActiveArtifactId);
     } catch (error) {
       console.error('Error applying AI improvements:', error);
       addToast('No se pudieron aplicar las mejoras con IA. Reintenta más tarde.', 'error');
     } finally {
       if (isMounted.current) setIsApplyingSuggestions(false);
     }
-  }, [suggestions.report, isApplyingSuggestions, artifact, project, modelCalls, restoreArtifactVersion, setActiveArtifactId, addToast]);
+  }, [suggestions.report, isApplyingSuggestions, artifact, project, modelCalls, restoreArtifactVersion, setActiveArtifactId, addToast, offerVersionUndo]);
 
   // Gap 13 / Gap 3: the Sugerencias panel's action dispatcher lives in
   // `useSuggestionActionRunner`, which mutates the IR deterministically and

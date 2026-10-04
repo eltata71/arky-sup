@@ -2,6 +2,7 @@ import React, { useEffect, useId, useState } from 'react';
 import type { Artifact } from '../../../lib/artifacts';
 import { useAppContext } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
+import { useAiUndo } from '../../../hooks/artifacts/useAiUndo';
 import { useDiagramModification } from '../../../hooks/artifacts/useDiagramModification';
 import { Alert, Button, Drawer } from '../../ui';
 import { SparklesIcon } from '../../Icons';
@@ -42,6 +43,7 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
 }) => {
   const { settings, restoreArtifactVersion, getProject } = useAppContext();
   const { addToast } = useToast();
+  const { offerUndo } = useAiUndo();
   const { state, canModify, propose, apply, discard } = useDiagramModification({
     projectId,
     artifact,
@@ -72,7 +74,12 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
       return;
     }
     const count = result.summary.length;
-    addToast(`Diagrama modificado: ${count} cambio${count === 1 ? '' : 's'}. La versión anterior queda en el historial.`, 'success');
+    offerUndo({
+      projectId,
+      label: 'modificación del diagrama',
+      steps: [{ before: artifact, producedId: result.versionId }],
+      onUndone: ([restored]) => onVersionCreated(restored.id),
+    }, `Diagrama modificado: ${count} cambio${count === 1 ? '' : 's'}. La versión anterior queda en el historial.`);
     setInstruction('');
     onVersionCreated(result.versionId);
     onClose();

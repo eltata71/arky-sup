@@ -83,6 +83,8 @@ export interface ArtifactPlan {
   readonly write: ArtifactWrite;
   /** El artefacto que la intención produjo, cuando produjo uno. */
   readonly produced?: Artifact;
+  /** Todas las versiones que produjo, cuando una intención crea varias (consistencia). */
+  readonly producedAll?: readonly Artifact[];
 }
 
 const OPERATION: Record<ArtifactIntent['kind'], string> = {
@@ -178,6 +180,7 @@ export const planArtifactIntent = (
       return {
         operation,
         change: (list) => [...list, ...versions],
+        producedAll: versions,
         // Una intención, una transacción: todas las versiones o ninguna
         // (ADR-106 §4), así que una corrección nunca queda a medias.
         write: { kind: 'revise', changes: versions.map((artifact) => ({ op: 'create-version' as const, artifact })) },

@@ -99,7 +99,7 @@ describe('DiagramModifyPanel', () => {
     expect(version.changeNote).toMatchObject({ basedOnVersion: 1, instruction: 'renombra la API' });
     expect(onVersionCreated).toHaveBeenCalledWith('a1-v2');
     expect(onClose).toHaveBeenCalled();
-    expect(app.addToast).toHaveBeenCalledWith(expect.stringContaining('1 cambio'), 'success');
+    expect(app.addToast).toHaveBeenCalledWith(expect.stringContaining('1 cambio'), 'success', expect.objectContaining({ action: expect.objectContaining({ label: 'Deshacer' }) }));
   });
 
   it('descartar olvida la propuesta sin escribir', async () => {

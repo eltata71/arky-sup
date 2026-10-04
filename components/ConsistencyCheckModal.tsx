@@ -3,6 +3,7 @@ import { Modal } from './Modal';
 import { useAppContext, type Project } from '../context/AppContext';
 import { ConsistencySuggestion } from '../types';
 import { assistantService } from '../services/ai';
+import { useAiUndo } from '../hooks/artifacts/useAiUndo';
 import { CheckCircleIcon } from './Icons';
 
 interface ConsistencyCheckModalProps {
@@ -13,6 +14,7 @@ interface ConsistencyCheckModalProps {
 
 export const ConsistencyCheckModal: React.FC<ConsistencyCheckModalProps> = ({ isOpen, onClose, project }) => {
     const { settings, applyConsistencySuggestion, getArtifact } = useAppContext();
+    const { offerUndo } = useAiUndo();
     const [isLoading, setIsLoading] = useState(true);
     const [suggestions, setSuggestions] = useState<ConsistencySuggestion[]>([]);
     const isMounted = useRef(true);
@@ -46,7 +48,26 @@ export const ConsistencyCheckModal: React.FC<ConsistencyCheckModalProps> = ({ is
     }, [isOpen, project, settings]);
     
     const handleApplySuggestion = (suggestion: ConsistencySuggestion) => {
-        applyConsistencySuggestion(project.id, suggestion);
+        const before = suggestion.changes.flatMap(change => {
+            const target = getArtifact(project.id, change.artifactId);
+            if (!target) return [];
+            const latest = project.artifacts
+                .filter(a => a.versionGroupId === target.versionGroupId)
+                .reduce((top, a) => (a.version > top.version ? a : top), target);
+            return [latest];
+        });
+        const produced = applyConsistencySuggestion(project.id, suggestion);
+        if (produced.length > 0) {
+            offerUndo({
+                projectId: project.id,
+                label: 'corrección de consistencia',
+                steps: produced.map(version => ({
+                    producedId: version.id,
+                    before: before.find(b => b.versionGroupId === version.versionGroupId) ?? version,
+                })),
+                onUndone: () => setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, isApplied: false } : s)),
+            }, 'Corrección aplicada como versión nueva.');
+        }
         // Update local state to show it's applied
         setSuggestions(prev => prev.map(s => s.id === suggestion.id ? { ...s, isApplied: true } : s));
     };
