@@ -12,6 +12,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { useCommandPalette, type Command } from './context/CommandPaletteContext';
 import { AppRail } from './components/AppRail';
 import { GenerationCenter } from './components/artifacts/GenerationCenter';
+import { AiChangeCard } from './components/artifacts/AiChangeCard';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { RuntimeErrorOverlay } from './components/RuntimeErrorOverlay';
 import { GlobalObservabilityCenter } from './components/GlobalObservabilityCenter';
@@ -219,6 +220,7 @@ const App: React.FC = () => {
       {/* Persistent navigation rail (hidden on /auth and on small screens). */}
       <AppRail onOpenShortcuts={() => setShortcutsOpen(true)} onOpenGuide={() => setGuideOpen(true)} />
       <GenerationCenter />
+      <AiChangeCard />
       {/* Mobile bottom navigation — visible below md, hidden when AppRail shows. */}
       <MobileBottomNav onOpenGuide={() => setGuideOpen(true)} />
 

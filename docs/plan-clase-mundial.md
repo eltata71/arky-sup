@@ -786,7 +786,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 10.2 Cola en segundo plano | Hecha | #162 |
 | 10.3 *Streaming* | Hecha | #163 · cierre 10.3b (lienzo provisional, nombres validados, E2E <3 s, guardrail antes del stream) |
 | 10.4 «Deshacer» en un clic | Hecha | #164 · cierre 10.4b (asistente, agente, copiloto y cola, con prueba por camino) |
-| 10.5 La IA explica qué cambió | Pendiente | |
+| 10.5 La IA explica qué cambió | Hecha | tarjeta de resumen derivada del mismo resultado del motor + resaltado de 600 ms (apagado con movimiento reducido) |
 | 11.0 Estándar declarado y fases ADM | Pendiente | |
 | 11.1 ArchiMate | Pendiente | |
 | 11.2 Inventario empresarial | Pendiente (R-17 resuelta: A) | |

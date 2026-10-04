@@ -12,6 +12,7 @@ import type { Settings } from '../../../types';
 import type { Artifact, ArtifactContextPorts, DocumentPatchRejection } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import { assembleArtifactContext, captureArtifactContext, documentEditService, renderArtifactContextBundle } from '../../ai';
+import { summarizeDocumentChange, type AiChangeSummary } from './aiChangeSummary';
 import { applyDocumentPatch, outlineOfDocument } from '../domain/documentPatchEngine';
 
 export type DocumentModificationOutcome =
@@ -23,6 +24,8 @@ export type DocumentModificationOutcome =
     readonly applied: readonly string[];
     readonly rejected: readonly DocumentPatchRejection[];
     readonly rationale?: string;
+    /** El mismo cambio, explicado para la tarjeta (10.5). */
+    readonly change: AiChangeSummary;
   }
   | { readonly kind: 'refused'; readonly reason: string; readonly rejected: readonly DocumentPatchRejection[] }
   | { readonly kind: 'cancelled' };
@@ -61,5 +64,11 @@ export const proposeDocumentModification = async (
       rejected: result.rejected,
     };
   }
-  return { kind: 'proposal', content: result.content, applied: result.applied, rejected: result.rejected, rationale: proposal.patch.rationale };
+  const change = summarizeDocumentChange({
+    artifactId: artifact.id,
+    before: content,
+    after: result.content,
+    applied: result.applied,
+  });
+  return { kind: 'proposal', content: result.content, applied: result.applied, rejected: result.rejected, rationale: proposal.patch.rationale, change };
 };
