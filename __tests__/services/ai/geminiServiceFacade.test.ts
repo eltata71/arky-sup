@@ -144,6 +144,19 @@ describe('geminiService façade — generateTextWithFallback streaming (10.3)', 
     expect(text).toBe('completo');
     expect(partials).toEqual([]);
   });
+
+  it('applies the input guardrails before the first stream call', async () => {
+    generateContentStream.mockResolvedValue((async function* () { yield { text: 'no debería llegar' }; })());
+    generateContent.mockResolvedValue({ text: 'no debería llegar' });
+    const partials: string[] = [];
+    const credential = `clave AIza${'A'.repeat(35)} en el prompt`;
+    await expect(
+      legacyTransport.generateTextWithFallback(settings, 'gemini-2.5-flash', credential, {}, { onPartial: t => partials.push(t) }),
+    ).rejects.toBeDefined();
+    expect(generateContentStream).not.toHaveBeenCalled();
+    expect(generateContent).not.toHaveBeenCalled();
+    expect(partials).toEqual([]);
+  });
 });
 
 describe('geminiService façade — OpenRouter dispatch', () => {

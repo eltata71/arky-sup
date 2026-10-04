@@ -8,6 +8,7 @@ import { cancelGenerationJob, changeGenerationJob, countInterrupted, planGenerat
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useAiUndo } from './useAiUndo';
 
 interface GenerationRequest {
   project: Project;
@@ -38,6 +39,7 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
   const { user, isLoading: authLoading } = useAuth();
   const { createArtifact, createArtifactVersion, updateArtifact } = useAppContext();
   const { addToast } = useToast();
+  const { offerUndo } = useAiUndo();
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const jobsRef = useRef<GenerationJob[]>([]);
@@ -152,6 +154,16 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
             artifactId = createArtifact(request.project.id, plan.draft).id;
           }
           update(current => changeGenerationJob(current, job.id, { status: 'done', phase: 'persistence', artifactId, finishedAt: Date.now() }));
+          // Un cambio sobre un artefacto existente se puede deshacer (10.4b); una creación nueva no tiene «antes».
+          if (request.existingArtifact && plan.kind !== 'create') {
+            offerUndo({
+              projectId: request.project.id,
+              label: `generación de «${request.template.name}»`,
+              steps: [{ before: request.existingArtifact, producedId: artifactId }],
+              onUndone: ([restored]) => navigate(`/workspace/${request.project.id}?artifact=${encodeURIComponent(restored.id)}`),
+            }, `«${request.template.name}» está listo.`);
+            return;
+          }
           addToast(`«${request.template.name}» está listo.`, 'success', {
             action: { label: 'Abrir', onClick: () => navigate(`/workspace/${request.project.id}?artifact=${encodeURIComponent(artifactId)}`) },
             durationMs: 10000,
@@ -171,7 +183,7 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
         }
       })();
     }
-  }, [jobs, update, addToast, createArtifact, createArtifactVersion, updateArtifact, navigate, retry]);
+  }, [jobs, update, addToast, createArtifact, createArtifactVersion, updateArtifact, navigate, retry, offerUndo]);
 
   return <GenerationQueueContext.Provider value={{ jobs, enqueue, cancel, retry, open, panelOpen, setPanelOpen }}>{children}</GenerationQueueContext.Provider>;
 }

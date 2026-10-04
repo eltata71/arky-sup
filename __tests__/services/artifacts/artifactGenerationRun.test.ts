@@ -16,6 +16,7 @@ vi.mock('../../../services/artifacts/application/artifactRefinementOrchestrator'
     refineArtifactBeforePersistence,
 }));
 
+const { mermaidToIR } = await import('../../../services/diagram');
 const { runArtifactGeneration } = await import('../../../services/artifacts/application/artifactGenerationRun');
 
 const project: Project = {
@@ -97,6 +98,20 @@ describe('runArtifactGeneration', () => {
         expect(fidelity.map(step => step.message)).toEqual([expect.stringMatching(/C4 de contexto.*otra notación/)]);
         expect(result.fidelity?.warnings.map(w => w.kind)).toEqual(['dialect']);
         expect(result.generationTrace.errors.every(step => step.stage === 'quality-gate' || fidelity.includes(step))).toBe(true);
+    });
+
+    it('muestra sólo los nombres que el lector validó, nunca un diagrama a medias (10.3)', async () => {
+        const partials: string[] = [];
+        generateArtifactContent.mockImplementation(async (...args: unknown[]) => {
+            const opts = args[4] as { onDiagramIR?: (ir: unknown) => void };
+            opts.onDiagramIR?.(mermaidToIR('graph TD\n  A[Cliente] --> B[API]\n'));
+            return 'graph TD\n  A[Cliente] --> B[API]\n';
+        });
+        await runArtifactGeneration({
+            project, template: diagramTemplate, settings, action: 'create', operationId: 'op-1',
+            startedAt: new Date().toISOString(), startedMs: Date.now(), onPartial: text => partials.push(text),
+        });
+        expect(partials).toEqual(['• Cliente\n• API']);
     });
 
     it('persists a deterministic fallback — never nothing — when the model returns empty content', async () => {

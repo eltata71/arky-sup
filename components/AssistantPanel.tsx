@@ -13,6 +13,7 @@ import { useAgentActions, type AgentExecutionTarget, type MemoryScope } from '..
 import { MODIFICATION_NOTES, useAssistantTurns } from '../hooks/useAssistantTurns';
 import { AgentActionCard, AgentResultCard, ProactiveAgentSuggestionCard } from './assistant/AgentActionCard';
 import { useAuth } from '../context/AuthContext';
+import { useAiUndo } from '../hooks/artifacts/useAiUndo';
 import { SafeRichText } from './ui/SafeRichText';
 
 interface AssistantPanelProps {
@@ -52,6 +53,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
     logAgentAction,
   } = useAppContext();
   const { profile } = useAuth();
+  const { offerUndo, offerVersionUndo } = useAiUndo();
   const [isRollingBack, setIsRollingBack] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
@@ -181,6 +183,12 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
             finalResponse += `\n\n${modification.note}`;
         } else if (modification.kind === 'update-current' && activeArtifact) {
             updateArtifact(project.id, activeArtifact.id, withDiagramContent(activeArtifact, modification.content));
+            offerUndo({
+              projectId: project.id,
+              label: 'cambio del asistente',
+              steps: [{ before: activeArtifact, producedId: activeArtifact.id }],
+              onUndone: ([restored]) => setActiveArtifactId(restored.id),
+            }, 'El asistente modificó el artefacto.');
             // updateArtifact resolves synchronously via the optimistic
             // setProjects branch in AppContext, so reading the artifact
             // back through getArtifact gives us the persisted snapshot we
@@ -196,6 +204,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
             });
             if (newVersion?.id) {
                 setActiveArtifactId(newVersion.id);
+                offerVersionUndo(activeArtifact, newVersion, 'versión del asistente', 'El asistente creó una versión nueva.', setActiveArtifactId);
                 finalResponse += `\n\n${MODIFICATION_NOTES.versionCreated(newVersion.version)}`;
             } else {
                 finalResponse += `\n\n${MODIFICATION_NOTES.versionFailed}`;
@@ -242,7 +251,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         setStreamingText(null);
       }
     }
-  }, [agent, assistantTurns, project, activeArtifact, settings, updateArtifact, createArtifactVersion, getArtifact, setActiveArtifactId, updateProjectContext]);
+  }, [agent, assistantTurns, project, activeArtifact, settings, updateArtifact, createArtifactVersion, getArtifact, setActiveArtifactId, updateProjectContext, offerUndo, offerVersionUndo]);
 
   const memoryStore = useAgentMemoryStore({
     settings, updateSettings, getProject, runProjectCommand,
@@ -379,9 +388,13 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
       if (result.status === 'success' || result.status === 'partial') {
         const targetId = result.newArtifactId ?? result.newArtifactVersionId;
         if (targetId) setActiveArtifactId(targetId);
+        const before = result.newArtifactVersionId ? getArtifact(project.id, result.previousArtifactVersionId) : undefined;
+        if (before && result.newArtifactVersionId) {
+          offerVersionUndo(before, { id: result.newArtifactVersionId }, 'acción del agente', 'El agente creó una versión nueva.', setActiveArtifactId);
+        }
       }
     },
-    [activeArtifact, agent, project, settings, messages, createArtifact, createArtifactVersion, updateArtifact, setActiveArtifactId, profile?.uid, profile?.displayName, logAgentAction, memoryStore, lessonStore],
+    [activeArtifact, agent, project, settings, messages, createArtifact, createArtifactVersion, updateArtifact, setActiveArtifactId, profile?.uid, profile?.displayName, logAgentAction, memoryStore, lessonStore, getArtifact, offerVersionUndo],
   );
 
   /**
