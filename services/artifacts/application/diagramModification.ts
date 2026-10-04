@@ -31,6 +31,7 @@ import { assembleArtifactContext, diagramEditService, renderArtifactContextBundl
 import { applySemanticPatch, reconcileIRWithContent, resolveEditableDiagramIR } from '../../diagram';
 import { rewriteDiagramContent } from './diagramContentRewrite';
 import { planCanvasEdit, type CanvasEdit } from './diagramCanvasEdit';
+import { summarizeDiagramChange, type AiChangeSummary } from './aiChangeSummary';
 
 type EditableSource = Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>;
 
@@ -58,6 +59,8 @@ export type DiagramModificationPlan =
       readonly draft: Artifact;
       /** Lo que hizo el motor, en frases que la persona lee. */
       readonly summary: readonly string[];
+      /** La misma aplicación del motor, explicada para la tarjeta de cambio (10.5). */
+      readonly change: AiChangeSummary;
     };
 
 const NOTHING_TO_EDIT = 'Este artefacto no tiene un diagrama que se pueda modificar.';
@@ -177,7 +180,12 @@ export const planDiagramModification = (params: {
     changes: summary,
     at: now(),
   };
-  return { kind: 'version', draft: { ...artifact, ir, content, changeNote }, summary };
+  return {
+    kind: 'version',
+    draft: { ...artifact, ir, content, changeNote },
+    summary,
+    change: summarizeDiagramChange({ artifactId: artifact.id, before: current, result }),
+  };
 };
 
 /**

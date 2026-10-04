@@ -2,6 +2,7 @@ import React, { useEffect, useId, useState } from 'react';
 import type { Artifact } from '../../../lib/artifacts';
 import { useAppContext } from '../../../context/AppContext';
 import { useToast } from '../../../context/ToastContext';
+import { aiChangeStore } from '../../../services/artifacts/application/aiChangeSummary';
 import { useAiUndo } from '../../../hooks/artifacts/useAiUndo';
 import { useDiagramModification } from '../../../hooks/artifacts/useDiagramModification';
 import { Alert, Button, Drawer } from '../../ui';
@@ -80,6 +81,7 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
       steps: [{ before: artifact, producedId: result.versionId }],
       onUndone: ([restored]) => onVersionCreated(restored.id),
     }, `Diagrama modificado: ${count} cambio${count === 1 ? '' : 's'}. La versión anterior queda en el historial.`);
+    aiChangeStore.set(result.change);
     setInstruction('');
     onVersionCreated(result.versionId);
     onClose();

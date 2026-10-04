@@ -9,6 +9,7 @@ import {
   proposeDiagramModification,
   type DiagramModificationProposal,
 } from '../../services/artifacts/application/diagramModification';
+import type { AiChangeSummary } from '../../services/artifacts/application/aiChangeSummary';
 
 export type { DiagramModificationProposal };
 
@@ -19,7 +20,7 @@ export type DiagramModificationState =
   | { readonly status: 'refused'; readonly reason: string; readonly rejected: readonly PatchRejection[] };
 
 export type DiagramModificationApplyResult =
-  | { readonly ok: true; readonly versionId: string; readonly summary: readonly string[] }
+  | { readonly ok: true; readonly versionId: string; readonly summary: readonly string[]; readonly change: AiChangeSummary }
   | { readonly ok: false; readonly reason: string };
 
 interface UseDiagramModificationParams {
@@ -97,7 +98,7 @@ export function useDiagramModification({
     }
     const version = restoreArtifactVersion(projectId, plan.draft);
     setState({ status: 'idle' });
-    return { ok: true, versionId: version.id, summary: plan.summary };
+    return { ok: true, versionId: version.id, summary: plan.summary, change: plan.change };
   }, [artifact, projectId, restoreArtifactVersion, state]);
 
   return { state, canModify, propose, apply, discard };
