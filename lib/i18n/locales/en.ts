@@ -14,5 +14,9 @@ export const en: Dictionary = {
   "rail.training.label": "Training", "rail.training.long": "Training Center", "rail.training.hint": "Courses and labs",
   "rail.settings.label": "Settings", "rail.settings.long": "Settings", "rail.settings.hint": "Theme, language, AI model and keys",
   "rail.security.label": "Security", "rail.security.long": "Security", "rail.security.hint": "Users, roles and permissions",
-  "rail.group.work": "The work", "rail.group.system": "The system", "rail.nav": "Main navigation", "rail.navMobile": "Main navigation (mobile)", "rail.goHome": "Go to command center", "rail.openGenerations": "Open generations center", "rail.search": "Search · ⌘K", "rail.more": "More", "rail.moreOptions": "More options"
+  "rail.group.work": "The work", "rail.group.system": "The system", "rail.nav": "Main navigation", "rail.navMobile": "Main navigation (mobile)", "rail.goHome": "Go to command center", "rail.openGenerations": "Open generations center", "rail.search": "Search · ⌘K", "rail.more": "More", "rail.moreOptions": "More options",
+  "addProjectContext": "Add project context",
+  "addMilestone": "Add milestone",
+  "addRisk": "Add risk",
+  "documentContent": "Document content"
 };

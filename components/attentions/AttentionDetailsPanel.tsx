@@ -30,6 +30,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { CaptureAssist, FormAssistBar } from '../capture';
 import { useAttentionRecordCapture } from '../../hooks/useLevelCapture';
 import { useAttentionInitiatives } from '../../hooks/useAttentionInitiatives';
+import { useAppContext } from '../../context/AppContext';
 import { AttentionTrackingPanel } from './AttentionTrackingPanel';
 import { AttentionContributionPanel } from './AttentionContributionPanel';
 import { EA_LEVELS } from '../../lib/eaTerminology';
@@ -58,6 +59,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
   onCommand,
   busy,
 }) => {
+  const { t } = useAppContext();
   const capture = useAttentionRecordCapture(project, initiatives);
   // Las que este proyecto atiende de verdad, por la regla del portafolio: ids
   // primero, códigos sólo como migración.
@@ -204,7 +206,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
             <Button
               variant="secondary"
               size="sm"
-              aria-label="Añadir contexto del proyecto"
+              aria-label={t('addProjectContext')}
               onClick={() => addContext(contextEntry)}
               disabled={busy || !contextEntry.trim()}
             >

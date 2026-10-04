@@ -21,6 +21,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { Badge, Button, Input, cn } from '../ui';
+import { useAppContext } from '../../context/AppContext';
 import { CalendarClock, Plus, ShieldAlert } from 'lucide-react';
 import {
   EmptyRow,
@@ -68,6 +69,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
   onPatch,
   busy,
 }) => {
+  const { t } = useAppContext();
   const tracking = project.attention ?? BASE_TRACKING;
   const progress = attentionProgress(project.attention);
 
@@ -318,7 +320,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
           <Button
             variant="secondary"
             size="sm"
-            aria-label="Añadir hito"
+            aria-label={t('addMilestone')}
             onClick={addMilestone}
             disabled={busy || !milestone.name.trim() || !milestone.dueAt}
           >
@@ -372,7 +374,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
               <option key={value} value={value}>{label}</option>
             ))}
           </select>
-          <Button variant="secondary" size="sm" aria-label="Añadir riesgo" onClick={addRisk} disabled={busy || !risk.description.trim()}>
+          <Button variant="secondary" size="sm" aria-label={t('addRisk')} onClick={addRisk} disabled={busy || !risk.description.trim()}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
           </Button>
         </div>

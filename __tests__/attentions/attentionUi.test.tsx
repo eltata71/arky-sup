@@ -155,7 +155,7 @@ describe('AttentionInitiativeGate', () => {
 
   it('emits the ids and derives the code mirror from them', () => {
     const { onContinue } = renderGate();
-    fireEvent.click(screen.getByRole('option', { name: new RegExp(need.title, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(need.title, 'i') }));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     expect(onContinue).toHaveBeenCalledWith({
       initiativeIds: [need.id],

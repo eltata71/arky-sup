@@ -15,5 +15,9 @@ export const es: Dictionary = {
   "rail.training.label": "Formación", "rail.training.long": "Centro de Formación", "rail.training.hint": "Cursos y laboratorios",
   "rail.settings.label": "Ajustes", "rail.settings.long": "Configuración", "rail.settings.hint": "Tema, idioma, modelo de IA y claves",
   "rail.security.label": "Seguridad", "rail.security.long": "Seguridad", "rail.security.hint": "Usuarios, roles y permisos",
-  "rail.group.work": "El trabajo", "rail.group.system": "El sistema", "rail.nav": "Navegación principal", "rail.navMobile": "Navegación principal (móvil)", "rail.goHome": "Ir al centro de mando", "rail.openGenerations": "Abrir centro de generaciones", "rail.search": "Buscar · ⌘K", "rail.more": "Más", "rail.moreOptions": "Más opciones"
+  "rail.group.work": "El trabajo", "rail.group.system": "El sistema", "rail.nav": "Navegación principal", "rail.navMobile": "Navegación principal (móvil)", "rail.goHome": "Ir al centro de mando", "rail.openGenerations": "Abrir centro de generaciones", "rail.search": "Buscar · ⌘K", "rail.more": "Más", "rail.moreOptions": "Más opciones",
+  "addProjectContext": "Añadir contexto del proyecto",
+  "addMilestone": "Añadir hito",
+  "addRisk": "Añadir riesgo",
+  "documentContent": "Contenido del documento"
 };

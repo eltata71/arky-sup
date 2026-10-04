@@ -128,7 +128,7 @@ describe('EngagementIntakeWizard — la jerarquía es obligatoria', () => {
       projects: [{ id: 'proj-a', name: 'Núcleo de pólizas' }],
       initiatives: [first],
     });
-    fireEvent.click(screen.getByRole('option', { name: new RegExp(first.title, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(first.title, 'i') }));
     fillBrief();
     submitBrief();
 
@@ -177,7 +177,7 @@ describe('EngagementIntakeWizard — la jerarquía es obligatoria', () => {
       initiatives: [first],
       initialProjectId: 'proj-b',
     });
-    fireEvent.click(screen.getByRole('option', { name: new RegExp(first.title, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(first.title, 'i') }));
     fillBrief();
     submitBrief();
 

@@ -117,8 +117,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   }, [project, searchParams, activeArtifactId, setSearchParams]);
 
   useEffect(() => {
-    // A project arrives from the portfolio with only an artifact index. Do not
-    // expire a deep link while its artifact bodies are still being hydrated.
     if (!pendingOpenArtifactId || project?.artifactsLoaded === false) return;
     const timeout = window.setTimeout(() => {
       setPendingOpenArtifactId(null);
@@ -308,7 +306,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden min-h-0 md:pl-14">
 
-        {pendingOpenArtifactId && <p role="status" className="mx-4 mt-3 text-sm text-gray-600">Abriendo artefacto…</p>}
+        {pendingOpenArtifactId && <p role="status" className="mx-4 mt-3 text-sm text-gray-600 dark:text-gray-300">Abriendo artefacto…</p>}
 
         {/* Workspace shell: main canvas/hub on the left, persistent copilot on the right */}
         <div className="flex flex-1 min-h-0 overflow-hidden">

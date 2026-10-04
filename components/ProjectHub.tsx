@@ -428,7 +428,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                         </button>
                         <button
                             onClick={() => setChatArtifact(createGlobalProjectArtifact())}
-                                className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-primary-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-primary-500/20 transition hover:bg-primary-800 dark:bg-primary-700 dark:hover:bg-primary-800"
+                                className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-primary-700 px-4 py-2 text-sm font-bold text-white shadow-primary-500/20 transition hover:bg-primary-800 dark:bg-primary-700 dark:hover:bg-primary-800"
                         >
                             <ChatBubbleLeftRightIcon className="mr-2 h-5 w-5" />
                             Arquitecto Agente
