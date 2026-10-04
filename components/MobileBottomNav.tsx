@@ -23,6 +23,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 import { can } from '../lib/authz';
 import { useCommandPalette } from '../context/CommandPaletteContext';
 import { cn } from './ui/cn';
@@ -30,7 +31,7 @@ import { AIArchitectAvatar } from './ui/AIArchitectIdentity';
 import { MoonIcon, SparklesIcon, SunIcon } from './Icons';
 import { EllipsisVertical, LifeBuoy } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
-import { RAIL_ITEMS } from './navigation/appRailItems';
+import { RAIL_ITEMS, railItemText } from './navigation/appRailItems';
 import { PRODUCT_SHORT_NAME } from '../lib/eaTerminology';
 
 interface NavItem {
@@ -70,6 +71,7 @@ export interface MobileBottomNavProps {
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenGuide }) => {
     const { user, profile } = useAuth();
+    const { t } = useAppContext();
     const navigate = useNavigate();
     const location = useLocation();
     const { setOpen: setPaletteOpen } = useCommandPalette();
@@ -84,25 +86,25 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenGuide })
     const items: NavItem[] = [
         ...WORKING_ITEMS.map((item) => ({
             id: item.id,
-            label: item.label,
-            name: item.longLabel,
+            label: railItemText(item.id, t).label,
+            name: railItemText(item.id, t).longLabel,
             icon: item.icon,
             href: item.href,
             match: item.match,
         })),
-        { id: 'palette', label: 'Buscar · ⌘K', icon: <SparklesIcon className="h-5 w-5" />, onClick: () => setPaletteOpen(true), flavor: 'ai' },
-        { id: 'more', label: 'Más', icon: <EllipsisVertical className="h-5 w-5" />, onClick: () => setMoreOpen(true) },
+        { id: 'palette', label: t('rail.search'), icon: <SparklesIcon className="h-5 w-5" />, onClick: () => setPaletteOpen(true), flavor: 'ai' },
+        { id: 'more', label: t('rail.more'), icon: <EllipsisVertical className="h-5 w-5" />, onClick: () => setMoreOpen(true) },
     ];
 
     // La hoja tiene sitio de sobra, así que ahí sí va el nombre largo visible.
     const systemItems: NavItem[] = SYSTEM_ITEMS
         .filter((item) => !item.permission || can(profile, item.permission))
-        .map((item) => ({ id: item.id, label: item.longLabel, icon: item.icon, href: item.href }));
+        .map((item) => ({ id: item.id, label: railItemText(item.id, t).longLabel, icon: item.icon, href: item.href }));
 
     return (
         <>
             <nav
-                aria-label="Navegación principal (móvil)"
+                aria-label={t('rail.navMobile')}
                 className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 pb-[env(safe-area-inset-bottom,0)]"
             >
                 {/* One column per destination; the count drives the grid rather than a
@@ -158,7 +160,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenGuide })
                 <div
                     role="dialog"
                     aria-modal="true"
-                    aria-label="Más opciones"
+                    aria-label={t('rail.moreOptions')}
                     className="md:hidden fixed inset-0 z-[110] bg-gray-950/60 backdrop-blur-sm"
                     onClick={() => setMoreOpen(false)}
                 >

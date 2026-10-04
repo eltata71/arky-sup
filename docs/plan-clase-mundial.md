@@ -801,7 +801,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 12.5 Barras por intención | Pendiente | |
 | 13.0 axe y regresión visual | Pendiente | |
 | 13.1 Movimiento reducido | Pendiente | |
-| 13.2 Idioma | Pendiente (R-16 resuelta: B, tamaño L) | |
+| 13.2 Idioma | En curso (R-16: B, tamaño L) | Infraestructura entregada: un módulo por idioma, inglés lazy, presupuesto monótono de literales (1 321 medidos); raíl y navegación móvil migrados. Falta la campaña de extracción hasta 0 |
 | 13.3 Primitivas | Pendiente | |
 | 13.4 Estados vacío, carga y error | Pendiente | |
 | 13.5 Microinteracciones | Pendiente | |

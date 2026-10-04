@@ -22,11 +22,12 @@ vi.mock('../../hooks/artifacts/useGenerationQueue', () => ({
  * contexto de la aplicación. Antes lo leía de `localStorage` por su cuenta, que
  * es exactamente la divergencia que dejaba el interruptor sin efecto.
  */
-const appState = { settings: { theme: 'light' as 'light' | 'dark' }, updateSettings: vi.fn() };
+const appState = { settings: { theme: 'light' as 'light' | 'dark' }, updateSettings: vi.fn(), t: (key: string) => translate(INITIAL_TRANSLATIONS, 'es', key) };
 vi.mock('../../context/AppContext', () => ({
   useAppContext: () => appState,
 }));
 
+import { INITIAL_TRANSLATIONS, translate } from '../../lib/i18n';
 import { AppRail } from '../../components/AppRail';
 
 const railLabels = (): string[] => Array.from(

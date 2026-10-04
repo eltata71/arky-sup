@@ -39,6 +39,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 import { can } from '../lib/authz';
 import { useCommandPalette } from '../context/CommandPaletteContext';
 import { Tooltip } from './ui/Tooltip';
@@ -49,7 +50,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useRailExpansion } from '../hooks/useRailExpansion';
 import { useKeyboardModality } from '../hooks/useKeyboardModality';
 import { SPRING } from '../lib/designTokens';
-import { RAIL_GROUP_LABELS, RAIL_ITEMS } from './navigation/appRailItems';
+import { RAIL_GROUP_LABEL_KEYS, RAIL_ITEMS, railItemText } from './navigation/appRailItems';
 import { AppRailFooter } from './navigation/AppRailFooter';
 import { RailRevealedText } from './navigation/RailRevealedText';
 import { PRODUCT_NAME } from '../lib/eaTerminology';
@@ -75,6 +76,7 @@ export interface AppRailProps {
 
 export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }) => {
     const { user, profile, logout } = useAuth();
+    const { t } = useAppContext();
     const navigate = useNavigate();
     const location = useLocation();
     const { setOpen: setPaletteOpen } = useCommandPalette();
@@ -114,7 +116,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
 
     return (
         <motion.aside
-            aria-label="Navegación principal"
+            aria-label={t('rail.nav')}
             onMouseEnter={openOnHover}
             onMouseLeave={closeOnHover}
             /*
@@ -159,7 +161,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                         type="button"
                         onClick={() => navigate('/')}
                         className="flex h-11 shrink-0 items-center gap-2.5 rounded-2xl px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                        aria-label="Ir al centro de mando"
+                        aria-label={t('rail.goHome')}
                     >
                         <AIArchitectAvatar size="sm" />
                         <RailRevealedText show={expanded} reduced={reducedMotion} className="min-w-0 truncate text-sm font-bold tracking-tight text-gray-900 dark:text-gray-50">
@@ -173,8 +175,9 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                 <nav className="flex flex-col gap-0.5">
                     {items.map((item, index) => {
                         const active = item.match(location.pathname);
+                        const text = railItemText(item.id, t);
                         const startsGroup = index > 0 && items[index - 1].group !== item.group;
-                        const groupLabel = RAIL_GROUP_LABELS[item.group];
+                        const groupLabel = (RAIL_GROUP_LABEL_KEYS[item.group] ? t(RAIL_GROUP_LABEL_KEYS[item.group] as string) : null);
                         return (
                             <React.Fragment key={item.id}>
                                 {startsGroup && (
@@ -188,7 +191,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                                             : <span className="h-px w-6 bg-gray-200 dark:bg-gray-800" />}
                                     </div>
                                 )}
-                                {withTooltip(item.hint ? `${item.longLabel} · ${item.hint}` : item.longLabel, (
+                                {withTooltip(text.hint ? `${text.longLabel} · ${text.hint}` : text.longLabel, (
                                     <button
                                         type="button"
                                         onClick={() => navigate(item.href)}
@@ -197,7 +200,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                                         // estados. Todo el texto visible es
                                         // `aria-hidden`, así que abrir el raíl cambia
                                         // lo que se ve y nunca lo que se anuncia.
-                                        aria-label={item.longLabel}
+                                        aria-label={text.longLabel}
                                         className={cn(
                                             'relative flex w-full rounded-xl transition-colors',
                                             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
@@ -231,16 +234,16 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                                         </span>
                                         {expanded ? (
                                             <RailRevealedText show reduced={reducedMotion} className="flex min-w-0 flex-1 flex-col text-left">
-                                                <span className="truncate text-sm font-semibold leading-tight">{item.longLabel}</span>
-                                                {item.hint && (
+                                                <span className="truncate text-sm font-semibold leading-tight">{text.longLabel}</span>
+                                                {text.hint && (
                                                     <span className="truncate text-2xs leading-tight text-gray-500 dark:text-gray-500">
-                                                        {item.hint}
+                                                        {text.hint}
                                                     </span>
                                                 )}
                                             </RailRevealedText>
                                         ) : (
                                             <span aria-hidden className="w-full truncate text-center text-[9px] font-semibold leading-tight tracking-tight">
-                                                {item.label}
+                                                {text.label}
                                             </span>
                                         )}
                                         {active && <span className={cn('absolute top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary-500', expanded ? '-left-2' : '-left-1')} aria-hidden />}
@@ -250,7 +253,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                         );
                     })}
                 </nav>
-                <button type="button" onClick={() => setPanelOpen(true)} aria-label="Abrir centro de generaciones" className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-gray-800">
+                <button type="button" onClick={() => setPanelOpen(true)} aria-label={t('rail.openGenerations')} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-gray-800">
                     <span aria-hidden>✦</span>{expanded && <span>Generaciones</span>}{jobs.some(job => job.status === 'running' || job.status === 'queued') && <span className="rounded-full bg-primary-600 px-1.5 text-xs text-white">{jobs.filter(job => job.status === 'running' || job.status === 'queued').length}</span>}
                 </button>
             </div>

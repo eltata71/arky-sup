@@ -311,8 +311,9 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
 16. **`context/AppContext.tsx` es composición y nada más.** Un `useState`, un
    `useEffect` o una importación de `services/` en ese archivo es un hallazgo:
    cada concern vive en un hook bajo `context/app/`, y `projects` tiene un solo
-   dueño (`useProjectsState`). El diccionario `en`/`es` está en `lib/i18n/` y
-   ambos idiomas llevan las mismas claves. Detalle en CLAUDE.md →
+   dueño (`useProjectsState`). El diccionario `en`/`es` está en `lib/i18n/locales/` (inglés
+   cargado con `import()`), ambos idiomas llevan las mismas claves y
+   `literalBudget.test.ts` impide que suban los literales de JSX (R-16). Detalle en CLAUDE.md →
    *`AppContext` is one context composed of seven hooks*.
 17. **Producción la publica un solo camino, y es `ci.yml`.** El contrato
     versionado `docs/operacion/despliegue.json` fija el repositorio
