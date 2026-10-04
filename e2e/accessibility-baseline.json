@@ -1,0 +1,17 @@
+{
+  "comentario": "13.0 — violaciones de axe (WCAG 2.2 A/AA) por pantalla, como ids de regla. null = aún sin medir (el primer CI las registra). La lista sólo puede encogerse: una regla nueva, o una pantalla con más reglas que su línea base, falla.",
+  "pantallas": {
+    "dashboard": null,
+    "iniciativas": null,
+    "proyectos": null,
+    "oficina": null,
+    "agentes": null,
+    "configuracion": null,
+    "formacion": null,
+    "usuarios": null,
+    "espacio-de-trabajo": null,
+    "proceso-sdd": null,
+    "artefacto-diagrama": null,
+    "artefacto-documento": null
+  }
+}
