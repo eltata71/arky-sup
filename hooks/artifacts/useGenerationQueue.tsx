@@ -116,6 +116,7 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
           }
           if (jobsRef.current.find(item => item.id === job.id)?.status !== 'running') return;
           const startedMs = Date.now();
+          let lastPartialAt = 0;
           const result = await runArtifactGeneration({
             project: request.project, template: request.template, settings: request.settings,
             existingArtifact: request.existingArtifact, action: request.action,
@@ -126,6 +127,14 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
               if (jobsRef.current.find(item => item.id === job.id)?.status === 'running') {
                 update(current => changeGenerationJob(current, job.id, { phase: event.stage }));
                 request.onPhase?.(event);
+              }
+            },
+            onPartial: text => {
+              const now = Date.now();
+              if (now - lastPartialAt < 150) return;
+              lastPartialAt = now;
+              if (jobsRef.current.find(item => item.id === job.id)?.status === 'running') {
+                update(current => changeGenerationJob(current, job.id, { partial: text }));
               }
             },
             onWarning: message => addToast(message, 'warning', { durationMs: 8000 }),

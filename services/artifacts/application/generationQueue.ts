@@ -15,6 +15,7 @@ export interface GenerationJob {
   finishedAt?: number;
   status: GenerationStatus;
   phase?: string;
+  partial?: string;
   artifactId?: string;
   failure?: { headline: string; message: string; detail: string; retryable: boolean };
 }
@@ -39,7 +40,7 @@ export function cancelGenerationJob(jobs: readonly GenerationJob[], id: string, 
 
 export function retryGenerationJob(jobs: readonly GenerationJob[], id: string, at: number): GenerationJob[] {
   return jobs.map(job => job.id === id && job.status === 'failed'
-    ? { ...job, status: 'queued', enqueuedAt: at, startedAt: undefined, finishedAt: undefined, failure: undefined, phase: undefined } : job);
+    ? { ...job, status: 'queued', enqueuedAt: at, startedAt: undefined, finishedAt: undefined, failure: undefined, phase: undefined, partial: undefined } : job);
 }
 
 export function countInterrupted(jobs: readonly GenerationJob[]): number {

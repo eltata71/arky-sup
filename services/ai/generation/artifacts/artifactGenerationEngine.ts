@@ -187,7 +187,7 @@ class ArtifactGenerationEngine {
         previousArtifact: Artifact | undefined,
         opts: ArtifactContentGenerationOptions,
     ): Promise<string> {
-        const { onPhase, support } = opts;
+        const { onPhase, support, onPartial } = opts;
         const stageTimings = new Map<string, number>();
         const emit = (event: Omit<ArtifactGenerationPhaseEvent, 'at'>) =>
             emitGenerationPhase(onPhase, event, stageTimings);
@@ -857,11 +857,13 @@ ${catalogDocumentReinforcement}
                 timeoutMs: isDiagramArtifact ? 75000 : 90000,
                 maxCandidates: isDiagramArtifact ? 3 : 3,
                 maxRetries: 2,
+                onPartial: isDiagramArtifact ? undefined : onPartial,
             } : {
                 // Catalog artefacts also benefit from a couple of retries on
                 // transient errors — the user has no reason to be punished by
                 // a single 503 when Gemini routinely recovers in 1-3s.
                 maxRetries: 2,
+                onPartial: isDiagramArtifact ? undefined : onPartial,
             });
             if (!raw || raw.trim().length === 0) {
                 console.warn(`[artifactGenerationEngine] Empty generation for "${template.name}"; using deterministic fallback.`);

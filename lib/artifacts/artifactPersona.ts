@@ -116,6 +116,12 @@ export interface ArtifactGenerationOptions extends ArtifactContextPorts {
    * Not called for a skeleton — that IR is the system's, not the model's.
    */
   onDiagramIR?: (ir: DiagramIR) => void;
+  /**
+   * The text of a document or presentation as the model writes it (10.3), the
+   * whole text so far on each call. Never called for diagrams: an IR cannot be
+   * shown half-written without lying about what the diagram is.
+   */
+  onPartial?: (accumulated: string) => void;
 
   /**
    * Told, in one Spanish sentence, when a path saved something other than

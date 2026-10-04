@@ -21,4 +21,9 @@ describe('generation queue', () => {
     const failed = changeGenerationJob(cancelled, '2', { status: 'failed', failure: { headline: 'x', message: 'x', detail: 'x', retryable: true } });
     expect(retryGenerationJob(failed, '2', 200)[1]).toMatchObject({ status: 'queued', enqueuedAt: 200, failure: undefined });
   });
+
+  it('clears the partial preview when a failed job is retried', () => {
+    const failed = changeGenerationJob([job('1')], '1', { status: 'failed', partial: 'texto', failure: { headline: 'x', message: 'x', detail: 'x', retryable: true } });
+    expect(retryGenerationJob(failed, '1', 5)[0].partial).toBeUndefined();
+  });
 });

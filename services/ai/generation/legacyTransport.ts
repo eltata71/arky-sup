@@ -58,6 +58,8 @@ export interface LegacyGenerationOptions {
     maxCandidates?: number;
     maxRetries?: number;
     signal?: AbortSignal;
+    /** Texto acumulado a medida que llega; sólo lo usa `generateTextWithFallback`. */
+    onPartial?: (accumulated: string) => void;
 }
 
 /** Lo que devuelve una generación completa. */
@@ -228,7 +230,53 @@ export class LegacyGenerationTransport {
         preferredModel: string,
         contents: string,
         config: LegacyGenerationConfig,
-        options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
+        options: LegacyGenerationOptions = {}
+    ): Promise<string> {
+        const { onPartial, ...callOptions } = options;
+        if (onPartial) {
+            const streamed = await this.tryStreamText(settings, preferredModel, contents, config, callOptions, onPartial);
+            if (streamed !== null) return streamed;
+        }
+        return this.generateBufferedText(settings, preferredModel, contents, config, callOptions);
+    }
+
+    /**
+     * Streams the text and reports it as it grows. Any failure — opening the
+     * stream or midway — returns `null` so the caller repeats the call buffered:
+     * the person gets the same answer either way. A guardrail block throws the
+     * same error from the buffered path, so nothing is hidden by falling back.
+     */
+    private async tryStreamText(
+        settings: Settings,
+        preferredModel: string,
+        contents: string,
+        config: LegacyGenerationConfig,
+        options: LegacyGenerationOptions,
+        onPartial: (accumulated: string) => void,
+    ): Promise<string | null> {
+        if (config.tools || config.toolConfig) return null;
+        try {
+            const stream = await this.generateContentStreamWithFallback(settings, preferredModel, contents, config, options);
+            let accumulated = '';
+            for await (const chunk of stream) {
+                const delta = (chunk as { text?: string }).text ?? '';
+                if (!delta) continue;
+                accumulated += delta;
+                onPartial(accumulated);
+            }
+            return accumulated.trim().length > 0 ? accumulated : null;
+        } catch {
+            if (options.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+            return null;
+        }
+    }
+
+    private async generateBufferedText(
+        settings: Settings,
+        preferredModel: string,
+        contents: string,
+        config: LegacyGenerationConfig,
+        options: LegacyGenerationOptions,
     ): Promise<string> {
         // Proxy first, like the other two paths: skipping it left users without
         // a personal key with no model at all in production.
