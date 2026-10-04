@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import { useAppContext } from '../../../context/AppContext';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
 import DocumentViewToolbar from './DocumentViewToolbar';
@@ -57,7 +56,6 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
   cover,
   isSplit = false,
 }) => {
-  const { t } = useAppContext();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(false);
 
@@ -149,7 +147,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
               )}
             </div>
           )}
-          <div ref={scrollRef} tabIndex={0} aria-label={t('documentContent')} className="h-full overflow-auto px-4 md:px-8 py-6 md:py-10">
+          <div ref={scrollRef} tabIndex={0} className="h-full overflow-auto px-4 md:px-8 py-6 md:py-10">
             <DocumentPaper html={markdownHtml} widthPx={pageWidthPx} zoom={zoom} theme={theme} fallbackContent={rawContent} cover={cover} />
           </div>
         </div>

@@ -52,6 +52,7 @@ export const Badge: React.FC<BadgeProps> = ({
     const palette = tones[tone];
     return (
         <span
+            role={rest['aria-label'] ? 'status' : undefined}
             className={cn(
                 'inline-flex items-center font-medium tracking-tight whitespace-nowrap',
                 outline ? cn('border bg-transparent', palette.outline) : palette.solid,

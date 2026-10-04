@@ -19,7 +19,7 @@ export interface C4Ribbon {
 
 export const C4_RIBBONS: readonly C4Ribbon[] = [
     { match: /^(person|actor)$/i,                                    label: 'PERSON',     bg: 'bg-blue-500',     darkBg: 'dark:bg-blue-600',    text: 'text-white',     darkText: 'dark:text-white' },
-    { match: /^softwaresystem$|^system$|^system_ext$|^context$/i,   label: 'SYSTEM',     bg: 'bg-indigo-600',   darkBg: 'dark:bg-indigo-500',  text: 'text-white',     darkText: 'dark:text-white' },
+    { match: /^softwaresystem$|^system$|^system_ext$|^context$/i,   label: 'SYSTEM',     bg: 'bg-indigo-600',   darkBg: 'dark:bg-indigo-700',  text: 'text-white',     darkText: 'dark:text-white' },
     { match: /^container$|^container_ext$|^containerdb$|^containerqueue$/i, label: 'CONTAINER',  bg: 'bg-violet-600',   darkBg: 'dark:bg-violet-500',  text: 'text-white',     darkText: 'dark:text-white' },
     { match: /^component$|^component_ext$|^componentdb$|^componentqueue$/i, label: 'COMPONENT',  bg: 'bg-fuchsia-600',  darkBg: 'dark:bg-fuchsia-500', text: 'text-white',     darkText: 'dark:text-white' },
     { match: /^deployment_node$|^node$/i,                            label: 'DEPLOYMENT', bg: 'bg-slate-700',    darkBg: 'dark:bg-slate-500',   text: 'text-white',     darkText: 'dark:text-white' },

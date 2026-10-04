@@ -18,6 +18,5 @@ export const es: Dictionary = {
   "rail.group.work": "El trabajo", "rail.group.system": "El sistema", "rail.nav": "Navegación principal", "rail.navMobile": "Navegación principal (móvil)", "rail.goHome": "Ir al centro de mando", "rail.openGenerations": "Abrir centro de generaciones", "rail.search": "Buscar · ⌘K", "rail.more": "Más", "rail.moreOptions": "Más opciones",
   "addProjectContext": "Añadir contexto del proyecto",
   "addMilestone": "Añadir hito",
-  "addRisk": "Añadir riesgo",
-  "documentContent": "Contenido del documento"
+  "addRisk": "Añadir riesgo"
 };

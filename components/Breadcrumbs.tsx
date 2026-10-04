@@ -34,7 +34,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs, className = ''
               {crumb.icon}
               <span className="truncate">{crumb.label}</span>
               {crumb.meta && (
-                <span className="text-2xs font-mono text-gray-400 dark:text-gray-500">{crumb.meta}</span>
+                <span className="text-2xs font-mono text-gray-400 dark:text-gray-300">{crumb.meta}</span>
               )}
             </span>
           );
