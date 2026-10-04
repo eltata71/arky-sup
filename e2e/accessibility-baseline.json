@@ -1,17 +1,36 @@
 {
-  "comentario": "13.0 — violaciones de axe (WCAG 2.2 A/AA) por pantalla, como ids de regla. null = aún sin medir (el primer CI las registra). La lista sólo puede encogerse: una regla nueva, o una pantalla con más reglas que su línea base, falla.",
+  "comentario": "13.0 — reglas axe WCAG 2.2 A/AA medidas en CI el 2026-10-04 (run 37215673633). La lista por pantalla sólo puede encogerse; el criterio de cierre exige corregir toda violación grave o crítica.",
   "pantallas": {
-    "dashboard": null,
-    "iniciativas": null,
-    "proyectos": null,
-    "oficina": null,
-    "agentes": null,
-    "configuracion": null,
-    "formacion": null,
-    "usuarios": null,
-    "espacio-de-trabajo": null,
-    "proceso-sdd": null,
-    "artefacto-diagrama": null,
-    "artefacto-documento": null
+    "dashboard": [],
+    "iniciativas": [],
+    "proyectos": [],
+    "oficina": [],
+    "agentes": [
+      "color-contrast"
+    ],
+    "configuracion": [
+      "select-name"
+    ],
+    "formacion": [],
+    "usuarios": [
+      "color-contrast"
+    ],
+    "espacio-de-trabajo": [
+      "aria-required-children",
+      "aria-required-parent",
+      "button-name",
+      "color-contrast",
+      "listitem"
+    ],
+    "proceso-sdd": [],
+    "artefacto-diagrama": [
+      "aria-prohibited-attr",
+      "color-contrast"
+    ],
+    "artefacto-documento": [
+      "aria-prohibited-attr",
+      "color-contrast",
+      "scrollable-region-focusable"
+    ]
   }
 }

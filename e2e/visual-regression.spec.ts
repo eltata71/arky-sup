@@ -44,7 +44,16 @@ test.describe('Regresión visual — diagramas y documentos canónicos', () => {
       await signInE2E(page);
       await page.goto(`/workspace/${projectId}?artifact=${ids.get(spec.key)}`);
       await page.waitForLoadState('networkidle');
-      await page.getByRole('main').first().waitFor({ state: 'visible' });
+      // The project hub is also a <main>. Wait for the requested artifact,
+      // otherwise a slow project read can silently bless a hub screenshot.
+      if (spec.representation === 'document') {
+        await expect(page.getByRole('heading', { name: 'Vista Markdown (.md)' })).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByRole('heading', { name: spec.name, exact: false }).first()).toBeVisible({ timeout: 20_000 });
+      } else if (spec.type === 'mermaid-sequence' || spec.type === 'mermaid-state') {
+        await expect(page.getByTestId('mermaid-notation').locator('svg')).toBeVisible({ timeout: 20_000 });
+      } else {
+        await expect(page.getByRole('region', { name: 'Lienzo de diagrama de arquitectura' }).locator('.react-flow__node').first()).toBeVisible({ timeout: 20_000 });
+      }
       await page.waitForTimeout(2_500); // el layout del diagrama termina de asentarse
       const file = `${spec.key}.png`;
       if (!existsSync(testInfo.snapshotPath(file))) {

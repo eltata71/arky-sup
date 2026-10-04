@@ -26,7 +26,11 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 type Baseline = { pantallas: Record<string, string[] | null> };
 const baseline: Baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
-const measured: Record<string, { reglas: string[]; nodos: Record<string, number> }> = {};
+type Finding = {
+  impact: string | null;
+  nodes: { target: string; summary: string }[];
+};
+const measured: Record<string, { reglas: string[]; nodos: Record<string, number>; hallazgos: Record<string, Finding> }> = {};
 
 test.describe.configure({ mode: 'serial' });
 
@@ -49,7 +53,14 @@ test.describe('Accesibilidad — axe sobre el artefacto desplegado', () => {
     await page.waitForLoadState('networkidle');
     const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     const reglas = [...new Set(results.violations.map((violation) => violation.id))].sort();
-    measured[name] = { reglas, nodos: Object.fromEntries(results.violations.map((v) => [v.id, v.nodes.length])) };
+    measured[name] = {
+      reglas,
+      nodos: Object.fromEntries(results.violations.map((v) => [v.id, v.nodes.length])),
+      hallazgos: Object.fromEntries(results.violations.map((v) => [v.id, {
+        impact: v.impact ?? null,
+        nodes: v.nodes.map((node) => ({ target: JSON.stringify(node.target), summary: node.failureSummary ?? '' })),
+      }])),
+    };
     const known = baseline.pantallas[name];
     if (known === undefined) throw new Error(`«${name}» no está en accessibility-baseline.json`);
     if (known === null) {
