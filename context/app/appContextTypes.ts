@@ -77,7 +77,7 @@ export interface AppContextType {
   t: (key: string, replacements?: Record<string, string>) => string;
   getGroupedArtifactsByView: (projectId: string) => GroupedArtifacts;
   updateProjectContext: (projectId: string, context: string[]) => void;
-  applyConsistencySuggestion: (projectId: string, suggestion: ConsistencySuggestion) => void;
+  applyConsistencySuggestion: (projectId: string, suggestion: ConsistencySuggestion) => Artifact[];
   toggleArtifactFavorite: (projectId: string, artifactId: string) => void;
   findLatestArtifactByName: (projectId: string, name: string) => Artifact | undefined;
   getArtifactVersions: (projectId: string, versionGroupId: string) => Artifact[];

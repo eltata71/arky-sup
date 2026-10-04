@@ -43,6 +43,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
             items: [
                 { keys: <><Mod /><Kbd>K</Kbd></>, label: 'Abrir paleta de comandos' },
                 { keys: <><Mod /><Kbd>.</Kbd></>, label: 'Abrir / cerrar Arquitecto Agente' },
+                { keys: <><Mod /><Kbd>Alt</Kbd><Kbd>Z</Kbd></>, label: 'Deshacer el último cambio de la IA' },
                 { keys: <Kbd>?</Kbd>, label: 'Mostrar atajos de teclado' },
                 { keys: <Kbd>Esc</Kbd>, label: 'Cerrar paneles, modales o presentación' },
             ],

@@ -33,6 +33,7 @@ import {
   settleArtifactWrite,
   withConfirmedRevisions,
   type ArtifactIntent,
+  type ArtifactPlan,
 } from '../../services/artifacts/application/artifactWorkflow';
 import { groupArtifactsByView, findLatestArtifactByName as findLatestByName } from '../../utils';
 import { useAuth } from '../AuthContext';
@@ -67,9 +68,10 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
    * segunda edición consecutiva de un artefacto no se escribía (F4-03;
    * `artifactRevisionFlow.test.tsx` lo fija).
    */
-  const run = useCallback((projectId: string, intent: ArtifactIntent): Artifact | undefined => {
+  const run = useCallback((projectId: string, intent: ArtifactIntent, onPlanned?: (plan: ArtifactPlan) => void): Artifact | undefined => {
     const snapshot = getProject(projectId);
     const plan = planArtifactIntent(snapshot?.artifacts ?? [], intent);
+    if (plan) onPlanned?.(plan);
     // Sin proyecto no hay dónde guardarlo, pero una intención que produce un
     // artefacto lo devuelve igual: es el contrato que siempre tuvo el contexto.
     if (!plan || !snapshot) return plan?.produced;
@@ -154,8 +156,11 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
     return groupArtifactsByView(project.artifacts);
   }, [getProject]);
 
-  const applyConsistencySuggestion = useCallback((projectId: string, suggestion: ConsistencySuggestion) => {
-    run(projectId, { kind: 'apply-consistency', suggestion });
+  /** Devuelve las versiones que creó, para poder ofrecer deshacer (10.4). */
+  const applyConsistencySuggestion = useCallback((projectId: string, suggestion: ConsistencySuggestion): Artifact[] => {
+    let produced: readonly Artifact[] = [];
+    run(projectId, { kind: 'apply-consistency', suggestion }, plan => { produced = plan.producedAll ?? []; });
+    return [...produced];
   }, [run]);
 
   const toggleArtifactFavorite = useCallback((projectId: string, artifactId: string) => {

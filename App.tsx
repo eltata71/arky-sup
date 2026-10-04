@@ -3,6 +3,7 @@ import React, { useMemo, Suspense, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from './context/AppContext';
+import { useAiUndoShortcut } from './hooks/artifacts/useAiUndo';
 import { useAuth } from './context/AuthContext';
 import { can, type Permission } from './lib/authz';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -174,6 +175,7 @@ const GlobalCommands: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  useAiUndoShortcut();
   const { projects, settings } = useAppContext();
   const { error: authError } = useAuth();
   const location = useLocation();
