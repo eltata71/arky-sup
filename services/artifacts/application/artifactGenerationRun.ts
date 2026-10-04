@@ -76,6 +76,8 @@ export interface ArtifactGenerationRunInput extends ArtifactContextPorts {
     startedAt: string;
     startedMs: number;
     onPhase?: ArtifactGenerationPhaseListener;
+    /** The document's text as it is written (10.3); never for diagrams. */
+    onPartial?: (accumulated: string) => void;
     /** Who speaks in the prompt; handed in because only the Office knows (corte 13). */
     composePersonaInstruction?: ArtifactPersonaComposer;
     /**
@@ -110,6 +112,7 @@ export async function runArtifactGeneration({
     startedAt,
     startedMs,
     onPhase,
+    onPartial,
     composePersonaInstruction,
     businessMotivation,
     conversation,
@@ -182,6 +185,7 @@ export async function runArtifactGeneration({
         existingArtifact,
         {
             onPhase,
+            onPartial,
             architectureGraphPromptBlock: graphGenerationContext.promptBlock,
             composePersonaInstruction,
             support: artifactGenerationSupport,

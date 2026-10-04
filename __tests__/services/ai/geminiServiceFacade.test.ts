@@ -119,6 +119,33 @@ describe('geminiService façade — generateContentWithFallback', () => {
   });
 });
 
+describe('geminiService façade — generateTextWithFallback streaming (10.3)', () => {
+  beforeEach(() => {
+    generateContent.mockReset();
+    generateContentStream.mockReset();
+    localStorage.setItem('user_gemini_key', 'test-key');
+  });
+
+  it('reports accumulated partials and returns the same text as the buffered path', async () => {
+    generateContentStream.mockResolvedValue((async function* () { yield { text: 'uno ' }; yield { text: 'dos' }; })());
+    const partials: string[] = [];
+    const streamed = await legacyTransport.generateTextWithFallback(settings, 'gemini-2.5-flash', 'hola', {}, { onPartial: t => partials.push(t) });
+    generateContent.mockResolvedValue({ text: 'uno dos' });
+    const buffered = await legacyTransport.generateTextWithFallback(settings, 'gemini-2.5-flash', 'hola', {});
+    expect(partials).toEqual(['uno ', 'uno dos']);
+    expect(streamed).toBe(buffered);
+  });
+
+  it('falls back to the buffered call when the stream fails', async () => {
+    generateContentStream.mockRejectedValue(new Error('boom'));
+    generateContent.mockResolvedValue({ text: 'completo' });
+    const partials: string[] = [];
+    const text = await legacyTransport.generateTextWithFallback(settings, 'gemini-2.5-flash', 'hola', {}, { onPartial: t => partials.push(t) });
+    expect(text).toBe('completo');
+    expect(partials).toEqual([]);
+  });
+});
+
 describe('geminiService façade — OpenRouter dispatch', () => {
   const openRouterSettings: Settings = {
     theme: 'dark',
