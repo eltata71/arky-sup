@@ -147,7 +147,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                                 <AIArchitectAvatar size="sm" state="idle" />
                             </button>
                         </Tooltip>
-                        <div className="text-[10px] tracking-widest-2 font-bold text-gray-400 dark:text-gray-500 [writing-mode:vertical-rl] rotate-180 select-none">
+                        <div className="text-[10px] tracking-widest-2 font-bold text-gray-600 dark:text-gray-300 [writing-mode:vertical-rl] rotate-180 select-none">
                             AGENTE · IA
                         </div>
                         <div className="h-5" />

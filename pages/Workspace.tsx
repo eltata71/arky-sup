@@ -117,7 +117,9 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   }, [project, searchParams, activeArtifactId, setSearchParams]);
 
   useEffect(() => {
-    if (!pendingOpenArtifactId) return;
+    // A project arrives from the portfolio with only an artifact index. Do not
+    // expire a deep link while its artifact bodies are still being hydrated.
+    if (!pendingOpenArtifactId || project?.artifactsLoaded === false) return;
     const timeout = window.setTimeout(() => {
       setPendingOpenArtifactId(null);
       setDeepLinkError('El artefacto terminó de generarse, pero no pudimos abrirlo automáticamente. Puedes abrirlo manualmente desde la tabla de artefactos.');
@@ -130,7 +132,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     }, 10000);
 
     return () => window.clearTimeout(timeout);
-  }, [pendingOpenArtifactId, setSearchParams]);
+  }, [pendingOpenArtifactId, project?.artifactsLoaded, setSearchParams]);
 
   const handleConfirmCleanup = () => {
       if (project && integrityCheckResult) {

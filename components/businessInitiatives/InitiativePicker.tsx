@@ -183,8 +183,6 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
           placeholder="Buscar por código, título o driver"
           disabled={disabled}
           className="pl-8"
-          role="combobox"
-          aria-expanded={matches.length > 0}
           aria-controls={listId}
           autoComplete="off"
         />
@@ -198,7 +196,6 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
       ) : (
         <ul
           id={listId}
-          role="listbox"
           aria-label="Iniciativas disponibles"
           className="max-h-56 space-y-1 overflow-y-auto"
         >
@@ -213,8 +210,6 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
               <li key={initiative.id}>
                 <button
                   type="button"
-                  role="option"
-                  aria-selected={false}
                   onClick={() => add(initiative.id)}
                   disabled={disabled}
                   className="flex w-full items-start gap-2 rounded-lg border border-gray-200 px-2.5 py-2 text-left transition-colors hover:border-primary-300 hover:bg-primary-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-40 dark:border-gray-800 dark:hover:border-primary-700 dark:hover:bg-primary-950/30"

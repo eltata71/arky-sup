@@ -143,7 +143,7 @@ const AgentsPage: React.FC = () => {
                   )}
                 >
                   {entry.icon}<span>{entry.label}</span>
-                  <span className={cn('rounded-full px-1.5 py-0.5 tabular-nums', lens === entry.id ? 'bg-white/20' : 'bg-gray-200/70 dark:bg-gray-700')}>
+                  <span className={cn('rounded-full px-1.5 py-0.5 tabular-nums', lens === entry.id ? 'bg-primary-800' : 'bg-gray-200/70 dark:bg-gray-700')}>
                     {profiles.filter(entry.matches).length}
                   </span>
                 </button>

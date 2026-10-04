@@ -66,7 +66,7 @@ export const ReviewSyncBadge: React.FC<ReviewSyncBadgeProps> = ({ projectId, art
             : meta.label;
 
     return (
-        <span aria-label={`Estado de sincronización: ${meta.title}`}>
+        <span role="status" aria-label={`Estado de sincronización: ${meta.title}`}>
             <Badge tone={meta.tone} size="xs" dot>
                 {label}
             </Badge>

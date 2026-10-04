@@ -61,7 +61,7 @@ export const ProjectContextBar: React.FC<ProjectContextBarProps> = ({
 
       {engagements.length > 0 && (
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-widest-2 text-gray-400 dark:text-gray-500">
+          <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-widest-2 text-gray-600 dark:text-gray-300">
             <HIERARCHY_ICONS.engagement className="h-3 w-3" aria-hidden />
             Entregables
           </span>

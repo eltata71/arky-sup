@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import { signInE2E } from './support/auth';
 import { accessTokenOf, hasBackendAccess } from './support/backend';
 import { createInitiative, createProjectFor, uniqueSuffix } from './support/journeys';
@@ -46,6 +46,24 @@ test.describe('Accesibilidad — axe sobre el artefacto desplegado', () => {
   test.afterAll(() => {
     mkdirSync(REPORT_DIR, { recursive: true });
     writeFileSync(`${REPORT_DIR}/accessibility-axe.json`, JSON.stringify({ pantallas: measured }, null, 2));
+    const failures: string[] = [];
+    for (const [name, known] of Object.entries(baseline.pantallas)) {
+      const result = measured[name];
+      if (!result) {
+        failures.push(`«${name}» no se midió`);
+        continue;
+      }
+      if (known === null) continue;
+      const added = result.reglas.filter((id) => !known.includes(id));
+      const resolved = known.filter((id) => !result.reglas.includes(id));
+      if (added.length) failures.push(`Reglas nuevas en «${name}»: ${added.join(', ')}`);
+      if (resolved.length) failures.push(`Reglas resueltas en «${name}»: quítalas de la línea base: ${resolved.join(', ')}`);
+      const severe = Object.entries(result.hallazgos)
+        .filter(([, finding]) => finding.impact === 'serious' || finding.impact === 'critical')
+        .map(([id]) => id);
+      if (severe.length) failures.push(`Violaciones graves o críticas en «${name}»: ${severe.join(', ')}`);
+    }
+    if (failures.length) throw new Error(failures.join('\n'));
   });
 
   async function audit(page: import('@playwright/test').Page, name: string, path: string): Promise<void> {
@@ -61,14 +79,8 @@ test.describe('Accesibilidad — axe sobre el artefacto desplegado', () => {
         nodes: v.nodes.map((node) => ({ target: JSON.stringify(node.target), summary: node.failureSummary ?? '' })),
       }])),
     };
-    const known = baseline.pantallas[name];
-    if (known === undefined) throw new Error(`«${name}» no está en accessibility-baseline.json`);
-    if (known === null) {
-      console.log(`[a11y] ${name}: sin línea base; ${reglas.length} reglas → ${reglas.join(', ') || '—'}`);
-      return;
-    }
-    expect(reglas.filter((id) => !known.includes(id)), `Reglas nuevas en «${name}»`).toEqual([]);
-    expect(known.filter((id) => !reglas.includes(id)), `Reglas ya resueltas en «${name}»: quítalas de la línea base`).toEqual([]);
+    if (!(name in baseline.pantallas)) throw new Error(`«${name}» no está en accessibility-baseline.json`);
+    console.log(`[a11y] ${name}: ${reglas.length} reglas → ${reglas.join(', ') || '—'}`);
   }
 
   test('prepara un proyecto con un diagrama y un documento', async ({ page, request }) => {

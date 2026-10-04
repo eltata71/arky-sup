@@ -204,6 +204,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
             <Button
               variant="secondary"
               size="sm"
+              aria-label="Añadir contexto del proyecto"
               onClick={() => addContext(contextEntry)}
               disabled={busy || !contextEntry.trim()}
             >

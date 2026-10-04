@@ -184,7 +184,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                                     <div className="mt-2 flex h-5 items-center px-1" aria-hidden>
                                         {expanded && groupLabel
                                             ? (
-                                                <RailRevealedText show reduced={reducedMotion} className="text-2xs font-bold uppercase tracking-widest-2 text-gray-400 dark:text-gray-500">
+                                                <RailRevealedText show reduced={reducedMotion} className="text-2xs font-bold uppercase tracking-widest-2 text-gray-600 dark:text-gray-300">
                                                     {groupLabel}
                                                 </RailRevealedText>
                                             )

@@ -428,7 +428,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                         </button>
                         <button
                             onClick={() => setChatArtifact(createGlobalProjectArtifact())}
-                            className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-primary-600 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-primary-500/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
+                                className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-primary-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-primary-500/20 transition hover:bg-primary-800 dark:bg-primary-700 dark:hover:bg-primary-800"
                         >
                             <ChatBubbleLeftRightIcon className="mr-2 h-5 w-5" />
                             Arquitecto Agente
@@ -655,7 +655,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
+                                        <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-600 dark:text-slate-300">
                                             {activeTab === 'workspace' ? 'Exploración enfocada' : 'Generación guiada'}
                                         </p>
                                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">{overallCompletion}% madurez</span>

@@ -247,7 +247,7 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
     const baseClasses = [
         'rounded-2xl animate-node-enter relative flex flex-col overflow-hidden transition-all duration-300 ease-out',
         selected ? 'ring-2 ring-primary-400 dark:ring-primary-500 ring-offset-2 dark:ring-offset-gray-900' : hierarchyRing,
-        isDimmed || hiddenByAudience ? 'opacity-40 saturate-50' : hierarchyEmphasis === 'low' ? 'opacity-80' : 'opacity-100',
+        isDimmed || hiddenByAudience ? 'opacity-80 saturate-50' : hierarchyEmphasis === 'low' ? 'opacity-80' : 'opacity-100',
         isNarrativeFocus ? 'scale-[1.03]' : isHovered ? 'scale-[1.01]' : '',
         shape === 'diamond' ? 'min-h-[120px]' :
             shape === 'person' ? 'mt-5 min-h-[100px]' :
@@ -509,7 +509,7 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
             )}
 
             {hasDetail && (
-                <span aria-hidden className="absolute -top-2.5 right-4 z-20 rounded-md bg-primary-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white shadow-sm dark:bg-primary-500">
+                <span aria-hidden className="absolute -top-2.5 right-4 z-20 rounded-md bg-primary-700 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white shadow-sm dark:bg-primary-700">
                     Detalle ↘
                 </span>
             )}

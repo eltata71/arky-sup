@@ -318,6 +318,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
           <Button
             variant="secondary"
             size="sm"
+            aria-label="Añadir hito"
             onClick={addMilestone}
             disabled={busy || !milestone.name.trim() || !milestone.dueAt}
           >
@@ -371,7 +372,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
               <option key={value} value={value}>{label}</option>
             ))}
           </select>
-          <Button variant="secondary" size="sm" onClick={addRisk} disabled={busy || !risk.description.trim()}>
+          <Button variant="secondary" size="sm" aria-label="Añadir riesgo" onClick={addRisk} disabled={busy || !risk.description.trim()}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
           </Button>
         </div>

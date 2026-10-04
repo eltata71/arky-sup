@@ -1,36 +1,17 @@
 {
-  "comentario": "13.0 — reglas axe WCAG 2.2 A/AA medidas en CI el 2026-10-04 (run 37215673633). La lista por pantalla sólo puede encogerse; el criterio de cierre exige corregir toda violación grave o crítica.",
+  "comentario": "13.0 — medición inicial: run 37215673633. El objetivo es 0 violaciones graves o críticas por pantalla; la línea base registra ese techo monótono. El informe E2E conserva gravedad, nodos y selectores para cada ejecución.",
   "pantallas": {
     "dashboard": [],
     "iniciativas": [],
     "proyectos": [],
     "oficina": [],
-    "agentes": [
-      "color-contrast"
-    ],
-    "configuracion": [
-      "select-name"
-    ],
+    "agentes": [],
+    "configuracion": [],
     "formacion": [],
-    "usuarios": [
-      "color-contrast"
-    ],
-    "espacio-de-trabajo": [
-      "aria-required-children",
-      "aria-required-parent",
-      "button-name",
-      "color-contrast",
-      "listitem"
-    ],
+    "usuarios": [],
+    "espacio-de-trabajo": [],
     "proceso-sdd": [],
-    "artefacto-diagrama": [
-      "aria-prohibited-attr",
-      "color-contrast"
-    ],
-    "artefacto-documento": [
-      "aria-prohibited-attr",
-      "color-contrast",
-      "scrollable-region-focusable"
-    ]
+    "artefacto-diagrama": [],
+    "artefacto-documento": []
   }
 }

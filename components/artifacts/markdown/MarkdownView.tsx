@@ -68,11 +68,11 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
         <div className="inline-flex items-center bg-gray-200 dark:bg-gray-800 rounded-lg p-0.5">
           <button
             onClick={() => onToggleSource(false)}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${!showSource ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${!showSource ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200'}`}
           >Vista previa</button>
           <button
             onClick={() => onToggleSource(true)}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${showSource ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-200'}`}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${showSource ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200'}`}
           >Fuente</button>
         </div>
         <button
@@ -118,7 +118,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
         />
       )}
     >
-      <div className="flex-1 overflow-auto min-h-0 px-4 md:px-8 py-6 md:py-10">
+      <div tabIndex={0} aria-label="Contenido Markdown" className="flex-1 overflow-auto min-h-0 px-4 md:px-8 py-6 md:py-10">
         {showSource ? (
           <pre className="font-mono text-xs md:text-sm text-gray-100 whitespace-pre-wrap break-words max-w-4xl mx-auto rounded-md bg-gray-950 dark:bg-black/60 p-6 shadow-inner ring-1 ring-gray-800">{rawContent}</pre>
         ) : (
