@@ -12,9 +12,23 @@
  * not.
  */
 import { describe, expect, it } from 'vitest';
-import { translations } from '../../../lib/i18n';
+import { en } from '../../../lib/i18n/locales/en';
+import { es } from '../../../lib/i18n/locales/es';
+import { UI_LANGUAGES, loadDictionary } from '../../../lib/i18n';
+
+const translations = { en, es };
 
 const LANGUAGES = ['en', 'es'] as const;
+
+describe('loading', () => {
+  it('declares exactly the languages that have a dictionary', () => {
+    expect([...UI_LANGUAGES].sort()).toEqual(Object.keys(translations).sort());
+  });
+
+  it.each(LANGUAGES)('loads %s on demand', async (language) => {
+    expect(await loadDictionary(language)).toBe(translations[language]);
+  });
+});
 
 describe('the dictionary', () => {
   it('carries the two languages `Settings.language` can select', () => {

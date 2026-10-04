@@ -13,28 +13,12 @@ import React from 'react';
 import { Boxes, Landmark, LayoutDashboard, PackageCheck, Shield, Users } from 'lucide-react';
 import { AcademicCapIcon, Cog6ToothIcon } from '../Icons';
 import type { Permission } from '../../lib/authz';
-import { EA_LEVELS } from '../../lib/eaTerminology';
 
 export type RailGroup = 'entry' | 'hierarchy' | 'system';
 
 export interface RailItem {
     id: string;
-    /**
-     * El registro corto — lo que se ve bajo el glifo cuando el raíl está
-     * plegado, donde el sitio escasea y el icono ya lleva la mayor parte del
-     * significado. La pantalla que abre muestra el nombre largo en su título;
-     * ver `EaLevelTerms`.
-     */
-    label: string;
-    /**
-     * Nombre largo. Es el nombre accesible del botón en los dos estados, y el
-     * texto visible cuando el raíl está desplegado. Que no cambie al abrir es
-     * lo que hace que abrir el raíl altere lo que se ve y nunca lo que se
-     * anuncia.
-     */
-    longLabel: string;
-    /** Para qué sirve el destino. Segunda línea del tooltip y del panel abierto. */
-    hint?: string;
+    /** Los textos del destino viven en el diccionario: `rail.<id>.label|long|hint`. */
     icon: React.ReactNode;
     href: string;
     match: (path: string) => boolean;
@@ -78,30 +62,37 @@ export interface RailItem {
  * trabajo es lo que hacía que la vieja portada compitiera con el raíl.
  */
 export const RAIL_ITEMS: RailItem[] = [
-    { id: 'dashboard', label: 'Dashboard', longLabel: 'Centro de mando', hint: 'Todo el portafolio de un vistazo', icon: <LayoutDashboard className="h-5 w-5" />, href: '/', match: (p) => p === '/', group: 'entry' },
-    { id: 'initiatives', label: EA_LEVELS.initiative.shortPlural, longLabel: EA_LEVELS.initiative.plural, hint: 'La necesidad del negocio', icon: <Landmark className="h-5 w-5" />, href: '/initiatives', match: (p) => p.startsWith('/initiatives'), group: 'hierarchy' },
-    { id: 'projects', label: EA_LEVELS.engagementProject.shortPlural, longLabel: EA_LEVELS.engagementProject.plural, hint: 'La respuesta de arquitectura', icon: <Boxes className="h-5 w-5" />, href: '/projects', match: (p) => p.startsWith('/projects') || p.startsWith('/workspace') || p.startsWith('/sdd-process'), group: 'hierarchy' },
-    { id: 'deliverables', label: EA_LEVELS.deliverable.shortPlural, longLabel: EA_LEVELS.deliverable.plural, hint: 'El trabajo gobernado de la Oficina', icon: <PackageCheck className="h-5 w-5" />, href: '/office', match: (p) => p.startsWith('/office'), group: 'hierarchy', primary: true },
+    { id: 'dashboard', icon: <LayoutDashboard className="h-5 w-5" />, href: '/', match: (p) => p === '/', group: 'entry' },
+    { id: 'initiatives', icon: <Landmark className="h-5 w-5" />, href: '/initiatives', match: (p) => p.startsWith('/initiatives'), group: 'hierarchy' },
+    { id: 'projects', icon: <Boxes className="h-5 w-5" />, href: '/projects', match: (p) => p.startsWith('/projects') || p.startsWith('/workspace') || p.startsWith('/sdd-process'), group: 'hierarchy' },
+    { id: 'deliverables', icon: <PackageCheck className="h-5 w-5" />, href: '/office', match: (p) => p.startsWith('/office'), group: 'hierarchy', primary: true },
     // Los agentes son el reparto que atiende cualquier solicitud, así que su
     // ficha es una pantalla de sistema como Formación o Ajustes: se llega desde
     // el raíl y desde ningún otro sitio.
-    { id: 'agents', label: 'Agentes', longLabel: 'Agentes de la Oficina', hint: 'Habilidades, conocimiento, memoria y modelo de cada agente', icon: <Users className="h-5 w-5" />, href: '/agents', match: (p) => p.startsWith('/agents'), group: 'system' },
-    { id: 'training', label: 'Formación', longLabel: 'Centro de Formación', hint: 'Cursos y laboratorios', icon: <AcademicCapIcon className="h-5 w-5" />, href: '/training', match: (p) => p.startsWith('/training'), group: 'system' },
+    { id: 'agents', icon: <Users className="h-5 w-5" />, href: '/agents', match: (p) => p.startsWith('/agents'), group: 'system' },
+    { id: 'training', icon: <AcademicCapIcon className="h-5 w-5" />, href: '/training', match: (p) => p.startsWith('/training'), group: 'system' },
     // «Configuración» es un carácter más ancho de lo que cabe y trunca a
     // «Configurac…». El registro corto existe justo para esto: el botón dice
     // Ajustes, el tooltip y el nombre accesible dicen Configuración.
-    { id: 'settings', label: 'Ajustes', longLabel: 'Configuración', hint: 'Tema, idioma, modelo de IA y claves', icon: <Cog6ToothIcon className="h-5 w-5" />, href: '/settings', match: (p) => p.startsWith('/settings'), group: 'system' },
-    { id: 'security', label: 'Seguridad', longLabel: 'Seguridad', hint: 'Usuarios, roles y permisos', icon: <Shield className="h-5 w-5" />, href: '/users', match: (p) => p.startsWith('/users'), group: 'system', permission: 'users:read' },
+    { id: 'settings', icon: <Cog6ToothIcon className="h-5 w-5" />, href: '/settings', match: (p) => p.startsWith('/settings'), group: 'system' },
+    { id: 'security', icon: <Shield className="h-5 w-5" />, href: '/users', match: (p) => p.startsWith('/users'), group: 'system', permission: 'users:read' },
 ];
 
 /**
- * El rótulo de cada grupo, visible sólo cuando el raíl está desplegado.
+ * La clave del rótulo de cada grupo, visible sólo cuando el raíl está desplegado.
  *
  * `entry` no tiene: el Dashboard es uno solo, y un rótulo sobre un único
  * elemento es una categoría inventada para justificar la línea que la separa.
  */
-export const RAIL_GROUP_LABELS: Readonly<Record<RailGroup, string | null>> = Object.freeze({
+export const RAIL_GROUP_LABEL_KEYS: Readonly<Record<RailGroup, string | null>> = Object.freeze({
     entry: null,
-    hierarchy: 'El trabajo',
-    system: 'El sistema',
+    hierarchy: 'rail.group.work',
+    system: 'rail.group.system',
+});
+
+/** Los tres textos de un destino, traducidos. El corto se ve plegado; el largo es el nombre accesible. */
+export const railItemText = (id: string, t: (key: string) => string) => ({
+    label: t(`rail.${id}.label`),
+    longLabel: t(`rail.${id}.long`),
+    hint: t(`rail.${id}.hint`),
 });

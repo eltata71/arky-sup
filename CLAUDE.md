@@ -57,7 +57,7 @@ multi-ambiente.
 `AGENTS.md` regla 1 dice lo mismo para Codex/Koder. **Todo cambio de este
 fichero actualiza `AGENTS.md` en el mismo commit** — ver *AI Assistant Resources*.
 
-**UI language is Spanish** (`<html lang="es">`). Source code, identifiers and most comments are English; user-facing copy is Spanish. The `en`/`es` dictionary lives in `lib/i18n/`; `AppContext` binds it to `settings.language` and exposes it as `t()`. Both languages carry the same 168 keys, and `__tests__/lib/i18n/translations.test.ts` fails the build if one gains a key the other lacks — a missing key renders as the key itself, in the middle of a toast.
+**UI language is Spanish** (`<html lang="es">`). Source code, identifiers and most comments are English; user-facing copy is Spanish. The `en`/`es` dictionary lives in `lib/i18n/`; `AppContext` binds it to `settings.language` and exposes it as `t()`. Each language is its own module (`lib/i18n/locales/es.ts`, `en.ts`) with the same keys, and `__tests__/lib/i18n/translations.test.ts` fails the build if one gains a key the other lacks — a missing key renders as the key itself, in the middle of a toast. Spanish is the eager default; English is a lazy `import()` chunk (`loadDictionary`), and until it arrives `t()` answers in Spanish, never with keys. `__tests__/i18n/literalBudget.test.ts` counts literals in JSX and may only fall (R-16: the campaign ends at 0); new copy goes through `t()`.
 
 ---
 

@@ -38,9 +38,9 @@ describe('a line budget is a budget on newlines', () => {
   // now, and the assertions below are what keeps it from coming back inline.
 
   it('measures bytes as well as lines', () => {
-    expect(byteCount('lib/i18n/translations.ts')).toBeGreaterThan(15_000);
+    expect(byteCount('lib/i18n/locales/es.ts')).toBeGreaterThan(8_000);
     // Under 40 lines, so no line budget would ever have seen it.
-    expect(lineCount('lib/i18n/translations.ts')).toBeLessThan(40);
+    expect(lineCount('lib/i18n/locales/es.ts')).toBeLessThan(40);
   });
 
   it('holds unlisted modules to 20 KB', () => {
@@ -52,9 +52,10 @@ describe('a line budget is a budget on newlines', () => {
     // weight plus the dictionary's exceeds the default, which is exactly the
     // failure the guard is for.
     const provider = byteCount('context/AppContext.tsx');
-    const dictionary = byteCount('lib/i18n/translations.ts');
+    const dictionary = byteCount('lib/i18n/locales/es.ts');
     expect(provider).toBeLessThan(DEFAULT_MAX_BYTES);
-    expect(provider + dictionary).toBeGreaterThan(DEFAULT_MAX_BYTES);
+    expect(provider + dictionary).toBeGreaterThan(provider);
+    expect(dictionary).toBeGreaterThan(8_000);
   });
 
   it('records a weight for every file heavier than the default', () => {

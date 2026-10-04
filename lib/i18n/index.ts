@@ -1,10 +1,11 @@
 /**
- * `lib/i18n` — the UI dictionary and the lookup that reads it.
+ * `lib/i18n` — the UI dictionaries and the lookup that reads them.
  *
  * Framework-agnostic on purpose: it is under `lib/`, imports no React and no
- * Firebase, and `AppContext` binds it to `Settings.language` in one `useCallback`.
+ * SDK, and `AppContext` binds it to `Settings.language` in `useSettingsState`.
  */
 
 export { translate } from './translate';
-export { translations } from './translations';
-export type { Translations } from './translations';
+export { INITIAL_TRANSLATIONS, loadDictionary } from './dictionaries';
+export { DEFAULT_LANGUAGE, UI_LANGUAGES } from './translations';
+export type { Dictionary, Translations, UiLanguage } from './translations';

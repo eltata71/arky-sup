@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Settings } from '../../types';
 import { confirmedSettingsRevision, settingsRepository } from '../../services/settings';
-import { translate, translations } from '../../lib/i18n';
+import { DEFAULT_LANGUAGE, INITIAL_TRANSLATIONS, loadDictionary, translate, type Translations, type UiLanguage } from '../../lib/i18n';
 import { useAuth } from '../AuthContext';
 import { mirrorThemeForBoot } from '../../hooks/useTheme';
 import { initialSettings } from './initialSettings';
@@ -52,9 +52,30 @@ export const useSettingsState = (reporter: PersistenceReporter): SettingsState =
     mirrorThemeForBoot(dark ? 'dark' : 'light');
   }, [settings.theme]);
 
+  /*
+   * El español viaja en la carga inicial; el resto de idiomas se descarga al
+   * elegirse. Mientras llega, `t()` contesta en español: nunca una clave a la
+   * vista ni una interfaz a medias.
+   */
+  const [dictionaries, setDictionaries] = useState<Translations>(INITIAL_TRANSLATIONS);
+  useEffect(() => {
+    const language = settings.language as UiLanguage;
+    if (dictionaries[language]) return;
+    let cancelled = false;
+    loadDictionary(language)
+      .then(dictionary => { if (!cancelled) setDictionaries(current => ({ ...current, [language]: dictionary })); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [settings.language, dictionaries]);
+
+  useEffect(() => {
+    document.documentElement.lang = dictionaries[settings.language] ? settings.language : DEFAULT_LANGUAGE;
+  }, [settings.language, dictionaries]);
+
   const t = useCallback((key: string, replacements?: Record<string, string>) => {
-    return translate(translations, settings.language, key, replacements);
-  }, [settings.language]);
+    const language = dictionaries[settings.language] ? settings.language : DEFAULT_LANGUAGE;
+    return translate(dictionaries, language, key, replacements);
+  }, [settings.language, dictionaries]);
 
   const updateSettings = useCallback(async (updates: Partial<Settings>) => {
     const previous = settings;
