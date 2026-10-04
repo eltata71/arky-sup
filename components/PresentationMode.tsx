@@ -27,6 +27,7 @@ import type { Edge, Node } from 'reactflow';
 import { useReactFlow } from 'reactflow';
 import type { DiagramIR, DiagramScene } from '../lib/diagram';
 import { buildStoryPlan } from '../services/diagram';
+import { MOTION } from '../lib/designTokens';
 
 export interface PresentationModeProps {
     open: boolean;
@@ -212,7 +213,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
+                transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
             >
                 {/* Vignette */}
                 <div
@@ -236,7 +237,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                                     stage === 'closing' ? '100%' :
                                     `${Math.round(((sceneIndex + 1) / Math.max(totalScenes, 1)) * 100)}%`,
                             }}
-                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                            transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
                         />
                     </div>
                 </div>
@@ -260,7 +261,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                             initial={{ opacity: 0, scale: 0.96 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.02, filter: 'blur(8px)' }}
-                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                            transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
                         >
                             <div className="text-center max-w-2xl px-8">
                                 <div className="inline-block px-3 py-1 rounded-full bg-white/12 text-white/80 uppercase tracking-[0.32em] text-[10px] mb-5 backdrop-blur-md">
@@ -299,7 +300,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                             initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
                             animate={{ opacity: 1, y: 0, filter: 'blur(0)' }}
                             exit={{ opacity: 0, y: -16, filter: 'blur(6px)' }}
-                            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                            transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
                         >
                             <div className="rounded-2xl bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/15 shadow-2xl px-7 py-6 text-white">
                                 <div className="flex items-baseline justify-between mb-2">

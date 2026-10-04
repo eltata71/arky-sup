@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './cn';
+import { MOTION } from '../../lib/designTokens';
 
 export interface DropdownItem {
     id?: string;
@@ -83,7 +84,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                             initial={motionFrom}
                             animate={{ y: 0, opacity: 1 }}
                             exit={motionFrom}
-                            transition={{ duration: 0.14, ease: 'easeOut' }}
+                            transition={{ duration: MOTION.duration.fast, ease: MOTION.ease.enter }}
                             className={cn(
                                 'absolute z-50',
                                 alignClass,

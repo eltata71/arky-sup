@@ -105,6 +105,26 @@ export const TRANSITION = {
 } as const;
 
 /**
+ * The single vocabulary Motion animations draw from (13.1): durations in
+ * seconds and curves. A literal `duration: 0.3` or `ease: [..]` in a component
+ * is a second, private scale; `motionTokens.test.ts` refuses it. `loop` and
+ * `loopSlow` are for ambient repetition (skeletons, pulses), never for a
+ * response to something the user did.
+ */
+export const MOTION = {
+  duration: {
+    instant: DURATION_S.instant,
+    fast: DURATION_S.fast,
+    base: DURATION_S.base,
+    slow: DURATION_S.slow,
+    cinematic: 0.5,
+    loop: 1.5,
+    loopSlow: 2,
+  },
+  ease: { ...EASING, linear: 'linear' },
+} as const;
+
+/**
  * How long to wait between siblings in a staggered entrance.
  *
  * Small on purpose. A stagger exists to make a group read as a group; past

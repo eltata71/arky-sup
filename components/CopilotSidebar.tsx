@@ -35,6 +35,7 @@ import { Tooltip } from './ui/Tooltip';
 import { cn } from './ui/cn';
 import { useResizablePanel } from '../hooks/useResizablePanel';
 import { ArrowRightIcon, XMarkIcon, SparklesIcon } from './Icons';
+import { MOTION } from '../lib/designTokens';
 
 const STORAGE_KEY = 'arky_copilot_open';
 const WIDTH_STORAGE_KEY = 'arky.copilot.width';
@@ -132,7 +133,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         initial={{ x: 16, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: 16, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: MOTION.duration.base, ease: MOTION.ease.enter }}
                         className="hidden md:flex w-12 flex-shrink-0 flex-col items-center justify-between py-4 border-l border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/40 backdrop-blur-sm"
                         aria-label="Arquitecto Agente colapsado"
                     >
@@ -165,7 +166,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         // Durante el arrastre no hay transición: el ancho sigue
                         // al puntero exactamente. La animación es para abrir y
                         // cerrar, que es cuando nadie está apuntando a nada.
-                        transition={panel.resizing ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        transition={panel.resizing ? { duration: 0 } : { duration: MOTION.duration.slow, ease: MOTION.ease.enter }}
                         className="hidden md:flex flex-shrink-0 overflow-hidden bg-white dark:bg-gray-900"
                         aria-label="Arquitecto Agente"
                     >
@@ -228,7 +229,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: MOTION.duration.fast }}
                         className="md:hidden fixed inset-0 z-[110] flex flex-col bg-gray-950/60 backdrop-blur-sm"
                         onClick={() => setOpen(false)}
                     >

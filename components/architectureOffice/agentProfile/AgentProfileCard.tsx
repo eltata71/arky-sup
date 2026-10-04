@@ -20,6 +20,7 @@ import { Badge, Button, Card, StatusDot, cn } from '../../ui';
 import { useReducedMotion } from '../../../hooks/useReducedMotion';
 import type { OfficeAgentProfile } from '../../../services/architectureOffice';
 import { AgentProfileAvatar } from './AgentProfileAvatar';
+import { MOTION } from '../../../lib/designTokens';
 
 const TIER_LABELS: Record<OfficeAgentProfile['modelTier'], string> = {
   quick: 'Modelo rápido',
@@ -46,7 +47,7 @@ export const AgentProfileCard: React.FC<AgentProfileCardProps> = ({ profile, onO
   const knowledgeScore = Math.min(100, profile.standardIds.length * 16 + profile.knowledge.length * 12);
   const memoryScore = Math.min(100, profile.memory.length * 20);
   return (
-  <motion.article whileHover={reducedMotion ? undefined : { y: -4 }} transition={{ duration: 0.18 }} className="h-full">
+  <motion.article whileHover={reducedMotion ? undefined : { y: -4 }} transition={{ duration: MOTION.duration.fast }} className="h-full">
   <Card className={cn('group relative flex h-full flex-col gap-3 overflow-hidden border-gray-200/80 transition-shadow hover:shadow-pop dark:border-gray-800', !profile.enabled && 'opacity-60')}>
     <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-400/70 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
     <button

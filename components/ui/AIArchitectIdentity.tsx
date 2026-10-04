@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { cn } from './cn';
+import { MOTION } from '../../lib/designTokens';
 
 export type AIState = 'idle' | 'thinking' | 'streaming' | 'error';
 
@@ -29,7 +30,7 @@ export const AIArchitectAvatar: React.FC<AIArchitectAvatarProps> = ({ size = 'md
         <span className={cn('relative inline-flex flex-shrink-0', className)}>
             <motion.span
                 animate={isAnimating ? { scale: [1, 1.05, 1], opacity: [0.92, 1, 0.92] } : { scale: 1, opacity: 1 }}
-                transition={isAnimating ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+                transition={isAnimating ? { duration: MOTION.duration.loop, repeat: Infinity, ease: MOTION.ease.standard } : { duration: MOTION.duration.slow }}
                 className={cn(
                     'inline-flex items-center justify-center rounded-2xl shadow-glow-ai',
                     'bg-ai-gradient bg-[length:200%_200%]',

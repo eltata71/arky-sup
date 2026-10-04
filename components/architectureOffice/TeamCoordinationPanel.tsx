@@ -30,6 +30,7 @@ import type {
   CoordinationEvent,
   CoordinationTeamMember,
 } from '../../services/architectureOffice';
+import { MOTION } from '../../lib/designTokens';
 
 /** Per-agent state, derived from the stream rather than tracked separately. */
 type AgentState = 'idle' | 'active' | 'done' | 'failed';
@@ -299,7 +300,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
               className="fill-[#4f46e5] dark:fill-[#6366f1]"
               initial={{ cx: liveEdge.from.x, cy: liveEdge.from.y, opacity: 0 }}
               animate={{ cx: liveEdge.to.x, cy: liveEdge.to.y, opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 1.1, ease: 'easeInOut', repeat: Infinity }}
+              transition={{ duration: MOTION.duration.loop, ease: MOTION.ease.standard, repeat: Infinity }}
             />
           )}
 

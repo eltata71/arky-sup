@@ -12,6 +12,7 @@ import {
   fableRoleFor,
   type FableThemeName,
 } from './fableTheme';
+import { MOTION } from '../../../lib/designTokens';
 
 export interface FableDiagramCanvasProps {
   ir: DiagramIR;
@@ -403,7 +404,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
               key={group.id}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.05 + i * 0.05, duration: 0.5 }}
+              transition={{ delay: 0.05 + i * 0.05, duration: MOTION.duration.cinematic }}
             >
               <rect
                 x={group.x}
@@ -461,7 +462,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
                 key={edge.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: focused ? 1 : 0.12 }}
-                transition={{ delay: 0.25 + Math.min(i, 20) * 0.02, duration: 0.35 }}
+                transition={{ delay: 0.25 + Math.min(i, 20) * 0.02, duration: MOTION.duration.slow }}
               >
                 <path
                   d={d}
