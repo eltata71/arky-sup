@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { GenerationTrace } from '../../../lib/artifacts/contracts';
 import type { ArtifactCompilerSummary, CompilationFreshness } from '../../../services/artifactCompiler';
+import { MOTION } from '../../../lib/designTokens';
 
 export interface GenerationTracePanelProps {
   open: boolean;
@@ -74,7 +75,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
           initial={{ x: -24, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: -24, opacity: 0 }}
-          transition={{ duration: 0.18 }}
+          transition={{ duration: MOTION.duration.fast }}
           role="complementary"
           aria-label="Observabilidad de generación"
           className="absolute top-20 left-4 z-30 w-[380px] max-w-[calc(100%-2rem)] max-h-[calc(100%-10rem)] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-4"

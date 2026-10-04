@@ -4,6 +4,7 @@ import { XMarkIcon } from '../Icons';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { cn } from './cn';
+import { MOTION } from '../../lib/designTokens';
 
 export type DrawerSide = 'right' | 'left' | 'bottom';
 export type DrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -131,7 +132,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                         initial={reducedMotion ? { opacity: 0 } : enterFrom[side]}
                         animate={reducedMotion ? { opacity: 1 } : enterTo[side]}
                         exit={reducedMotion ? { opacity: 0 } : enterFrom[side]}
-                        transition={reducedMotion ? { duration: 0.12 } : { type: 'spring', damping: 28, stiffness: 320 }}
+                        transition={reducedMotion ? { duration: MOTION.duration.instant } : { type: 'spring', damping: 28, stiffness: 320 }}
                         className={cn(
                             'fixed bg-white dark:bg-gray-900 shadow-pop ring-1 ring-gray-900/5 dark:ring-white/10 flex flex-col',
                             positionMap[side],

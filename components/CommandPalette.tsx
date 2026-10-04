@@ -16,6 +16,7 @@ import { Kbd, isMac } from './ui/Kbd';
 import { cn } from './ui/cn';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { MagnifyingGlassIcon, SparklesIcon, ArrowRightIcon, XMarkIcon } from './Icons';
+import { MOTION } from '../lib/designTokens';
 
 function fuzzyScore(query: string, text: string): number {
     if (!query) return 1;
@@ -128,7 +129,7 @@ export const CommandPalette: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
+                        transition={{ duration: MOTION.duration.fast }}
                         className="absolute inset-0 bg-gray-950/60 backdrop-blur-sm"
                         onClick={() => setOpen(false)}
                     />
@@ -137,7 +138,7 @@ export const CommandPalette: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.97, y: -8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.98, y: -8 }}
-                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: MOTION.duration.fast, ease: MOTION.ease.enter }}
                         className="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-pop overflow-hidden"
                         role="dialog"
                         aria-modal="true"

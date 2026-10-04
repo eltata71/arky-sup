@@ -74,7 +74,7 @@ export const BYTE_CEILINGS = {
   'components/CustomArtifactRequestModal.tsx': 42394, // 10.1: las etiquetas de fase salen al catálogo · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 41947, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'context/OfficeContext.tsx': 20370, // 6.5: la motivación de la iniciativa llega a la producción del encargo (lectura diferida del portafolio)
-  'pages/SDDProcessView.tsx': 41644, // F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
+  'pages/SDDProcessView.tsx': 41713, // 13.1: duraciones desde MOTION (+69 B). Antes: F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   /**
    * +365 bytes while the line count fell 1005 → 1001. `executeAgentAction` now
    * refuses a high-impact plan that nobody confirmed — a flag three modules had
@@ -93,7 +93,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/suggestionActionExecutors.ts': 33643,
   'components/memory/ChatHistoryPanel.tsx': 32783,
   'components/copilot/ProjectCopilotChatModal.tsx': 24926, // 10.4b: +473, «Deshacer» tras la acción confirmada del copiloto · F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
-  'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
+  'components/artifacts/fable/FableDiagramCanvas.tsx': 32543, // 13.1: duraciones desde MOTION (+90 B)
   'components/CustomEdge.tsx': 32345, // plan diagramas 8.3d: +322, dibuja la ruta ortogonal de ELK (la decisión vive en `hooks/useEngineRoute`)
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
   'services/agent/agentContextComposer.ts': 23023, // plan artefactos 7.3d: +775, entregables en curso, razón de negocio y extractos de hermanos en el copiloto · plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
@@ -103,7 +103,7 @@ export const BYTE_CEILINGS = {
   'hooks/artifacts/useDiagramRendering.ts': 24203, // plan diagramas 8.3d: −3 183, la pasada de ELK sale a `useElkLayoutPass` · plan diagramas 8.1d: −1 896, abrir ya no escribe el plan de layout · F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
   'services/diagram/qualityRepair.ts': 27154, // plan diagramas 8.4a: la reagrupación sale a `qualityRepairGrouping.ts` y cada reparación anota lo que escribe · plan diagramas 8.3b: +135, el clon del IR conserva `notation` · plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
-  'components/LucidchartViewer.tsx': 27773,
+  'components/LucidchartViewer.tsx': 27863, // 13.1: duraciones desde MOTION (+90 B)
   'services/diagram/layoutQualityService.ts': 27648,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 27231, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/artifactCompiler/profiles/contractDefinitions.ts': 26764,

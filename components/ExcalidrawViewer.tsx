@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ExternalLink, Download, RefreshCw, AlertTriangle, Loader2, Layers } from 'lucide-react';
 import { inferPalette } from '../lib/diagramTokens';
 import { lazyWithRetry } from './routing/lazyWithRetry';
+import { MOTION } from '../lib/designTokens';
 
 // Lazy-load Excalidraw to keep the initial bundle small. Routed through
 // `lazyWithRetry` so a transient failure loading this heavy ESM chunk
@@ -260,7 +261,7 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
     return (
         <motion.div
             className="flex-1 flex flex-col min-h-0 h-full bg-white dark:bg-gray-950"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: MOTION.duration.fast }}
         >
             {/* ── Header ── */}
             <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -331,12 +332,12 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
                                     <motion.div key={i} className="absolute rounded-lg bg-violet-100 dark:bg-violet-900/40 border border-violet-200 dark:border-violet-800"
                                         style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
                                         animate={{ opacity: [0.3, 0.8, 0.3] }}
-                                        transition={{ duration: 2, repeat: Infinity, delay: i * 0.35 }}
+                                        transition={{ duration: MOTION.duration.loopSlow, repeat: Infinity, delay: i * 0.35 }}
                                     />
                                 ))}
                                 <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
                                     <motion.path d="M 70 35 Q 150 70 160 72" fill="none" stroke="#6965db" strokeWidth="1.5" strokeDasharray="4 3" opacity={0.4}
-                                        animate={{ strokeDashoffset: [0, -14] }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} />
+                                        animate={{ strokeDashoffset: [0, -14] }} transition={{ duration: MOTION.duration.loop, repeat: Infinity, ease: MOTION.ease.linear }} />
                                 </svg>
                             </div>
                         </motion.div>
@@ -366,7 +367,7 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
                         </motion.div>
                     ) : (
                         <motion.div key="canvas" className="absolute inset-0"
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: MOTION.duration.slow }}>
                             <Suspense fallback={
                                 <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-950">
                                     <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />

@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { toPng } from 'html-to-image';
 import { Button, Badge } from './ui';
 import { PencilIcon, CheckCircleIcon, XMarkIcon } from './Icons';
+import { MOTION } from '../lib/designTokens';
 
 interface ExecutiveOnePagerProps {
     title: string;
@@ -108,7 +109,7 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
             className="relative w-full max-w-5xl mx-auto bg-gradient-to-br from-white via-gray-50 to-primary-50 dark:from-gray-950 dark:via-gray-900 dark:to-primary-950/40 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl p-8"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: MOTION.duration.base }}
         >
             <header className="flex items-start justify-between mb-6 gap-4">
                 <div className="flex-1 min-w-0">

@@ -29,6 +29,7 @@ import {
     type LucidDocumentSummary,
     type LucidEmbedSession,
 } from '../services/lucid';
+import { MOTION } from '../lib/designTokens';
 
 interface LucidchartViewerProps {
     artifactContent: string;
@@ -195,7 +196,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
     return (
         <motion.div
             className="flex-1 flex flex-col min-h-0 h-full bg-white dark:bg-gray-950"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: MOTION.duration.fast }}
         >
             {/* ── Branded header ── */}
             <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -402,7 +403,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                         </motion.div>
                     ) : embedSession ? (
                         <motion.div key="lucid-embed" className="absolute inset-0 bg-white dark:bg-gray-950"
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: MOTION.duration.slow }}
                         >
                             <iframe
                                 title={`Lucidchart · ${artifactTitle}`}
@@ -447,7 +448,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                         </motion.div>
                     ) : flowData ? (
                         <motion.div key="diagram" className="absolute inset-0"
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: MOTION.duration.slow, ease: MOTION.ease.enter }}>
                             <ReactFlowCanvas nodes={flowData.nodes} edges={flowData.edges} />
                         </motion.div>
                     ) : (

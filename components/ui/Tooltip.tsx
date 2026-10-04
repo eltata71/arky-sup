@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './cn';
+import { MOTION } from '../../lib/designTokens';
 
 type Side = 'top' | 'bottom' | 'left' | 'right';
 
@@ -83,7 +84,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ label, children, side = 'top',
                         initial={{ opacity: 0, scale: 0.95, y: side === 'top' ? 4 : -4 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.96, y: side === 'top' ? 4 : -4 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        transition={{ duration: MOTION.duration.fast, ease: MOTION.ease.enter }}
                         className={cn(
                             'absolute z-[1000] px-2 py-1 rounded-md whitespace-nowrap pointer-events-none',
                             'bg-gray-900 text-white text-xs font-medium shadow-lg',

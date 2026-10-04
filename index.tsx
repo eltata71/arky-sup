@@ -1,4 +1,5 @@
 import React from 'react';
+import { MotionConfig } from 'motion/react';
 import ReactDOM from 'react-dom/client';
 import { assertProductionRuntimeConfig } from './lib/runtimeConfig';
 import { BrowserRouter } from 'react-router-dom';
@@ -49,6 +50,7 @@ observabilityService.installGlobalErrorHandlers();
 
 const app = (
   <React.StrictMode>
+    <MotionConfig reducedMotion="user">
     <ObservabilityProvider>
       <ErrorBoundary fallbackTitle="Error crítico al iniciar Arky 10">
         <AuthProvider>
@@ -75,6 +77,7 @@ const app = (
         </AuthProvider>
       </ErrorBoundary>
     </ObservabilityProvider>
+    </MotionConfig>
   </React.StrictMode>
 );
 

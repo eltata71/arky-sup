@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { SafeRichText } from '../components/ui/SafeRichText';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { useArtifactGenerationPorts } from '../hooks/useArtifactPersona';
+import { MOTION } from '../lib/designTokens';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -475,7 +476,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: MOTION.duration.fast }}
                 >
                   {/* Info banner — artifact storage */}
                   <div className="mb-5 flex items-start gap-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3">
@@ -515,7 +516,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: MOTION.duration.fast }}
                         className="mb-4 flex items-center justify-between gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3"
                       >
                         <div className="flex items-center gap-2 min-w-0">

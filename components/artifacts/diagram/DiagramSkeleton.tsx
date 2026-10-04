@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { SparklesIcon, XCircleIcon } from '../../Icons';
+import { MOTION } from '../../../lib/designTokens';
 
 interface LoadingOverlayProps {
   message: string;
@@ -60,17 +61,17 @@ export const DiagramSkeleton: React.FC<DiagramSkeletonProps> = ({ onCancel, mess
       {/* Flashing nodes */}
       <motion.div
         animate={{ opacity: [0.3, 0.7, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: MOTION.duration.loopSlow, repeat: Infinity, ease: MOTION.ease.standard }}
         className="absolute top-1/4 left-1/4 w-32 h-16 bg-gray-200 dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700"
       />
       <motion.div
         animate={{ opacity: [0.3, 0.7, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+        transition={{ duration: MOTION.duration.loopSlow, repeat: Infinity, ease: MOTION.ease.standard, delay: 0.3 }}
         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-20 bg-gray-200 dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700"
       />
       <motion.div
         animate={{ opacity: [0.3, 0.7, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+        transition={{ duration: MOTION.duration.loopSlow, repeat: Infinity, ease: MOTION.ease.standard, delay: 0.6 }}
         className="absolute bottom-1/4 right-1/4 w-32 h-16 bg-gray-200 dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700"
       />
       {/* Connecting lines */}
@@ -82,7 +83,7 @@ export const DiagramSkeleton: React.FC<DiagramSkeletonProps> = ({ onCancel, mess
           className="text-gray-200 dark:text-gray-800"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          transition={{ duration: MOTION.duration.loop, repeat: Infinity }}
         />
         <motion.path
           d="M 50% 50% L 75% 75%"
@@ -91,7 +92,7 @@ export const DiagramSkeleton: React.FC<DiagramSkeletonProps> = ({ onCancel, mess
           className="text-gray-200 dark:text-gray-800"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+          transition={{ duration: MOTION.duration.loop, repeat: Infinity, delay: 0.5 }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center backdrop-blur-[2px]">
