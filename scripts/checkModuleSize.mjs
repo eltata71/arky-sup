@@ -83,7 +83,7 @@ export const BYTE_CEILINGS = {
    * while gaining a guarantee.
    */
   'services/agent/agentExecutor.ts': 37846, // plan artefactos 7.3d: +31, las mejoras del agente reciben motivación y conversación · plan artefactos 7.4b: −503, el cambio puntual sale a `agentPatchAction` (parche de documento o reescritura) · plan artefactos 7.3b: +30, las generaciones del agente reciben las decisiones de su historial · 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente · 7.1a: −4 125, la validación de contenido salió a `agentContentValidation` · 7.1b: +228, el cambio puntual se niega si el modelo no puede ver el artefacto entero
-  'components/AssistantPanel.tsx': 36676, // plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
+  'components/AssistantPanel.tsx': 37650, // 10.4b: +974, «Deshacer» en las tres escrituras de IA del asistente (modificar, versión nueva, agente) · plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   'pages/Workspace.tsx': 20200, // 10.2: la ejecución y el diagnóstico pasan a la cola persistente; 33 921 → 20 097 bytes. El pequeño margen sobre 20 KB evita un techo de líneas innecesario.
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 35725, // plan diagramas 8.4c: +274, sin medida no hay pasadas de refinamiento · plan diagramas 8.2d: +148, compara la fidelidad con el IR que persistirá, incluidos sus metadatos · plan artefactos 7.5a: +38, la crítica y el refinamiento reciben onContextCaptured · plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
@@ -92,7 +92,7 @@ export const BYTE_CEILINGS = {
   'pages/LMS/LMSDashboard.tsx': 34123,
   'services/diagram/suggestionActionExecutors.ts': 33643,
   'components/memory/ChatHistoryPanel.tsx': 32783,
-  'components/copilot/ProjectCopilotChatModal.tsx': 24453, // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
+  'components/copilot/ProjectCopilotChatModal.tsx': 24926, // 10.4b: +473, «Deshacer» tras la acción confirmada del copiloto · F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32453,
   'components/CustomEdge.tsx': 32345, // plan diagramas 8.3d: +322, dibuja la ruta ortogonal de ELK (la decisión vive en `hooks/useEngineRoute`)
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
@@ -188,11 +188,11 @@ export const CEILINGS = {
   'components/CustomArtifactRequestModal.tsx': 831, // 10.1: las etiquetas de fase salen al catálogo
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
   'constants.ts': 805,
-  'components/AssistantPanel.tsx': 732, // plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
+  'components/AssistantPanel.tsx': 744, // 10.4b: +12 · plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
   'components/artifacts/fable/FableDiagramCanvas.tsx': 790,
   'pages/SDDProcessView.tsx': 785,
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 732, // plan diagramas 8.4c: +5, sin medida no hay pasadas · plan diagramas 8.2d: +2 para comparar el IR que persistirá · 7.3c: la petición extiende ArtifactContextPorts · 7.3a: la crítica y el refinamiento comparten una llamada · 7.1a: `lib/artifacts/contentPreservation`
-  'components/copilot/ProjectCopilotChatModal.tsx': 582, // F5-02
+  'components/copilot/ProjectCopilotChatModal.tsx': 590, // 10.4b: +8 · F5-02
   'services/diagram/suggestionActionExecutors.ts': 760,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 737,

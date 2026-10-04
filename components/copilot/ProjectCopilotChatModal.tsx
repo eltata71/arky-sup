@@ -18,6 +18,7 @@
  *  4. Anything else is answered by the Office team (`consultCopilot`).
  */
 
+import { useAiUndo } from '../../hooks/artifacts/useAiUndo';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { motion } from 'motion/react';
@@ -76,6 +77,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     getProject,
     logAgentAction,
   } = useAppContext();
+  const { offerVersionUndo } = useAiUndo();
   const { profile } = useAuth();
   const { initiatives } = useInitiatives();
 
@@ -307,6 +309,11 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
         },
       });
 
+      if ((result.status === 'success' || result.status === 'partial') && result.newArtifactVersionId) {
+        const before = getArtifact(project.id, result.previousArtifactVersionId);
+        if (before) offerVersionUndo(before, { id: result.newArtifactVersionId }, 'acción del copiloto', 'El copiloto creó una versión nueva.');
+      }
+
       const ackParts: string[] = [];
       if (result.status === 'success') {
         ackParts.push(result.messages[0] ?? 'Acción completada.');
@@ -349,6 +356,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
       profile?.uid,
       profile?.displayName,
       getArtifact,
+      offerVersionUndo,
     ],
   );
 
