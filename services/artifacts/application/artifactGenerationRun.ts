@@ -190,7 +190,11 @@ export async function runArtifactGeneration({
             composePersonaInstruction,
             support: artifactGenerationSupport,
             ...ports,
-            onDiagramIR: (ir) => { modelOutput.ir = ir; },
+            onDiagramIR: (ir) => {
+                modelOutput.ir = ir;
+                // Un diagrama no se muestra a medias: sólo los nombres que el lector ya validó.
+                onPartial?.(ir.nodes.map((node) => `• ${node.label}`).join('\n'));
+            },
             onDegraded: (message) => { modelOutput.degradations.push(message); },
         },
     );

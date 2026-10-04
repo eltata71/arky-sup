@@ -162,6 +162,8 @@ test('el recorrido de generación, medido', async ({ page, request }) => {
   // Lo único que se afirma es que el recorrido se completó y pasó por el proveedor.
   expect(report.llamadasAlProveedor).toBeGreaterThan(0);
   expect(timeline.primerContenidoMs).not.toBeNull();
+  // 10.3: el primer contenido llega antes de 3 s desde el clic.
+  expect(timeline.primerContenidoMs ?? Infinity).toBeLessThan(3_000);
 });
 
 test('tres generaciones continúan al navegar', async ({ page, request }) => {
