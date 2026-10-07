@@ -42,4 +42,28 @@ describe('auditoría de dependencias', () => {
     next.vulnerabilities.braces.via[0].url = 'https://example.test/new';
     expect(assessAudit(next, lockfile, '2026-10-03')).not.toEqual([]);
   });
+  it('tolera un aviso moderado de build que también cuelga de la cadena', () => {
+    const next = structuredClone(report);
+    next.vulnerabilities.tailwindcss.via = ['chokidar', 'postcss-selector-parser'];
+    next.vulnerabilities['postcss-selector-parser'] = {
+      severity: 'moderate', via: [{ url: 'https://github.com/advisories/GHSA-rj75-hqrm-r3gf' }],
+      nodes: ['node_modules/postcss-selector-parser'],
+    };
+    const lock = structuredClone(lockfile);
+    lock.packages['node_modules/postcss-selector-parser'] = { dev: true };
+    expect(assessAudit(next, lock, '2026-10-07')).toEqual([]);
+    lock.packages['node_modules/postcss-selector-parser'].dev = false;
+    expect(assessAudit(next, lock, '2026-10-07')).not.toEqual([]);
+  });
+
+  it('falla si lo alto no viene de la cadena de braces', () => {
+    const next = structuredClone(report);
+    next.vulnerabilities.tailwindcss.via = ['postcss-selector-parser'];
+    next.vulnerabilities['postcss-selector-parser'] = {
+      severity: 'moderate', via: [{ url: 'https://example.test/m' }], nodes: ['node_modules/postcss-selector-parser'],
+    };
+    const lock = structuredClone(lockfile);
+    lock.packages['node_modules/postcss-selector-parser'] = { dev: true };
+    expect(assessAudit(next, lock, '2026-10-07')).not.toEqual([]);
+  });
 });
