@@ -51,6 +51,11 @@ fi
 
 mkdir -p "$WORKTREES"
 git worktree add -b "$rama" "$ruta" origin/main
+# El worktree vive fuera del repositorio: sin esto no encuentra dependencias.
+# Si la tarea cambia package.json, sustituye el enlace por un `npm ci` propio.
+if [ -d "$PRINCIPAL/node_modules" ] && [ ! -e "$ruta/node_modules" ]; then
+  ln -s "$PRINCIPAL/node_modules" "$ruta/node_modules"
+fi
 git -C "$ruta" commit --allow-empty -q -m "Reserva de la tarea ${id} (${agente})"
 git -C "$ruta" push -u origin "$rama" --quiet
 gh pr create --draft --head "$rama" --base main \
