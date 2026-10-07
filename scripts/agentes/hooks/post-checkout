@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Avisa si el checkout principal deja main. Ver docs/operacion/multiagente.md.
+[ "${3:-0}" = 1 ] || exit 0
+git_dir="$(git rev-parse --absolute-git-dir)"
+comun="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
+rama="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$git_dir" = "$comun" ] && [ "$rama" != main ]; then
+  echo "AVISO: el checkout principal está ahora en «$rama». Vuelve a main (git switch main)" >&2
+  echo "y trabaja la tarea en un worktree: bash scripts/agentes/nueva-tarea.sh <agente> <id> <tema>" >&2
+fi

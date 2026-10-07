@@ -662,3 +662,11 @@ Esta sección es un contrato adicional y **no reemplaza** las reglas de arriba.
 5. Documentar comandos ejecutados y riesgos detectados en cada tarea cerrada.
 6. Usar ramas de feature (`make new-feature`) y PRs contra `main`.
 7. Antes de cerrar: `npm run quality` y reportar el estado con evidencia real.
+8. **Varios agentes, un solo estado** (`docs/operacion/multiagente.md`). El
+   checkout principal sólo sigue a `main` y no se edita; cada tarea se reserva
+   con `bash scripts/agentes/nueva-tarea.sh <agente> <id> <tema>` (worktree
+   propio + PR en borrador, que es la reserva que ven todos); una tarea `Hecha`
+   del plan no se reabre —lo nuevo se propone al propietario—; el trabajo se
+   publica el mismo día; y no se empieza si `bash scripts/agentes/estado.sh`
+   sale con avisos. Las tareas programadas de Hermes llaman a `estado.sh` y
+   paran si sale con 1.

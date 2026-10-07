@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# El checkout principal sólo sigue a main: en él no se hacen commits.
+# Instalado por scripts/agentes/instalar-guarda.sh. Ver docs/operacion/multiagente.md.
+git_dir="$(git rev-parse --absolute-git-dir)"
+comun="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
+if [ "$git_dir" = "$comun" ] && [ "${ARKY_PERMITIR_PRINCIPAL:-}" != 1 ]; then
+  echo "Commit rechazado: éste es el checkout principal y sólo sigue a main." >&2
+  echo "Reserva la tarea en un worktree: bash scripts/agentes/nueva-tarea.sh <agente> <id> <tema>" >&2
+  exit 1
+fi

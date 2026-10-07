@@ -2850,7 +2850,7 @@ Read the relevant doc before modifying a subsystem — they carry the rationale 
 | `docs/ui-ux-world-class-plan.md` | UI/UX upgrade plan |
 | `docs/technical-debt-audit.md` | Prioritised debt — **record new debt here** |
 | `docs/ddd-transformacion/` | **The canonical record of the DDD transformation, closed on 2026-09-27**: start with `14-informe-cierre.md` (managerial and technical closing report), then baseline, findings, master plan, backlog, progress log (`08-avance.md`), phase closures, residual debt (`13-deuda-residual.md`) and evidence. `adr/` holds ADR-100…109 — the last three are the projection outbox (107), the engine strangled through ports (108), and small doors with per-route budgets (109) |
-| `docs/operacion/` | Operations: the deployment contract, and four runbooks — **applying a migration to `ArkyDB-US`** (`runbook-migraciones.md`), **a route that shows «Error en la aplicación»** (`runbook-ruta-no-carga.md`), **a knowledge graph that does not update** (`runbook-proyecciones.md`), and **how the E2E suite runs, how to read a failure and when a journey needs its own seeded account** (`runbook-e2e.md`). Read the first before any `supabase db push`
+| `docs/operacion/` | Operations: the deployment contract, and four runbooks — **applying a migration to `ArkyDB-US`** (`runbook-migraciones.md`), **a route that shows «Error en la aplicación»** (`runbook-ruta-no-carga.md`), **a knowledge graph that does not update** (`runbook-proyecciones.md`), and **how the E2E suite runs, how to read a failure and when a journey needs its own seeded account** (`runbook-e2e.md`), and **how several agents share the clone without contradicting each other** (`multiagente.md`). Read the first before any `supabase db push`
 | `docs/aws-migration-plan.md` | **Propuesta, sin ejecutar, y hoy histórica**: se escribió contra la infraestructura Firebase/Vercel, que F9 sustituyó. Plan por fases para migrar a AWS dentro de la capa gratuita: Cognito, DynamoDB en tabla única, Lambda + API Gateway, S3 + CloudFront, CI/CD por OIDC, y los cuatro riesgos estructurales medidos sobre este código |
 | `docs/top-10-monolito-modular-ddd-2026-09-01.md` | Open review: modular-monolith boundaries, DDD, tech debt and CI/CD — measured dependency graph, cycle census and the root cause of the 8m49s test step |
 | `specs/00-index.md` | SDD artifacts: BRD, use cases, ADRs, domain model, NFR, BDD, traceability matrix |
@@ -2864,6 +2864,20 @@ This repository ships project-scoped agents and skills. Prefer them over ad-hoc 
 > **Cross-assistant compatibility:** `AGENTS.md` maps these same capabilities for OpenAI Codex/Koder and for the Hermes maintenance workflow. Keep `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/` and `AGENTS.md` in sync in the same change whenever agents or skills are added or modified.
 >
 > **And every change to this file updates `AGENTS.md` in the same commit** (owner's decision, 2026-09-23) — not only when "the base architecture changes". That narrower condition is how `AGENTS.md` went through phases 3 and 4 entire without learning any of their rules while this file described them. `AGENTS.md` summarises each rule and points back here; `__tests__/config/assistantDocsParity.test.ts` holds a list of anchors both files must name, and a rule worth sharing adds its anchor there.
+
+### Varios agentes sobre el mismo clon
+
+Claude Code, Codex y Hermes trabajan a la vez, y la auditoría del 2026-10-07
+encontró el modo de fallo: un agente reabrió una tarea ya fusionada (la 10.2)
+sin commit **en el checkout principal**, y el repositorio pasó a contar dos
+historias sobre en qué ola íbamos. `docs/operacion/multiagente.md` es el
+contrato y `scripts/agentes/` lo comprueba: el checkout principal sólo sigue a
+`main`; una tarea se reserva con `nueva-tarea.sh` (worktree propio y PR en
+borrador, la única reserva que ven todos); una tarea `Hecha` no se reabre;
+`estado.sh` sale con 1 si algo está fuera de su sitio, y `limpieza.sh` borra
+sólo lo fusionado y limpio, en seco por defecto. **En una sesión de Claude Code,
+la tarea sigue yendo en su rama `clase-mundial/<id>-<tema>` dentro del worktree
+de la sesión**, y antes de empezar se comprueba que nadie la tenga reservada.
 
 ### Sub-agents (`.claude/settings.json`)
 
