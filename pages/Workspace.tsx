@@ -5,7 +5,6 @@ import { useOffice } from '../context/OfficeContext';
 import { useToast } from '../context/ToastContext';
 import { ArtifactTemplate } from '../types';
 import type { Artifact, ArtifactGenerationPhaseListener } from '../lib/artifacts';
-import { ArtifactCanvas } from '../components/ArtifactCanvas';
 import { ProjectHub } from '../components/ProjectHub';
 import { ProjectContextBar } from '../components/navigation';
 import { SparklesIcon } from '../components/Icons';
@@ -21,6 +20,8 @@ import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { useArtifactPersona } from '../hooks/useArtifactPersona';
 import { useArtifactContextPorts } from '../hooks/useArtifactContextPorts';
 import { useGenerationQueue } from '../hooks/artifacts/useGenerationQueue';
+
+const ArtifactCanvas = React.lazy(() => import('../components/ArtifactCanvas').then((module) => ({ default: module.ArtifactCanvas })));
 
 interface WorkspaceProps {
   projectId: string;
@@ -306,7 +307,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden min-h-0 md:pl-14">
 
-        {pendingOpenArtifactId && <p role="status" className="mx-4 mt-3 text-sm text-gray-600 dark:text-gray-300">Abriendo artefacto…</p>}
+        {pendingOpenArtifactId && <p role="status" className="mx-4 mt-3 text-sm text-gray-600 dark:text-gray-300">{t('workspace.openingArtifact')}</p>}
 
         {/* Workspace shell: main canvas/hub on the left, persistent copilot on the right */}
         <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -316,13 +317,15 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
                     <div className="flex flex-col h-full bg-white dark:bg-gray-950 animate-fade-in min-h-0">
                         <div className="flex-1 relative overflow-hidden min-h-0">
                             <ErrorBoundary key={activeArtifact.id} fallbackTitle="Error al renderizar el artefacto">
-                                <ArtifactCanvas
-                                    project={project}
-                                    artifact={activeArtifact}
-                                    onGenerateWorldClass={handleGenerateWorldClassArtifact}
-                                    setActiveArtifactId={setActiveArtifactId}
-                                    onBack={() => setActiveArtifactId(null)}
-                                />
+                                <React.Suspense fallback={<p role="status" className="p-4 text-sm text-gray-600 dark:text-gray-300">{t('workspace.openingArtifact')}</p>}>
+                                    <ArtifactCanvas
+                                        project={project}
+                                        artifact={activeArtifact}
+                                        onGenerateWorldClass={handleGenerateWorldClassArtifact}
+                                        setActiveArtifactId={setActiveArtifactId}
+                                        onBack={() => setActiveArtifactId(null)}
+                                    />
+                                </React.Suspense>
                             </ErrorBoundary>
                         </div>
                     </div>

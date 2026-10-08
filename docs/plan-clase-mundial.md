@@ -793,7 +793,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 11.3 Mapa de calor de capacidades | Pendiente | |
 | 11.4 Brechas y hoja de ruta | Pendiente | |
 | 11.5 TIME, radar y contrato | Pendiente | |
-| 12.0 Workspace ≤ 700 KB gz | Pendiente | |
+| 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |
 | 12.1 Partir los cinco ficheros grandes | Pendiente | |
 | 12.2 Documento editorial | Pendiente | |
 | 12.3 Zoom semántico C4 | Pendiente | |

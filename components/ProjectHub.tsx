@@ -24,22 +24,12 @@ import {
     CpuChipIcon,
     FunnelIcon
 } from './Icons';
-import { RealArtifactHistoryModal } from './ArtifactHistoryModal';
-import { ChatModal } from './ChatModal';
-import { ProjectCopilotChatModal } from './copilot/ProjectCopilotChatModal';
-import { AssistantDock } from './architectureOffice/AssistantDock';
 import { AssistantLauncher } from './architectureOffice/AssistantLauncher';
-import {
-    EngagementIntakeWizard,
-    type EngagementIntakeSubmit,
-} from './architectureOffice/EngagementIntakeWizard';
+import type { EngagementIntakeSubmit } from './architectureOffice/EngagementIntakeWizard';
 import { useOffice } from '../context/OfficeContext';
 import { useToast } from '../context/ToastContext';
 import { buildProjectHubScope } from '../services/architectureOffice/application/assistantConsultation';
 import { ProjectTimeline } from './ProjectTimeline';
-import { CustomArtifactRequestModal } from './CustomArtifactRequestModal';
-import { MemoryCenterModal } from './MemoryCenterModal';
-import { PublicationCenter } from './publication';
 import { LatestArtifactCard } from './LatestArtifactCard';
 import { ArtifactSortControl } from './ArtifactSortControl';
 import { ArtifactOriginBadge } from './ArtifactOriginBadge';
@@ -58,6 +48,15 @@ import {
     DEFAULT_TEMPLATE_SORT,
     type ArtifactSortKey,
 } from '../utils/artifactExploration';
+
+const CustomArtifactRequestModal = React.lazy(() => import('./CustomArtifactRequestModal').then((module) => ({ default: module.CustomArtifactRequestModal })));
+const RealArtifactHistoryModal = React.lazy(() => import('./ArtifactHistoryModal').then((module) => ({ default: module.RealArtifactHistoryModal })));
+const ChatModal = React.lazy(() => import('./ChatModal').then((module) => ({ default: module.ChatModal })));
+const ProjectCopilotChatModal = React.lazy(() => import('./copilot/ProjectCopilotChatModal').then((module) => ({ default: module.ProjectCopilotChatModal })));
+const AssistantDock = React.lazy(() => import('./architectureOffice/AssistantDock').then((module) => ({ default: module.AssistantDock })));
+const EngagementIntakeWizard = React.lazy(() => import('./architectureOffice/EngagementIntakeWizard').then((module) => ({ default: module.EngagementIntakeWizard })));
+const MemoryCenterModal = React.lazy(() => import('./MemoryCenterModal').then((module) => ({ default: module.MemoryCenterModal })));
+const PublicationCenter = React.lazy(() => import('./publication').then((module) => ({ default: module.PublicationCenter })));
 
 interface ProjectHubProps {
     project: Project;
@@ -979,34 +978,38 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                 </main>
             </div>
 
-            <RealArtifactHistoryModal
+            {historyModalArtifact && <React.Suspense fallback={null}><RealArtifactHistoryModal
                 isOpen={!!historyModalArtifact}
                 onClose={() => setHistoryModalArtifact(null)}
                 projectId={project.id}
                 artifact={historyModalArtifact}
                 onOpenVersion={onOpenArtifact}
-            />
+            /></React.Suspense>}
 
-            <CustomArtifactRequestModal
-                isOpen={isCustomArtifactModalOpen}
-                project={project}
-                onClose={() => setIsCustomArtifactModalOpen(false)}
-                onGenerate={onCreateArtifact}
-            />
+            {isCustomArtifactModalOpen && (
+                <React.Suspense fallback={null}>
+                    <CustomArtifactRequestModal
+                        isOpen={isCustomArtifactModalOpen}
+                        project={project}
+                        onClose={() => setIsCustomArtifactModalOpen(false)}
+                        onGenerate={onCreateArtifact}
+                    />
+                </React.Suspense>
+            )}
 
-            <MemoryCenterModal
+            {isMemoryCenterOpen && <React.Suspense fallback={null}><MemoryCenterModal
                 isOpen={isMemoryCenterOpen}
                 onClose={() => setIsMemoryCenterOpen(false)}
                 project={project}
-            />
+            /></React.Suspense>}
 
-            <PublicationCenter
+            {isPublicationCenterOpen && <React.Suspense fallback={null}><PublicationCenter
                 isOpen={isPublicationCenterOpen}
                 onClose={() => setIsPublicationCenterOpen(false)}
                 projectId={project.id}
-            />
+            /></React.Suspense>}
 
-            <EngagementIntakeWizard
+            {intakeOpen && <React.Suspense fallback={null}><EngagementIntakeWizard
                 open={intakeOpen}
                 initialProjectId={project.id}
                 projects={[{ id: project.id, name: project.name, initiativeIds: project.initiativeIds ?? [] }]}
@@ -1015,14 +1018,14 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                 onPropose={handleProposeEngagement}
                 onApproveAndRun={handleApproveAndRun}
                 onClose={() => setIntakeOpen(false)}
-            />
+            /></React.Suspense>}
 
             <AssistantLauncher
                 onOpen={() => setAssistantOpen(true)}
                 label={`Abrir el equipo de arquitectura para ${project.name}`}
             />
 
-            <AssistantDock
+            {assistantOpen && <React.Suspense fallback={null}><AssistantDock
                 open={assistantOpen}
                 onClose={() => setAssistantOpen(false)}
                 scope={assistantScope}
@@ -1033,18 +1036,18 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                     'Revisa la coherencia entre los artefactos que ya existen',
                     'Propón los entregables que la Oficina debería abrir aquí',
                 ]}
-            />
+            /></React.Suspense>}
 
             {chatArtifact && chatArtifact.id === 'global' && (
-                <ProjectCopilotChatModal
+                <React.Suspense fallback={null}><ProjectCopilotChatModal
                     isOpen={!!chatArtifact}
                     onClose={() => setChatArtifact(null)}
                     project={project}
                     onOpenArtifact={(artifactId) => onOpenArtifact(artifactId)}
-                />
+                /></React.Suspense>
             )}
             {chatArtifact && chatArtifact.id !== 'global' && (
-                <ChatModal
+                <React.Suspense fallback={null}><ChatModal
                     isOpen={!!chatArtifact}
                     onClose={() => setChatArtifact(null)}
                     purpose="project-chat"
@@ -1052,7 +1055,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                     initialPrompt="Continuando conversación sobre el proyecto..."
                     projectId={project.id}
                     contextData={`Nombre del Artefacto: ${chatArtifact.name}\nObjetivo: ${chatArtifact.objective}\nContenido Actual (Resumen):\n${chatArtifact.content.substring(0, 1000)}...`}
-                />
+                /></React.Suspense>
             )}
         </div>
     );
