@@ -12,7 +12,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const LITERAL_BUDGET = 1305;
+const LITERAL_BUDGET = 1281;
 
 const ROOTS = ['components', 'pages'];
 const TEXT_NODE = />\s*([^<>{}\n=]*[A-Za-zÁ-ÿ]{3,}[^<>{}\n=]*)</g;

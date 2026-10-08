@@ -64,6 +64,7 @@ const Section: React.FC<{ title: string; count?: number; children: React.ReactNo
 );
 
 const EntityRow: React.FC<{ entity: ArchitectureEntity }> = ({ entity }) => {
+  const { t } = useAppContext();
   const evidence = entity.sourceRefs.length;
   return (
     <li className="flex items-start gap-2 text-sm">
@@ -71,16 +72,16 @@ const EntityRow: React.FC<{ entity: ArchitectureEntity }> = ({ entity }) => {
       <span className="flex-1 text-gray-800 dark:text-gray-100">
         {entity.name}
         {entity.status === 'candidate-duplicate' && (
-          <span className="ml-1 text-amber-500" title="Posible duplicado">⚑</span>
+          <span className="ml-1 text-amber-500" title={t('kg.possibleDuplicate')}>⚑</span>
         )}
         {entity.status === 'unverified' && (
-          <span className="ml-1 text-gray-400" title="Baja evidencia">?</span>
+          <span className="ml-1 text-gray-400" title={t('kg.lowEvidence')}>?</span>
         )}
-        <span className="ml-1 text-2xs text-gray-400" title="Fuentes de evidencia">
-          · {evidence} fuente{evidence === 1 ? '' : 's'}
+        <span className="ml-1 text-2xs text-gray-400" title={t('kg.evidenceSources')}>
+          · {t(evidence === 1 ? 'kg.sourceOne' : 'kg.sourceMany', { count: String(evidence) })}
         </span>
       </span>
-      <span className="text-2xs tabular-nums text-gray-400" title="Confianza">
+      <span className="text-2xs tabular-nums text-gray-400" title={t('kg.confidence')}>
         {Math.round(entity.confidence * 100)}%
       </span>
     </li>
@@ -91,7 +92,7 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
   projectId,
   artifact,
 }) => {
-  const { getProject, settings, rebuildArchitectureGraph } = useAppContext();
+  const { getProject, settings, rebuildArchitectureGraph, t } = useAppContext();
   const project = getProject(projectId);
   const [tab, setTab] = useState<GraphTab>('resumen');
   const [copied, setCopied] = useState(false);
@@ -127,7 +128,7 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
   ]);
 
   if (!project || !model) {
-    return <EmptyState title="Sin proyecto" description="No se encontró el proyecto asociado." />;
+    return <EmptyState title={t('kg.noProject')} description={t('kg.noProjectDesc')} />;
   }
 
   const { graph, consistency, traceability, reportText, insight, impact, freshness } = model;
@@ -147,8 +148,8 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
     const result = rebuildArchitectureGraph(projectId);
     setPersistNote(
       result
-        ? `Grafo recalculado y persistido: ${result.statistics.entityCount} entidades.`
-        : 'No se pudo recalcular el grafo.',
+        ? t('kg.rebuilt', { count: String(result.statistics.entityCount) })
+        : t('kg.rebuildFailed'),
     );
     window.setTimeout(() => setPersistNote(null), 3500);
   };
@@ -157,15 +158,15 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
     return (
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="gray" size="xs">Grafo vacío</Badge>
+          <Badge tone="gray" size="xs">{t('kg.empty')}</Badge>
           <Badge tone={freshnessInfo.tone} size="xs" dot>{freshnessInfo.label}</Badge>
         </div>
         <EmptyState
-          title="Grafo vacío"
-          description="Aún no se detectó conocimiento arquitectónico. Genera artefactos o enriquece el contexto del proyecto."
+          title={t('kg.empty')}
+          description={t('kg.emptyDesc')}
         />
         <Button size="xs" variant="secondary" onClick={handleRebuild} className="w-full">
-          Recalcular y persistir
+          {t('kg.rebuild')}
         </Button>
         {persistNote && <Alert tone="info" variant="soft"><span className="text-xs">{persistNote}</span></Alert>}
       </div>
@@ -175,10 +176,10 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="primary" size="sm">{graph.statistics.entityCount} entidades</Badge>
-        <Badge tone="gray" size="sm">{graph.statistics.relationCount} relaciones</Badge>
+        <Badge tone="primary" size="sm">{t('kg.entities', { count: String(graph.statistics.entityCount) })}</Badge>
+        <Badge tone="gray" size="sm">{t('kg.relations', { count: String(graph.statistics.relationCount) })}</Badge>
         <Badge tone={graph.quality.score >= 70 ? 'success' : graph.quality.score >= 45 ? 'warning' : 'danger'} size="sm">
-          Salud {graph.quality.score}/100
+          {t('kg.health', { score: String(graph.quality.score) })}
         </Badge>
         <Badge tone={freshnessInfo.tone} size="xs" dot>{freshnessInfo.label}</Badge>
       </div>
@@ -186,43 +187,41 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
       {freshness === 'stale' && (
         <Alert tone="warning" variant="soft">
           <span className="text-xs">
-            {freshnessInfo.description} El grafo mostrado se recalculó en memoria; usa
-            «Recalcular y persistir» para guardarlo.
+            {freshnessInfo.description} {t('kg.staleNote')}
           </span>
         </Alert>
       )}
       {freshness === 'missing' && (
         <Alert tone="info" variant="soft">
           <span className="text-xs">
-            Este grafo aún no está persistido en el proyecto. Púlsalo con «Recalcular y
-            persistir» para fijarlo como fuente canónica.
+            {t('kg.missingNote')}
           </span>
         </Alert>
       )}
 
       <Tabs value={tab} onChange={(v) => setTab(v as GraphTab)} variant="underline">
-        <TabList aria-label="Vistas del grafo de conocimiento">
-          <Tab value="resumen">Resumen</Tab>
+        <TabList aria-label={t('kg.views')}>
+          <Tab value="resumen">{t('kg.tabSummary')}</Tab>
           <Tab
             value="consistencia"
             badge={consistency.issues.length > 0 ? <Badge tone="warning" size="xs">{consistency.issues.length}</Badge> : undefined}
           >
-            Consistencia
+            {t('kg.tabConsistency')}
           </Tab>
           <Tab
             value="trazabilidad"
             badge={traceability.gaps.length > 0 ? <Badge tone="warning" size="xs">{traceability.gaps.length}</Badge> : undefined}
           >
-            Trazabilidad
+            {t('kg.tabTraceability')}
           </Tab>
-          <Tab value="impacto">Impacto</Tab>
+          <Tab value="impacto">{t('kg.tabImpact')}</Tab>
         </TabList>
 
         <div className="pt-3">
           <TabPanel value="resumen">
             <div className="space-y-4">
               <p className="text-xs text-gray-500 dark:text-gray-400">{graph.quality.summary}</p>
-              <Section title="Entidades principales" count={graph.entities.length}>
+              <Section title={t('kg.mainEntities')} count={graph.entities.length}>
                 <ul className="space-y-1">
                   {graph.entities.slice(0, 16).map((entity) => (
                     <EntityRow key={entity.id} entity={entity} />
@@ -230,7 +229,7 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
                 </ul>
               </Section>
               {graph.relations.length > 0 && (
-                <Section title="Relaciones detectadas" count={graph.relations.length}>
+                <Section title={t('kg.detectedRelations')} count={graph.relations.length}>
                   <ul className="space-y-0.5 text-xs text-gray-700 dark:text-gray-200">
                     {graph.relations.slice(0, 12).map((relation) => {
                       const from = graph.entities.find((e) => e.id === relation.sourceEntityId);
@@ -256,7 +255,7 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
 
           <TabPanel value="consistencia">
             {consistency.issues.length === 0 ? (
-              <Alert tone="success" variant="soft">Sin inconsistencias detectadas entre artefactos.</Alert>
+              <Alert tone="success" variant="soft">{t('kg.noInconsistencies')}</Alert>
             ) : (
               <ul className="space-y-2">
                 {consistency.issues.map((issue) => (
@@ -276,24 +275,24 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-2">
-                  <p className="text-2xs uppercase tracking-wider text-gray-400">Requisitos</p>
+                  <p className="text-2xs uppercase tracking-wider text-gray-400">{t('kg.requirements')}</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">
                     {Math.round(traceability.requirementCoverage * 100)}%
                   </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-2">
-                  <p className="text-2xs uppercase tracking-wider text-gray-400">Riesgos</p>
+                  <p className="text-2xs uppercase tracking-wider text-gray-400">{t('kg.risks')}</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">
                     {Math.round(traceability.riskCoverage * 100)}%
                   </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-2">
-                  <p className="text-2xs uppercase tracking-wider text-gray-400">Enlaces</p>
+                  <p className="text-2xs uppercase tracking-wider text-gray-400">{t('kg.links')}</p>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">{traceability.linkCount}</p>
                 </div>
               </div>
               {traceability.gaps.length === 0 ? (
-                <Alert tone="success" variant="soft">Sin vacíos de trazabilidad pendientes.</Alert>
+                <Alert tone="success" variant="soft">{t('kg.noGaps')}</Alert>
               ) : (
                 <ul className="space-y-1.5">
                   {traceability.gaps.map((gap) => (
@@ -312,23 +311,23 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
 
           <TabPanel value="impacto">
             {!impact ? (
-              <EmptyState title="Sin artefacto" description="Abre un artefacto para analizar su impacto en el grafo." />
+              <EmptyState title={t('kg.noArtifact')} description={t('kg.noArtifactDesc')} />
             ) : !impact.resolved ? (
               <Alert tone="info" variant="soft">
-                <span className="text-xs">Este artefacto aún no aporta entidades al grafo.</span>
+                <span className="text-xs">{t('kg.noEntities')}</span>
               </Alert>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Badge tone={SEVERITY_TONE[impact.severity]} size="sm">Impacto {impact.severity}</Badge>
+                  <Badge tone={SEVERITY_TONE[impact.severity]} size="sm">{t('kg.impact', { severity: impact.severity })}</Badge>
                   {impact.requiresArtifactRegeneration && (
-                    <Badge tone="warning" size="xs">Regeneración sugerida</Badge>
+                    <Badge tone="warning" size="xs">{t('kg.regenSuggested')}</Badge>
                   )}
-                  {impact.requiresHumanReview && <Badge tone="danger" size="xs">Revisión humana</Badge>}
+                  {impact.requiresHumanReview && <Badge tone="danger" size="xs">{t('kg.humanReview')}</Badge>}
                 </div>
-                <Section title="Artefactos impactados" count={impact.impactedArtifacts.length}>
+                <Section title={t('kg.impactedArtifacts')} count={impact.impactedArtifacts.length}>
                   {impact.impactedArtifacts.length === 0 ? (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">El cambio parece aislado.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('kg.isolated')}</p>
                   ) : (
                     <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-200">
                       {impact.impactedArtifacts.map((item) => (
@@ -340,7 +339,7 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
                     </ul>
                   )}
                 </Section>
-                <Section title="Recomendaciones">
+                <Section title={t('kg.recommendations')}>
                   <ul className="list-disc pl-4 space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
                     {impact.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
                   </ul>
@@ -357,10 +356,10 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
 
       <div className="flex gap-2 pt-1">
         <Button size="xs" variant="secondary" onClick={handleRebuild} className="flex-1">
-          Recalcular y persistir
+          {t('kg.rebuild')}
         </Button>
         <Button size="xs" variant="ghost" onClick={handleCopy} className="flex-1">
-          {copied ? 'Reporte copiado ✓' : 'Copiar reporte'}
+          {copied ? t('kg.copied') : t('kg.copy')}
         </Button>
       </div>
     </div>
