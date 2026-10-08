@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAppContext } from '../context/AppContext';
 import { 
   BoldIcon, ItalicIcon, StrikethroughIcon, Heading1Icon, Heading2Icon, Heading3Icon, 
   ListUnorderedIcon, ListOrderedIcon, QuoteIcon, CodeBlockIcon 
@@ -19,27 +20,53 @@ const ToolbarButton: React.FC<{ onClick: () => void; children: React.ReactNode; 
   </button>
 );
 
+type ToolbarItem = { key: string; insert: string; block?: boolean; Icon?: React.FC<{ className?: string }>; glyph?: string };
+
+const GROUPS: ToolbarItem[][] = [
+  [
+    { key: 'h1', insert: '# ', block: true, Icon: Heading1Icon },
+    { key: 'h2', insert: '## ', block: true, Icon: Heading2Icon },
+    { key: 'h3', insert: '### ', block: true, Icon: Heading3Icon },
+  ],
+  [
+    { key: 'bold', insert: '**bold text**', Icon: BoldIcon },
+    { key: 'italic', insert: '*italic text*', Icon: ItalicIcon },
+    { key: 'strike', insert: '~~strikethrough~~', Icon: StrikethroughIcon },
+  ],
+  [
+    { key: 'quote', insert: '> ', block: true, Icon: QuoteIcon },
+    { key: 'ul', insert: '\n- List item', Icon: ListUnorderedIcon },
+    { key: 'ol', insert: '\n1. List item', Icon: ListOrderedIcon },
+    { key: 'code', insert: '\n```\ncode\n```', Icon: CodeBlockIcon },
+  ],
+  [
+    { key: 'arrow', insert: '-->', glyph: '-->' },
+    { key: 'dotted', insert: '-.->', glyph: '-.->' },
+    { key: 'node', insert: 'Node[Text]', glyph: '[]' },
+    { key: 'round', insert: 'Node(Text)', glyph: '()' },
+    { key: 'subgraph', insert: '\nsubgraph Name\n  \nend', glyph: 'sub' },
+  ],
+];
+
 export const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ onInsert }) => {
+  const { t } = useAppContext();
   return (
     <div className="flex items-center p-1 space-x-1 bg-gray-100 border-b border-gray-200 dark:bg-gray-900/50 dark:border-gray-700 sticky top-0 z-10 overflow-x-auto no-scrollbar">
-      <ToolbarButton onClick={() => onInsert('# ', true)} title="Heading 1"><Heading1Icon className="w-5 h-5"/></ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('## ', true)} title="Heading 2"><Heading2Icon className="w-5 h-5"/></ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('### ', true)} title="Heading 3"><Heading3Icon className="w-5 h-5"/></ToolbarButton>
-      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 flex-shrink-0"></div>
-      <ToolbarButton onClick={() => onInsert('**bold text**')} title="Bold"><BoldIcon className="w-5 h-5"/></ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('*italic text*')} title="Italic"><ItalicIcon className="w-5 h-5"/></ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('~~strikethrough~~')} title="Strikethrough"><StrikethroughIcon className="w-5 h-5"/></ToolbarButton>
-      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 flex-shrink-0"></div>
-      <ToolbarButton onClick={() => onInsert('> ', true)} title="Quote"><QuoteIcon className="w-5 h-5"/></ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('\n- List item')} title="Unordered List"><ListUnorderedIcon className="w-5 h-5"/></ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('\n1. List item')} title="Ordered List"><ListOrderedIcon className="w-5 h-5"/></ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('\n```\ncode\n```')} title="Code Block"><CodeBlockIcon className="w-5 h-5"/></ToolbarButton>
-      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 flex-shrink-0"></div>
-      <ToolbarButton onClick={() => onInsert('-->')} title="Mermaid Arrow" className="font-mono text-xs font-bold">--&gt;</ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('-.->')} title="Mermaid Dotted Arrow" className="font-mono text-xs font-bold">-.-&gt;</ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('Node[Text]')} title="Mermaid Node" className="font-mono text-xs font-bold">[]</ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('Node(Text)')} title="Mermaid Round Node" className="font-mono text-xs font-bold">()</ToolbarButton>
-      <ToolbarButton onClick={() => onInsert('\nsubgraph Name\n  \nend')} title="Mermaid Subgraph" className="font-mono text-xs font-bold">sub</ToolbarButton>
+      {GROUPS.map((group, index) => (
+        <React.Fragment key={group[0].key}>
+          {index > 0 && <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 flex-shrink-0"></div>}
+          {group.map(({ key, insert, block, Icon, glyph }) => (
+            <ToolbarButton
+              key={key}
+              onClick={() => onInsert(insert, block)}
+              title={t(`markdownToolbar.${key}`)}
+              className={glyph ? 'font-mono text-xs font-bold' : ''}
+            >
+              {Icon ? <Icon className="w-5 h-5" /> : glyph}
+            </ToolbarButton>
+          ))}
+        </React.Fragment>
+      ))}
     </div>
   );
 };

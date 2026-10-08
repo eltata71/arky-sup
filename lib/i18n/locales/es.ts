@@ -18,5 +18,6 @@ export const es: Dictionary = {
   "rail.group.work": "El trabajo", "rail.group.system": "El sistema", "rail.nav": "Navegación principal", "rail.navMobile": "Navegación principal (móvil)", "rail.goHome": "Ir al centro de mando", "rail.openGenerations": "Abrir centro de generaciones", "rail.search": "Buscar · ⌘K", "rail.more": "Más", "rail.moreOptions": "Más opciones",
   "addProjectContext": "Añadir contexto del proyecto",
   "addMilestone": "Añadir hito",
-  "addRisk": "Añadir riesgo"
+  "addRisk": "Añadir riesgo",
+  "markdownToolbar.h1": "Título 1", "markdownToolbar.h2": "Título 2", "markdownToolbar.h3": "Título 3", "markdownToolbar.bold": "Negrita", "markdownToolbar.italic": "Cursiva", "markdownToolbar.strike": "Tachado", "markdownToolbar.quote": "Cita", "markdownToolbar.ul": "Lista con viñetas", "markdownToolbar.ol": "Lista numerada", "markdownToolbar.code": "Bloque de código", "markdownToolbar.arrow": "Flecha Mermaid", "markdownToolbar.dotted": "Flecha punteada Mermaid", "markdownToolbar.node": "Nodo Mermaid", "markdownToolbar.round": "Nodo redondo Mermaid", "markdownToolbar.subgraph": "Subgrafo Mermaid"
 };
