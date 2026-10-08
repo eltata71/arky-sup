@@ -36,7 +36,9 @@
     "quality:static": "npm run typecheck && npm run typecheck:strict && npm run lint && npm run check:any-budget && npm run check:no-orphan-scripts && npm run check:module-size && npm run check:module-boundaries",
     "quality:fast": "npm run quality:static && npm run test:ci",
     "build:placeholders": "node scripts/buildWithPlaceholders.mjs",
-    "quality": "npm run quality:static && npm run test:coverage && npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget"
+    "quality": "npm run quality:static && npm run test:coverage && npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget",
+    "agentes:estado": "bash scripts/agentes/estado.sh",
+    "agentes:limpieza": "bash scripts/agentes/limpieza.sh"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.17.6",

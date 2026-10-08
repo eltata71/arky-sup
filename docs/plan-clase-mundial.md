@@ -820,7 +820,10 @@ identificador:
 > Ejecuta la tarea **⟨ID⟩** de `docs/plan-clase-mundial.md`.
 > 1. Lee CLAUDE.md, la tarea, sus dependencias y los documentos que cita.
 > 2. Antes de cambiar nada, **mide** la cifra que la tarea mueve y anótala.
-> 3. Crea una rama desde `main` (`clase-mundial/⟨id⟩-⟨tema⟩`).
+> 3. Reserva la tarea con `bash scripts/agentes/nueva-tarea.sh ⟨agente⟩ ⟨id⟩
+>    ⟨tema⟩`: crea la rama `clase-mundial/⟨id⟩-⟨tema⟩` desde `main` en un
+>    worktree propio y abre la PR en borrador que la marca como tomada (ver
+>    `docs/operacion/multiagente.md`).
 > 4. Implementa con pruebas que fallen con el código anterior. Respeta
 >    fronteras, pureza del dominio, presupuestos y la regla de «una puerta».
 > 5. Ejecuta `NODE_OPTIONS=--max-old-space-size=3072 npm run quality` y el banco

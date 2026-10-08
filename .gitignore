@@ -56,3 +56,6 @@ ui-debug.log
 .vercel
 .env.local
 e2e-report/
+
+# Worktrees de sesiones de Claude Code: nunca son parte del repositorio
+.claude/worktrees/
