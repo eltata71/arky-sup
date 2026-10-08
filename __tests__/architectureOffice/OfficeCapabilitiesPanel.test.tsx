@@ -53,7 +53,7 @@ describe('OfficeCapabilitiesPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('option', { name: /Modernización de siniestros/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Modernización de siniestros/ }));
 
     // The relation is the ids; the codes travel with them so the two cannot drift.
     expect(onChange).toHaveBeenCalledWith({
@@ -71,7 +71,7 @@ describe('OfficeCapabilitiesPanel', () => {
       />,
     );
     // Every option is a real record — there is no free-text path any more.
-    const options = screen.getAllByRole('option');
+    const options = screen.getByRole('list', { name: 'Iniciativas disponibles' }).querySelectorAll('button');
     expect(options).toHaveLength(CATALOG.length);
     expect(screen.queryByPlaceholderText('NEG-2026-001')).not.toBeInTheDocument();
   });

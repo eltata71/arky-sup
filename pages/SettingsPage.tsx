@@ -472,16 +472,15 @@ const SettingsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Tone / Style */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {t('tone')}
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('toneHelp')}</p>
-                    <select
+                    <select aria-label={t('tone')}
                         value={localSettings.aiConfig?.tone || 'Profesional y Técnico'}
                         onChange={(e) => handleAIConfigChange('tone', e.target.value)}
-                        className="w-full h-10 px-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                        className="w-full h-10 px-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                     >
                         <option value="Profesional y Técnico">Profesional y Técnico</option>
                         <option value="Ejecutivo y Conciso">Ejecutivo y Conciso</option>

@@ -18,10 +18,13 @@ import { useAppContext } from '../context/AppContext';
  * reads `project.artifactsLoaded`.
  */
 export function useProjectArtifacts(projectId: string | undefined): void {
-  const { ensureProjectArtifacts } = useAppContext();
+  const { ensureProjectArtifacts, projects } = useAppContext();
+  // Entering by URL mounts the screen before the portfolio has loaded, and a
+  // call made then finds no project and does nothing: depend on its arrival.
+  const needsArtifacts = projects.find(p => p.id === projectId)?.artifactsLoaded === false;
 
   useEffect(() => {
     if (!projectId) return;
     void ensureProjectArtifacts(projectId);
-  }, [projectId, ensureProjectArtifacts]);
+  }, [projectId, needsArtifacts, ensureProjectArtifacts]);
 }

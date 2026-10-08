@@ -117,7 +117,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   }, [project, searchParams, activeArtifactId, setSearchParams]);
 
   useEffect(() => {
-    if (!pendingOpenArtifactId) return;
+    if (!pendingOpenArtifactId || project?.artifactsLoaded === false) return;
     const timeout = window.setTimeout(() => {
       setPendingOpenArtifactId(null);
       setDeepLinkError('El artefacto terminó de generarse, pero no pudimos abrirlo automáticamente. Puedes abrirlo manualmente desde la tabla de artefactos.');
@@ -130,7 +130,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     }, 10000);
 
     return () => window.clearTimeout(timeout);
-  }, [pendingOpenArtifactId, setSearchParams]);
+  }, [pendingOpenArtifactId, project?.artifactsLoaded, setSearchParams]);
 
   const handleConfirmCleanup = () => {
       if (project && integrityCheckResult) {
@@ -306,7 +306,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden min-h-0 md:pl-14">
 
-        {pendingOpenArtifactId && <p role="status" className="mx-4 mt-3 text-sm text-gray-600">Abriendo artefacto…</p>}
+        {pendingOpenArtifactId && <p role="status" className="mx-4 mt-3 text-sm text-gray-600 dark:text-gray-300">Abriendo artefacto…</p>}
 
         {/* Workspace shell: main canvas/hub on the left, persistent copilot on the right */}
         <div className="flex flex-1 min-h-0 overflow-hidden">

@@ -74,7 +74,7 @@ export const LatestArtifactCard: React.FC<LatestArtifactCardProps> = ({
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-500 dark:bg-primary-500/10 dark:text-primary-300">
           <SparklesIcon className="h-6 w-6" />
         </div>
-        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-300">
           Último artefacto
         </p>
         <h3 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
