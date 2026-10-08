@@ -58,7 +58,7 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     id: 'artefacto',
     question: '¿Cómo se crea un artefacto?',
     answer: 'Desde el proyecto, en su espacio de trabajo: eliges el tipo de artefacto del catálogo —diagramas C4, secuencias, documentos, especificaciones SDD— y la Oficina lo genera con el contexto del proyecto. Después se edita, se valida contra su contrato y se puede exportar o publicar.',
-    where: 'Proyectos → abre un proyecto → Mis artefactos / Catálogo.',
+    where: 'Proyectos → abre un proyecto → Mis artefactos / Catálogo (cada plantilla muestra su estándar y puedes agrupar por fase TOGAF ADM).',
     keywords: ['artefacto', 'crear', 'generar', 'diagrama', 'documento', 'c4', 'plantilla', 'catalogo'],
   }),
   topic({

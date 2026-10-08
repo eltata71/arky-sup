@@ -86,16 +86,6 @@ export const DOCUMENT_DISCIPLINES: readonly DocumentDiscipline[] = [
     rules: [ADR_STATUS_RULE],
   },
   {
-    templateName: 'Catálogo de Decisiones (ADR)',
-    label: 'Catálogo de decisiones arquitectónicas',
-    standard: 'un registro por decisión, formato de Michael Nygard',
-    sections: [
-      required('index', 'Índice de decisiones', ['indice', 'catalogo', 'decisiones']),
-      ...ADR_SECTIONS.slice(1),
-    ],
-    rules: [ADR_STATUS_RULE],
-  },
-  {
     templateName: 'Plan de Recuperación ante Desastres (DRP)',
     label: 'Plan de Recuperación ante Desastres',
     standard: 'ISO 22301',
@@ -304,6 +294,17 @@ const normalizeName = (name: string): string =>
 
 const BY_NAME = new Map(DOCUMENT_DISCIPLINES.map((discipline) => [normalizeName(discipline.templateName), discipline]));
 
+/** Names of templates merged into another (11.0): artifacts saved under them still resolve. */
+export const LEGACY_TEMPLATE_NAMES: Readonly<Record<string, string>> = {
+  'Catálogo de Decisiones (ADR)': 'Registro de Decisiones Arquitectónicas (ADR)',
+};
+
+const LEGACY_BY_NAME = new Map(Object.entries(LEGACY_TEMPLATE_NAMES).map(([from, to]) => [normalizeName(from), to]));
+
+/** The current name of a template, migrating a merged one on read. */
+export const currentTemplateName = (templateName: string): string =>
+  LEGACY_BY_NAME.get(normalizeName(templateName)) ?? templateName;
+
 /** The discipline of a catalogue template, by its name; `undefined` when it has none. */
 export const disciplineForTemplate = (templateName: string | undefined | null): DocumentDiscipline | undefined =>
-  templateName ? BY_NAME.get(normalizeName(templateName)) : undefined;
+  templateName ? BY_NAME.get(normalizeName(currentTemplateName(templateName))) : undefined;

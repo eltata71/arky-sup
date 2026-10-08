@@ -21,13 +21,6 @@ export const DISCIPLINE_GUIDANCE: Readonly<Record<string, Readonly<Record<string
     alternatives: 'Cada opción con sus ventajas, inconvenientes y por qué se descartó.',
     consequences: 'Lo que la decisión hace más fácil y más difícil, positivo y negativo.',
   },
-  'Catálogo de Decisiones (ADR)': {
-    context: 'El problema, las fuerzas en juego y las restricciones que obligan a decidir.',
-    decision: 'Lo que se decide, en voz activa y sin ambigüedad.',
-    alternatives: 'Cada opción con sus ventajas, inconvenientes y por qué se descartó.',
-    consequences: 'Lo que la decisión hace más fácil y más difícil, positivo y negativo.',
-    index: 'Tabla con ID, título, estado y fecha de cada decisión.',
-  },
   'Plan de Recuperación ante Desastres (DRP)': {
     scope: 'Qué sistemas y procesos cubre y cuáles no.',
     objectives: 'RTO y RPO por sistema, con cifra y unidad.',
