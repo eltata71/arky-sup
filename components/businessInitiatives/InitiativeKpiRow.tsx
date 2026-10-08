@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { StatTile } from '../ui';
+import { useAppContext } from '../../context/AppContext';
 import { AlertTriangle, CalendarClock, Gavel, Landmark, TrendingUp } from 'lucide-react';
 import { formatPercent } from '../architectureOffice/officeChartTokens';
 import { formatInvestment } from './initiativeUiLabels';
@@ -28,6 +29,7 @@ export const InitiativeKpiRow: React.FC<InitiativeKpiRowProps> = ({
   onFocusDecisions,
   className,
 }) => {
+  const { t } = useAppContext();
   const atRisk = rollup.healthMix['at-risk'];
   const milestoneRatio = rollup.milestonesTotal === 0
     ? null
@@ -37,50 +39,50 @@ export const InitiativeKpiRow: React.FC<InitiativeKpiRowProps> = ({
     <div className={className}>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatTile
-          label="Iniciativas"
+          label={t('iniKpi.initiatives')}
           value={rollup.total}
           icon={Landmark}
           tone="primary"
-          hint={`Atendidas por ${attentionCount} proyecto(s) de arquitectura`}
+          hint={t('iniKpi.servedHint', { count: String(attentionCount) })}
         />
         <StatTile
-          label="En riesgo"
+          label={t('iniKpi.atRisk')}
           value={atRisk}
           icon={AlertTriangle}
           tone={atRisk > 0 ? 'danger' : 'success'}
           hint={atRisk > 0
-            ? `${rollup.overdue} vencida(s) · ${rollup.milestonesMissed} hito(s) incumplido(s)`
-            : 'Ninguna vencida ni con riesgo crítico'}
+            ? t('iniKpi.atRiskHint', { overdue: String(rollup.overdue), missed: String(rollup.milestonesMissed) })
+            : t('iniKpi.noneAtRisk')}
         />
         <StatTile
-          label="Requieren decisión"
+          label={t('kpi.needDecision')}
           value={rollup.awaitingDecision}
           icon={Gavel}
           tone={rollup.awaitingDecision > 0 ? 'warning' : 'success'}
           hint={rollup.awaitingDecision > 0
-            ? 'Esperan aprobación del negocio'
-            : 'Nada esperando aprobación'}
+            ? t('iniKpi.awaitingApproval')
+            : t('iniKpi.noApproval')}
           onClick={onFocusDecisions}
         />
         <StatTile
-          label="Hitos cumplidos"
-          value={milestoneRatio === null ? 'Sin hitos' : formatPercent(milestoneRatio)}
+          label={t('iniKpi.milestonesMet')}
+          value={milestoneRatio === null ? t('iniKpi.noMilestones') : formatPercent(milestoneRatio)}
           icon={CalendarClock}
           tone="neutral"
           meter={milestoneRatio ?? undefined}
           hint={milestoneRatio === null
-            ? 'Ninguna iniciativa declara hitos todavía'
-            : `${rollup.milestonesMet}/${rollup.milestonesTotal} · ${rollup.dueSoon} vence(n) en 30 días`}
+            ? t('iniKpi.noMilestonesHint')
+            : t('iniKpi.milestonesHint', { met: String(rollup.milestonesMet), total: String(rollup.milestonesTotal), due: String(rollup.dueSoon) })}
         />
         <StatTile
-          label="Avance de indicadores"
-          value={rollup.kpiAttainment === null ? 'Sin medir' : formatPercent(rollup.kpiAttainment)}
+          label={t('iniKpi.indicators')}
+          value={rollup.kpiAttainment === null ? t('iniKpi.unmeasured') : formatPercent(rollup.kpiAttainment)}
           icon={TrendingUp}
           tone="success"
           meter={rollup.kpiAttainment ?? undefined}
           hint={rollup.kpiAttainment === null
-            ? `${rollup.kpisTotal} KPI declarado(s), ninguno con línea base y meta`
-            : `${rollup.kpisMeasurable}/${rollup.kpisTotal} KPI medibles · ${formatInvestment(rollup.investment || undefined, currency)}`}
+            ? t('iniKpi.unmeasuredHint', { count: String(rollup.kpisTotal) })
+            : t('iniKpi.measurableHint', { measurable: String(rollup.kpisMeasurable), total: String(rollup.kpisTotal), investment: formatInvestment(rollup.investment || undefined, currency) })}
         />
       </div>
     </div>
