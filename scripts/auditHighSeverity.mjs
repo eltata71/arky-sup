@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const BRACES_ADVISORY = 'https://github.com/advisories/GHSA-vfj7-8cjw-p6xm';
-const BUILD_CHAIN = new Set(['braces', 'chokidar', 'micromatch', 'fast-glob', 'tailwindcss', 'postcss-nested', 'postcss-selector-parser']);
+const BUILD_CHAIN = new Set(['braces', 'chokidar', 'micromatch', 'fast-glob', 'tailwindcss']);
 const EXCEPTION_EXPIRES = '2026-11-03';
 
 /** The sole exception is one unpatched advisory in build-only dependencies. */
@@ -20,9 +20,17 @@ export function assessAudit(report, lockfile, today = new Date().toISOString().s
   const onlyBuildDependencies = high.every(([, vulnerability]) =>
     vulnerability.nodes?.length > 0
     && vulnerability.nodes.every((node) => lockfile.packages[node]?.dev === true));
+  // A source below high cannot make anything high; it only has to stay out of production.
+  const belowHighBuildOnly = (name) => {
+    const source = report.vulnerabilities[name];
+    return Boolean(source) && !['high', 'critical'].includes(source.severity)
+      && source.nodes?.length > 0 && source.nodes.every((node) => lockfile.packages[node]?.dev === true);
+  };
   const derivedFromBraces = high.every(([name, vulnerability]) =>
-    name === 'braces' || vulnerability.via?.every((source) =>
-      typeof source === 'string' && BUILD_CHAIN.has(source)));
+    name === 'braces' || (
+      vulnerability.via?.some((source) => typeof source === 'string' && BUILD_CHAIN.has(source))
+      && vulnerability.via.every((source) =>
+        typeof source === 'string' && (BUILD_CHAIN.has(source) || belowHighBuildOnly(source)))));
 
   if (today <= EXCEPTION_EXPIRES && knownChain && onlyBuildDependencies && derivedFromBraces) {
     return [];
