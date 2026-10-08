@@ -3,6 +3,7 @@ import { ArtifactTemplate } from '../types';
 import type { Artifact, ArtifactGenerationPhaseListener } from '../lib/artifacts';
 import { type Project, useAppContext } from '../context/AppContext';
 import { ARTIFACT_TEMPLATES, KANBAN_COLUMNS } from '../constants';
+import { groupTemplatesByAdm } from '../lib/artifacts/admPhases';
 import { sortTemplatesByRoadmap } from '../lib/artifacts/artifactGovernance';
 import {
     DocumentTextIcon,
@@ -186,6 +187,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPhase, setSelectedPhase] = useState<string>('all');
+    const [groupByAdm, setGroupByAdm] = useState(false);
     // Mis artefactos uses the activity-based default; the catalog uses the
     // AI-recommended sequence by default so each phase shows the dependency
     // order the architect should follow to avoid inconsistencies.
@@ -357,8 +359,10 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
 
     // Phase sections always follow the roadmap order; the chosen sort only
     // reorders the template cards inside each section.
-    const groupedTemplateEntries = (Object.entries(groupedTemplates) as Array<[string, ArtifactTemplate[]]>)
-        .sort(([phaseA], [phaseB]) => KANBAN_COLUMNS.indexOf(phaseA) - KANBAN_COLUMNS.indexOf(phaseB));
+    const groupedTemplateEntries = groupByAdm
+        ? groupTemplatesByAdm(sortedTemplates)
+        : (Object.entries(groupedTemplates) as Array<[string, ArtifactTemplate[]]>)
+            .sort(([phaseA], [phaseB]) => KANBAN_COLUMNS.indexOf(phaseA) - KANBAN_COLUMNS.indexOf(phaseB));
     const selectedPhaseSummary = phaseSummaries.find(summary => summary.phase === selectedPhase);
     const hasActiveFilters = searchTerm.trim().length > 0 || selectedPhase !== 'all';
     const readyTemplateCount = filteredTemplates.filter(template => !latestArtifacts.some(artifact => artifact.name === template.name)).length;
@@ -870,6 +874,10 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
 
                         {activeTab === 'catalog' && (
                             <div className="space-y-8 animate-slide-up pb-24">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                                    <input type="checkbox" checked={groupByAdm} onChange={event => setGroupByAdm(event.target.checked)} />
+                                    Agrupar por fase TOGAF ADM
+                                </label>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111116]">
                                         <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Plantillas visibles</p>
@@ -890,7 +898,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                         <section key={phase} className="space-y-4">
                                             <div className="flex items-center gap-3">
                                                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-100 text-sm font-black text-primary-700 dark:bg-primary-500/15 dark:text-primary-200">
-                                                    {phase.match(/Fase (\d)/)?.[1] || '#'}
+                                                    {(groupByAdm ? phase.match(/Fase ([A-H])|^(P)reliminar/)?.slice(1).find(Boolean) : phase.match(/Fase (\d)/)?.[1]) || '#'}
                                                 </span>
                                                 <div className="min-w-0">
                                                     <h3 className="text-xl font-black text-slate-950 dark:text-white">{phase}</h3>

@@ -86,6 +86,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Mapa de Capacidades de Negocio",
         type: "react-flow-graph",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "TOGAF ADM · Fase B (Mapa de capacidades)",
+        admPhase: "B",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Visualizar las capacidades clave del negocio para alinear la tecnología con las metas de la empresa.",
         keyConcepts: [
@@ -98,6 +100,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Visión de la Arquitectura",
         type: "markdown",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "TOGAF ADM · Fase A (Visión de la arquitectura)",
+        admPhase: "A",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Establecer una visión de alto nivel para la arquitectura, describiendo el estado futuro deseado y los principios guía.",
         keyConcepts: [
@@ -110,6 +114,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Principios de Arquitectura",
         type: "markdown",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "TOGAF ADM · Fase Preliminar (Principios)",
+        admPhase: "preliminary",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Definir un conjunto de reglas y directrices estratégicas que gobiernan el diseño y la evolución de la arquitectura.",
         keyConcepts: [
@@ -122,6 +128,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Contexto (C4-N1)",
         type: "mermaid-c4-context",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "C4 · Nivel 1",
+        admPhase: "A",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Mostrar una vista panorámica del sistema, sus usuarios y sus interacciones con otros sistemas externos.",
         keyConcepts: [
@@ -135,6 +143,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Análisis de Stakeholders",
         type: "markdown",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "TOGAF ADM · Fase A (Mapa de stakeholders)",
+        admPhase: "A",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Identificar a todas las personas y grupos de interés, entender sus necesidades, influencias y expectativas.",
         keyConcepts: [
@@ -147,6 +157,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Mapa de Flujo de Valor",
         type: "hybrid-text-diagram",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "TOGAF ADM · Fase B (Flujo de valor)",
+        admPhase: "B",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Mapear los pasos desde la solicitud de un cliente hasta la entrega de valor para identificar ineficiencias.",
         keyConcepts: [
@@ -159,6 +171,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Modelo de Proceso de Negocio (BPMN)",
         type: "hybrid-text-diagram",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "OMG BPMN 2.0",
+        admPhase: "B",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Modelar visualmente los pasos de un proceso de negocio para entender el 'cómo' y encontrar oportunidades de mejora.",
         keyConcepts: [
@@ -172,6 +186,7 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Resumen Ejecutivo",
         type: "presentation-summary",
         phase: "General",
+        standard: "Comunicación ejecutiva (síntesis)",
         architecturalView: "Vista de Contexto y Negocio",
         objective: "Generar un briefing deck ejecutivo de alto nivel (5-8 slides) para stakeholders no técnicos y directivos, enfocado en valor de negocio, beneficios, riesgos, decisiones y próximos pasos.",
         keyConcepts: [
@@ -189,6 +204,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Contenedores (C4-N2)",
         type: "mermaid-c4-container",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "C4 · Nivel 2",
+        admPhase: "C",
         architecturalView: "Vista Lógica y de Diseño",
         objective: "Descomponer el sistema en sus 'contenedores' principales (APIs, bases de datos, aplicaciones web, etc.).",
         keyConcepts: [
@@ -201,6 +218,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Componentes (C4-N3)",
         type: "mermaid-c4-component",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "C4 · Nivel 3",
+        admPhase: "C",
         architecturalView: "Vista Lógica y de Diseño",
         objective: "Descomponer un contenedor en sus componentes internos (ej. controladores, servicios, repositorios).",
         keyConcepts: [
@@ -213,6 +232,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Integración",
         type: "mermaid-graph",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "TOGAF ADM · Fase C (Arquitectura de aplicaciones)",
+        admPhase: "C",
         architecturalView: "Vista Lógica y de Diseño",
         objective: "Visualizar cómo se conectan e interactúan los diferentes sistemas, APIs y componentes.",
         keyConcepts: [
@@ -225,6 +246,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Contrato de API (OpenAPI)",
         type: "yaml",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "OpenAPI 3.1",
+        admPhase: "G",
         architecturalView: "Vista Lógica y de Diseño",
         objective: "Definir formalmente la especificación de una API RESTful usando el estándar OpenAPI.",
         keyConcepts: [
@@ -237,6 +260,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Catálogo de Patrones de Diseño",
         type: "hybrid-text-diagram",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "Patrones de diseño (GoF / EIP)",
+        admPhase: "G",
         architecturalView: "Vista Lógica y de Diseño",
         objective: "Documentar los patrones de diseño de software (ej. 'Singleton', 'Factory') que se utilizarán en el proyecto.",
         keyConcepts: [
@@ -249,6 +274,7 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Resumen de Arquitectura",
         type: "presentation-overview",
         phase: "General",
+        standard: "Comunicación ejecutiva (síntesis)",
         architecturalView: "Vista Lógica y de Diseño",
         objective: "Generar un deck sintético de arquitectura (6-10 slides) para una audiencia técnica y semi-ejecutiva, con visión general, capacidades, componentes, integraciones, decisiones, riesgos y próximos pasos.",
         keyConcepts: [
@@ -266,6 +292,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Modelo de Dominio (ERD)",
         type: "react-flow-graph",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "TOGAF ADM · Fase C (Arquitectura de datos)",
+        admPhase: "C",
         architecturalView: "Vista de Datos",
         objective: "Representar las entidades de negocio clave, sus atributos y las relaciones que existen entre ellas.",
         keyConcepts: [
@@ -279,6 +307,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Flujo de Datos Lógico",
         type: "mermaid-graph",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "TOGAF ADM · Fase C (Arquitectura de datos)",
+        admPhase: "C",
         architecturalView: "Vista de Datos",
         objective: "Mostrar cómo fluyen los datos a través del sistema, identificando procesos y almacenes de datos.",
         keyConcepts: [
@@ -292,6 +322,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Modelo Físico de Datos",
         type: "react-flow-graph",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "TOGAF ADM · Fase D (Tecnología de datos)",
+        admPhase: "D",
         architecturalView: "Vista de Datos",
         objective: "Traducir el modelo lógico a un diseño específico para una base de datos (tablas, columnas, índices).",
         keyConcepts: [
@@ -304,6 +336,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diccionario de Datos",
         type: "markdown",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "TOGAF ADM · Fase C (Arquitectura de datos)",
+        admPhase: "C",
         architecturalView: "Vista de Datos",
         objective: "Crear un catálogo centralizado de definiciones para todos los elementos de datos del sistema.",
         keyConcepts: [
@@ -317,6 +351,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Estrategia de Migración de Datos",
         type: "markdown",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "TOGAF ADM · Fase F (Planificación de la migración)",
+        admPhase: "F",
         architecturalView: "Vista de Datos",
         objective: "Planificar el proceso de mover datos desde un sistema de origen a un sistema de destino.",
         keyConcepts: [
@@ -332,6 +368,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Secuencia",
         type: "mermaid-sequence",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "UML 2.5 · Diagrama de secuencia",
+        admPhase: "C",
         architecturalView: "Vista de Proceso e Interacción",
         objective: "Ilustrar las interacciones entre componentes a lo largo del tiempo para un escenario específico (ej. 'Procesar pago').",
         keyConcepts: [
@@ -344,6 +382,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Máquina de Estados",
         type: "mermaid-state",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "UML 2.5 · Máquina de estados",
+        admPhase: "C",
         architecturalView: "Vista de Proceso e Interacción",
         objective: "Modelar el comportamiento de un objeto, describiendo sus estados y las transiciones entre ellos.",
         keyConcepts: [
@@ -356,6 +396,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Casos de Uso",
         type: "hybrid-text-diagram",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "UML 2.5 · Casos de uso",
+        admPhase: "requirements",
         architecturalView: "Vista de Proceso e Interacción",
         objective: "Representar las interacciones entre los actores (usuarios) y el sistema.",
         keyConcepts: [
@@ -370,6 +412,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Despliegue (C4-N4)",
         type: "mermaid-c4-deployment",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "C4 · Despliegue",
+        admPhase: "D",
         architecturalView: "Vista Física y de Despliegue",
         objective: "Mostrar cómo se despliegan los contenedores del software en la infraestructura (servidores, redes, etc.).",
         keyConcepts: [
@@ -382,6 +426,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama de Arquitectura de Red",
         type: "mermaid-graph",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "TOGAF ADM · Fase D (Arquitectura tecnológica)",
+        admPhase: "D",
         architecturalView: "Vista Física y de Despliegue",
         objective: "Visualizar la topología de la red, incluyendo subredes, firewalls y balanceadores de carga.",
         keyConcepts: [
@@ -394,6 +440,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Modelo de Costos de Infraestructura",
         type: "markdown",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "TOGAF ADM · Fase E (Análisis de costes)",
+        admPhase: "E",
         architecturalView: "Vista Física y de Despliegue",
         objective: "Estimar los costos de la infraestructura necesaria para ejecutar la solución.",
         keyConcepts: [
@@ -406,6 +454,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Diagrama del Pipeline CI/CD",
         type: "mermaid-graph",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "TOGAF ADM · Fase G (Gobierno de la implementación)",
+        admPhase: "G",
         architecturalView: "Vista Física y de Despliegue",
         objective: "Visualizar las etapas del pipeline de Integración y Despliegue Continuo (CI/CD).",
         keyConcepts: [
@@ -418,6 +468,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Plan de Recuperación ante Desastres (DRP)",
         type: "markdown",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "ISO/IEC 27031",
+        admPhase: "D",
         architecturalView: "Vista Física y de Despliegue",
         objective: "Definir la estrategia y los procedimientos para restaurar el servicio después de una interrupción mayor.",
         keyConcepts: [
@@ -432,6 +484,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Especificación de Requerimientos (SRS)",
         type: "markdown",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ISO/IEC/IEEE 29148",
+        admPhase: "requirements",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Documentar de forma completa los requerimientos funcionales y no funcionales.",
         keyConcepts: [
@@ -441,21 +495,11 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         representation: "document"
     },
     {
-        name: "Catálogo de Decisiones (ADR)",
-        type: "markdown",
-        phase: "Fase 3: Diseño Físico y Tecnológico",
-        architecturalView: "Vista de Gestión y Soporte",
-        objective: "Registrar las decisiones arquitectónicas importantes (Architecture Decision Records).",
-        keyConcepts: [
-            { term: "Decisión", definition: "La elección tomada (ej. 'Usar base de datos PostgreSQL')." },
-            { term: "Contexto", definition: "Las fuerzas y requerimientos que influyeron en la decisión." }
-        ],
-        representation: "document"
-    },
-    {
         name: "Registro de Decisiones Arquitectónicas (ADR)",
         type: "markdown",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "ADR · formato de Michael Nygard",
+        admPhase: "requirements",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Documentar decisiones clave de arquitectura y sus justificaciones.",
         keyConcepts: [
@@ -468,6 +512,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Plan de Proyecto (Gantt)",
         type: "mermaid-gantt",
         phase: "Fase 1: Estratégica y de Visión de Negocio",
+        standard: "TOGAF ADM · Fase F (Hoja de ruta de implementación)",
+        admPhase: "F",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Crear un cronograma visual del proyecto, mostrando fases, tareas y dependencias.",
         keyConcepts: [
@@ -480,6 +526,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Casos de Prueba",
         type: "markdown",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "ISO/IEC/IEEE 29119",
+        admPhase: "G",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Definir los escenarios y pasos de prueba para verificar que el sistema funciona como se espera.",
         keyConcepts: [
@@ -492,6 +540,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Manual de Operaciones / Runbook",
         type: "markdown",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "ITIL 4 · Gestión de la operación",
+        admPhase: "H",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Crear una guía detallada para el equipo de operaciones con procedimientos para tareas comunes y resolución de incidentes.",
         keyConcepts: [
@@ -504,6 +554,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Plan de Monitorización",
         type: "hybrid-text-diagram",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "ITIL 4 · Monitorización",
+        admPhase: "H",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Definir qué métricas clave se monitorizarán, qué herramientas se usarán y cómo se configurarán las alertas.",
         keyConcepts: [
@@ -516,6 +568,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Modelo de Amenazas",
         type: "hybrid-text-diagram",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "STRIDE (Microsoft)",
+        admPhase: "D",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Identificar y evaluar posibles amenazas de seguridad y vulnerabilidades en la arquitectura.",
         keyConcepts: [
@@ -528,6 +582,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Matriz de Controles de Seguridad",
         type: "markdown",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "ISO/IEC 27002",
+        admPhase: "D",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Mapear requerimientos de seguridad a los componentes de la arquitectura que los implementan para garantizar la cobertura.",
         keyConcepts: [
@@ -540,6 +596,7 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "README del Proyecto",
         type: "markdown",
         phase: "General",
+        standard: "Documentación del proyecto",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Servir como la página de inicio del repositorio, explicando qué es el proyecto y cómo empezar a trabajar con él.",
         keyConcepts: [
@@ -552,6 +609,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Informe de Revisión de Arquitectura",
         type: "markdown",
         phase: "General",
+        standard: "TOGAF ADM · Fase G (Revisión de conformidad)",
+        admPhase: "G",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Generar un análisis completo de la arquitectura actual del proyecto, identificando fortalezas, riesgos y recomendaciones.",
         keyConcepts: [
@@ -565,6 +624,7 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Presentación Ejecutiva",
         type: "presentation-executive",
         phase: "General",
+        standard: "Comunicación ejecutiva (presentación)",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Generar un deck ejecutivo (8-12 slides) para directivos, sponsors y stakeholders no técnicos. Debe cubrir: portada, contexto, problema, objetivos, valor de negocio, arquitectura objetivo/visión, roadmap, riesgos, decisiones requeridas y cierre.",
         keyConcepts: [],
@@ -577,6 +637,7 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Presentación Técnica",
         type: "presentation-technical",
         phase: "General",
+        standard: "Comunicación técnica (presentación)",
         architecturalView: "Vista de Gestión y Soporte",
         objective: "Generar un deck técnico detallado (10-15 slides) para equipos de arquitectura, desarrollo, seguridad e integración. Debe cubrir: portada, contexto técnico, arquitectura actual, arquitectura objetivo, componentes, integraciones, seguridad, datos, despliegue, observabilidad, riesgos técnicos, ADRs y próximos pasos.",
         keyConcepts: [],
@@ -591,6 +652,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Escenarios de Atributos de Calidad",
         type: "hybrid-text-diagram",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ISO/IEC 25010 · ATAM",
+        admPhase: "requirements",
         architecturalView: "Vista de Calidad y Validación",
         objective: "Especificar requerimientos no funcionales de manera medible y comprobable (Fuente, Estímulo, Respuesta).",
         keyConcepts: [
@@ -603,6 +666,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Árbol de Utilidad",
         type: "mermaid-graph",
         phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ATAM (SEI)",
+        admPhase: "requirements",
         architecturalView: "Vista de Calidad y Validación",
         objective: "Priorizar los atributos de calidad (ASRs) basándose en el valor para el negocio y el riesgo arquitectónico.",
         keyConcepts: [
@@ -615,6 +680,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Matriz de Tácticas de Arquitectura",
         type: "markdown",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "ISO/IEC 25010 · Tácticas (SEI)",
+        admPhase: "D",
         architecturalView: "Vista de Calidad y Validación",
         objective: "Mapear los atributos de calidad deseados con las decisiones de diseño y patrones técnicos implementados.",
         keyConcepts: [
@@ -627,6 +694,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Análisis de Compromisos (Trade-offs)",
         type: "markdown",
         phase: "Fase 3: Diseño Físico y Tecnológico",
+        standard: "ATAM (SEI)",
+        admPhase: "E",
         architecturalView: "Vista de Calidad y Validación",
         objective: "Documentar y justificar los conflictos entre atributos de calidad (ej. Seguridad vs Rendimiento).",
         keyConcepts: [
@@ -639,6 +708,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Definición de Fitness Functions",
         type: "markdown",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "Arquitectura evolutiva (Ford, Parsons, Kua)",
+        admPhase: "H",
         architecturalView: "Vista de Calidad y Validación",
         objective: "Diseñar pruebas automatizadas que validen continuamente la integridad de la arquitectura.",
         keyConcepts: [
@@ -651,6 +722,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Estrategia de Observabilidad",
         type: "hybrid-text-diagram",
         phase: "Fase 4: Implementación y Operaciones",
+        standard: "OpenTelemetry",
+        admPhase: "H",
         architecturalView: "Vista de Calidad y Validación",
         objective: "Definir el modelo de telemetría para monitorear la salud y el comportamiento del sistema en producción.",
         keyConcepts: [
@@ -669,6 +742,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "BRD — Documento de Requisitos de Negocio",
         type: "sdd-brd",
         phase: "SDD: Especificación",
+        standard: "BABOK v3 · Requisitos de negocio",
+        admPhase: "requirements",
         architecturalView: "Vista SDD",
         objective: "Capturar los requisitos de negocio de alto nivel, el problema que se resuelve, los objetivos del proyecto, los stakeholders clave y los criterios de éxito, siguiendo el estándar IEEE 830.",
         keyConcepts: [
@@ -683,6 +758,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Especificación de Casos de Uso",
         type: "sdd-use-case",
         phase: "SDD: Especificación",
+        standard: "UML 2.5 · Casos de uso",
+        admPhase: "requirements",
         architecturalView: "Vista SDD",
         objective: "Describir en detalle las interacciones entre los actores del sistema y el sistema mismo, incluyendo flujos principal, alternativo y de excepción, siguiendo UML 2.5.",
         keyConcepts: [
@@ -698,6 +775,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "User Story Map — Mapa de Historias de Usuario",
         type: "sdd-user-story",
         phase: "SDD: Especificación",
+        standard: "User Story Mapping (Patton)",
+        admPhase: "requirements",
         architecturalView: "Vista SDD",
         objective: "Organizar las historias de usuario en un mapa visual que refleja el recorrido del usuario, agrupadas por épicas y ordenadas por prioridad para definir el backlog y el MVP.",
         keyConcepts: [
@@ -714,6 +793,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Modelo de Dominio DDD",
         type: "sdd-domain-model",
         phase: "SDD: Especificación",
+        standard: "Domain-Driven Design (Evans)",
+        admPhase: "C",
         architecturalView: "Vista SDD",
         objective: "Modelar el dominio del negocio utilizando Domain-Driven Design: identificar Bounded Contexts, Aggregates, Entities, Value Objects, Domain Events y los mapas de contexto entre subdominios.",
         keyConcepts: [
@@ -729,6 +810,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Event Storming — Mapa de Eventos de Dominio",
         type: "sdd-event-storming",
         phase: "SDD: Especificación",
+        standard: "Event Storming (Brandolini)",
+        admPhase: "C",
         architecturalView: "Vista SDD",
         objective: "Descubrir y modelar los eventos de dominio, comandos, actores, políticas y sistemas externos que componen el flujo de negocio, utilizando la técnica de Event Storming de Alberto Brandolini.",
         keyConcepts: [
@@ -744,6 +827,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Glosario — Lenguaje Ubicuo (Ubiquitous Language)",
         type: "sdd-glossary",
         phase: "SDD: Especificación",
+        standard: "Domain-Driven Design (Evans)",
+        admPhase: "requirements",
         architecturalView: "Vista SDD",
         objective: "Definir el vocabulario compartido entre desarrolladores y expertos del negocio para eliminar ambigüedades en las especificaciones y el código.",
         keyConcepts: [
@@ -759,6 +844,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "NFR — Requisitos No Funcionales (ISO 25010)",
         type: "sdd-nfr",
         phase: "SDD: Especificación",
+        standard: "ISO/IEC 25010",
+        admPhase: "requirements",
         architecturalView: "Vista SDD",
         objective: "Especificar los requisitos de calidad del sistema de forma medible y verificable, cubriendo las características de ISO 25010: rendimiento, seguridad, usabilidad, fiabilidad, mantenibilidad y portabilidad.",
         keyConcepts: [
@@ -773,6 +860,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Escenarios BDD — Gherkin (Given/When/Then)",
         type: "sdd-bdd",
         phase: "SDD: Especificación",
+        standard: "Gherkin (BDD)",
+        admPhase: "requirements",
         architecturalView: "Vista SDD",
         objective: "Expresar los criterios de aceptación como escenarios ejecutables en lenguaje Gherkin (Given/When/Then), conectando las historias de usuario con pruebas automatizables y comprensibles para el negocio.",
         keyConcepts: [
@@ -790,6 +879,8 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         name: "Matriz de Trazabilidad de Requisitos",
         type: "sdd-traceability",
         phase: "SDD: Especificación",
+        standard: "ISO/IEC/IEEE 29148 · Trazabilidad",
+        admPhase: "requirements",
         architecturalView: "Vista SDD",
         objective: "Establecer y mantener la trazabilidad bidireccional entre requisitos de negocio, casos de uso, historias de usuario, componentes de arquitectura y casos de prueba, siguiendo IEEE 29148.",
         keyConcepts: [
