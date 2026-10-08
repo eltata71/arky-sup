@@ -28,7 +28,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArtifactTemplate } from '../types';
 import type { Artifact } from '../lib/artifacts';
 import type { Project } from '../context/AppContext';
-import { AssistantPanel } from './AssistantPanel';
 import { AIArchitectAvatar, AIArchitectChip } from './ui/AIArchitectIdentity';
 import { ResizeHandle } from './ui/ResizeHandle';
 import { Tooltip } from './ui/Tooltip';
@@ -38,6 +37,7 @@ import { ArrowRightIcon, XMarkIcon, SparklesIcon } from './Icons';
 import { MOTION } from '../lib/designTokens';
 
 const STORAGE_KEY = 'arky_copilot_open';
+const AssistantPanel = React.lazy(() => import('./AssistantPanel').then((module) => ({ default: module.AssistantPanel })));
 const WIDTH_STORAGE_KEY = 'arky.copilot.width';
 
 /**
@@ -209,12 +209,12 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         </div>
 
                         <div className="flex-1 min-h-0 flex flex-col">
-                            <AssistantPanel
+                            <React.Suspense fallback={null}><AssistantPanel
                                 project={project}
                                 activeArtifact={activeArtifact}
                                 setActiveArtifactId={setActiveArtifactId}
                                 onRequestArtifactGeneration={onRequestArtifactGeneration}
-                            />
+                            /></React.Suspense>
                         </div>
                       </div>
                     </motion.aside>
@@ -256,12 +256,12 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                                 </button>
                             </header>
                             <div className="flex-1 min-h-0 flex flex-col">
-                                <AssistantPanel
+                                <React.Suspense fallback={null}><AssistantPanel
                                     project={project}
                                     activeArtifact={activeArtifact}
                                     setActiveArtifactId={setActiveArtifactId}
                                     onRequestArtifactGeneration={onRequestArtifactGeneration}
-                                />
+                                /></React.Suspense>
                             </div>
                         </motion.div>
                     </motion.div>

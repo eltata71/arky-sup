@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext, type Project } from '../context/AppContext';
 import { ChatModalPurpose, Template } from '../types';
 import { useCreateAttention } from '../hooks/useCreateAttention';
-import { artifactGenerationService, type GuidedProjectData } from '../services/ai';
+import type { GuidedProjectData } from '../services/ai';
 import { 
     ChatBubbleLeftRightIcon,
     DocumentTextIcon,
@@ -19,9 +19,6 @@ import {
     PlusCircleIcon,
 } from '../components/Icons';
 import { LayoutDashboard, ListFilter } from 'lucide-react';
-import { ChatModal } from '../components/ChatModal';
-import { TemplateSelectionModal } from '../components/GuidedCreationModal';
-import { ConsistencyCheckModal } from '../components/ConsistencyCheckModal';
 import { Modal } from '../components/Modal';
 import ProjectCreationStatus from '../components/ProjectCreationStatus';
 import ArtifactSelectionStep from '../components/ArtifactSelectionStep';
@@ -36,12 +33,14 @@ import {
     LinkInitiativeModal,
 } from '../components/attentions';
 import { PortfolioPulse } from '../components/architectureOffice/dashboard';
-import {
-    EngagementIntakeWizard,
-    type EngagementIntakeSubmit,
-} from '../components/architectureOffice/EngagementIntakeWizard';
+import type { EngagementIntakeSubmit } from '../components/architectureOffice/EngagementIntakeWizard';
 import { useAttentionPortfolio } from '../hooks/useAttentionPortfolio';
 import { EA_LEVELS } from '../lib/eaTerminology';
+
+const ChatModal = React.lazy(() => import('../components/ChatModal').then((module) => ({ default: module.ChatModal })));
+const TemplateSelectionModal = React.lazy(() => import('../components/GuidedCreationModal').then((module) => ({ default: module.TemplateSelectionModal })));
+const ConsistencyCheckModal = React.lazy(() => import('../components/ConsistencyCheckModal').then((module) => ({ default: module.ConsistencyCheckModal })));
+const EngagementIntakeWizard = React.lazy(() => import('../components/architectureOffice/EngagementIntakeWizard').then((module) => ({ default: module.EngagementIntakeWizard })));
 
 interface ProjectsPageProps {
   navigateToWorkspace: (id: string) => void;
@@ -493,7 +492,8 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
     });
     if (!createdProject) return;
 
-    const initialArtifacts = await artifactGenerationService.getInitialArtifactsForTemplate(template.name, settings);
+    const { getInitialArtifactsForTemplate } = await import('../services/ai/templateSuggestions');
+    const initialArtifacts = await getInitialArtifactsForTemplate(template.name, settings);
 
     setCreationData({
         project: createdProject,
@@ -560,7 +560,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-50 dark:bg-gray-950">
       <div className="flex-1 overflow-y-auto p-4 md:p-12 md:pl-20">
         {isChatModalOpen && chatModalConfig && (
-            <ChatModal
+            <React.Suspense fallback={null}><ChatModal
                 isOpen={isChatModalOpen}
                 onClose={() => setChatModalOpen(false)}
                 onComplete={handleChatComplete}
@@ -569,13 +569,13 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                 initialPrompt={chatModalConfig.initialPrompt}
                 projectId={chatModalConfig.projectId}
                 contextData={chatModalConfig.purpose === 'project-chat' ? undefined : creationContext}
-            />
+            /></React.Suspense>
         )}
-        <TemplateSelectionModal 
+        {isTemplateModalOpen && <React.Suspense fallback={null}><TemplateSelectionModal
             isOpen={isTemplateModalOpen}
             onClose={() => setTemplateModalOpen(false)}
             onSelect={handleTemplateSelect}
-        />
+        /></React.Suspense>}
         
         {/* Modals for Project Actions */}
         {projectToDelete && (
@@ -610,11 +610,11 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
         )}
 
         {consistencyProject && (
-            <ConsistencyCheckModal 
+            <React.Suspense fallback={null}><ConsistencyCheckModal
                 isOpen={!!consistencyProject}
                 onClose={() => setConsistencyProject(null)}
                 project={consistencyProject}
-            />
+            /></React.Suspense>
         )}
 
         <div className="mx-auto max-w-7xl space-y-5">
@@ -866,7 +866,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
         Opening a deliverable from an attention preselects that attention, so the
         second level of the hierarchy is already answered when the dialog opens.
       */}
-      <EngagementIntakeWizard
+      {intakeProjectId !== null && <React.Suspense fallback={null}><EngagementIntakeWizard
         open={intakeProjectId !== null}
         initialProjectId={intakeProjectId ?? undefined}
         projects={projects.map((project) => ({
@@ -880,7 +880,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
         onPropose={handleProposeEngagement}
         onApproveAndRun={handleApproveAndRun}
         onClose={() => setIntakeProjectId(null)}
-      />
+      /></React.Suspense>}
     </div>
   );
 };
