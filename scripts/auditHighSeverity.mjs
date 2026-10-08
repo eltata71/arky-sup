@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const BRACES_ADVISORY = 'https://github.com/advisories/GHSA-vfj7-8cjw-p6xm';
-const BUILD_CHAIN = new Set(['braces', 'chokidar', 'micromatch', 'fast-glob', 'tailwindcss']);
+const BUILD_CHAIN = new Set(['braces', 'chokidar', 'micromatch', 'fast-glob', 'tailwindcss', 'postcss-nested', 'postcss-selector-parser']);
 const EXCEPTION_EXPIRES = '2026-11-03';
 
 /** The sole exception is one unpatched advisory in build-only dependencies. */
