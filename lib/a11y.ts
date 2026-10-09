@@ -94,3 +94,21 @@ export const DECORATIVE = { 'aria-hidden': true } as const;
  * the card's real control — its title — is the single announced affordance.
  */
 export const POINTER_ONLY_OVERLAY = { 'aria-hidden': true, tabIndex: -1 } as const;
+
+/**
+ * Keyboard path for a non-button element that must stay a container (a card
+ * holding headings, which a `<button>` cannot legally hold). Spread it with
+ * the activation handler: the element gets a role, a tab stop and Enter/Space.
+ */
+export const activatable = (onActivate: () => void) => ({
+  role: 'button' as const,
+  tabIndex: 0,
+  onClick: onActivate,
+  onKeyDown: (event: { key: string; target: unknown; currentTarget: unknown; preventDefault: () => void }) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onActivate();
+    }
+  },
+});

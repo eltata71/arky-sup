@@ -27,6 +27,8 @@ export { Tabs, TabList, Tab, TabPanel } from './Tabs';
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabsVariant, TabsSize } from './Tabs';
 export { Drawer } from './Drawer';
 export type { DrawerProps, DrawerSide, DrawerSize } from './Drawer';
+export { Modal } from './Modal';
+export type { ModalProps } from './Modal';
 export { Alert } from './Alert';
 export type { AlertProps, AlertTone, AlertVariant } from './Alert';
 export { Skeleton, SkeletonGroup } from './Skeleton';

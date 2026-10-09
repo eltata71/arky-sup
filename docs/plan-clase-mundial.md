@@ -802,7 +802,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 13.0 axe y regresión visual | Hecha (#169) | axe y regresión visual en E2E con referencias medidas en CI. Cerró también un defecto real: el enlace profundo `?artifact=` no reintentaba la hidratación si el portafolio llegaba tras montar `Workspace` (`useProjectArtifacts` depende ahora de la llegada del proyecto) |
 | 13.1 Movimiento reducido | Hecha | `MotionConfig reducedMotion="user"` en la raíz, `MOTION` en `lib/designTokens.ts` como fuente única de duraciones y curvas, y un escáner que impide literales en `motion/react` |
 | 13.2 Idioma | En curso (R-16: B, tamaño L) | Infraestructura entregada: un módulo por idioma, inglés lazy, presupuesto monótono de literales (1 321 medidos); raíl y navegación móvil migrados. Falta la campaña de extracción hasta 0 |
-| 13.3 Primitivas | Pendiente | |
+| 13.3 Primitivas | Hecha | #187 |
 | 13.4 Estados vacío, carga y error | Pendiente | |
 | 13.5 Microinteracciones | Pendiente | |
 | 14.0 Ciclo de vida visible | Pendiente | |

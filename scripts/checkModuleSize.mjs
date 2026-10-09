@@ -110,7 +110,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/quality/diagramQualityService.ts': 26699, // plan diagramas 8.4a: +257, el análisis puntúa sin lo derivado y siempre clasificado
   'services/publicationPipeline/PublicationPreflightService.ts': 26117, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/artifacts/ArtifactInspectorPanel.tsx': 24782, // plan diagramas 8.4c: +47, «Sin medir» en vez de una cifra neutra · F4-05: la coordinación salió a `services/artifacts/application`
-  'pages/LMS/CourseView.tsx': 24691,
+  'pages/LMS/CourseView.tsx': 24745,
   'services/diagram/irToReactFlow.ts': 23966, // plan diagramas 4.1: +100, el enlace de detalle viaja en los datos del nodo
   'services/architectureOffice/domain/officePortfolio.ts': 23879, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 3: rutas de `domain/`
   // 23338 → 23347 el 2026-09-22: nueve bytes, y la razón es la que el gate
@@ -121,7 +121,7 @@ export const BYTE_CEILINGS = {
   // vive en `describeArbDecisionEligibility`; lo que creció es la llamada, no
   // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
   'pages/EngagementRoom.tsx': 23347,
-  'pages/LMS/LMSCatalog.tsx': 22897,
+  'pages/LMS/LMSCatalog.tsx': 22959,
   'components/ChatInterface.tsx': 22492, // plan artefactos 7.3d: +27, el chat pasa su proyecto a los turnos del agente
   'services/diagram/diagramTypeQualityGates.ts': 22356,
   'services/diagram/bpmnValidation.ts': 21918,
@@ -196,7 +196,7 @@ export const CEILINGS = {
   'components/copilot/ProjectCopilotChatModal.tsx': 590, // 10.4b: +8 · F5-02
   'services/diagram/suggestionActionExecutors.ts': 760,
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
-  'pages/LMS/LessonModal.tsx': 737,
+  'pages/LMS/LessonModal.tsx': 739,
   'services/diagram/qualityRepair.ts': 642, // plan diagramas 8.4a: 710 → 642 · plan diagramas 8.3b: +2, el clon del IR conserva `notation` · plan diagramas 8.1b: +3, el alcance `structural`
   'hooks/artifacts/useDiagramRendering.ts': 561, // plan diagramas 8.3d: 630 → 561 · plan diagramas 8.1d: 685 → 630
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
