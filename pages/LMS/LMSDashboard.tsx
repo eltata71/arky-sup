@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Course, UserProgress } from '../../types/lms';
 import { BookOpenIcon, StarIcon, SparklesIcon, ArrowRightIcon, PlayCircleIcon, MoreVerticalIcon, PencilIcon, Trash2Icon, BarChart2Icon, RotateCcwIcon, ExternalLinkIcon, TableIcon, LayoutGridIcon, FlameIcon, AwardIcon, ZapIcon, TrophyIcon } from 'lucide-react';
+import { Modal } from '../../components/ui/Modal';
+import { activatable } from '../../lib/a11y';
 import { EditCourseModal } from './EditCourseModal';
 import { levelFromXp } from '../../lib/lmsProgress';
 import { useAppContext } from '../../context/AppContext';
@@ -362,7 +364,7 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                                     </div>
 
                                     {/* Card content — clickable */}
-                                    <div onClick={() => onOpenCourse(course)} className="cursor-pointer flex flex-col flex-1">
+                                    <div {...activatable(() => onOpenCourse(course))} className="cursor-pointer flex flex-col flex-1">
                                         <div className="flex items-center space-x-3 mb-4">
                                             <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
                                                 <BookOpenIcon className="h-6 w-6" />
@@ -404,10 +406,9 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
             {statsCourse && (() => {
                 const { total, read, inProg, percent, lastAccessed } = getCourseStats(statsCourse);
                 return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setStatsCourse(null)} />
-                        <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 ring-1 ring-gray-900/5 dark:ring-white/10">
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{statsCourse.title}</h2>
+                    <Modal isOpen onClose={() => setStatsCourse(null)} widthClass="max-w-sm">
+                        {({ titleId }) => (<>
+                            <h2 id={titleId} className="text-lg font-bold text-gray-900 dark:text-white mb-1">{statsCourse.title}</h2>
                             <p className="text-xs text-indigo-500 font-semibold uppercase tracking-wider mb-5">{statsCourse.category} · {statsCourse.level}</p>
                             <div className="space-y-3 mb-5">
                                 <div className="flex justify-between text-sm">
@@ -444,8 +445,8 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                             >
                                 Cerrar
                             </button>
-                        </div>
-                    </div>
+                        </>)}
+                    </Modal>
                 );
             })()}
 
@@ -453,13 +454,12 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
             {confirmDeleteId && (() => {
                 const course = courses.find(c => c.id === confirmDeleteId);
                 return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setConfirmDeleteId(null)} />
-                        <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 ring-1 ring-gray-900/5 dark:ring-white/10">
+                    <Modal isOpen onClose={() => setConfirmDeleteId(null)} widthClass="max-w-sm" role="alertdialog">
+                        {({ titleId }) => (<>
                             <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Trash2Icon className="h-6 w-6 text-red-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">{t('lmsDash.deleteCourse')}</h3>
+                            <h3 id={titleId} className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">{t('lmsDash.deleteCourse')}</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
                                 ¿Estás seguro de que deseas eliminar <span className="font-semibold text-gray-700 dark:text-gray-300">"{course?.title}"</span>? Esta acción no se puede deshacer.
                             </p>
@@ -477,8 +477,8 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                                     Eliminar
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </>)}
+                    </Modal>
                 );
             })()}
         </div>

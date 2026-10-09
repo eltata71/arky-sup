@@ -1,4 +1,5 @@
 
+import { activatable } from '../../lib/a11y';
 import React, { useState } from 'react';
 
 import { Course, Lesson, UserProgress, SmartNote, LessonCache, Certificate } from '../../types/lms';
@@ -221,7 +222,7 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                                                             return (
                                                                 <div
                                                                     key={lesson.id || `lesson-${lIdx}`}
-                                                                    onClick={() => onOpenLesson(lesson, mod.title)}
+                                                                    {...activatable(() => onOpenLesson(lesson, mod.title))}
                                                                     className={`bg-white dark:bg-gray-800 rounded-xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group flex flex-col h-full ${isRead ? 'border-green-200 dark:border-green-900/50' : isProg ? 'border-amber-200 dark:border-amber-900/50' : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700'}`}
                                                                 >
                                                                     <div className="flex items-start justify-between mb-3">
