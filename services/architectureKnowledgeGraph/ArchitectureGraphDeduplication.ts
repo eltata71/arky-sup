@@ -154,6 +154,8 @@ export const consolidateEntities = (
         status,
         tags,
         metadata,
+        // The link to the inventory is a human decision: a rebuild keeps it.
+        ...(previous?.inventoryItemId ? { inventoryItemId: previous.inventoryItemId } : {}),
         createdAt: previous?.createdAt ?? now,
         updatedAt: now,
       });

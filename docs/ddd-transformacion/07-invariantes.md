@@ -26,6 +26,17 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | I-03 | Una iniciativa citada por un proyecto no se borra | `RPC` + contrato `engagement_overload_and_initiative_references` | ✅ cierra **H08** | fase 2 |
 | I-04 | El código es único en toda la base y lo asigna el servidor al crear | `RPC` (`pg_advisory_xact_lock` + siguiente libre del año) + `SQL` (`unique`) | ✅ | F6-04 |
 
+## Inventario empresarial
+
+| # | Invariante | Autoridad | ¿Basta? | Desde |
+|---|---|---|---|---|
+| V-01 | Un elemento tiene dueño, tipo válido y nombre | `TS` (`createInventoryItem`) + `RPC` (forma inválida → `22023`; el dueño es el actor) | ✅ | 11.2 |
+| V-02 | El nombre normalizado es único por dueño y tipo (los alias cuentan en el dominio) | `TS` (`findInventoryMatch`) + `SQL` (índice único → `23505`) | ⚠️ los alias sólo los vigila TypeScript | 11.2 |
+| V-03 | Cada usuario ve y edita sólo su inventario | `RLS` + guarda de la RPC (`owner_id`); pgTAP con arquitecto ajeno | ✅ | 11.2 |
+| V-04 | Dos pestañas no se pisan: se guarda con la revisión vista | `RPC` (`P0001` ante conflicto) | ✅ | 11.2 |
+| V-05 | `retired` es terminal; un comando que no cambia nada no escribe | `TS` (`applyInventoryCommand`) | ⚠️ sólo TypeScript | 11.2 |
+| V-06 | Nada se unifica sin un clic humano: la promoción propone y sólo `acceptPromotion` produce un plan | `TS` (`inventoryPromotion`) | ⚠️ convención del contexto, sin servidor | 11.2 |
+
 ## Proyectos de Arquitectura
 
 | # | Invariante | Autoridad | ¿Basta? | Desde |
