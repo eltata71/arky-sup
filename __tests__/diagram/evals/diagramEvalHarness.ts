@@ -19,6 +19,7 @@
  * en `origenRespuesta`). Mide el pipeline, que es lo que un cambio de código
  * puede romper sin que ninguna prueba unitaria lo vea.
  */
+import { hasArchimateMarker } from '../../../services/diagram/notation/archimateNotation';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { vi } from 'vitest';
@@ -331,7 +332,7 @@ const NOTATION_DIALECTS = new Set(['sequencediagram', 'erdiagram', 'statediagram
  * escribirse sin cambiar de dialecto.
  */
 async function measureNotationRoundTrip(text: string, savedIR: DiagramIR | null | undefined): Promise<boolean | null> {
-    if (!NOTATION_DIALECTS.has(savedDialect(text).toLowerCase())) return null;
+    if (!NOTATION_DIALECTS.has(savedDialect(text).toLowerCase()) && !hasArchimateMarker(text)) return null;
     if (!savedIR?.notation) return false;
     const ir = mermaidToIR(text);
     const written = serializeNotation(ir);
@@ -621,7 +622,7 @@ function measureGroupGain(ir: DiagramIR, dialect: string): number | null {
  */
 function measureNotationContract(saved: Pick<Artifact, 'id' | 'type' | 'content' | 'representation' | 'ir'>, artifactName: string): string[] | null {
     const ir = resolveRenderableDiagram(saved, { audience: 'technical' }).ir;
-    if (!ir || !c4LevelOfIR(ir)) return null;
+    if (!ir || (!c4LevelOfIR(ir) && ir.notation?.dialect !== 'archimate')) return null;
     const nodes = irToReactFlow(ir).nodes;
     const frame = defaultFrameMetadataFromIR(ir, { fallbackTitle: artifactName });
     return checkNotationContract(ir, {

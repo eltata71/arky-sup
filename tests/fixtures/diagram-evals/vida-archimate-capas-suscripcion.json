@@ -1,0 +1,46 @@
+{
+  "id": "vida-archimate-capas-suscripcion",
+  "dominio": "vida",
+  "proposito": "Vista ArchiMate (layered): el tipo de elemento y de relación sobreviven al guardado y a la reescritura (11.1).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Suscripción de Vida",
+    "descripcion": "Evaluación de riesgo y emisión de pólizas de vida.",
+    "contexto": [
+      "La evidencia médica se clasifica como PHI"
+    ]
+  },
+  "solicitud": {
+    "texto": "Muestra las capas de la suscripción de seguros de vida",
+    "audiencia": "technical",
+    "criterios": []
+  },
+  "plantilla": {
+    "nombre": "Vista de capas de la Suscripción",
+    "tipo": "mermaid-archimate",
+    "objetivo": "Muestra las capas de la suscripción de seguros de vida",
+    "conceptosClave": []
+  },
+  "respuestaModelo": "%% archimate viewpoint=layered\nflowchart LR\n    suscriptor[\"Suscriptor\"]\n    evaluar[\"Evaluar riesgo\"]\n    srvRiesgo[\"Servicio de evaluación de riesgo\"]\n    motor[\"Motor de suscripción\"]\n    srv[\"Servidor de aplicaciones\"]\n    suscriptor -->|assignment| evaluar\n    srvRiesgo -->|serving| evaluar\n    motor -->|realization| srvRiesgo\n    srv -->|realization| motor\n    class suscriptor archimate_business_role\n    class evaluar archimate_business_process\n    class srvRiesgo archimate_application_service\n    class motor archimate_application_component\n    class srv archimate_node",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Suscriptor"
+      ],
+      [
+        "Evaluar riesgo"
+      ],
+      [
+        "Servicio de evaluación de riesgo"
+      ],
+      [
+        "Motor de suscripción"
+      ],
+      [
+        "Servidor de aplicaciones"
+      ]
+    ],
+    "metadatos": []
+  }
+}

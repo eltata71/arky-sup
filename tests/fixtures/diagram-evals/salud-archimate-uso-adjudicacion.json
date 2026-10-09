@@ -1,0 +1,43 @@
+{
+  "id": "salud-archimate-uso-adjudicacion",
+  "dominio": "salud",
+  "proposito": "Vista ArchiMate (application-usage): el tipo de elemento y de relación sobreviven al guardado y a la reescritura (11.1).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Adjudicación Médica",
+    "descripcion": "Pago automático de reclamaciones.",
+    "contexto": [
+      "Las reglas de adjudicación deciden el pago"
+    ]
+  },
+  "solicitud": {
+    "texto": "Qué procesos de negocio usan los servicios de adjudicación",
+    "audiencia": "technical",
+    "criterios": []
+  },
+  "plantilla": {
+    "nombre": "Uso de aplicaciones de la Adjudicación",
+    "tipo": "mermaid-archimate",
+    "objetivo": "Qué procesos de negocio usan los servicios de adjudicación",
+    "conceptosClave": []
+  },
+  "respuestaModelo": "%% archimate viewpoint=application-usage\nflowchart LR\n    analista[\"Analista de reclamaciones\"]\n    adj[\"Adjudicar reclamación\"]\n    srv[\"Servicio de adjudicación\"]\n    comp[\"Motor de adjudicación\"]\n    analista -->|assignment| adj\n    srv -->|serving: decide el pago| adj\n    comp -->|realization| srv\n    class analista archimate_business_role\n    class adj archimate_business_process\n    class srv archimate_application_service\n    class comp archimate_application_component",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Analista de reclamaciones"
+      ],
+      [
+        "Adjudicar reclamación"
+      ],
+      [
+        "Servicio de adjudicación"
+      ],
+      [
+        "Motor de adjudicación"
+      ]
+    ],
+    "metadatos": []
+  }
+}

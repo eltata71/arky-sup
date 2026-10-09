@@ -393,6 +393,90 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         representation: "diagram"
     },
     {
+        name: "Vista Cooperación de Aplicaciones (ArchiMate)",
+        type: "mermaid-archimate",
+        phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ArchiMate 3.2 · Punto de vista application-cooperation",
+        admPhase: "C",
+        architecturalView: "Vista Lógica y de Diseño",
+        objective: "Mostrar cómo cooperan los componentes de aplicación mediante servicios, interfaces y flujos de datos. Declara el punto de vista con «%% archimate viewpoint=application-cooperation».",
+        keyConcepts: [
+            { term: "Componente de aplicación", definition: "Unidad modular desplegable que encapsula comportamiento y datos." },
+            { term: "Flujo", definition: "Transferencia de información entre componentes." }
+        ],
+        representation: "diagram"
+    },
+    {
+        name: "Vista Uso de Aplicaciones (ArchiMate)",
+        type: "mermaid-archimate",
+        phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ArchiMate 3.2 · Punto de vista application-usage",
+        admPhase: "C",
+        architecturalView: "Vista Lógica y de Diseño",
+        objective: "Relacionar procesos y actores de negocio con los servicios de aplicación que los soportan. Declara el punto de vista con «%% archimate viewpoint=application-usage».",
+        keyConcepts: [
+            { term: "Servicio de aplicación", definition: "Comportamiento expuesto que apoya un proceso de negocio." },
+            { term: "Proceso de negocio", definition: "Secuencia de comportamiento que produce un resultado." }
+        ],
+        representation: "diagram"
+    },
+    {
+        name: "Vista Capas (ArchiMate)",
+        type: "mermaid-archimate",
+        phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ArchiMate 3.2 · Punto de vista layered",
+        admPhase: "D",
+        architecturalView: "Vista Física y de Despliegue",
+        objective: "Mostrar de una sola vez negocio, aplicación y tecnología con las relaciones de servicio entre capas. Declara el punto de vista con «%% archimate viewpoint=layered».",
+        keyConcepts: [
+            { term: "Capa", definition: "Agrupación de elementos de negocio, aplicación o tecnología." },
+            { term: "Servicio", definition: "Lo que una capa ofrece a la superior." }
+        ],
+        representation: "diagram"
+    },
+    {
+        name: "Vista Motivación (ArchiMate)",
+        type: "mermaid-archimate",
+        phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ArchiMate 3.2 · Punto de vista motivation",
+        admPhase: "A",
+        architecturalView: "Vista de Contexto y Negocio",
+        objective: "Enlazar interesados, impulsores, metas y requisitos con lo que los realiza. Declara el punto de vista con «%% archimate viewpoint=motivation».",
+        keyConcepts: [
+            { term: "Impulsor", definition: "Condición que motiva a la organización a cambiar." },
+            { term: "Meta", definition: "Estado final que un interesado quiere alcanzar." }
+        ],
+        representation: "diagram"
+    },
+    {
+        name: "Vista Estrategia (ArchiMate)",
+        type: "mermaid-archimate",
+        phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ArchiMate 3.2 · Punto de vista strategy",
+        admPhase: "B",
+        architecturalView: "Vista de Contexto y Negocio",
+        objective: "Relacionar capacidades, recursos y flujos de valor con los cursos de acción. Declara el punto de vista con «%% archimate viewpoint=strategy».",
+        keyConcepts: [
+            { term: "Capacidad", definition: "Habilidad que la organización posee para lograr un resultado." },
+            { term: "Flujo de valor", definition: "Secuencia de actividades que crea valor para un cliente." }
+        ],
+        representation: "diagram"
+    },
+    {
+        name: "Vista Tecnología (ArchiMate)",
+        type: "mermaid-archimate",
+        phase: "Fase 2: Diseño Conceptual y Lógico",
+        standard: "ArchiMate 3.2 · Punto de vista technology",
+        admPhase: "D",
+        architecturalView: "Vista Física y de Despliegue",
+        objective: "Mostrar nodos, software de sistema, redes y artefactos que soportan las aplicaciones. Declara el punto de vista con «%% archimate viewpoint=technology».",
+        keyConcepts: [
+            { term: "Nodo", definition: "Recurso computacional sobre el que se ejecuta software." },
+            { term: "Artefacto", definition: "Pieza física que se despliega en un nodo." }
+        ],
+        representation: "diagram"
+    },
+    {
         name: "Diagrama de Casos de Uso",
         type: "hybrid-text-diagram",
         phase: "Fase 2: Diseño Conceptual y Lógico",

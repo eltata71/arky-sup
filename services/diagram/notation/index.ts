@@ -6,6 +6,7 @@ import type { DiagramIR, DiagramNotation } from '../../../lib/diagram';
 import { serializeSequenceNotation } from './sequenceNotation';
 import { serializeErdNotation } from './erdNotation';
 import { serializeStateNotation } from './stateNotation';
+import { comparableArchimate, serializeArchimateNotation } from './archimateNotation';
 
 export { erdRelationLabel } from './erdNotation';
 
@@ -14,6 +15,7 @@ const DIALECT_KEYWORDS: Record<DiagramNotation['dialect'], string[]> = {
     sequence: ['sequencediagram'],
     erd: ['erdiagram'],
     state: ['statediagram', 'statediagram-v2'],
+    archimate: ['flowchart', 'graph'],
 };
 
 /** Whether `notation` is the notation of a text whose dialect keyword is `dialect`. */
@@ -31,6 +33,7 @@ export function serializeNotation(ir: DiagramIR): string | null {
     if (!notation) return null;
     if (notation.dialect === 'sequence') return serializeSequenceNotation(ir, notation);
     if (notation.dialect === 'erd') return serializeErdNotation(ir, notation);
+    if (notation.dialect === 'archimate') return serializeArchimateNotation(ir, notation);
     return serializeStateNotation(ir, notation);
 }
 
@@ -85,6 +88,7 @@ function comparableNotation(notation: DiagramNotation, edge: (id: string) => str
             relations: Object.entries(notation.relations).map(([id, r]) => [edge(id), r]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
         };
     }
+    if (notation.dialect === 'archimate') return comparableArchimate(notation, edge);
     return {
         header: notation.header,
         direction: notation.direction ?? null,

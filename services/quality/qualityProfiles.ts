@@ -200,7 +200,7 @@ const profiles: ArtifactQualityProfile[] = [
     id: 'profile.diagram.process',
     label: 'Diagrama de proceso',
     family: 'diagram-process',
-    appliesTo: ['mermaid-graph', 'mermaid-state', 'mermaid-gantt'],
+    appliesTo: ['mermaid-graph', 'mermaid-state', 'mermaid-archimate', 'mermaid-gantt'],
     dimensions: DIAGRAM_BASE_DIMENSIONS,
     thresholds: DEFAULT_THRESHOLDS,
   },
