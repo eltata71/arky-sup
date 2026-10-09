@@ -185,10 +185,10 @@ export interface ArchitectureEntity {
   confidence: number;
   criticality: ArchitectureCriticality;
   status: ArchitectureEntityStatus;
-  /** Free-form labels. */
-  tags: string[];
+  tags: string[]; // free-form labels
   /** Structured, JSON-safe extension bag. */
   metadata: Record<string, string | number | boolean>;
+  inventoryItemId?: string; // 11.2: inventory key set by a human promotion, kept across rebuilds
   createdAt: string;
   updatedAt: string;
 }
