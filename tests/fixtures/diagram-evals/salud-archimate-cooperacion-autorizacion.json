@@ -1,0 +1,43 @@
+{
+  "id": "salud-archimate-cooperacion-autorizacion",
+  "dominio": "salud",
+  "proposito": "Vista ArchiMate (application-cooperation): el tipo de elemento y de relación sobreviven al guardado y a la reescritura (11.1).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Autorización Previa",
+    "descripcion": "Solicitudes de autorización previa a prestadores.",
+    "contexto": [
+      "El portal consulta elegibilidad antes de autorizar"
+    ]
+  },
+  "solicitud": {
+    "texto": "Cómo cooperan las aplicaciones de autorización previa",
+    "audiencia": "technical",
+    "criterios": []
+  },
+  "plantilla": {
+    "nombre": "Cooperación de aplicaciones de Autorización previa",
+    "tipo": "mermaid-archimate",
+    "objetivo": "Cómo cooperan las aplicaciones de autorización previa",
+    "conceptosClave": []
+  },
+  "respuestaModelo": "%% archimate viewpoint=application-cooperation\nflowchart LR\n    portal[\"Portal de prestadores\"]\n    elig[\"Servicio de elegibilidad\"]\n    motor[\"Motor de reglas clínicas\"]\n    sol[\"Solicitud de autorización\"]\n    portal -->|flow: envía solicitud| motor\n    motor -->|serving| portal\n    elig -->|serving: valida cobertura| motor\n    motor -->|access| sol\n    class portal archimate_application_component\n    class elig archimate_application_service\n    class motor archimate_application_component\n    class sol archimate_data_object",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Portal de prestadores"
+      ],
+      [
+        "Servicio de elegibilidad"
+      ],
+      [
+        "Motor de reglas clínicas"
+      ],
+      [
+        "Solicitud de autorización"
+      ]
+    ],
+    "metadatos": []
+  }
+}

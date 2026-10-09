@@ -298,6 +298,9 @@ export function selectRelevantBuckets(type: ArtifactType): Array<keyof Extracted
     if (t === 'mermaid-sequence') {
         return ['actors', 'systems', 'integrations', 'protocols', 'messaging'];
     }
+    if (t === 'mermaid-archimate') {
+        return ['actors', 'systems', 'processes', 'integrations', 'dataStores'];
+    }
     if (t === 'mermaid-state') {
         return ['processes', 'systems'];
     }

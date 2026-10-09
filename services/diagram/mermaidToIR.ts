@@ -25,6 +25,7 @@ import type { NotationParseApi } from './notation/notationParseApi';
 import { parseSequenceNotation } from './notation/sequenceNotation';
 import { parseErdNotation } from './notation/erdNotation';
 import { parseStateNotation } from './notation/stateNotation';
+import { readArchimateNotation } from './notation/archimateNotation';
 
 const SHAPE_SYNTAX: Array<{ open: string; close: string; shape: NodeShape }> = [
     { open: '[[', close: ']]', shape: 'tab-box' },
@@ -691,6 +692,12 @@ export function mermaidToIRWithDiagnostics(code: string): { ir: DiagramIR; diagn
     else if (lower === 'gantt' || lower === 'journey' || lower === 'mindmap') { /* no graph to read */ }
     else {
         parseFlowchart(body, ctx);
+    }
+
+    // ArchiMate is a marked flowchart (11.1): its element classes are read
+    // into the notation and removed before the generic class-to-role pass.
+    if (!notation && (lower.startsWith('flowchart') || lower.startsWith('graph'))) {
+        notation = readArchimateNotation(code, Array.from(ctx.nodes.keys()), ctx.classes, ctx.edges) ?? undefined;
     }
 
     const unmappedClasses = applyClassRoles(ctx.nodes, ctx.classes, canonicalKindForRole);

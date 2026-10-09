@@ -351,3 +351,13 @@ export const CANVAS_BACKGROUND = {
         'high-contrast': { bg: '#000000', dot: '#64748b', gap: 24, size: 1.4 },
     },
 } as const;
+
+/** ArchiMate 3.2 layer fills (the specification's own colours), with text and stroke that pass AA over them. */
+export const ARCHIMATE_LAYER_PALETTE = {
+    strategy: { bg: '#F5DEAA', stroke: '#8A6A1F', text: '#2B2108' },
+    business: { bg: '#FFFFB5', stroke: '#8A8A1F', text: '#2B2B08' },
+    application: { bg: '#B5FFFF', stroke: '#1F7F8A', text: '#082B2B' },
+    technology: { bg: '#C9E7B7', stroke: '#3F7F2A', text: '#0F2B08' },
+    motivation: { bg: '#CCCCFF', stroke: '#4F4F9A', text: '#10102B' },
+    implementation: { bg: '#FFE0E0', stroke: '#9A4F4F', text: '#2B0808' },
+} as const;

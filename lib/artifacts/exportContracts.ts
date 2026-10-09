@@ -35,6 +35,7 @@ export type ExportFormat =
   | 'svg'
   | 'mermaid'
   | 'diagram-json'
+  | 'archimate-xml'
   | 'pdf'
   | 'docx'
   | 'html'

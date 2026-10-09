@@ -23,7 +23,7 @@ export function normalizeCustomArtifactRecommendation(
     const artifactTypes: readonly ArtifactType[] = [
         'markdown', 'yaml', 'hybrid-text-diagram', 'mermaid-c4-context', 'mermaid-c4-container',
         'mermaid-c4-component', 'mermaid-c4-deployment', 'mermaid-erd', 'mermaid-sequence',
-        'mermaid-graph', 'mermaid-state', 'mermaid-gantt', 'react-flow-graph',
+        'mermaid-graph', 'mermaid-state', 'mermaid-archimate', 'mermaid-gantt', 'react-flow-graph',
         'presentation-executive', 'presentation-technical', 'sdd-brd', 'sdd-use-case',
         'sdd-user-story', 'sdd-domain-model', 'sdd-event-storming', 'sdd-glossary',
         'sdd-nfr', 'sdd-bdd', 'sdd-traceability',

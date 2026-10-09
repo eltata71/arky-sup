@@ -1,0 +1,40 @@
+{
+  "id": "vida-archimate-estrategia-motivacion",
+  "dominio": "vida",
+  "proposito": "Vista ArchiMate (layered): el tipo de elemento y de relación sobreviven al guardado y a la reescritura (11.1).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Modernización de Vida",
+    "descripcion": "Programa de modernización del negocio de vida.",
+    "contexto": [
+      "El regulador exige trazabilidad de las decisiones"
+    ]
+  },
+  "solicitud": {
+    "texto": "Relaciona el objetivo de negocio con sus requisitos y la capacidad que los cumple",
+    "audiencia": "technical",
+    "criterios": []
+  },
+  "plantilla": {
+    "nombre": "Motivación de la modernización de Vida",
+    "tipo": "mermaid-archimate",
+    "objetivo": "Relaciona el objetivo de negocio con sus requisitos y la capacidad que los cumple",
+    "conceptosClave": []
+  },
+  "respuestaModelo": "%% archimate viewpoint=layered\nflowchart LR\n    meta[\"Reducir el tiempo de emisión\"]\n    req[\"Trazabilidad de decisiones\"]\n    cap[\"Suscripción automatizada\"]\n    req -->|realization| meta\n    cap -->|realization| req\n    class meta archimate_goal\n    class req archimate_requirement\n    class cap archimate_capability",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Reducir el tiempo de emisión"
+      ],
+      [
+        "Trazabilidad de decisiones"
+      ],
+      [
+        "Suscripción automatizada"
+      ]
+    ],
+    "metadatos": []
+  }
+}

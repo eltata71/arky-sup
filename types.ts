@@ -216,6 +216,7 @@ export type ArtifactType =
   | 'mermaid-sequence'
   | 'mermaid-graph'
   | 'mermaid-state'
+  | 'mermaid-archimate'
   | 'mermaid-gantt'
   | 'react-flow-graph'
   | 'presentation-executive'

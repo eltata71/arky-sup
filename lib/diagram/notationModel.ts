@@ -21,6 +21,8 @@
  *
  * Optional and additive: an IR without it is exactly the IR of before.
  */
+import type { ArchimateElementType, ArchimateRelationType } from '../archimate/archimateMetamodel';
+
 
 export type SequenceArrow = '->>' | '-->>' | '->' | '-->' | '-)' | '--)' | '-x' | '--x';
 
@@ -113,4 +115,15 @@ export interface StateNotation {
   unsupported: string[];
 }
 
-export type DiagramNotation = SequenceNotation | ErdNotation | StateNotation;
+export interface ArchimateNotation {
+  dialect: 'archimate';
+  /** The viewpoint the diagram was drawn for (`layered`, `capability`…). */
+  viewpoint: string;
+  /** ArchiMate element type by node id. */
+  elements: Record<string, ArchimateElementType>;
+  /** Relation type and written text by edge id. */
+  relations: Record<string, { type: ArchimateRelationType; text: string }>;
+  unsupported: string[];
+}
+
+export type DiagramNotation = SequenceNotation | ErdNotation | StateNotation | ArchimateNotation;

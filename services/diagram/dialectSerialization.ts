@@ -25,6 +25,7 @@ import type { DiagramIR } from '../../lib/diagram';
 import { irToMermaid } from './irToMermaid';
 import { c4LevelOfArtifactType, irToMermaidC4 } from './irToMermaidC4';
 import { mermaidToIR } from './mermaidToIR';
+import { hasArchimateMarker } from './notation/archimateNotation';
 import { attachNotationFromSource, notationFingerprint, notationMatchesDialect, serializeNotation } from './notation';
 
 /** The first statement of a Mermaid text: its dialect keyword (`flowchart`, `erDiagram`…). */
@@ -42,7 +43,6 @@ export function mermaidDialectOf(mermaid: string): string {
     }
     return '';
 }
-
 /**
  * The IR as Mermaid in the artifact's own dialect, or `null` when that
  * dialect cannot be written from an IR without losing what makes it that
@@ -57,6 +57,9 @@ export function serializeIRPreservingDialect(
     const c4Level = c4LevelOfArtifactType(artifactType);
     if (c4Level) return irToMermaidC4(ir, c4Level);
     const dialect = mermaidDialectOf(currentMermaid);
+    if (ir.notation?.dialect === 'archimate' || hasArchimateMarker(currentMermaid)) {
+        return serializeWithNotation(ir, 'flowchart', currentMermaid);
+    }
     if (dialect === 'flowchart' || dialect === 'graph' || dialect === '') return irToMermaid(ir);
     return serializeWithNotation(ir, dialect, currentMermaid);
 }

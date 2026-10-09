@@ -8,6 +8,7 @@
  */
 
 import type { DiagramIR, DiagramIREdge, DiagramIRNode } from '../../../lib/diagram';
+import { checkArchimateRelation } from '../../../lib/archimate/archimateMetamodel';
 import { detectTechBadge } from '../../../lib/diagramTechBadges';
 import { hasText, type DiagramLintIssue } from './diagramQualityTypes';
 
@@ -170,6 +171,28 @@ export function collectIssues(diagram: DiagramIR): DiagramLintIssue[] {
                 severity: 'high',
                 message: `La narrativa apunta a ${stale.size} elemento(s) que ya no existen: ${Array.from(stale).slice(0, 5).join(', ')}.`,
                 recommendation: 'Actualiza las escenas y los callouts, o reescribe la narrativa para el diagrama actual.',
+            });
+        }
+    }
+
+    // ArchiMate — a relation the metamodel does not allow between two element
+    // types is a named violation, with the reason, never a silently drawn arrow.
+    const archimate = diagram.notation?.dialect === 'archimate' ? diagram.notation : null;
+    if (archimate) {
+        for (const edge of diagram.edges) {
+            const relation = archimate.relations[edge.id];
+            const source = archimate.elements[edge.source];
+            const target = archimate.elements[edge.target];
+            if (!relation || !source || !target) continue;
+            const verdict = checkArchimateRelation(relation.type, source, target);
+            if (verdict.allowed) continue;
+            issues.push({
+                id: `archimate-relation-${edge.id}`,
+                code: 'ARCHIMATE_RELATION_NOT_ALLOWED',
+                severity: 'high',
+                message: `Relación no permitida por ArchiMate: ${verdict.reason}`,
+                recommendation: 'Cambia el tipo de relación o los elementos que enlaza.',
+                fixable: false,
             });
         }
     }
