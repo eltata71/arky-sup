@@ -36,6 +36,22 @@ create index enterprise_inventory_owner_updated_idx
 
 alter table api.enterprise_inventory_items enable row level security;
 
+-- La unicidad por nombre no puede depender de lo que el cliente declare: el
+-- servidor calcula la clave. Es la misma regla que `normalizeInventoryName`
+-- (sin acentos, minúsculas, sin comillas, signos a espacio, espacios colapsados).
+create function private.inventory_normalize_name(p_name text)
+returns text
+language sql immutable parallel safe set search_path = '' as $$
+  select btrim(regexp_replace(
+    regexp_replace(
+      regexp_replace(
+        lower(regexp_replace(normalize(coalesce(p_name, ''), nfd), E'[\\u0300-\\u036f]', '', 'g')),
+        E'[`\'"\\u201c\\u201d\\u2019]', '', 'g'),
+      E'[^a-z0-9\\s-]', ' ', 'g'),
+    E'\\s+', ' ', 'g'));
+$$;
+revoke all on function private.inventory_normalize_name(text) from public, anon, authenticated, service_role;
+
 create function api.list_enterprise_inventory()
 returns setof api.enterprise_inventory_items
 language plpgsql security definer set search_path = '' as $$
@@ -67,7 +83,7 @@ declare
   item_id text := btrim(coalesce(p_item ->> 'id', ''));
   item_kind text := coalesce(p_item ->> 'kind', '');
   item_name text := btrim(coalesce(p_item ->> 'name', ''));
-  item_normalized text := btrim(coalesce(p_item ->> 'normalizedName', ''));
+  item_normalized text := private.inventory_normalize_name(p_item ->> 'name');
   item_lifecycle text := coalesce(p_item ->> 'lifecycle', '');
 begin
   if actor is null then

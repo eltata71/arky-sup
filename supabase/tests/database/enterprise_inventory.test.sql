@@ -71,6 +71,15 @@ select throws_ok($$select api.save_enterprise_inventory_item($json${
 }$json$::jsonb, 0)$$,
   '23505', null,
   'Dos elementos del mismo tipo no comparten nombre normalizado');
+select is((select (api.save_enterprise_inventory_item($json${
+  "id":"inv_norm", "schemaVersion":1, "userId":"62000000-0000-4000-8000-000000000001",
+  "kind":"capability", "name":"Pagos Móviles “Pro”", "normalizedName":"falso",
+  "aliases":[], "description":"", "lifecycle":"candidate", "projectIds":[],
+  "createdAt":"2026-10-09T00:00:00.000Z", "updatedAt":"2026-10-09T00:00:00.000Z"
+}$json$::jsonb, 0)).normalized_name), 'pagos moviles pro',
+  'El servidor calcula el nombre normalizado y ignora el que declara el cliente');
+select lives_ok($$select api.delete_enterprise_inventory_item('inv_norm', 1)$$,
+  'El elemento de prueba de normalización se retira');
 select throws_ok($$select * from api.enterprise_inventory_items$$,
   '42501', null,
   'Ni el propietario salta la RPC mediante tabla directa');
