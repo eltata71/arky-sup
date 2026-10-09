@@ -143,7 +143,7 @@ interface SDDProcessViewProps {
 const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
   // Reads artifact content to assess SDD coverage, so it needs the documents.
   useProjectArtifacts(projectId);
-  const { projects, settings, createArtifact } = useAppContext();
+  const { projects, settings, createArtifact, t } = useAppContext();
   const navigate = useNavigate();
 
   const project = projects.find(p => p.id === projectId);
@@ -284,7 +284,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
   if (!project) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-        <p>Proyecto no encontrado. <button onClick={() => navigate('/projects')} className="underline text-primary-600">Ver proyectos</button></p>
+        <p>{t('sdd.notFound')} <button onClick={() => navigate('/projects')} className="underline text-primary-600">{t('sdd.seeProjects')}</button></p>
       </div>
     );
   }
@@ -311,9 +311,9 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                   <path d="M12 2l1.7 4.6L18 8.3l-4.3 1.7L12 14.6l-1.7-4.6L6 8.3l4.3-1.7L12 2zm7 11l.9 2.5L22 16.4l-2.1.9L19 20l-.9-2.7-2.1-.9 2.1-.9L19 13zM5 14l.9 2.5 2.1.9-2.1.9L5 21l-.9-2.7L2 17.4l2.1-.9L5 14z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold mb-2">Generando Artefacto</h3>
+              <h3 className="text-2xl font-bold mb-2">{t('sdd.generating')}</h3>
               <p className="text-sm text-gray-300">Generando: {generatingArtifact}</p>
-              <p className="text-xs text-gray-400 mt-3">Aplicando el mismo flujo estándar de generación del Workspace.</p>
+              <p className="text-xs text-gray-400 mt-3">{t('sdd.generatingHint')}</p>
             </div>
           </motion.div>
         )}
@@ -326,7 +326,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
             <button
               onClick={() => navigate(`/workspace/${projectId}`)}
               className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
-              title="Volver al Workspace"
+              title={t('sdd.backToWorkspace')}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -334,7 +334,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-gray-900 dark:text-white">SDD Process</span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">{t('sdd.process')}</span>
                 <span className="text-xs font-medium bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
                   Specification-Driven Development
                 </span>
@@ -346,7 +346,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
           {/* Overall progress */}
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Completitud SDD</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('sdd.completeness')}</p>
               <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">{overallPct}%</p>
             </div>
             <div className="w-32 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden hidden sm:block">
@@ -484,7 +484,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
                     <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                      Los artefactos generados se guardan automáticamente en el <strong>Workspace</strong> del proyecto. Accede a ellos desde el <strong>Panel de Artefactos</strong> (barra lateral) para ver versiones, conversar con la IA o exportarlos. Usa los botones <strong>Copiar</strong> y <strong>Descargar</strong> para compartir con tu equipo de desarrollo.
+                      {t('sdd.storageInfo')}
                     </p>
                   </div>
 
@@ -500,7 +500,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                       <button
                         onClick={() => setGenerationError(null)}
                         className="text-red-500 hover:text-red-700 dark:hover:text-red-300"
-                        title="Cerrar"
+                        title={t('sdd.close')}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -623,7 +623,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                                 {/* Copy to clipboard */}
                                 <button
                                   onClick={() => as.artifact && handleCopyContent(as.artifact, as.templateName)}
-                                  title="Copiar contenido Markdown"
+                                  title={t('sdd.copyMd')}
                                   className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1"
                                 >
                                   {copiedArtifact === as.templateName ? (
@@ -631,7 +631,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                                       <svg className="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                       </svg>
-                                      <span className="text-green-600 dark:text-green-400">¡Copiado!</span>
+                                      <span className="text-green-600 dark:text-green-400">{t('sdd.copied')}</span>
                                     </>
                                   ) : (
                                     <>
@@ -645,7 +645,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                                 {/* Download .md */}
                                 <button
                                   onClick={() => as.artifact && handleDownload(as.artifact)}
-                                  title="Descargar como archivo .md"
+                                  title={t('sdd.downloadMd')}
                                   className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1"
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -673,10 +673,10 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
-                                    Generando...
+                                    {t('sdd.generatingShort')}
                                   </>
                                 ) : (
-                                  <>✨ Generar</>
+                                  <>✨ {t('sdd.generate')}</>
                                 )}
                               </button>
                             )}
@@ -717,7 +717,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                 </div>
-                <p className="text-sm animate-pulse">Generando plan SDD personalizado...</p>
+                <p className="text-sm animate-pulse">{t('sdd.planLoading')}</p>
               </div>
             ) : sddPlan ? (
               <div className="flex-1 overflow-y-auto p-6 md:p-10">
@@ -729,7 +729,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 text-gray-400">
                 <span className="text-5xl">📋</span>
-                <p className="text-sm">Haz clic en <strong>Generar Plan SDD</strong> para obtener un plan personalizado.</p>
+                <p className="text-sm">{t('sdd.planEmpty')}</p>
                 <button
                   onClick={handleGeneratePlan}
                   className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
@@ -753,7 +753,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                 </div>
-                <p className="text-sm animate-pulse">Analizando artefactos SDD del proyecto...</p>
+                <p className="text-sm animate-pulse">{t('sdd.healthLoading')}</p>
               </div>
             ) : healthReport ? (
               <div className="flex-1 overflow-y-auto p-6 md:p-10">
@@ -765,7 +765,7 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 text-gray-400">
                 <span className="text-5xl">📊</span>
-                <p className="text-sm">Haz clic en <strong>Reporte de Salud</strong> para analizar el estado SDD del proyecto.</p>
+                <p className="text-sm">{t('sdd.healthEmpty')}</p>
                 <button
                   onClick={handleGenerateReport}
                   className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
