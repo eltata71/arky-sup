@@ -17,6 +17,18 @@ Columna **Naturaleza**: `autoritativo` (la verdad vive aquí) ·
 
 ---
 
+## Contexto: Inventario empresarial
+
+| Tabla | RPC | Naturaleza | Consumidores | Desde |
+|---|---|---|---|---|
+| `enterprise_inventory_items` | `list_enterprise_inventory`, `save_enterprise_inventory_item`, `delete_enterprise_inventory_item` | autoritativo, **por usuario** (R-17 opción A) | `services/enterpriseRepository` | 11.2 |
+
+Los elementos del grafo de conocimiento lo referencian por id
+(`ArchitectureEntity.inventoryItemId`, opcional): el inventario no copia al
+grafo ni el grafo al inventario. Pasar de «por usuario» a «por organización» es
+una migración aditiva (una columna de organización y otra política), no un
+cambio de forma.
+
 ## Contexto: Iniciativas y Portafolio
 
 | Tabla | RPC | Naturaleza | Consumidores | Desde |

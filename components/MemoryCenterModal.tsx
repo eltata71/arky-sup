@@ -112,7 +112,7 @@ const deriveInitialCaptureFallback = (project: Project): string[] => {
 };
 
 export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, onClose, project }) => {
-    const { settings, updateSettings, runProjectCommand, updateArtifact } = useAppContext();
+    const { settings, updateSettings, runProjectCommand, updateArtifact, t } = useAppContext();
     const { profile } = useAuth();
     const { addToast } = useToast();
 
@@ -397,7 +397,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         : null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Centro de Memoria" description="Gestiona la memoria del Arquitecto Agente (base y proyecto), la memoria global, del proyecto y de cada artefacto en un único panel.">
+        <Modal isOpen={isOpen} onClose={onClose} title={t('mem.title')} description="Gestiona la memoria del Arquitecto Agente (base y proyecto), la memoria global, del proyecto y de cada artefacto en un único panel.">
             <div className="flex flex-col gap-5 md:flex-row md:gap-6 md:min-h-[60vh]">
                 {/* Sidebar de scopes */}
                 <aside className="md:w-64 md:flex-shrink-0">
@@ -405,7 +405,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                         <CpuChipIcon className="h-4 w-4" />
                         Ámbitos
                     </div>
-                    <nav className="grid gap-1.5" aria-label="Ámbitos de memoria">
+                    <nav className="grid gap-1.5" aria-label={t('mem.scopesLabel')}>
                         {MEMORY_SCOPES.map(scope => {
                             const isActive = scope.id === activeScope;
                             const count = scope.id === 'global'
@@ -501,7 +501,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-gray-800 dark:text-white"
                             >
                                 {project.artifacts.length === 0 ? (
-                                    <option value="">Sin artefactos en este proyecto</option>
+                                    <option value="">{t('mem.noArtifacts')}</option>
                                 ) : (
                                     project.artifacts.map(artifact => (
                                         <option key={artifact.id} value={artifact.id}>
@@ -518,7 +518,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                         <div className="mb-3 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-500/20 dark:bg-amber-500/[0.06]">
                             <LightBulbIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-300" />
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Captura inicial derivada</p>
+                                <p className="text-sm font-bold text-amber-900 dark:text-amber-100">{t('mem.derivedCapture')}</p>
                                 <p className="mt-0.5 text-xs leading-relaxed text-amber-900/80 dark:text-amber-100/80">
                                     Este proyecto se creó antes de que existiera la captura inicial gestionable. Se está mostrando lo registrado al momento de creación (descripción y contexto inicial). Conviértela en captura editable para poder modificar, añadir o eliminar entradas.
                                 </p>
@@ -614,7 +614,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
             </div>
             <ConfirmDialog
                 isOpen={pendingDeleteId !== null}
-                title="Eliminar entrada de memoria"
+                title={t('mem.deleteTitle')}
                 message="Esta entrada se eliminará de la memoria del proyecto. La acción no se puede deshacer."
                 confirmLabel="Eliminar"
                 variant="danger"
@@ -631,8 +631,10 @@ const PrioritySelector: React.FC<{
     onChange: (priority: MemoryPriority) => void;
     disabled?: boolean;
     compact?: boolean;
-}> = ({ value, onChange, disabled, compact }) => (
-    <div className={`inline-flex items-center gap-1 ${compact ? '' : 'rounded-xl border border-slate-200 p-1 dark:border-white/10'}`} role="group" aria-label="Prioridad de la nota">
+}> = ({ value, onChange, disabled, compact }) => {
+    const { t } = useAppContext();
+    return (
+    <div className={`inline-flex items-center gap-1 ${compact ? '' : 'rounded-xl border border-slate-200 p-1 dark:border-white/10'}`} role="group" aria-label={t('mem.priorityLabel')}>
         {MEMORY_PRIORITIES.map((priority) => {
             const isActive = priority === value;
             return (
@@ -653,7 +655,8 @@ const PrioritySelector: React.FC<{
             );
         })}
     </div>
-);
+    );
+};
 
 /** Línea de metadatos de una nota: fecha/hora de creación y autor. */
 const EntryMetaLine: React.FC<{ entry: MemoryEntry }> = ({ entry }) => {
@@ -694,12 +697,13 @@ interface ListViewProps {
 const ListView: React.FC<ListViewProps> = ({
     entries, totalCount, search, onSearchChange, onView, onEdit, onDelete, onChangePriority, scopeLabel, isArtifactSelectionMissing,
 }) => {
+    const { t } = useAppContext();
     if (isArtifactSelectionMissing) {
         return (
             <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-white/10">
                 <CpuChipIcon className="h-10 w-10 text-slate-400" />
-                <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">Selecciona un artefacto</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Necesitas elegir un artefacto del proyecto para gestionar su contexto.</p>
+                <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">{t('mem.selectArtifact')}</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('mem.selectArtifactHint')}</p>
             </div>
         );
     }
@@ -720,8 +724,8 @@ const ListView: React.FC<ListViewProps> = ({
             {totalCount === 0 ? (
                 <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-white/10">
                     <SparklesIcon className="h-10 w-10 text-slate-400" />
-                    <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">Sin registros todavía</p>
-                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">Crea uno digitando directamente o cargando un documento para que la IA extraiga los apuntes relevantes.</p>
+                    <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">{t('mem.noRecords')}</p>
+                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">{t('mem.noRecordsHint')}</p>
                 </div>
             ) : entries.length === 0 ? (
                 <p className="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs text-slate-500 dark:bg-white/[0.03] dark:text-slate-400">No hay resultados para "{search}".</p>
@@ -752,6 +756,7 @@ interface MemoryCardProps {
 }
 
 const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete, onChangePriority }) => {
+    const { t } = useAppContext();
     const { entry, isDerived } = item;
     const headline = deriveEntryHeadline(entry.text);
     const { chars, words, isLong } = buildPreviewMeta(entry.text);
@@ -764,7 +769,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete,
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                         <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{headline}</p>
                         {isDerived && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">Derivado</span>
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">{t('mem.derived')}</span>
                         )}
                         <PrioritySelector value={entry.priority} onChange={onChangePriority} disabled={isDerived} compact />
                     </div>
@@ -799,9 +804,9 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete,
                     </div>
                 </div>
                 <div className="flex flex-shrink-0 flex-col items-end gap-1">
-                    <ActionButton label="Ver" icon={<EyeIcon className="h-4 w-4" />} onClick={onView} />
-                    <ActionButton label="Editar" icon={<PencilIcon className="h-4 w-4" />} onClick={onEdit} disabled={isDerived} />
-                    <ActionButton label="Eliminar" icon={<TrashIcon className="h-4 w-4" />} onClick={onDelete} variant="danger" disabled={isDerived} />
+                    <ActionButton label={t('mem.view')} icon={<EyeIcon className="h-4 w-4" />} onClick={onView} />
+                    <ActionButton label={t('mem.edit')} icon={<PencilIcon className="h-4 w-4" />} onClick={onEdit} disabled={isDerived} />
+                    <ActionButton label={t('mem.delete')} icon={<TrashIcon className="h-4 w-4" />} onClick={onDelete} variant="danger" disabled={isDerived} />
                 </div>
             </div>
         </li>
@@ -826,11 +831,12 @@ const ActionButton: React.FC<{ label: string; icon: React.ReactNode; onClick: ()
 
 interface ViewEntryProps { entry: MemoryEntry; isDerived: boolean; onEdit: () => void; onDelete: () => void; onBack: () => void; }
 const ViewEntry: React.FC<ViewEntryProps> = ({ entry, isDerived, onEdit, onDelete, onBack }) => {
+    const { t } = useAppContext();
     const { chars, words } = buildPreviewMeta(entry.text);
     return (
         <div className="flex flex-1 flex-col">
             <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <span>Detalle de la entrada</span>
+                <span>{t('mem.entryDetail')}</span>
                 <span aria-hidden>·</span>
                 <span>{chars.toLocaleString()} caracteres</span>
                 <span aria-hidden>·</span>
@@ -839,7 +845,7 @@ const ViewEntry: React.FC<ViewEntryProps> = ({ entry, isDerived, onEdit, onDelet
                     Prioridad {MEMORY_PRIORITY_LABEL_ES[entry.priority]}
                 </span>
                 {isDerived && (
-                    <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">Derivado</span>
+                    <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">{t('mem.derived')}</span>
                 )}
             </div>
             <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
@@ -876,10 +882,12 @@ interface EditEntryProps {
     onSave: () => void;
     onCancel: () => void;
 }
-const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel }) => (
+const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel }) => {
+    const { t } = useAppContext();
+    return (
     <div className="flex flex-1 flex-col">
         <div className="mb-1 flex items-center justify-between">
-            <label htmlFor="memory-edit-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contenido</label>
+            <label htmlFor="memory-edit-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.content')}</label>
             <span className="text-[11px] text-slate-500 dark:text-slate-400">{draft.length.toLocaleString()} caracteres</span>
         </div>
         <textarea
@@ -888,10 +896,10 @@ const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPrio
             onChange={(event) => onChange(event.target.value)}
             rows={10}
             className="flex-1 resize-y rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-gray-800 dark:text-white"
-            placeholder="Edita el contenido de la entrada de memoria…"
+            placeholder={t('mem.editPlaceholder')}
         />
         <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prioridad</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.priority')}</span>
             <PrioritySelector value={priority} onChange={onPriorityChange} />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -904,7 +912,8 @@ const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPrio
             </button>
         </div>
     </div>
-);
+    );
+};
 
 interface CreateEntryProps {
     draft: string;
@@ -925,7 +934,9 @@ interface CreateEntryProps {
 const CreateEntry: React.FC<CreateEntryProps> = ({
     draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel, onPickFile, isExtracting,
     extractedSuggestions, extractionFileName, onUpdateSuggestion, onClearSuggestions,
-}) => (
+}) => {
+    const { t } = useAppContext();
+    return (
     <div className="flex flex-1 flex-col">
         <div className="mb-1 flex items-center justify-between">
             <label htmlFor="memory-create-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -939,18 +950,18 @@ const CreateEntry: React.FC<CreateEntryProps> = ({
             onChange={(event) => onChange(event.target.value)}
             rows={5}
             className="resize-y rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-gray-800 dark:text-white"
-            placeholder="Digita la nota o apunte que quieres guardar como memoria…"
+            placeholder={t('mem.createPlaceholder')}
         />
         <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prioridad</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.priority')}</span>
             <PrioritySelector value={priority} onChange={onPriorityChange} />
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">(por omisión: media — aplica a todas las entradas que guardes ahora)</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('mem.defaultPriority')}</span>
         </div>
 
         <div className="mt-4 rounded-2xl border border-dashed border-primary-300 bg-primary-50/40 p-4 dark:border-primary-500/30 dark:bg-primary-500/[0.06]">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p className="text-sm font-bold text-primary-900 dark:text-primary-100">Cargar desde documento</p>
+                    <p className="text-sm font-bold text-primary-900 dark:text-primary-100">{t('mem.loadFromDoc')}</p>
                     <p className="mt-1 max-w-sm text-xs text-primary-800/80 dark:text-primary-200/80">
                         Sube un PDF, Word, Google Doc, texto o markdown. La IA analizará el contenido y propondrá los apuntes relevantes para guardar.
                     </p>
@@ -975,7 +986,7 @@ const CreateEntry: React.FC<CreateEntryProps> = ({
         {extractedSuggestions.length > 0 && (
             <div className="mt-3 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-2 flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Apuntes propuestos por la IA</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.aiNotes')}</p>
                     <button type="button" onClick={onClearSuggestions} className="text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
                         <XMarkIcon className="inline h-3 w-3" /> Descartar todos
                     </button>
@@ -1013,4 +1024,5 @@ const CreateEntry: React.FC<CreateEntryProps> = ({
             </button>
         </div>
     </div>
-);
+    );
+};
