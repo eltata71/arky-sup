@@ -30,6 +30,7 @@ import {
     type LucidEmbedSession,
 } from '../services/lucid';
 import { MOTION } from '../lib/designTokens';
+import { useAppContext } from '../context/AppContext';
 
 interface LucidchartViewerProps {
     artifactContent: string;
@@ -68,6 +69,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
     onLucidDocumentReady,
     existingLucidDocumentId,
 }) => {
+    const { t } = useAppContext();
     const [copied, setCopied] = useState(false);
     const [config, setConfig] = useState(() => getLucidConfig());
     const [tokenInput, setTokenInput] = useState('');
@@ -207,7 +209,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                     </svg>
                     <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">Lucidchart</span>
                     <span className="text-xs text-gray-400 dark:text-gray-500 hidden lg:inline flex-shrink-0">
-                        — {integrationReady ? 'integración autenticada' : 'vista previa local'}
+                        — {integrationReady ? t('lucid.authenticated') : t('lucid.localPreview')}
                     </span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -216,7 +218,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                             <motion.button
                                 onClick={handleExportPNG}
                                 disabled={exportBusy}
-                                title="Descargar PNG exportado desde Lucid"
+                                title={t('lucid.downloadPng')}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                                 whileTap={{ scale: 0.96 }}
                             >
@@ -226,19 +228,19 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                             <motion.button
                                 onClick={handleShare}
                                 disabled={shareBusy}
-                                title="Generar enlace para compartir (solo lectura)"
+                                title={t('lucid.shareTitle')}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                                 whileTap={{ scale: 0.96 }}
                             >
                                 {shareBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
-                                <span className="hidden sm:inline">Compartir</span>
+                                <span className="hidden sm:inline">{t('lucid.share')}</span>
                             </motion.button>
                         </>
                     )}
                     <motion.button
                         onClick={handleCopyMermaid}
                         disabled={!mermaidCode}
-                        title="Copiar código Mermaid"
+                        title={t('lucid.copyMermaidTitle')}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
                         style={{
                             borderColor: copied ? '#86efac' : '#d1d5db',
@@ -250,28 +252,28 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                             {copied ? (
                                 <motion.span key="ok" className="flex items-center gap-1.5 text-green-700"
                                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                                    <Check className="w-3.5 h-3.5" /><span className="hidden sm:inline">¡Copiado!</span>
+                                    <Check className="w-3.5 h-3.5" /><span className="hidden sm:inline">{t('lucid.copied')}</span>
                                 </motion.span>
                             ) : (
                                 <motion.span key="cp" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300"
                                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                                    <Copy className="w-3.5 h-3.5" /><span className="hidden sm:inline">Copiar Mermaid</span>
+                                    <Copy className="w-3.5 h-3.5" /><span className="hidden sm:inline">{t('lucid.copyMermaid')}</span>
                                 </motion.span>
                             )}
                         </AnimatePresence>
                     </motion.button>
                     <motion.button
                         onClick={integrationReady ? handleOpenAuthenticatedExternal : onOpenExternal}
-                        title={integrationReady ? 'Abrir el documento real en Lucidchart' : 'Abrir Lucidchart para importar'}
+                        title={integrationReady ? t('lucid.openRealTitle') : t('lucid.openImportTitle')}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#E8440A] rounded-lg"
                         whileHover={{ backgroundColor: '#c93a09' }} whileTap={{ scale: 0.96 }}
                     >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{integrationReady ? 'Abrir en Lucidchart' : 'Importar en Lucidchart'}</span>
+                        <span className="hidden sm:inline">{integrationReady ? t('lucid.open') : t('lucid.import')}</span>
                     </motion.button>
                     <motion.button
                         onClick={() => setShowTokenPanel(v => !v)}
-                        title={integrationReady ? 'Administrar token de Lucid' : 'Configurar token de Lucid'}
+                        title={integrationReady ? t('lucid.manageToken') : t('lucid.configureToken')}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg"
                         whileTap={{ scale: 0.96 }}
                     >
@@ -285,19 +287,19 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                 <div className="flex-shrink-0 flex items-start gap-2 px-4 py-2 bg-orange-50 dark:bg-orange-950/30 border-b border-orange-100 dark:border-orange-900/40">
                     <Info className="w-4 h-4 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-px" />
                     <p className="text-xs text-orange-800 dark:text-orange-200">
-                        Sin token configurado. Puedes <strong>Copiar Mermaid</strong> e importarlo manualmente, o pulsa el ícono <KeyRound className="inline w-3 h-3" /> para conectar Lucid y generar documentos reales automáticamente.
+                        {t('lucid.noTokenA')} <strong>{t('lucid.copyMermaid')}</strong> {t('lucid.noTokenB')} <KeyRound className="inline w-3 h-3" /> {t('lucid.noTokenC')}
                     </p>
                 </div>
             ) : documentSummary ? (
                 <div className="flex-shrink-0 flex items-start gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900/40">
                     <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-px" />
                     <p className="text-xs text-emerald-800 dark:text-emerald-200 truncate">
-                        Documento en Lucid:&nbsp;
+                        {t('lucid.docInLucid')}&nbsp;
                         <a href={documentSummary.editUrl} target="_blank" rel="noopener noreferrer" className="underline font-medium">
                             {documentSummary.documentId}
                         </a>
                         {shareUrl && (
-                            <>&nbsp;·&nbsp;Enlace copiado:&nbsp;<span className="font-mono truncate">{shareUrl}</span></>
+                            <>&nbsp;·&nbsp;{t('lucid.linkCopied')}&nbsp;<span className="font-mono truncate">{shareUrl}</span></>
                         )}
                     </p>
                 </div>
@@ -305,7 +307,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                 <div className="flex-shrink-0 flex items-start gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/40">
                     <Info className="w-4 h-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-px" />
                     <p className="text-xs text-blue-800 dark:text-blue-200">
-                        Token detectado ({config.source === 'user' ? 'personal' : 'global'}). Preparando el documento en Lucidchart…
+                        {t('lucid.tokenDetected', { source: config.source === 'user' ? t('lucid.personal') : t('lucid.global') })}
                     </p>
                 </div>
             )}
@@ -314,7 +316,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
             {showTokenPanel && (
                 <div className="flex-shrink-0 flex flex-col gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                     <p className="text-xs text-gray-600 dark:text-gray-300">
-                        Pega tu <strong>Lucid API token</strong> (Settings → Developer en lucid.app). Se guarda sólo en este navegador (<code>localStorage</code>).
+                        {t('lucid.pasteA')} <strong>{t('lucid.apiToken')}</strong> {t('lucid.pasteB')} (<code>localStorage</code>).
                     </p>
                     <div className="flex items-center gap-2">
                         <input
@@ -329,14 +331,14 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                             disabled={tokenInput.trim().length === 0}
                             className="px-3 py-1.5 text-xs font-medium text-white bg-[#E8440A] rounded-lg disabled:opacity-40"
                         >
-                            Guardar
+                            {t('lucid.save')}
                         </button>
                         {config.source === 'user' && (
                             <button
                                 onClick={() => { setUserLucidToken(null); setConfig(getLucidConfig()); }}
                                 className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg"
                             >
-                                Revocar
+                                {t('lucid.revoke')}
                             </button>
                         )}
                     </div>
@@ -353,7 +355,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                     {flowData && (
                         <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                             <BarChart2 className="w-3.5 h-3.5" />
-                            <span>{stats.nodeCount} nodos · {stats.edgeCount} relaciones</span>
+                            <span>{t('lucid.stats', { nodes: String(stats.nodeCount), edges: String(stats.edgeCount) })}</span>
                         </div>
                     )}
                     <span className="ml-auto text-xs text-gray-400 dark:text-gray-600 truncate max-w-xs hidden md:block">{artifactTitle}</span>
@@ -372,19 +374,19 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                                 <AlertTriangle className="w-7 h-7 text-amber-500" />
                             </div>
                             <div className="text-center max-w-sm">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Error con Lucidchart</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('lucid.errorTitle')}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{lucidError}</p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <motion.button onClick={() => { setLucidError(null); createDocAndEmbed(); }}
                                     className="flex items-center gap-2 px-4 py-2 bg-[#E8440A] text-white text-sm font-medium rounded-xl"
                                     whileHover={{ backgroundColor: '#c93a09' }} whileTap={{ scale: 0.96 }}>
-                                    <RefreshCw className="w-4 h-4" /> Reintentar
+                                    <RefreshCw className="w-4 h-4" /> {t('lucid.retry')}
                                 </motion.button>
                                 <motion.button onClick={() => { setLucidError(null); }}
                                     className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl"
                                     whileTap={{ scale: 0.96 }}>
-                                    Usar vista previa local
+                                    {t('lucid.useLocal')}
                                 </motion.button>
                             </div>
                         </motion.div>
@@ -397,8 +399,8 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                                 <Loader2 className="w-8 h-8 text-[#E8440A] animate-spin" />
                             </div>
                             <div className="text-center">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Enviando a Lucidchart…</p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Creando documento y sesión embebida.</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('lucid.sending')}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('lucid.creating')}</p>
                             </div>
                         </motion.div>
                     ) : embedSession ? (
@@ -424,8 +426,8 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                                 </div>
                             </div>
                             <div className="text-center">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Generando vista previa</p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Convirtiendo el diagrama de arquitectura…</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('lucid.generatingPreview')}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('lucid.converting')}</p>
                             </div>
                         </motion.div>
                     ) : flowError ? (
@@ -437,13 +439,13 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                                 <AlertTriangle className="w-7 h-7 text-amber-500" />
                             </div>
                             <div className="text-center max-w-sm">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Error al generar la vista previa</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('lucid.previewError')}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{flowError}</p>
                             </div>
                             <motion.button onClick={onRetry}
                                 className="flex items-center gap-2 px-4 py-2 bg-[#E8440A] text-white text-sm font-medium rounded-xl"
                                 whileHover={{ backgroundColor: '#c93a09' }} whileTap={{ scale: 0.96 }}>
-                                <RefreshCw className="w-4 h-4" /> Reintentar
+                                <RefreshCw className="w-4 h-4" /> {t('lucid.retry')}
                             </motion.button>
                         </motion.div>
                     ) : flowData ? (
@@ -463,9 +465,9 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                                 </svg>
                             </div>
                             <div className="text-center max-w-xs">
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sin vista previa disponible</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('lucid.noPreview')}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Primero visita la vista <strong>Diagrama</strong> para generar el diagrama. Después vuelve aquí para verlo con branding de Lucidchart.
+                                    {t('lucid.emptyA')} <strong>{t('lucid.diagramView')}</strong> {t('lucid.emptyB')}
                                 </p>
                             </div>
                             {mermaidCode && (
@@ -473,7 +475,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                                     className="flex items-center gap-2 px-4 py-2 bg-[#E8440A] text-white text-sm font-medium rounded-xl"
                                     whileHover={{ backgroundColor: '#c93a09' }} whileTap={{ scale: 0.96 }}>
                                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                    {copied ? '¡Copiado!' : 'Copiar código Mermaid'}
+                                    {copied ? t('lucid.copied') : t('lucid.copyCode')}
                                 </motion.button>
                             )}
                         </motion.div>
