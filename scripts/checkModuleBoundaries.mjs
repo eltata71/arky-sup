@@ -265,7 +265,7 @@ export const DEEP_IMPORT_BUDGET = {
   'api -> services/ai': 1,
   'components -> services/ai': 1,
   'components -> services/architectureOffice': 19, // F5-02: capacidades y copiloto, por la puerta
-  'components -> services/artifacts': 8,
+  'components -> services/artifacts': 7,
   'components -> services/diagram': 14,
   'components -> services/quality': 2,
   // F5-01 corte 8: 10 → 11, y `context -> services/ai` desaparece a cambio.

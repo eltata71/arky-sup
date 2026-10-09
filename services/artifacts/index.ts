@@ -96,3 +96,11 @@ export {
 // aquí, en la puerta, sin coste en el bundle (se borran al compilar).
 export type { ArtifactRecommendationCandidate } from './domain/artifactRecommendationService';
 export { isPatchableDocument, proposeDocumentModification, type DocumentModificationOutcome } from './application/documentModification';
+
+/** El asistente de brief (`useBriefWizard`) es código perezoso: entra por la puerta. */
+export {
+  selectArtifactGenerationContext,
+  updateArtifactBriefFromForm,
+  validateArtifactGenerationContract,
+} from './domain';
+export type { ArtifactGenerationContract } from './domain';
