@@ -5,6 +5,13 @@
 -- amplía la guarda de lectura; ninguna fila ni RPC existente se reescribe.
 -- Reutiliza los permisos `portfolio:read` (leer) y `project:write` (escribir)
 -- para no tocar la matriz sembrada en `private.role_permissions`.
+--
+-- Reversión (migración nueva, nunca editar ésta): drop function
+-- api.list_enterprise_inventory(), api.save_enterprise_inventory_item(jsonb,
+-- bigint), api.delete_enterprise_inventory_item(text, bigint) y
+-- private.inventory_normalize_name(text); luego drop table
+-- api.enterprise_inventory_items. Es aditiva: ninguna tabla ni RPC previa
+-- depende de ella, así que revertir el código basta casi siempre.
 begin;
 
 create table api.enterprise_inventory_items (
