@@ -44,6 +44,7 @@ const EngagementRoom = lazyWithRetry(() => import('./pages/EngagementRoom'), { c
 const InitiativesPage = lazyWithRetry(() => import('./pages/InitiativesPage'), { chunkName: 'InitiativesPage' });
 const InitiativeRoom = lazyWithRetry(() => import('./pages/InitiativeRoom'), { chunkName: 'InitiativeRoom' });
 const AgentsPage = lazyWithRetry(() => import('./pages/AgentsPage'), { chunkName: 'AgentsPage' });
+const CapabilityMapPage = lazyWithRetry(() => import('./pages/CapabilityMapPage'), { chunkName: 'CapabilityMapPage' });
 
 /*
  * La guía de uso se carga bajo demanda, como una ruta. Vive en el raíl, que
@@ -152,6 +153,7 @@ const GlobalCommands: React.FC = () => {
             { id: 'nav.projects', section: 'Navegación', title: 'Ver todos los proyectos', subtitle: 'Listado completo de proyectos de arquitectura', icon: <FolderOpenIcon className="h-4 w-4" />, run: () => navigate('/projects'), keywords: ['projects','listado','arquitectura'] },
             { id: 'nav.office', section: 'Navegación', title: 'Oficina de Arquitectura', subtitle: 'Encargos, especialistas y comité de arquitectura', icon: <BuildingOffice2Icon className="h-4 w-4" />, run: () => navigate('/office'), keywords: ['oficina','encargo','office','agentes','comité','arb'] },
             { id: 'nav.agents', section: 'Navegación', title: 'Agentes de la Oficina', subtitle: 'La ficha de cada arquitecto: habilidades, conocimiento, memoria y modelo', icon: <BuildingOffice2Icon className="h-4 w-4" />, run: () => navigate('/agents'), keywords: ['agentes','ficha','arquitectos','especialistas','reparto'] },
+            { id: 'nav.capabilities', section: 'Navegación', title: 'Mapa de capacidades', subtitle: 'Madurez, inversión, riesgo y cobertura de cada capacidad', icon: <BuildingOffice2Icon className="h-4 w-4" />, run: () => navigate('/capabilities'), keywords: ['capacidades','mapa','calor','madurez','inversion','riesgo'] },
             { id: 'nav.training', section: 'Navegación', title: 'Centro de Formación', subtitle: 'Cursos, rutas de aprendizaje y notas inteligentes', icon: <AcademicCapIcon className="h-4 w-4" />, run: () => navigate('/training'), keywords: ['curso','formación','training','lms'] },
             { id: 'nav.settings', section: 'Navegación', title: 'Configuración', subtitle: 'Tema, idioma, modelo de IA, claves', icon: <Cog6ToothIcon className="h-4 w-4" />, run: () => navigate('/settings'), keywords: ['config','tema','dark','idioma','clave'] },
             ...(profile?.role === 'admin' || profile?.role === 'superadmin' ? [
@@ -255,6 +257,7 @@ const App: React.FC = () => {
                   <Route path="/initiatives/:initiativeId" element={<ProtectedRoute><InitiativeRoom /></ProtectedRoute>} />
                   <Route path="/office/:engagementId" element={<ProtectedRoute><EngagementRoom /></ProtectedRoute>} />
                   <Route path="/agents" element={<ProtectedRoute><AgentsPage /></ProtectedRoute>} />
+                  <Route path="/capabilities" element={<ProtectedRoute><CapabilityMapPage /></ProtectedRoute>} />
                   <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                   <Route path="/training" element={<ProtectedRoute><TrainingCenterPage /></ProtectedRoute>} />
                   <Route path="/users" element={<ProtectedRoute permission="users:read"><UserManagementPage /></ProtectedRoute>} />

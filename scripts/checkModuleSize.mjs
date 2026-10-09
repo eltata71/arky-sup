@@ -149,8 +149,8 @@ export const BYTE_CEILINGS = {
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   'components/ArtifactSelectionStep.tsx': 20101,
   'pages/UserManagementPage.tsx': 20037,
-  'lib/i18n/locales/es.ts': 24200, // 13.2 (4)(5): claves lucid/mem/users/lmsDash; el diccionario crece con la campaña de t()
-  'lib/i18n/locales/en.ts': 22692, // 13.2 (5): el diccionario inglés crece con la campaña de t()
+  'lib/i18n/locales/es.ts': 26200, // 11.3: claves cap.* del mapa de capacidades (es/en en el mismo lote)
+  'lib/i18n/locales/en.ts': 24600, // 11.3: claves cap.* del mapa de capacidades
 };
 
 /**

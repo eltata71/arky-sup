@@ -34,6 +34,13 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     keywords: ['niveles', 'jerarquia', 'organiza', 'estructura', 'relacion', 'encajan', 'empezar', 'orden'],
   }),
   topic({
+    id: 'mapa-capacidades',
+    question: '¿Qué es el mapa de capacidades y cómo se lee?',
+    answer: 'Muestra lo que la organización sabe hacer en tres niveles (L1, L2, L3) y te deja elegir qué pintar encima: **madurez**, **inversión**, **riesgo** o **cobertura** (cuántas iniciativas sirven a cada capacidad). Cada celda escribe su valor además de colorearlo, y lo que nadie ha medido dice «sin medir»: nunca se pinta como cero. Un valor marcado como «derivado» se calculó a partir de otros datos, no lo declaró nadie.',
+    where: 'Raíl izquierdo: Capacidades.',
+    keywords: ['capacidades', 'capacidad', 'mapa', 'calor', 'madurez', 'inversion', 'riesgo', 'cobertura', 'heatmap'],
+  }),
+  topic({
     id: 'iniciativa',
     question: '¿Qué es una Iniciativa de Negocio y para qué sirve?',
     answer: 'Es la razón por la que existe el trabajo de arquitectura: la necesidad del negocio, su driver, sus objetivos y los resultados que se van a medir. No es un proyecto y no termina cuando se entrega: sigue abierta mientras se estén midiendo sus resultados. Una iniciativa puede estar servida por varios proyectos de arquitectura.',
