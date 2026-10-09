@@ -71,7 +71,7 @@ export const BYTE_CEILINGS = {
   'pages/ProjectsPage.tsx': 44541, // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
   'components/artifacts/export/ArtifactExportModal.tsx': 28422, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
-  'components/CustomArtifactRequestModal.tsx': 42394, // 10.1: las etiquetas de fase salen al catálogo · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
+  'components/CustomArtifactRequestModal.tsx': 35711, // 12.1: estado y trazabilidad salen a components/artifacts/requestModal/ · 10.1: las etiquetas de fase salen al catálogo · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
   'components/CustomArtifactBriefWizard.tsx': 23813, // 12.1: el asistente partido en hook, modelo y piezas
   'context/OfficeContext.tsx': 20370, // 6.5: la motivación de la iniciativa llega a la producción del encargo (lectura diferida del portafolio)
   'pages/SDDProcessView.tsx': 41713, // 13.1: duraciones desde MOTION (+69 B). Antes: F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
@@ -184,7 +184,7 @@ export const CEILINGS = {
   'pages/ProjectsPage.tsx': 890, // F5-02
   'services/diagram/mermaidToIR.ts': 740, // plan diagramas 8.3b: 873 → 740 · plan diagramas 8.2a: +2 · plan diagramas 2.1
   'components/artifacts/export/ArtifactExportModal.tsx': 564, // plan de clase mundial 9.4: 596 → 564 // plan diagramas 3.4: 844 → 596
-  'components/CustomArtifactRequestModal.tsx': 831, // 10.1: las etiquetas de fase salen al catálogo
+  'components/CustomArtifactRequestModal.tsx': 685, // 12.1: estado y trazabilidad salen a components/artifacts/requestModal/ · 10.1: las etiquetas de fase salen al catálogo
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
   'constants.ts': 805,
   'components/AssistantPanel.tsx': 744, // 10.4b: +12 · plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
