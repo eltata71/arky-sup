@@ -20,7 +20,7 @@ const dosDateTime = (date: Date): { time: number; date: number } => ({
   date: ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
 });
 
-const concat = (parts: Uint8Array[]): Uint8Array => {
+const concat = (parts: Uint8Array[]): Uint8Array<ArrayBuffer> => {
   const total = parts.reduce((sum, part) => sum + part.length, 0);
   const output = new Uint8Array(total);
   let offset = 0;
@@ -36,7 +36,7 @@ export interface ZipEntryInput {
   content: string | Uint8Array;
 }
 
-export function createStoredZip(entries: ZipEntryInput[]): Uint8Array {
+export function createStoredZip(entries: ZipEntryInput[]): Uint8Array<ArrayBuffer> {
   const now = dosDateTime(new Date());
   const localParts: Uint8Array[] = [];
   const centralParts: Uint8Array[] = [];
