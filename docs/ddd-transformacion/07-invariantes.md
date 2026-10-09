@@ -31,7 +31,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | # | Invariante | Autoridad | ¿Basta? | Desde |
 |---|---|---|---|---|
 | V-01 | Un elemento tiene dueño, tipo válido y nombre | `TS` (`createInventoryItem`) + `RPC` (forma inválida → `22023`; el dueño es el actor) | ✅ | 11.2 |
-| V-02 | El nombre normalizado es único por dueño y tipo (los alias cuentan en el dominio) | `TS` (`findInventoryMatch`) + `SQL` (índice único → `23505`) | ⚠️ los alias sólo los vigila TypeScript | 11.2 |
+| V-02 | El nombre normalizado es único por dueño y tipo (los alias cuentan en el dominio) | `TS` (`findInventoryMatch`) + `SQL` (índice único → `23505`; el servidor calcula `normalized_name` con `private.inventory_normalize_name`, no se fía del cliente) | ⚠️ los alias sólo los vigila TypeScript | 11.2 |
 | V-03 | Cada usuario ve y edita sólo su inventario | `RLS` + guarda de la RPC (`owner_id`); pgTAP con arquitecto ajeno | ✅ | 11.2 |
 | V-04 | Dos pestañas no se pisan: se guarda con la revisión vista | `RPC` (`P0001` ante conflicto) | ✅ | 11.2 |
 | V-05 | `retired` es terminal; un comando que no cambia nada no escribe | `TS` (`applyInventoryCommand`) | ⚠️ sólo TypeScript | 11.2 |
