@@ -95,7 +95,7 @@ export const BYTE_CEILINGS = {
   'components/copilot/ProjectCopilotChatModal.tsx': 24926, // 10.4b: +473, «Deshacer» tras la acción confirmada del copiloto · F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32543, // 13.1: duraciones desde MOTION (+90 B)
   'components/CustomEdge.tsx': 32345, // plan diagramas 8.3d: +322, dibuja la ruta ortogonal de ELK (la decisión vive en `hooks/useEngineRoute`)
-  'components/businessInitiatives/InitiativeDetailPanels.tsx': 25419, // F3-05
+  'components/businessInitiatives/InitiativeDetailPanels.tsx': 25617, // F3-05; 13.2 (5): t() en los cinco paneles
   'services/agent/agentContextComposer.ts': 23023, // plan artefactos 7.3d: +775, entregables en curso, razón de negocio y extractos de hermanos en el copiloto · plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
   // F6-05: +18 bytes, the import path to the model-directory door instead of
   // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
@@ -149,7 +149,8 @@ export const BYTE_CEILINGS = {
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   'components/ArtifactSelectionStep.tsx': 20101,
   'pages/UserManagementPage.tsx': 20037,
-  'lib/i18n/locales/es.ts': 20014, // 13.2 (4): claves lucid/mem/users/lmsDash; el diccionario crece con la campaña de t()
+  'lib/i18n/locales/es.ts': 24200, // 13.2 (4)(5): claves lucid/mem/users/lmsDash; el diccionario crece con la campaña de t()
+  'lib/i18n/locales/en.ts': 22692, // 13.2 (5): el diccionario inglés crece con la campaña de t()
 };
 
 /**
@@ -195,7 +196,7 @@ export const CEILINGS = {
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 732, // plan diagramas 8.4c: +5, sin medida no hay pasadas · plan diagramas 8.2d: +2 para comparar el IR que persistirá · 7.3c: la petición extiende ArtifactContextPorts · 7.3a: la crítica y el refinamiento comparten una llamada · 7.1a: `lib/artifacts/contentPreservation`
   'components/copilot/ProjectCopilotChatModal.tsx': 590, // 10.4b: +8 · F5-02
   'services/diagram/suggestionActionExecutors.ts': 760,
-  'components/businessInitiatives/InitiativeDetailPanels.tsx': 576, // F3-05: las reglas bajaron a domain/initiativeCommands
+  'components/businessInitiatives/InitiativeDetailPanels.tsx': 582, // F3-05; 13.2 (5): useAppContext en cada panel: las reglas bajaron a domain/initiativeCommands
   'pages/LMS/LessonModal.tsx': 739,
   'services/diagram/qualityRepair.ts': 642, // plan diagramas 8.4a: 710 → 642 · plan diagramas 8.3b: +2, el clon del IR conserva `notation` · plan diagramas 8.1b: +3, el alcance `structural`
   'hooks/artifacts/useDiagramRendering.ts': 561, // plan diagramas 8.3d: 630 → 561 · plan diagramas 8.1d: 685 → 630
