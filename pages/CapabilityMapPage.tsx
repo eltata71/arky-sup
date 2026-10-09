@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useCapabilityMap } from '../hooks/useCapabilityMap';
+import { useCapabilityMapExport } from '../hooks/useCapabilityMapExport';
 import useReducedMotion from '../hooks/useReducedMotion';
 import { CapabilityHeatmap, CapabilityLegend } from '../components/capabilityMap/CapabilityHeatmap';
+import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PageSkeleton } from '../components/ui/PageSkeleton';
@@ -18,6 +20,7 @@ const CapabilityMapPage: React.FC = () => {
   const { map, isLoading, failed } = useCapabilityMap();
   const reducedMotion = useReducedMotion();
   const [layer, setLayer] = useState<CapabilityLayer>('maturity');
+  const exporter = useCapabilityMapExport(map, layer, t);
 
   return (
     <div className="min-h-[100dvh] px-4 py-6 pb-24 md:pb-8 md:pl-20 md:pr-8">
@@ -41,11 +44,16 @@ const CapabilityMapPage: React.FC = () => {
                 onChange={setLayer}
                 options={LAYERS.map((l) => ({ value: l, label: t(`cap.layer.${l}`) }))}
               />
-              <CapabilityLegend layer={layer} t={t} />
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={exporter.busy} onClick={() => void exporter.exportPng()}>{t('cap.export.png')}</Button>
+                <Button size="sm" variant="secondary" disabled={exporter.busy} onClick={() => void exporter.exportPptx()}>{t('cap.export.pptx')}</Button>
+              </div>
             </div>
+            <CapabilityLegend layer={layer} t={t} />
             <CapabilityHeatmap roots={map.roots} layer={layer} t={t} reducedMotion={reducedMotion} />
             <div role="status" aria-live="polite" className="space-y-1 text-sm text-gray-700 dark:text-gray-200">
               {map.uncoveredIds.length > 0 && <p>{t('cap.uncovered', { n: String(map.uncoveredIds.length) })}</p>}
+              {exporter.failed && <p>{t('cap.export.failed')}</p>}
               {map.issues.length > 0 && <p>{t('cap.issues', { n: String(map.issues.length) })}</p>}
             </div>
           </>

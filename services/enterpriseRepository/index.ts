@@ -33,3 +33,4 @@ export {
   type InitiativesByProject,
   type LayerValue,
 } from './application/capabilityMap';
+export { buildCapabilityExportRows, type CapabilityExportRow } from './application/capabilityMapExport';

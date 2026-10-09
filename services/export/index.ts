@@ -38,3 +38,4 @@ export * from './artifactExportPayload';
 /** El diagrama tal como lo ve la persona, para el PDF vectorial (plan de diagramas, 2.4). */
 export { snapshotFromFlow } from './diagramSnapshot';
 export type { DiagramSnapshot, DiagramSnapshotEdge, DiagramSnapshotNode } from './diagramSnapshot';
+export { buildTableDeck, exportTableDeckAsPptx, pngFile, type TableDeckSummary } from './deckExport';

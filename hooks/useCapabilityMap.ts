@@ -9,9 +9,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { useInitiatives } from '../context/InitiativeContext';
-import { buildCapabilityMap, listInventory, type CapabilityMap, type InitiativesByProject } from '../services/enterpriseRepository';
+import { buildCapabilityMap, listInventory, type CapabilityMap, type InitiativesByProject, type InventoryItem } from '../services/enterpriseRepository';
 import { initiativesServedBy } from '../services/portfolioGraph';
-import type { InventoryItem } from '../services/enterpriseRepository';
 
 export interface UseCapabilityMapResult {
   readonly map: CapabilityMap | null;
