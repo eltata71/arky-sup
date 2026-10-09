@@ -4,6 +4,7 @@ import { Course, UserProgress } from '../../types/lms';
 import { BookOpenIcon, StarIcon, SparklesIcon, ArrowRightIcon, PlayCircleIcon, MoreVerticalIcon, PencilIcon, Trash2Icon, BarChart2Icon, RotateCcwIcon, ExternalLinkIcon, TableIcon, LayoutGridIcon, FlameIcon, AwardIcon, ZapIcon, TrophyIcon } from 'lucide-react';
 import { EditCourseModal } from './EditCourseModal';
 import { levelFromXp } from '../../lib/lmsProgress';
+import { useAppContext } from '../../context/AppContext';
 
 interface Props {
     courses: Course[];
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse, onNavigate, onDeleteCourse, onUpdateCourse, onResetCourseProgress, canManageCourse }) => {
+    const { t } = useAppContext();
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
     const [statsCourse, setStatsCourse] = useState<Course | null>(null);
@@ -75,7 +77,7 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
             <button
                 onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === course.id ? null : course.id); }}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                title="Opciones del curso"
+                title={t('lmsDash.courseOptions')}
             >
                 <MoreVerticalIcon className="h-4 w-4" />
             </button>
@@ -138,7 +140,7 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="max-w-2xl">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-4 tracking-tight">
-                            Tu carrera como Arquitecto, <span className="text-yellow-400">potenciada por IA</span>
+                            Tu carrera como Arquitecto, <span className="text-yellow-400">{t('lmsDash.aiPowered')}</span>
                         </h1>
                         <p className="text-indigo-100 text-lg mb-8 leading-relaxed">
                             Explora rutas de aprendizaje curadas o genera un curso personalizado sobre cualquier tecnología emergente en segundos.
@@ -165,7 +167,7 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                         const { total, read, percent } = getCourseStats(recentCourse);
                         return (
                             <div className="hidden lg:block w-80 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl">
-                                <div className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-3">Continuar Aprendiendo</div>
+                                <div className="text-xs font-bold text-indigo-200 uppercase tracking-wider mb-3">{t('lmsDash.continue')}</div>
                                 <h3 className="text-lg font-bold text-white mb-1 line-clamp-2">{recentCourse.title}</h3>
                                 <p className="text-xs text-indigo-300 mb-3">{read} de {total} lecciones completadas</p>
                                 <div className="w-full bg-white/20 rounded-full h-1.5 mb-4">
@@ -204,21 +206,21 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                         <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
                             <div className="flex items-center gap-2 text-amber-500 mb-2">
                                 <ZapIcon className="h-5 w-5" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Experiencia</span>
+                                <span className="text-xs font-bold uppercase tracking-wider">{t('lmsDash.experience')}</span>
                             </div>
                             <p className="text-2xl font-black text-gray-900 dark:text-white">{xp} <span className="text-sm font-bold text-gray-400">XP</span></p>
                         </div>
                         <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
                             <div className="flex items-center gap-2 text-orange-500 mb-2">
                                 <FlameIcon className="h-5 w-5" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Racha</span>
+                                <span className="text-xs font-bold uppercase tracking-wider">{t('lmsDash.streak')}</span>
                             </div>
                             <p className="text-2xl font-black text-gray-900 dark:text-white">{streak} <span className="text-sm font-bold text-gray-400">{streak === 1 ? 'día' : 'días'}</span></p>
                         </div>
                         <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
                             <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-2">
                                 <AwardIcon className="h-5 w-5" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Certificados</span>
+                                <span className="text-xs font-bold uppercase tracking-wider">{t('lmsDash.certificates')}</span>
                             </div>
                             <p className="text-2xl font-black text-gray-900 dark:text-white">{certificates}</p>
                         </div>
@@ -229,21 +231,21 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
             {/* My Courses Section */}
             <div>
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Mi Aprendizaje</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('lmsDash.myLearning')}</h2>
                     <div className="flex items-center gap-3">
                         {myCourses.length > 0 && (
                             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
                                 <button
                                     onClick={() => setViewMode('table')}
                                     className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                                    title="Vista tabla"
+                                    title={t('lmsDash.tableView')}
                                 >
                                     <TableIcon className="h-4 w-4" />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('cards')}
                                     className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                                    title="Vista tarjetas"
+                                    title={t('lmsDash.cardView')}
                                 >
                                     <LayoutGridIcon className="h-4 w-4" />
                                 </button>
@@ -262,7 +264,7 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                         <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                             <BookOpenIcon className="h-10 w-10 text-indigo-500" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Aún no tienes cursos activos</h3>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('lmsDash.noActive')}</h3>
                         <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
                             Comienza tu viaje de aprendizaje explorando nuestro catálogo de rutas arquitectónicas o crea un curso a tu medida.
                         </p>
@@ -279,10 +281,10 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                             <table className="w-full text-sm text-left">
                                 <thead>
                                     <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Curso</th>
-                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Descripción</th>
-                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap">Última Actividad</th>
-                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Progreso</th>
+                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t('lmsDash.course')}</th>
+                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t('lmsDash.description')}</th>
+                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap">{t('lmsDash.lastActivity')}</th>
+                                        <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t('lmsDash.progress')}</th>
                                         <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider"></th>
                                         <th className="px-4 py-3"></th>
                                     </tr>
@@ -409,30 +411,30 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                             <p className="text-xs text-indigo-500 font-semibold uppercase tracking-wider mb-5">{statsCourse.category} · {statsCourse.level}</p>
                             <div className="space-y-3 mb-5">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Total de lecciones</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('lmsDash.totalLessons')}</span>
                                     <span className="font-bold text-gray-900 dark:text-white">{total}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Lecciones completadas</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('lmsDash.doneLessons')}</span>
                                     <span className="font-bold text-green-600">{read}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">En progreso</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('lmsDash.inProgress')}</span>
                                     <span className="font-bold text-blue-600">{inProg}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Progreso general</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('lmsDash.overall')}</span>
                                     <span className="font-bold text-indigo-600">{percent}%</span>
                                 </div>
                                 <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
                                     <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${percent}%` }} />
                                 </div>
                                 <div className="flex justify-between text-sm pt-1">
-                                    <span className="text-gray-500 dark:text-gray-400">Último acceso</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('lmsDash.lastAccess')}</span>
                                     <span className="font-semibold text-gray-700 dark:text-gray-300 text-right">{lastAccessed}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">Módulos</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('lmsDash.modules')}</span>
                                     <span className="font-bold text-gray-900 dark:text-white">{statsCourse.modules.length}</span>
                                 </div>
                             </div>
@@ -457,7 +459,7 @@ export const LMSDashboard: React.FC<Props> = ({ courses, progress, onOpenCourse,
                             <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Trash2Icon className="h-6 w-6 text-red-600" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">Eliminar Curso</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white text-center mb-2">{t('lmsDash.deleteCourse')}</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
                                 ¿Estás seguro de que deseas eliminar <span className="font-semibold text-gray-700 dark:text-gray-300">"{course?.title}"</span>? Esta acción no se puede deshacer.
                             </p>
