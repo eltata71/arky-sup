@@ -4,6 +4,7 @@
  * caller), never a plausible-looking item.
  */
 
+import { readCapabilityAttributes } from './capabilityAttributes';
 import { toInventoryRevision } from './inventoryIdentity';
 import { cleanAliases, cleanInventoryText, normalizeInventoryName } from './inventoryNames';
 import { uniqueIds } from './inventoryFactory';
@@ -21,6 +22,7 @@ export const normalizeInventoryItem = (raw: unknown, fallbackUserId: string): In
     ? (r.lifecycle as InventoryLifecycle)
     : 'candidate';
   const revision = toInventoryRevision(r.revision);
+  const capability = kind === 'capability' ? readCapabilityAttributes(r.capability) : undefined;
   return {
     id,
     schemaVersion: 1,
@@ -34,6 +36,7 @@ export const normalizeInventoryItem = (raw: unknown, fallbackUserId: string): In
     projectIds: uniqueIds(Array.isArray(r.projectIds) ? r.projectIds : []),
     createdAt: typeof r.createdAt === 'string' ? r.createdAt : now,
     updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : now,
+    ...(capability ? { capability } : {}),
     ...(revision ? { revision } : {}),
   };
 };

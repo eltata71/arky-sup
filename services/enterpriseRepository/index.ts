@@ -21,3 +21,15 @@ export {
   type EntityReference,
   type ProposePromotionsOptions,
 } from './application/inventoryPromotion';
+export {
+  buildCapabilityMap,
+  flattenCapabilityMap,
+  CAPABILITY_LAYERS,
+  COVERAGE_SATURATION,
+  type CapabilityLayer,
+  type CapabilityMap,
+  type CapabilityNode,
+  type CapabilityMapIssue,
+  type InitiativesByProject,
+  type LayerValue,
+} from './application/capabilityMap';
