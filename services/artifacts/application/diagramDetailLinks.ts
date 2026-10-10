@@ -268,3 +268,65 @@ export const describeDetailLinks = (
     rows: ir.nodes.map((node) => ({ nodeId: node.id, label: node.label, link: links.get(node.id) ?? null })),
   };
 };
+
+export interface C4TrailStep {
+  readonly artifactId: string;
+  readonly name: string;
+  readonly levelLabel: string | null;
+}
+
+export interface C4Navigation {
+  /** De la raíz al diagrama actual, que es el último paso. */
+  readonly trail: readonly C4TrailStep[];
+  /** Los nodos de este diagrama cuyo detalle se puede abrir. */
+  readonly enterable: readonly { readonly nodeId: string; readonly label: string; readonly artifactId: string; readonly targetName: string }[];
+  /** El diagrama del nivel de arriba, si alguno enlaza a éste. */
+  readonly parentArtifactId: string | null;
+}
+
+/**
+ * Dónde está un diagrama en la cadena de niveles (plan de clase mundial, 12.3).
+ *
+ * El camino de vuelta se **deriva** de los enlaces de detalle —el padre es el
+ * diagrama cuyo nodo declara el grupo de éste—, nunca se guarda: un segundo
+ * registro de «quién es mi padre» sería el que se queda viejo. Si dos
+ * diagramas lo reclaman gana el de nivel más alto y, a igualdad, el primero
+ * por nombre; un ciclo corta la cadena en vez de recorrerla sin fin.
+ */
+export const describeC4Navigation = (
+  artifact: Pick<Artifact, 'id' | 'versionGroupId' | 'name' | 'type' | 'ir'>,
+  artifacts: readonly (LinkableSource & Pick<Artifact, 'ir'>)[],
+): C4Navigation => {
+  const latest = latestByGroup(artifacts) as Map<string, LinkableSource & Pick<Artifact, 'ir'>>;
+  const LEVEL_RANK: Record<C4Level, number> = { context: 0, container: 1, component: 2, deployment: 3 };
+  const step = (a: Pick<Artifact, 'id' | 'name' | 'type'>): C4TrailStep => {
+    const level = c4LevelOf(a.type);
+    return { artifactId: a.id, name: a.name, levelLabel: level ? C4_LEVEL_LABEL[level] : null };
+  };
+  const parentOf = (groupId: string, seen: Set<string>) => {
+    const parents = [...latest.entries()]
+      .filter(([g, a]) => !seen.has(g) && a.ir?.nodes?.some((n) => n.detailArtifactGroupId?.trim() === groupId))
+      .map(([, a]) => a);
+    return parents.sort((a, b) =>
+      (LEVEL_RANK[c4LevelOf(a.type) ?? 'deployment']) - (LEVEL_RANK[c4LevelOf(b.type) ?? 'deployment'])
+      || a.name.localeCompare(b.name, 'es'))[0] ?? null;
+  };
+
+  const ownGroup = artifact.versionGroupId || artifact.id;
+  const seen = new Set<string>([ownGroup]);
+  const ancestors: C4TrailStep[] = [];
+  let parentArtifactId: string | null = null;
+  let group = ownGroup;
+  for (let parent = parentOf(group, seen); parent; parent = parentOf(group, seen)) {
+    group = parent.versionGroupId || parent.id;
+    seen.add(group);
+    ancestors.unshift(step(parent));
+    parentArtifactId ??= parent.id;
+  }
+
+  const enterable = resolveDetailLinks(artifact.ir, artifacts).flatMap((link) =>
+    link.status === 'resolved'
+      ? [{ nodeId: link.nodeId, label: link.nodeLabel, artifactId: link.target.artifactId, targetName: link.target.name }]
+      : []);
+  return { trail: [...ancestors, step(artifact)], enterable, parentArtifactId };
+};
