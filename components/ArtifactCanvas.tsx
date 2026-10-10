@@ -68,6 +68,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { planCanvasDiagramSave, withDiagramContent } from '../services/artifacts/application/diagramModification';
 import { resolveNodeDetailLink } from '../services/artifacts/application/diagramDetailLinks';
 import { DiagramPanels, type DiagramPanelId } from './artifacts/diagram/DiagramPanels';
+import { C4LevelNavigator } from './artifacts/diagram/C4LevelNavigator';
 
 export interface ArtifactCanvasProps {
   project: Project;
@@ -750,6 +751,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
               )
             )}
             {(viewMode === 'diagram' || viewMode === 'split') && (
+              <C4LevelNavigator artifact={artifact} projectArtifacts={project.artifacts} onOpenArtifact={setActiveArtifactId}>
               <DiagramView
                 artifact={artifact}
                 renderable={renderable}
@@ -791,6 +793,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
                   });
                 }}
               />
+              </C4LevelNavigator>
             )}
             {viewMode === 'notation' && <MermaidNotationView source={mermaidCode} artifactName={artifact.name} onViewText={() => setViewMode('document')} />}
             {viewMode === 'publication' && !isFullscreen && (
