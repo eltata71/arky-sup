@@ -4,6 +4,8 @@
  * caller), never a plausible-looking item.
  */
 
+import { readApplicationAttributes } from './applicationAttributes';
+import { readTechnologyAttributes } from './technologyAttributes';
 import { readCapabilityAttributes } from './capabilityAttributes';
 import { toInventoryRevision } from './inventoryIdentity';
 import { cleanAliases, cleanInventoryText, normalizeInventoryName } from './inventoryNames';
@@ -23,6 +25,8 @@ export const normalizeInventoryItem = (raw: unknown, fallbackUserId: string): In
     : 'candidate';
   const revision = toInventoryRevision(r.revision);
   const capability = kind === 'capability' ? readCapabilityAttributes(r.capability) : undefined;
+  const application = kind === 'application' ? readApplicationAttributes(r.application) : undefined;
+  const technology = kind === 'technology' ? readTechnologyAttributes(r.technology) : undefined;
   return {
     id,
     schemaVersion: 1,
@@ -37,6 +41,8 @@ export const normalizeInventoryItem = (raw: unknown, fallbackUserId: string): In
     createdAt: typeof r.createdAt === 'string' ? r.createdAt : now,
     updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : now,
     ...(capability ? { capability } : {}),
+    ...(application ? { application } : {}),
+    ...(technology ? { technology } : {}),
     ...(revision ? { revision } : {}),
   };
 };

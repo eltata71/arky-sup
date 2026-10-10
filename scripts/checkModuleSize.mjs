@@ -50,6 +50,7 @@ export const DEFAULT_MAX_BYTES = 20_000;
  * matters is each file's own, and it may only fall.
  */
 export const BYTE_CEILINGS = {
+  'App.tsx': 20_110, // 11.5: ruta lazy, ruta y entrada de paleta de /portfolio
   /**
    * +133 bytes and +1 line, deliberately: `chatWithProject` gained a
    * `modelTier` parameter so the Architecture Office can honour the model tier
@@ -67,7 +68,7 @@ export const BYTE_CEILINGS = {
   'services/ai/prompts/diagramPrompts.ts': 45933, // 11.1 ArchiMate: +995 bytes, el prompt de ArchiMate (capas, viewpoints, relaciones) · , // plan artefactos 7.5a: +673, el puerto onContextCaptured llega a los tres constructores (la captura vive en contextManifestCapture) · plan diagramas 6.4: 52 524 → 44265, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
   'components/MemoryCenterModal.tsx': 55654, // 13.2 (4): t() en los literales, +102 B // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/ArtifactCanvas.tsx': 43829, // ola 10.4: +99, «Deshacer» tras aplicar mejoras con IA (la regla vive en `aiUndo`, el lienzo sólo la ofrece) // plan diagramas 8.3a: +181, monta la vista «Notación» (secuencia, Gantt y estados abren en Mermaid nativo; el lienzo los aplanaba) // plan diagramas 8.1a: +49, «Guardar» del lienzo pasa lo que el lienzo mostraba y dice si el texto se conservó (antes convertía cualquier diagrama en React Flow) // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
-  'constants.ts': 57249, // 11.1 ArchiMate: plantillas de los viewpoints ArchiMate (datos) · , // 11.0: `standard` y `admPhase` en cada plantilla del catálogo (datos)
+  'constants.ts': 58691, // 11.5: dos plantillas (contrato de arquitectura, evaluación de cumplimiento; datos) · 11.1 ArchiMate: plantillas de los viewpoints ArchiMate (datos) · , // 11.0: `standard` y `admPhase` en cada plantilla del catálogo (datos)
   'pages/ProjectsPage.tsx': 44541, // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
   'components/artifacts/export/ArtifactExportModal.tsx': 28422, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
@@ -149,8 +150,8 @@ export const BYTE_CEILINGS = {
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   'components/ArtifactSelectionStep.tsx': 20101,
   'pages/UserManagementPage.tsx': 20037,
-  'lib/i18n/locales/es.ts': 29100, // 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
-  'lib/i18n/locales/en.ts': 27400, // 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
+  'lib/i18n/locales/es.ts': 31139, // 11.5: claves pf.* y rail.portfolio.* del portafolio y radar (es/en juntas); 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
+  'lib/i18n/locales/en.ts': 29362, // 11.5: claves pf.* y rail.portfolio.*; 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
 };
 
 /**
@@ -189,7 +190,7 @@ export const CEILINGS = {
   'components/CustomArtifactBriefWizard.tsx': 845,
   'components/CustomArtifactRequestModal.tsx': 831, // 10.1: las etiquetas de fase salen al catálogo
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
-  'constants.ts': 978, // 11.1 ArchiMate: plantillas ArchiMate · , // 11.0: una línea más por plantilla
+  'constants.ts': 1006, // 11.5: dos plantillas · 11.1 ArchiMate: plantillas ArchiMate · , // 11.0: una línea más por plantilla
   'components/AssistantPanel.tsx': 744, // 10.4b: +12 · plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
   'components/artifacts/fable/FableDiagramCanvas.tsx': 790,
   'pages/SDDProcessView.tsx': 785,

@@ -17,6 +17,8 @@ import {
   CAPABILITY_INVESTMENTS,
   CAPABILITY_RISKS,
 } from './capabilityAttributes';
+import { isFitScore, type ApplicationAttributes, type FitScore } from './applicationAttributes';
+import { isRadarRing, type RadarRing, type TechnologyAttributes } from './technologyAttributes';
 import { uniqueIds } from './inventoryFactory';
 import { cleanAliases, cleanInventoryText, findInventoryMatch, normalizeInventoryName } from './inventoryNames';
 import type { InventoryItem, InventoryLifecycle } from './InventoryTypes';
@@ -34,13 +36,18 @@ export type InventoryCommand =
   | { readonly type: 'set-capability-investment'; readonly investment: CapabilityInvestment | null }
   | { readonly type: 'set-capability-risk'; readonly risk: CapabilityRisk | null }
   | { readonly type: 'link-supporting-application'; readonly applicationId: string }
-  | { readonly type: 'unlink-supporting-application'; readonly applicationId: string };
+  | { readonly type: 'unlink-supporting-application'; readonly applicationId: string }
+  | { readonly type: 'set-application-functional-fit'; readonly score: FitScore | null }
+  | { readonly type: 'set-application-technical-fit'; readonly score: FitScore | null }
+  | { readonly type: 'set-technology-ring'; readonly ring: RadarRing | null };
 
 export type InventoryCommandRejection =
   | { readonly reason: 'missing-name' }
   | { readonly reason: 'missing-alias' }
   | { readonly reason: 'missing-project' }
   | { readonly reason: 'not-a-capability' }
+  | { readonly reason: 'not-an-application' }
+  | { readonly reason: 'not-a-technology' }
   | { readonly reason: 'invalid-value' }
   | { readonly reason: 'unknown-parent'; readonly parentId: string }
   | { readonly reason: 'capability-cycle' }
@@ -82,6 +89,17 @@ const withCapability = (item: InventoryItem, patch: Partial<CapabilityAttributes
   const merged: Record<string, unknown> = { ...item.capability, ...patch };
   for (const key of Object.keys(merged)) if (merged[key] === undefined) delete merged[key];
   return { capability: Object.keys(merged).length ? (merged as CapabilityAttributes) : undefined };
+};
+
+const withApplication = (item: InventoryItem, patch: Partial<ApplicationAttributes>): Partial<InventoryItem> => {
+  const merged: Record<string, unknown> = { ...item.application, ...patch };
+  for (const key of Object.keys(merged)) if (merged[key] === undefined) delete merged[key];
+  return { application: Object.keys(merged).length ? (merged as ApplicationAttributes) : undefined };
+};
+
+const withTechnology = (ring: RadarRing | undefined): Partial<InventoryItem> => {
+  const technology: TechnologyAttributes | undefined = ring ? { ring } : undefined;
+  return { technology };
 };
 
 const applyCapabilityCommand = (
@@ -191,6 +209,22 @@ export const applyInventoryCommand = (
     case 'unlink-project': {
       const projectIds = item.projectIds.filter((id) => id !== command.projectId);
       return projectIds.length === item.projectIds.length ? unchanged(item) : done(item, { projectIds }, now);
+    }
+    case 'set-application-functional-fit':
+    case 'set-application-technical-fit': {
+      if (item.kind !== 'application') return reject({ reason: 'not-an-application' });
+      if (command.score !== null && !isFitScore(command.score)) return reject({ reason: 'invalid-value' });
+      const score = command.score ?? undefined;
+      const field = command.type === 'set-application-functional-fit' ? 'functionalFit' : 'technicalFit';
+      if (score === item.application?.[field]) return unchanged(item);
+      return done(item, withApplication(item, { [field]: score }), now);
+    }
+    case 'set-technology-ring': {
+      if (item.kind !== 'technology') return reject({ reason: 'not-a-technology' });
+      if (command.ring !== null && !isRadarRing(command.ring)) return reject({ reason: 'invalid-value' });
+      const ring = command.ring ?? undefined;
+      if (ring === item.technology?.ring) return unchanged(item);
+      return done(item, withTechnology(ring), now);
     }
     case 'set-capability-parent':
     case 'set-capability-maturity':

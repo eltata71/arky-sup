@@ -10,7 +10,9 @@
  * database, so "per organisation" is an additive migration later, not a rewrite.
  */
 
+import type { ApplicationAttributes } from './applicationAttributes';
 import type { CapabilityAttributes } from './capabilityAttributes';
+import type { TechnologyAttributes } from './technologyAttributes';
 
 export type InventoryKind = 'application' | 'capability' | 'technology';
 
@@ -38,6 +40,10 @@ export interface InventoryItem {
   readonly projectIds: readonly string[];
   /** Only for `kind: 'capability'`: its place in the L1/L2/L3 map and what the map overlays. */
   readonly capability?: CapabilityAttributes;
+  /** Only for `kind: 'application'`: the two measured axes TIME reads. */
+  readonly application?: ApplicationAttributes;
+  /** Only for `kind: 'technology'`: its radar ring. */
+  readonly technology?: TechnologyAttributes;
   readonly createdAt: string;
   readonly updatedAt: string;
   /** Row witness for optimistic concurrency. Unknown until stored. */

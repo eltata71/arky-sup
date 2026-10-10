@@ -41,6 +41,13 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     keywords: ['capacidades', 'capacidad', 'mapa', 'calor', 'madurez', 'inversion', 'riesgo', 'cobertura', 'heatmap'],
   }),
   topic({
+    id: 'portafolio-radar',
+    question: '¿Cómo se clasifican las aplicaciones (TIME) y qué es el radar tecnológico?',
+    answer: 'Cada aplicación se evalúa con dos notas de 1 a 5: **ajuste funcional** y **ajuste técnico**. El cuadrante se calcula solo: **Invertir**, **Migrar**, **Tolerar** o **Eliminar**; nunca se elige a mano, y sin las dos notas figura «sin evaluar». El radar coloca cada tecnología en un anillo (**Adoptar, Probar, Evaluar, Retener**) y le muestra al lado los estándares de la Oficina que la nombran.',
+    where: 'Raíl izquierdo: Portafolio.',
+    keywords: ['portafolio', 'aplicaciones', 'time', 'radar', 'tecnologia', 'tecnologias', 'tolerar', 'invertir', 'migrar', 'eliminar', 'adoptar', 'anillo'],
+  }),
+  topic({
     id: 'iniciativa',
     question: '¿Qué es una Iniciativa de Negocio y para qué sirve?',
     answer: 'Es la razón por la que existe el trabajo de arquitectura: la necesidad del negocio, su driver, sus objetivos y los resultados que se van a medir. No es un proyecto y no termina cuando se entrega: sigue abierta mientras se estén midiendo sus resultados. Una iniciativa puede estar servida por varios proyectos de arquitectura.',
