@@ -2248,6 +2248,29 @@ inventario empresarial y arma la hoja de ruta de un proyecto. Reglas:
 - Mover un plateau es con botones (Antes/Después), nunca sólo arrastrando.
 - La exportación PPTX usa la línea de tiempo nativa (`buildRoadmapDeck`).
 
+## El portafolio de aplicaciones se clasifica, el radar se alimenta de estándares
+
+`/portfolio` (rail, grupo sistema) tiene dos vistas sobre el mismo inventario:
+
+- **TIME se calcula, nunca se elige.** `classifyTime`
+  (`services/enterpriseRepository/application/timeClassification.ts`) cruza dos
+  notas medidas, ajuste funcional y ajuste técnico (1–5, umbral
+  `TIME_HIGH_THRESHOLD`), y devuelve Invertir, Migrar, Tolerar o Eliminar. Sin
+  las dos notas el cuadrante es `null`: «sin evaluar», nunca un cuadrante por
+  defecto. Las notas cambian por `InventoryCommand`
+  (`set-application-functional-fit`, `set-application-technical-fit`).
+- **El anillo del radar sí lo decide una persona**
+  (`set-technology-ring`: Adoptar, Probar, Evaluar, Retener), pero los estándares
+  de la Oficina que nombran la tecnología se muestran al lado
+  (`buildTechnologyRadar`) y **nunca eligen el anillo**.
+- **Los contextos no se importan.** Los estándares llegan por el puerto
+  `RadarStandard` y la puerta pequeña `services/architectureOffice/standards.ts`;
+  `hooks/useApplicationPortfolio` los une, y la pantalla importa un solo módulo.
+- **Las plantillas «Contrato de arquitectura» y «Evaluación de cumplimiento»**
+  son disciplinas documentales (`lib/artifacts/documentDisciplines.ts`); la
+  segunda exige un veredicto con valor (`compliance-verdict-value`).
+- Sin migración: los atributos viajan en el `data jsonb` del inventario.
+
 ## El tablero es un centro de mando, y su cifra viene con su composición
 
 La pantalla con la que abre el producto tenía cuatro contadores y dejaba la

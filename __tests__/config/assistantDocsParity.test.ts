@@ -25,6 +25,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'provision-user', rule: 'el backend es Supabase y su única pieza de servidor' },
   { anchor: 'sqlMatrixParity', rule: 'la matriz de permisos es la misma en cliente y en PostgreSQL' },
   { anchor: 'createArchitectureProject', rule: 'un proyecto sólo nace de su fábrica' },
+  { anchor: 'classifyTime', rule: 'el cuadrante TIME se calcula, nunca se elige' },
   { anchor: 'modules.json', rule: 'los módulos declarados y su gate' },
   { anchor: 'allowedDependencies', rule: 'las dependencias entre módulos están declaradas (F3-03)' },
   { anchor: 'budgetTargets', rule: 'los presupuestos tienen objetivo y fecha (F3-04)' },

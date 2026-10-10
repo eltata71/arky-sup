@@ -45,6 +45,7 @@ const InitiativesPage = lazyWithRetry(() => import('./pages/InitiativesPage'), {
 const InitiativeRoom = lazyWithRetry(() => import('./pages/InitiativeRoom'), { chunkName: 'InitiativeRoom' });
 const AgentsPage = lazyWithRetry(() => import('./pages/AgentsPage'), { chunkName: 'AgentsPage' });
 const TransitionPlanPage = lazyWithRetry(() => import('./pages/TransitionPlanPage'), { chunkName: 'TransitionPlanPage' });
+const PortfolioPage = lazyWithRetry(() => import('./pages/PortfolioPage'), { chunkName: 'PortfolioPage' });
 const CapabilityMapPage = lazyWithRetry(() => import('./pages/CapabilityMapPage'), { chunkName: 'CapabilityMapPage' });
 
 /*
@@ -156,6 +157,7 @@ const GlobalCommands: React.FC = () => {
             { id: 'nav.agents', section: 'Navegación', title: 'Agentes de la Oficina', subtitle: 'La ficha de cada arquitecto: habilidades, conocimiento, memoria y modelo', icon: <BuildingOffice2Icon className="h-4 w-4" />, run: () => navigate('/agents'), keywords: ['agentes','ficha','arquitectos','especialistas','reparto'] },
             { id: 'nav.transition', section: 'Navegación', title: 'Plan de transición', subtitle: 'Brechas entre línea base y objetivo, y hoja de ruta por mesetas', icon: <BuildingOffice2Icon className="h-4 w-4" />, run: () => navigate('/transition'), keywords: ['transicion','brechas','hoja','ruta','mesetas','roadmap'] },
             { id: 'nav.capabilities', section: 'Navegación', title: 'Mapa de capacidades', subtitle: 'Madurez, inversión, riesgo y cobertura de cada capacidad', icon: <BuildingOffice2Icon className="h-4 w-4" />, run: () => navigate('/capabilities'), keywords: ['capacidades','mapa','calor','madurez','inversion','riesgo'] },
+            { id: 'nav.portfolio', section: 'Navegación', title: 'Portafolio y radar', subtitle: 'Aplicaciones por TIME y tecnologías por anillo', icon: <BuildingOffice2Icon className="h-4 w-4" />, run: () => navigate('/portfolio'), keywords: ['portafolio','aplicaciones','time','radar','tecnologia'] },
             { id: 'nav.training', section: 'Navegación', title: 'Centro de Formación', subtitle: 'Cursos, rutas de aprendizaje y notas inteligentes', icon: <AcademicCapIcon className="h-4 w-4" />, run: () => navigate('/training'), keywords: ['curso','formación','training','lms'] },
             { id: 'nav.settings', section: 'Navegación', title: 'Configuración', subtitle: 'Tema, idioma, modelo de IA, claves', icon: <Cog6ToothIcon className="h-4 w-4" />, run: () => navigate('/settings'), keywords: ['config','tema','dark','idioma','clave'] },
             ...(profile?.role === 'admin' || profile?.role === 'superadmin' ? [
@@ -260,6 +262,7 @@ const App: React.FC = () => {
                   <Route path="/office/:engagementId" element={<ProtectedRoute><EngagementRoom /></ProtectedRoute>} />
                   <Route path="/agents" element={<ProtectedRoute><AgentsPage /></ProtectedRoute>} />
                   <Route path="/transition" element={<ProtectedRoute><TransitionPlanPage /></ProtectedRoute>} />
+                  <Route path="/portfolio" element={<ProtectedRoute><PortfolioPage /></ProtectedRoute>} />
                   <Route path="/capabilities" element={<ProtectedRoute><CapabilityMapPage /></ProtectedRoute>} />
                   <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                   <Route path="/training" element={<ProtectedRoute><TrainingCenterPage /></ProtectedRoute>} />

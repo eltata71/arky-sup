@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Boxes, Landmark, LayoutDashboard, Network, PackageCheck, Route as RouteIcon, Shield, Users } from 'lucide-react';
+import { Boxes, Landmark, LayoutDashboard, Network, PackageCheck, Radar, Route as RouteIcon, Shield, Users } from 'lucide-react';
 import { AcademicCapIcon, Cog6ToothIcon } from '../Icons';
 import type { Permission } from '../../lib/authz';
 
@@ -71,6 +71,7 @@ export const RAIL_ITEMS: RailItem[] = [
     // el raíl y desde ningún otro sitio.
     { id: 'agents', icon: <Users className="h-5 w-5" />, href: '/agents', match: (p) => p.startsWith('/agents'), group: 'system' },
     { id: 'capabilities', icon: <Network className="h-5 w-5" />, href: '/capabilities', match: (p) => p.startsWith('/capabilities'), group: 'system' },
+    { id: 'portfolio', icon: <Radar className="h-5 w-5" />, href: '/portfolio', match: (p) => p.startsWith('/portfolio'), group: 'system' },
     { id: 'transition', icon: <RouteIcon className="h-5 w-5" />, href: '/transition', match: (p) => p.startsWith('/transition'), group: 'system' },
     { id: 'training', icon: <AcademicCapIcon className="h-5 w-5" />, href: '/training', match: (p) => p.startsWith('/training'), group: 'system' },
     // «Configuración» es un carácter más ancho de lo que cabe y trunca a
