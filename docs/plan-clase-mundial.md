@@ -790,7 +790,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 11.0 Estándar declarado y fases ADM | Hecha | #180 |
 | 11.1 ArchiMate | Hecha | ArchiMate como dialecto del IR |
 | 11.2 Inventario empresarial | Hecha · #183 | |
-| 11.3 Mapa de calor de capacidades | Pendiente | |
+| 11.3 Mapa de calor de capacidades | Hecha | #189 |
 | 11.4 Brechas y hoja de ruta | Pendiente | |
 | 11.5 TIME, radar y contrato | Pendiente | |
 | 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |

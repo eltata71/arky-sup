@@ -36,6 +36,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | V-04 | Dos pestañas no se pisan: se guarda con la revisión vista | `RPC` (`P0001` ante conflicto) | ✅ | 11.2 |
 | V-05 | `retired` es terminal; un comando que no cambia nada no escribe | `TS` (`applyInventoryCommand`) | ⚠️ sólo TypeScript | 11.2 |
 | V-06 | Nada se unifica sin un clic humano: la promoción propone y sólo `acceptPromotion` produce un plan | `TS` (`inventoryPromotion`) | ⚠️ convención del contexto, sin servidor | 11.2 |
+| V-07 | Una capacidad no pasa de L3, no tiene ciclos y su padre existe; las aplicaciones que la soportan existen. El nivel se deriva, no se guarda; lo no medido es `null` | `TS` (`applyInventoryCommand`, `buildCapabilityMap`) | ⚠️ sólo TypeScript (`data jsonb`, sin migración) | 11.3 |
 
 ## Proyectos de Arquitectura
 

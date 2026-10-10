@@ -10,6 +10,8 @@
  * database, so "per organisation" is an additive migration later, not a rewrite.
  */
 
+import type { CapabilityAttributes } from './capabilityAttributes';
+
 export type InventoryKind = 'application' | 'capability' | 'technology';
 
 export const INVENTORY_KINDS: readonly InventoryKind[] = ['application', 'capability', 'technology'];
@@ -34,6 +36,8 @@ export interface InventoryItem {
   readonly lifecycle: InventoryLifecycle;
   /** Ids of the projects in which this item appears — keys, never text. */
   readonly projectIds: readonly string[];
+  /** Only for `kind: 'capability'`: its place in the L1/L2/L3 map and what the map overlays. */
+  readonly capability?: CapabilityAttributes;
   readonly createdAt: string;
   readonly updatedAt: string;
   /** Row witness for optimistic concurrency. Unknown until stored. */
