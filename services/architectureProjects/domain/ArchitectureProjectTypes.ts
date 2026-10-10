@@ -13,6 +13,7 @@
  */
 
 import type { MemoryEntry } from '../../../types';
+import type { TransitionPlan } from './transitionPlan';
 import type { Artifact, ArtifactSummary } from '../../../lib/artifacts';
 
 // El resumen del índice es un contrato sin comportamiento que leen el
@@ -137,6 +138,8 @@ export interface ProjectAttentionTracking {
   risks?: AttentionRisk[];
   /** What this project moves in each initiative it answers. */
   contributions?: AttentionContribution[];
+  /** Línea base, objetivo y mesetas (11.4): ids del inventario y de los hitos, nunca copias. */
+  transition?: TransitionPlan;
 }
 
 

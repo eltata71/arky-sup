@@ -602,6 +602,12 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    - documentar comandos ejecutados,
    - registrar riesgos o deuda técnica detectada.
 
+27. El plan de transición (`/transition`) se deriva: la brecha sale de `analyzeGaps`
+    sobre línea base y objetivo, los plateaus enlazan hitos por id (`deriveRoadmap`,
+    sin fecha = «sin fecha», nunca 0), el plan es aditivo en `attention.transition` y
+    cambia por `TransitionCommand`; `architectureProjects` y `enterpriseRepository`
+    no se importan (puerto `GapPlanPort` + `useTransitionPlan`). Detalle en CLAUDE.md.
+
 ---
 
 ## Sincronización de capacidades

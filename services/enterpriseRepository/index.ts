@@ -34,3 +34,12 @@ export {
   type LayerValue,
 } from './application/capabilityMap';
 export { buildCapabilityExportRows, type CapabilityExportRow } from './application/capabilityMapExport';
+export {
+  analyzeGaps,
+  type GapPlanPort,
+  type GapAction,
+  type GapChange,
+  type GapEntry,
+  type GapIssue,
+  type GapAnalysis,
+} from './application/gapAnalysis';

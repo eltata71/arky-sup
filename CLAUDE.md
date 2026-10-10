@@ -2231,6 +2231,23 @@ hosts it did not change: *what it is* (the existing file), *how it is going*
 (`AttentionTrackingPanel`) and *what it moves* (`AttentionContributionPanel`).
 `InitiativeDeliveryPanel` renders the other end in the initiative's room.
 
+## El plan de transición se deriva, no se almacena
+
+`/transition` (rail, grupo sistema) compara la línea base y el objetivo del
+inventario empresarial y arma la hoja de ruta de un proyecto. Reglas:
+
+- **La brecha se deriva** de las dos listas (`analyzeGaps`, en
+  `services/enterpriseRepository/application/gapAnalysis.ts`): conservar,
+  eliminar, nuevo o modificar. Nunca se escribe a mano ni se guarda.
+- **Los plateaus enlazan hitos por id** (`deriveRoadmap`); un hito sin fecha
+  queda «sin fecha», nunca 0, y una referencia rota se informa.
+- **El plan viaja aditivo** en `attention.transition` y cambia por operaciones
+  con nombre (`TransitionCommand`, vía `update-transition`); no hay migración.
+- `architectureProjects` y `enterpriseRepository` no se importan: el puerto
+  `GapPlanPort` y el hook `useTransitionPlan` los reúnen.
+- Mover un plateau es con botones (Antes/Después), nunca sólo arrastrando.
+- La exportación PPTX usa la línea de tiempo nativa (`buildRoadmapDeck`).
+
 ## El tablero es un centro de mando, y su cifra viene con su composición
 
 La pantalla con la que abre el producto tenía cuatro contadores y dejaba la

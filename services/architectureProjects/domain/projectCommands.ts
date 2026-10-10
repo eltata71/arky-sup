@@ -27,6 +27,7 @@ import type { PublicationPackage } from '../../publicationPipeline';
 import { toInitiativeCodes } from '../../../lib/eaTerminology';
 import type { ProjectAttentionTracking, ProjectRoot } from './ArchitectureProjectTypes';
 import { normalizeAttentionTracking } from './projectRuntimeValidation';
+import { applyTransitionCommand, type TransitionCommand } from './transitionPlan';
 
 /** Las tres memorias de un proyecto, cada una con su lista de entradas. */
 export type ProjectMemoryArea = 'projectContext' | 'agentMemory' | 'initialCapture';
@@ -43,13 +44,14 @@ export type ProjectCommand =
     readonly entries?: readonly MemoryEntry[];
   }
   | { readonly kind: 'update-tracking'; readonly tracking: ProjectAttentionTracking }
+  | { readonly kind: 'update-transition'; readonly command: TransitionCommand }
   | { readonly kind: 'link-initiatives'; readonly initiativeIds: readonly string[]; readonly codes?: readonly string[] }
   | { readonly kind: 'set-publication-packages'; readonly packages: readonly PublicationPackage[] };
 
 export type ProjectCommandKind = ProjectCommand['kind'];
 
 export interface ProjectCommandRejection {
-  readonly reason: 'empty-name' | 'empty-context-entry' | 'no-initiative' | 'invalid-tracking';
+  readonly reason: 'empty-name' | 'empty-context-entry' | 'no-initiative' | 'invalid-tracking' | 'invalid-transition';
   readonly message: string;
 }
 
@@ -106,6 +108,13 @@ const decide = (project: ProjectRoot, command: ProjectCommand): ProjectCommandRe
       const attention = normalizeAttentionTracking(command.tracking);
       if (!attention) return reject('invalid-tracking', 'El seguimiento no tiene una forma válida.');
       return { ok: true, changed: !same(project.attention, attention), changes: { attention } };
+    }
+    case 'update-transition': {
+      if (!project.attention) return reject('invalid-tracking', 'El plan de transición cuelga del seguimiento: el proyecto aún no tiene.');
+      const result = applyTransitionCommand(project.attention.transition, command.command, project.attention);
+      if (!result.ok) return reject('invalid-transition', `El plan de transición rechaza la operación: ${result.rejection}.`);
+      const attention = { ...project.attention, transition: result.plan };
+      return { ok: true, changed: result.changed, changes: { attention } };
     }
     case 'link-initiatives': {
       // P-02: la regla que la fábrica aplica al crear también se aplica al
