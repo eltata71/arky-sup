@@ -43,6 +43,7 @@
  */
 
 import type { Artifact } from '../../../lib/artifacts';
+import { normalizeTransitionPlan } from './transitionPlan';
 import type { Project, ProjectAttentionTracking, AttentionContribution, AttentionMilestone, AttentionRisk } from './ArchitectureProjectTypes';
 import { validatePublicationPackages } from '../../publicationPipeline/PublicationRuntimeValidation';
 import { sanitizeMemoryEntryList } from '../../memory/memoryEntries';
@@ -275,6 +276,7 @@ export const normalizeAttentionTracking = (
     milestones: milestones.length > 0 ? milestones : undefined,
     risks: risks.length > 0 ? risks : undefined,
     contributions: contributions.length > 0 ? contributions : undefined,
+    transition: normalizeTransitionPlan(raw.transition),
   };
 };
 
