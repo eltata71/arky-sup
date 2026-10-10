@@ -107,6 +107,7 @@ export const ROUTE_BUDGETS_GZIP_KB = {
   SettingsPage: 30,
   AgentsPage: 50,
   CapabilityMapPage: 30,
+  TransitionPlanPage: 30,
   UserManagementPage: 15,
   ProjectsPage: 712, // 12.0: 708,6 KB gz medidos: el chat guiado, la selección de plantilla, la consistencia y el asistente de entregables se cargan al abrirse (antes 754) · 10.2: 753,4 KB gz medidos; la cola persistente comparte el camino de generación con esta ruta, mientras el motor sigue fuera de la carga inicial (antes 752). · plan diagramas 8.3b: 751,0 KB gz medidos: la notación de secuencia, ERD y estados (lectores y escritores sin pérdida) viaja con el parser y la reescritura · plan diagramas 8.2a: 747,4 KB gz medidos: la gramática de Mermaid juzga el texto generado (el módulo de Mermaid sigue diferido) · plan artefactos 7.5a: medidos 746,5 KB gz: el grabador del manifiesto de contexto y su captura en cada compositor de prompt · plan artefactos 7.4a: medidos 742,7 → 745,0 KB gz: la guía de redacción de las 18 disciplinas viaja con la generación y no en la carga inicial · plan artefactos 7.3b: +0,9 KB gz medidos (741,3 → 742,2): el extractor de decisiones del chat y la oferta de memoria · plan artefactos 7.2b: +0,7 KB gz medidos (740,4 → 741,1): el prompt base y el camino IR leen el bundle, con el filtro de eco y el refuerzo de señales · plan artefactos 7.2a: +0,4 KB gz medidos (740,0 → 740,4): el ensamblador del contexto de artefacto viaja con la capa de IA
   InitiativesPage: 660,

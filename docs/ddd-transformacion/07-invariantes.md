@@ -50,6 +50,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | P-06 | Una escritura desde vista obsoleta no pisa otra | `RPC` (revisión optimista → `P0001`) y la revisión viaja con el registro, sin mapas (`noRevisionCache.test.ts`) | ✅ cierra **H10** | F4-07, F5-05, F6-03 |
 | P-07 | El dueño es el actor | `RPC` + `RLS` | ✅ | — |
 | P-08 | Un borrado desde vista obsoleta no elimina una edición concurrente | `RPC` (`P0001`, y no borra nada) + contrato `project_deletion_conflict` | ✅ | F6-05 |
+| P-09 | Una brecha o una hoja de ruta no se almacenan: se derivan de la línea base, el objetivo y el plan; un hito sin fecha queda «sin fecha», nunca 0 | `TS` (`analyzeGaps`, `deriveRoadmap`, `applyTransitionCommand` con rechazo tipado; el plan viaja aditivo en `attention.transition`, sin migración) | ✅ — 11.4 | 11.4 |
 
 ## Encargos y Gobernanza
 
@@ -108,7 +109,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | Autoridad suficiente | Insuficiente | Total |
 |---|---|---|
-| **38 ✅** | 1 ❌ + 4 ⚠️ | 43 |
+| **39 ✅** | 1 ❌ + 4 ⚠️ | 44 |
 
 En la línea base eran 17 ✅, 8 ❌ y 8 ⚠️ sobre 33. **De las ocho sin autoridad
 efectiva, siete tienen hoy servidor detrás.** H02 se cerró en sus tres partes

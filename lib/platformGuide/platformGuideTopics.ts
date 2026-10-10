@@ -153,6 +153,13 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     keywords: ['buscar', 'busqueda', 'encontrar', 'atajo', 'teclado', 'comando', 'paleta'],
   }),
   topic({
+    id: 'plan-transicion',
+    question: '¿Cómo planifico la transición de la arquitectura actual a la deseada?',
+    answer: 'En el plan de transición eliges un proyecto, añades elementos del inventario a la línea base y al objetivo, y las brechas (se mantiene, se elimina, nuevo, se modifica) se calculan solas a partir de las dos listas. Después ordenas las mesetas de la hoja de ruta, atas cada una a un hito del proyecto y la exportas a PPTX. Una meseta sin fecha se dice «sin fecha»; nunca se inventa una.',
+    where: 'Raíl izquierdo → Transición.',
+    keywords: ['transicion', 'brechas', 'gap', 'linea', 'base', 'objetivo', 'meseta', 'hoja', 'ruta', 'roadmap'],
+  }),
+  topic({
     id: 'formacion',
     question: '¿Qué es el Centro de Formación?',
     answer: 'Es el espacio de aprendizaje: cursos, lecciones, laboratorios y notas inteligentes sobre arquitectura y sobre la propia disciplina. Tu progreso se guarda por usuario, y quien tenga el rol de formador puede crear y editar los cursos.',

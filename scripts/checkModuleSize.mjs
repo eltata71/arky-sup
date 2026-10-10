@@ -149,8 +149,8 @@ export const BYTE_CEILINGS = {
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   'components/ArtifactSelectionStep.tsx': 20101,
   'pages/UserManagementPage.tsx': 20037,
-  'lib/i18n/locales/es.ts': 26750, // 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
-  'lib/i18n/locales/en.ts': 25200, // 11.3: claves cap.* y cap.export.* del mapa de capacidades
+  'lib/i18n/locales/es.ts': 29100, // 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
+  'lib/i18n/locales/en.ts': 27400, // 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
 };
 
 /**

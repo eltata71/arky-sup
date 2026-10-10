@@ -56,6 +56,7 @@ describe('AppRail', () => {
       'Solicitudes de Entregables',
       'Agentes de la Oficina',
       'Mapa de capacidades',
+      'Plan de transición',
       'Centro de Formación',
       'Configuración',
       'Seguridad',

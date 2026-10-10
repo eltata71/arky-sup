@@ -72,6 +72,56 @@ export const exportTableDeckAsPptx = async (summary: TableDeckSummary, name: str
   };
 };
 
+export interface RoadmapDeckSummary {
+  readonly title: string;
+  readonly subtitle: string;
+  readonly gapTitle: string;
+  readonly gapHeaders: readonly string[];
+  readonly gapRows: readonly (readonly string[])[];
+  readonly timelineTitle: string;
+  /** One sentence per plateau, in order; the native timeline of the PPTX draws them. */
+  readonly steps: readonly string[];
+  readonly notes?: string;
+}
+
+export const buildRoadmapDeck = (summary: RoadmapDeckSummary): PresentationDeck => {
+  const slides: PresentationSlide[] = [];
+  const push = (slide: Omit<PresentationSlide, 'id' | 'slideNumber'>) => {
+    const slideNumber = slides.length + 1;
+    slides.push({ id: `slide-${slideNumber}`, slideNumber, ...slide });
+  };
+  push({ title: summary.title, subtitle: summary.subtitle, layout: 'titleSlide', contentBlocks: [] });
+  if (summary.gapRows.length > 0) {
+    push({
+      title: summary.gapTitle,
+      layout: 'comparisonTable',
+      contentBlocks: [{ type: 'table', content: { headers: [...summary.gapHeaders], rows: summary.gapRows.slice(0, ROWS_PER_SLIDE).map((r) => [...r]) } }],
+    });
+  }
+  if (summary.steps.length > 0) {
+    push({
+      title: summary.timelineTitle,
+      layout: 'timeline',
+      contentBlocks: summary.steps.map((step) => ({ type: 'text' as const, content: step })),
+      ...(summary.notes ? { speakerNotes: summary.notes } : {}),
+    });
+  }
+  return { kind: 'presentation', version: '1', title: summary.title, audience: 'executive', slides };
+};
+
+export const exportRoadmapDeckAsPptx = async (summary: RoadmapDeckSummary, name: string): Promise<ExportedFile> => {
+  const { buildPptx } = await import('./adapters/pptxExporter');
+  const definition = EXPORT_DEFINITIONS.pptx;
+  const bytes = buildPptx(buildRoadmapDeck(summary));
+  return {
+    blob: new Blob([bytes.slice().buffer], { type: definition.mimeType }),
+    filename: sanitizeFileName(name, { extension: definition.extension }),
+    mimeType: definition.mimeType,
+    extension: definition.extension,
+    format: 'pptx',
+  };
+};
+
 export const pngFile = (blob: Blob, name: string): ExportedFile => ({
   blob,
   filename: sanitizeFileName(name, { extension: 'png' }),
