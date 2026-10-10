@@ -14,7 +14,7 @@ import { csvExporter } from './adapters/csvExporter';
 import { jsonExporter } from './adapters/jsonExporter';
 import { pdfExporter } from './adapters/pdfExporter';
 import { xlsxExporter } from './adapters/xlsxExporter';
-import { mermaidExporter, diagramJsonExporter } from './adapters/diagramExporter';
+import { mermaidExporter, diagramJsonExporter, archimateXmlExporter } from './adapters/diagramExporter';
 
 const adapters: Partial<Record<ExportFormat, ExportAdapter>> = {
   md: markdownExporter,
@@ -26,6 +26,7 @@ const adapters: Partial<Record<ExportFormat, ExportAdapter>> = {
   xlsx: xlsxExporter,
   mermaid: mermaidExporter,
   'diagram-json': diagramJsonExporter,
+  'archimate-xml': archimateXmlExporter,
 };
 
 /** Build the quality traceability payload recorded on every export attempt. */

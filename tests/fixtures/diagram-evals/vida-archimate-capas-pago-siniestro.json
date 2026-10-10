@@ -1,0 +1,46 @@
+{
+  "id": "vida-archimate-capas-pago-siniestro",
+  "dominio": "vida",
+  "proposito": "Vista ArchiMate (layered): el tipo de elemento y de relación sobreviven al guardado y a la reescritura (11.1).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Pago de Siniestros de Vida",
+    "descripcion": "Pago de beneficios por fallecimiento.",
+    "contexto": [
+      "Todo pago pasa por un control de sanciones y AML"
+    ]
+  },
+  "solicitud": {
+    "texto": "Muestra las capas del pago de siniestros de vida",
+    "audiencia": "technical",
+    "criterios": []
+  },
+  "plantilla": {
+    "nombre": "Vista de capas del Pago de siniestros",
+    "tipo": "mermaid-archimate",
+    "objetivo": "Muestra las capas del pago de siniestros de vida",
+    "conceptosClave": []
+  },
+  "respuestaModelo": "%% archimate viewpoint=layered\nflowchart LR\n    benef[\"Beneficiario\"]\n    pago[\"Pagar siniestro\"]\n    srvPago[\"Servicio de pagos\"]\n    aml[\"Control AML y sanciones\"]\n    poliza[\"Póliza\"]\n    benef -->|assignment| pago\n    srvPago -->|serving| pago\n    aml -->|serving: filtra pagos| srvPago\n    pago -->|access| poliza\n    class benef archimate_business_actor\n    class pago archimate_business_process\n    class srvPago archimate_application_service\n    class aml archimate_application_component\n    class poliza archimate_business_object",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Beneficiario"
+      ],
+      [
+        "Pagar siniestro"
+      ],
+      [
+        "Servicio de pagos"
+      ],
+      [
+        "Control AML y sanciones"
+      ],
+      [
+        "Póliza"
+      ]
+    ],
+    "metadatos": []
+  }
+}

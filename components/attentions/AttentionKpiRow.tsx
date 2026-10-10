@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { StatTile } from '../ui';
+import { useAppContext } from '../../context/AppContext';
 import { AlertTriangle, Boxes, FileStack, Gavel, Layers } from 'lucide-react';
 import { formatPercent } from '../architectureOffice/officeChartTokens';
 import type { OfficePortfolio } from '../../services/architectureOffice';
@@ -34,6 +35,7 @@ export const AttentionKpiRow: React.FC<AttentionKpiRowProps> = ({
   onFocusDecisions,
   className,
 }) => {
+  const { t } = useAppContext();
   const { rollup, projects, decisionQueue } = portfolio;
   const artifacts = projects.reduce((sum, project) => sum + project.artifactCount, 0);
   // An attention with nothing planned has no progress to report. The rollup
@@ -44,50 +46,50 @@ export const AttentionKpiRow: React.FC<AttentionKpiRowProps> = ({
     <div className={className}>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatTile
-          label="Proyectos"
+          label={t('attKpi.projects')}
           value={projects.length}
           icon={Boxes}
           tone="primary"
           hint={servedInitiatives > 0
-            ? `Responden a ${servedInitiatives} iniciativa(s) de negocio`
-            : 'Ninguno declara todavía la iniciativa que atiende'}
+            ? t('attKpi.servedHint', { count: String(servedInitiatives) })
+            : t('attKpi.noneServed')}
         />
         <StatTile
-          label="Sin iniciativa"
+          label={t('attKpi.unlinked')}
           value={unlinkedCount}
           icon={AlertTriangle}
           tone={unlinkedCount > 0 ? 'danger' : 'success'}
           hint={unlinkedCount > 0
-            ? 'Trabajo de arquitectura sin necesidad de negocio declarada'
-            : 'Todo proyecto declara la necesidad que responde'}
+            ? t('attKpi.unlinkedHint')
+            : t('attKpi.allLinked')}
           onClick={unlinkedCount > 0 ? onFocusUnlinked : undefined}
         />
         <StatTile
-          label="Entregables"
+          label={t('officeKpi.deliverables')}
           value={rollup.engagements}
           icon={Layers}
           tone="neutral"
-          hint={`${rollup.statusMix.running} en curso · ${rollup.statusMix.blocked} bloqueado(s)`}
+          hint={t('attKpi.deliverablesHint', { running: String(rollup.statusMix.running), blocked: String(rollup.statusMix.blocked) })}
         />
         <StatTile
-          label="Requieren decisión"
+          label={t('kpi.needDecision')}
           value={decisionQueue.length}
           icon={Gavel}
           tone={decisionQueue.length > 0 ? 'warning' : 'success'}
           hint={decisionQueue.length > 0
-            ? 'Esperan una firma en la Oficina de Arquitectura'
-            : 'Nada esperando una firma'}
+            ? t('attKpi.awaitingSignature')
+            : t('attKpi.noSignature')}
           onClick={decisionQueue.length > 0 ? onFocusDecisions : undefined}
         />
         <StatTile
-          label="Avance de tareas"
-          value={progress === null ? 'Sin plan' : formatPercent(progress)}
+          label={t('kpi.taskProgress')}
+          value={progress === null ? t('attKpi.noPlan') : formatPercent(progress)}
           icon={FileStack}
           tone="success"
           meter={progress ?? undefined}
           hint={progress === null
-            ? `${artifacts} artefacto(s) · ningún entregable con tareas planificadas`
-            : `${rollup.tasksCompleted}/${rollup.tasksTotal} tareas · ${artifacts} artefacto(s)`}
+            ? t('attKpi.noPlanHint', { artifacts: String(artifacts) })
+            : t('kpi.tasksHint', { done: String(rollup.tasksCompleted), total: String(rollup.tasksTotal), artifacts: String(artifacts) })}
         />
       </div>
     </div>

@@ -43,6 +43,7 @@ const ARTIFACT_TYPE_PREFERENCES: Partial<Record<ArtifactType, ContextEntityType[
   'mermaid-c4-component': ['application', 'api', 'integration', 'data-store'],
   'mermaid-c4-deployment': ['application', 'technology', 'vendor', 'data-store'],
   'mermaid-state': ['process', 'workflow'],
+  'mermaid-archimate': ['business-capability', 'actor', 'application', 'system', 'technology', 'requirement'],
   'mermaid-gantt': ['process', 'workflow', 'requirement'],
   'mermaid-graph': ['system', 'application', 'integration', 'process'],
   'react-flow-graph': ['system', 'application', 'integration', 'process'],

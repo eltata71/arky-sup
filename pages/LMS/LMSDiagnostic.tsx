@@ -1,3 +1,4 @@
+import { activatable } from '../../lib/a11y';
 import React, { useState } from 'react';
 import { Course, ArchitectRole, DiagnosticQuestion, DiagnosticResult, CompetencyScore } from '../../types/lms';
 import { learningService } from '../../services/ai';
@@ -121,7 +122,7 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
                             {recommended.map((course, idx) => (
                                 <div
                                     key={course.id}
-                                    onClick={() => onOpenCourse(course)}
+                                    {...activatable(() => onOpenCourse(course))}
                                     className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors group"
                                 >
                                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center">{idx + 1}</div>

@@ -17,6 +17,11 @@ import {
 } from '../../services/architectureOffice/domain/OfficeTypes';
 import type { Project } from '../../services/architectureProjects';
 
+vi.mock('../../context/AppContext', async () => {
+  const { INITIAL_TRANSLATIONS, translate } = await import('../../lib/i18n');
+  return { useAppContext: () => ({ t: (key: string, r?: Record<string, string>) => translate(INITIAL_TRANSLATIONS, 'es', key, r) }) };
+});
+
 const NOW = Date.parse('2026-08-27T12:00:00.000Z');
 
 const initiative = (overrides: Partial<BusinessInitiative> = {}): BusinessInitiative => ({

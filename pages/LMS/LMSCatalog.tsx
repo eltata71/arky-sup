@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { activatable } from '../../lib/a11y';
 import { Course, CourseCategory, CourseLevel, ArchitectRole, UserProgress } from '../../types/lms';
 import { BookOpenIcon, SparklesIcon, ChevronRightIcon, Loader2Icon, TableIcon, LayoutGridIcon } from 'lucide-react';
 import { asCourseCategory, asCourseLevel, learningService } from '../../services/ai';
@@ -281,7 +282,7 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {/* AI Lab Card */}
                             <div
-                                onClick={() => onNavigate('ai-lab')}
+                                {...activatable(() => onNavigate('ai-lab'))}
                                 className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-dashed border-indigo-300 dark:border-indigo-700/50 shadow-sm hover:shadow-lg hover:border-indigo-500 dark:hover:border-indigo-500 transition-all cursor-pointer group flex flex-col items-center justify-center text-center min-h-[280px]"
                             >
                                 <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-md mb-4 group-hover:scale-110 transition-transform">
@@ -298,7 +299,7 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
 
                             {/* Course Cards */}
                             {filteredCourses.map(course => (
-                                <div key={course.id} onClick={() => onOpenCourse(course)} className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group flex flex-col h-full min-h-[280px]">
+                                <div key={course.id} {...activatable(() => onOpenCourse(course))} className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group flex flex-col h-full min-h-[280px]">
                                     <div className="flex items-start justify-between mb-4">
                                         <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
                                             {course.category}

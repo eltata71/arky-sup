@@ -216,6 +216,7 @@ export type ArtifactType =
   | 'mermaid-sequence'
   | 'mermaid-graph'
   | 'mermaid-state'
+  | 'mermaid-archimate'
   | 'mermaid-gantt'
   | 'react-flow-graph'
   | 'presentation-executive'
@@ -281,10 +282,17 @@ export interface ArtifactRequestContext {
   acceptanceCriteria?: string[];
 }
 
+/** TOGAF ADM phases a catalogue template can be tied to. */
+export type AdmPhase = 'preliminary' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'requirements';
+
 export interface ArtifactTemplate {
   name: string;
   type: ArtifactType;
   phase: string;
+  /** Reference standard or notation the template follows (TOGAF, C4, ISO…). Required of the catalogue by a test; optional so derived and custom templates stay valid. */
+  standard?: string;
+  /** TOGAF ADM phase it belongs to; absent when the template is outside the ADM. */
+  admPhase?: AdmPhase;
   architecturalView: ArchitecturalView;
   objective: string;
   keyConcepts: { term: string; definition: string; }[];

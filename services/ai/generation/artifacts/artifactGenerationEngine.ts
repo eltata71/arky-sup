@@ -18,6 +18,7 @@
  */
 import { Settings, ArtifactTemplate } from '../../../../types';
 import {
+    buildArchimateDialectInstruction,
     buildDialectInstruction,
     buildMermaidQualityReinforcement,
     DIAGRAM_SYSTEM_INSTRUCTION,
@@ -1325,6 +1326,9 @@ PROFESSIONAL QUALITY:
 - Label transitions with event names, guard conditions [in brackets], and actions /after slash
 - Highlight the happy path vs error/exception paths clearly
 ${crossCuttingGuidance}`;
+
+            case 'mermaid-archimate':
+                return ` Generate an ArchiMate model. ${buildArchimateDialectInstruction()}${crossCuttingGuidance}`;
 
             case 'mermaid-graph':
                 return ` Generate a professional Flowchart/Graph Diagram using Mermaid syntax.

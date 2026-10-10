@@ -73,6 +73,7 @@ function buildPlaceholderIR(artifact: Pick<Artifact, 'id' | 'type' | 'content'>)
         artifact.type === 'mermaid-erd' ? 'ERD' :
         artifact.type === 'mermaid-sequence' ? 'Secuencia' :
         artifact.type === 'mermaid-state' ? 'Estado' :
+        artifact.type === 'mermaid-archimate' ? 'ArchiMate' :
         artifact.type === 'mermaid-gantt' ? 'Gantt' :
         artifact.type === 'mermaid-graph' ? 'Flujo / Integración' :
         artifact.type === 'react-flow-graph' ? 'ReactFlow' :

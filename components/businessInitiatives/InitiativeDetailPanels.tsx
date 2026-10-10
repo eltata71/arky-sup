@@ -14,6 +14,7 @@
 import React, { useCallback, useState } from 'react';
 import { Badge, Button, Input, cn } from '../ui';
 import { Plus } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 import { EmptyRow, RemoveButton, SectionCard, selectClass } from './panelPrimitives';
 import { CaptureAssist } from '../capture';
 import type { CaptureAssistantApi } from '../../hooks/useCaptureAssistant';
@@ -67,6 +68,7 @@ export interface PanelProps {
 // ---------------------------------------------------------------------------
 
 export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const { t } = useAppContext();
   const [objective, setObjective] = useState('');
   const [statement, setStatement] = useState('');
   const [measure, setMeasure] = useState('');
@@ -90,14 +92,14 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
     <SectionCard
       id="objetivos"
       icon={INITIATIVE_SECTION_ICONS.outcomes}
-      title="Objetivos y resultados esperados"
-      hint="Qué se quiere lograr y cómo se sabrá que ocurrió. Nunca cómo construirlo."
+      title={t('iniPanel.outcomesTitle')}
+      hint={t('iniPanel.outcomesHint')}
       count={initiative.objectives.length + initiative.expectedOutcomes.length}
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Objetivos
+            {t('iniPanel.objectives')}
           </p>
           {assist && (
             <CaptureAssist
@@ -110,7 +112,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
           )}
         </div>
         {initiative.objectives.length === 0 ? (
-          <EmptyRow>Sin objetivos declarados. Sin ellos no se puede juzgar si la iniciativa se cumplió.</EmptyRow>
+          <EmptyRow>{t('iniPanel.noObjectives')}</EmptyRow>
         ) : (
           <ul className="space-y-1">
             {initiative.objectives.map((item, index) => (
@@ -118,7 +120,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-400" aria-hidden />
                 <span className="min-w-0 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-200">{item}</span>
                 <RemoveButton
-                  label={`Quitar objetivo ${item}`}
+                  label={t('iniPanel.removeObjective', { item })}
                   disabled={busy}
                   onClick={() => onCommand({ kind: 'remove-objective', index })}
                 />
@@ -128,11 +130,11 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
         )}
         <div className="flex gap-2">
           <Input
-            aria-label="Ej. Responder el 80 % de las pre-autorizaciones en menos de 2 minutos"
+            aria-label={t('iniPanel.objectiveExample')}
             value={objective}
             onChange={(event) => setObjective(event.target.value)}
             onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addObjective(); } }}
-            placeholder="Ej. Responder el 80 % de las pre-autorizaciones en menos de 2 minutos"
+            placeholder={t('iniPanel.objectiveExample')}
             className="flex-1"
           />
           <Button variant="secondary" size="sm" onClick={addObjective} disabled={busy || !objective.trim()}>
@@ -144,7 +146,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
       <div className="space-y-2 border-t border-gray-100 pt-3 dark:border-gray-800">
         <div className="flex items-center justify-between gap-2">
           <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Resultados esperados
+            {t('iniPanel.outcomes')}
           </p>
           {assist && (
             <CaptureAssist
@@ -157,7 +159,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
           )}
         </div>
         {initiative.expectedOutcomes.length === 0 ? (
-          <EmptyRow>Sin resultados esperados. Un objetivo sin resultado medible no se puede cerrar.</EmptyRow>
+          <EmptyRow>{t('iniPanel.noOutcomes')}</EmptyRow>
         ) : (
           <ul className="space-y-1.5">
             {initiative.expectedOutcomes.map((outcome) => (
@@ -165,11 +167,11 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
                 <div className="min-w-0 flex-1">
                   <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-200">{outcome.statement}</p>
                   {outcome.measure
-                    ? <p className="text-2xs text-gray-500 dark:text-gray-400">Se evidencia con: {outcome.measure}</p>
-                    : <p className="text-2xs text-amber-600 dark:text-amber-400">Falta acordar cómo se evidencia.</p>}
+                    ? <p className="text-2xs text-gray-500 dark:text-gray-400">{t('iniPanel.evidencedWith', { measure: outcome.measure })}</p>
+                    : <p className="text-2xs text-amber-600 dark:text-amber-400">{t('iniPanel.evidenceMissing')}</p>}
                 </div>
                 <RemoveButton
-                  label={`Quitar resultado ${outcome.statement}`}
+                  label={t('iniPanel.removeOutcome', { item: outcome.statement })}
                   disabled={busy}
                   onClick={() => onCommand({ kind: 'remove-outcome', outcomeId: outcome.id })}
                 />
@@ -179,16 +181,16 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
         )}
         <div className="grid gap-2 sm:grid-cols-[2fr_2fr_auto]">
           <Input
-            aria-label="Resultado esperado"
+            aria-label={t('iniPanel.outcomeField')}
             value={statement}
             onChange={(event) => setStatement(event.target.value)}
-            placeholder="Resultado esperado"
+            placeholder={t('iniPanel.outcomeField')}
           />
           <Input
-            aria-label="Cómo se evidencia"
+            aria-label={t('iniPanel.evidenceField')}
             value={measure}
             onChange={(event) => setMeasure(event.target.value)}
-            placeholder="Cómo se evidencia"
+            placeholder={t('iniPanel.evidenceField')}
           />
           <Button variant="secondary" size="sm" onClick={addOutcome} disabled={busy || !statement.trim()}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
@@ -204,6 +206,7 @@ export const OutcomesPanel: React.FC<PanelProps> = ({ initiative, onCommand, bus
 // ---------------------------------------------------------------------------
 
 export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const { t } = useAppContext();
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('');
   const [baseline, setBaseline] = useState('');
@@ -243,7 +246,7 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
     <SectionCard
       id="indicadores"
       icon={INITIATIVE_SECTION_ICONS.indicators}
-      title="Indicadores (KPI)"
+      title={t('iniPanel.kpiTitle')}
       action={assist && (
         <CaptureAssist
           fieldId="initiative.kpis"
@@ -253,11 +256,11 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
           apply={applyKpiSuggestion}
         />
       )}
-      hint="Un indicador sin línea base y meta no puede mostrar avance; el tablero lo dice en vez de dibujar una barra vacía."
+      hint={t('iniPanel.kpiHint')}
       count={initiative.kpis.length}
     >
       {initiative.kpis.length === 0 ? (
-        <EmptyRow>Sin indicadores. Son la única forma de cerrar la iniciativa con evidencia.</EmptyRow>
+        <EmptyRow>{t('iniPanel.noKpis')}</EmptyRow>
       ) : (
         <ul className="space-y-2">
           {initiative.kpis.map((kpi) => {
@@ -268,22 +271,22 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{kpi.name}</p>
                     <p className="text-2xs text-gray-500 dark:text-gray-400">
-                      {kpi.unit || 'sin unidad'}
-                      {kpi.baseline !== undefined && ` · base ${kpi.baseline}`}
-                      {kpi.target !== undefined ? ` · meta ${kpi.target}` : ' · sin meta'}
+                      {kpi.unit || t('iniPanel.noUnit')}
+                      {kpi.baseline !== undefined && t('iniPanel.base', { value: String(kpi.baseline) })}
+                      {kpi.target !== undefined ? t('iniPanel.goal', { value: String(kpi.target) }) : t('iniPanel.noGoal')}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <Input
-                      aria-label={`Valor actual de ${kpi.name}`}
+                      aria-label={t('iniPanel.currentOf', { item: kpi.name })}
                       value={kpi.current === undefined ? '' : String(kpi.current)}
                       onChange={(event) => setCurrent(kpi.id, event.target.value)}
-                      placeholder="Actual"
+                      placeholder={t('iniPanel.current')}
                       className="h-8 w-20 text-xs"
                       disabled={busy}
                     />
                     <RemoveButton
-                      label={`Quitar indicador ${kpi.name}`}
+                      label={t('iniPanel.removeKpi', { item: kpi.name })}
                       disabled={busy}
                       onClick={() => onCommand({ kind: 'remove-kpi', kpiId: kpi.id })}
                     />
@@ -291,7 +294,7 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
                 </div>
                 {progress === null ? (
                   <p className="mt-1.5 text-2xs text-amber-600 dark:text-amber-400">
-                    Sin meta o sin valor actual: todavía no se puede medir el avance.
+                    {t('iniPanel.kpiUnmeasurable')}
                   </p>
                 ) : (
                   <div className="mt-2 flex items-center gap-2">
@@ -301,7 +304,7 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
                       aria-valuenow={Math.round(progress * 100)}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-label={`Avance de ${kpi.name}`}
+                      aria-label={t('iniPanel.progressOf', { item: kpi.name })}
                     >
                       <div
                         className={cn(
@@ -323,10 +326,10 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
       )}
 
       <div className="grid gap-2 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
-        <Input aria-label="Indicador" value={name} onChange={(e) => setName(e.target.value)} placeholder="Indicador" />
-        <Input aria-label="Unidad" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Unidad" />
-        <Input aria-label="Línea base" value={baseline} onChange={(e) => setBaseline(e.target.value)} placeholder="Línea base" />
-        <Input aria-label="Meta" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="Meta" />
+        <Input aria-label={t('iniPanel.kpiField')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('iniPanel.kpiField')} />
+        <Input aria-label={t('iniPanel.unit')} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={t('iniPanel.unit')} />
+        <Input aria-label={t('iniPanel.baseline')} value={baseline} onChange={(e) => setBaseline(e.target.value)} placeholder={t('iniPanel.baseline')} />
+        <Input aria-label={t('iniPanel.target')} value={target} onChange={(e) => setTarget(e.target.value)} placeholder={t('iniPanel.target')} />
         <Button variant="secondary" size="sm" onClick={addKpi} disabled={busy || !name.trim()}>
           <Plus className="h-3.5 w-3.5" aria-hidden />
         </Button>
@@ -340,6 +343,7 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
 // ---------------------------------------------------------------------------
 
 export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const { t } = useAppContext();
   const [name, setName] = useState('');
   const [dueAt, setDueAt] = useState('');
 
@@ -358,7 +362,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
     <SectionCard
       id="hitos"
       icon={INITIATIVE_SECTION_ICONS.timeline}
-      title="Hitos"
+      title={t('iniPanel.milestonesTitle')}
       action={assist && (
         <CaptureAssist
           fieldId="initiative.milestones"
@@ -368,11 +372,11 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
           apply={setName}
         />
       )}
-      hint="Los compromisos de fecha con el negocio. Un hito incumplido pone la iniciativa en riesgo automáticamente."
+      hint={t('iniPanel.milestonesHint')}
       count={initiative.milestones.length}
     >
       {initiative.milestones.length === 0 ? (
-        <EmptyRow>Sin hitos. El estado solo podrá deducirse de la fecha objetivo global.</EmptyRow>
+        <EmptyRow>{t('iniPanel.noMilestones')}</EmptyRow>
       ) : (
         <ul className="space-y-1.5">
           {initiative.milestones.map((milestone) => (
@@ -385,7 +389,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
                 {MILESTONE_STATUS_LABELS[milestone.status]}
               </Badge>
               <select
-                aria-label={`Estado de ${milestone.name}`}
+                aria-label={t('iniPanel.statusOf', { item: milestone.name })}
                 value={milestone.status}
                 onChange={(event) => setStatus(milestone.id, event.target.value as InitiativeMilestoneStatus)}
                 className={selectClass}
@@ -396,7 +400,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
                 ))}
               </select>
               <RemoveButton
-                label={`Quitar hito ${milestone.name}`}
+                label={t('iniPanel.removeMilestone', { item: milestone.name })}
                 disabled={busy}
                 onClick={() => onCommand({ kind: 'remove-milestone', milestoneId: milestone.id })}
               />
@@ -405,8 +409,8 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
         </ul>
       )}
       <div className="grid gap-2 sm:grid-cols-[2fr_1fr_auto]">
-        <Input aria-label="Hito" value={name} onChange={(e) => setName(e.target.value)} placeholder="Hito" />
-        <Input aria-label="Fecha del hito" type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+        <Input aria-label={t('iniPanel.milestoneField')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('iniPanel.milestoneField')} />
+        <Input aria-label={t('iniPanel.milestoneDate')} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
         <Button variant="secondary" size="sm" onClick={addMilestone} disabled={busy || !name.trim() || !dueAt}>
           <Plus className="h-3.5 w-3.5" aria-hidden />
         </Button>
@@ -420,6 +424,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
 // ---------------------------------------------------------------------------
 
 export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const { t } = useAppContext();
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState<InitiativeRiskLevel>('medium');
   const [mitigation, setMitigation] = useState('');
@@ -435,7 +440,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
     <SectionCard
       id="riesgos"
       icon={INITIATIVE_SECTION_ICONS.risks}
-      title="Riesgos"
+      title={t('iniPanel.risksTitle')}
       action={assist && (
         <CaptureAssist
           fieldId="initiative.risks"
@@ -445,11 +450,11 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
           apply={setDescription}
         />
       )}
-      hint="Un riesgo crítico pone la iniciativa en riesgo, sin importar el estado que se haya marcado a mano."
+      hint={t('iniPanel.risksHint')}
       count={initiative.risks.length}
     >
       {initiative.risks.length === 0 ? (
-        <EmptyRow>Sin riesgos declarados.</EmptyRow>
+        <EmptyRow>{t('iniPanel.noRisks')}</EmptyRow>
       ) : (
         <ul className="space-y-1.5">
           {initiative.risks.map((risk) => (
@@ -458,11 +463,11 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-gray-700 dark:text-gray-200">{risk.description}</p>
                 {risk.mitigation
-                  ? <p className="text-2xs text-gray-500 dark:text-gray-400">Mitigación: {risk.mitigation}</p>
-                  : <p className="text-2xs text-amber-600 dark:text-amber-400">Sin mitigación definida.</p>}
+                  ? <p className="text-2xs text-gray-500 dark:text-gray-400">{t('iniPanel.mitigationOf', { value: risk.mitigation })}</p>
+                  : <p className="text-2xs text-amber-600 dark:text-amber-400">{t('iniPanel.noMitigation')}</p>}
               </div>
               <RemoveButton
-                label={`Quitar riesgo ${risk.description}`}
+                label={t('iniPanel.removeRisk', { item: risk.description })}
                 disabled={busy}
                 onClick={() => onCommand({ kind: 'remove-risk', riskId: risk.id })}
               />
@@ -471,9 +476,9 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
         </ul>
       )}
       <div className="grid gap-2 sm:grid-cols-[2fr_1fr_2fr_auto]">
-        <Input aria-label="Riesgo" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Riesgo" />
+        <Input aria-label={t('iniPanel.riskField')} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('iniPanel.riskField')} />
         <select
-          aria-label="Nivel del riesgo"
+          aria-label={t('iniPanel.riskLevel')}
           value={level}
           onChange={(event) => setLevel(event.target.value as InitiativeRiskLevel)}
           className={selectClass}
@@ -482,7 +487,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
             <option key={value} value={value}>{RISK_LEVEL_LABELS[value]}</option>
           ))}
         </select>
-        <Input aria-label="Mitigación" value={mitigation} onChange={(e) => setMitigation(e.target.value)} placeholder="Mitigación" />
+        <Input aria-label={t('iniPanel.mitigationField')} value={mitigation} onChange={(e) => setMitigation(e.target.value)} placeholder={t('iniPanel.mitigationField')} />
         <Button variant="secondary" size="sm" onClick={addRisk} disabled={busy || !description.trim()}>
           <Plus className="h-3.5 w-3.5" aria-hidden />
         </Button>
@@ -496,6 +501,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
 // ---------------------------------------------------------------------------
 
 export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const { t } = useAppContext();
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [kind, setKind] = useState<InitiativeStakeholderKind>('stakeholder');
@@ -513,7 +519,7 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, 
     <SectionCard
       id="personas"
       icon={INITIATIVE_SECTION_ICONS.people}
-      title="Personas"
+      title={t('iniPanel.peopleTitle')}
       action={assist && (
         <CaptureAssist
           fieldId="initiative.stakeholders"
@@ -523,12 +529,12 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, 
           apply={setRole}
         />
       )}
-      hint="Quién patrocina la iniciativa, quién la posee en el negocio y quién lidera la arquitectura."
+      hint={t('iniPanel.peopleHint')}
       count={initiative.stakeholders.length}
     >
       {!hasSponsor && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
-          Sin patrocinador. Una iniciativa sin quien la respalde no se puede priorizar.
+          {t('iniPanel.noSponsor')}
         </p>
       )}
       {initiative.stakeholders.length > 0 && (
@@ -545,7 +551,7 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, 
                 )}
               </span>
               <RemoveButton
-                label={`Quitar a ${stakeholder.name}`}
+                label={t('iniPanel.removePerson', { item: stakeholder.name })}
                 disabled={busy}
                 onClick={() => onCommand({ kind: 'remove-stakeholder', stakeholderId: stakeholder.id })}
               />
@@ -554,10 +560,10 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, 
         </ul>
       )}
       <div className="grid gap-2 sm:grid-cols-[2fr_2fr_1fr_auto]">
-        <Input aria-label="Nombre" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" />
-        <Input aria-label="Cargo" value={role} onChange={(e) => setRole(e.target.value)} placeholder="Cargo" />
+        <Input aria-label={t('iniPanel.name')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('iniPanel.name')} />
+        <Input aria-label={t('iniPanel.position')} value={role} onChange={(e) => setRole(e.target.value)} placeholder={t('iniPanel.position')} />
         <select
-          aria-label="Rol en la iniciativa"
+          aria-label={t('iniPanel.stakeholderRole')}
           value={kind}
           onChange={(event) => setKind(event.target.value as InitiativeStakeholderKind)}
           className={selectClass}

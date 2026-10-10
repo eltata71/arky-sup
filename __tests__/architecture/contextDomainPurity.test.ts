@@ -24,6 +24,7 @@ const ROOT = join(__dirname, '..', '..');
 /** Los contextos con la forma completa: `domain/` puro e `infrastructure/` aparte. */
 const CONTEXTS = [
   'services/businessInitiatives',
+  'services/enterpriseRepository',
   'services/architectureProjects',
   'services/architectureOffice',
   'services/artifacts',

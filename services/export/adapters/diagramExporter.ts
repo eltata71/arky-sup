@@ -25,3 +25,15 @@ export const diagramJsonExporter: ExportAdapter = {
     return buildFile(context, 'diagram-json', blob);
   },
 };
+
+export const archimateXmlExporter: ExportAdapter = {
+  format: 'archimate-xml',
+  async export(context) {
+    // Lazy: the serializer and the Mermaid reader stay out of the boot path.
+    const { archimateExchangeXml } = await import('../../diagram/archimateExport');
+    const xml = archimateExchangeXml(context.artifact.content, context.artifact.ir);
+    if (!xml) throw new Error('El artefacto no es un modelo ArchiMate exportable.');
+    const blob = new Blob([xml], { type: EXPORT_DEFINITIONS['archimate-xml'].mimeType });
+    return buildFile(context, 'archimate-xml', blob);
+  },
+};

@@ -745,6 +745,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
                     updatedAt: artifact.createdAt,
                   }}
                   isSplit={viewMode === 'split'}
+                  review={{ artifactId: artifact.id, projectId: project.id, author: inspectorAuthor }}
                 />
               )
             )}

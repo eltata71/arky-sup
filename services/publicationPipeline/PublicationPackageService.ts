@@ -44,6 +44,7 @@ const TYPE_RANK: Partial<Record<ArtifactType, number>> = {
   'mermaid-erd': 34,
   'mermaid-sequence': 36,
   'mermaid-state': 38,
+  'mermaid-archimate': 39,
   'sdd-use-case': 42,
   'sdd-user-story': 44,
   'sdd-domain-model': 46,

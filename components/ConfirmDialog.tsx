@@ -61,15 +61,15 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     const styles = variantStyles[variant];
 
     return (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onCancel}>
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+            <div aria-hidden="true" className="absolute inset-0" onClick={onCancel} />
             <div
                 ref={containerRef}
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
                 aria-describedby={descId}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl border border-gray-200 dark:border-gray-800 animate-slide-up"
+                className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl border border-gray-200 dark:border-gray-800 animate-slide-up"
             >
                 <div className="flex items-start gap-4">
                     <div className={`flex-shrink-0 w-10 h-10 rounded-full ${styles.icon} flex items-center justify-center`}>

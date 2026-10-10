@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
 import DocumentViewToolbar from './DocumentViewToolbar';
@@ -6,6 +6,11 @@ import DocumentPaper from './DocumentPaper';
 import { DOCUMENT_ZOOM_LEVELS, type DocumentPageSize, type DocumentTheme } from './documentPresentation';
 import type { DocumentCoverMeta } from './DocumentPaper';
 import type { DocumentTocEntry } from '../../../hooks/artifacts/useDocumentRendering';
+import DocumentSideIndex from './DocumentSideIndex';
+import CommentThread from '../CommentThread';
+import type { ArtifactCommentAuthor } from '../../../services/review';
+import { useOptionalAppContext } from '../../../context/AppContext';
+import { activeSectionId, adjacentSectionId, sectionFromHash } from './documentSections';
 
 export interface DocumentViewProps {
   /** Sanitized HTML rendered inside the paper surface. */
@@ -31,6 +36,8 @@ export interface DocumentViewProps {
   cover?: DocumentCoverMeta;
   /** Applies split-view borders when the document shares the canvas. */
   isSplit?: boolean;
+  /** When present the reader can switch to review mode and comment per section. */
+  review?: { artifactId: string; projectId: string; author: ArtifactCommentAuthor };
 }
 
 /**
@@ -55,17 +62,55 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
   toc = [],
   cover,
   isSplit = false,
+  review,
 }) => {
+  const t = useOptionalAppContext()?.t;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(false);
 
-  const scrollToHeading = (id: string) => {
+  const [mode, setMode] = useState<'read' | 'review'>('read');
+  const [activeId, setActiveId] = useState<string | null>(toc[0]?.id ?? null);
+  const hasIndex = toc.length >= 3;
+
+  const scrollToHeading = useCallback((id: string, updateHash = true) => {
     const container = scrollRef.current;
     const target = container?.querySelector(`#${CSS.escape(id)}`) as HTMLElement | null;
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveId(id);
+      if (updateHash) window.history.replaceState(null, '', `#${encodeURIComponent(id)}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = sectionFromHash(window.location.hash, toc);
+    if (id) scrollToHeading(id, false);
+    // Only on first render of a document: later hash changes are ours.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markdownHtml]);
+
+  const trackActiveSection = () => {
+    const container = scrollRef.current;
+    if (!container || toc.length === 0) return;
+    const base = container.getBoundingClientRect().top;
+    const tops = toc.flatMap((entry) => {
+      const el = container.querySelector(`#${CSS.escape(entry.id)}`);
+      return el ? [{ id: entry.id, top: el.getBoundingClientRect().top - base }] : [];
+    });
+    setActiveId(activeSectionId(tops, 80));
+  };
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key !== '[' && event.key !== ']') return;
+    const next = adjacentSectionId(toc, activeId, event.key === ']' ? 1 : -1);
+    if (next) {
+      event.preventDefault();
+      scrollToHeading(next);
     }
   };
+
+  const activeEntry = toc.find((entry) => entry.id === activeId);
 
   // Word-style "fit to width": pick the zoom level whose scaled page best
   // fills the scroll container (accounting for its horizontal padding).
@@ -98,6 +143,25 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
         onExport={onExport}
         onPrint={onPrint}
       />
+      {review && (
+        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70" role="group" aria-label={t?.('doc.mode.label') ?? 'Modo del documento'}>
+          {(['read', 'review'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={mode === value}
+              onClick={() => setMode(value)}
+              className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                mode === value
+                  ? 'bg-primary-600 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              {value === 'read' ? (t?.('doc.mode.read') ?? 'Lectura') : (t?.('doc.mode.review') ?? 'Revisión')}
+            </button>
+          ))}
+        </div>
+      )}
       <ErrorBoundary
         fallback={(error, reset) => (
           <ViewerCrashFallback
@@ -108,9 +172,11 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
           />
         )}
       >
-        <div className="relative flex-1 min-h-0">
-          {toc.length >= 3 && (
-            <div className="absolute top-3 left-3 z-10">
+        <div className="relative flex flex-1 min-h-0">
+          {hasIndex && <DocumentSideIndex toc={toc} activeId={activeId} onNavigate={scrollToHeading} />}
+          <div className="relative flex-1 min-w-0 min-h-0">
+          {hasIndex && (
+            <div className="absolute top-3 left-3 z-10 lg:hidden">
               <button
                 type="button"
                 onClick={() => setTocOpen((v) => !v)}
@@ -147,9 +213,32 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
               )}
             </div>
           )}
-          <div ref={scrollRef} tabIndex={0} className="h-full overflow-auto px-4 md:px-8 py-6 md:py-10">
+          <div
+            ref={scrollRef}
+            tabIndex={0}
+            onScroll={trackActiveSection}
+            onKeyDown={onKeyDown}
+            aria-label={t?.('doc.scroller.label') ?? 'Documento. Con [ y ] pasas a la sección anterior o siguiente'}
+            className="h-full overflow-auto px-4 md:px-8 py-6 md:py-10"
+          >
             <DocumentPaper html={markdownHtml} widthPx={pageWidthPx} zoom={zoom} theme={theme} fallbackContent={rawContent} cover={cover} />
           </div>
+          </div>
+          {review && mode === 'review' && (
+            <aside aria-label={t?.('doc.comments.label') ?? 'Comentarios de la sección'} className="hidden md:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3">
+              <p className="mb-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                {activeEntry ? `Sección: ${activeEntry.text}` : 'Documento'}
+              </p>
+              <CommentThread
+                key={activeEntry?.id ?? 'doc'}
+                artifactId={review.artifactId}
+                projectId={review.projectId}
+                author={review.author}
+                filterAnchor={activeEntry ? { kind: 'document-section', sectionId: activeEntry.id, sectionTitle: activeEntry.text } : undefined}
+                defaultAnchor={activeEntry ? { kind: 'document-section', sectionId: activeEntry.id, sectionTitle: activeEntry.text } : undefined}
+              />
+            </aside>
+          )}
         </div>
       </ErrorBoundary>
     </div>

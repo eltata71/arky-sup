@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { SmartNote } from '../../types/lms';
 import { BrainCircuitIcon, TrashIcon, BookOpenIcon, ArrowRightIcon, XIcon, ChevronLeftIcon, ChevronRightIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { SafeRichText } from '../../components/ui/SafeRichText';
+import { Modal } from '../../components/ui/Modal';
 
 
 interface Props {
@@ -96,9 +97,7 @@ export const LMSSmartNotes: React.FC<Props> = ({ notes, onDelete }) => {
 
             {/* Flashcard Review Modal */}
             {reviewNote && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm" onClick={() => setReviewIndex(null)} />
-                    <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl ring-1 ring-gray-900/5 dark:ring-white/10 overflow-hidden">
+                <Modal isOpen onClose={() => setReviewIndex(null)} widthClass="max-w-2xl" panelClassName="overflow-hidden" padded={false} ariaLabel="Repaso de concepto">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-400 to-purple-500" />
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-6">
@@ -157,8 +156,7 @@ export const LMSSmartNotes: React.FC<Props> = ({ notes, onDelete }) => {
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
+                </Modal>
             )}
         </div>
     );

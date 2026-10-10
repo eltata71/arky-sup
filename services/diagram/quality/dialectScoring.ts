@@ -23,7 +23,8 @@ export type ScoringDialect = 'graph' | 'sequence' | 'erd' | 'state';
 
 /** The dialect a diagram is scored as: its notation first, its declared type next. */
 export function scoringDialectOf(ir: DiagramIR): ScoringDialect {
-    if (ir.notation) return ir.notation.dialect;
+    // ArchiMate is a layered graph: groups and edge labels mean what they mean in a graph.
+    if (ir.notation && ir.notation.dialect !== 'archimate') return ir.notation.dialect;
     if (ir.metadata?.diagramType === 'sequence') return 'sequence';
     if (ir.metadata?.diagramType === 'erd') return 'erd';
     return 'graph';

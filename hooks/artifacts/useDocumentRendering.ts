@@ -87,6 +87,9 @@ export const renderDocumentMarkdown = async (
         }
         return `<h${level} id="${id}">${text}</h${level}>\n`;
       },
+      table(header: string, body: string): string {
+        return `<div class="doc-table-scroll"><table><thead>${header}</thead>${body ? `<tbody>${body}</tbody>` : ''}</table></div>\n`;
+      },
       blockquote(quote: string): string {
         const match = /^<p>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(?:<br\s*\/?>)?\s*/i.exec(quote);
         if (!match) return `<blockquote>${quote}</blockquote>\n`;

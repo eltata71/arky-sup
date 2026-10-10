@@ -21,10 +21,10 @@ export function useProjectArtifacts(projectId: string | undefined): void {
   const { ensureProjectArtifacts, projects } = useAppContext();
   // Entering by URL mounts the screen before the portfolio has loaded, and a
   // call made then finds no project and does nothing: depend on its arrival.
-  const needsArtifacts = projects.find(p => p.id === projectId)?.artifactsLoaded === false;
+  const artifactsLoaded = projects.find(project => project.id === projectId)?.artifactsLoaded;
 
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId || artifactsLoaded !== false) return;
     void ensureProjectArtifacts(projectId);
-  }, [projectId, needsArtifacts, ensureProjectArtifacts]);
+  }, [projectId, artifactsLoaded, ensureProjectArtifacts]);
 }

@@ -34,6 +34,20 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     keywords: ['niveles', 'jerarquia', 'organiza', 'estructura', 'relacion', 'encajan', 'empezar', 'orden'],
   }),
   topic({
+    id: 'mapa-capacidades',
+    question: '¿Qué es el mapa de capacidades y cómo se lee?',
+    answer: 'Muestra lo que la organización sabe hacer en tres niveles (L1, L2, L3) y te deja elegir qué pintar encima: **madurez**, **inversión**, **riesgo** o **cobertura** (cuántas iniciativas sirven a cada capacidad). Cada celda escribe su valor además de colorearlo, y lo que nadie ha medido dice «sin medir»: nunca se pinta como cero. Un valor marcado como «derivado» se calculó a partir de otros datos, no lo declaró nadie.',
+    where: 'Raíl izquierdo: Capacidades.',
+    keywords: ['capacidades', 'capacidad', 'mapa', 'calor', 'madurez', 'inversion', 'riesgo', 'cobertura', 'heatmap'],
+  }),
+  topic({
+    id: 'portafolio-radar',
+    question: '¿Cómo se clasifican las aplicaciones (TIME) y qué es el radar tecnológico?',
+    answer: 'Cada aplicación se evalúa con dos notas de 1 a 5: **ajuste funcional** y **ajuste técnico**. El cuadrante se calcula solo: **Invertir**, **Migrar**, **Tolerar** o **Eliminar**; nunca se elige a mano, y sin las dos notas figura «sin evaluar». El radar coloca cada tecnología en un anillo (**Adoptar, Probar, Evaluar, Retener**) y le muestra al lado los estándares de la Oficina que la nombran.',
+    where: 'Raíl izquierdo: Portafolio.',
+    keywords: ['portafolio', 'aplicaciones', 'time', 'radar', 'tecnologia', 'tecnologias', 'tolerar', 'invertir', 'migrar', 'eliminar', 'adoptar', 'anillo'],
+  }),
+  topic({
     id: 'iniciativa',
     question: '¿Qué es una Iniciativa de Negocio y para qué sirve?',
     answer: 'Es la razón por la que existe el trabajo de arquitectura: la necesidad del negocio, su driver, sus objetivos y los resultados que se van a medir. No es un proyecto y no termina cuando se entrega: sigue abierta mientras se estén midiendo sus resultados. Una iniciativa puede estar servida por varios proyectos de arquitectura.',
@@ -58,7 +72,7 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     id: 'artefacto',
     question: '¿Cómo se crea un artefacto?',
     answer: 'Desde el proyecto, en su espacio de trabajo: eliges el tipo de artefacto del catálogo —diagramas C4, secuencias, documentos, especificaciones SDD— y la Oficina lo genera con el contexto del proyecto. Después se edita, se valida contra su contrato y se puede exportar o publicar.',
-    where: 'Proyectos → abre un proyecto → Mis artefactos / Catálogo.',
+    where: 'Proyectos → abre un proyecto → Mis artefactos / Catálogo (cada plantilla muestra su estándar y puedes agrupar por fase TOGAF ADM).',
     keywords: ['artefacto', 'crear', 'generar', 'diagrama', 'documento', 'c4', 'plantilla', 'catalogo'],
   }),
   topic({
@@ -144,6 +158,13 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
     answer: 'Con la búsqueda global, que abre con Cmd+K (o Ctrl+K) y también desde la lupa del raíl: busca en iniciativas, proyectos, entregables y artefactos, y salta directamente. La tecla «?» muestra todos los atajos.',
     where: 'Raíl izquierdo → lupa, o Cmd+K en cualquier pantalla.',
     keywords: ['buscar', 'busqueda', 'encontrar', 'atajo', 'teclado', 'comando', 'paleta'],
+  }),
+  topic({
+    id: 'plan-transicion',
+    question: '¿Cómo planifico la transición de la arquitectura actual a la deseada?',
+    answer: 'En el plan de transición eliges un proyecto, añades elementos del inventario a la línea base y al objetivo, y las brechas (se mantiene, se elimina, nuevo, se modifica) se calculan solas a partir de las dos listas. Después ordenas las mesetas de la hoja de ruta, atas cada una a un hito del proyecto y la exportas a PPTX. Una meseta sin fecha se dice «sin fecha»; nunca se inventa una.',
+    where: 'Raíl izquierdo → Transición.',
+    keywords: ['transicion', 'brechas', 'gap', 'linea', 'base', 'objetivo', 'meseta', 'hoja', 'ruta', 'roadmap'],
   }),
   topic({
     id: 'formacion',

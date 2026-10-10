@@ -1,0 +1,46 @@
+{
+  "id": "salud-archimate-capas-reclamaciones",
+  "dominio": "salud",
+  "proposito": "Vista ArchiMate (layered): el tipo de elemento y de relación sobreviven al guardado y a la reescritura (11.1).",
+  "origenRespuesta": "redactada-a-mano: respuesta representativa del modelo, no capturada de una llamada real",
+  "proyecto": {
+    "nombre": "Reclamaciones Digitales",
+    "descripcion": "Digitalización del trámite de reclamaciones médicas.",
+    "contexto": [
+      "El asegurado presenta la reclamación desde el portal"
+    ]
+  },
+  "solicitud": {
+    "texto": "Muestra las capas de negocio, aplicación y tecnología de las reclamaciones",
+    "audiencia": "technical",
+    "criterios": []
+  },
+  "plantilla": {
+    "nombre": "Vista de capas de Reclamaciones",
+    "tipo": "mermaid-archimate",
+    "objetivo": "Muestra las capas de negocio, aplicación y tecnología de las reclamaciones",
+    "conceptosClave": []
+  },
+  "respuestaModelo": "%% archimate viewpoint=layered\nflowchart LR\n    asegurado[\"Asegurado\"]\n    tramite[\"Tramitar reclamación\"]\n    srvRecl[\"Servicio de reclamaciones\"]\n    motor[\"Motor de adjudicación\"]\n    nube[\"Plataforma en la nube\"]\n    asegurado -->|assignment| tramite\n    srvRecl -->|serving: soporta| tramite\n    motor -->|realization| srvRecl\n    nube -->|realization| motor\n    class asegurado archimate_business_actor\n    class tramite archimate_business_process\n    class srvRecl archimate_application_service\n    class motor archimate_application_component\n    class nube archimate_node",
+  "esperado": {
+    "dialecto": "flowchart",
+    "entidades": [
+      [
+        "Asegurado"
+      ],
+      [
+        "Tramitar reclamación"
+      ],
+      [
+        "Servicio de reclamaciones"
+      ],
+      [
+        "Motor de adjudicación"
+      ],
+      [
+        "Plataforma en la nube"
+      ]
+    ],
+    "metadatos": []
+  }
+}

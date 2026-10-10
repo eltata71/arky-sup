@@ -21,13 +21,6 @@ export const DISCIPLINE_GUIDANCE: Readonly<Record<string, Readonly<Record<string
     alternatives: 'Cada opción con sus ventajas, inconvenientes y por qué se descartó.',
     consequences: 'Lo que la decisión hace más fácil y más difícil, positivo y negativo.',
   },
-  'Catálogo de Decisiones (ADR)': {
-    context: 'El problema, las fuerzas en juego y las restricciones que obligan a decidir.',
-    decision: 'Lo que se decide, en voz activa y sin ambigüedad.',
-    alternatives: 'Cada opción con sus ventajas, inconvenientes y por qué se descartó.',
-    consequences: 'Lo que la decisión hace más fácil y más difícil, positivo y negativo.',
-    index: 'Tabla con ID, título, estado y fecha de cada decisión.',
-  },
   'Plan de Recuperación ante Desastres (DRP)': {
     scope: 'Qué sistemas y procesos cubre y cuáles no.',
     objectives: 'RTO y RPO por sistema, con cifra y unidad.',
@@ -122,6 +115,21 @@ export const DISCIPLINE_GUIDANCE: Readonly<Record<string, Readonly<Record<string
     criteria: 'Los criterios y su peso.',
     comparison: 'Tabla de opciones contra criterios.',
     recommendation: 'La opción recomendada y lo que se sacrifica.',
+  },
+  'Contrato de Arquitectura': {
+    parties: 'Quién entrega y quién gobierna, con su rol.',
+    scope: 'Qué solución y qué límites cubre el contrato.',
+    obligations: 'Lo que la implementación debe respetar (estándares, patrones, restricciones).',
+    criteria: 'Criterios verificables con cifra o condición comprobable.',
+    compliance: 'Cómo y cuándo se revisa el cumplimiento, y quién decide.',
+    deviations: 'Cómo se solicita y registra una excepción.',
+  },
+  'Evaluación de Cumplimiento': {
+    scope: 'La implementación evaluada y el contrato contra el que se mide.',
+    criteria: 'Los criterios del contrato que se comprobaron.',
+    findings: 'Tabla con criterio, resultado y evidencia.',
+    verdict: 'Conforme, conforme con condiciones o no conforme.',
+    actions: 'Acciones correctivas con responsable y fecha.',
   },
   'Definición de Fitness Functions': {
     functions: 'Tabla con atributo que protege, métrica, umbral y cómo se ejecuta.',

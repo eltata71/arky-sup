@@ -74,6 +74,7 @@
     // F5-05: la recuperación de la proyección del grafo, pura por puertos.
     "services/architectureProjects/application/graphProjectionRecovery.ts",
     "services/businessInitiatives/domain/**/*.ts",
+    "services/enterpriseRepository/domain/**/*.ts",
     "services/review/ReviewTypes.ts",
     "services/review/reviewTransitions.ts",
     "services/review/localArtifactReviewRepository.ts",

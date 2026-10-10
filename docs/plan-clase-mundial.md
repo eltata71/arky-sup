@@ -787,12 +787,12 @@ presupuesto que consumirán las olas 11 y 12.
 | 10.3 *Streaming* | Hecha | #163 · cierre 10.3b (lienzo provisional, nombres validados, E2E <3 s, guardrail antes del stream) |
 | 10.4 «Deshacer» en un clic | Hecha | #164 · cierre 10.4b (asistente, agente, copiloto y cola, con prueba por camino) |
 | 10.5 La IA explica qué cambió | Hecha | tarjeta de resumen derivada del mismo resultado del motor + resaltado de 600 ms (apagado con movimiento reducido) |
-| 11.0 Estándar declarado y fases ADM | Pendiente | |
-| 11.1 ArchiMate | Pendiente | |
-| 11.2 Inventario empresarial | Pendiente (R-17 resuelta: A) | |
-| 11.3 Mapa de calor de capacidades | Pendiente | |
-| 11.4 Brechas y hoja de ruta | Pendiente | |
-| 11.5 TIME, radar y contrato | Pendiente | |
+| 11.0 Estándar declarado y fases ADM | Hecha | #180 |
+| 11.1 ArchiMate | Hecha | ArchiMate como dialecto del IR |
+| 11.2 Inventario empresarial | Hecha · #183 | |
+| 11.3 Mapa de calor de capacidades | Hecha | #189 |
+| 11.4 Brechas y hoja de ruta | Hecha | #190 |
+| 11.5 TIME, radar y contrato | Hecha | #192 |
 | 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |
 | 12.1 Partir los cinco ficheros grandes | Pendiente | |
 | 12.2 Documento editorial | Pendiente | |
@@ -801,8 +801,8 @@ presupuesto que consumirán las olas 11 y 12.
 | 12.5 Barras por intención | Pendiente | |
 | 13.0 axe y regresión visual | Hecha (#169) | axe y regresión visual en E2E con referencias medidas en CI. Cerró también un defecto real: el enlace profundo `?artifact=` no reintentaba la hidratación si el portafolio llegaba tras montar `Workspace` (`useProjectArtifacts` depende ahora de la llegada del proyecto) |
 | 13.1 Movimiento reducido | Hecha | `MotionConfig reducedMotion="user"` en la raíz, `MOTION` en `lib/designTokens.ts` como fuente única de duraciones y curvas, y un escáner que impide literales en `motion/react` |
-| 13.2 Idioma | En curso (R-16: B, tamaño L) | Infraestructura entregada: un módulo por idioma, inglés lazy, presupuesto monótono de literales (1 321 medidos); raíl y navegación móvil migrados. Falta la campaña de extracción hasta 0 |
-| 13.3 Primitivas | Pendiente | |
+| 13.2 Idioma | En curso (R-16: B, tamaño L) | Infraestructura entregada: un módulo por idioma, inglés lazy, presupuesto monótono de literales (1 321 medidos, 1 117 tras el lote 5, #188); raíl y navegación móvil migrados. Falta la campaña de extracción hasta 0 |
+| 13.3 Primitivas | Hecha | #187 |
 | 13.4 Estados vacío, carga y error | Pendiente | |
 | 13.5 Microinteracciones | Pendiente | |
 | 14.0 Ciclo de vida visible | Pendiente | |

@@ -9,4 +9,4 @@ export { fixDiagramError } from './diagramRepair';
 // The diagram prompt pieces the engine's own artifact generation still reads.
 // Re-exported here so the engine enters diagram generation through one door
 // instead of two (F5-01, corte 6); they stay defined in `prompts/`.
-export { buildDialectInstruction, buildMermaidQualityReinforcement, DIAGRAM_SYSTEM_INSTRUCTION } from '../../prompts/diagramPrompts';
+export { buildArchimateDialectInstruction, buildDialectInstruction, buildMermaidQualityReinforcement, DIAGRAM_SYSTEM_INSTRUCTION } from '../../prompts/diagramPrompts';

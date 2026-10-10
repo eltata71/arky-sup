@@ -23,6 +23,8 @@ import { LessonMermaid } from './LessonMermaid';
 import { LessonLab } from './LessonLab';
 import { EvaluationResultCard } from './EvaluationResultCard';
 import { SafeRichText } from '../../components/ui/SafeRichText';
+import { Modal } from '../../components/ui/Modal';
+import { activatable } from '../../lib/a11y';
 import { renderMarkdownToSafeHtml } from '../../lib/richText';
 import { escapeHtml } from '../../lib/codeHighlight';
 import { errorMessageOf } from '../../lib/errorMessage';
@@ -639,7 +641,7 @@ export const LessonModal: React.FC<Props> = ({
                                                 const concepts = parsed.filter(isRelatedConcept);
                                                 if (concepts.length === 0) throw new Error("No concepts");
                                                 return concepts.map((concept, idx) => (
-                                                    <div key={idx} onClick={() => handleConceptClick(concept)} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer group">
+                                                    <div key={idx} {...activatable(() => handleConceptClick(concept))} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer group">
                                                         <h4 className="font-bold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{concept.title}</h4>
                                                         <p className="text-sm text-gray-600 dark:text-gray-400">{concept.description}</p>
                                                     </div>
@@ -707,14 +709,14 @@ export const LessonModal: React.FC<Props> = ({
 
             {/* Regenerate confirmation — guarantees the first version is never lost by accident */}
             {showRegenConfirm && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4" onClick={() => setShowRegenConfirm(false)}>
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-800" onClick={e => e.stopPropagation()}>
+                <Modal isOpen onClose={() => setShowRegenConfirm(false)} role="alertdialog">
+                    {({ titleId }) => (<>
                         <div className="flex items-start gap-4">
                             <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                                 <RefreshCwIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Regenerar esta sección</h3>
+                                <h3 id={titleId} className="text-lg font-bold text-gray-900 dark:text-white">Regenerar esta sección</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                     Se generará un texto nuevo para <strong>{activeTab}</strong>. Tu <strong>primera versión se conservará</strong> y podrás restaurarla cuando quieras.
                                 </p>
@@ -728,8 +730,8 @@ export const LessonModal: React.FC<Props> = ({
                                 <RefreshCwIcon className="h-4 w-4" /> Generar nueva versión
                             </button>
                         </div>
-                    </div>
-                </div>
+                    </>)}
+                </Modal>
             )}
         </div>
     );

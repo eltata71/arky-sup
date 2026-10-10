@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StudentContext } from '../../types/lms';
 import { XIcon, UserCogIcon } from 'lucide-react';
+import { Modal } from '../../components/ui/Modal';
 
 interface Props {
     isOpen: boolean;
@@ -32,16 +33,15 @@ export const StudentContextModal: React.FC<Props> = ({ isOpen, context, onClose,
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 ring-1 ring-gray-900/5 dark:ring-white/10">
+        <Modal isOpen onClose={onClose}>
+            {({ titleId }) => (<>
                 <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center gap-3">
                         <div className="w-11 h-11 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
                             <UserCogIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Mi Perfil de Aprendizaje</h2>
+                            <h2 id={titleId} className="text-lg font-bold text-gray-900 dark:text-white">Mi Perfil de Aprendizaje</h2>
                             <p className="text-xs text-gray-500 dark:text-gray-400">La IA usa esto para calibrar profundidad y ejemplos.</p>
                         </div>
                     </div>
@@ -96,7 +96,7 @@ export const StudentContextModal: React.FC<Props> = ({ isOpen, context, onClose,
                         Guardar
                     </button>
                 </div>
-            </div>
-        </div>
+            </>)}
+        </Modal>
     );
 };

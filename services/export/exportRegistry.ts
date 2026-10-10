@@ -16,12 +16,16 @@ export const EXPORT_DEFINITIONS: Record<ExportFormat, ExportFormatDefinition> = 
   svg: { format: 'svg', extension: 'svg', mimeType: 'image/svg+xml', label: 'SVG (vectorial)', description: 'Captura vectorial del diagrama visible.', category: 'Diagrama', implemented: true, requiresDiagram: true },
   mermaid: { format: 'mermaid', extension: 'mmd', mimeType: 'text/plain;charset=utf-8', label: 'Mermaid (.mmd)', description: 'Código Mermaid del diagrama.', category: 'Diagrama', implemented: true, requiresDiagram: true },
   'diagram-json': { format: 'diagram-json', extension: 'diagram.json', mimeType: 'application/json;charset=utf-8', label: 'JSON de diagrama', description: 'IR de nodos y aristas para auditoría técnica.', category: 'Diagrama', implemented: true, requiresDiagram: true },
+  'archimate-xml': { format: 'archimate-xml', extension: 'archimate.xml', mimeType: 'application/xml;charset=utf-8', label: 'ArchiMate Exchange (.xml)', description: 'Modelo ArchiMate en el formato de intercambio de The Open Group, para Archi, BiZZdesign o Sparx.', category: 'Diagrama', implemented: true, requiresDiagram: true },
   pptx: { format: 'pptx', extension: 'pptx', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', label: 'PowerPoint / Google Slides compatible (.pptx)', description: 'Paquete OOXML real con una slide por diapositiva del deck. Abre en PowerPoint, Keynote y Google Slides.', category: 'Presentación', implemented: true, requiresPresentation: true, producesBinary: true },
 };
 
 const DOCUMENT_FORMATS: readonly ExportFormat[] = ['md', 'html', 'txt', 'pdf', 'docx', 'json'];
 const TABLE_FORMATS: readonly ExportFormat[] = ['csv', 'xlsx'];
 const DIAGRAM_FORMATS: readonly ExportFormat[] = ['png', 'svg', 'mermaid', 'diagram-json'];
+const ARCHIMATE_ONLY_FORMATS: readonly ExportFormat[] = ['archimate-xml'];
+const isArchimateArtifact = (type: string): boolean => type === 'mermaid-archimate';
+const diagramFormatsFor = (type: string): ExportFormat[] => (isArchimateArtifact(type) ? [...DIAGRAM_FORMATS, ...ARCHIMATE_ONLY_FORMATS] : [...DIAGRAM_FORMATS]);
 const PRESENTATION_FORMATS: readonly ExportFormat[] = ['pptx', 'pdf', 'html', 'json'];
 const unique = <T,>(items: readonly T[]): T[] => Array.from(new Set(items));
 
@@ -34,9 +38,9 @@ export function getCandidateFormats(context: Pick<ExportContext, 'artifact' | 'a
     const hasDocument = context.presentationModel.sections.length > 0 || Boolean(context.presentationModel.executiveSummary);
     const hasDiagram = context.presentationModel.diagrams.some((diagram) => diagram.nodeCount > 0 || Boolean(diagram.mermaid));
     const hasTables = context.presentationModel.tables.some((table) => table.headers.length > 0 && table.rows.length > 0);
-    if (context.publicationMode === 'diagram-only') return hasDiagram ? [...DIAGRAM_FORMATS, 'html', 'md', 'pdf', 'docx', 'json'] : [];
+    if (context.publicationMode === 'diagram-only') return hasDiagram ? [...diagramFormatsFor(context.artifact.type), 'html', 'md', 'pdf', 'docx', 'json'] : [];
     if (context.publicationMode === 'table-only') return hasTables ? unique([...TABLE_FORMATS, 'html', 'md', 'json']) : [];
-    return unique([...(hasDocument ? DOCUMENT_FORMATS : []), ...(hasDiagram ? DIAGRAM_FORMATS : []), ...(hasTables ? TABLE_FORMATS : [])]);
+    return unique([...(hasDocument ? DOCUMENT_FORMATS : []), ...(hasDiagram ? diagramFormatsFor(context.artifact.type) : []), ...(hasTables ? TABLE_FORMATS : [])]);
   }
   // Presentation artifacts get their own format universe: PPTX is the
   // primary export, PDF/HTML/JSON are secondary. DOCX is intentionally
@@ -47,8 +51,8 @@ export function getCandidateFormats(context: Pick<ExportContext, 'artifact' | 'a
   }
   const classification = classifyArtifact(context.artifact);
   const view = normalizeExportView(context.activeView);
-  if (view === 'diagram') return classification.hasDiagram ? [...DIAGRAM_FORMATS] : [];
-  const base = view === 'split' && classification.hasDiagram ? unique([...DOCUMENT_FORMATS, ...DIAGRAM_FORMATS]) : [...DOCUMENT_FORMATS];
+  if (view === 'diagram') return classification.hasDiagram ? diagramFormatsFor(context.artifact.type) : [];
+  const base = view === 'split' && classification.hasDiagram ? unique([...DOCUMENT_FORMATS, ...diagramFormatsFor(context.artifact.type)]) : [...DOCUMENT_FORMATS];
   const tableAware = classification.hasTables || classification.isDataDictionary || parseMarkdownTables(context.artifact.content).length > 0;
   return tableAware ? unique([...base, ...TABLE_FORMATS]) : base;
 }
@@ -60,7 +64,7 @@ export function getExportCapabilities(context: Pick<ExportContext, 'artifact' | 
   const candidates = getCandidateFormats(context);
   const universe = isPresentation
     ? unique([...candidates, ...PRESENTATION_FORMATS])
-    : unique([...candidates, ...DOCUMENT_FORMATS, ...TABLE_FORMATS, ...DIAGRAM_FORMATS]);
+    : unique([...candidates, ...DOCUMENT_FORMATS, ...TABLE_FORMATS, ...diagramFormatsFor(context.artifact.type)]);
   return universe.map((format) => {
     const definition = EXPORT_DEFINITIONS[format];
     const inCandidate = candidates.includes(format);

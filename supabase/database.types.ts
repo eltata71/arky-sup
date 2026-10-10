@@ -255,6 +255,45 @@ export type Database = {
         }
         Relationships: []
       }
+      enterprise_inventory_items: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+          lifecycle: string
+          name: string
+          normalized_name: string
+          owner_id: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id: string
+          kind: string
+          lifecycle: string
+          name: string
+          normalized_name: string
+          owner_id: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          kind?: string
+          lifecycle?: string
+          name?: string
+          normalized_name?: string
+          owner_id?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       file_objects: {
         Row: {
           aggregate_id: string
@@ -736,6 +775,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      delete_enterprise_inventory_item: {
+        Args: { p_expected_revision: number; p_id: string }
+        Returns: undefined
+      }
       delete_note: { Args: { p_note_id: string }; Returns: undefined }
       delete_project_aggregate: {
         Args: { p_expected_revision: number; p_id: string }
@@ -784,6 +827,27 @@ export type Database = {
         }
       }
       list_courses: { Args: { p_include_all?: boolean }; Returns: Json }
+      list_enterprise_inventory: {
+        Args: never
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+          lifecycle: string
+          name: string
+          normalized_name: string
+          owner_id: string
+          revision: number
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "enterprise_inventory_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_notes: { Args: never; Returns: Json }
       list_pending_projections: { Args: never; Returns: Json }
       list_project_aggregates: { Args: never; Returns: Json }
@@ -949,6 +1013,27 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "office_engagements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_enterprise_inventory_item: {
+        Args: { p_expected_revision: number; p_item: Json }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+          lifecycle: string
+          name: string
+          normalized_name: string
+          owner_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "enterprise_inventory_items"
           isOneToOne: true
           isSetofReturn: false
         }

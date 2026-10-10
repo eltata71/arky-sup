@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { provisionUser, resendInvitation, userService, type UserProfile } from '../services/identity';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 import {
   ROLE_DESCRIPTIONS,
   ROLE_LABELS,
@@ -55,6 +56,7 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
 
 export const UserManagementPage: React.FC = () => {
   const { profile } = useAuth();
+  const { t } = useAppContext();
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,7 +217,7 @@ export const UserManagementPage: React.FC = () => {
           className="mb-6 flex items-start justify-between gap-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300 rounded-lg p-3 text-sm"
         >
           <span>{notice}</span>
-          <button onClick={() => setNotice('')} aria-label="Descartar aviso" className="shrink-0">
+          <button onClick={() => setNotice('')} aria-label={t('users.dismiss')} className="shrink-0">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -226,10 +228,10 @@ export const UserManagementPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-300 uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium">Correo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium">Rol</th>
-                <th className="px-6 py-3 text-right text-xs font-medium">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium">{t('users.name')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium">{t('users.email')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium">{t('users.role')}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium">{t('users.actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -242,10 +244,10 @@ export const UserManagementPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-300 uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium">Correo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium">Rol</th>
-                <th className="px-6 py-3 text-right text-xs font-medium">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium">{t('users.name')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium">{t('users.email')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium">{t('users.role')}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium">{t('users.actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -333,7 +335,7 @@ export const UserManagementPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-200 dark:border-gray-800">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Crear una cuenta</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('users.createAccount')}</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                 <X className="h-5 w-5" />
               </button>
@@ -347,7 +349,7 @@ export const UserManagementPage: React.FC = () => {
               )}
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre completo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('users.fullName')}</label>
                 <input
                   type="text"
                   required
@@ -358,7 +360,7 @@ export const UserManagementPage: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('users.email')}</label>
                 <input
                   type="email"
                   required
@@ -369,7 +371,7 @@ export const UserManagementPage: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="nuevo-rol" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
+                <label htmlFor="nuevo-rol" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('users.role')}</label>
                 <select
                   id="nuevo-rol"
                   value={newRole}
@@ -415,7 +417,7 @@ export const UserManagementPage: React.FC = () => {
 
       <ConfirmDialog
           isOpen={!!deleteConfirm}
-          title="Eliminar Perfil de Usuario"
+          title={t('users.deleteProfile')}
           message={`¿Estás seguro de que deseas eliminar el perfil de "${deleteConfirm?.name}"? Esto no elimina su cuenta de autenticación.`}
           confirmLabel="Eliminar"
           cancelLabel="Cancelar"

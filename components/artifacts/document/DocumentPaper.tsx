@@ -2,12 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import { decodeMermaidSource } from '../../../hooks/artifacts/useDocumentRendering';
 import type { DocumentTheme } from './documentPresentation';
 import { SafeRichText } from '../../ui/SafeRichText';
+import { DOCUMENT_TYPE } from '../../../lib/designTokens';
 
 // Layout + structure shared by both reading themes. Colours live in the
 // per-theme strings below so the paper can flip light/dark independently of
 // the app chrome (`dark:` variants follow the app, not the document).
+const MEASURE = `[&>:is(p,ul,ol,h1,h2,h3,h4,blockquote)]:${DOCUMENT_TYPE.measure}`;
+
 const PROSE_BASE_CLASS =
-  'prose prose-base max-w-none px-[72px] py-[80px] [&>*:first-child]:mt-0 [&_table]:w-full [&_table]:text-sm [&_th]:font-semibold [&_th]:align-top [&_td]:align-top [&_th]:break-words [&_td]:break-words [&_h1]:text-[28px] [&_h1]:leading-tight [&_h1]:border-b [&_h1]:pb-2 [&_h1]:scroll-mt-4 [&_h2]:text-[20px] [&_h2]:mt-8 [&_h2]:scroll-mt-4 [&_h3]:text-[16px] [&_h3]:scroll-mt-4 [&_p]:leading-relaxed [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_pre]:bg-gray-900 [&_pre]:text-gray-100 [&_pre]:rounded-md [&_pre]:relative [&_pre_code]:bg-transparent [&_pre_code]:text-gray-100 [&_pre_code]:p-0 [&_.code-lang-badge]:absolute [&_.code-lang-badge]:top-2 [&_.code-lang-badge]:right-3 [&_.code-lang-badge]:text-[9px] [&_.code-lang-badge]:uppercase [&_.code-lang-badge]:tracking-widest [&_.code-lang-badge]:text-gray-400 [&_.tok-kw]:text-violet-300 [&_.tok-kw]:font-semibold [&_.tok-str]:text-emerald-300 [&_.tok-com]:text-slate-400 [&_.tok-com]:italic [&_.tok-num]:text-amber-300 [&_.tok-prop]:text-sky-300 [&_blockquote]:border-l-4 [&_blockquote]:border-primary-500 [&_.mermaid-embed_svg]:mx-auto [&_.mermaid-embed_svg]:max-w-full [&_.mermaid-embed.is-rendered]:rounded-xl [&_.mermaid-embed.is-rendered]:border [&_.mermaid-embed.is-rendered]:p-4';
+  `prose prose-base max-w-none px-[72px] py-[80px] ${MEASURE} ${DOCUMENT_TYPE.body} [&>*:first-child]:mt-0 [&_.doc-table-scroll]:overflow-auto [&_.doc-table-scroll]:max-h-[70vh] [&_.doc-table-scroll]:my-5 [&_.doc-table-scroll_table]:my-0 [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-[1] [&_table]:w-full [&_table]:text-sm [&_th]:font-semibold [&_th]:align-top [&_td]:align-top [&_th]:break-words [&_td]:break-words [&_h1]:text-[28px] [&_h1]:leading-tight [&_h1]:border-b [&_h1]:pb-2 [&_h1]:scroll-mt-4 [&_h2]:text-[20px] [&_h2]:mt-8 [&_h2]:scroll-mt-4 [&_h3]:text-[16px] [&_h3]:scroll-mt-4 [&_p]:leading-relaxed [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_pre]:bg-gray-900 [&_pre]:text-gray-100 [&_pre]:rounded-md [&_pre]:relative [&_pre_code]:bg-transparent [&_pre_code]:text-gray-100 [&_pre_code]:p-0 [&_.code-lang-badge]:absolute [&_.code-lang-badge]:top-2 [&_.code-lang-badge]:right-3 [&_.code-lang-badge]:text-[9px] [&_.code-lang-badge]:uppercase [&_.code-lang-badge]:tracking-widest [&_.code-lang-badge]:text-gray-400 [&_.tok-kw]:text-violet-300 [&_.tok-kw]:font-semibold [&_.tok-str]:text-emerald-300 [&_.tok-com]:text-slate-400 [&_.tok-com]:italic [&_.tok-num]:text-amber-300 [&_.tok-prop]:text-sky-300 [&_blockquote]:border-l-4 [&_blockquote]:border-primary-500 [&_.mermaid-embed_svg]:mx-auto [&_.mermaid-embed_svg]:max-w-full [&_.mermaid-embed.is-rendered]:rounded-xl [&_.mermaid-embed.is-rendered]:border [&_.mermaid-embed.is-rendered]:p-4`;
 
 const PROSE_LIGHT_CLASS =
   '[&_th]:bg-gray-50 [&_th]:text-gray-700 [&_tbody_tr:nth-child(even)]:bg-gray-50/60 [&_h1]:border-gray-200 [&_code]:bg-gray-100 [&_code]:text-gray-800 [&_blockquote]:bg-gray-50 [&_blockquote]:text-gray-700 [&_.mermaid-embed.is-rendered]:border-gray-200 [&_.mermaid-embed.is-rendered]:bg-white';
@@ -154,6 +157,23 @@ export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoo
     void hydrateMermaidEmbeds(root, resolvedTheme, () => cancelled);
     return () => { cancelled = true; };
   }, [html, resolvedTheme]);
+
+  // The sanitizer strips tabindex/role/aria-*, so the scrollable regions and
+  // citation chips get their keyboard and screen-reader semantics here.
+  useEffect(() => {
+    const root = proseRef.current;
+    if (!root) return;
+    root.querySelectorAll<HTMLElement>('.doc-table-scroll').forEach((region, index) => {
+      region.tabIndex = 0;
+      region.setAttribute('role', 'region');
+      region.setAttribute('aria-label', `Tabla ${index + 1}, desplazable`);
+    });
+    root.querySelectorAll<HTMLElement>('.ctx-chip').forEach((chip) => {
+      chip.tabIndex = 0;
+      const source = chip.getAttribute('title');
+      if (source) chip.setAttribute('aria-label', `Fuente: ${source}`);
+    });
+  }, [html]);
 
   return (
     <div

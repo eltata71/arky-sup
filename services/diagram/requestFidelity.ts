@@ -67,6 +67,7 @@ const EXPECTED_DIALECT: Record<string, readonly string[]> = {
     'mermaid-sequence': ['sequencediagram'],
     'mermaid-erd': ['erdiagram'],
     'mermaid-state': ['statediagram', 'statediagram-v2'],
+    'mermaid-archimate': ['flowchart', 'graph'],
     'mermaid-gantt': ['gantt'],
     'mermaid-graph': ['flowchart', 'graph'],
 };
@@ -79,6 +80,7 @@ const DIALECT_NAME: Record<string, string> = {
     'mermaid-sequence': 'diagrama de secuencia',
     'mermaid-erd': 'diagrama entidad-relación',
     'mermaid-state': 'máquina de estados',
+    'mermaid-archimate': 'modelo ArchiMate',
     'mermaid-gantt': 'diagrama de Gantt',
     'mermaid-graph': 'diagrama de flujo',
 };

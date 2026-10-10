@@ -66,6 +66,18 @@ export {
   type ProjectMemoryArea,
   type ProjectRootChanges,
 } from './domain';
+/** El plan de transición del proyecto (11.4): sus órdenes y la hoja de ruta que se deriva. */
+export {
+  deriveRoadmap,
+  emptyTransitionPlan,
+  type Roadmap,
+  type RoadmapIssue,
+  type RoadmapPlateau,
+  type TransitionCommand,
+  type TransitionPlan,
+  type TransitionPlateau,
+  type TransitionRejection,
+} from './domain';
 export {
   architectureProjectRepository,
   type ArchitectureProjectRepository,

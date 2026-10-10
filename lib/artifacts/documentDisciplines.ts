@@ -86,16 +86,6 @@ export const DOCUMENT_DISCIPLINES: readonly DocumentDiscipline[] = [
     rules: [ADR_STATUS_RULE],
   },
   {
-    templateName: 'Catálogo de Decisiones (ADR)',
-    label: 'Catálogo de decisiones arquitectónicas',
-    standard: 'un registro por decisión, formato de Michael Nygard',
-    sections: [
-      required('index', 'Índice de decisiones', ['indice', 'catalogo', 'decisiones']),
-      ...ADR_SECTIONS.slice(1),
-    ],
-    rules: [ADR_STATUS_RULE],
-  },
-  {
     templateName: 'Plan de Recuperación ante Desastres (DRP)',
     label: 'Plan de Recuperación ante Desastres',
     standard: 'ISO 22301',
@@ -297,6 +287,47 @@ export const DOCUMENT_DISCIPLINES: readonly DocumentDiscipline[] = [
     ],
     rules: [],
   },
+  {
+    templateName: 'Contrato de Arquitectura',
+    label: 'Contrato de arquitectura',
+    standard: 'TOGAF · Contrato de Arquitectura',
+    sections: [
+      required('parties', 'Partes', ['partes', 'parties', 'firmantes']),
+      required('scope', 'Alcance', ['alcance', 'scope']),
+      required('obligations', 'Obligaciones de arquitectura', ['obligaciones', 'obligations', 'compromisos']),
+      required('criteria', 'Criterios de aceptación', ['criterios de aceptacion', 'aceptacion', 'acceptance']),
+      required('compliance', 'Gobierno y cumplimiento', ['cumplimiento', 'gobierno', 'compliance', 'governance']),
+      recommended('deviations', 'Desviaciones y excepciones', ['desviaciones', 'excepciones', 'dispensas']),
+    ],
+    rules: [{
+      id: 'contract-acceptance-measurable',
+      label: 'Cada criterio de aceptación es verificable (cifra, umbral o condición comprobable)',
+      pattern: /(\d|\b(debe|deber[aá]|cumple|no (?:debe|puede)|m[aá]ximo|m[ií]nimo|exactamente)\b)/i,
+      message: 'El contrato no declara criterios de aceptación verificables.',
+      recommendation: 'Redacta cada criterio de modo que pueda comprobarse, p. ej. «Disponibilidad ≥ 99,9 %» o «Todo acceso debe autenticarse».',
+      severity: 'medium',
+    }],
+  },
+  {
+    templateName: 'Evaluación de Cumplimiento',
+    label: 'Evaluación de cumplimiento de arquitectura',
+    standard: 'TOGAF · Revisión de cumplimiento',
+    sections: [
+      required('scope', 'Alcance y contrato evaluado', ['alcance', 'contrato', 'scope']),
+      required('criteria', 'Criterios evaluados', ['criterios', 'criteria']),
+      required('findings', 'Hallazgos', ['hallazgos', 'findings', 'resultados']),
+      required('verdict', 'Veredicto de cumplimiento', ['veredicto', 'conclusion', 'verdict']),
+      required('actions', 'Acciones correctivas', ['acciones', 'correctivas', 'plan de accion', 'remediation']),
+    ],
+    rules: [{
+      id: 'compliance-verdict-value',
+      label: 'El veredicto es uno de: conforme, conforme con condiciones o no conforme',
+      pattern: /\b(no conforme|conforme con condiciones|conforme|cumple|no cumple|cumple parcialmente|compliant|non-compliant)\b/i,
+      message: 'La evaluación no declara un veredicto de cumplimiento.',
+      recommendation: 'Indica si la solución es Conforme, Conforme con condiciones o No conforme.',
+      severity: 'high',
+    }],
+  },
 ];
 
 const normalizeName = (name: string): string =>
@@ -304,6 +335,17 @@ const normalizeName = (name: string): string =>
 
 const BY_NAME = new Map(DOCUMENT_DISCIPLINES.map((discipline) => [normalizeName(discipline.templateName), discipline]));
 
+/** Names of templates merged into another (11.0): artifacts saved under them still resolve. */
+export const LEGACY_TEMPLATE_NAMES: Readonly<Record<string, string>> = {
+  'Catálogo de Decisiones (ADR)': 'Registro de Decisiones Arquitectónicas (ADR)',
+};
+
+const LEGACY_BY_NAME = new Map(Object.entries(LEGACY_TEMPLATE_NAMES).map(([from, to]) => [normalizeName(from), to]));
+
+/** The current name of a template, migrating a merged one on read. */
+export const currentTemplateName = (templateName: string): string =>
+  LEGACY_BY_NAME.get(normalizeName(templateName)) ?? templateName;
+
 /** The discipline of a catalogue template, by its name; `undefined` when it has none. */
 export const disciplineForTemplate = (templateName: string | undefined | null): DocumentDiscipline | undefined =>
-  templateName ? BY_NAME.get(normalizeName(templateName)) : undefined;
+  templateName ? BY_NAME.get(normalizeName(currentTemplateName(templateName))) : undefined;

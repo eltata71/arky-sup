@@ -20,6 +20,17 @@ import type { DiagramIR, DiagramIRNode } from '../../lib/diagram';
 import { c4MacroFor, type C4DiagramLevel } from './irToMermaidC4';
 import type { LegendEntry } from './diagramExportFrame';
 import { C4_BOUNDARY_LEGEND } from '../../lib/diagramC4Levels';
+import { archimateElementLabel, archimateLayerOf } from '../../lib/archimate/archimateMetamodel';
+import { ARCHIMATE_LAYER_PALETTE } from '../../lib/diagramTokens';
+
+/** The ArchiMate element a node is, with the colour of its layer; `null` for any other diagram. */
+function archimateElementOf(ir: Pick<DiagramIR, 'notation'>, nodeId: string): LegendEntry | null {
+    const notation = ir.notation;
+    if (notation?.dialect !== 'archimate') return null;
+    const type = notation.elements[nodeId];
+    return type ? { label: archimateElementLabel(type), color: ARCHIMATE_LAYER_PALETTE[archimateLayerOf(type)].bg } : null;
+}
+
 
 /** The title an export falls back to when it knows nothing: it names no diagram. */
 export const GENERIC_DIAGRAM_TITLE = 'Diagrama de arquitectura';
@@ -78,7 +89,9 @@ export function c4StereotypeOf(node: DiagramIRNode, level: C4DiagramLevel): stri
  * What a C4 node carries to the canvas: its stereotype for the node's ribbon
  * and its element type for the canvas legend. Empty for a diagram that is not C4.
  */
-export function c4NodePresentation(ir: Pick<DiagramIR, 'metadata'>, node: DiagramIRNode): { stereotype?: string; c4Element?: LegendEntry } {
+export function c4NodePresentation(ir: Pick<DiagramIR, 'metadata' | 'notation'>, node: DiagramIRNode): { stereotype?: string; c4Element?: LegendEntry } {
+    const archimate = archimateElementOf(ir, node.id);
+    if (archimate) return { stereotype: archimate.label, c4Element: archimate };
     const level = c4LevelOfIR(ir);
     if (!level) return {};
     const type = elementTypeOf(node, level);
@@ -100,6 +113,17 @@ export function describeNotationPresentation(
     options: { fallbackTitle?: string } = {},
 ): NotationPresentation {
     const title = ir.metadata?.title?.trim() || options.fallbackTitle?.trim() || null;
+    if (ir.notation?.dialect === 'archimate') {
+        const stereotypes: Record<string, string> = {};
+        const legend = new Map<string, LegendEntry>();
+        for (const node of ir.nodes) {
+            const element = archimateElementOf(ir, node.id);
+            if (!element) continue;
+            stereotypes[node.id] = element.label;
+            if (!legend.has(element.label)) legend.set(element.label, element);
+        }
+        return { title, elementLegend: [...legend.values()], stereotypes };
+    }
     const level = c4LevelOfIR(ir);
     if (!level) return { title, elementLegend: [], stereotypes: {} };
 
@@ -147,7 +171,7 @@ export function checkNotationContract(ir: DiagramIR, presented: PresentedNotatio
         .filter(([id, stereotype]) => presented.stereotypes[id] !== stereotype)
         .map(([id]) => ir.nodes.find((n) => n.id === id)?.label ?? id);
     if (unnamed.length > 0) {
-        issues.push({ code: 'NOTATION_STEREOTYPE_MISSING', message: `Sin su estereotipo C4: ${unnamed.join(', ')}.` });
+        issues.push({ code: 'NOTATION_STEREOTYPE_MISSING', message: `Sin su estereotipo: ${unnamed.join(', ')}.` });
     }
     return issues;
 }

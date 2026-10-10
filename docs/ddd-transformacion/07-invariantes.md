@@ -26,6 +26,18 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | I-03 | Una iniciativa citada por un proyecto no se borra | `RPC` + contrato `engagement_overload_and_initiative_references` | ✅ cierra **H08** | fase 2 |
 | I-04 | El código es único en toda la base y lo asigna el servidor al crear | `RPC` (`pg_advisory_xact_lock` + siguiente libre del año) + `SQL` (`unique`) | ✅ | F6-04 |
 
+## Inventario empresarial
+
+| # | Invariante | Autoridad | ¿Basta? | Desde |
+|---|---|---|---|---|
+| V-01 | Un elemento tiene dueño, tipo válido y nombre | `TS` (`createInventoryItem`) + `RPC` (forma inválida → `22023`; el dueño es el actor) | ✅ | 11.2 |
+| V-02 | El nombre normalizado es único por dueño y tipo (los alias cuentan en el dominio) | `TS` (`findInventoryMatch`) + `SQL` (índice único → `23505`; el servidor calcula `normalized_name` con `private.inventory_normalize_name`, no se fía del cliente) | ⚠️ los alias sólo los vigila TypeScript | 11.2 |
+| V-03 | Cada usuario ve y edita sólo su inventario | `RLS` + guarda de la RPC (`owner_id`); pgTAP con arquitecto ajeno | ✅ | 11.2 |
+| V-04 | Dos pestañas no se pisan: se guarda con la revisión vista | `RPC` (`P0001` ante conflicto) | ✅ | 11.2 |
+| V-05 | `retired` es terminal; un comando que no cambia nada no escribe | `TS` (`applyInventoryCommand`) | ⚠️ sólo TypeScript | 11.2 |
+| V-06 | Nada se unifica sin un clic humano: la promoción propone y sólo `acceptPromotion` produce un plan | `TS` (`inventoryPromotion`) | ⚠️ convención del contexto, sin servidor | 11.2 |
+| V-07 | Una capacidad no pasa de L3, no tiene ciclos y su padre existe; las aplicaciones que la soportan existen. El nivel se deriva, no se guarda; lo no medido es `null` | `TS` (`applyInventoryCommand`, `buildCapabilityMap`) | ⚠️ sólo TypeScript (`data jsonb`, sin migración) | 11.3 |
+
 ## Proyectos de Arquitectura
 
 | # | Invariante | Autoridad | ¿Basta? | Desde |
@@ -38,6 +50,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | P-06 | Una escritura desde vista obsoleta no pisa otra | `RPC` (revisión optimista → `P0001`) y la revisión viaja con el registro, sin mapas (`noRevisionCache.test.ts`) | ✅ cierra **H10** | F4-07, F5-05, F6-03 |
 | P-07 | El dueño es el actor | `RPC` + `RLS` | ✅ | — |
 | P-08 | Un borrado desde vista obsoleta no elimina una edición concurrente | `RPC` (`P0001`, y no borra nada) + contrato `project_deletion_conflict` | ✅ | F6-05 |
+| P-09 | Una brecha o una hoja de ruta no se almacenan: se derivan de la línea base, el objetivo y el plan; un hito sin fecha queda «sin fecha», nunca 0 | `TS` (`analyzeGaps`, `deriveRoadmap`, `applyTransitionCommand` con rechazo tipado; el plan viaja aditivo en `attention.transition`, sin migración) | ✅ — 11.4 | 11.4 |
 
 ## Encargos y Gobernanza
 
@@ -96,7 +109,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | Autoridad suficiente | Insuficiente | Total |
 |---|---|---|
-| **38 ✅** | 1 ❌ + 4 ⚠️ | 43 |
+| **39 ✅** | 1 ❌ + 4 ⚠️ | 44 |
 
 En la línea base eran 17 ✅, 8 ❌ y 8 ⚠️ sobre 33. **De las ocho sin autoridad
 efectiva, siete tienen hoy servidor detrás.** H02 se cerró en sus tres partes

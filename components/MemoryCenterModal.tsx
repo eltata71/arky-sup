@@ -70,7 +70,7 @@ const deriveInitialCaptureFallback = (project: Project): string[] => {
 };
 
 export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, onClose, project }) => {
-    const { settings, updateSettings, runProjectCommand, updateArtifact } = useAppContext();
+    const { settings, updateSettings, runProjectCommand, updateArtifact, t } = useAppContext();
     const { profile } = useAuth();
     const { addToast } = useToast();
 
@@ -355,7 +355,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         : null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Centro de Memoria" description="Gestiona la memoria del Arquitecto Agente (base y proyecto), la memoria global, del proyecto y de cada artefacto en un único panel.">
+        <Modal isOpen={isOpen} onClose={onClose} title={t('mem.title')} description="Gestiona la memoria del Arquitecto Agente (base y proyecto), la memoria global, del proyecto y de cada artefacto en un único panel.">
             <div className="flex flex-col gap-5 md:flex-row md:gap-6 md:min-h-[60vh]">
                 {/* Sidebar de scopes */}
                 <aside className="md:w-64 md:flex-shrink-0">
@@ -363,7 +363,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                         <CpuChipIcon className="h-4 w-4" />
                         Ámbitos
                     </div>
-                    <nav className="grid gap-1.5" aria-label="Ámbitos de memoria">
+                    <nav className="grid gap-1.5" aria-label={t('mem.scopesLabel')}>
                         {MEMORY_SCOPES.map(scope => {
                             const isActive = scope.id === activeScope;
                             const count = scope.id === 'global'
@@ -459,7 +459,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-gray-800 dark:text-white"
                             >
                                 {project.artifacts.length === 0 ? (
-                                    <option value="">Sin artefactos en este proyecto</option>
+                                    <option value="">{t('mem.noArtifacts')}</option>
                                 ) : (
                                     project.artifacts.map(artifact => (
                                         <option key={artifact.id} value={artifact.id}>
@@ -476,7 +476,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                         <div className="mb-3 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-500/20 dark:bg-amber-500/[0.06]">
                             <LightBulbIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-300" />
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Captura inicial derivada</p>
+                                <p className="text-sm font-bold text-amber-900 dark:text-amber-100">{t('mem.derivedCapture')}</p>
                                 <p className="mt-0.5 text-xs leading-relaxed text-amber-900/80 dark:text-amber-100/80">
                                     Este proyecto se creó antes de que existiera la captura inicial gestionable. Se está mostrando lo registrado al momento de creación (descripción y contexto inicial). Conviértela en captura editable para poder modificar, añadir o eliminar entradas.
                                 </p>
@@ -572,7 +572,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
             </div>
             <ConfirmDialog
                 isOpen={pendingDeleteId !== null}
-                title="Eliminar entrada de memoria"
+                title={t('mem.deleteTitle')}
                 message="Esta entrada se eliminará de la memoria del proyecto. La acción no se puede deshacer."
                 confirmLabel="Eliminar"
                 variant="danger"

@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { StatTile } from '../../ui';
+import { useAppContext } from '../../../context/AppContext';
 import { AlertOctagon, Briefcase, Gavel, Layers, Sparkles } from 'lucide-react';
 import { formatPercent } from '../officeChartTokens';
 import {
@@ -30,6 +31,7 @@ export const OfficeKpiRow: React.FC<OfficeKpiRowProps> = ({
   onFocusDecisions,
   className,
 }) => {
+  const { t } = useAppContext();
   const findings = totalFindings(rollup.findings);
   const blocking = rollup.findings.critical + rollup.findings.high;
   const budgetRatio = rollup.aiCallsBudget === 0 ? 0 : rollup.aiCallsUsed / rollup.aiCallsBudget;
@@ -38,46 +40,46 @@ export const OfficeKpiRow: React.FC<OfficeKpiRowProps> = ({
     <div className={className}>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatTile
-          label="Entregables"
+          label={t('officeKpi.deliverables')}
           value={rollup.engagements}
           icon={Briefcase}
           tone="primary"
-          hint={`En ${projectCount} proyecto(s) de arquitectura`}
+          hint={t('officeKpi.deliverablesHint', { count: String(projectCount) })}
         />
         <StatTile
-          label="Requieren decisión"
+          label={t('kpi.needDecision')}
           value={rollup.awaitingDecision + rollup.statusMix.blocked}
           icon={Gavel}
           tone={rollup.statusMix.blocked > 0 ? 'danger' : rollup.awaitingDecision > 0 ? 'warning' : 'success'}
           hint={rollup.statusMix.blocked > 0
-            ? `${rollup.statusMix.blocked} bloqueado(s)`
-            : 'Nada esperando por una persona'}
+            ? t('officeKpi.blockedHint', { count: String(rollup.statusMix.blocked) })
+            : t('officeKpi.nobodyWaiting')}
           onClick={onFocusDecisions}
         />
         <StatTile
-          label="Avance de tareas"
+          label={t('kpi.taskProgress')}
           value={formatPercent(rollup.completionRatio)}
           icon={Layers}
           tone="success"
           meter={rollup.completionRatio}
-          hint={`${rollup.tasksCompleted}/${rollup.tasksTotal} tareas · ${rollup.artifactsProduced} artefacto(s)`}
+          hint={t('kpi.tasksHint', { done: String(rollup.tasksCompleted), total: String(rollup.tasksTotal), artifacts: String(rollup.artifactsProduced) })}
         />
         <StatTile
-          label="Hallazgos abiertos"
+          label={t('officeKpi.findings')}
           value={findings}
           icon={AlertOctagon}
           tone={blocking > 0 ? 'danger' : findings > 0 ? 'warning' : 'success'}
           hint={blocking > 0
-            ? `${blocking} crítico(s) o alto(s)`
-            : 'Sin hallazgos de severidad alta'}
+            ? t('officeKpi.blockingHint', { count: String(blocking) })
+            : t('officeKpi.noHighFindings')}
         />
         <StatTile
-          label="Consumo de IA"
+          label={t('officeKpi.aiUsage')}
           value={`${rollup.aiCallsUsed}/${rollup.aiCallsBudget}`}
           icon={Sparkles}
           tone="ai"
           meter={budgetRatio}
-          hint={`Presupuesto de llamadas · ${formatPercent(budgetRatio)} usado`}
+          hint={t('officeKpi.aiHint', { percent: formatPercent(budgetRatio) })}
         />
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAppContext } from '../../context/AppContext';
 import type { MemoryEntry, MemoryPriority } from '../../types';
 import { MEMORY_PRIORITY_LABEL_ES } from '../../services/memory';
 import { PencilIcon, TrashIcon, DocumentArrowUpIcon, XMarkIcon, CheckCircleIcon, ArrowPathIcon } from '../Icons';
@@ -8,11 +9,12 @@ import { EntryMetaLine, PrioritySelector } from './MemoryEntryViews';
 
 interface ViewEntryProps { entry: MemoryEntry; isDerived: boolean; onEdit: () => void; onDelete: () => void; onBack: () => void; }
 export const ViewEntry: React.FC<ViewEntryProps> = ({ entry, isDerived, onEdit, onDelete, onBack }) => {
+    const { t } = useAppContext();
     const { chars, words } = buildPreviewMeta(entry.text);
     return (
         <div className="flex flex-1 flex-col">
             <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <span>Detalle de la entrada</span>
+                <span>{t('mem.entryDetail')}</span>
                 <span aria-hidden>·</span>
                 <span>{chars.toLocaleString()} caracteres</span>
                 <span aria-hidden>·</span>
@@ -21,7 +23,7 @@ export const ViewEntry: React.FC<ViewEntryProps> = ({ entry, isDerived, onEdit, 
                     Prioridad {MEMORY_PRIORITY_LABEL_ES[entry.priority]}
                 </span>
                 {isDerived && (
-                    <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">Derivado</span>
+                    <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">{t('mem.derived')}</span>
                 )}
             </div>
             <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
@@ -58,10 +60,12 @@ interface EditEntryProps {
     onSave: () => void;
     onCancel: () => void;
 }
-export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel }) => (
+export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel }) => {
+    const { t } = useAppContext();
+    return (
     <div className="flex flex-1 flex-col">
         <div className="mb-1 flex items-center justify-between">
-            <label htmlFor="memory-edit-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contenido</label>
+            <label htmlFor="memory-edit-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.content')}</label>
             <span className="text-[11px] text-slate-500 dark:text-slate-400">{draft.length.toLocaleString()} caracteres</span>
         </div>
         <textarea
@@ -70,10 +74,10 @@ export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority,
             onChange={(event) => onChange(event.target.value)}
             rows={10}
             className="flex-1 resize-y rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-gray-800 dark:text-white"
-            placeholder="Edita el contenido de la entrada de memoria…"
+            placeholder={t('mem.editPlaceholder')}
         />
         <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prioridad</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.priority')}</span>
             <PrioritySelector value={priority} onChange={onPriorityChange} />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -87,6 +91,7 @@ export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority,
         </div>
     </div>
 );
+};
 
 interface CreateEntryProps {
     draft: string;
@@ -107,7 +112,9 @@ interface CreateEntryProps {
 export const CreateEntry: React.FC<CreateEntryProps> = ({
     draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel, onPickFile, isExtracting,
     extractedSuggestions, extractionFileName, onUpdateSuggestion, onClearSuggestions,
-}) => (
+}) => {
+    const { t } = useAppContext();
+    return (
     <div className="flex flex-1 flex-col">
         <div className="mb-1 flex items-center justify-between">
             <label htmlFor="memory-create-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -121,18 +128,18 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
             onChange={(event) => onChange(event.target.value)}
             rows={5}
             className="resize-y rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-gray-800 dark:text-white"
-            placeholder="Digita la nota o apunte que quieres guardar como memoria…"
+            placeholder={t('mem.createPlaceholder')}
         />
         <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prioridad</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.priority')}</span>
             <PrioritySelector value={priority} onChange={onPriorityChange} />
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">(por omisión: media — aplica a todas las entradas que guardes ahora)</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('mem.defaultPriority')}</span>
         </div>
 
         <div className="mt-4 rounded-2xl border border-dashed border-primary-300 bg-primary-50/40 p-4 dark:border-primary-500/30 dark:bg-primary-500/[0.06]">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p className="text-sm font-bold text-primary-900 dark:text-primary-100">Cargar desde documento</p>
+                    <p className="text-sm font-bold text-primary-900 dark:text-primary-100">{t('mem.loadFromDoc')}</p>
                     <p className="mt-1 max-w-sm text-xs text-primary-800/80 dark:text-primary-200/80">
                         Sube un PDF, Word, Google Doc, texto o markdown. La IA analizará el contenido y propondrá los apuntes relevantes para guardar.
                     </p>
@@ -157,7 +164,7 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
         {extractedSuggestions.length > 0 && (
             <div className="mt-3 flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-2 flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Apuntes propuestos por la IA</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.aiNotes')}</p>
                     <button type="button" onClick={onClearSuggestions} className="text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
                         <XMarkIcon className="inline h-3 w-3" /> Descartar todos
                     </button>
@@ -196,3 +203,4 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
         </div>
     </div>
 );
+};

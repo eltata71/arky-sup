@@ -35,7 +35,9 @@ function extractFromFirstMermaidHeader(input: string): string | null {
     const lines = input.split(/\r?\n/);
     const start = lines.findIndex((line) => MERMAID_HEAD.test(line));
     if (start < 0) return null;
-    return lines.slice(start).join('\n').trim();
+    // The ArchiMate marker is a comment above the header and is part of the diagram.
+    const from = start > 0 && /^\s*%%\s*archimate\b/i.test(lines[start - 1]) ? start - 1 : start;
+    return lines.slice(from).join('\n').trim();
 }
 
 /**

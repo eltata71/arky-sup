@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = join(__dirname, '..', '..');
 const LAYERS = ['services', 'hooks', 'components', 'pages', 'context', 'lib'];
 /** El serializador, su puerta de dialecto y el banco que mide flowcharts viven aquí. */
-const ALLOWED = new Set(['services/diagram/irToMermaid.ts', 'services/diagram/dialectSerialization.ts', 'services/diagram/flowArtifactSerialization.ts', 'services/diagram/index.ts']);
+const ALLOWED = new Set(['services/diagram/irToMermaid.ts', 'services/diagram/dialectSerialization.ts', 'services/diagram/notation/archimateNotation.ts', 'services/diagram/flowArtifactSerialization.ts', 'services/diagram/index.ts']);
 
 const filesUnder = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);

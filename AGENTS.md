@@ -602,6 +602,19 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    - documentar comandos ejecutados,
    - registrar riesgos o deuda técnica detectada.
 
+27. El plan de transición (`/transition`) se deriva: la brecha sale de `analyzeGaps`
+    sobre línea base y objetivo, los plateaus enlazan hitos por id (`deriveRoadmap`,
+    sin fecha = «sin fecha», nunca 0), el plan es aditivo en `attention.transition` y
+    cambia por `TransitionCommand`; `architectureProjects` y `enterpriseRepository`
+    no se importan (puerto `GapPlanPort` + `useTransitionPlan`). Detalle en CLAUDE.md.
+
+28. El portafolio de aplicaciones (`/portfolio`) clasifica por TIME con
+    `classifyTime`: el cuadrante se calcula de dos notas medidas (ajuste funcional
+    y técnico) y sin ambas es «sin evaluar», nunca un valor por defecto. El anillo
+    del radar lo fija una persona (`set-technology-ring`); los estándares de la
+    Oficina entran por el puerto `RadarStandard` (puerta `standards.ts`,
+    `useApplicationPortfolio`) y nunca eligen anillo. Detalle en CLAUDE.md.
+
 ---
 
 ## Sincronización de capacidades

@@ -148,6 +148,7 @@ export const validateEntity = (
       : 'active',
     tags: stringArray(input.tags),
     metadata: safeMetadata(input.metadata),
+    ...(isNonEmptyString(input.inventoryItemId) ? { inventoryItemId: input.inventoryItemId } : {}),
     createdAt: typeof input.createdAt === 'string' ? input.createdAt : now,
     updatedAt: typeof input.updatedAt === 'string' ? input.updatedAt : now,
   };

@@ -50,6 +50,13 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
             ],
         },
         {
+            title: 'Documento',
+            items: [
+                { keys: <Kbd>]</Kbd>, label: 'Ir a la sección siguiente' },
+                { keys: <Kbd>[</Kbd>, label: 'Ir a la sección anterior' },
+            ],
+        },
+        {
             title: 'Presentación',
             items: [
                 { keys: <><Kbd>←</Kbd><Kbd>→</Kbd></>, label: 'Navegar entre escenas' },

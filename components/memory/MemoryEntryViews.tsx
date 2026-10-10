@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAppContext } from '../../context/AppContext';
 import type { MemoryEntry, MemoryPriority } from '../../types';
 import { MEMORY_PRIORITIES, MEMORY_PRIORITY_LABEL_ES } from '../../services/memory';
 import { PencilIcon, TrashIcon, EyeIcon, SparklesIcon, CpuChipIcon, MagnifyingGlassIcon } from '../Icons';
@@ -10,8 +11,10 @@ export const PrioritySelector: React.FC<{
     onChange: (priority: MemoryPriority) => void;
     disabled?: boolean;
     compact?: boolean;
-}> = ({ value, onChange, disabled, compact }) => (
-    <div className={`inline-flex items-center gap-1 ${compact ? '' : 'rounded-xl border border-slate-200 p-1 dark:border-white/10'}`} role="group" aria-label="Prioridad de la nota">
+}> = ({ value, onChange, disabled, compact }) => {
+    const { t } = useAppContext();
+    return (
+    <div className={`inline-flex items-center gap-1 ${compact ? '' : 'rounded-xl border border-slate-200 p-1 dark:border-white/10'}`} role="group" aria-label={t('mem.priorityLabel')}>
         {MEMORY_PRIORITIES.map((priority) => {
             const isActive = priority === value;
             return (
@@ -32,7 +35,8 @@ export const PrioritySelector: React.FC<{
             );
         })}
     </div>
-);
+    );
+};
 
 /** Línea de metadatos de una nota: fecha/hora de creación y autor. */
 export const EntryMetaLine: React.FC<{ entry: MemoryEntry }> = ({ entry }) => {
@@ -73,12 +77,13 @@ interface ListViewProps {
 export const ListView: React.FC<ListViewProps> = ({
     entries, totalCount, search, onSearchChange, onView, onEdit, onDelete, onChangePriority, scopeLabel, isArtifactSelectionMissing,
 }) => {
+    const { t } = useAppContext();
     if (isArtifactSelectionMissing) {
         return (
             <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-white/10">
                 <CpuChipIcon className="h-10 w-10 text-slate-400" />
-                <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">Selecciona un artefacto</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Necesitas elegir un artefacto del proyecto para gestionar su contexto.</p>
+                <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">{t('mem.selectArtifact')}</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('mem.selectArtifactHint')}</p>
             </div>
         );
     }
@@ -99,8 +104,8 @@ export const ListView: React.FC<ListViewProps> = ({
             {totalCount === 0 ? (
                 <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-white/10">
                     <SparklesIcon className="h-10 w-10 text-slate-400" />
-                    <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">Sin registros todavía</p>
-                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">Crea uno digitando directamente o cargando un documento para que la IA extraiga los apuntes relevantes.</p>
+                    <p className="mt-3 text-sm font-bold text-slate-700 dark:text-slate-200">{t('mem.noRecords')}</p>
+                    <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">{t('mem.noRecordsHint')}</p>
                 </div>
             ) : entries.length === 0 ? (
                 <p className="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs text-slate-500 dark:bg-white/[0.03] dark:text-slate-400">No hay resultados para "{search}".</p>
@@ -131,6 +136,7 @@ interface MemoryCardProps {
 }
 
 const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete, onChangePriority }) => {
+    const { t } = useAppContext();
     const { entry, isDerived } = item;
     const headline = deriveEntryHeadline(entry.text);
     const { chars, words, isLong } = buildPreviewMeta(entry.text);
@@ -143,7 +149,7 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete,
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                         <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{headline}</p>
                         {isDerived && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">Derivado</span>
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">{t('mem.derived')}</span>
                         )}
                         <PrioritySelector value={entry.priority} onChange={onChangePriority} disabled={isDerived} compact />
                     </div>
@@ -178,9 +184,9 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete,
                     </div>
                 </div>
                 <div className="flex flex-shrink-0 flex-col items-end gap-1">
-                    <ActionButton label="Ver" icon={<EyeIcon className="h-4 w-4" />} onClick={onView} />
-                    <ActionButton label="Editar" icon={<PencilIcon className="h-4 w-4" />} onClick={onEdit} disabled={isDerived} />
-                    <ActionButton label="Eliminar" icon={<TrashIcon className="h-4 w-4" />} onClick={onDelete} variant="danger" disabled={isDerived} />
+                    <ActionButton label={t('mem.view')} icon={<EyeIcon className="h-4 w-4" />} onClick={onView} />
+                    <ActionButton label={t('mem.edit')} icon={<PencilIcon className="h-4 w-4" />} onClick={onEdit} disabled={isDerived} />
+                    <ActionButton label={t('mem.delete')} icon={<TrashIcon className="h-4 w-4" />} onClick={onDelete} variant="danger" disabled={isDerived} />
                 </div>
             </div>
         </li>

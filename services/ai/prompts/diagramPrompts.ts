@@ -18,6 +18,7 @@ import type { ArtifactType, Settings } from '../../../types';
 import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
+import { ARCHIMATE_ELEMENT_TYPES, ARCHIMATE_RELATION_TYPES } from '../../../lib/archimate/archimateMetamodel';
 import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
 import { captureDiagramProjectBlock, captureDiagramRequest } from './contextManifestCapture';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
@@ -177,6 +178,7 @@ export function buildDialectInstruction(type: ArtifactType): string {
     if (type === 'mermaid-sequence') {
         return `Mermaid dialect: sequenceDiagram. Declare every participant up-front; use "->>" for sync, "-)" for async, "rect rgb(...)" to group, alt/opt/loop for conditional flows.`;
     }
+    if (type === 'mermaid-archimate') return buildArchimateDialectInstruction();
     if (type === 'mermaid-state') {
         return `Mermaid dialect: stateDiagram-v2. Use [*] for initial/final, <<choice>> for decisions, composite states for nesting.`;
     }
@@ -827,4 +829,12 @@ export function buildArchitecturalConstraints(type: ArtifactType): string {
   domain verb ("Valida pago", "Sincroniza catálogo").`;
     }
     return '';
+}
+
+
+/** ArchiMate travels as a flowchart that says so; the metamodel is the vocabulary. */
+export function buildArchimateDialectInstruction(): string {
+    const types = ARCHIMATE_ELEMENT_TYPES.join(', ');
+    const relations = ARCHIMATE_RELATION_TYPES.join(', ');
+    return `ArchiMate dialect (a flowchart that declares itself). First line: "%% archimate viewpoint=<layered|application-cooperation|application-usage|motivation|strategy|technology>", then "flowchart LR". Give every element its type with a class named archimate_<type> using underscores for hyphens (e.g. "class cliente archimate_business_actor"). Element types: ${types}. Label every edge "<relation>" or "<relation>: <text>" with a relation from: ${relations}. Use only relations ArchiMate 3.2 allows between the element types; never write colour values — the renderer colours by layer.`;
 }
