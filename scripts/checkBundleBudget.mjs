@@ -71,8 +71,11 @@ export const BUDGETS = {
    * mide nada no impide la siguiente regresión.
    */
   eagerPayloadGzipKb: 340,
-  /** The entry chunk alone, gzipped. */
-  entryChunkGzipKb: 205,
+  /**
+   * The entry chunk alone, gzipped. 205 → 207 en 11.4: el diccionario español
+   * es eager por diseño y las ~50 claves de /transition añaden 1,1 KB gz.
+   */
+  entryChunkGzipKb: 207,
   /**
    * Any single chunk, raw. Catches a lazy chunk exploding — Excalidraw is
    * already 2.4 MB raw, and this stops it (or a sibling) doubling unnoticed.
