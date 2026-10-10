@@ -220,6 +220,19 @@ export const TYPE = {
 
 export type TypeToken = keyof typeof TYPE;
 
+/**
+ * Editorial steps for the long-form document surface. They are separate from
+ * `TYPE` because a document is read for minutes, not scanned: the measure is
+ * capped at ~72 characters and headings keep a fixed scale on the paper.
+ */
+export const DOCUMENT_TYPE = {
+  /** Cap on running text so a line holds 65–75 characters at any paper width. */
+  measure: 'max-w-[72ch]',
+  body: 'text-[15px] leading-[1.7]',
+  /** Eyebrow over the side index. */
+  indexLabel: 'text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400',
+} as const;
+
 /* --------------------------------------------------------------- surfaces */
 
 /**
