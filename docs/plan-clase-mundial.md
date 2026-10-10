@@ -795,7 +795,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 11.5 TIME, radar y contrato | Hecha | #192 |
 | 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |
 | 12.1 Partir los cinco ficheros grandes | Pendiente | |
-| 12.2 Documento editorial | Pendiente | |
+| 12.2 Documento editorial | Hecha · #194 | |
 | 12.3 Zoom semántico C4 | Pendiente | |
 | 12.4 Modo presentación | Pendiente | |
 | 12.5 Barras por intención | Pendiente | |
