@@ -287,6 +287,47 @@ export const DOCUMENT_DISCIPLINES: readonly DocumentDiscipline[] = [
     ],
     rules: [],
   },
+  {
+    templateName: 'Contrato de Arquitectura',
+    label: 'Contrato de arquitectura',
+    standard: 'TOGAF · Contrato de Arquitectura',
+    sections: [
+      required('parties', 'Partes', ['partes', 'parties', 'firmantes']),
+      required('scope', 'Alcance', ['alcance', 'scope']),
+      required('obligations', 'Obligaciones de arquitectura', ['obligaciones', 'obligations', 'compromisos']),
+      required('criteria', 'Criterios de aceptación', ['criterios de aceptacion', 'aceptacion', 'acceptance']),
+      required('compliance', 'Gobierno y cumplimiento', ['cumplimiento', 'gobierno', 'compliance', 'governance']),
+      recommended('deviations', 'Desviaciones y excepciones', ['desviaciones', 'excepciones', 'dispensas']),
+    ],
+    rules: [{
+      id: 'contract-acceptance-measurable',
+      label: 'Cada criterio de aceptación es verificable (cifra, umbral o condición comprobable)',
+      pattern: /(\d|\b(debe|deber[aá]|cumple|no (?:debe|puede)|m[aá]ximo|m[ií]nimo|exactamente)\b)/i,
+      message: 'El contrato no declara criterios de aceptación verificables.',
+      recommendation: 'Redacta cada criterio de modo que pueda comprobarse, p. ej. «Disponibilidad ≥ 99,9 %» o «Todo acceso debe autenticarse».',
+      severity: 'medium',
+    }],
+  },
+  {
+    templateName: 'Evaluación de Cumplimiento',
+    label: 'Evaluación de cumplimiento de arquitectura',
+    standard: 'TOGAF · Revisión de cumplimiento',
+    sections: [
+      required('scope', 'Alcance y contrato evaluado', ['alcance', 'contrato', 'scope']),
+      required('criteria', 'Criterios evaluados', ['criterios', 'criteria']),
+      required('findings', 'Hallazgos', ['hallazgos', 'findings', 'resultados']),
+      required('verdict', 'Veredicto de cumplimiento', ['veredicto', 'conclusion', 'verdict']),
+      required('actions', 'Acciones correctivas', ['acciones', 'correctivas', 'plan de accion', 'remediation']),
+    ],
+    rules: [{
+      id: 'compliance-verdict-value',
+      label: 'El veredicto es uno de: conforme, conforme con condiciones o no conforme',
+      pattern: /\b(no conforme|conforme con condiciones|conforme|cumple|no cumple|cumple parcialmente|compliant|non-compliant)\b/i,
+      message: 'La evaluación no declara un veredicto de cumplimiento.',
+      recommendation: 'Indica si la solución es Conforme, Conforme con condiciones o No conforme.',
+      severity: 'high',
+    }],
+  },
 ];
 
 const normalizeName = (name: string): string =>

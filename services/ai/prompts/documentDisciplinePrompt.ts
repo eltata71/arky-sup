@@ -116,6 +116,21 @@ export const DISCIPLINE_GUIDANCE: Readonly<Record<string, Readonly<Record<string
     comparison: 'Tabla de opciones contra criterios.',
     recommendation: 'La opción recomendada y lo que se sacrifica.',
   },
+  'Contrato de Arquitectura': {
+    parties: 'Quién entrega y quién gobierna, con su rol.',
+    scope: 'Qué solución y qué límites cubre el contrato.',
+    obligations: 'Lo que la implementación debe respetar (estándares, patrones, restricciones).',
+    criteria: 'Criterios verificables con cifra o condición comprobable.',
+    compliance: 'Cómo y cuándo se revisa el cumplimiento, y quién decide.',
+    deviations: 'Cómo se solicita y registra una excepción.',
+  },
+  'Evaluación de Cumplimiento': {
+    scope: 'La implementación evaluada y el contrato contra el que se mide.',
+    criteria: 'Los criterios del contrato que se comprobaron.',
+    findings: 'Tabla con criterio, resultado y evidencia.',
+    verdict: 'Conforme, conforme con condiciones o no conforme.',
+    actions: 'Acciones correctivas con responsable y fecha.',
+  },
   'Definición de Fitness Functions': {
     functions: 'Tabla con atributo que protege, métrica, umbral y cómo se ejecuta.',
     thresholds: 'El valor que hace fallar cada función.',

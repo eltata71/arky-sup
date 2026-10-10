@@ -789,6 +789,34 @@ export const ARTIFACT_TEMPLATES: ArtifactTemplate[] = [
         representation: "document"
     },
     {
+        name: "Contrato de Arquitectura",
+        type: "markdown",
+        phase: "Fase 4: Implementación y Operaciones",
+        standard: "TOGAF · Contrato de Arquitectura",
+        admPhase: "G",
+        architecturalView: "Vista de Gestión y Soporte",
+        objective: "Acordar entre el equipo de arquitectura y el de entrega qué debe cumplir la solución, con criterios de aceptación verificables.",
+        keyConcepts: [
+            { term: "Contrato de Arquitectura", definition: "Acuerdo formal sobre las obligaciones de arquitectura de una implementación." },
+            { term: "Criterio de aceptación", definition: "Condición comprobable que decide si la obligación se cumplió." }
+        ],
+        representation: "document"
+    },
+    {
+        name: "Evaluación de Cumplimiento",
+        type: "markdown",
+        phase: "Fase 4: Implementación y Operaciones",
+        standard: "TOGAF · Revisión de cumplimiento",
+        admPhase: "G",
+        architecturalView: "Vista de Calidad y Validación",
+        objective: "Contrastar una implementación con su contrato de arquitectura y dictaminar si es conforme.",
+        keyConcepts: [
+            { term: "Veredicto", definition: "Conforme, conforme con condiciones o no conforme." },
+            { term: "Acción correctiva", definition: "Cambio con responsable y fecha que cierra un hallazgo." }
+        ],
+        representation: "document"
+    },
+    {
         name: "Definición de Fitness Functions",
         type: "markdown",
         phase: "Fase 4: Implementación y Operaciones",

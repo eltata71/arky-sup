@@ -43,3 +43,18 @@ export {
   type GapIssue,
   type GapAnalysis,
 } from './application/gapAnalysis';
+export {
+  classifyTime,
+  buildApplicationPortfolio,
+  TIME_QUADRANTS,
+  TIME_HIGH_THRESHOLD,
+  type TimeQuadrant,
+  type ApplicationTimeEntry,
+  type ApplicationPortfolio,
+} from './application/timeClassification';
+export {
+  buildTechnologyRadar,
+  type RadarStandard,
+  type TechnologyRadar,
+  type TechnologyRadarEntry,
+} from './application/technologyRadar';
