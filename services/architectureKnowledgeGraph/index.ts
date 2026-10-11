@@ -114,3 +114,13 @@ export {
   reportGraphFailure,
   type ArchitectureGraphEvent,
 } from './ArchitectureGraphObservability';
+
+export {
+  analyzeTraceabilityChains,
+  explainEntity,
+  type EntityExplanation,
+  type RequirementChain,
+  type TraceabilityChainFinding,
+  type TraceabilityChainFindingType,
+  type TraceabilityChainReport,
+} from './traceabilityChain';
