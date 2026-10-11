@@ -21,7 +21,7 @@ const STATUS_META: Record<ArtifactReviewStatus, { tone: BadgeTone; label: string
     },
     'changes-requested': {
         tone: 'warning',
-        label: 'Requiere cambios',
+        label: 'Cambios pedidos',
         description: 'Un revisor pidió ajustes',
     },
     approved: {

@@ -30,3 +30,4 @@ export * from './contentPreservation';
 export { DOCUMENT_DISCIPLINES, disciplineForTemplate, type DocumentDiscipline, type DisciplineRule, type DisciplineSection } from './documentDisciplines';
 export * from './documentPatch';
 export * from './admPhases';
+export * from './artifactLifecycle';

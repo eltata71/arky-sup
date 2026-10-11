@@ -40,7 +40,8 @@ import {
   PortfolioCanvas,
   PortfolioSearchBox,
 } from '../components/navigation';
-import { AttentionCenter, PortfolioHealthHero } from '../components/dashboard';
+import { ArtifactLifecyclePanel, AttentionCenter, PortfolioHealthHero } from '../components/dashboard';
+import { countArtifactLifecycle } from '../lib/artifacts/artifactLifecycle';
 import { DecisionQueue } from '../components/architectureOffice/dashboard';
 import { usePortfolioCommandCenter } from '../hooks/usePortfolioCommandCenter';
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -272,6 +273,11 @@ const DashboardPage: React.FC = () => {
                   else navigate(`/initiatives/${issue.sourceId}`);
                 }}
               />
+            </motion.div>
+
+            {/* 6 · En qué etapa está cada artefacto (14.0): las mismas etiquetas que el lienzo y el hub. */}
+            <motion.div {...region(5, reducedMotion)}>
+              <ArtifactLifecyclePanel counts={countArtifactLifecycle(projects)} />
             </motion.div>
           </>
         )}
