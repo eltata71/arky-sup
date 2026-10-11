@@ -42,6 +42,10 @@ declare
   previous_approved_at text := nullif(btrim(coalesce(p_previous -> 'charter' ->> 'approvedAt', '')), '');
   previous_approved_by text := nullif(btrim(coalesce(p_previous -> 'charter' -> 'approvedBy' ->> 'id', '')), '');
 begin
+  if p_actor is null then
+    raise exception 'Se requiere sesión' using errcode = '42501';
+  end if;
+
   -- Regla 2: lo aprobado se queda aprobado, con su fecha y su firmante.
   if previous_approved_at is not null then
     if next_approved_at is distinct from previous_approved_at
