@@ -19,28 +19,31 @@
  * canvas filled from a field nobody ever set, and fell through to topology
  * for every real diagram. One rule now answers "in what order is this read",
  * and it is the rule that knows whether the answer was written or guessed.
+ *
+ * **And there is no override** (12.4). A `scenes` prop survived the fix as an
+ * "explicit override for the walk" that no caller set — a third walk waiting
+ * for its first user. It is gone: the order of the scenes comes from
+ * `buildStoryPlan` and from nowhere else. With reduced motion the camera jumps
+ * and the captions appear; the scenes, their order and their text are the same.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Edge, Node } from 'reactflow';
 import { useReactFlow } from 'reactflow';
-import type { DiagramIR, DiagramScene } from '../lib/diagram';
+import type { DiagramIR } from '../lib/diagram';
 import { buildStoryPlan } from '../services/diagram';
 import { MOTION } from '../lib/designTokens';
+import useReducedMotion from '../hooks/useReducedMotion';
+import { useUiText } from '../hooks/useUiText';
 
 export interface PresentationModeProps {
     open: boolean;
     onClose: () => void;
-    /**
-     * Explicit override for the walk. Left unset the overlay reads the story
-     * off the IR, which is where an authored narrative actually lives.
-     */
-    scenes?: DiagramScene[];
     /** Optional executive summary to show on the cover slide. */
     title?: string;
     summary?: string;
-    /** Underlying diagram — the source of the story and of the fallback walk. */
+    /** Underlying diagram — the only source of the walk, through `buildStoryPlan`. */
     ir?: DiagramIR;
     /** Live ReactFlow nodes/edges, used to pan-to-focus. */
     nodes: Node[];
@@ -79,22 +82,6 @@ function scenesFromStoryPlan(ir: DiagramIR | undefined): ResolvedScene[] {
         }));
 }
 
-function resolveScenes(
-    scenes: DiagramScene[] | undefined,
-    ir: DiagramIR | undefined,
-): ResolvedScene[] {
-    if (Array.isArray(scenes) && scenes.length > 0) {
-        return scenes.map((s) => ({
-            id: s.id,
-            title: s.title,
-            insight: s.insight,
-            nodeIds: new Set(Array.isArray(s.focusNodeIds) ? s.focusNodeIds : []),
-            edgeIds: new Set(Array.isArray(s.focusEdgeIds) ? s.focusEdgeIds : []),
-        }));
-    }
-    return scenesFromStoryPlan(ir);
-}
-
 /** Compute the bounding rectangle of the focus nodes in canvas coordinates. */
 function focusBounds(focus: ResolvedScene, nodes: Node[]): { x: number; y: number; width: number; height: number } | null {
     if (focus.nodeIds.size === 0) return null;
@@ -117,7 +104,6 @@ function focusBounds(focus: ResolvedScene, nodes: Node[]): { x: number; y: numbe
 const PresentationMode: React.FC<PresentationModeProps> = ({
     open,
     onClose,
-    scenes,
     title,
     summary,
     ir,
@@ -126,11 +112,15 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
     onSceneChange,
 }) => {
     const { fitBounds, fitView } = useReactFlow();
+    const t = useUiText();
+    const reduced = useReducedMotion();
+    const camera = reduced ? 0 : 600;
+    const transition = reduced ? { duration: 0 } : { duration: MOTION.duration.cinematic, ease: MOTION.ease.enter };
     const [stage, setStage] = useState<'cover' | 'scene' | 'closing'>('cover');
     const [sceneIndex, setSceneIndex] = useState(0);
     const lastEmittedFocusRef = useRef<string | null>(null);
 
-    const resolvedScenes = useMemo(() => resolveScenes(scenes, ir), [scenes, ir]);
+    const resolvedScenes = useMemo(() => scenesFromStoryPlan(ir), [ir]);
     const totalScenes = resolvedScenes.length;
     const activeScene = resolvedScenes[sceneIndex];
 
@@ -162,14 +152,14 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
         try {
             if (bounds) {
                 const padding = 0.25;
-                fitBounds(bounds, { duration: 600, padding });
+                fitBounds(bounds, { duration: camera, padding });
             } else {
-                fitView({ duration: 600, padding: 0.18 });
+                fitView({ duration: camera, padding: 0.18 });
             }
         } catch {
             /* fitBounds may throw if the canvas isn't mounted yet */
         }
-    }, [open, stage, activeScene, nodes, fitBounds, fitView, onSceneChange]);
+    }, [open, stage, activeScene, nodes, fitBounds, fitView, onSceneChange, camera]);
 
     const goNext = useCallback(() => {
         if (stage === 'cover') { setStage('scene'); return; }
@@ -177,9 +167,9 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
             setSceneIndex((i) => i + 1);
         } else {
             setStage('closing');
-            window.setTimeout(onClose, 700);
+            window.setTimeout(onClose, reduced ? 0 : 700);
         }
-    }, [stage, sceneIndex, totalScenes, onClose]);
+    }, [stage, sceneIndex, totalScenes, onClose, reduced]);
 
     const goPrev = useCallback(() => {
         if (stage === 'cover') return;
@@ -210,10 +200,10 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
             <motion.div
                 key="presentation-overlay"
                 className="fixed inset-0 z-[80] pointer-events-none"
-                initial={{ opacity: 0 }}
+                initial={reduced ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
+                transition={transition}
             >
                 {/* Vignette */}
                 <div
@@ -237,7 +227,7 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                                     stage === 'closing' ? '100%' :
                                     `${Math.round(((sceneIndex + 1) / Math.max(totalScenes, 1)) * 100)}%`,
                             }}
-                            transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
+                            transition={transition}
                         />
                     </div>
                 </div>
@@ -247,9 +237,9 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                     type="button"
                     onClick={onClose}
                     className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold tracking-wide uppercase backdrop-blur-md pointer-events-auto transition"
-                    aria-label="Salir de modo presentación"
+                    aria-label={t('pm.exitLabel')}
                 >
-                    Salir · Esc
+                    {t('pm.exit')}
                 </button>
 
                 {/* Cover */}
@@ -258,17 +248,17 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                         <motion.div
                             key="cover"
                             className="absolute inset-0 flex items-center justify-center pointer-events-auto"
-                            initial={{ opacity: 0, scale: 0.96 }}
+                            initial={reduced ? false : { opacity: 0, scale: 0.96 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.02, filter: 'blur(8px)' }}
-                            transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
+                            exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.02, filter: 'blur(8px)' }}
+                            transition={transition}
                         >
                             <div className="text-center max-w-2xl px-8">
                                 <div className="inline-block px-3 py-1 rounded-full bg-white/12 text-white/80 uppercase tracking-[0.32em] text-[10px] mb-5 backdrop-blur-md">
-                                    Modo presentación
+                                    {t('pm.badge')}
                                 </div>
                                 <h1 className="text-4xl md:text-5xl font-semibold text-white leading-tight">
-                                    {title || 'Arquitectura de la solución'}
+                                    {title || t('pm.defaultTitle')}
                                 </h1>
                                 {summary && (
                                     <p className="mt-5 text-lg text-white/85 leading-relaxed">
@@ -280,11 +270,11 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                                     onClick={goNext}
                                     className="mt-10 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-gray-900 text-sm font-semibold tracking-wide hover:scale-[1.03] active:scale-95 transition"
                                 >
-                                    Comenzar recorrido
-                                    <span>→</span>
+                                    {t('pm.start')}
+                                    <span aria-hidden="true">→</span>
                                 </button>
                                 <div className="mt-6 text-white/55 text-xs">
-                                    Usa ← → para navegar · Esc para salir
+                                    {t('pm.hint')}
                                 </div>
                             </div>
                         </motion.div>
@@ -297,15 +287,15 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                         <motion.div
                             key={`scene-${activeScene.id}`}
                             className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[min(90vw,720px)] pointer-events-auto"
-                            initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
+                            initial={reduced ? false : { opacity: 0, y: 32, filter: 'blur(8px)' }}
                             animate={{ opacity: 1, y: 0, filter: 'blur(0)' }}
-                            exit={{ opacity: 0, y: -16, filter: 'blur(6px)' }}
-                            transition={{ duration: MOTION.duration.cinematic, ease: MOTION.ease.enter }}
+                            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -16, filter: 'blur(6px)' }}
+                            transition={transition}
                         >
                             <div className="rounded-2xl bg-white/10 dark:bg-white/5 backdrop-blur-2xl border border-white/15 shadow-2xl px-7 py-6 text-white">
                                 <div className="flex items-baseline justify-between mb-2">
                                     <div className="text-xs uppercase tracking-[0.28em] text-white/60">
-                                        Escena {sceneIndex + 1} / {totalScenes}
+                                        {t('pm.scene', { current: String(sceneIndex + 1), total: String(totalScenes) })}
                                     </div>
                                     <div className="flex gap-1.5">
                                         {resolvedScenes.map((_, i) => (
@@ -328,14 +318,14 @@ const PresentationMode: React.FC<PresentationModeProps> = ({
                                         onClick={goPrev}
                                         className="text-xs uppercase tracking-wider text-white/65 hover:text-white transition"
                                     >
-                                        ← Anterior
+                                        {t('pm.prev')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={goNext}
                                         className="px-4 py-1.5 rounded-full bg-white text-gray-900 text-xs font-semibold tracking-wide hover:scale-[1.03] active:scale-95 transition"
                                     >
-                                        {sceneIndex === totalScenes - 1 ? 'Cerrar' : 'Siguiente →'}
+                                        {sceneIndex === totalScenes - 1 ? t('pm.close') : t('pm.next')}
                                     </button>
                                 </div>
                             </div>

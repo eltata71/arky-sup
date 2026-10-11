@@ -8,6 +8,7 @@
  * nobody had chosen, which is the one thing a presentation mode must not do.
  */
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ReactFlowProvider } from 'reactflow';
@@ -68,5 +69,34 @@ describe('PresentationMode', () => {
     it('does not treat the repair pass synthesis as a written walk', async () => {
         renderOverlay(ir({ summary: 'Flujo centrado en Cliente.', source: 'derived' }));
         expect(await screen.findByText('Paso 1', {}, { timeout: 3000 })).toBeInTheDocument();
+    });
+
+    it('reads its walk from buildStoryPlan and from nowhere else (12.4)', () => {
+        const source = readFileSync('components/PresentationMode.tsx', 'utf8');
+        expect(source).not.toMatch(/\bscenes\?:/);
+        expect(source).not.toMatch(/focusNodeIds/);
+        expect(source.match(/buildStoryPlan\(/g)).toHaveLength(1);
+    });
+
+    it('keeps the same scenes and text with reduced motion (12.4)', async () => {
+        const original = window.matchMedia;
+        window.matchMedia = ((query: string) => ({
+            matches: query.includes('reduce'), media: query, onchange: null,
+            addEventListener: () => undefined, removeEventListener: () => undefined,
+            addListener: () => undefined, removeListener: () => undefined, dispatchEvent: () => false,
+        })) as typeof window.matchMedia;
+        try {
+            renderOverlay(ir({
+                summary: 'El cobro depende de un proveedor externo.',
+                scenes: [
+                    { id: 'sc-1', title: 'La solicitud', focusNodeIds: ['cliente', 'api'], focusEdgeIds: ['e1'] },
+                    { id: 'sc-2', title: 'El cobro', focusNodeIds: ['cobro'], focusEdgeIds: ['e2'] },
+                ],
+            }));
+            expect(await screen.findByText('La solicitud', {}, { timeout: 3000 })).toBeInTheDocument();
+            expect(screen.getAllByText((_, node) => node?.textContent === 'Escena 1 / 2').length).toBeGreaterThan(0);
+        } finally {
+            window.matchMedia = original;
+        }
     });
 });
