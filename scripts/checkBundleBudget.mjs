@@ -70,7 +70,9 @@ export const BUDGETS = {
    * regla de todos los presupuestos de este repositorio: un número que ya no
    * mide nada no impide la siguiente regresión.
    */
-  eagerPayloadGzipKb: 340,
+  // 340 → 345 en 14.2: 341,5 KB gz medidos; las claves kg.chain* de la pestaña Cadena
+  // viven en el diccionario español, que es eager por diseño.
+  eagerPayloadGzipKb: 345,
   /**
    * The entry chunk alone, gzipped. 205 → 207 en 11.4: el diccionario español
    * es eager por diseño y las ~50 claves de /transition añaden 1,1 KB gz.
@@ -86,7 +88,8 @@ export const BUDGETS = {
    * load.* y office.empty.* y el error de carga de los tres contextos del arranque
    * (proyectos, iniciativas, Oficina), que antes se tragaban el fallo.
    */
-  entryChunkGzipKb: 211,
+  // 211 → 215 en 14.2: 213,2 KB gz medidos, mismas claves kg.chain* del diccionario eager.
+  entryChunkGzipKb: 215,
   /**
    * Any single chunk, raw. Catches a lazy chunk exploding — Excalidraw is
    * already 2.4 MB raw, and this stops it (or a sibling) doubling unnoticed.

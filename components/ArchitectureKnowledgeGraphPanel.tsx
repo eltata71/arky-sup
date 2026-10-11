@@ -18,6 +18,7 @@
 import React, { useMemo, useState } from 'react';
 import { Badge, Alert, Button, EmptyState, Tabs, TabList, Tab, TabPanel } from './ui';
 import { useAppContext } from '../context/AppContext';
+import TraceabilityChainView from './knowledgeGraph/TraceabilityChainView';
 import type { Artifact } from '../lib/artifacts';
 import {
   analyzeArchitectureConsistency,
@@ -39,7 +40,7 @@ interface ArchitectureKnowledgeGraphPanelProps {
   artifact?: Artifact;
 }
 
-type GraphTab = 'resumen' | 'consistencia' | 'trazabilidad' | 'impacto';
+type GraphTab = 'resumen' | 'consistencia' | 'trazabilidad' | 'cadena' | 'impacto';
 
 const SEVERITY_TONE: Record<ArchitectureIssueSeverity, 'danger' | 'warning' | 'gray'> = {
   critical: 'danger',
@@ -214,6 +215,7 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
           >
             {t('kg.tabTraceability')}
           </Tab>
+          <Tab value="cadena">{t('kg.tabChain')}</Tab>
           <Tab value="impacto">{t('kg.tabImpact')}</Tab>
         </TabList>
 
@@ -307,6 +309,13 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
                 </ul>
               )}
             </div>
+          </TabPanel>
+
+          <TabPanel value="cadena">
+            <TraceabilityChainView
+              graph={graph}
+              artifacts={project.artifacts.map((a) => ({ id: a.id, name: a.name }))}
+            />
           </TabPanel>
 
           <TabPanel value="impacto">
