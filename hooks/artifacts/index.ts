@@ -56,8 +56,5 @@ export type {
   UseArtifactSuggestionsResult,
 } from './useArtifactSuggestions';
 
-export { useCanvasStorytellingCommands } from './useCanvasStorytellingCommands';
-export type { CanvasStorytellingCommandsOptions } from './useCanvasStorytellingCommands';
-
 export { useSuggestionActionRunner } from './useSuggestionActionRunner';
 export type { SuggestionActionRunner, SuggestionActionRunnerOptions } from './useSuggestionActionRunner';

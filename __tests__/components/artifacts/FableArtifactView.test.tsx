@@ -126,7 +126,7 @@ describe('FableArtifactView', () => {
 });
 
 describe('ArtifactBottomToolbar — Vista Fable entry', () => {
-  it('is wired through the Configuración menu (see ArtifactBottomToolbar.test.tsx for menu behaviour)', async () => {
+  it('is wired through Revisar → Abrir en otra vista (see ArtifactBottomToolbar.test.tsx for menu behaviour)', async () => {
     const { ArtifactBottomToolbar } = await import('../../../components/artifacts/toolbar/ArtifactBottomToolbar');
     const onSelectView = vi.fn();
     render(
@@ -172,7 +172,7 @@ describe('ArtifactBottomToolbar — Vista Fable entry', () => {
         onSelectView={onSelectView}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Configuración' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Más acciones para Revisar' }));
     fireEvent.click(screen.getByText('Vista Fable'));
     expect(onSelectView).toHaveBeenCalledWith('fable');
   });
