@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { GenerationTrace } from '../../../lib/artifacts/contracts';
@@ -68,6 +69,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
   onCopyDiagnosticReport,
   onClose,
 }) => {
+  const t = useUiTranslation();
   return (
     <AnimatePresence>
       {open && (
@@ -77,24 +79,24 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
           exit={{ x: -24, opacity: 0 }}
           transition={{ duration: MOTION.duration.fast }}
           role="complementary"
-          aria-label="Observabilidad de generación"
+          aria-label={t("ui.observabilidad-de-generacion.ec74b9")}
           className="absolute top-20 left-4 z-30 w-[380px] max-w-[calc(100%-2rem)] max-h-[calc(100%-10rem)] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-4"
         >
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
               <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-                Observabilidad
+                {t("ui.observabilidad.2ea551")}
               </p>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Cómo se generó este artefacto
+                {t("ui.como-se-genero-este-artefact.b9cac6")}
               </h3>
             </div>
             <button
               onClick={onClose}
               className="text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-              title="Ocultar observabilidad"
+              title={t("ui.ocultar-observabilidad.6b72ab")}
             >
-              Cerrar
+              {t("sdd.close")}
             </button>
           </div>
 
@@ -102,21 +104,21 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Estado</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("diagramInspector.status")}</p>
                   <p className="mt-1 text-sm font-semibold capitalize text-gray-900 dark:text-white">{trace.status}</p>
                 </div>
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Fuente</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("ui.fuente.f00fca")}</p>
                   <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{trace.source}</p>
                 </div>
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Duración</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("ui.duracion.63ce53")}</p>
                   <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
                     {trace.durationMs ? `${Math.round(trace.durationMs / 1000)}s` : 'N/D'}
                   </p>
                 </div>
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Calidad</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("ui.calidad.b2e6a4")}</p>
                   <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
                     {trace.quality?.score ?? qualityScoreFallback ?? 'N/D'}/100
                   </p>
@@ -125,48 +127,48 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
 
               {(trace.operationId || trace.id) && (
                 <p className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
-                  operationId: {trace.operationId ?? trace.id}
+                  {t("ui.operationid.facbda")} {trace.operationId ?? trace.id}
                 </p>
               )}
 
               {(trace.quality?.initialScore !== undefined || trace.quality?.finalScore !== undefined) && (
                 <div className="rounded-xl border border-primary-100 bg-primary-50/60 p-3 dark:border-primary-900/60 dark:bg-primary-950/20">
                   <p className="text-[10px] uppercase tracking-wider text-primary-700 dark:text-primary-300">
-                    Refinamiento semántico
+                    {t("ui.refinamiento-semantico.381241")}
                   </p>
                   <p className="mt-1 text-xs text-gray-700 dark:text-gray-200">
-                    Inicial: <span className="font-semibold">{trace.quality.initialScore ?? 'N/D'}/100</span>
-                    {' · '}Final: <span className="font-semibold">{trace.quality.finalScore ?? trace.quality.score ?? 'N/D'}/100</span>
-                    {' · '}Pasadas: <span className="font-semibold">{trace.quality.refinementPasses ?? 0}</span>
+                    {t("ui.inicial.e7d704")} <span className="font-semibold">{trace.quality.initialScore ?? 'N/D'}/100</span>
+                    {' · '}{t("ui.final.464a59")} <span className="font-semibold">{trace.quality.finalScore ?? trace.quality.score ?? 'N/D'}/100</span>
+                    {' · '}{t("ui.pasadas.20cf78")} <span className="font-semibold">{trace.quality.refinementPasses ?? 0}</span>
                   </p>
                   <p className="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
-                    {trace.quality.refinementAccepted ? 'Contenido refinado aceptado antes de persistir.' : 'Se conservó la versión validada sin reemplazo de refinamiento.'}
-                    {trace.quality.refinementUsedAI ? ' Incluyó IA controlada.' : ' Sólo determinístico o sin IA.'}
+                    {trace.quality.refinementAccepted ? t("uiExpr.contenido-refinado-aceptado.7e2991") : t("uiExpr.se-conservo-la-version-valid.173883")}
+                    {trace.quality.refinementUsedAI ? t("uiExpr.incluyo-ia-controlada.03d584") : t("uiExpr.solo-deterministico-o-sin-ia.e67c33")}
                   </p>
                 </div>
               )}
 
               {(trace.modelEffective || trace.model) && (
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Modelo IA efectivo</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("ui.modelo-ia-efectivo.f67c5a")}</p>
                   {trace.modelEffective ? (
                     <>
                       <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
                         {trace.modelEffective.id}
                       </p>
                       <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                        Fuente:{' '}
+                        {t("ui.fuente.fac584")}{' '}
                         <span className="font-medium text-gray-700 dark:text-gray-200">
                           {trace.modelEffective.source}
                         </span>
-                        {' · '}Tier:{' '}
+                        {' · '}{t("ui.tier.ac7c78")}{' '}
                         <span className="font-medium text-gray-700 dark:text-gray-200">
                           {trace.modelEffective.tier}
                         </span>
                         {trace.modelEffective.requested
                           && trace.modelEffective.requested !== trace.modelEffective.id && (
                             <>
-                              {' '}· Preferencia:{' '}
+                              {' '}{t("ui.preferencia.ba98a7")}{' '}
                               <span className="font-medium text-gray-700 dark:text-gray-200">
                                 {trace.modelEffective.requested}
                               </span>
@@ -183,14 +185,14 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
               {trace.request && (
                 <div className="rounded-xl bg-primary-50/70 dark:bg-primary-950/25 border border-primary-100 dark:border-primary-900/60 p-3">
                   <p className="text-[10px] uppercase tracking-wider text-primary-700 dark:text-primary-300">
-                    Solicitud original
+                    {t("ui.solicitud-original.30e861")}
                   </p>
                   <p className="mt-1 text-xs text-gray-700 dark:text-gray-200 leading-snug">
                     {trace.request.userRequest}
                   </p>
                   {trace.request.matchedCatalogTemplateName && (
                     <p className="mt-2 text-[11px] text-primary-700 dark:text-primary-300">
-                      Estándar usado: {trace.request.matchedCatalogTemplateName}
+                      {t("ui.estandar-usado.ff2436")} {trace.request.matchedCatalogTemplateName}
                     </p>
                   )}
                 </div>
@@ -198,7 +200,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
 
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                  Decisiones tomadas
+                  {t("ui.decisiones-tomadas.61eee8")}
                 </p>
                 <div className="space-y-2">
                   {trace.decisions.map((step, index) => (
@@ -222,7 +224,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
 
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                  Errores / advertencias
+                  {t("ui.errores-advertencias.a6e4cc")}
                 </p>
                 {trace.errors.length > 0 ? (
                   <div className="space-y-2">
@@ -247,31 +249,30 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
                   </div>
                 ) : (
                   <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                    Sin errores registrados en la generación.
+                    {t("ui.sin-errores-registrados-en-l.6233c3")}
                   </p>
                 )}
               </div>
             </div>
           ) : (
             <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-              Este artefacto no tiene traza de generación persistida. Puede haber sido creado antes
-              de activar la observabilidad; se muestran diagnósticos de render en el reporte copiable.
+              {t("ui.este-artefacto-no-tiene-traz.21bd56")}
             </p>
           )}
 
           {compilation && (
             <section
-              aria-label="Resultado del motor de compilación de artefactos"
+              aria-label={t("ui.resultado-del-motor-de-compi.624b46")}
               className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2"
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-                  Motor de compilación
+                  {t("ui.motor-de-compilacion.dbad1a")}
                 </p>
                 {compilationFreshness && (
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${COMPILATION_FRESHNESS_CLASS[compilationFreshness]}`}
-                    title="Frescura de la compilación respecto al contenido actual del artefacto."
+                    title={t("ui.frescura-de-la-compilacion-r.dfcf2a")}
                   >
                     {COMPILATION_FRESHNESS_LABEL[compilationFreshness]}
                   </span>
@@ -279,8 +280,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
               </div>
               {compilationFreshness && compilationFreshness !== 'current' && (
                 <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-snug">
-                  La compilación mostrada puede no reflejar la última edición; vuelve a guardar el
-                  artefacto para recompilarlo.
+                  {t("ui.la-compilacion-mostrada-pued.65abce")}
                 </p>
               )}
               <div className="flex items-center justify-between gap-2">
@@ -292,23 +292,21 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-snug">
-                Contrato: {compilation.compilerContractLabel} · Nivel:{' '}
+                {t("ui.contrato.e1a1c6")} {compilation.compilerContractLabel} {t("ui.nivel.cd06ec")}{' '}
                 {COMPILER_TIER_LABEL[compilation.compilerTier]}
               </p>
               <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-snug">
-                Hallazgos — Críticos: {compilation.compilerIssues.critical} · Altos:{' '}
-                {compilation.compilerIssues.high} · Medios: {compilation.compilerIssues.medium} ·
-                Bajos: {compilation.compilerIssues.low}
+                {t("ui.hallazgos-criticos.97bc07")} {compilation.compilerIssues.critical} {t("ui.altos.cb717e")}{' '}
+                {compilation.compilerIssues.high} {t("ui.medios.e48f26")} {compilation.compilerIssues.medium} {t("ui.bajos.0cdc10")} {compilation.compilerIssues.low}
               </p>
               <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-snug">
-                Exportable — Documento: {compilation.exportReadiness.document ? 'Sí' : 'No'} ·
-                Diagrama: {compilation.exportReadiness.diagram ? 'Sí' : 'No'} · Tabla:{' '}
+                {t("ui.exportable-documento.e03683")} {compilation.exportReadiness.document ? 'Sí' : 'No'} {t("ui.diagrama.926170")} {compilation.exportReadiness.diagram ? 'Sí' : 'No'} {t("ui.tabla.72d206")}{' '}
                 {compilation.exportReadiness.table ? 'Sí' : 'No'}
               </p>
               {compilation.compilerRepairs.length > 0 && (
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Reparaciones aplicadas
+                    {t("ui.reparaciones-aplicadas.2b072f")}
                   </p>
                   <ul className="mt-1 list-disc list-inside text-[11px] text-gray-600 dark:text-gray-300">
                     {compilation.compilerRepairs.map((repairItem) => (
@@ -320,7 +318,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
               {compilation.compilerRecommendations.length > 0 && (
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Recomendaciones
+                    {t("kg.recommendations")}
                   </p>
                   <ul className="mt-1 list-disc list-inside text-[11px] text-gray-600 dark:text-gray-300">
                     {compilation.compilerRecommendations.map((recommendation) => (
@@ -331,7 +329,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
               )}
               {compilation.requiresHumanReview && (
                 <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-                  Requiere revisión humana antes de compartir o exportar.
+                  {t("ui.requiere-revision-humana-ant.d03230")}
                 </p>
               )}
             </section>
@@ -341,7 +339,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
             <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
               {renderDiagnosticsSummary && (
                 <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">
-                  Diagnóstico render: {renderDiagnosticsSummary}
+                  {t("ui.diagnostico-render.c80cb6")} {renderDiagnosticsSummary}
                 </p>
               )}
               <button
@@ -349,7 +347,7 @@ export const GenerationTracePanel: React.FC<GenerationTracePanelProps> = ({
                 disabled={!diagnosticReport}
                 className="w-full px-3 py-2 rounded-lg text-xs font-semibold bg-gray-900 text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
               >
-                {diagnosticCopied ? 'Reporte copiado' : 'Copiar reporte técnico'}
+                {diagnosticCopied ? t("uiExpr.reporte-copiado.89dc78") : t("uiExpr.copiar-reporte-tecnico.dbc88b")}
               </button>
             </div>
           )}

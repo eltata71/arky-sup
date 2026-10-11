@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * A gauge — one ratio, drawn as an arc, when that ratio *is* the headline.
  *
@@ -84,6 +85,7 @@ export const RadialGauge: React.FC<RadialGaugeProps> = ({
   thickness = 14,
   className,
 }) => {
+  const t = useUiTranslation();
   const measured = typeof value === 'number' && Number.isFinite(value);
   const ratio = measured ? Math.max(0, Math.min(1, value)) : 0;
   const centre = size / 2;
@@ -99,7 +101,7 @@ export const RadialGauge: React.FC<RadialGaugeProps> = ({
         aria-label={
           measured
             ? `${title}: ${Math.round(ratio * 100)} %${bandLabel ? `, ${bandLabel}` : ''}`
-            : `${title}: sin medir`
+            : t("uiTemplate.p0-sin-medir.5c7107", { p0: String(title) })
         }
       >
         <path
@@ -127,7 +129,7 @@ export const RadialGauge: React.FC<RadialGaugeProps> = ({
             measured ? 'text-3xl text-gray-900 dark:text-gray-50' : 'text-xl text-gray-400 dark:text-gray-500',
           )}
         >
-          {measured ? (displayValue ?? `${Math.round(ratio * 100)}%`) : 'Sin medir'}
+          {measured ? (displayValue ?? `${Math.round(ratio * 100)}%`) : t("iniKpi.unmeasured")}
         </span>
         {bandLabel && measured && (
           <span className={cn('mt-1.5 text-2xs font-bold uppercase tracking-widest-2', ink)}>

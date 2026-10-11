@@ -35,7 +35,7 @@ export const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({ 
       <div className="flex flex-col h-full">
         <input
           type="text"
-          placeholder="Buscar plantilla..."
+          placeholder={t("ui.buscar-plantilla.f8187e")}
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           className="w-full px-4 py-2 mb-4 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -58,7 +58,7 @@ export const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({ 
               </div>
             </div>
           )) : (
-            <p className="text-center text-gray-500">No se encontraron plantillas.</p>
+            <p className="text-center text-gray-500">{t("ui.no-se-encontraron-plantillas.d83697")}</p>
           )}
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
@@ -25,12 +26,12 @@ export const ExcalidrawArtifactView: React.FC<ExcalidrawArtifactViewProps> = ({
   onRetry,
   onOpenExternal,
   onSwitchToDocument,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <ErrorBoundary
     fallback={(boundaryError, reset) => (
       <ViewerCrashFallback
-        title="Excalidraw falló al renderizar"
-        viewerLabel="Excalidraw"
+        title={t("ui.excalidraw-fallo-al-renderiz.9a44ec")}
+        viewerLabel={t("Excalidraw")}
         error={boundaryError}
         onReset={reset}
         onSwitchToDocument={() => {
@@ -48,6 +49,6 @@ export const ExcalidrawArtifactView: React.FC<ExcalidrawArtifactViewProps> = ({
       onOpenExternal={onOpenExternal}
     />
   </ErrorBoundary>
-);
+); };
 
 export default ExcalidrawArtifactView;

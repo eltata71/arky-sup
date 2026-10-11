@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Qué mueve este proyecto en la iniciativa que lo justifica.
  *
@@ -68,6 +69,8 @@ export const AttentionContributionPanel: React.FC<AttentionContributionPanelProp
   onPatch,
   busy,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const tracking = project.attention ?? BASE_TRACKING;
   const contributions = tracking.contributions ?? [];
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
@@ -117,22 +120,20 @@ export const AttentionContributionPanel: React.FC<AttentionContributionPanelProp
   return (
     <SectionCard
       icon={Link2}
-      title="Impacto en la iniciativa"
-      hint="Qué mueve este proyecto en la necesidad de negocio que lo justifica."
+      title={t("ui.impacto-en-la-iniciativa.2b87ad")}
+      hint={t("Qué mueve este proyecto en la necesidad de negocio que lo justifica.")}
       count={contributions.length}
     >
       {initiatives.length === 0 ? (
         <EmptyRow>
-          Este proyecto no está enlazado a ninguna iniciativa todavía. Enlázalo desde el panel de la
-          Oficina y aquí podrás declarar qué mueve en ella.
+          {t("ui.este-proyecto-no-esta-enlaza.f9eeae")}
         </EmptyRow>
       ) : (
         <>
           {contributions.length === 0
             ? (
               <EmptyRow>
-                Sin aportes declarados. La iniciativa sabe que este proyecto la atiende, pero no qué
-                cambia cuando avanza.
+                {t("ui.sin-aportes-declarados-la-in.ca5855")}
               </EmptyRow>
             )
             : (
@@ -149,10 +150,10 @@ export const AttentionContributionPanel: React.FC<AttentionContributionPanelProp
                         </span>
                       </span>
                       <Badge tone={CONTRIBUTION_STATE_TONES[contribution.state]} size="xs">
-                        {CONTRIBUTION_STATE_LABELS[contribution.state]}
+                        {translateConfig(CONTRIBUTION_STATE_LABELS[contribution.state])}
                       </Badge>
                       <RemoveButton
-                        label={`Quitar el aporte ${contribution.statement}`}
+                        label={t("uiTemplate.quitar-el-aporte-p0.ec2d10", { p0: String(contribution.statement) })}
                         disabled={busy}
                         onClick={() => onPatch({
                           attention: {
@@ -163,7 +164,7 @@ export const AttentionContributionPanel: React.FC<AttentionContributionPanelProp
                       />
                     </div>
                     <select
-                      aria-label={`Estado del aporte ${contribution.statement}`}
+                      aria-label={t("uiTemplate.estado-del-aporte-p0.71c6cc", { p0: String(contribution.statement) })}
                       className={cn(selectClass, 'mt-1.5')}
                       value={contribution.state}
                       disabled={busy}
@@ -180,15 +181,15 @@ export const AttentionContributionPanel: React.FC<AttentionContributionPanelProp
 
           <div className="space-y-1.5 border-t border-gray-100 pt-3 dark:border-gray-800">
             <Input
-              aria-label="Ej. Deja el alta de póliza disponible por API para el canal de corredores"
-              placeholder="Ej. Deja el alta de póliza disponible por API para el canal de corredores"
+              aria-label={t("ui.ej-deja-el-alta-de-poliza-di.4920bf")}
+              placeholder={t("ui.ej-deja-el-alta-de-poliza-di.4920bf")}
               value={draft.statement}
               onChange={(event) => setDraft((current) => ({ ...current, statement: event.target.value }))}
             />
             <div className="grid grid-cols-2 gap-1.5">
               {initiatives.length > 1 && (
                 <select
-                  aria-label="Iniciativa a la que aporta"
+                  aria-label={t("ui.iniciativa-a-la-que-aporta.67e12a")}
                   className={cn(selectClass, 'col-span-2')}
                   value={draft.initiativeId || (selectedInitiative?.id ?? '')}
                   onChange={(event) => setDraft((current) => ({
@@ -204,38 +205,38 @@ export const AttentionContributionPanel: React.FC<AttentionContributionPanelProp
                 </select>
               )}
               <select
-                aria-label="Resultado esperado al que sirve"
+                aria-label={t("ui.resultado-esperado-al-que-si.ba4a7e")}
                 className={selectClass}
                 value={draft.outcomeId}
                 onChange={(event) => setDraft((current) => ({ ...current, outcomeId: event.target.value }))}
               >
-                <option value="">Sin resultado concreto</option>
+                <option value="">{t("ui.sin-resultado-concreto.177620")}</option>
                 {(selectedInitiative?.expectedOutcomes ?? []).map((outcome) => (
                   <option key={outcome.id} value={outcome.id}>{outcome.statement}</option>
                 ))}
               </select>
               <select
-                aria-label="Indicador que mueve"
+                aria-label={t("ui.indicador-que-mueve.2cda85")}
                 className={selectClass}
                 value={draft.kpiId}
                 onChange={(event) => setDraft((current) => ({ ...current, kpiId: event.target.value }))}
               >
-                <option value="">Sin indicador concreto</option>
+                <option value="">{t("ui.sin-indicador-concreto.c1a940")}</option>
                 {(selectedInitiative?.kpis ?? []).map((kpi) => (
                   <option key={kpi.id} value={kpi.id}>{kpi.name}</option>
                 ))}
               </select>
               <Input
-                aria-label="Peso del aporte, de 1 a 100 (opcional)"
+                aria-label={t("ui.peso-del-aporte-de-1-a-100-o.32fb99")}
                 type="number"
                 min={1}
                 max={100}
-                placeholder="Peso del aporte, de 1 a 100 (opcional)"
+                placeholder={t("ui.peso-del-aporte-de-1-a-100-o.32fb99")}
                 value={draft.weight}
                 onChange={(event) => setDraft((current) => ({ ...current, weight: event.target.value }))}
               />
               <select
-                aria-label="Estado del aporte"
+                aria-label={t("ui.estado-del-aporte.b5d635")}
                 className={selectClass}
                 value={draft.state}
                 onChange={(event) => setDraft((current) => ({
@@ -256,7 +257,7 @@ export const AttentionContributionPanel: React.FC<AttentionContributionPanelProp
               fullWidth
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-              Declarar el aporte
+              {t("ui.declarar-el-aporte.401311")}
             </Button>
           </div>
         </>

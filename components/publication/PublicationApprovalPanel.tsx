@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useState } from 'react';
 import { Badge, Button } from '../ui';
 import {
@@ -30,6 +31,7 @@ export const PublicationApprovalPanel: React.FC<PublicationApprovalPanelProps> =
   pkg, profile, readiness, busy,
   onSubmitForReview, onRequestChanges, onApprove, onPublish, onArchive, onCreateVersion,
 }) => {
+  const t = useUiTranslation();
   const [comment, setComment] = useState('');
   const [override, setOverride] = useState(false);
 
@@ -51,67 +53,67 @@ export const PublicationApprovalPanel: React.FC<PublicationApprovalPanelProps> =
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          Estado del paquete
+          {t("ui.estado-del-paquete.6b80bb")}
         </span>
         <Badge tone={statusTone(pkg.status)} size="sm">{publicationStatusLabel(pkg.status)}</Badge>
-        <Badge tone="gray" size="sm" outline>Versión {pkg.version}</Badge>
+        <Badge tone="gray" size="sm" outline>{t("projectHub.version")} {pkg.version}</Badge>
         {pkg.freshness !== 'current' && (
-          <Badge tone="warning" size="sm">{pkg.freshness === 'stale' ? 'Desactualizado' : 'Obsoleto'}</Badge>
+          <Badge tone="warning" size="sm">{pkg.freshness === 'stale' ? t("uiExpr.desactualizado.bda113") : t("uiExpr.obsoleto.71364b")}</Badge>
         )}
       </div>
 
       <label className="block">
         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Comentario / motivo (opcional para enviar y aprobar; obligatorio para solicitar cambios)
+          {t("ui.comentario-motivo-opcional-p.51cc0b")}
         </span>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={2}
           className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-white/15 dark:bg-white/[0.04] dark:text-white"
-          placeholder="Describe el motivo de la transición…"
-          aria-label="Describe el motivo de la transición…"
+          placeholder={t("ui.describe-el-motivo-de-la-tra.00b3dc")}
+          aria-label={t("ui.describe-el-motivo-de-la-tra.00b3dc")}
         />
       </label>
 
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" size="sm" disabled={!canSubmit || busy}
           onClick={() => onSubmitForReview(comment)}
-          aria-label="Enviar el paquete a revisión">
-          Enviar a revisión
+          aria-label={t("ui.enviar-el-paquete-a-revision.80f4b5")}>
+          {t("ui.enviar-a-revision.bcef7a")}
         </Button>
         <Button variant="secondary" size="sm" disabled={!canRequestChanges || busy || !comment.trim()}
           onClick={() => onRequestChanges(comment)}
-          aria-label="Solicitar cambios en el paquete">
-          Solicitar cambios
+          aria-label={t("ui.solicitar-cambios-en-el-paqu.28eb56")}>
+          {t("ui.solicitar-cambios.353d2a")}
         </Button>
         <Button variant="primary" size="sm" disabled={!canApprove || busy}
           onClick={() => onApprove(comment)}
-          aria-label="Aprobar el paquete">
-          Aprobar
+          aria-label={t("ui.aprobar-el-paquete.c9583d")}>
+          {t("ui.aprobar.c2505a")}
         </Button>
         <Button variant="secondary" size="sm" disabled={!canArchive || busy}
           onClick={() => onArchive(comment)}
-          aria-label="Archivar el paquete">
-          Archivar
+          aria-label={t("ui.archivar-el-paquete.361c9c")}>
+          {t("ui.archivar.2a8569")}
         </Button>
         <Button variant="ghost" size="sm" disabled={busy}
           onClick={onCreateVersion}
-          aria-label="Crear una nueva versión del paquete">
-          Nueva versión
+          aria-label={t("ui.crear-una-nueva-version-del.77c038")}>
+          {t("ui.nueva-version.cedd81")}
         </Button>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]">
-        <p className="text-sm font-bold text-slate-900 dark:text-white">Publicación</p>
+        <p className="text-sm font-bold text-slate-900 dark:text-white">{t("projectHub.publication")}</p>
         <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">
           {hasBlockers
-            ? 'No se puede publicar: hay bloqueadores críticos sin resolver.'
+            ? t("uiExpr.no-se-puede-publicar-hay-blo.ac36a1")
             : needsApproval && !isApproved
-              ? 'Este perfil requiere aprobación formal antes de publicar.'
+              ? t("uiExpr.este-perfil-requiere-aprobac.840bca")
               : hasWarnings
-                ? 'El paquete tiene advertencias no críticas. Confirma con override para publicar.'
-                : 'El paquete está listo para publicarse.'}
+                ? t("uiExpr.el-paquete-tiene-advertencia.013095")
+                : t("uiExpr.el-paquete-esta-listo-para-p.4487b6")}
         </p>
         {hasWarnings && !hasBlockers && (
           <label className="mt-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
@@ -121,21 +123,21 @@ export const PublicationApprovalPanel: React.FC<PublicationApprovalPanelProps> =
               onChange={(e) => setOverride(e.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-primary-600 focus-visible:ring-2 focus-visible:ring-primary-500"
             />
-            Publicar aceptando las advertencias (override auditado)
+            {t("ui.publicar-aceptando-las-adver.f6c4a5")}
           </label>
         )}
         <div className="mt-2">
           <Button variant="primary" size="sm" disabled={!canPublish || busy}
             onClick={() => onPublish(override, comment)}
-            aria-label="Publicar el paquete">
-            Publicar paquete
+            aria-label={t("ui.publicar-el-paquete.23c949")}>
+            {t("ui.publicar-paquete.582ff9")}
           </Button>
         </div>
       </div>
 
-      <section aria-label="Historial de auditoría">
+      <section aria-label={t("ui.historial-de-auditoria.e7082d")}>
         <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-          Historial de auditoría ({pkg.auditTrail.length})
+          {t("ui.historial-de-auditoria.dbd186")}{pkg.auditTrail.length})
         </h3>
         <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto text-xs">
           {[...pkg.auditTrail].reverse().slice(0, 20).map((entry) => (
@@ -149,7 +151,7 @@ export const PublicationApprovalPanel: React.FC<PublicationApprovalPanelProps> =
             </li>
           ))}
           {pkg.auditTrail.length === 0 && (
-            <li className="text-slate-500 dark:text-slate-400">Sin entradas de auditoría.</li>
+            <li className="text-slate-500 dark:text-slate-400">{t("ui.sin-entradas-de-auditoria.78f2e2")}</li>
           )}
         </ul>
       </section>

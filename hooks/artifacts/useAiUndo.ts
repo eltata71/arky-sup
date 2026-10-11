@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import type { Artifact } from '../../lib/artifacts';
 import { useAppContext } from '../../context/AppContext';
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { useToast } from '../../context/ToastContext';
 import { useAriaAnnouncer } from '../useAriaAnnouncer';
 import {
@@ -29,6 +30,7 @@ export interface OfferAiUndoInput {
  */
 export function useAiUndo() {
   const { projects, restoreArtifactVersion } = useAppContext();
+  const t = useUiTranslation();
   const { addToast } = useToast();
   const { announce } = useAriaAnnouncer();
   const projectsRef = useRef(projects);
@@ -47,11 +49,11 @@ export function useAiUndo() {
     const restored = plan.drafts.map((draft) => restoreArtifactVersion(target.projectId, draft));
     aiUndoStore.clear(target.id);
     target.onUndone?.(restored);
-    const message = `Deshecho: ${target.label}. La versión anterior vuelve como versión nueva.`;
+    const message = t('uiDynamic.undoApplied', { label: target.label });
     addToast(message, 'info');
     announce(message);
     return true;
-  }, [addToast, announce, restoreArtifactVersion]);
+  }, [addToast, announce, restoreArtifactVersion, t]);
 
   /** Registra el cambio como el último deshacible y avisa con un botón. */
   const offerUndo = useCallback((input: OfferAiUndoInput, message: string) => {
@@ -59,10 +61,10 @@ export function useAiUndo() {
     aiUndoStore.set(created);
     addToast(message, 'success', {
       durationMs: UNDO_TOAST_MS,
-      action: { label: 'Deshacer', onClick: () => { undoEntry(created); } },
+      action: { label: t('Deshacer'), onClick: () => { undoEntry(created); } },
     });
     return created;
-  }, [addToast, undoEntry]);
+  }, [addToast, t, undoEntry]);
 
   /** El caso común: una versión nueva sobre un artefacto, y la pantalla pasa a mostrarla o a mostrar la restaurada. */
   const offerVersionUndo = useCallback((
@@ -78,11 +80,11 @@ export function useAiUndo() {
   const undoLast = useCallback((): boolean => {
     const last = aiUndoStore.get();
     if (!last) {
-      announce('No hay ningún cambio de la IA que deshacer.');
+      announce(t('uiDynamic.noUndo'));
       return false;
     }
     return undoEntry(last);
-  }, [announce, undoEntry]);
+  }, [announce, t, undoEntry]);
 
   return { offerUndo, offerVersionUndo, undoLast, canUndo: entry !== null, lastLabel: entry?.label ?? null };
 }
@@ -101,4 +103,3 @@ export function useAiUndoShortcut(): void {
     return () => window.removeEventListener('keydown', handler);
   }, [undoLast]);
 }
-

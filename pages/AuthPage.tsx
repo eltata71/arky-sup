@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * The door, and only the door.
  *
@@ -27,6 +28,7 @@ interface AuthError {
 type AuthMode = 'login' | 'recover' | 'setup-password';
 
 export const AuthPage: React.FC = () => {
+  const t = useUiTranslation();
   const [mode, setMode] = useState<AuthMode>(() => (
     isSupabasePasswordSetupCallback(window.location.hash) ? 'setup-password' : 'login'
   ));
@@ -70,7 +72,7 @@ export const AuthPage: React.FC = () => {
       navigate('/');
     } catch (err: unknown) {
       const authError = err as AuthError;
-      setError(authError.message || 'No se pudo iniciar en modo desarrollo');
+      setError(authError.message || t("uiMessage.no-se-pudo-iniciar-en-modo-d.d6a945"));
     }
   };
 
@@ -89,7 +91,7 @@ export const AuthPage: React.FC = () => {
       await loginWithGoogle();
     } catch (err: unknown) {
       const authError = err as AuthError;
-      setError(authError.message || 'No se pudo iniciar el acceso con Google.');
+      setError(authError.message || t("uiMessage.no-se-pudo-iniciar-el-acceso.bd76b8"));
     }
   };
 
@@ -104,7 +106,7 @@ export const AuthPage: React.FC = () => {
         await sendPasswordReset(email);
         // The same sentence whether or not that address exists. A recovery form
         // that says "no encontramos esa cuenta" tells a stranger who works here.
-        setNotice('Si esa dirección tiene una cuenta en Arky, le enviamos un enlace para restablecer la contraseña. Revisa también la carpeta de correo no deseado.');
+        setNotice(t('uiState.13'));
         setIsSubmitting(false);
         return;
       }
@@ -123,7 +125,7 @@ export const AuthPage: React.FC = () => {
       navigate('/');
     } catch (err: unknown) {
       const authError = err as AuthError;
-      setError(authError.message || 'No fue posible autenticar la cuenta');
+      setError(authError.message || t("uiMessage.no-fue-posible-autenticar-la.62b15b"));
     } finally {
       setIsSubmitting(false);
     }
@@ -139,13 +141,13 @@ export const AuthPage: React.FC = () => {
           <div className="relative z-10 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-semibold tracking-wide uppercase">
               <Sparkles className="h-3.5 w-3.5" />
-              Arquitectura con IA
+              {t("ui.arquitectura-con-ia.d9a109")}
             </div>
             <h1 className="text-4xl font-bold leading-tight">
-              Diseña soluciones que cuentan una historia técnica clara.
+              {t("ui.disena-soluciones-que-cuenta.e9e088")}
             </h1>
             <p className="text-primary-100 leading-relaxed">
-              Arky transforma ideas de arquitectura en decisiones trazables, artefactos accionables y colaboración de alto impacto.
+              {t("ui.arky-transforma-ideas-de-arq.96c6bf")}
             </p>
           </div>
 
@@ -171,15 +173,15 @@ export const AuthPage: React.FC = () => {
               </div>
               <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
                 {mode === 'login'
-                  ? 'Bienvenido de nuevo'
-                  : mode === 'recover' ? 'Recupera tu acceso' : 'Define tu contraseña'}
+                  ? t("uiExpr.bienvenido-de-nuevo.ca2fbf")
+                  : mode === 'recover' ? t("uiExpr.recupera-tu-acceso.30800b") : t("uiExpr.define-tu-contrasena.a81393")}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {mode === 'login'
-                  ? 'Accede y continúa construyendo arquitectura de clase mundial.'
+                  ? t("uiExpr.accede-y-continua-construyen.e3ffb3")
                   : mode === 'recover'
-                    ? 'Te enviamos un enlace al correo con el que fue creada tu cuenta.'
-                    : 'Elige una contraseña personal para terminar de activar tu acceso al piloto.'}
+                    ? t("uiExpr.te-enviamos-un-enlace-al-cor.38505c")
+                    : t("uiExpr.elige-una-contrasena-persona.51c15e")}
               </p>
             </div>
 
@@ -191,8 +193,8 @@ export const AuthPage: React.FC = () => {
               )}
               {contextError && !error && (
                 <div className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 p-4 rounded-lg text-sm text-center border border-amber-200 dark:border-amber-800">
-                  <p className="font-semibold mb-1">Aviso</p>
-                  <p>{contextError}</p>
+                  <p className="font-semibold mb-1">{t("ui.aviso.456ab5")}</p>
+                  <p>{contextError.startsWith('uiMessage.') ? t(contextError) : contextError}</p>
                 </div>
               )}
               {notice && (
@@ -204,7 +206,7 @@ export const AuthPage: React.FC = () => {
               <div className="rounded-md shadow-sm space-y-4">
                 {mode !== 'setup-password' && (
                 <div>
-                  <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo electrónico</label>
+                  <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("ui.correo-electronico.59a167")}</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-5 w-5 text-gray-400" />
@@ -214,7 +216,7 @@ export const AuthPage: React.FC = () => {
                       type="email"
                       required
                       className="appearance-none rounded-lg relative block w-full px-3 py-2.5 pl-10 border border-gray-300 dark:border-gray-700 placeholder-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="tu@empresa.com"
+                      placeholder={t("ui.tu-empresa-com.7b77ad")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
@@ -225,7 +227,7 @@ export const AuthPage: React.FC = () => {
                 {mode !== 'recover' && (
                 <div>
                   <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {mode === 'setup-password' ? 'Nueva contraseña' : 'Contraseña'}
+                    {mode === 'setup-password' ? t("uiExpr.nueva-contrasena.5c4fd9") : t("ui.contrasena.5a6d1c")}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -248,7 +250,7 @@ export const AuthPage: React.FC = () => {
                     onClick={() => { setMode('recover'); setError(''); setNotice(''); }}
                     className="mt-2 text-xs text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                   >
-                    ¿Olvidaste tu contraseña?
+                    {t("ui.olvidaste-tu-contrasena.28ca3f")}
                   </button>
                   )}
                 </div>
@@ -256,7 +258,7 @@ export const AuthPage: React.FC = () => {
 
                 {mode === 'setup-password' && (
                 <div>
-                  <label htmlFor="auth-password-confirmation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirma la contraseña</label>
+                  <label htmlFor="auth-password-confirmation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("ui.confirma-la-contrasena.eac658")}</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" />
@@ -272,7 +274,7 @@ export const AuthPage: React.FC = () => {
                       onChange={(e) => setPasswordConfirmation(e.target.value)}
                     />
                   </div>
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Usa al menos 12 caracteres.</p>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{t("ui.usa-al-menos-12-caracteres.b4db5e")}</p>
                 </div>
                 )}
               </div>
@@ -283,8 +285,8 @@ export const AuthPage: React.FC = () => {
                 className="group relative w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 transition-all active:scale-[0.98] shadow-sm hover:shadow-md"
               >
                 {isSubmitting
-                  ? 'Enviando…'
-                  : mode === 'login' ? 'Iniciar sesión' : mode === 'recover' ? 'Enviarme el enlace' : 'Guardar contraseña y activar acceso'}
+                  ? t("uiExpr.enviando.5e91dc")
+                  : mode === 'login' ? t("uiExpr.iniciar-sesion.9c18b1") : mode === 'recover' ? t("uiExpr.enviarme-el-enlace.25aef7") : t("uiExpr.guardar-contrasena-y-activar.106f82")}
               </button>
             </form>
 
@@ -302,7 +304,7 @@ export const AuthPage: React.FC = () => {
                     <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">o continúa con</span>
+                    <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">{t("ui.o-continua-con.aa4f7a")}</span>
                   </div>
                 </div>
 
@@ -319,12 +321,11 @@ export const AuthPage: React.FC = () => {
                     <path fill="#FBBC05" d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56V6.61H1.26a12 12 0 0 0 0 10.78l4.01-3.11Z" />
                     <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.26 6.61l4.01 3.11C6.22 6.86 8.87 4.75 12 4.75Z" />
                   </svg>
-                  Continuar con Google
+                  {t("ui.continuar-con-google.4943a6")}
                 </button>
 
                 <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                  Puedes usar una cuenta personal de Google o la de tu organización.
-                  Entrar con Google no crea una cuenta en Arky: un administrador debe darte de alta antes.
+                  {t("ui.puedes-usar-una-cuenta-perso.7f574b")}
                 </p>
               </>
             )}
@@ -336,7 +337,7 @@ export const AuthPage: React.FC = () => {
                 <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">o continúa con</span>
+                <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">{t("ui.o-continua-con.aa4f7a")}</span>
               </div>
             </div>
 
@@ -346,7 +347,7 @@ export const AuthPage: React.FC = () => {
                 className="w-full flex items-center justify-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               >
                 <Shield className="h-5 w-5 mr-2" />
-                Entrar como Administrador (Modo Desarrollo)
+                {t("ui.entrar-como-administrador-mo.c22f66")}
               </button>
             </div>
 
@@ -357,14 +358,13 @@ export const AuthPage: React.FC = () => {
                   className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Volver a iniciar sesión
+                  {t("ui.volver-a-iniciar-sesion.1e59a9")}
                 </button>
               )}
               {/* No hay registro público, y se dice en lugar de dejar al visitante
                   buscando el enlace que ya no existe. */}
               <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                Las cuentas de Arky las crea un administrador. Si aún no tienes acceso,
-                solicítalo a quien administra la herramienta en tu organización.
+                {t("ui.las-cuentas-de-arky-las-crea.ccaa97")}
               </p>
             </div>
             </>

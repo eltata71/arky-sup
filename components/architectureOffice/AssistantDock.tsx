@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The Office assistant, wherever the user is standing.
  *
@@ -76,6 +77,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
   suggestions = [],
   className,
 }) => {
+  const t = useUiTranslation();
   const [input, setInput] = useState('');
   const [turns, setTurns] = useState<DockTurn[]>([]);
   const [events, setEvents] = useState<CoordinationEvent[]>([]);
@@ -217,13 +219,13 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
               variant="ghost"
               size="sm"
               iconOnly
-              aria-label={panelVisible ? 'Ocultar el panel de coordinación' : 'Mostrar el panel de coordinación'}
+              aria-label={panelVisible ? t("uiExpr.ocultar-el-panel-de-coordina.0bdc6d") : t("uiExpr.mostrar-el-panel-de-coordina.1c4083")}
               onClick={() => setPanelVisible((visible) => !visible)}
               className="hidden lg:inline-flex"
             >
               {panelVisible ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="sm" iconOnly aria-label="Cerrar" onClick={onClose}>
+            <Button variant="ghost" size="sm" iconOnly aria-label={t("sdd.close")} onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -243,9 +245,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
               {rendered.length === 0 && (
                 <div className="rounded-2xl border border-dashed border-gray-300 p-5 dark:border-gray-700">
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Pide lo que necesites. No responde un agente suelto: la solicitud entra por la
-                    Oficina, se reparte entre los especialistas del dominio y se consolida en una
-                    recomendación firmada.
+                    {t("ui.pide-lo-que-necesites-no-res.0f6a9b")}
                   </p>
                   {suggestions.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -294,8 +294,8 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                           className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-2xs font-medium text-gray-500 transition-colors hover:bg-gray-200/60 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
                         >
                           {copiedTurn === turn.id
-                            ? <><Check className="h-3 w-3" aria-hidden /> Copiada</>
-                            : <><Copy className="h-3 w-3" aria-hidden /> Copiar respuesta</>}
+                            ? <><Check className="h-3 w-3" aria-hidden /> {t("ui.copiada.26e35a")}</>
+                            : <><Copy className="h-3 w-3" aria-hidden /> {t("ui.copiar-respuesta.40dc31")}</>}
                         </button>
                         {(turn.status === 'failed' || turn.status === 'partial') && lastRequest && (
                           <button
@@ -305,7 +305,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                             className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-2xs font-medium text-gray-500 transition-colors hover:bg-gray-200/60 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
                           >
                             <RotateCcw className="h-3 w-3" aria-hidden />
-                            Reintentar con el equipo
+                            {t("ui.reintentar-con-el-equipo.cc427b")}
                           </button>
                         )}
                       </div>
@@ -315,14 +315,14 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                         report, and the recommendation was signed without them. */}
                     {turn.status === 'partial' && (
                       <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1 text-2xs font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                        Recomendación parcial: algún especialista no pudo entregar su análisis.
+                        {t("ui.recomendacion-parcial-algun.e57a1f")}
                       </p>
                     )}
 
                     {turn.contributions && turn.contributions.length > 0 && (
                       <details className="mt-2">
                         <summary className="cursor-pointer text-2xs font-medium text-gray-500 dark:text-gray-400">
-                          Ver los {turn.contributions.length} análisis que la sustentan
+                          {t("ui.ver-los.17cbfb")} {turn.contributions.length} {t("ui.analisis-que-la-sustentan.92f9da")}
                         </summary>
                         <div className="mt-2 space-y-2">
                           {turn.contributions.map((contribution) => (
@@ -331,7 +331,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                                 <PersonaAvatar personaId={contribution.personaId} size="xs" decorative />
                                 {OFFICE_AGENT_PERSONAS[contribution.personaId].alias} · {OFFICE_AGENT_PERSONAS[contribution.personaId].role}
                                 {contribution.status === 'failed' && (
-                                  <span className="text-[#dc2626] dark:text-[#ef4444]">· no entregó</span>
+                                  <span className="text-[#dc2626] dark:text-[#ef4444]">{t("ui.no-entrego.f52d6b")}</span>
                                 )}
                               </p>
                               <p className="mt-0.5 whitespace-pre-wrap text-2xs text-gray-600 dark:text-gray-300">
@@ -349,7 +349,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
               {running && (
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400" role="status">
                   <Spinner />
-                  La Oficina está coordinando al equipo…
+                  {t("ui.la-oficina-esta-coordinando.40edcb")}
                 </div>
               )}
             </div>
@@ -368,12 +368,12 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                   }
                 }}
                 rows={2}
-                aria-label="Solicitud para el equipo de arquitectura"
-                placeholder={`Pide algo sobre ${scope.name}…`}
+                aria-label={t("ui.solicitud-para-el-equipo-de.47b51b")}
+                placeholder={t("uiTemplate.pide-algo-sobre-p0.46f7f1", { p0: String(scope.name) })}
                 className="min-h-[44px] flex-1 resize-none rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               />
               <Button type="submit" variant="primary" disabled={running || input.trim().length === 0}>
-                Enviar
+                {t("send")}
               </Button>
             </form>
           </div>
@@ -381,7 +381,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
           {/* Coordination — the reason this is a dock and not a chat bubble. */}
           {panelVisible && (
             <aside
-              aria-label="Coordinación del equipo"
+              aria-label={t("ui.coordinacion-del-equipo.327258")}
               className="hidden min-h-0 overflow-y-auto border-l border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-gray-900/40 lg:block"
             >
               <TeamCoordinationPanel

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * El seguimiento del proyecto de arquitectura: en qué estado está, cuánto ha
  * avanzado, qué se ha comprometido y qué puede pararlo.
@@ -69,6 +70,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
   onPatch,
   busy,
 }) => {
+  const translateConfig = useUiTranslation();
   const { t } = useAppContext();
   const tracking = project.attention ?? BASE_TRACKING;
   const progress = attentionProgress(project.attention);
@@ -124,13 +126,13 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
   return (
     <SectionCard
       icon={CalendarClock}
-      title="Seguimiento"
-      hint="En qué estado está, cuánto ha avanzado y para cuándo se ha comprometido."
+      title={t("ui.seguimiento.42b94f")}
+      hint={t("En qué estado está, cuánto ha avanzado y para cuándo se ha comprometido.")}
     >
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <label htmlFor="attention-status" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Estado
+            {t("diagramInspector.status")}
           </label>
           <select
             id="attention-status"
@@ -146,7 +148,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
         </div>
         <div className="space-y-1">
           <label htmlFor="attention-priority" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Prioridad
+            {t("mem.priority")}
           </label>
           <select
             id="attention-priority"
@@ -164,13 +166,13 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
 
       <div className="space-y-1">
         <label htmlFor="attention-lead" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-          Arquitecto responsable
+          {t("ui.arquitecto-responsable.decd0e")}
         </label>
         <Input
           id="attention-lead"
           value={leadDraft ?? tracking.architectureLead ?? ''}
           disabled={busy}
-          placeholder="Quién responde por esta arquitectura"
+          placeholder={t("ui.quien-responde-por-esta-arqu.bc6a51")}
           onChange={(event) => setLeadDraft(event.target.value)}
           onBlur={() => {
             if (leadDraft !== null && leadDraft.trim() !== (tracking.architectureLead ?? '')) {
@@ -184,7 +186,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <label htmlFor="attention-start" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Inicio
+            {t("ui.inicio.4f70d8")}
           </label>
           <input
             id="attention-start"
@@ -197,7 +199,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
         </div>
         <div className="space-y-1">
           <label htmlFor="attention-target" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Fecha objetivo
+            {t("ui.fecha-objetivo.c69014")}
           </label>
           <input
             id="attention-target"
@@ -213,11 +215,11 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2">
           <label htmlFor="attention-progress" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Avance declarado
+            {t("ui.avance-declarado.0f376f")}
           </label>
           <span className="text-2xs text-gray-500 dark:text-gray-400">
             {progress === null
-              ? 'Sin declarar'
+              ? t("uiExpr.sin-declarar.597727")
               : `${Math.round(progress.value * 100)} %${progress.source === 'milestones' ? ' (deducido de los hitos)' : ''}`}
           </span>
         </div>
@@ -238,20 +240,20 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
             onClick={() => patch({ progress: undefined })}
             className="text-2xs font-medium text-gray-500 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-400"
           >
-            Quitar el avance declarado (volver a deducirlo de los hitos)
+            {t("ui.quitar-el-avance-declarado-v.5d0344")}
           </button>
         )}
       </div>
 
       <div className="space-y-1">
         <label htmlFor="attention-health-note" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-          Nota de situación
+          {t("ui.nota-de-situacion.1c6eba")}
         </label>
         <textarea
           id="attention-health-note"
           rows={2}
           disabled={busy}
-          placeholder="Una línea sobre por qué el proyecto está donde está"
+          placeholder={t("ui.una-linea-sobre-por-que-el-p.d667d6")}
           className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm leading-relaxed text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           value={noteDraft ?? tracking.healthNote ?? ''}
           onChange={(event) => setNoteDraft(event.target.value)}
@@ -267,10 +269,10 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
       {/* Hitos */}
       <div className="space-y-1.5 border-t border-gray-100 pt-3 dark:border-gray-800">
         <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-          Hitos comprometidos
+          {t("ui.hitos-comprometidos.e212d2")}
         </p>
         {milestones.length === 0
-          ? <EmptyRow>Sin hitos. Sin ellos, el avance sólo puede declararse a mano.</EmptyRow>
+          ? <EmptyRow>{t("ui.sin-hitos-sin-ellos-el-avanc.9d6a69")}</EmptyRow>
           : (
             <ul className="space-y-1">
               {milestones.map((entry) => (
@@ -280,10 +282,10 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
                     <span className="text-2xs text-gray-500 dark:text-gray-400">{entry.dueAt.slice(0, 10)}</span>
                   </span>
                   <Badge tone={ATTENTION_MILESTONE_TONES[entry.status]} size="xs">
-                    {ATTENTION_MILESTONE_LABELS[entry.status]}
+                    {translateConfig(ATTENTION_MILESTONE_LABELS[entry.status])}
                   </Badge>
                   <select
-                    aria-label={`Estado del hito ${entry.name}`}
+                    aria-label={t("uiTemplate.estado-del-hito-p0.cdbc49", { p0: String(entry.name) })}
                     className={selectClass}
                     value={entry.status}
                     disabled={busy}
@@ -294,7 +296,7 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
                     ))}
                   </select>
                   <RemoveButton
-                    label={`Quitar el hito ${entry.name}`}
+                    label={t("uiTemplate.quitar-el-hito-p0.25f35f", { p0: String(entry.name) })}
                     disabled={busy}
                     onClick={() => patch({ milestones: milestones.filter((item) => item.id !== entry.id) })}
                   />
@@ -304,15 +306,15 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
           )}
         <div className="flex gap-2">
           <Input
-            aria-label="Ej. Arquitectura de destino aprobada"
-            placeholder="Ej. Arquitectura de destino aprobada"
+            aria-label={t("ui.ej-arquitectura-de-destino-a.bac6a8")}
+            placeholder={t("ui.ej-arquitectura-de-destino-a.bac6a8")}
             className="flex-1"
             value={milestone.name}
             onChange={(event) => setMilestone((draft) => ({ ...draft, name: event.target.value }))}
           />
           <input
             type="date"
-            aria-label="Fecha del hito"
+            aria-label={t("iniPanel.milestoneDate")}
             className={selectClass}
             value={milestone.dueAt}
             onChange={(event) => setMilestone((draft) => ({ ...draft, dueAt: event.target.value }))}
@@ -333,10 +335,10 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
       <div className="space-y-1.5 border-t border-gray-100 pt-3 dark:border-gray-800">
         <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
           <ShieldAlert className="h-3.5 w-3.5" aria-hidden />
-          Riesgos del proyecto
+          {t("ui.riesgos-del-proyecto.97aed7")}
         </p>
         {risks.length === 0
-          ? <EmptyRow>Sin riesgos registrados. Los altos y críticos los hereda la iniciativa.</EmptyRow>
+          ? <EmptyRow>{t("ui.sin-riesgos-registrados-los.a32d55")}</EmptyRow>
           : (
             <ul className="space-y-1">
               {risks.map((entry: AttentionRisk) => (
@@ -345,10 +347,10 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
                     {entry.description}
                   </span>
                   <Badge tone={ATTENTION_RISK_TONES[entry.level]} size="xs">
-                    {ATTENTION_RISK_LABELS[entry.level]}
+                    {translateConfig(ATTENTION_RISK_LABELS[entry.level])}
                   </Badge>
                   <RemoveButton
-                    label={`Quitar el riesgo ${entry.description}`}
+                    label={t("uiTemplate.quitar-el-riesgo-p0.99a13d", { p0: String(entry.description) })}
                     disabled={busy}
                     onClick={() => patch({ risks: risks.filter((item) => item.id !== entry.id) })}
                   />
@@ -358,14 +360,14 @@ export const AttentionTrackingPanel: React.FC<AttentionTrackingPanelProps> = ({
           )}
         <div className="flex gap-2">
           <Input
-            aria-label="Ej. El proveedor del core no confirma la ventana de migración"
-            placeholder="Ej. El proveedor del core no confirma la ventana de migración"
+            aria-label={t("ui.ej-el-proveedor-del-core-no.e69637")}
+            placeholder={t("ui.ej-el-proveedor-del-core-no.e69637")}
             className="flex-1"
             value={risk.description}
             onChange={(event) => setRisk((draft) => ({ ...draft, description: event.target.value }))}
           />
           <select
-            aria-label="Nivel del riesgo"
+            aria-label={t("iniPanel.riskLevel")}
             className={selectClass}
             value={risk.level}
             onChange={(event) => setRisk((draft) => ({ ...draft, level: event.target.value as AttentionRiskLevel }))}

@@ -801,7 +801,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 12.5 Barras por intención | Pendiente | |
 | 13.0 axe y regresión visual | Hecha (#169) | axe y regresión visual en E2E con referencias medidas en CI. Cerró también un defecto real: el enlace profundo `?artifact=` no reintentaba la hidratación si el portafolio llegaba tras montar `Workspace` (`useProjectArtifacts` depende ahora de la llegada del proyecto) |
 | 13.1 Movimiento reducido | Hecha | `MotionConfig reducedMotion="user"` en la raíz, `MOTION` en `lib/designTokens.ts` como fuente única de duraciones y curvas, y un escáner que impide literales en `motion/react` |
-| 13.2 Idioma | En curso (R-16: B, tamaño L) | Infraestructura entregada: un módulo por idioma e inglés lazy. El presupuesto monótono de literales JSX pasó de 1 321 a 1 094 en `main` y a 1 008 en el lote del ProjectHub y los inspectores de diagrama. Falta la extracción hasta 0 y la revisión de cadenas dentro de expresiones JSX, que el contador actual no incluye. |
+| 13.2 Idioma | Hecha en rama (R-16: B, tamaño L) | Diccionarios `es`/`en` con las mismas claves e inglés diferido; JSX estático, expresiones JSX y propiedades visibles de componentes con presupuesto AST 0. También se extrajeron avisos, errores, estados y etiquetas de configuración. Las 5.694 pruebas de Vitest pasan (606 archivos); TypeScript, lint y límites de módulos pasan. El escáner regex heredado conserva 23 coincidencias de sintaxis o marca fija. Publicación pendiente del flujo PR → `main` → CI. |
 | 13.3 Primitivas | Hecha | #187 |
 | 13.4 Estados vacío, carga y error | Pendiente | |
 | 13.5 Microinteracciones | Pendiente | |

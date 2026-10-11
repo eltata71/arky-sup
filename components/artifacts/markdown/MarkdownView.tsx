@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
@@ -54,14 +55,14 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
   onChangePageSize,
   onChangeZoom,
   onChangeTheme,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <div className={`flex-1 flex flex-col min-h-0 overflow-hidden animate-fade-in ${theme === 'dark' ? 'bg-gray-950' : 'bg-gray-100 dark:bg-gray-800'}`}>
     <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-2 px-4 md:px-8 py-3 border-b border-gray-200 dark:border-gray-800 bg-white/85 dark:bg-gray-950/80 backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <DocumentTextIcon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
         <div>
-          <h3 id="markdown-view-title" className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">Vista Markdown (.md)</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">Formato listo para compartir con el equipo de desarrollo</p>
+          <h3 id="markdown-view-title" className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{t("ui.vista-markdown-md.739fd3")}</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">{t("ui.formato-listo-para-compartir.3489a2")}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -69,32 +70,32 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
           <button
             onClick={() => onToggleSource(false)}
             className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${!showSource ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200'}`}
-          >Vista previa</button>
+          >{t("ui.vista-previa.432932")}</button>
           <button
             onClick={() => onToggleSource(true)}
             className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${showSource ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-200'}`}
-          >Fuente</button>
+          >{t("ui.fuente.f00fca")}</button>
         </div>
         <button
           onClick={onCopyMarkdown}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           {markdownCopied ? <CheckCircleIcon className="w-4 h-4 text-green-500" /> : <Square2StackIcon className="w-4 h-4" />}
-          {markdownCopied ? 'Copiado' : 'Copiar Markdown'}
+          {markdownCopied ? t("ui.copiado.9e4170") : t("uiExpr.copiar-markdown.c60448")}
         </button>
         <button
           onClick={onDownloadMarkdown}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
         >
           <ArrowUpTrayIcon className="w-4 h-4" />
-          Descargar .md
+          {t("ui.descargar-md.ea774f")}
         </button>
       </div>
     </div>
     {representation === 'diagram' && (
       <div className="flex-shrink-0 px-4 md:px-8 py-2 bg-blue-50 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/40 text-xs text-blue-800 dark:text-blue-200 flex items-start gap-2">
         <LightBulbIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
-        <span>Este artefacto es un diagrama. El Markdown incluye su código fuente como bloque <code className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">```mermaid```</code> para que pueda renderizarse en cualquier visor Markdown.</span>
+        <span>{t("ui.este-artefacto-es-un-diagram.38327f")} <code className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">{t("ui.mermaid.986b49")}</code> {t("ui.para-que-pueda-renderizarse.8ec737")}</span>
       </div>
     )}
     {!showSource && (
@@ -111,8 +112,8 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
     <ErrorBoundary
       fallback={(error, reset) => (
         <ViewerCrashFallback
-          title="La vista Markdown falló al renderizar"
-          viewerLabel="Markdown"
+          title={t("ui.la-vista-markdown-fallo-al-r.1852a6")}
+          viewerLabel={t("Markdown")}
           error={error}
           onReset={reset}
         />
@@ -127,6 +128,6 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
       </div>
     </ErrorBoundary>
   </div>
-);
+); };
 
 export default MarkdownView;

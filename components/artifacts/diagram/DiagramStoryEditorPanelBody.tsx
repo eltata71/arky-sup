@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useId, useState } from 'react';
 import type { Artifact } from '../../../lib/artifacts';
 import type { DiagramScene } from '../../../lib/diagram';
@@ -43,6 +44,8 @@ const DiagramStoryEditorPanelBody: React.FC<DiagramStoryEditorPanelBodyProps> = 
   artifact,
   onVersionCreated,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const { restoreArtifactVersion } = useAppContext();
   const { addToast } = useToast();
   const editor = useDiagramStoryEditor({ projectId, artifact, restoreArtifactVersion });
@@ -54,17 +57,17 @@ const DiagramStoryEditorPanelBody: React.FC<DiagramStoryEditorPanelBodyProps> = 
       addToast(result.reason, 'warning');
       return;
     }
-    addToast(`Historia guardada: ${result.summary.length} cambio${result.summary.length === 1 ? '' : 's'}. La versión anterior queda en el historial.`, 'success');
+    addToast(t("uiMessage.historia-guardada-p0-cambio.e58944", { p0: String(result.summary.length), p1: String(result.summary.length === 1 ? '' : 's') }), 'success');
     onVersionCreated(result.versionId);
     onClose();
   };
 
   const footer = editor.pending > 0 ? (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-gray-500 dark:text-gray-400">{editor.pending} cambio{editor.pending === 1 ? '' : 's'} sin guardar</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{editor.pending} {t("ui.cambio.93cf09")}{editor.pending === 1 ? '' : 's'} {t("ui.sin-guardar.e62b07")}</span>
       <div className="flex gap-2">
-        <Button variant="ghost" onClick={editor.discard}>Descartar</Button>
-        <Button variant="primary" onClick={handleSave}>Guardar como versión nueva</Button>
+        <Button variant="ghost" onClick={editor.discard}>{t("ui.descartar.63a77c")}</Button>
+        <Button variant="primary" onClick={handleSave}>{t("ui.guardar-como-version-nueva.64c351")}</Button>
       </div>
     </div>
   ) : undefined;
@@ -73,20 +76,20 @@ const DiagramStoryEditorPanelBody: React.FC<DiagramStoryEditorPanelBodyProps> = 
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Editar historia"
-      description="Qué cuenta el diagrama y en qué orden lo recorre el modo presentación."
+      title={t("ui.editar-historia.bcf63a")}
+      description={t("Qué cuenta el diagrama y en qué orden lo recorre el modo presentación.")}
       size="md"
       footer={footer}
     >
       {!draft ? (
-        <Alert tone="neutral" title="No hay diagrama">
-          Este artefacto no tiene un diagrama estructurado sobre el que escribir una historia.
+        <Alert tone="neutral" title={t("ui.no-hay-diagrama.8ea06b")}>
+          {t("ui.este-artefacto-no-tiene-un-d.ae23b4")}
         </Alert>
       ) : (
         <div className="space-y-6">
           <div className="flex items-start gap-2">
-            <Badge tone={AUTHORSHIP[draft.authorship].tone}>{AUTHORSHIP[draft.authorship].label}</Badge>
-            <p className="text-xs text-gray-600 dark:text-gray-300">{AUTHORSHIP[draft.authorship].hint}</p>
+            <Badge tone={AUTHORSHIP[draft.authorship].tone}>{translateConfig(AUTHORSHIP[draft.authorship].label)}</Badge>
+            <p className="text-xs text-gray-600 dark:text-gray-300">{translateConfig(AUTHORSHIP[draft.authorship].hint)}</p>
           </div>
           <div role="status" aria-live="polite">
             {editor.lastRejection && <p className="text-xs text-amber-700 dark:text-amber-300">{editor.lastRejection}</p>}
@@ -101,17 +104,18 @@ const DiagramStoryEditorPanelBody: React.FC<DiagramStoryEditorPanelBodyProps> = 
 };
 
 const MessageField: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draft, editor }) => {
+  const t = useUiTranslation();
   const id = useId();
   return (
     <section>
-      <label htmlFor={id} className={SECTION}>Mensaje principal</label>
+      <label htmlFor={id} className={SECTION}>{t("ui.mensaje-principal.f6a749")}</label>
       <textarea
         id={id}
         key={draft.message}
         defaultValue={draft.message}
         rows={2}
         maxLength={280}
-        placeholder="La frase que el diagrama defiende. Ej.: «Toda reserva pasa por una única API que audita el acceso»."
+        placeholder={t("ui.la-frase-que-el-diagrama-def.33aba4")}
         onBlur={(event) => { if (event.target.value.trim() !== draft.message) editor.setMessage(event.target.value); }}
         className={FIELD}
       />
@@ -120,6 +124,7 @@ const MessageField: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draft, 
 };
 
 const ScenesSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draft, editor }) => {
+  const t = useUiTranslation();
   const [title, setTitle] = useState('');
   const id = useId();
   const add = () => {
@@ -127,9 +132,9 @@ const ScenesSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draft,
   };
   return (
     <section aria-labelledby={`${id}-h`}>
-      <h3 id={`${id}-h`} className={SECTION}>Escenas ({draft.scenes.length})</h3>
+      <h3 id={`${id}-h`} className={SECTION}>{t("ui.escenas.9148e4")}{draft.scenes.length})</h3>
       {draft.scenes.length === 0 && (
-        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">Sin escenas escritas. Cada escena enfoca unos nodos y dice qué deben ver.</p>
+        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">{t("ui.sin-escenas-escritas-cada-es.3f002a")}</p>
       )}
       <ol className="space-y-3">
         {draft.scenes.map((scene, index) => (
@@ -137,16 +142,16 @@ const ScenesSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draft,
         ))}
       </ol>
       <div className="mt-3 flex gap-2">
-        <label htmlFor={id} className="sr-only">Título de la nueva escena</label>
+        <label htmlFor={id} className="sr-only">{t("ui.titulo-de-la-nueva-escena.e22400")}</label>
         <input
           id={id}
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); add(); } }}
-          placeholder="Título de la nueva escena"
+          placeholder={t("ui.titulo-de-la-nueva-escena.e22400")}
           className={FIELD}
         />
-        <Button variant="secondary" onClick={add} leftIcon={<PlusIcon className="h-4 w-4" />}>Añadir</Button>
+        <Button variant="secondary" onClick={add} leftIcon={<PlusIcon className="h-4 w-4" />}>{t("ui.anadir.41261d")}</Button>
       </div>
     </section>
   );
@@ -155,6 +160,7 @@ const ScenesSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draft,
 const SceneItem: React.FC<{ scene: DiagramScene; index: number; total: number; draft: StoryDraft; editor: Editor }> = ({
   scene, index, total, draft, editor,
 }) => {
+  const t = useUiTranslation();
   const titleId = useId();
   const insightId = useId();
   const focus = new Set(scene.focusNodeIds ?? []);
@@ -166,7 +172,7 @@ const SceneItem: React.FC<{ scene: DiagramScene; index: number; total: number; d
     <li className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-gray-500 dark:text-gray-400" aria-hidden="true">{index + 1}.</span>
-        <label htmlFor={titleId} className="sr-only">Título de la escena {index + 1}</label>
+        <label htmlFor={titleId} className="sr-only">{t("ui.titulo-de-la-escena.5c8b89")} {index + 1}</label>
         <input
           id={titleId}
           key={scene.title}
@@ -174,17 +180,17 @@ const SceneItem: React.FC<{ scene: DiagramScene; index: number; total: number; d
           onBlur={(event) => { if (event.target.value.trim() && event.target.value.trim() !== scene.title) editor.renameScene(scene.id, event.target.value); }}
           className={FIELD}
         />
-        <IconButton label={`Subir la escena ${index + 1}`} disabled={index === 0} onClick={() => editor.moveScene(scene.id, index - 1)}>
+        <IconButton label={t("uiTemplate.subir-la-escena-p0.f806f4", { p0: String(index + 1) })} disabled={index === 0} onClick={() => editor.moveScene(scene.id, index - 1)}>
           <ArrowLeftIcon className="h-4 w-4 rotate-90" />
         </IconButton>
-        <IconButton label={`Bajar la escena ${index + 1}`} disabled={index === total - 1} onClick={() => editor.moveScene(scene.id, index + 1)}>
+        <IconButton label={t("uiTemplate.bajar-la-escena-p0.350c83", { p0: String(index + 1) })} disabled={index === total - 1} onClick={() => editor.moveScene(scene.id, index + 1)}>
           <ArrowRightIcon className="h-4 w-4 rotate-90" />
         </IconButton>
-        <IconButton label={`Eliminar la escena ${index + 1}`} onClick={() => editor.removeScene(scene.id)}>
+        <IconButton label={t("uiTemplate.eliminar-la-escena-p0.89bd98", { p0: String(index + 1) })} onClick={() => editor.removeScene(scene.id)}>
           <TrashIcon className="h-4 w-4" />
         </IconButton>
       </div>
-      <label htmlFor={insightId} className="mt-2 block text-xs text-gray-600 dark:text-gray-300">Qué debe ver quien mira</label>
+      <label htmlFor={insightId} className="mt-2 block text-xs text-gray-600 dark:text-gray-300">{t("ui.que-debe-ver-quien-mira.4e0823")}</label>
       <textarea
         id={insightId}
         key={scene.insight ?? ''}
@@ -194,7 +200,7 @@ const SceneItem: React.FC<{ scene: DiagramScene; index: number; total: number; d
         className={`${FIELD} mt-1`}
       />
       <fieldset className="mt-2">
-        <legend className="text-xs text-gray-600 dark:text-gray-300">Enfoca ({focus.size})</legend>
+        <legend className="text-xs text-gray-600 dark:text-gray-300">{t("ui.enfoca.f7516d")}{focus.size})</legend>
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
           {draft.nodes.map((node) => (
             <label key={node.id} className="inline-flex items-center gap-1 text-xs text-gray-700 dark:text-gray-200">
@@ -215,6 +221,8 @@ const SEVERITIES = [
 ] as const;
 
 const CalloutsSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draft, editor }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const id = useId();
   const targets = [...draft.nodes, ...draft.edges];
   const [targetId, setTargetId] = useState(targets[0]?.id ?? '');
@@ -226,7 +234,7 @@ const CalloutsSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draf
   };
   return (
     <section aria-labelledby={`${id}-h`}>
-      <h3 id={`${id}-h`} className={SECTION}>Anotaciones ({draft.callouts.length})</h3>
+      <h3 id={`${id}-h`} className={SECTION}>{t("ui.anotaciones.ece10e")}{draft.callouts.length})</h3>
       <ul className="space-y-2">
         {draft.callouts.map((callout) => (
           <li key={callout.id} className="flex items-start justify-between gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm dark:bg-gray-800/60">
@@ -234,7 +242,7 @@ const CalloutsSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draf
               <span className="font-medium text-gray-800 dark:text-gray-100">{labelOf.get(callout.targetId) ?? callout.targetId}:</span>{' '}
               <span className="text-gray-700 dark:text-gray-200">{callout.text}</span>
             </span>
-            <IconButton label={`Quitar la anotación sobre ${labelOf.get(callout.targetId) ?? callout.targetId}`} onClick={() => editor.removeCallout(callout.id)}>
+            <IconButton label={t("uiTemplate.quitar-la-anotacion-sobre-p0.56f4e9", { p0: String(labelOf.get(callout.targetId) ?? callout.targetId) })} onClick={() => editor.removeCallout(callout.id)}>
               <TrashIcon className="h-4 w-4" />
             </IconButton>
           </li>
@@ -242,24 +250,24 @@ const CalloutsSection: React.FC<{ draft: StoryDraft; editor: Editor }> = ({ draf
       </ul>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-xs text-gray-600 dark:text-gray-300">
-          Sobre
+          {t("ui.sobre.239302")}
           <select value={targetId} onChange={(event) => setTargetId(event.target.value)} className={`${FIELD} mt-1`}>
             {targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}
           </select>
         </label>
         <label className="text-xs text-gray-600 dark:text-gray-300">
-          Importancia
+          {t("ui.importancia.bc4d51")}
           <select value={severity} onChange={(event) => setSeverity(event.target.value as typeof severity)} className={`${FIELD} mt-1`}>
-            {SEVERITIES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            {SEVERITIES.map((option) => <option key={option.value} value={option.value}>{translateConfig(option.label)}</option>)}
           </select>
         </label>
         <label className="text-xs text-gray-600 dark:text-gray-300 sm:col-span-2">
-          Lo que no hay que perderse
+          {t("ui.lo-que-no-hay-que-perderse.fc7fb4")}
           <input value={text} maxLength={160} onChange={(event) => setText(event.target.value)} className={`${FIELD} mt-1`} />
         </label>
       </div>
       <Button className="mt-2" variant="secondary" disabled={!text.trim() || !targetId} onClick={add} leftIcon={<PlusIcon className="h-4 w-4" />}>
-        Añadir anotación
+        {t("ui.anadir-anotacion.90233c")}
       </Button>
     </section>
   );

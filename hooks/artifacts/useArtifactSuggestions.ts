@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Settings } from '../../types';
 import {
@@ -37,6 +38,7 @@ export const useArtifactSuggestions = ({
   settings,
   buildContext,
 }: UseArtifactSuggestionsInput): UseArtifactSuggestionsResult => {
+  const t = useUiTranslation();
   const [status, setStatus] = useState<ArtifactSuggestionsStatus>('idle');
   const [report, setReport] = useState<ArtifactSuggestionReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export const useArtifactSuggestions = ({
         inFlight.current = false;
         if (!isMounted.current) return;
         setStatus('error');
-        setError(err instanceof Error ? err.message : 'No se pudo preparar el contexto del artefacto.');
+        setError(err instanceof Error ? err.message : t("uiMessage.no-se-pudo-preparar-el-conte.6fcc40"));
         return;
       }
       try {
@@ -92,13 +94,13 @@ export const useArtifactSuggestions = ({
         setError(
           err instanceof Error
             ? err.message
-            : 'No se pudieron generar sugerencias. Reintenta en unos segundos.',
+            : t("uiMessage.no-se-pudieron-generar-suger.1c5dc6"),
         );
       } finally {
         inFlight.current = false;
       }
     })();
-  }, [settings]);
+  }, [settings, t]);
 
   return { status, report, error, request, reset };
 };

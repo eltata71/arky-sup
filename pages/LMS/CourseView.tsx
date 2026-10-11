@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 
 import { activatable } from '../../lib/a11y';
 import React, { useState } from 'react';
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, onBack, onOpenLesson, onToggleFavorite, onResetProgress, onIssueCertificate }) => {
+  const t = useUiTranslation();
     const [activeTab, setActiveTab] = useState<'syllabus' | 'notes'>('syllabus');
     const [filter, setFilter] = useState<'all' | 'read' | 'unread' | 'in-progress' | 'favorite'>('all');
 
@@ -61,7 +63,7 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
     return (
         <div className="animate-fade-in max-w-7xl mx-auto">
             <button onClick={onBack} className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-6">
-                <ArrowLeftIcon className="h-4 w-4 mr-2" /> Volver al panel
+                <ArrowLeftIcon className="h-4 w-4 mr-2" /> {t("ui.volver-al-panel.c82cdd")}
             </button>
 
             {/* Certificate banner — shown once the course is fully completed */}
@@ -76,15 +78,15 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                             <AwardIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">¡Curso completado!</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Has terminado todas las lecciones. Reclama tu certificado.</p>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t("ui.curso-completado.b20fc2")}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("ui.has-terminado-todas-las-lecc.c7db82")}</p>
                         </div>
                     </div>
                     <button
                         onClick={() => onIssueCertificate(course)}
                         className="bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors shadow-md whitespace-nowrap"
                     >
-                        Obtener Certificado
+                        {t("ui.obtener-certificado.8d4ba2")}
                     </button>
                 </div>
             ) : null}
@@ -111,7 +113,7 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                             <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
                                 <div>
                                     <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
-                                        <span>Progreso del curso</span>
+                                        <span>{t("ui.progreso-del-curso.2f91ac")}</span>
                                         <span className="text-indigo-600 dark:text-indigo-400 font-bold">{percent}%</span>
                                     </div>
                                     <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
@@ -120,13 +122,13 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                                 </div>
 
                                 <div className="pt-4 pb-2">
-                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Filtros de Lecciones</div>
+                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("ui.filtros-de-lecciones.de8a23")}</div>
                                     <div className="flex flex-col gap-2">
-                                        <button onClick={() => setFilter('all')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>Todas las lecciones</button>
-                                        <button onClick={() => setFilter('read')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'read' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>Completadas</button>
-                                        <button onClick={() => setFilter('in-progress')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'in-progress' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>En Progreso</button>
-                                        <button onClick={() => setFilter('unread')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'unread' ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>No Iniciadas</button>
-                                        <button onClick={() => setFilter('favorite')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'favorite' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>Favoritas</button>
+                                        <button onClick={() => setFilter('all')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>{t("ui.todas-las-lecciones.1530f5")}</button>
+                                        <button onClick={() => setFilter('read')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'read' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>{t("ui.completadas.149714")}</button>
+                                        <button onClick={() => setFilter('in-progress')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'in-progress' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>{t("ui.en-progreso.345a38")}</button>
+                                        <button onClick={() => setFilter('unread')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'unread' ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>{t("ui.no-iniciadas.1933a4")}</button>
+                                        <button onClick={() => setFilter('favorite')} className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'favorite' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}`}>{t("ui.favoritas.4e668e")}</button>
                                     </div>
                                 </div>
 
@@ -136,15 +138,15 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                                         className={`w-full flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${isFav ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-300 dark:hover:bg-gray-800'}`}
                                     >
                                         <StarIcon className={`h-4 w-4 mr-2 ${isFav ? 'fill-current' : ''}`} />
-                                        {isFav ? 'En Favoritos' : 'Marcar como Favorito'}
+                                        {isFav ? t("uiExpr.en-favoritos.c3dfac") : t("uiExpr.marcar-como-favorito.51b223")}
                                     </button>
                                     
                                     <button onClick={handleOfflineDownload} className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
-                                        <DownloadIcon className="h-4 w-4 mr-2" /> Descargar para Offline
+                                        <DownloadIcon className="h-4 w-4 mr-2" /> {t("ui.descargar-para-offline.601bed")}
                                     </button>
                                     
                                     <button onClick={() => onResetProgress(course.id, allLessonIds)} className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
-                                        <RefreshCwIcon className="h-4 w-4 mr-2" /> Reiniciar Progreso
+                                        <RefreshCwIcon className="h-4 w-4 mr-2" /> {t("ui.reiniciar-progreso.54916b")}
                                     </button>
                                 </div>
                             </div>
@@ -161,13 +163,13 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                                 onClick={() => setActiveTab('syllabus')}
                                 className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'syllabus' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}
                             >
-                                Plan de Estudio
+                                {t("ui.plan-de-estudio.f172dd")}
                             </button>
                             <button 
                                 onClick={() => setActiveTab('notes')}
                                 className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors flex items-center ${activeTab === 'notes' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}
                             >
-                                Notas del Curso <span className="ml-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{courseNotes.length}</span>
+                                {t("ui.notas-del-curso.639268")} <span className="ml-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{courseNotes.length}</span>
                             </button>
                         </div>
 
@@ -175,7 +177,7 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                             {activeTab === 'syllabus' ? (
                                 <div className="space-y-8">
                                     <div className="flex justify-between items-center mb-6">
-                                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Plan de Estudio</h2>
+                                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t("ui.plan-de-estudio.f172dd")}</h2>
                                     </div>
                                     
                                     <div className="space-y-8">
@@ -209,7 +211,7 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                                                         <div className="flex-1 max-w-xs bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
                                                             <div className={`h-full rounded-full transition-all duration-500 ease-out ${modDone ? 'bg-green-500' : 'bg-indigo-500'}`} style={{ width: `${modPct}%` }} />
                                                         </div>
-                                                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{modRead}/{modLessonIds.length} lecciones</span>
+                                                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">{modRead}/{modLessonIds.length} {t("ui.lecciones.84da6d")}</span>
                                                     </div>
                                                     
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-11">
@@ -239,11 +241,11 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
 
                                                                     <div className="flex items-center gap-2 mt-auto pt-4">
                                                                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${isRead ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : isProg ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
-                                                                            {isRead ? 'Completada' : isProg ? 'En progreso' : 'Nueva'}
+                                                                            {isRead ? t("uiExpr.completada.377783") : isProg ? t("lmsDash.inProgress") : t("ui.nueva.47a1dd")}
                                                                         </span>
                                                                         {hasContent && (
-                                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400 flex items-center gap-1" title="Ya tiene contenido generado y guardado">
-                                                                                <BrainCircuitIcon className="h-3 w-3" /> Contenido listo
+                                                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400 flex items-center gap-1" title={t("ui.ya-tiene-contenido-generado.ec26e4")}>
+                                                                                <BrainCircuitIcon className="h-3 w-3" /> {t("ui.contenido-listo.7b8f3f")}
                                                                             </span>
                                                                         )}
                                                                         <PlayCircleIcon className="h-4 w-4 ml-auto text-gray-300 dark:text-gray-600 group-hover:text-indigo-500 transition-colors" />
@@ -262,8 +264,8 @@ export const CourseView: React.FC<Props> = ({ course, progress, notes, cache, on
                                     {courseNotes.length === 0 ? (
                                         <div className="col-span-full text-center py-12 bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
                                             <BrainCircuitIcon className="mx-auto h-12 w-12 text-gray-400" />
-                                            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay notas para este curso</h3>
-                                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Genera notas inteligentes desde las lecciones.</p>
+                                            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{t("ui.no-hay-notas-para-este-curso.c73b64")}</h3>
+                                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t("ui.genera-notas-inteligentes-de.2a7988")}</p>
                                         </div>
                                     ) : (
                                         courseNotes.map(note => (

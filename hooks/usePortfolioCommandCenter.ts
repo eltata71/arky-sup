@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useMemo } from 'react';
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import type { Project } from '../services/architectureProjects';
 import { type BusinessInitiative, rollupInitiatives } from '../services/businessInitiatives';
 import type { OfficeEngagement } from '../services/architectureOffice';
@@ -56,6 +57,7 @@ export const usePortfolioCommandCenter = (
   engagements: readonly OfficeEngagement[],
   loadEngagements: (projectId: string) => void | Promise<unknown>,
 ): PortfolioCommandCenterModel => {
+  const t = useUiTranslation();
   // Los entregables cuelgan de su proyecto, así que hay que pedírselos a cada
   // uno. `loadEngagements` es idempotente por id de proyecto.
   useEffect(() => {
@@ -114,7 +116,7 @@ export const usePortfolioCommandCenter = (
     portfolio,
     commandCenter,
     ...trends,
-    comparisonLabel: `vs. ${COMPARISON_WINDOW_DAYS} días previos`,
+    comparisonLabel: t('uiDynamic.comparisonDays', { count: String(COMPARISON_WINDOW_DAYS) }),
   };
 };
 

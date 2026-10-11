@@ -42,12 +42,13 @@ import type { PersistenceReporter } from './usePersistenceReporter';
 type NewArtifactDraft = Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>;
 
 interface ArtifactsStatePorts {
+  readonly t: (key: string, replacements?: Record<string, string>) => string;
   readonly setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   readonly getProject: (id: string) => Project | undefined;
   readonly reporter: PersistenceReporter;
 }
 
-export const useArtifactsState = ({ setProjects, getProject, reporter }: ArtifactsStatePorts) => {
+export const useArtifactsState = ({ setProjects, getProject, reporter, t }: ArtifactsStatePorts) => {
   const { user } = useAuth();
   const { handleWriteResult, setPersistenceStatus, setPersistenceMessage } = reporter;
 
@@ -80,7 +81,7 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
     const changedIds = changedArtifactIds(previous, next);
     updateArtifactsOf(projectId, artifacts => markArtifactPersistence(plan.change(artifacts), changedIds, 'pending'));
     setPersistenceStatus('saving');
-    setPersistenceMessage('Guardando artefacto en base de datos…');
+    setPersistenceMessage(t('uiState.28'));
 
     const rollback = () => updateArtifactsOf(projectId, () => previous);
     executeArtifactWrite(artifactRepository, projectId, plan.write, user?.uid).then(({ result, confirmedRevisions }) => {
@@ -122,11 +123,11 @@ export const useArtifactsState = ({ setProjects, getProject, reporter }: Artifac
         metadata: { projectId },
       });
       setPersistenceStatus('error');
-      setPersistenceMessage('No se pudo guardar en la base de datos.');
+      setPersistenceMessage(t('uiState.29'));
       rollback();
     });
     return plan.produced;
-  }, [getProject, handleWriteResult, setPersistenceMessage, setPersistenceStatus, updateArtifactsOf, user]);
+  }, [getProject, handleWriteResult, setPersistenceMessage, setPersistenceStatus, t, updateArtifactsOf, user]);
 
   const createArtifact = useCallback((projectId: string, draft: NewArtifactDraft, deterministicId?: string): Artifact => {
     // Crear siempre produce un artefacto: el plan de `create` nunca es `null`.

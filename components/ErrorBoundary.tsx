@@ -1,5 +1,11 @@
 import React, { Component, ReactNode } from 'react';
 import { observabilityService } from '../services/observability';
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
+
+function ErrorText({ translationKey }: { translationKey: string }) {
+    const t = useUiTranslation();
+    return <>{t(translationKey)}</>;
+}
 
 interface ErrorBoundaryProps {
     key?: React.Key;
@@ -72,13 +78,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                         </svg>
                     </div>
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                        {this.props.fallbackTitle ?? 'Algo salió mal'}
+                        {this.props.fallbackTitle ?? <ErrorText translationKey="errorBoundary.title" />}
                     </h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        Encontramos un problema al renderizar esta vista. Puedes intentar recargar la sección o volver atrás.
+                        <ErrorText translationKey="errorBoundary.description" />
                     </p>
                     <details className="text-left mb-4 bg-gray-50 dark:bg-gray-950/50 rounded-lg p-3 border border-gray-200 dark:border-gray-800">
-                        <summary className="cursor-pointer text-xs font-medium text-gray-500 dark:text-gray-400">Detalles técnicos</summary>
+                        <summary className="cursor-pointer text-xs font-medium text-gray-500 dark:text-gray-400"><ErrorText translationKey="errorBoundary.technicalDetails" /></summary>
                         <pre className="mt-2 text-2xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words max-h-32 overflow-auto custom-scrollbar">{error.message}</pre>
                     </details>
                     <div className="flex items-center justify-center gap-2">
@@ -87,14 +93,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                             onClick={this.reset}
                             className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
                         >
-                            Intentar de nuevo
+                            <ErrorText translationKey="errorBoundary.retry" />
                         </button>
                         <button
                             type="button"
                             onClick={() => { window.location.href = '/'; }}
                             className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                         >
-                            Volver al inicio
+                            <ErrorText translationKey="errorBoundary.home" />
                         </button>
                     </div>
                 </div>

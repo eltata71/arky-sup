@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 
 import React, { useState } from 'react';
 import { assistantService } from '../../services/ai';
@@ -9,6 +10,7 @@ import { errorMessageOf } from '../../lib/errorMessage';
 
 
 export const LMSConsulting: React.FC = () => {
+  const t = useUiTranslation();
     const { settings } = useAppContext();
     const { addToast } = useToast();
     const [challenge, setChallenge] = useState('');
@@ -23,7 +25,7 @@ export const LMSConsulting: React.FC = () => {
             setResponse(res);
         } catch (error) {
             console.error(error);
-            addToast(errorMessageOf(error, 'Error en la consultoría. Revisa tu conexión o la API Key.'), 'error');
+            addToast(errorMessageOf(error, t("uiMessage.error-en-la-consultoria-revi.ad8e68")), 'error');
         } finally {
             setIsAnalyzing(false);
         }
@@ -37,17 +39,17 @@ export const LMSConsulting: React.FC = () => {
                         <LightbulbIcon className="h-8 w-8 text-amber-500" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Consultoría de Arquitectura IA</h2>
-                        <p className="text-gray-500 dark:text-gray-400">Describe tu desafío arquitectónico y recibe una propuesta estratégica estructurada.</p>
+                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t("ui.consultoria-de-arquitectura.b7f5d7")}</h2>
+                        <p className="text-gray-500 dark:text-gray-400">{t("ui.describe-tu-desafio-arquitec.3fd0a2")}</p>
                     </div>
                 </div>
                 
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-800">
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wider">Tu Desafío</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wider">{t("ui.tu-desafio.c5f033")}</label>
                     <textarea 
                         value={challenge}
                         onChange={e => setChallenge(e.target.value)}
-                        placeholder="Ej. Necesitamos migrar un monolito legacy a microservicios pero tenemos una base de datos altamente acoplada..."
+                        placeholder={t("ui.ej-necesitamos-migrar-un-mon.09b78a")}
                         className="w-full h-40 p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 text-base resize-none shadow-sm"
                     />
                     <div className="flex justify-end">
@@ -58,11 +60,11 @@ export const LMSConsulting: React.FC = () => {
                         >
                             {isAnalyzing ? (
                                 <span className="flex items-center">
-                                    <SparklesIcon className="h-5 w-5 mr-2 animate-spin" /> Analizando...
+                                    <SparklesIcon className="h-5 w-5 mr-2 animate-spin" /> {t("ui.analizando.7cb616")}
                                 </span>
                             ) : (
                                 <span className="flex items-center">
-                                    <MessageSquareIcon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" /> Consultar IA
+                                    <MessageSquareIcon className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" /> {t("ui.consultar-ia.53e613")}
                                 </span>
                             )}
                         </button>
@@ -75,7 +77,7 @@ export const LMSConsulting: React.FC = () => {
                     <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-amber-400 to-indigo-500"></div>
                     <div className="flex items-center mb-6 text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider text-sm">
                         <SparklesIcon className="h-5 w-5 mr-2" />
-                        Respuesta de la IA
+                        {t("ui.respuesta-de-la-ia.7f22d3")}
                     </div>
                     <div className="prose prose-indigo dark:prose-invert max-w-none prose-headings:font-bold prose-h3:text-xl prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-li:text-gray-600 dark:prose-li:text-gray-300">
                         <SafeRichText markdown={response} />

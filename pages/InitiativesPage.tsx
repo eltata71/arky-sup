@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * InitiativesPage — management of business initiatives, the top of the
  * hierarchy.
@@ -40,6 +41,7 @@ const STATUS_FILTERS: (InitiativeStatus | 'all')[] = [
 ];
 
 const InitiativesPage: React.FC = () => {
+  const t = useUiTranslation();
   const navigate = useNavigate();
   const { projects, settings } = useAppContext();
   const {
@@ -114,10 +116,10 @@ const InitiativesPage: React.FC = () => {
       });
     }
 
-    addToast('Iniciativa de negocio creada.', 'success');
+    addToast(t("uiMessage.iniciativa-de-negocio-creada.6fa828"), 'success');
     navigate(`/initiatives/${created.initiative.id}`);
     return { ok: true };
-  }, [createInitiative, runInitiativeCommand, addToast, navigate]);
+  }, [createInitiative, runInitiativeCommand, addToast, navigate, t]);
 
   const openInitiative = useCallback(
     (initiative: BusinessInitiative) => navigate(`/initiatives/${initiative.id}`),
@@ -129,10 +131,10 @@ const InitiativesPage: React.FC = () => {
     const result = await deleteInitiative(pendingDelete.id);
     setPendingDelete(null);
     addToast(
-      result.ok ? 'Iniciativa eliminada.' : (result.reason ?? 'No se pudo eliminar la iniciativa.'),
+      result.ok ? t("uiMessage.iniciativa-eliminada.2b088b") : (result.reason ?? 'No se pudo eliminar la iniciativa.'),
       result.ok ? 'success' : 'error',
     );
-  }, [pendingDelete, deleteInitiative, addToast]);
+  }, [pendingDelete, deleteInitiative, addToast, t]);
 
   useEffect(() => {
     // A filter that hides everything reads as "no data" — reset it instead.
@@ -144,7 +146,7 @@ const InitiativesPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
-        <PageSkeleton label="Cargando las iniciativas de negocio" tiles={4} panels={2} />
+        <PageSkeleton label={t("ui.cargando-las-iniciativas-de.0ab087")} tiles={4} panels={2} />
       </div>
     );
   }
@@ -155,7 +157,7 @@ const InitiativesPage: React.FC = () => {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-2xs font-semibold uppercase tracking-widest-2 text-primary-600 dark:text-primary-400">
-              Arquitectura Empresarial · capa de motivación
+              {t("ui.arquitectura-empresarial-cap.7c1000")}
             </p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50 md:text-display-sm">
               {EA_LEVELS.initiative.plural}
@@ -166,15 +168,15 @@ const InitiativesPage: React.FC = () => {
           </div>
           <Button variant="primary" onClick={() => setIntakeOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Nueva iniciativa
+            {t("ui.nueva-iniciativa.be9bdc")}
           </Button>
         </header>
 
         {initiatives.length === 0 ? (
           <EmptyState
-            title="Todavía no hay iniciativas de negocio"
-            description="Registra la primera necesidad del negocio. El asistente propondrá su driver, objetivos, resultados e indicadores, y desde ahí podrás abrir las proyectos de arquitectura que la sirvan."
-            actions={<Button variant="primary" onClick={() => setIntakeOpen(true)}>Nueva iniciativa</Button>}
+            title={t("ui.todavia-no-hay-iniciativas-d.455737")}
+            description={t("Registra la primera necesidad del negocio. El asistente propondrá su driver, objetivos, resultados e indicadores, y desde ahí podrás abrir las proyectos de arquitectura que la sirvan.")}
+            actions={<Button variant="primary" onClick={() => setIntakeOpen(true)}>{t("ui.nueva-iniciativa.be9bdc")}</Button>}
             flavor="ai"
           />
         ) : (
@@ -193,18 +195,18 @@ const InitiativesPage: React.FC = () => {
               value={view}
               onChange={(next) => setView(next as ViewId)}
               variant="pill"
-              aria-label="Vistas de iniciativas"
+              aria-label={t("ui.vistas-de-iniciativas.330134")}
             >
               <TabList className="w-full overflow-x-auto sm:w-auto">
                 <Tab value="resumen" icon={<LayoutDashboard className="h-4 w-4" aria-hidden />}>
-                  Resumen
+                  {t("kg.tabSummary")}
                 </Tab>
                 <Tab
                   value="listado"
                   icon={<ListFilter className="h-4 w-4" aria-hidden />}
                   badge={initiatives.length}
                 >
-                  Listado
+                  {t("ui.listado.82eb87")}
                 </Tab>
               </TabList>
 
@@ -220,10 +222,10 @@ const InitiativesPage: React.FC = () => {
                       aria-hidden
                     />
                     <Input
-                      aria-label="Buscar por título, código o necesidad"
+                      aria-label={t("ui.buscar-por-titulo-codigo-o-n.ead7c4")}
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Buscar por título, código o necesidad"
+                      placeholder={t("ui.buscar-por-titulo-codigo-o-n.ead7c4")}
                       className="pl-8"
                     />
                   </div>
@@ -241,7 +243,7 @@ const InitiativesPage: React.FC = () => {
                             : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
                         )}
                       >
-                        {value === 'all' ? 'Todas' : INITIATIVE_STATUS_LABELS[value]}
+                        {value === 'all' ? t("uiExpr.todas.8a3c34") : INITIATIVE_STATUS_LABELS[value]}
                       </button>
                     ))}
                   </div>
@@ -249,7 +251,7 @@ const InitiativesPage: React.FC = () => {
 
                 {visible.length === 0 ? (
                   <p className="rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-                    Ninguna iniciativa coincide con el filtro.
+                    {t("ui.ninguna-iniciativa-coincide.fe2804")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -262,19 +264,19 @@ const InitiativesPage: React.FC = () => {
                         actions={[
                           {
                             id: 'assistant',
-                            label: 'Conversar con el equipo de arquitectura',
+                            label: t("Conversar con el equipo de arquitectura"),
                             icon: <Sparkles className="h-3.5 w-3.5" aria-hidden />,
                             onSelect: () => setAssistantFor(initiative),
                           },
                           {
                             id: 'open',
-                            label: 'Abrir y gestionar la ficha',
+                            label: t("Abrir y gestionar la ficha"),
                             icon: <SquarePen className="h-3.5 w-3.5" aria-hidden />,
                             onSelect: () => openInitiative(initiative),
                           },
                           {
                             id: 'delete',
-                            label: 'Eliminar iniciativa',
+                            label: t("Eliminar iniciativa"),
                             icon: <Trash2 className="h-3.5 w-3.5" aria-hidden />,
                             onSelect: () => setPendingDelete(initiative),
                             destructive: true,
@@ -310,7 +312,7 @@ const InitiativesPage: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Confirmar eliminación"
+          aria-label={t("ui.confirmar-eliminacion.586994")}
           className="fixed inset-0 z-[130] flex items-center justify-center bg-gray-950/50 p-4 backdrop-blur-sm"
           onClick={() => setPendingDelete(null)}
         >
@@ -319,15 +321,14 @@ const InitiativesPage: React.FC = () => {
             className="w-full max-w-md rounded-2xl bg-white p-5 shadow-pop dark:bg-gray-900"
           >
             <h2 className="text-base font-bold text-gray-900 dark:text-gray-50">
-              ¿Eliminar «{pendingDelete.title}»?
+              {t("ui.eliminar.049973")}{pendingDelete.title}»?
             </h2>
             <p className="mt-1.5 text-sm text-gray-600 dark:text-gray-300">
-              Los proyectos de arquitectura enlazados no se eliminan: quedan sin iniciativa y el
-              tablero los reportará como tales.
+              {t("ui.los-proyectos-de-arquitectur.57e7b6")}
             </p>
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setPendingDelete(null)}>Cancelar</Button>
-              <Button variant="danger" onClick={() => void confirmDelete()}>Eliminar</Button>
+              <Button variant="ghost" onClick={() => setPendingDelete(null)}>{t("ui.cancelar.c111e0")}</Button>
+              <Button variant="danger" onClick={() => void confirmDelete()}>{t("delete")}</Button>
             </div>
           </div>
         </div>

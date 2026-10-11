@@ -83,12 +83,12 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
       <Card className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <CardTitle>Ficha del {EA_LEVELS.engagementProject.singular.toLowerCase()}</CardTitle>
+            <CardTitle>{t("ui.ficha-del.3ce5f4")} {EA_LEVELS.engagementProject.singular.toLowerCase()}</CardTitle>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Lo que la Oficina sabe de este proyecto cada vez que trabaja en él.
+              {t("ui.lo-que-la-oficina-sabe-de-es.f3378e")}
             </p>
           </div>
-          <Badge tone="gray" size="xs">{project.projectContext.length} hechos</Badge>
+          <Badge tone="gray" size="xs">{project.projectContext.length} {t("ui.hechos.eaf27d")}</Badge>
         </div>
 
         <FormAssistBar
@@ -97,13 +97,13 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
           loading={capture.formLoading}
           notice={capture.assistant.notice}
           openQuestions={capture.assistant.openQuestions}
-          subject="la ficha de este proyecto"
+          subject={t("la ficha de este proyecto")}
         />
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <label htmlFor="attention-name" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              Nombre
+              {t("users.name")}
             </label>
             <CaptureAssist
               fieldId="attention.name"
@@ -130,7 +130,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <label htmlFor="attention-description" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              Descripción
+              {t("lmsDash.description")}
             </label>
             <CaptureAssist
               fieldId="attention.description"
@@ -159,7 +159,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              Contexto que condiciona el diseño
+              {t("ui.contexto-que-condiciona-el-d.aa8c38")}
             </p>
             <CaptureAssist
               fieldId="attention.context"
@@ -171,7 +171,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
           </div>
           {project.projectContext.length === 0 ? (
             <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-              Sin contexto capturado. Cada respuesta de la Oficina partirá sólo de la descripción.
+              {t("ui.sin-contexto-capturado-cada.27faa4")}
             </p>
           ) : (
             <ul className="space-y-1">
@@ -181,7 +181,7 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
                   <span className="min-w-0 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-200">{entry}</span>
                   <button
                     type="button"
-                    aria-label={`Quitar del contexto: ${entry}`}
+                    aria-label={t("uiTemplate.quitar-del-contexto-p0.832e87", { p0: String(entry) })}
                     disabled={busy}
                     onClick={() => onCommand({ kind: 'remove-context-entry', entry })}
                     className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-40 dark:hover:bg-red-950/40 dark:hover:text-red-400"
@@ -194,13 +194,13 @@ export const AttentionDetailsPanel: React.FC<AttentionDetailsPanelProps> = ({
           )}
           <div className="flex gap-2">
             <Input
-              aria-label="Ej. El core de pólizas corre sobre AS/400 y no se sustituye en este alcance"
+              aria-label={t("ui.ej-el-core-de-polizas-corre.c4c243")}
               value={contextEntry}
               onChange={(event) => setContextEntry(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') { event.preventDefault(); addContext(contextEntry); }
               }}
-              placeholder="Ej. El core de pólizas corre sobre AS/400 y no se sustituye en este alcance"
+              placeholder={t("ui.ej-el-core-de-polizas-corre.c4c243")}
               className="flex-1"
             />
             <Button

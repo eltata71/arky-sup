@@ -13,6 +13,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { es } from '../../lib/i18n/locales/es';
 
 /* --------------------------------------------------------- the absence */
 
@@ -48,14 +49,16 @@ describe('nobody can create their own account', () => {
   it('offers the two things a person may legitimately do alone', () => {
     const source = read('pages/AuthPage.tsx');
     expect(source).toContain('sendPasswordReset');
-    expect(source).toContain('¿Olvidaste tu contraseña?');
+    expect(source).toContain('ui.olvidaste-tu-contrasena.28ca3f');
+    expect(es['ui.olvidaste-tu-contrasena.28ca3f']).toBe('¿Olvidaste tu contraseña?');
   });
 
   it('does not leak whether an address has an account', () => {
     // A recovery form that answers differently for a known address is a
     // directory of who works here, readable by anyone.
     const source = readCode('pages/AuthPage.tsx');
-    expect(source).toMatch(/Si esa dirección tiene una cuenta/);
+    expect(source).toContain('uiState.13');
+    expect(es['uiState.13']).toMatch(/Si esa dirección tiene una cuenta/);
     expect(source).not.toMatch(/no encontramos|no existe esa cuenta|correo no registrado/i);
   });
 

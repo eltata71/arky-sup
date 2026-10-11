@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * El pie del raíl: la ayuda y las utilidades que actúan sobre la aplicación en
  * vez de navegarla.
@@ -57,7 +58,7 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
   pinned,
   onTogglePinned,
   onSignOut,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <div className={cn('flex shrink-0 flex-col gap-0.5 border-t border-gray-200 pt-2 dark:border-gray-800', expanded ? 'px-3' : 'px-1')}>
       {/* La ayuda lleva etiqueta visible en los dos estados, como los
           destinos y a diferencia de las tres utilidades de debajo: es
@@ -69,7 +70,7 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
               type="button"
               onClick={onOpenGuide}
               aria-haspopup="dialog"
-              aria-label="Guía de uso de la plataforma"
+              aria-label={t("ui.guia-de-uso-de-la-plataforma.9a853b")}
               className={cn(
                   'flex rounded-xl text-primary-600 transition-colors hover:bg-primary-50',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
@@ -80,20 +81,20 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
               <LifeBuoy className="h-5 w-5 shrink-0" />
               {expanded ? (
                   <RailRevealedText show reduced={reducedMotion} className="truncate text-sm font-semibold">
-                      Guía de uso
+                      {t("ui.guia-de-uso.a0b1ba")}
                   </RailRevealedText>
               ) : (
                   <span aria-hidden className="w-full truncate text-center text-[9px] font-semibold leading-tight tracking-tight">
-                      Ayuda
+                      {t("ui.ayuda.e5bd06")}
                   </span>
               )}
           </button>
       ))}
 
       {withTooltip('Búsqueda global · Cmd K', (
-          <button type="button" onClick={onOpenSearch} aria-label="Búsqueda global" className={cn(UTILITY_BUTTON, utilityLayout(expanded))}>
+          <button type="button" onClick={onOpenSearch} aria-label={t("ui.busqueda-global.899d97")} className={cn(UTILITY_BUTTON, utilityLayout(expanded))}>
               <MagnifyingGlassIcon className="h-5 w-5 shrink-0" />
-              <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">Buscar</RailRevealedText>
+              <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">{t("ui.buscar.a62405")}</RailRevealedText>
           </button>
       ))}
 
@@ -101,20 +102,20 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
           <button
               type="button"
               onClick={onToggleTheme}
-              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              aria-label={theme === 'dark' ? t("uiExpr.cambiar-a-modo-claro.e7f281") : t("uiExpr.cambiar-a-modo-oscuro.79b3b7")}
               className={cn(UTILITY_BUTTON, utilityLayout(expanded))}
           >
               {theme === 'dark' ? <SunIcon className="h-5 w-5 shrink-0" /> : <MoonIcon className="h-5 w-5 shrink-0" />}
               <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">
-                  {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+                  {theme === 'dark' ? t("uiExpr.modo-claro.8212b7") : t("uiExpr.modo-oscuro.b8a1c6")}
               </RailRevealedText>
           </button>
       ))}
 
       {onOpenShortcuts && withTooltip('Atajos de teclado · ?', (
-          <button type="button" onClick={onOpenShortcuts} aria-label="Atajos de teclado" className={cn(UTILITY_BUTTON, utilityLayout(expanded))}>
+          <button type="button" onClick={onOpenShortcuts} aria-label={t("ui.atajos-de-teclado.e91567")} className={cn(UTILITY_BUTTON, utilityLayout(expanded))}>
               <Keyboard className="h-5 w-5 shrink-0" />
-              <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">Atajos</RailRevealedText>
+              <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">{t("ui.atajos.201c2c")}</RailRevealedText>
           </button>
       ))}
 
@@ -123,14 +124,14 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
               type="button"
               onClick={onTogglePinned}
               aria-pressed={pinned}
-              aria-label={pinned ? 'Soltar el menú' : 'Fijar el menú abierto'}
+              aria-label={pinned ? t("uiExpr.soltar-el-menu.d7633e") : t("uiExpr.fijar-el-menu-abierto.854b7a")}
               className={cn(UTILITY_BUTTON, utilityLayout(expanded))}
           >
               {pinned
                   ? <PanelLeftClose className="h-5 w-5 shrink-0" />
                   : <PanelLeftOpen className="h-5 w-5 shrink-0" />}
               <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">
-                  {pinned ? 'Soltar menú' : 'Fijar menú'}
+                  {pinned ? t("uiExpr.soltar-menu.9cd48e") : t("uiExpr.fijar-menu.8fd627")}
               </RailRevealedText>
           </button>
       ))}
@@ -139,16 +140,16 @@ export const AppRailFooter: React.FC<AppRailFooterProps> = ({
           <button
               type="button"
               onClick={onSignOut}
-              aria-label="Cerrar sesión"
+              aria-label={t("ui.cerrar-sesion.f394d0")}
               className={cn(UTILITY_BUTTON, utilityLayout(expanded))}
           >
               <LogOut className="h-5 w-5 shrink-0" />
               <RailRevealedText show={expanded} reduced={reducedMotion} className="truncate text-sm">
-                  Cerrar sesión
+                  {t("ui.cerrar-sesion.f394d0")}
               </RailRevealedText>
           </button>
       ))}
   </div>
-);
+); };
 
 export default AppRailFooter;

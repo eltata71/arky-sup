@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import type { ArtifactQualityGateResult, ExportFormat, ExportFormatOption } from '../../../services/artifacts/application/artifactAssessment';
 
@@ -8,11 +9,12 @@ export interface BlockedFormatsListProps {
 
 /** Los formatos que no se ofrecen, con el motivo de cada uno (salió de `ArtifactExportModal` en 9.4). */
 export const BlockedFormatsList: React.FC<BlockedFormatsListProps> = ({ unavailable, gateByFormat }) => {
+  const t = useUiTranslation();
   if (unavailable.length === 0) return null;
   return (
     <details className="mt-4 text-xs text-gray-600 dark:text-gray-300">
       <summary className="cursor-pointer font-medium">
-        Formatos bloqueados ({unavailable.length})
+        {t("ui.formatos-bloqueados.bfc355")}{unavailable.length})
       </summary>
       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {unavailable.map((option) => {

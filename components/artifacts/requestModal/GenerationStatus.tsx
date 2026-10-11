@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import type { ArtifactGenerationPhaseEvent } from '../../../lib/artifacts';
 import { GENERATION_PHASE_COPY, GENERATION_STATUS_COPY } from '../../../lib/artifacts/generationPhaseCopy';
@@ -47,6 +48,7 @@ interface StatusBannerProps {
 }
 
 export const StatusBanner: React.FC<StatusBannerProps> = ({ phase, stage, durationLabel, tone }) => {
+  const t = useUiTranslation();
   const palette = tone === 'error'
     ? 'border-rose-200 bg-rose-50/80 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100'
     : tone === 'success'
@@ -55,9 +57,9 @@ export const StatusBanner: React.FC<StatusBannerProps> = ({ phase, stage, durati
   return (
     <div className={`rounded-xl border p-4 text-sm ${palette}`} role="status" aria-live="polite" data-generation-phase={stage}>
       <div className="flex items-center justify-between gap-3">
-        <p className="font-semibold">Estado</p>
+        <p className="font-semibold">{t("diagramInspector.status")}</p>
         {durationLabel && (
-          <span className="text-[11px] font-medium opacity-80">{durationLabel} acumulado</span>
+          <span className="text-[11px] font-medium opacity-80">{durationLabel} {t("ui.acumulado.5c14c6")}</span>
         )}
       </div>
       <p className="mt-1 leading-relaxed">{phase}</p>
@@ -79,12 +81,12 @@ export const TechnicalTimelineDisclosure: React.FC<TechnicalTimelineDisclosurePr
   onToggleTechnical,
   reportCopied,
   onCopyReport,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <CollapsibleSection
-    label={`Mostrar trazabilidad técnica (${events.length} ${events.length === 1 ? 'evento' : 'eventos'})`}
-    openLabel={`Ocultar trazabilidad técnica (${events.length} ${events.length === 1 ? 'evento' : 'eventos'})`}
+    label={t("uiTemplate.mostrar-trazabilidad-tecnica.62b03d", { p0: String(events.length), p1: String(events.length === 1 ? 'evento' : 'eventos') })}
+    openLabel={t("uiDynamicGenerated.ocultar-trazabilidad-tecnica.62b64f", { p0: String(events.length), p1: String(events.length === 1 ? 'evento' : 'eventos') })}
     tone="subtle"
-    hint="Línea de tiempo de fases, advertencias y diagnósticos para soporte y debugging."
+    hint={t("Línea de tiempo de fases, advertencias y diagnósticos para soporte y debugging.")}
   >
     <div className="rounded-xl border border-gray-200 bg-white/70 p-3 text-sm dark:border-gray-800 dark:bg-gray-950/40" aria-live="polite">
       <div className="flex flex-wrap items-center justify-end gap-2">
@@ -92,10 +94,10 @@ export const TechnicalTimelineDisclosure: React.FC<TechnicalTimelineDisclosurePr
           type="button"
           onClick={onCopyReport}
           className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-          title="Copiar reporte técnico al portapapeles para soporte"
+          title={t("ui.copiar-reporte-tecnico-al-po.427b0b")}
         >
           {reportCopied ? <CheckCircleIcon className="h-3 w-3" /> : <Square2StackIcon className="h-3 w-3" />}
-          {reportCopied ? 'Reporte copiado' : 'Copiar reporte técnico'}
+          {reportCopied ? t("uiExpr.reporte-copiado.89dc78") : t("uiExpr.copiar-reporte-tecnico.dbc88b")}
         </button>
         <button
           type="button"
@@ -103,7 +105,7 @@ export const TechnicalTimelineDisclosure: React.FC<TechnicalTimelineDisclosurePr
           aria-pressed={showTechnical}
           className="text-[11px] font-medium text-primary-700 hover:underline dark:text-primary-300"
         >
-          {showTechnical ? 'Ocultar metadatos' : 'Ver metadatos por evento'}
+          {showTechnical ? t("uiExpr.ocultar-metadatos.a2bcb7") : t("uiExpr.ver-metadatos-por-evento.61d304")}
         </button>
       </div>
       <ol className="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -149,4 +151,4 @@ export const TechnicalTimelineDisclosure: React.FC<TechnicalTimelineDisclosurePr
       </ol>
     </div>
   </CollapsibleSection>
-);
+); };

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Running a suggestion's action.
  *
@@ -48,6 +49,7 @@ export function useSuggestionActionRunner({
     applyWithAI,
     changeAudience,
 }: SuggestionActionRunnerOptions): SuggestionActionRunner {
+  const t = useUiTranslation();
   return useCallback((action: ArtifactSuggestionAction, suggestion: ArtifactSuggestion) => {
     const runDeterministic = (kind: string, params?: Record<string, string>): boolean => {
       if (!ir) return false;
@@ -64,7 +66,7 @@ export function useSuggestionActionRunner({
     switch (action.kind) {
       case 'apply-elk-layout':
         if (runDeterministic('apply-elk-layout', action.params)) return;
-        addToast('Re-corriendo el layout canónico (ELK layered).', 'info');
+        addToast(t("uiMessage.re-corriendo-el-layout-canon.295160"), 'info');
         retryDiagram();
         return;
       case 'set-layout-direction':
@@ -95,21 +97,21 @@ export function useSuggestionActionRunner({
         return;
       case 'convert-to-bpmn':
       case 'repair-exportability':
-        addToast(`${action.label}: ejecutando auto-mejora estructural.`, 'info');
+        addToast(t("uiMessage.p0-ejecutando-auto-mejora-es.01721f", { p0: String(action.label) }), 'info');
         autoImproveDiagram();
         return;
       case 'switch-audience': {
         const aud = (action.params?.audience ?? 'technical') as DiagramAudience;
-        addToast(`Generando vista ${aud}.`, 'info');
+        addToast(t("uiMessage.generando-vista-p0.bec19a", { p0: String(aud) }), 'info');
         changeAudience(aud);
         return;
       }
       case 'regenerate-with-ir-direct':
-        addToast('Reintentando con el pipeline IR-direct conservando metadata previa.', 'info');
+        addToast(t("uiMessage.reintentando-con-el-pipeline.86fee8"), 'info');
         void applyWithAI();
         return;
       default:
         console.warn('[useSuggestionActionRunner] Unknown suggestion action', action.kind, suggestion.id);
     }
-  }, [ir, addToast, persistIR, retryDiagram, autoImproveDiagram, applyWithAI, changeAudience]);
+  }, [ir, addToast, persistIR, retryDiagram, autoImproveDiagram, applyWithAI, changeAudience, t]);
 }

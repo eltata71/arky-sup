@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Selector card surfaced by the Arquitecto Agente when the user references an
  * artifact ambiguously ("mejora el diagrama"). Lets the user pick the target
@@ -31,12 +32,13 @@ export const ArtifactSelectorCard: React.FC<ArtifactSelectorCardProps> = ({
   onCancel,
   prompt,
 }) => {
+  const t = useUiTranslation();
   if (candidates.length === 0) return null;
 
   return (
     <motion.div
       role="region"
-      aria-label="Seleccionar artefacto objetivo"
+      aria-label={t("ui.seleccionar-artefacto-objeti.e28e1b")}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 4 }}
@@ -45,16 +47,16 @@ export const ArtifactSelectorCard: React.FC<ArtifactSelectorCardProps> = ({
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-2xs uppercase tracking-widest font-semibold text-amber-700 dark:text-amber-300 mb-1">
-            Requiere selección
+            {t("ui.requiere-seleccion.a4683c")}
           </p>
           <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
-            {prompt ?? 'Encontré varios artefactos que podrían encajar. ¿Sobre cuál quieres trabajar?'}
+            {prompt ?? t("uiExpr.encontre-varios-artefactos-q.34db9b")}
           </p>
         </div>
       </div>
 
       <fieldset className="mt-3 space-y-2">
-        <legend className="sr-only">Artefactos candidatos</legend>
+        <legend className="sr-only">{t("ui.artefactos-candidatos.efcefd")}</legend>
         {candidates.map((artifact) => {
           const isSelected = selectedId === artifact.id;
           return (
@@ -73,7 +75,7 @@ export const ArtifactSelectorCard: React.FC<ArtifactSelectorCardProps> = ({
                 checked={isSelected}
                 onChange={() => onSelect(artifact)}
                 className="mt-1 accent-primary-600"
-                aria-label={`Seleccionar ${artifact.name}`}
+                aria-label={t("uiTemplate.seleccionar-p0.8ad2db", { p0: String(artifact.name) })}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline gap-1.5">
@@ -101,7 +103,7 @@ export const ArtifactSelectorCard: React.FC<ArtifactSelectorCardProps> = ({
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ArrowRightIcon className="h-3.5 w-3.5" />
-          Continuar con este artefacto
+          {t("ui.continuar-con-este-artefacto.8cdffa")}
         </button>
         <button
           type="button"
@@ -109,7 +111,7 @@ export const ArtifactSelectorCard: React.FC<ArtifactSelectorCardProps> = ({
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-colors"
         >
           <XMarkIcon className="h-3.5 w-3.5" />
-          Cancelar
+          {t("ui.cancelar.c111e0")}
         </button>
       </div>
     </motion.div>

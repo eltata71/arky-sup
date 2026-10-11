@@ -18,6 +18,7 @@ vi.mock('../../services/architectureProjects/graphProjection', () => ({
 }));
 
 import { useArchitectureGraphSync } from '../../context/app/useArchitectureGraphSync';
+import { spanishFallback } from '../../lib/i18n/spanishFallback';
 
 const project = { id: 'p1', name: 'Reclamos', artifacts: [], projectContext: [] } as unknown as Project;
 
@@ -28,6 +29,7 @@ const render = (projects: Project[]) => {
   const projectsRef = { current: projects } as React.MutableRefObject<Project[]>;
   const globalContextRef = { current: [] as string[] } as React.MutableRefObject<string[]>;
   const { result } = renderHook(() => useArchitectureGraphSync({
+    t: spanishFallback,
     projects, projectsRef, globalContext: [], globalContextRef, runProjectCommand, saveProjectGraph, setProjects,
   }));
   return { setProjects, runProjectCommand, saveProjectGraph, result };

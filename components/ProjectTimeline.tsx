@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * Project Timeline — narrative "story arc" of a project, organised by the four
  * SDD/architectural phases plus the cross-cutting SDD column.  Each phase node
@@ -50,6 +51,8 @@ function uniqueLatestArtifacts(artifacts: Artifact[]): Artifact[] {
 }
 
 export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, onOpenArtifact, className }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
     const stats = useMemo(() => {
         const latest = uniqueLatestArtifacts(project.artifacts);
         const recommendedByPhase = new Map<string, number>();
@@ -81,15 +84,15 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, onOpe
         <Card tone="default" className={cn('relative overflow-hidden rounded-[2rem] border-slate-200 bg-white/95 shadow-sm dark:border-white/10 dark:bg-[#111116]', className)}>
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <CardEyebrow>Línea narrativa</CardEyebrow>
+                    <CardEyebrow>{t("ui.linea-narrativa.cffeb0")}</CardEyebrow>
                     <h3 className="mt-2 text-xl font-black tracking-tight text-gray-900 dark:text-white">
-                        Historia del proyecto · de la visión a la operación
+                        {t("ui.historia-del-proyecto-de-la.860e8e")}
                     </h3>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
-                        Cada fase muestra cobertura, señales de avance y acceso directo a los artefactos más recientes.
+                        {t("ui.cada-fase-muestra-cobertura.8da268")}
                     </p>
                 </div>
-                <Badge tone="primary" outline>{totalArtifacts} artefactos activos</Badge>
+                <Badge tone="primary" outline>{totalArtifacts} {t("ui.artefactos-activos.78a09b")}</Badge>
             </div>
 
             <div className="relative">
@@ -104,7 +107,7 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, onOpe
                             <li key={phase.id} className="relative rounded-3xl border border-gray-100 bg-gray-50/80 p-4 dark:border-white/10 dark:bg-white/[0.03]">
                                 <div className="mb-3 flex items-start justify-between gap-3">
                                     <Badge tone={statusTone} size="xs" outline>
-                                        {phase.percent >= 100 ? 'Completa' : isEmpty ? 'Pendiente' : 'En progreso'}
+                                        {phase.percent >= 100 ? t("uiExpr.completa.1f4e93") : isEmpty ? t("uiExpr.pendiente.7d63af") : t("lmsDash.inProgress")}
                                     </Badge>
                                 </div>
                                 <div className="mb-3 flex items-start gap-3">
@@ -118,15 +121,15 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, onOpe
                                         {phase.short}
                                     </div>
                                     <div className="min-w-0 pt-1">
-                                        <p className="truncate text-base font-black text-gray-900 dark:text-white">{phase.label}</p>
-                                        <p className="text-xs leading-snug text-gray-500 dark:text-gray-400">{phase.description}</p>
+                                        <p className="truncate text-base font-black text-gray-900 dark:text-white">{translateConfig(phase.label)}</p>
+                                        <p className="text-xs leading-snug text-gray-500 dark:text-gray-400">{translateConfig(phase.description)}</p>
                                     </div>
                                 </div>
 
                                 {/* Progress meter */}
                                 <div className="mb-2">
                                     <div className="flex items-baseline justify-between mb-1">
-                                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Avance</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">{t("ui.avance.4ee76d")}</span>
                                         <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
                                             {phase.count}<span className="text-gray-400">/{phase.recommended || '–'}</span>
                                         </span>
@@ -164,16 +167,16 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ project, onOpe
                                             </li>
                                         ))}
                                         {phase.count > phase.latest.length && (
-                                            <li className="px-2 text-xs text-gray-400">+{phase.count - phase.latest.length} más</li>
+                                            <li className="px-2 text-xs text-gray-400">+{phase.count - phase.latest.length} {t("ui.mas.917ac7")}</li>
                                         )}
                                     </ul>
                                 ) : (
-                                    <p className="mt-3 rounded-2xl border border-dashed border-gray-200 px-3 py-2 text-xs italic text-gray-400 dark:border-white/10">Sin artefactos aún</p>
+                                    <p className="mt-3 rounded-2xl border border-dashed border-gray-200 px-3 py-2 text-xs italic text-gray-400 dark:border-white/10">{t("ui.sin-artefactos-aun.52b7dc")}</p>
                                 )}
 
                                 {phase.lastUpdated && (
                                     <p className="mt-3 text-xs text-gray-400">
-                                        Última actividad · {new Date(phase.lastUpdated).toLocaleDateString()}
+                                        {t("ui.ultima-actividad.a1b2ee")} {new Date(phase.lastUpdated).toLocaleDateString()}
                                     </p>
                                 )}
                             </li>

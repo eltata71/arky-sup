@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Picks the business initiatives an attention or a deliverable answers.
  *
@@ -53,6 +54,8 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
   disabled = false,
   className,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -103,12 +106,12 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
       </div>
 
       {selected.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5" aria-label="Iniciativas de negocio vinculadas">
+        <ul className="flex flex-wrap gap-1.5" aria-label={t("ui.iniciativas-de-negocio-vincu.be2102")}>
           {selected.map((initiative) => (
             <li key={initiative.id}>
               <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 py-1 pl-2 pr-1 dark:border-primary-800 dark:bg-primary-950/40">
                 <span className="font-mono text-2xs font-semibold text-primary-700 dark:text-primary-300">
-                  {initiative.code || 'sin código'}
+                  {initiative.code || t("uiExpr.sin-codigo.4391da")}
                 </span>
                 <span className="truncate text-2xs text-gray-700 dark:text-gray-200">
                   {initiative.title}
@@ -117,7 +120,7 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
                   type="button"
                   onClick={() => remove(initiative.id)}
                   disabled={disabled}
-                  aria-label={`Quitar ${initiative.title}`}
+                  aria-label={t("uiTemplate.quitar-p0.d9ad4a", { p0: String(initiative.title) })}
                   className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-primary-400 transition-colors hover:bg-primary-100 hover:text-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-40 dark:hover:bg-primary-900/60"
                 >
                   <X className="h-3 w-3" aria-hidden />
@@ -131,12 +134,12 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
       {/* A link that points at a deleted initiative is shown, not hidden: the
           work is still real and someone has to decide what it now answers. */}
       {(danglingIds.length > 0 || unresolvedCodes.length > 0) && (
-        <ul className="space-y-1" aria-label="Vínculos rotos">
+        <ul className="space-y-1" aria-label={t("ui.vinculos-rotos.922db0")}>
           {danglingIds.map((id) => (
             <li key={id} className="flex items-center gap-1.5 rounded-lg bg-red-50 px-2 py-1 dark:bg-red-950/30">
               <Link2Off className="h-3.5 w-3.5 shrink-0 text-red-600 dark:text-red-400" aria-hidden />
               <span className="min-w-0 flex-1 truncate text-2xs text-red-700 dark:text-red-300">
-                Apunta a una iniciativa eliminada.
+                {t("ui.apunta-a-una-iniciativa-elim.03f194")}
               </span>
               <button
                 type="button"
@@ -144,7 +147,7 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
                 disabled={disabled}
                 className="shrink-0 rounded px-1.5 text-2xs font-semibold text-red-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-red-300"
               >
-                Quitar
+                {t("tp.plateau.remove")}
               </button>
             </li>
           ))}
@@ -152,8 +155,7 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
             <li key={code} className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-1 dark:bg-amber-950/30">
               <Link2Off className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
               <span className="min-w-0 flex-1 truncate text-2xs text-amber-700 dark:text-amber-300">
-                El código <span className="font-mono font-semibold">{code}</span> no corresponde a
-                ninguna iniciativa registrada.
+                {t("ui.el-codigo.1d047b")} <span className="font-mono font-semibold">{code}</span> {t("ui.no-corresponde-a-ninguna-ini.e0bc12")}
               </span>
               {onDropUnresolvedCode && (
                 <button
@@ -162,7 +164,7 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
                   disabled={disabled}
                   className="shrink-0 rounded px-1.5 text-2xs font-semibold text-amber-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-amber-300"
                 >
-                  Quitar
+                  {t("tp.plateau.remove")}
                 </button>
               )}
             </li>
@@ -180,7 +182,7 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
           ref={inputRef}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Buscar por código, título o driver"
+          placeholder={t("ui.buscar-por-codigo-titulo-o-d.686ba3")}
           disabled={disabled}
           className="pl-8"
           aria-controls={listId}
@@ -190,20 +192,19 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
 
       {initiatives.length === 0 ? (
         <p className="rounded-lg bg-gray-50 px-3 py-2 text-2xs text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-          Todavía no hay iniciativas registradas. Crea una para poder enlazar este proyecto con la
-          necesidad de negocio que la justifica.
+          {t("ui.todavia-no-hay-iniciativas-r.bb7a82")}
         </p>
       ) : (
         <ul
           id={listId}
-          aria-label="Iniciativas disponibles"
+          aria-label={t("ui.iniciativas-disponibles.8b322b")}
           className="max-h-56 space-y-1 overflow-y-auto"
         >
           {matches.length === 0 ? (
             <li className="rounded-lg bg-gray-50 px-3 py-2 text-2xs text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
               {query.trim()
-                ? 'Ninguna iniciativa coincide con la búsqueda.'
-                : 'Todas las iniciativas registradas ya están vinculadas.'}
+                ? t("uiExpr.ninguna-iniciativa-coincide.1f8d58")
+                : t("uiExpr.todas-las-iniciativas-regist.d4d6bb")}
             </li>
           ) : (
             matches.map((initiative) => (
@@ -218,7 +219,7 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-1.5">
                       <span className="font-mono text-2xs font-semibold text-gray-500 dark:text-gray-400">
-                        {initiative.code || 'sin código'}
+                        {initiative.code || t("uiExpr.sin-codigo.4391da")}
                       </span>
                       <span className="truncate text-xs font-medium text-gray-900 dark:text-gray-100">
                         {initiative.title}
@@ -226,10 +227,10 @@ export const InitiativePicker: React.FC<InitiativePickerProps> = ({
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       <Badge tone={INITIATIVE_STATUS_TONES[initiative.status]} size="xs">
-                        {INITIATIVE_STATUS_LABELS[initiative.status]}
+                        {translateConfig(INITIATIVE_STATUS_LABELS[initiative.status])}
                       </Badge>
                       <Badge tone={PRIORITY_TONES[initiative.priority]} size="xs" outline>
-                        {PRIORITY_LABELS[initiative.priority]}
+                        {translateConfig(PRIORITY_LABELS[initiative.priority])}
                       </Badge>
                     </span>
                   </span>

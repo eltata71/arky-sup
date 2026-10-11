@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * Command Palette — global Cmd/Ctrl+K overlay.
  *
@@ -42,6 +43,7 @@ function rankCommand(query: string, command: Command): number {
 }
 
 export const CommandPalette: React.FC = () => {
+  const t = useUiTranslation();
     const { open, setOpen, commands } = useCommandPalette();
     const [query, setQuery] = useState('');
     const [highlight, setHighlight] = useState(0);
@@ -144,7 +146,7 @@ export const CommandPalette: React.FC = () => {
                         aria-modal="true"
                         aria-labelledby={titleId}
                     >
-                        <h2 id={titleId} className="sr-only">Paleta de comandos</h2>
+                        <h2 id={titleId} className="sr-only">{t("ui.paleta-de-comandos.691d0a")}</h2>
                         {/* Search input */}
                         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                             <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
@@ -153,15 +155,15 @@ export const CommandPalette: React.FC = () => {
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 onKeyDown={onKeyDown}
-                                placeholder="Busca comandos, navega o pídele algo a la IA…"
+                                placeholder={t("ui.busca-comandos-navega-o-pide.5fc326")}
                                 className="flex-1 bg-transparent text-base placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none"
-                                aria-label="Busca comandos, navega o pídele algo a la IA…"
+                                aria-label={t("ui.busca-comandos-navega-o-pide.5fc326")}
                             />
                             <button
                                 type="button"
                                 onClick={() => setOpen(false)}
                                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                                aria-label="Cerrar paleta"
+                                aria-label={t("ui.cerrar-paleta.5d5198")}
                             >
                                 <XMarkIcon className="h-4 w-4" />
                             </button>
@@ -172,7 +174,7 @@ export const CommandPalette: React.FC = () => {
                             {filtered.length === 0 ? (
                                 <div className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                                     <SparklesIcon className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                                    Sin coincidencias para “{query}”. Prueba con otro término.
+                                    {t("ui.sin-coincidencias-para.4e59cf")}{query}{t("ui.prueba-con-otro-termino.f6422e")}
                                 </div>
                             ) : (
                                 sectionedList.map((group, gi) => (
@@ -245,10 +247,10 @@ export const CommandPalette: React.FC = () => {
                         {/* Footer hints */}
                         <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 text-2xs text-gray-500 dark:text-gray-400">
                             <span className="flex items-center gap-2">
-                                <Kbd>↑</Kbd><Kbd>↓</Kbd> navegar · <Kbd>↵</Kbd> ejecutar · <Kbd>Esc</Kbd> cerrar
+                                <Kbd>↑</Kbd><Kbd>↓</Kbd> {t("ui.navegar.122334")} <Kbd>↵</Kbd> {t("ui.ejecutar.b07cbb")} <Kbd>{t("ui.esc.1f7a4f")}</Kbd> {t("ui.cerrar.13c4f0")}
                             </span>
                             <span className="flex items-center gap-1">
-                                <Kbd>{isMac() ? '⌘' : 'Ctrl'}</Kbd><Kbd>K</Kbd>
+                                <Kbd>{isMac() ? '⌘' : t("uiExpr.ctrl.dd6a02")}</Kbd><Kbd>K</Kbd>
                             </span>
                         </div>
                     </motion.div>

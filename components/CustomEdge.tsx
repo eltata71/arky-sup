@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useMemo } from 'react';
 import { EdgeProps, getBezierPath, getSmoothStepPath, EdgeLabelRenderer, BaseEdge, useStore } from 'reactflow';
 import type { EdgeRoute } from '../lib/edgeRoute';
@@ -95,6 +96,7 @@ const CustomEdge: React.FC<EdgeProps> = ({
     sourcePosition, targetPosition, label, data, style,
     markerEnd, markerStart, selected,
 }) => {
+  const t = useUiTranslation();
     const edgeData = (data ?? {}) as {
         edgeType?: string;
         animated?: boolean;
@@ -359,13 +361,13 @@ const CustomEdge: React.FC<EdgeProps> = ({
         if (edgeData.criticality) parts.push(`Criticidad: ${edgeData.criticality}`);
         if (edgeData.dataSensitivity) parts.push(`Sensibilidad: ${edgeData.dataSensitivity}`);
         if (edgeData.frequency) parts.push(`Frecuencia: ${edgeData.frequency}`);
-        if (edgeData.synchrony) parts.push(`Sincronía: ${edgeData.synchrony}`);
+        if (edgeData.synchrony) parts.push(t("uiDynamicGenerated.sincronia-p0.abb120", { p0: String(edgeData.synchrony) }));
         if (edgeData.security) parts.push(`Seguridad: ${edgeData.security}`);
         if (edgeData.retryPolicy) parts.push(`Reintentos: ${edgeData.retryPolicy}`);
         if (edgeData.sla) parts.push(`SLA: ${edgeData.sla}`);
         if (edgeData.payload) parts.push(`Payload: ${edgeData.payload}`);
         return parts.join(' · ');
-    }, [label, bpmnTokens, edgeData.fullLabel, edgeData.protocol, edgeData.direction, edgeData.criticality, edgeData.dataSensitivity, edgeData.frequency, edgeData.synchrony, edgeData.security, edgeData.retryPolicy, edgeData.sla, edgeData.payload]);
+    }, [label, bpmnTokens, edgeData.fullLabel, edgeData.protocol, edgeData.direction, edgeData.criticality, edgeData.dataSensitivity, edgeData.frequency, edgeData.synchrony, edgeData.security, edgeData.retryPolicy, edgeData.sla, edgeData.payload, t]);
 
     const filter = useMemo(() => {
         if (selected) return `drop-shadow(0 0 4px ${strokeColor})`;
@@ -562,13 +564,13 @@ const CustomEdge: React.FC<EdgeProps> = ({
                                             backgroundColor: `${strokeColor}22`,
                                             color: strokeColor,
                                         }}
-                                                aria-label={`BPMN ${bpmnTokens.label}`}
+                                                aria-label={t("uiTemplate.bpmn-p0.a62c35", { p0: String(bpmnTokens.label) })}
                                     >
-                                        {bpmnFlow === 'message-flow' ? 'MSG'
-                                            : bpmnFlow === 'association' ? 'ASSOC'
-                                                : bpmnFlow === 'conditional-flow' ? 'COND'
-                                                    : bpmnFlow === 'default-flow' ? 'DEF'
-                                                        : 'SEQ'}
+                                        {bpmnFlow === 'message-flow' ? t("uiExpr.msg.646083")
+                                            : bpmnFlow === 'association' ? t("uiExpr.assoc.d47278")
+                                                : bpmnFlow === 'conditional-flow' ? t("uiExpr.cond.f555c1")
+                                                    : bpmnFlow === 'default-flow' ? t("uiExpr.def.6dae29")
+                                                        : t("uiExpr.seq.001144")}
                                     </span>
                                 )}
                                 {edgeData.protocol && (
@@ -584,9 +586,9 @@ const CustomEdge: React.FC<EdgeProps> = ({
                                 {edgeData.criticality === 'critical' && (
                                     <span
                                         className="ml-1 px-1 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-rose-500/15 text-rose-600 dark:text-rose-300"
-                                        title="Relación crítica"
+                                        title={t("ui.relacion-critica.0e15c9")}
                                     >
-                                        Crítica
+                                        {t("ui.critica.3cfdcc")}
                                     </span>
                                 )}
                                 {visibleBadges.map((badge) => {
@@ -611,7 +613,7 @@ const CustomEdge: React.FC<EdgeProps> = ({
                                     <span
                                         className="ml-1 px-1 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-slate-500/15 text-slate-600 dark:text-slate-300"
                                         title={extraBadges.slice(2).map((b) => b.tooltip).join(' · ')}
-                                        aria-label={`Otros ${hiddenBadgeCount}: ${extraBadges.slice(2).map((b) => b.tooltip).join(', ')}`}
+                                        aria-label={t("uiTemplate.otros-p0-p1.ccd758", { p0: String(hiddenBadgeCount), p1: String(extraBadges.slice(2).map((b) => b.tooltip).join(', ')) })}
                                     >
                                         +{hiddenBadgeCount}
                                     </span>

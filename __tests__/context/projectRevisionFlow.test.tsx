@@ -9,6 +9,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../services/architectureProjects';
+import { spanishFallback } from '../../lib/i18n/spanishFallback';
 
 const repository = vi.hoisted(() => ({
   list: vi.fn(),
@@ -44,7 +45,7 @@ const mount = (initial: Project[]) => {
     handleWriteResult: (result: { success: boolean }) => result.success,
     setPersistenceStatus: vi.fn(),
     setPersistenceMessage: vi.fn(),
-  } as never));
+  } as never, spanishFallback));
   act(() => hook.result.current.setProjects(initial));
   return hook;
 };

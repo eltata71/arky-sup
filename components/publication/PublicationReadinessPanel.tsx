@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Badge, Button } from '../ui';
 import type {
@@ -35,12 +36,12 @@ const Metric: React.FC<{ label: string; value: string; tone?: 'success' | 'warni
  */
 export const PublicationReadinessPanel: React.FC<PublicationReadinessPanelProps> = ({
   readiness, profile, onRecalc, busy,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <div className="space-y-4">
     <div className="flex items-center justify-between gap-3">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          Veredicto de readiness
+          {t("ui.veredicto-de-readiness.c1a9fa")}
         </p>
         <div className="mt-1 flex items-center gap-2">
           <Badge tone={verdictTone(readiness.status)} size="sm">{verdictLabel(readiness.status)}</Badge>
@@ -50,26 +51,26 @@ export const PublicationReadinessPanel: React.FC<PublicationReadinessPanelProps>
         </div>
       </div>
       <Button variant="secondary" size="sm" onClick={onRecalc} disabled={busy}
-        aria-label="Recalcular el preflight y la readiness del paquete">
-        {busy ? 'Recalculando…' : 'Recalcular'}
+        aria-label={t("ui.recalcular-el-preflight-y-la.3ed4f9")}>
+        {busy ? t("uiExpr.recalculando.6038a1") : t("uiExpr.recalcular.ac2494")}
       </Button>
     </div>
 
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <Metric label="Calidad" value={`${readiness.qualityResults.score}`}
+      <Metric label={t("ui.calidad.b2e6a4")} value={`${readiness.qualityResults.score}`}
         tone={scoreTone(readiness.qualityResults.score) === 'danger' ? 'danger' : scoreTone(readiness.qualityResults.score) === 'warning' ? 'warning' : 'success'} />
-      <Metric label="Accesibilidad" value={`${readiness.accessibilityResults.score}`}
+      <Metric label={t("ui.accesibilidad.92bcf9")} value={`${readiness.accessibilityResults.score}`}
         tone={scoreTone(readiness.accessibilityResults.score) === 'danger' ? 'danger' : scoreTone(readiness.accessibilityResults.score) === 'warning' ? 'warning' : 'success'} />
-      <Metric label="Trazabilidad req." value={ratioPct(readiness.traceabilityResults.requirementCoverage)} />
-      <Metric label="Cobertura grafo" value={ratioPct(readiness.traceabilityResults.graphCoverage)} />
+      <Metric label={t("ui.trazabilidad-req.e684ca")} value={ratioPct(readiness.traceabilityResults.requirementCoverage)} />
+      <Metric label={t("ui.cobertura-grafo.ef7736")} value={ratioPct(readiness.traceabilityResults.graphCoverage)} />
     </div>
 
-    <section aria-label="Bloqueadores">
+    <section aria-label={t("ui.bloqueadores.2c247b")}>
       <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-        Bloqueadores ({readiness.blockers.length})
+        {t("ui.bloqueadores.02d707")}{readiness.blockers.length})
       </h3>
       {readiness.blockers.length === 0 ? (
-        <p className="mt-1 text-sm text-green-700 dark:text-green-300">Sin bloqueadores críticos.</p>
+        <p className="mt-1 text-sm text-green-700 dark:text-green-300">{t("ui.sin-bloqueadores-criticos.a0e22e")}</p>
       ) : (
         <ul className="mt-2 space-y-2">
           {readiness.blockers.map((b) => (
@@ -85,12 +86,12 @@ export const PublicationReadinessPanel: React.FC<PublicationReadinessPanelProps>
       )}
     </section>
 
-    <section aria-label="Advertencias">
+    <section aria-label={t("ui.advertencias.598c7e")}>
       <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-        Advertencias ({readiness.warnings.length})
+        {t("ui.advertencias.86bd60")}{readiness.warnings.length})
       </h3>
       {readiness.warnings.length === 0 ? (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Sin advertencias.</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("ui.sin-advertencias.ace3ba")}</p>
       ) : (
         <ul className="mt-2 space-y-1.5">
           {readiness.warnings.slice(0, 10).map((w) => (
@@ -103,15 +104,15 @@ export const PublicationReadinessPanel: React.FC<PublicationReadinessPanelProps>
       )}
     </section>
 
-    <section aria-label="Cobertura del perfil">
+    <section aria-label={t("ui.cobertura-del-perfil.81d136")}>
       <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-        Cobertura del perfil — {profile.name}
+        {t("ui.cobertura-del-perfil.bfa3b7")} {profile.name}
       </h3>
       <ul className="mt-2 space-y-1.5">
         {readiness.coverageResults.map((c) => (
           <li key={c.requirementId} className="flex items-start gap-2 text-sm">
             <Badge tone={c.satisfied ? 'success' : c.required ? 'danger' : 'warning'} size="xs">
-              {c.satisfied ? 'Cubierto' : c.required ? 'Falta' : 'Opcional'}
+              {c.satisfied ? t("uiExpr.cubierto.e4d71b") : c.required ? t("uiExpr.falta.2ce385") : t("uiExpr.opcional.7a5984")}
             </Badge>
             <span className="text-slate-700 dark:text-slate-300">
               <span className="font-semibold text-slate-900 dark:text-white">{c.label}</span> — {c.message}
@@ -119,14 +120,14 @@ export const PublicationReadinessPanel: React.FC<PublicationReadinessPanelProps>
           </li>
         ))}
         {readiness.coverageResults.length === 0 && (
-          <li className="text-sm text-slate-500 dark:text-slate-400">El perfil no define requisitos de artefactos.</li>
+          <li className="text-sm text-slate-500 dark:text-slate-400">{t("ui.el-perfil-no-define-requisit.de5976")}</li>
         )}
       </ul>
     </section>
 
     {readiness.recommendations.length > 0 && (
-      <section aria-label="Recomendaciones">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Recomendaciones</h3>
+      <section aria-label={t("kg.recommendations")}>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t("kg.recommendations")}</h3>
         <ul className="mt-2 space-y-1.5">
           {readiness.recommendations.slice(0, 10).map((r) => (
             <li key={r.id} className="text-sm text-slate-700 dark:text-slate-300">
@@ -137,4 +138,4 @@ export const PublicationReadinessPanel: React.FC<PublicationReadinessPanelProps>
       </section>
     )}
   </div>
-);
+); };

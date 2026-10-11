@@ -121,7 +121,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     if (!pendingOpenArtifactId || project?.artifactsLoaded === false) return;
     const timeout = window.setTimeout(() => {
       setPendingOpenArtifactId(null);
-      setDeepLinkError('El artefacto terminó de generarse, pero no pudimos abrirlo automáticamente. Puedes abrirlo manualmente desde la tabla de artefactos.');
+      setDeepLinkError(t('uiState.25'));
       setSearchParams(prev => {
         const next = new URLSearchParams(prev);
         next.delete('artifact');
@@ -131,7 +131,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     }, 10000);
 
     return () => window.clearTimeout(timeout);
-  }, [pendingOpenArtifactId, project?.artifactsLoaded, setSearchParams]);
+  }, [pendingOpenArtifactId, project?.artifactsLoaded, setSearchParams, t]);
 
   const handleConfirmCleanup = () => {
       if (project && integrityCheckResult) {
@@ -152,9 +152,9 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     if (!project) return false;
     enqueue({ project, template, settings, action, existingArtifact,
       composePersonaInstruction, loadContextPorts, onPhase });
-    addToast(`«${template.name}» está en la cola de generación.`, 'info');
+    addToast(t("uiMessage.p0-esta-en-la-cola-de-genera.debae3", { p0: String(template.name) }), 'info');
     return true;
-  }, [project, settings, enqueue, composePersonaInstruction, loadContextPorts, addToast]);
+  }, [project, settings, enqueue, composePersonaInstruction, loadContextPorts, addToast, t]);
 
   const handleCreateArtifact = useCallback(async (
         template: ArtifactTemplate,
@@ -167,7 +167,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
         return false;
     }
     if (readiness.score < 90) {
-        addToast(`Validación previa completada para "${template.name}" con score ${readiness.score}/100.`, 'warning');
+        addToast(t("uiMessage.validacion-previa-completada.e12303", { p0: String(template.name), p1: String(readiness.score) }), 'warning');
     }
 
     // Check if it already exists to show conflict modal
@@ -178,7 +178,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
     }
 
     return proceedWithGeneration(template, 'create', undefined, onPhase);
-  }, [project, findLatestArtifactByName, proceedWithGeneration, addToast]);
+  }, [project, findLatestArtifactByName, proceedWithGeneration, addToast, t]);
 
   const handleGenerateWorldClassArtifact = useCallback((artifact: Artifact) => {
     if (!project) return;
@@ -205,9 +205,9 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
         },
     };
 
-    addToast(`Iniciando generación de clase mundial para "${artifact.name}"…`, 'info');
+    addToast(t("uiMessage.iniciando-generacion-de-clas.db69d2", { p0: String(artifact.name) }), 'info');
     void proceedWithGeneration(template, 'new_version', artifact);
-  }, [project, proceedWithGeneration, addToast]);
+  }, [project, proceedWithGeneration, addToast, t]);
 
   const handleResolveConflict = (action: 'generate' | 'replace') => {
     if (!versionConflict) return;
@@ -240,15 +240,15 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
         {
             id: 'workspace.back-hub',
             section: 'Proyecto',
-            title: 'Volver al hub del proyecto',
-            subtitle: 'Cerrar el lienzo activo y ver el listado de artefactos',
+            title: t("Volver al hub del proyecto"),
+            subtitle: t("Cerrar el lienzo activo y ver el listado de artefactos"),
             run: () => setActiveArtifactId(null),
             keywords: ['hub','volver','listado'],
         },
         {
             id: 'workspace.go-home',
             section: 'Proyecto',
-            title: 'Ir al Dashboard',
+            title: t("Ir al Dashboard"),
             run: () => navigate('/'),
             keywords: ['inicio','home'],
         },
@@ -264,20 +264,20 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
         });
     });
     return list;
-  }, [project, navigate]);
+  }, [project, navigate, t]);
   useRegisterCommands(workspaceCommands);
 
   // --- Render Logic ---
 
   if (isGlobalLoading) {
     return (
-        <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950" role="status" aria-label="Cargando proyecto">
+        <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950" role="status" aria-label={t("ui.cargando-proyecto.342eaf")}>
             <div className="flex flex-col items-center gap-3 animate-fade-in">
                 <div className="relative h-12 w-12">
                     <div className="absolute inset-0 rounded-full bg-primary-200/50 dark:bg-primary-900/40 animate-ping" />
                     <div className="relative h-12 w-12 border-[3px] border-primary-200 dark:border-primary-900 border-t-primary-600 dark:border-t-primary-300 rounded-full animate-spin" />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Cargando proyecto…</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t("ui.cargando-proyecto.2afe0c")}</p>
             </div>
         </div>
     );
@@ -290,13 +290,13 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
                     <SparklesIcon className="h-6 w-6" />
                 </div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{t('projectNotFound')}</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">El proyecto que buscas puede haber sido eliminado o no tienes acceso a él.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{t("ui.el-proyecto-que-buscas-puede.e50643")}</p>
                 <button
                     type="button"
                     onClick={() => navigate('/')}
                     className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
                 >
-                    Volver al Dashboard
+                    {t("ui.volver-al-dashboard.4a3744")}
                 </button>
             </div>
         </div>
@@ -316,7 +316,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
                     /* SCREEN 3: ARTIFACT CANVAS (Active) */
                     <div className="flex flex-col h-full bg-white dark:bg-gray-950 animate-fade-in min-h-0">
                         <div className="flex-1 relative overflow-hidden min-h-0">
-                            <ErrorBoundary key={activeArtifact.id} fallbackTitle="Error al renderizar el artefacto">
+                            <ErrorBoundary key={activeArtifact.id} fallbackTitle={t("Error al renderizar el artefacto")}>
                                 <React.Suspense fallback={<p role="status" className="p-4 text-sm text-gray-600 dark:text-gray-300">{t('workspace.openingArtifact')}</p>}>
                                     <ArtifactCanvas
                                         project={project}
@@ -339,7 +339,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
                                   className="text-amber-700 dark:text-amber-300 hover:underline whitespace-nowrap"
                                   onClick={() => setDeepLinkError(null)}
                                 >
-                                  Cerrar
+                                  {t("sdd.close")}
                                 </button>
                             </div>
                         )}
@@ -394,10 +394,10 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
 
         <ConfirmDialog
             isOpen={!!deleteConfirm}
-            title="Eliminar Artefacto"
-            message={`¿Estás seguro de que deseas eliminar "${deleteConfirm?.name}"? Esta acción no se puede deshacer.`}
-            confirmLabel="Eliminar"
-            cancelLabel="Cancelar"
+            title={t("ui.eliminar-artefacto.9186fe")}
+            message={t('uiDynamic.deleteArtifactConfirm', { name: deleteConfirm?.name ?? '' })}
+            confirmLabel={t("Eliminar")}
+            cancelLabel={t("Cancelar")}
             variant="danger"
             onConfirm={confirmDeleteArtifact}
             onCancel={() => setDeleteConfirm(null)}

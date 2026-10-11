@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { Artifact } from '../../../lib/artifacts';
 import { aiUndoStore } from '../../../services/artifacts/application/aiUndo';
+import { spanishFallback } from '../../../lib/i18n/spanishFallback';
 
 const addToast = vi.fn();
 const announce = vi.fn();
@@ -13,7 +14,7 @@ const artifact = (id: string, version: number): Artifact =>
 const projects = [{ id: 'p1', artifacts: [artifact('a1', 1), artifact('a2', 2)] }];
 
 vi.mock('../../../context/AppContext', () => ({
-  useAppContext: () => ({ projects, restoreArtifactVersion }),
+  useAppContext: () => ({ projects, restoreArtifactVersion, t: spanishFallback }),
 }));
 vi.mock('../../../context/ToastContext', () => ({ useToast: () => ({ addToast }) }));
 vi.mock('../../../hooks/useAriaAnnouncer', () => ({ useAriaAnnouncer: () => ({ announce }) }));

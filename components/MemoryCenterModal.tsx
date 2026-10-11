@@ -189,7 +189,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                     return true;
                 case 'artifact':
                     if (!currentArtifact) {
-                        addToast('Selecciona primero un artefacto.', 'error');
+                        addToast(t("uiMessage.selecciona-primero-un-artefa.328ab6"), 'error');
                         return false;
                     }
                     updateArtifact(project.id, currentArtifact.id, { artifactMemory: texts, artifactMemoryEntries: nextRecords });
@@ -199,12 +199,12 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
             }
         } catch (error) {
             console.error('MemoryCenterModal: failed to persist entries', error);
-            addToast('No se pudo guardar el cambio. Reintenta más tarde.', 'error');
+            addToast(t("uiMessage.no-se-pudo-guardar-el-cambio.d4f4fc"), 'error');
             return false;
         } finally {
             setIsSaving(false);
         }
-    }, [activeScope, currentArtifact, project.id, addToast, updateArtifact, runProjectCommand, updateSettings]);
+    }, [activeScope, currentArtifact, project.id, addToast, updateArtifact, runProjectCommand, updateSettings, t]);
 
     const author = useMemo(() => ({
         authorId: profile?.uid ?? null,
@@ -217,12 +217,12 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         // materializan sin fecha (origen legacy) para no inventar metadatos.
         const records = initialCaptureFallback.map(text => createMemoryEntry(text, { createdAt: null }));
         const ok = await persistRecords(records);
-        if (ok) addToast('Captura inicial guardada como editable.', 'success');
-    }, [showFallback, initialCaptureFallback, persistRecords, addToast]);
+        if (ok) addToast(t("uiMessage.captura-inicial-guardada-com.251176"), 'success');
+    }, [showFallback, initialCaptureFallback, persistRecords, addToast, t]);
 
     const handleCreate = () => {
         if (activeScope === 'artifact' && !currentArtifact) {
-            addToast('Selecciona un artefacto primero.', 'info');
+            addToast(t("uiMessage.selecciona-un-artefacto-prim.129166"), 'info');
             return;
         }
         setDraft('');
@@ -237,7 +237,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         const fromExtraction = extractedSuggestions.filter(s => s.accepted).map(s => s.value.trim()).filter(Boolean);
         const toAdd = [value, ...fromExtraction].filter(Boolean);
         if (toAdd.length === 0) {
-            addToast('Escribe contenido o acepta al menos una sugerencia.', 'info');
+            addToast(t("uiMessage.escribe-contenido-o-acepta-a.57d0e8"), 'info');
             return;
         }
         const baseRecords = showFallback
@@ -246,7 +246,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         const newRecords = toAdd.map(text => createMemoryEntry(text, { priority: draftPriority, ...author }));
         const ok = await persistRecords([...baseRecords, ...newRecords]);
         if (ok) {
-            addToast(`${toAdd.length} entrada(s) añadida(s).`, 'success');
+            addToast(t("uiMessage.p0-entrada-s-anadida-s.fd596a", { p0: String(toAdd.length) }), 'success');
             setAction({ mode: 'list' });
         }
     };
@@ -254,7 +254,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
     const handleSaveEdit = async (entryId: string) => {
         const value = draft.trim();
         if (!value) {
-            addToast('El contenido no puede estar vacío.', 'info');
+            addToast(t("uiMessage.el-contenido-no-puede-estar.8f9a57"), 'info');
             return;
         }
         const next = entryRecords.map((entry) => entry.id === entryId
@@ -262,7 +262,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
             : entry);
         const ok = await persistRecords(next);
         if (ok) {
-            addToast('Entrada actualizada.', 'success');
+            addToast(t("uiMessage.entrada-actualizada.03e786"), 'success');
             setAction({ mode: 'list' });
         }
     };
@@ -270,12 +270,12 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
     const handleChangePriority = async (entryId: string, priority: MemoryPriority) => {
         const next = entryRecords.map((entry) => entry.id === entryId ? { ...entry, priority } : entry);
         const ok = await persistRecords(next);
-        if (ok) addToast(`Prioridad cambiada a ${MEMORY_PRIORITY_LABEL_ES[priority].toLowerCase()}.`, 'success');
+        if (ok) addToast(t("uiMessage.prioridad-cambiada-a-p0.d81e7b", { p0: String(MEMORY_PRIORITY_LABEL_ES[priority].toLowerCase()) }), 'success');
     };
 
     const handleDelete = (entryId: string | null, isDerived: boolean) => {
         if (isDerived || !entryId) {
-            addToast('Esta entrada está derivada de la creación del proyecto. Cárgala primero para gestionarla.', 'info');
+            addToast(t("uiMessage.esta-entrada-esta-derivada-d.a78d92"), 'info');
             return;
         }
         setPendingDeleteId(entryId);
@@ -288,7 +288,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         const next = entryRecords.filter((entry) => entry.id !== entryId);
         const ok = await persistRecords(next);
         if (ok) {
-            addToast('Entrada eliminada.', 'success');
+            addToast(t("uiMessage.entrada-eliminada.d61998"), 'success');
             if (action.mode === 'edit' || action.mode === 'view') setAction({ mode: 'list' });
         }
     };
@@ -311,14 +311,14 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                 : `Proyecto: "${project.name}". Descripción: ${project.description}.`;
             const suggestions = await documentGenerationService.extractMemoryEntriesFromDocument(filePayload, resolveMemoryExtractionScope(activeScope), extractionScopeHint, settings);
             if (suggestions.length === 0) {
-                addToast('La IA no encontró información relevante en el documento para este ámbito.', 'info');
+                addToast(t("uiMessage.la-ia-no-encontro-informacio.4107c8"), 'info');
             } else {
-                addToast(`Se identificaron ${suggestions.length} apunte(s). Revísalos y acepta los que quieras guardar.`, 'success');
+                addToast(t("uiMessage.se-identificaron-p0-apunte-s.1d3098", { p0: String(suggestions.length) }), 'success');
             }
             setExtractedSuggestions(suggestions.map(value => ({ value, accepted: true })));
         } catch (error) {
             console.error('MemoryCenterModal: extraction failed', error);
-            addToast('No se pudo analizar el documento. Verifica el formato o intenta de nuevo.', 'error');
+            addToast(t("uiMessage.no-se-pudo-analizar-el-docum.5672c6"), 'error');
         } finally {
             setIsExtracting(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -329,7 +329,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         const file = event.target.files?.[0];
         if (!file) return;
         if (file.size > 8 * 1024 * 1024) {
-            addToast('El archivo supera los 8 MB. Sube uno más liviano.', 'error');
+            addToast(t("uiMessage.el-archivo-supera-los-8-mb-s.a18e2f"), 'error');
             event.target.value = '';
             return;
         }
@@ -354,13 +354,13 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         : null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={t('mem.title')} description="Gestiona la memoria del Arquitecto Agente (base y proyecto), la memoria global, del proyecto y de cada artefacto en un único panel.">
+        <Modal isOpen={isOpen} onClose={onClose} title={t('mem.title')} description={t("Gestiona la memoria del Arquitecto Agente (base y proyecto), la memoria global, del proyecto y de cada artefacto en un único panel.")}>
             <div className="flex flex-col gap-5 md:flex-row md:gap-6 md:min-h-[60vh]">
                 {/* Sidebar de scopes */}
                 <aside className="md:w-64 md:flex-shrink-0">
                     <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                         <CpuChipIcon className="h-4 w-4" />
-                        Ámbitos
+                        {t("ui.ambitos.710fdf")}
                     </div>
                     <nav className="grid gap-1.5" aria-label={t('mem.scopesLabel')}>
                         {MEMORY_SCOPES.map(scope => {
@@ -429,7 +429,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                                 className="inline-flex items-center justify-center gap-1.5 self-start rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
                             >
                                 <PlusIcon className="h-4 w-4" />
-                                Nuevo registro
+                                {t("ui.nuevo-registro.3d23d0")}
                             </button>
                         )}
                     </header>
@@ -449,7 +449,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                     {isArtifactScope && (
                         <div className="mb-3">
                             <label htmlFor="memory-artifact-select" className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                Artefacto
+                                {t("ui.artefacto.609eed")}
                             </label>
                             <select
                                 id="memory-artifact-select"
@@ -477,7 +477,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                             <div className="min-w-0 flex-1">
                                 <p className="text-sm font-bold text-amber-900 dark:text-amber-100">{t('mem.derivedCapture')}</p>
                                 <p className="mt-0.5 text-xs leading-relaxed text-amber-900/80 dark:text-amber-100/80">
-                                    Este proyecto se creó antes de que existiera la captura inicial gestionable. Se está mostrando lo registrado al momento de creación (descripción y contexto inicial). Conviértela en captura editable para poder modificar, añadir o eliminar entradas.
+                                    {t("ui.este-proyecto-se-creo-antes.0ad919")}
                                 </p>
                                 <button
                                     type="button"
@@ -486,7 +486,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                                     className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-amber-500 dark:hover:bg-amber-400"
                                 >
                                     {isSaving ? <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" /> : <CheckCircleIcon className="h-3.5 w-3.5" />}
-                                    Convertir en captura editable
+                                    {t("ui.convertir-en-captura-editabl.283861")}
                                 </button>
                             </div>
                         </div>
@@ -501,7 +501,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                             onView={(item) => setAction({ mode: 'view', entryId: item.isDerived ? null : item.entry.id, derivedIndex: item.derivedIndex })}
                             onEdit={(item) => {
                                 if (item.isDerived) {
-                                    addToast('Convierte la captura inicial en editable para modificarla.', 'info');
+                                    addToast(t("uiMessage.convierte-la-captura-inicial.7f898d"), 'info');
                                     return;
                                 }
                                 startEdit(item.entry.id);
@@ -509,7 +509,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                             onDelete={(item) => handleDelete(item.isDerived ? null : item.entry.id, item.isDerived)}
                             onChangePriority={(item, priority) => {
                                 if (item.isDerived) {
-                                    addToast('Convierte la captura inicial en editable para priorizar sus notas.', 'info');
+                                    addToast(t("uiMessage.convierte-la-captura-inicial.397433"), 'info');
                                     return;
                                 }
                                 handleChangePriority(item.entry.id, priority);
@@ -523,7 +523,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                             isDerived={action.derivedIndex !== undefined}
                             onEdit={() => {
                                 if (action.derivedIndex !== undefined) {
-                                    addToast('Convierte la captura inicial en editable para modificarla.', 'info');
+                                    addToast(t("uiMessage.convierte-la-captura-inicial.7f898d"), 'info');
                                     return;
                                 }
                                 if (action.entryId) startEdit(action.entryId);
@@ -572,8 +572,8 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
             <ConfirmDialog
                 isOpen={pendingDeleteId !== null}
                 title={t('mem.deleteTitle')}
-                message="Esta entrada se eliminará de la memoria del proyecto. La acción no se puede deshacer."
-                confirmLabel="Eliminar"
+                message={t("Esta entrada se eliminará de la memoria del proyecto. La acción no se puede deshacer.")}
+                confirmLabel={t("Eliminar")}
                 variant="danger"
                 onConfirm={() => { void confirmDelete(); }}
                 onCancel={() => setPendingDeleteId(null)}

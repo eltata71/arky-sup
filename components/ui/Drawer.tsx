@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { ReactNode, useEffect, useId } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { XMarkIcon } from '../Icons';
@@ -91,6 +92,7 @@ export const Drawer: React.FC<DrawerProps> = ({
     children,
     ariaLabel,
 }) => {
+  const t = useUiTranslation();
     const titleId = useId();
     const descriptionId = useId();
     const containerRef = useFocusTrap<HTMLDivElement>(isOpen);
@@ -156,7 +158,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                                 <button
                                     onClick={onClose}
                                     type="button"
-                                    aria-label="Cerrar panel"
+                                    aria-label={t("ui.cerrar-panel.e9f9b4")}
                                     className="flex-shrink-0 p-2 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
                                 >
                                     <XMarkIcon className="h-5 w-5" />

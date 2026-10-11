@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Alert, Button, PageSkeleton } from '../ui';
 
@@ -16,21 +17,21 @@ interface EngagementRoomFallbackProps {
  * skipped the signature. Now it shows the load until the Office has resolved
  * (`OfficeContext.isResolving`), and only then says the engagement is not there.
  */
-export const EngagementRoomFallback: React.FC<EngagementRoomFallbackProps> = ({ resolving, onBack }) => (
+export const EngagementRoomFallback: React.FC<EngagementRoomFallbackProps> = ({ resolving, onBack }) =>{ const t = useUiTranslation(); return  (
   <div className="min-h-[100dvh] px-4 py-6 md:pl-20 md:pr-8">
     {resolving ? (
       <div className="mx-auto max-w-5xl">
-        <PageSkeleton label="Cargando el entregable" tiles={4} panels={2} />
+        <PageSkeleton label={t("ui.cargando-el-entregable.76271c")} tiles={4} panels={2} />
       </div>
     ) : (
       <div className="mx-auto max-w-3xl">
-        <Alert tone="warning" title="Entregable no encontrado">
-          El entregable que buscas no existe, o no tienes acceso a él.
+        <Alert tone="warning" title={t("ui.entregable-no-encontrado.a2d437")}>
+          {t("ui.el-entregable-que-buscas-no.021f21")}
         </Alert>
         <Button className="mt-4" variant="secondary" onClick={onBack}>
-          Volver al panel de la Oficina
+          {t("ui.volver-al-panel-de-la-oficin.77ef82")}
         </Button>
       </div>
     )}
   </div>
-);
+); };

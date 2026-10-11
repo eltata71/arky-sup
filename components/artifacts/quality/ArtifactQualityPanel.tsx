@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ArtifactQualityReport, ArtifactQualityExportabilityState } from '../../../services/quality';
@@ -64,6 +65,7 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
   onAutoImproveDiagram,
   onApplyRecommendation,
 }) => {
+  const t = useUiTranslation();
   const dimensionsByScope = useMemo(() => {
     if (!report) return [] as Array<[string, QualityDimensions]>;
     const grouped = new Map<string, QualityDimensions>();
@@ -84,28 +86,28 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
           exit={{ x: 24, opacity: 0 }}
           transition={{ duration: MOTION.duration.fast }}
           role="complementary"
-          aria-label="Calidad del artefacto"
+          aria-label={t("ui.calidad-del-artefacto.4216d8")}
           className="absolute top-20 right-4 z-30 w-[380px] max-h-[calc(100%-8rem)] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-4"
         >
           <header className="flex items-center justify-between gap-2 mb-3">
             <div>
               <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-                Calidad del artefacto
+                {t("ui.calidad-del-artefacto.4216d8")}
               </p>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {report.score.unmeasured ? 'Sin medir' : `${report.score.value}/100 · ${tierLabel(report.score.tier)}`}
+                {report.score.unmeasured ? t("iniKpi.unmeasured") : `${report.score.value}/100 · ${tierLabel(report.score.tier)}`}
               </h3>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                Perfil: {report.profile.label}
+                {t("ui.perfil.964c0a")} {report.profile.label}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
               className="text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-              title="Cerrar panel"
+              title={t("ui.cerrar-panel.e9f9b4")}
             >
-              Cerrar
+              {t("sdd.close")}
             </button>
           </header>
 
@@ -116,32 +118,32 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
           <div className="grid grid-cols-2 gap-2 mb-3">
             {report.document && (
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-2">
-                <p className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Documento</p>
+                <p className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("ui.documento.8ae11c")}</p>
                 <p className={`text-sm font-semibold ${toneForScore(report.document.score)}`}>{report.document.score}/100</p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400">{report.document.wordCount} palabras</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">{report.document.wordCount} {t("ui.palabras.6b05dc")}</p>
               </div>
             )}
             {report.diagram && (
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-2">
-                <p className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Diagrama</p>
+                <p className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("lucid.diagramView")}</p>
                 <p className={`text-sm font-semibold ${toneForScore(report.diagram.score)}`}>{report.diagram.score}/100</p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400">{report.diagram.issueCount} hallazgo(s)</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">{report.diagram.issueCount} {t("ui.hallazgo-s.51acab")}</p>
               </div>
             )}
             {report.tables && (
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-2 col-span-2">
-                <p className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Tablas</p>
+                <p className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("ui.tablas.54f708")}</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {report.tables.count} · {(report.tables.completeness * 100).toFixed(0)}% completas
+                  {report.tables.count} · {(report.tables.completeness * 100).toFixed(0)}{t("ui.completas.07d7da")}
                 </p>
               </div>
             )}
           </div>
 
           {exportability && (
-            <section aria-label="Estado de exportabilidad" className="mb-3 space-y-1">
+            <section aria-label={t("ui.estado-de-exportabilidad.46fd40")} className="mb-3 space-y-1">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                Exportabilidad
+                {t("ui.exportabilidad.8a3c9b")}
               </p>
               {(['document', 'diagram', 'table'] as const).map((kind) => {
                 const gate = exportability[kind];
@@ -150,7 +152,7 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
                     key={kind}
                     className={`text-[11px] rounded-md px-2 py-1.5 ${gateColour(gate.passed, gate.risk)}`}
                   >
-                    <strong className="capitalize">{kind === 'table' ? 'Tablas' : kind === 'diagram' ? 'Diagrama' : 'Documento'}: </strong>
+                    <strong className="capitalize">{kind === 'table' ? t("ui.tablas.54f708") : kind === 'diagram' ? t("lucid.diagramView") : t("ui.documento.8ae11c")}: </strong>
                     {gate.message}
                   </div>
                 );
@@ -165,9 +167,9 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
                 onClick={onAutoRepairDocument}
                 disabled={isRepairing}
                 className="flex-1 min-w-[140px] px-2 py-1.5 rounded-lg text-[11px] font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-900/60 disabled:opacity-60 disabled:cursor-wait"
-                title="Aplica reparaciones determinísticas al documento (secciones faltantes, TBD, H1, próximos pasos)."
+                title={t("ui.aplica-reparaciones-determin.571585")}
               >
-                {isRepairing ? 'Reparando…' : 'Auto-reparar documento'}
+                {isRepairing ? t("uiExpr.reparando.775b8e") : t("uiExpr.auto-reparar-documento.5682b8")}
               </button>
             )}
             {onAutoImproveDiagram && report.diagram && (
@@ -177,7 +179,7 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
                 disabled={isRepairing}
                 className="flex-1 min-w-[140px] px-2 py-1.5 rounded-lg text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 disabled:opacity-60 disabled:cursor-wait"
               >
-                Auto-mejorar diagrama
+                {t("ui.auto-mejorar-diagrama.6b16b8")}
               </button>
             )}
           </div>
@@ -185,7 +187,7 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
           {dimensionsByScope.length > 0 && (
             <section className="mb-3">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                Dimensiones evaluadas
+                {t("ui.dimensiones-evaluadas.19b221")}
               </p>
               <div className="grid grid-cols-2 gap-1.5">
                 {report.dimensions.map((dim) => (
@@ -203,7 +205,7 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
           {report.issues.length > 0 ? (
             <section className="space-y-3">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Hallazgos · {report.issues.length}
+                {t("ui.hallazgos.c1d4c1")} {report.issues.length}
               </p>
               {SEVERITY_ORDER.map((sev) => {
                 const group = report.issues.filter((i) => i.severity === sev);
@@ -227,7 +229,7 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
                                   onClick={() => onApplyRecommendation(`rec.${issue.id}`)}
                                   className="mt-1.5 px-2 py-1 rounded-md text-[10px] font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-900/60"
                                 >
-                                  Aplicar fix rápido
+                                  {t("ui.aplicar-fix-rapido.62503b")}
                                 </button>
                               )}
                             </div>
@@ -241,14 +243,14 @@ export const ArtifactQualityPanel: React.FC<ArtifactQualityPanelProps> = ({
             </section>
           ) : (
             <p className="text-xs text-emerald-700 dark:text-emerald-300">
-              Sin hallazgos. Excelente base para exportación.
+              {t("ui.sin-hallazgos-excelente-base.6f5b49")}
             </p>
           )}
 
           {report.recommendations.length > 0 && (
             <section className="mt-4">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                Próximos pasos
+                {t("ui.proximos-pasos.afb25f")}
               </p>
               <ul className="space-y-1.5">
                 {report.recommendations.map((rec) => (

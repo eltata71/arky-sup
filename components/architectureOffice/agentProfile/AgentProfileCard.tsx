@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * La ficha de un agente, en su forma de tarjeta.
  *
@@ -43,6 +44,8 @@ export interface AgentProfileCardProps {
 }
 
 export const AgentProfileCard: React.FC<AgentProfileCardProps> = ({ profile, onOpen, onEdit }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const reducedMotion = useReducedMotion();
   const knowledgeScore = Math.min(100, profile.standardIds.length * 16 + profile.knowledge.length * 12);
   const memoryScore = Math.min(100, profile.memory.length * 20);
@@ -53,7 +56,7 @@ export const AgentProfileCard: React.FC<AgentProfileCardProps> = ({ profile, onO
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`Ver la ficha de ${profile.alias}, ${profile.role}`}
+      aria-label={t("uiTemplate.ver-la-ficha-de-p0-p1.cfdbb0", { p0: String(profile.alias), p1: String(profile.role) })}
       className="flex items-start gap-3 rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
     >
       <AgentProfileAvatar profile={profile} />
@@ -64,7 +67,7 @@ export const AgentProfileCard: React.FC<AgentProfileCardProps> = ({ profile, onO
               sentidos. Un badge «Inactivo» aquí sería el mismo hecho contado
               dos veces en dos vocabularios distintos dentro de la misma
               tarjeta. */}
-          {profile.customized && <Badge tone="ai" size="xs">Personalizado</Badge>}
+          {profile.customized && <Badge tone="ai" size="xs">{t("ui.personalizado.738665")}</Badge>}
         </div>
         <p className="mt-0.5 text-xs leading-snug text-gray-600 dark:text-gray-300">{profile.role}</p>
         {/*
@@ -76,7 +79,7 @@ export const AgentProfileCard: React.FC<AgentProfileCardProps> = ({ profile, onO
         <span className="mt-1 flex">
           <StatusDot
             tone={profile.enabled ? 'success' : 'neutral'}
-            label={profile.enabled ? 'Disponible' : 'Fuera del reparto'}
+            label={profile.enabled ? t("uiExpr.disponible.264396") : t("uiExpr.fuera-del-reparto.68c58b")}
             showLabel
           />
         </span>
@@ -91,7 +94,7 @@ export const AgentProfileCard: React.FC<AgentProfileCardProps> = ({ profile, onO
     {profile.domains.length > 0 && (
       <div>
         <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-          <Target className="h-3.5 w-3.5" aria-hidden />Dominio
+          <Target className="h-3.5 w-3.5" aria-hidden />{t("ui.dominio.8b3cbf")}
         </p>
         <p className="mt-1 flex flex-wrap gap-1">
           {profile.domains.slice(0, 3).map((domain) => (
@@ -107,44 +110,44 @@ export const AgentProfileCard: React.FC<AgentProfileCardProps> = ({ profile, onO
     )}
 
     <div className="flex flex-wrap gap-1.5">
-      <Badge tone="primary" size="xs" outline>{ROLE_LABELS[profile.orchestrationRole]}</Badge>
-      <Badge tone="info" size="xs" outline>{TIER_LABELS[profile.modelTier]}</Badge>
-      <Badge tone="gray" size="xs" outline>{profile.maxConcurrentTasks} tarea(s) a la vez</Badge>
+      <Badge tone="primary" size="xs" outline>{translateConfig(ROLE_LABELS[profile.orchestrationRole])}</Badge>
+      <Badge tone="info" size="xs" outline>{translateConfig(TIER_LABELS[profile.modelTier])}</Badge>
+      <Badge tone="gray" size="xs" outline>{profile.maxConcurrentTasks} {t("ui.tarea-s-a-la-vez.92f208")}</Badge>
     </div>
 
-    <div className="grid grid-cols-2 gap-2" aria-label="Indicadores del agente">
+    <div className="grid grid-cols-2 gap-2" aria-label={t("ui.indicadores-del-agente.364785")}>
       <div className="rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/55">
-        <div className="flex items-center justify-between gap-2 text-2xs text-gray-500 dark:text-gray-400"><span className="inline-flex items-center gap-1"><BrainCircuit className="h-3.5 w-3.5" />Conocimiento</span><strong className="text-gray-700 dark:text-gray-200">{profile.standardIds.length + profile.knowledge.length}</strong></div>
+        <div className="flex items-center justify-between gap-2 text-2xs text-gray-500 dark:text-gray-400"><span className="inline-flex items-center gap-1"><BrainCircuit className="h-3.5 w-3.5" />{t("ui.conocimiento.e89439")}</span><strong className="text-gray-700 dark:text-gray-200">{profile.standardIds.length + profile.knowledge.length}</strong></div>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"><span className="block h-full rounded-full bg-gradient-to-r from-primary-500 to-sky-400" style={{ width: `${knowledgeScore}%` }} /></div>
       </div>
       <div className="rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/55">
-        <div className="flex items-center justify-between gap-2 text-2xs text-gray-500 dark:text-gray-400"><span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" />Memoria</span><strong className="text-gray-700 dark:text-gray-200">{profile.memory.length}</strong></div>
+        <div className="flex items-center justify-between gap-2 text-2xs text-gray-500 dark:text-gray-400"><span className="inline-flex items-center gap-1"><Sparkles className="h-3.5 w-3.5" />{t("ui.memoria.8b1a8b")}</span><strong className="text-gray-700 dark:text-gray-200">{profile.memory.length}</strong></div>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"><span className="block h-full rounded-full bg-gradient-to-r from-ai-500 to-pink-400" style={{ width: `${memoryScore}%` }} /></div>
       </div>
     </div>
 
     <dl className="space-y-2 text-xs">
       <div>
-        <dt className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400"><Cpu className="h-3.5 w-3.5" />Habilidades</dt>
+        <dt className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400"><Cpu className="h-3.5 w-3.5" />{t("ui.habilidades.bff903")}</dt>
         <dd className="mt-1 flex flex-wrap gap-1">
           {profile.skills.slice(0, 4).map((skill) => <span key={skill} className="rounded-md bg-gray-100 px-1.5 py-0.5 text-gray-700 dark:bg-gray-800 dark:text-gray-200">{skill}</span>)}
           {profile.skills.length > 4 && <span className="px-1 py-0.5 text-gray-500">+{profile.skills.length - 4}</span>}
         </dd>
       </div>
       <div>
-        <dt className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400"><Layers3 className="h-3.5 w-3.5" />Cobertura gobernada</dt>
+        <dt className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400"><Layers3 className="h-3.5 w-3.5" />{t("ui.cobertura-gobernada.a50841")}</dt>
         <dd className="mt-0.5 text-gray-700 dark:text-gray-200">
-          {profile.producesArtifactTypes.length} tipo(s) · {profile.reviewsArtifactTypes.length} tipo(s)
+          {profile.producesArtifactTypes.length} {t("ui.tipo-s.63acbc")} {profile.reviewsArtifactTypes.length} {t("ui.tipo-s.058563")}
         </dd>
       </div>
     </dl>
 
     <div className="mt-auto flex gap-2 pt-1">
       <Button variant="primary" size="sm" onClick={onOpen} className="flex-1">
-        Ver ficha
+        {t("ui.ver-ficha.ce3441")}
       </Button>
       <Button variant="secondary" size="sm" onClick={onEdit} className="flex-1">
-        <Settings2 className="h-3.5 w-3.5" aria-hidden /> Configurar
+        <Settings2 className="h-3.5 w-3.5" aria-hidden /> {t("ui.configurar.9b2229")}
       </Button>
     </div>
   </Card>

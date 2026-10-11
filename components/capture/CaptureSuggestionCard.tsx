@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Lo que el asistente propone, antes de que sea de nadie.
  *
@@ -36,6 +37,7 @@ export const CaptureSuggestionCard: React.FC<CaptureSuggestionCardProps> = ({
   applied = [],
   className,
 }) => {
+  const t = useUiTranslation();
   const appliedSet = new Set(applied.map((value) => value.trim().toLowerCase()));
   const pending = suggestion.values.filter((value) => !appliedSet.has(value.trim().toLowerCase()));
   if (pending.length === 0) return null;
@@ -50,12 +52,12 @@ export const CaptureSuggestionCard: React.FC<CaptureSuggestionCardProps> = ({
       <div className="mb-2 flex items-start justify-between gap-2">
         <Badge tone="ai" size="xs">
           <Sparkles className="mr-1 h-3 w-3" aria-hidden />
-          Propuesta del arquitecto agente
+          {t("ui.propuesta-del-arquitecto-age.6f4542")}
         </Badge>
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Descartar la propuesta"
+          aria-label={t("ui.descartar-la-propuesta.9e6815")}
           className="inline-flex h-5 w-5 items-center justify-center rounded text-gray-400 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:text-gray-200"
         >
           <X className="h-3.5 w-3.5" aria-hidden />
@@ -69,7 +71,7 @@ export const CaptureSuggestionCard: React.FC<CaptureSuggestionCardProps> = ({
           </p>
           <Button size="xs" variant="ai" onClick={() => onAccept(pending[0])}>
             <Check className="mr-1 h-3 w-3" aria-hidden />
-            Usar esta redacción
+            {t("ui.usar-esta-redaccion.ac8550")}
           </Button>
         </div>
       ) : (
@@ -79,7 +81,7 @@ export const CaptureSuggestionCard: React.FC<CaptureSuggestionCardProps> = ({
               <button
                 type="button"
                 onClick={() => onAccept(value)}
-                aria-label={`Añadir: ${value}`}
+                aria-label={t("uiTemplate.anadir-p0.575f18", { p0: String(value) })}
                 className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-ai-300 bg-white text-ai-700 transition-colors hover:bg-ai-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-ai-700 dark:bg-gray-900 dark:text-ai-300"
               >
                 <Plus className="h-3 w-3" aria-hidden />

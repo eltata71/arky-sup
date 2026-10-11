@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useMemo } from 'react';
 import type { Project } from '../../context/AppContext';
 import { Badge } from '../ui';
@@ -26,6 +27,7 @@ export const OfficeCapabilitiesPanel: React.FC<OfficeCapabilitiesPanelProps> = (
   initiatives,
   onChangeInitiativeLinks,
 }) => {
+  const t = useUiTranslation();
   const capabilities = useMemo(() => describeOfficeCapabilities(project), [project]);
   // Ids win; a legacy code is honoured only while nothing has migrated it —
   // `services/portfolioGraph` decides, so the picker shows what the rest of
@@ -39,23 +41,23 @@ export const OfficeCapabilitiesPanel: React.FC<OfficeCapabilitiesPanelProps> = (
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-600 dark:text-primary-300">Capacidades integradas</p>
-          <h2 id="office-capabilities-title" className="mt-1 text-base font-black text-slate-950 dark:text-white">Oficina de Arquitectura</h2>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-600 dark:text-primary-300">{t("ui.capacidades-integradas.0afaae")}</p>
+          <h2 id="office-capabilities-title" className="mt-1 text-base font-black text-slate-950 dark:text-white">{t("ui.oficina-de-arquitectura.2534eb")}</h2>
         </div>
         <Badge tone={toneFor(capabilities.overallStatus)} size="xs" dot>
           {capabilities.overallStatus.toUpperCase()}
         </Badge>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Cobertura de capacidades">
-        <Badge tone="ai" size="xs">{capabilities.counts.personas} personas</Badge>
-        <Badge tone="info" size="xs">{capabilities.counts.validators} validadores</Badge>
-        <Badge tone="primary" size="xs">{capabilities.counts.gates} quality gates</Badge>
-        <Badge tone="gray" size="xs">{capabilities.counts.standards} estándares</Badge>
+      <div className="mt-3 flex flex-wrap gap-1.5" aria-label={t("ui.cobertura-de-capacidades.183536")}>
+        <Badge tone="ai" size="xs">{capabilities.counts.personas} {t("ui.personas.709244")}</Badge>
+        <Badge tone="info" size="xs">{capabilities.counts.validators} {t("ui.validadores.2e7305")}</Badge>
+        <Badge tone="primary" size="xs">{capabilities.counts.gates} {t("ui.quality-gates.3fcd81")}</Badge>
+        <Badge tone="gray" size="xs">{capabilities.counts.standards} {t("ui.estandares.f1a6ae")}</Badge>
       </div>
 
       <details className="mt-4 rounded-2xl bg-white/80 p-3 dark:bg-black/20">
-        <summary className="cursor-pointer text-sm font-bold text-slate-800 dark:text-slate-100">Estado de quality gates</summary>
+        <summary className="cursor-pointer text-sm font-bold text-slate-800 dark:text-slate-100">{t("ui.estado-de-quality-gates.89ba7d")}</summary>
         {/*
           The gate evaluation computes `blockers`, `conditions` and the
           artifacts that evidence each gate. Rendering only the status left the
@@ -76,7 +78,7 @@ export const OfficeCapabilitiesPanel: React.FC<OfficeCapabilitiesPanelProps> = (
               ))}
               {gate.evidenceArtifactIds.length > 0 && (
                 <p className="text-slate-500 dark:text-slate-400">
-                  Evidencia: {gate.evidenceArtifactIds.length} artefacto(s)
+                  {t("ui.evidencia.a81e75")} {gate.evidenceArtifactIds.length} {t("ui.artefacto-s.d919fa")}
                 </p>
               )}
             </li>

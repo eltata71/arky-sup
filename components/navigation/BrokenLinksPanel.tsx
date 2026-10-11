@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * What does not resolve.
  *
@@ -51,6 +52,7 @@ export const BrokenLinksPanel: React.FC<BrokenLinksPanelProps> = ({
   onOpen,
   className,
 }) => {
+  const t = useUiTranslation();
   if (issues.length === 0) return null;
 
   const broken = issues.filter((issue) => TONE[issue.kind] === 'danger').length;
@@ -62,11 +64,11 @@ export const BrokenLinksPanel: React.FC<BrokenLinksPanelProps> = ({
           <Link2Off className="h-4 w-4" aria-hidden strokeWidth={2} />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle>Vínculos que no resuelven</CardTitle>
+          <CardTitle>{t("ui.vinculos-que-no-resuelven.048daf")}</CardTitle>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
             {broken > 0
-              ? `${broken} referencia(s) rota(s) y ${issues.length - broken} aviso(s). El trabajo sigue aquí; lo que falta es la relación.`
-              : `${issues.length} aviso(s). Nada se ha perdido, pero la cadena está incompleta.`}
+              ? t("uiTemplate.p0-referencia-s-rota-s-y-p1.733de7", { p0: String(broken), p1: String(issues.length - broken) })
+              : t("uiTemplate.p0-aviso-s-nada-se-ha-perdid.6eed61", { p0: String(issues.length) })}
           </p>
         </div>
       </div>
@@ -89,7 +91,7 @@ export const BrokenLinksPanel: React.FC<BrokenLinksPanelProps> = ({
             </div>
             {onOpen && (
               <Button variant="ghost" size="xs" onClick={() => onOpen(issue)}>
-                Abrir
+                {t("open")}
               </Button>
             )}
           </li>

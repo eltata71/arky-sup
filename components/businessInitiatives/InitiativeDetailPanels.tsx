@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The editable sections of an initiative's record.
  *
@@ -343,6 +344,7 @@ export const KpiPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, as
 // ---------------------------------------------------------------------------
 
 export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const translateConfig = useUiTranslation();
   const { t } = useAppContext();
   const [name, setName] = useState('');
   const [dueAt, setDueAt] = useState('');
@@ -386,7 +388,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
                 <span className="text-2xs text-gray-500 dark:text-gray-400">{formatDate(milestone.dueAt)}</span>
               </span>
               <Badge tone={MILESTONE_STATUS_TONES[milestone.status]} size="xs">
-                {MILESTONE_STATUS_LABELS[milestone.status]}
+                {translateConfig(MILESTONE_STATUS_LABELS[milestone.status])}
               </Badge>
               <select
                 aria-label={t('iniPanel.statusOf', { item: milestone.name })}
@@ -396,7 +398,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
                 disabled={busy}
               >
                 {(Object.keys(MILESTONE_STATUS_LABELS) as InitiativeMilestoneStatus[]).map((value) => (
-                  <option key={value} value={value}>{MILESTONE_STATUS_LABELS[value]}</option>
+                  <option key={value} value={value}>{translateConfig(MILESTONE_STATUS_LABELS[value])}</option>
                 ))}
               </select>
               <RemoveButton
@@ -424,6 +426,7 @@ export const MilestonePanel: React.FC<PanelProps> = ({ initiative, onCommand, bu
 // ---------------------------------------------------------------------------
 
 export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const translateConfig = useUiTranslation();
   const { t } = useAppContext();
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState<InitiativeRiskLevel>('medium');
@@ -459,7 +462,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
         <ul className="space-y-1.5">
           {initiative.risks.map((risk) => (
             <li key={risk.id} className="flex items-start gap-2 rounded-lg border border-gray-200 px-2.5 py-2 dark:border-gray-800">
-              <Badge tone={RISK_LEVEL_TONES[risk.level]} size="xs">{RISK_LEVEL_LABELS[risk.level]}</Badge>
+              <Badge tone={RISK_LEVEL_TONES[risk.level]} size="xs">{translateConfig(RISK_LEVEL_LABELS[risk.level])}</Badge>
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-gray-700 dark:text-gray-200">{risk.description}</p>
                 {risk.mitigation
@@ -484,7 +487,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
           className={selectClass}
         >
           {(Object.keys(RISK_LEVEL_LABELS) as InitiativeRiskLevel[]).map((value) => (
-            <option key={value} value={value}>{RISK_LEVEL_LABELS[value]}</option>
+            <option key={value} value={value}>{translateConfig(RISK_LEVEL_LABELS[value])}</option>
           ))}
         </select>
         <Input aria-label={t('iniPanel.mitigationField')} value={mitigation} onChange={(e) => setMitigation(e.target.value)} placeholder={t('iniPanel.mitigationField')} />
@@ -501,6 +504,7 @@ export const RiskPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, a
 // ---------------------------------------------------------------------------
 
 export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, busy, assist }) => {
+  const translateConfig = useUiTranslation();
   const { t } = useAppContext();
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
@@ -542,7 +546,7 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, 
           {initiative.stakeholders.map((stakeholder) => (
             <li key={stakeholder.id} className="flex items-center gap-2 rounded-lg border border-gray-200 px-2.5 py-2 dark:border-gray-800">
               <Badge tone={stakeholder.kind === 'sponsor' ? 'primary' : 'gray'} size="xs">
-                {STAKEHOLDER_KIND_LABELS[stakeholder.kind]}
+                {translateConfig(STAKEHOLDER_KIND_LABELS[stakeholder.kind])}
               </Badge>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-gray-800 dark:text-gray-100">{stakeholder.name}</span>
@@ -569,7 +573,7 @@ export const StakeholderPanel: React.FC<PanelProps> = ({ initiative, onCommand, 
           className={selectClass}
         >
           {(Object.keys(STAKEHOLDER_KIND_LABELS) as InitiativeStakeholderKind[]).map((value) => (
-            <option key={value} value={value}>{STAKEHOLDER_KIND_LABELS[value]}</option>
+            <option key={value} value={value}>{translateConfig(STAKEHOLDER_KIND_LABELS[value])}</option>
           ))}
         </select>
         <Button variant="secondary" size="sm" onClick={addStakeholder} disabled={busy || !name.trim()}>

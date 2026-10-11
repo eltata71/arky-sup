@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { cn } from './cn';
 
@@ -34,7 +35,8 @@ export function isMac(): boolean {
 }
 
 export const ModKey: React.FC = () => {
-    return <Kbd>{isMac() ? '⌘' : 'Ctrl'}</Kbd>;
+  const t = useUiTranslation();
+    return <Kbd>{isMac() ? '⌘' : t("uiExpr.ctrl.dd6a02")}</Kbd>;
 };
 
 export default Kbd;

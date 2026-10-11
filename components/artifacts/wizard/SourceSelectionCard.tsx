@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import type { Artifact } from '../../../lib/artifacts';
 import { CollapsibleSection } from './CollapsibleSection';
@@ -55,6 +56,8 @@ const USE_LABEL: Record<SourceUse, string> = {
  * a "Ver detalle técnico" disclosure.
  */
 export const SourceSelectionCard: React.FC<SourceSelectionCardProps> = ({ artifact, use, onChange }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const styles = useStyles[use];
   const createdAt = artifact.createdAt ? new Date(artifact.createdAt).toLocaleDateString() : null;
   return (
@@ -81,29 +84,29 @@ export const SourceSelectionCard: React.FC<SourceSelectionCardProps> = ({ artifa
           )}
         </div>
         <select
-          aria-label={`Uso de fuente ${artifact.name}`}
+          aria-label={t("uiTemplate.uso-de-fuente-p0.309c0f", { p0: String(artifact.name) })}
           value={use}
           onChange={event => onChange(event.target.value as SourceUse)}
           className="min-h-[44px] w-full shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:w-56"
         >
           {USE_OPTIONS.map(option => (
-            <option key={option.value} value={option.value}>{option.label}</option>
+            <option key={option.value} value={option.value}>{translateConfig(option.label)}</option>
           ))}
         </select>
       </div>
       <CollapsibleSection
-        label="Ver detalle técnico"
-        openLabel="Ocultar detalle técnico"
+        label={t("ui.ver-detalle-tecnico.e4c4c3")}
+        openLabel={t("Ocultar detalle técnico")}
         tone="subtle"
         className="mt-1"
       >
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] text-gray-600 dark:text-gray-400">
-          <div><dt className="font-semibold text-gray-700 dark:text-gray-300">Fase</dt><dd>{artifact.phase}</dd></div>
-          <div><dt className="font-semibold text-gray-700 dark:text-gray-300">Versión</dt><dd>v{artifact.version}</dd></div>
-          {createdAt && <div><dt className="font-semibold text-gray-700 dark:text-gray-300">Creado</dt><dd>{createdAt}</dd></div>}
-          <div><dt className="font-semibold text-gray-700 dark:text-gray-300">Representación</dt><dd>{artifact.representation ?? 'auto'}</dd></div>
+          <div><dt className="font-semibold text-gray-700 dark:text-gray-300">{t("projectHub.phase")}</dt><dd>{artifact.phase}</dd></div>
+          <div><dt className="font-semibold text-gray-700 dark:text-gray-300">{t("projectHub.version")}</dt><dd>v{artifact.version}</dd></div>
+          {createdAt && <div><dt className="font-semibold text-gray-700 dark:text-gray-300">{t("ui.creado.b3912d")}</dt><dd>{createdAt}</dd></div>}
+          <div><dt className="font-semibold text-gray-700 dark:text-gray-300">{t("ui.representacion.6cca4e")}</dt><dd>{artifact.representation ?? t("uiExpr.auto.0d612c")}</dd></div>
           {artifact.compilation?.compilerScore !== undefined && (
-            <div><dt className="font-semibold text-gray-700 dark:text-gray-300">Calidad</dt><dd>{artifact.compilation.compilerScore}/100</dd></div>
+            <div><dt className="font-semibold text-gray-700 dark:text-gray-300">{t("ui.calidad.b2e6a4")}</dt><dd>{artifact.compilation.compilerScore}/100</dd></div>
           )}
           <div className="col-span-2"><dt className="font-semibold text-gray-700 dark:text-gray-300">ID</dt><dd className="font-mono">{artifact.id}</dd></div>
         </dl>

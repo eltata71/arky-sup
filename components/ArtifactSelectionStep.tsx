@@ -139,19 +139,19 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                     <div className="space-y-3 mb-8 animate-fade-in">
                         <div className="flex items-center space-x-2 text-primary-600 dark:text-primary-400">
                             <SparklesIcon className="h-5 w-5" />
-                            <CardEyebrow>Sugerencias del Arquitecto IA</CardEyebrow>
+                            <CardEyebrow>{t("ui.sugerencias-del-arquitecto-i.8523bd")}</CardEyebrow>
                         </div>
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
-                            Elige los primeros artefactos para
+                            {t("ui.elige-los-primeros-artefacto.7c5235")}
                             {' '}
                             <span className="text-primary-600">{projectName}</span>
                         </h1>
                         <p className="text-base text-gray-600 dark:text-gray-300 max-w-3xl">
-                            Marcamos por omisión los artefactos recomendados como punto de partida. Desmarca los que prefieras no generar todavía. Podrás añadir más en cualquier momento desde el Hub del Proyecto.
+                            {t("ui.marcamos-por-omision-los-art.971e0f")}
                         </p>
                         {projectDescription && (
                             <p className="text-sm text-gray-500 dark:text-gray-400 max-w-3xl line-clamp-2">
-                                <span className="font-semibold text-gray-700 dark:text-gray-300">Contexto:</span> {projectDescription}
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">{t("ui.contexto.709900")}</span> {projectDescription}
                             </p>
                         )}
                     </div>
@@ -160,7 +160,7 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                         <div className="flex items-center gap-3 text-sm">
                             <Badge tone="primary" size="sm">
-                                {selectedCount} seleccionado{selectedCount === 1 ? '' : 's'}
+                                {selectedCount} {t("ui.seleccionado.55f708")}{selectedCount === 1 ? '' : 's'}
                             </Badge>
                             <span className="text-gray-500 dark:text-gray-400">{estimateLabel}</span>
                         </div>
@@ -170,7 +170,7 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                                 onClick={selectAll}
                                 className="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline"
                             >
-                                Marcar sugeridos
+                                {t("ui.marcar-sugeridos.8a45d1")}
                             </button>
                             <span className="text-gray-300 dark:text-gray-600">·</span>
                             <button
@@ -178,7 +178,7 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                                 onClick={selectNone}
                                 className="text-xs font-medium text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white hover:underline"
                             >
-                                Desmarcar sugeridos
+                                {t("ui.desmarcar-sugeridos.b1002f")}
                             </button>
                         </div>
                     </div>
@@ -187,7 +187,7 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                     {suggestedItems.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center bg-white dark:bg-gray-900">
                             <p className="text-sm text-gray-600 dark:text-gray-300">
-                                No tenemos sugerencias automáticas para este proyecto. Explora el catálogo para elegir los primeros artefactos.
+                                {t("ui.no-tenemos-sugerencias-autom.292bb1")}
                             </p>
                         </div>
                     ) : (
@@ -232,10 +232,10 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                                                                 <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                                                                     {template.name}
                                                                 </h3>
-                                                                <Badge tone="primary" size="sm">Sugerido</Badge>
+                                                                <Badge tone="primary" size="sm">{t("ui.sugerido.19169c")}</Badge>
                                                             </div>
                                                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                                {template.architecturalView} · {template.representation === 'diagram' ? 'Diagrama' : template.representation === 'document' ? 'Documento' : 'Híbrido'}
+                                                                {template.architecturalView} · {template.representation === 'diagram' ? t("lucid.diagramView") : template.representation === 'document' ? t("ui.documento.8ae11c") : t("uiExpr.hibrido.9cb40a")}
                                                             </p>
                                                             <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
                                                                 {template.objective}
@@ -259,7 +259,7 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                             className="flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 transition-colors"
                         >
                             <PlusCircleIcon className="h-5 w-5" />
-                            {showCatalog ? 'Ocultar catálogo completo' : 'Añadir más desde el catálogo'}
+                            {showCatalog ? t("uiExpr.ocultar-catalogo-completo.488326") : t("uiExpr.anadir-mas-desde-el-catalogo.2362e5")}
                         </button>
 
                         {showCatalog && (
@@ -270,14 +270,14 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                                         type="text"
                                         value={catalogSearch}
                                         onChange={e => setCatalogSearch(e.target.value)}
-                                        placeholder="Buscar por nombre, objetivo o vista..."
+                                        placeholder={t("ui.buscar-por-nombre-objetivo-o.495d00")}
                                         className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                                     />
                                 </div>
                                 <div className="max-h-80 overflow-y-auto pr-1 space-y-2">
                                     {catalogItems.length === 0 ? (
                                         <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                                            No hay resultados.
+                                            {t("ui.no-hay-resultados.29d26c")}
                                         </p>
                                     ) : (
                                         catalogItems.map(tpl => {
@@ -326,10 +326,10 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                 <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="text-sm text-gray-600 dark:text-gray-300">
                         {selectedCount === 0 ? (
-                            <span>Continuarás sin generar artefactos iniciales.</span>
+                            <span>{t("ui.continuaras-sin-generar-arte.cdf296")}</span>
                         ) : (
                             <span>
-                                Se generarán <strong className="text-gray-900 dark:text-white">{selectedCount}</strong> artefacto{selectedCount === 1 ? '' : 's'} con tu contexto.
+                                {t("ui.se-generaran.b3f1b5")} <strong className="text-gray-900 dark:text-white">{selectedCount}</strong> {t("ui.artefacto.c05e02")}{selectedCount === 1 ? '' : 's'} {t("ui.con-tu-contexto.8bdff3")}
                             </span>
                         )}
                     </div>
@@ -339,11 +339,11 @@ const ArtifactSelectionStep: React.FC<ArtifactSelectionStepProps> = ({
                         </Button>
                         {selectedCount === 0 ? (
                             <Button variant="secondary" onClick={onSkip}>
-                                Crear proyecto vacío
+                                {t("ui.crear-proyecto-vacio.b00efb")}
                             </Button>
                         ) : (
                             <Button variant="ai" leftIcon={<SparklesIcon className="h-4 w-4" />} onClick={handleConfirm}>
-                                Generar {selectedCount} artefacto{selectedCount === 1 ? '' : 's'}
+                                {t("sdd.generate")} {selectedCount} {t("ui.artefacto.c05e02")}{selectedCount === 1 ? '' : 's'}
                             </Button>
                         )}
                     </div>

@@ -34,6 +34,7 @@
  */
 
 import React from 'react';
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { cn } from './cn';
 
 export type StatusTone =
@@ -149,8 +150,9 @@ export const StatusDot: React.FC<StatusDotProps> = ({
   pulse = false,
   className,
 }) => {
+  const t = useUiTranslation();
   const visual = STATUS_VISUALS[tone];
-  const text = label ?? visual.label;
+  const text = label ?? t(visual.label);
 
   const dot = (
     <span className={cn('relative inline-flex h-2.5 w-2.5 shrink-0', className)}>

@@ -185,7 +185,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
             updateArtifact(project.id, activeArtifact.id, withDiagramContent(activeArtifact, modification.content));
             offerUndo({
               projectId: project.id,
-              label: 'cambio del asistente',
+              label: t("cambio del asistente"),
               steps: [{ before: activeArtifact, producedId: activeArtifact.id }],
               onUndone: ([restored]) => setActiveArtifactId(restored.id),
             }, 'El asistente modificó el artefacto.');
@@ -251,7 +251,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         setStreamingText(null);
       }
     }
-  }, [agent, assistantTurns, project, activeArtifact, settings, updateArtifact, createArtifactVersion, getArtifact, setActiveArtifactId, updateProjectContext, offerUndo, offerVersionUndo]);
+  }, [agent, assistantTurns, project, activeArtifact, settings, updateArtifact, createArtifactVersion, getArtifact, setActiveArtifactId, updateProjectContext, offerUndo, offerVersionUndo, t]);
 
   const memoryStore = useAgentMemoryStore({
     settings, updateSettings, getProject, runProjectCommand,
@@ -377,7 +377,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
               }`
             : result.status === 'cancelled'
               ? result.messages[0] ?? 'Acción cancelada.'
-              : `No pude completar la acción: ${result.messages[0] ?? 'error desconocido'}`;
+              : t("uiDynamicGenerated.no-pude-completar-la-accion.937216", { p0: String(result.messages[0] ?? 'error desconocido') });
       setMessages((prev) => [...prev, createChatMessage('model', `*${acknowledgement}*`)]);
 
       // Switch the canvas to whatever the executor produced — `newArtifactId`
@@ -394,7 +394,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         }
       }
     },
-    [activeArtifact, agent, project, settings, messages, createArtifact, createArtifactVersion, updateArtifact, setActiveArtifactId, profile?.uid, profile?.displayName, logAgentAction, memoryStore, lessonStore, getArtifact, offerVersionUndo],
+    [activeArtifact, agent, project, settings, messages, createArtifact, createArtifactVersion, updateArtifact, setActiveArtifactId, profile?.uid, profile?.displayName, logAgentAction, memoryStore, lessonStore, getArtifact, offerVersionUndo, t],
   );
 
   /**
@@ -415,12 +415,12 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
       }
       const restored = restoreArtifactVersion(project.id, previous);
       setActiveArtifactId(restored.id);
-      setMessages((prev) => [...prev, createChatMessage('model', `*Reversión aplicada: volví a "${previous.name}" v${previous.version} como nueva versión.*`)]);
+      setMessages((prev) => [...prev, createChatMessage('model', t("uiDynamicGenerated.reversion-aplicada-volvi-a-p.6b7486", { p0: String(previous.name), p1: String(previous.version) }))]);
       agent.acknowledgeResult();
     } finally {
       setIsRollingBack(false);
     }
-  }, [agent, project.id, getArtifact, restoreArtifactVersion, setActiveArtifactId, isRollingBack]);
+  }, [agent, project.id, getArtifact, restoreArtifactVersion, setActiveArtifactId, isRollingBack, t]);
 
   const handleAcceptProactiveSuggestion = useCallback(() => {
     if (!activeArtifact || !agent.proactiveSuggestion) return;
@@ -488,7 +488,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                 )}
             </div>
             <div className="space-y-2">
-                {projectContext.length === 0 && <p className="text-xs text-gray-400 italic">No hay contexto definido.</p>}
+                {projectContext.length === 0 && <p className="text-xs text-gray-400 italic">{t("ui.no-hay-contexto-definido.f2c800")}</p>}
                 {projectContext.map((note, index) => (
                     <div key={index} className="flex items-center group">
                         <input
@@ -496,7 +496,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                             value={note}
                             onChange={(e) => handleContextChange(index, e.target.value)}
                             className="flex-grow text-sm bg-transparent border-b border-transparent focus:border-primary-500 focus:outline-none text-gray-700 dark:text-gray-300 py-1"
-                            placeholder="Añadir nota de contexto..."
+                            placeholder={t("ui.anadir-nota-de-contexto.b99610")}
                         />
                         <button onClick={() => removeContextNote(index)} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity">
                             <TrashIcon className="h-3 w-3" />
@@ -514,7 +514,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         <div>
             <div className="flex items-center mb-3">
                  <SparklesIcon className="h-4 w-4 text-purple-500 mr-2" />
-                 <h3 className="font-semibold text-xs uppercase tracking-wider text-gray-500">Sugerencias IA</h3>
+                 <h3 className="font-semibold text-xs uppercase tracking-wider text-gray-500">{t("ui.sugerencias-ia.5284bb")}</h3>
             </div>
             
             <div className="grid grid-cols-1 gap-2">
@@ -547,7 +547,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         {/* Chat Messages */}
         <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700/50">
              <div className="flex items-center justify-center mb-4">
-                 <span className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-900 px-2">Historial de Chat</span>
+                 <span className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-900 px-2">{t("ui.historial-de-chat.98c5a9")}</span>
              </div>
             {messages.map((msg, index) => (
                 <div key={index} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -571,7 +571,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                             <span className="w-2 h-2 rounded-full bg-ai-400 animate-bounce [animation-delay:-0.3s]"></span>
                             <span className="w-2 h-2 rounded-full bg-primary-400 animate-bounce [animation-delay:-0.15s]"></span>
                             <span className="w-2 h-2 rounded-full bg-ai-400 animate-bounce"></span>
-                            <span className="ml-2 text-2xs uppercase tracking-widest-2 text-gray-400">Pensando…</span>
+                            <span className="ml-2 text-2xs uppercase tracking-widest-2 text-gray-400">{t("ui.pensando.8e7017")}</span>
                         </div>
                     </div>
                  </div>
@@ -648,12 +648,12 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                             <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 dark:text-amber-300 flex-shrink-0 mt-0.5" />
                             <div className="min-w-0">
                                 <p className="text-2xs uppercase tracking-widest-2 font-semibold text-amber-700 dark:text-amber-300 mb-0.5">
-                                    {lastError.category === 'overloaded' ? 'Modelo saturado' :
-                                     lastError.category === 'rate-limit' ? 'Límite alcanzado' :
-                                     lastError.category === 'auth' ? 'Autenticación' :
-                                     lastError.category === 'timeout' ? 'Tiempo agotado' :
-                                     lastError.category === 'network' ? 'Sin conexión' :
-                                     'Error temporal'}
+                                    {lastError.category === 'overloaded' ? t("uiExpr.modelo-saturado.cbb43d") :
+                                     lastError.category === 'rate-limit' ? t("uiExpr.limite-alcanzado.ba613c") :
+                                     lastError.category === 'auth' ? t("uiExpr.autenticacion.70858a") :
+                                     lastError.category === 'timeout' ? t("uiExpr.tiempo-agotado.579cb6") :
+                                     lastError.category === 'network' ? t("uiExpr.sin-conexion.33b7e7") :
+                                     t("ui.error-temporal.6d4c79")}
                                 </p>
                                 <p className="text-sm text-amber-900 dark:text-amber-100 leading-snug">
                                     {lastError.userMessage}
@@ -665,7 +665,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                                         className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
                                     >
                                         <ArrowPathIcon className="h-3.5 w-3.5" />
-                                        Reintentar
+                                        {t("lucid.retry")}
                                     </button>
                                 )}
                                 <button
@@ -673,7 +673,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                                     onClick={() => setLastError(null)}
                                     className="mt-2 ml-2 inline-flex items-center px-2 py-1.5 rounded-md text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
                                 >
-                                    Descartar
+                                    {t("ui.descartar.63a77c")}
                                 </button>
                             </div>
                         </div>
@@ -694,7 +694,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
       <div
         className="flex-shrink-0 p-3 sm:p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 safe-bottom"
         role="region"
-        aria-label={`${t('aiAssistant')} composer`}
+        aria-label={t("uiTemplate.p0-composer.4f2980", { p0: String(t('aiAssistant')) })}
       >
         <div className="relative flex items-end gap-2">
             <label htmlFor="arquitecto-agente-input" className="sr-only">
@@ -712,7 +712,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                 }}
                 placeholder={t('askSomething')}
                 rows={1}
-                aria-label={`Mensaje para ${t('aiAssistant')}`}
+                aria-label={t("uiTemplate.mensaje-para-p0.d69a14", { p0: String(t('aiAssistant')) })}
                 className="flex-1 min-h-[44px] max-h-40 resize-none pl-3 pr-3 py-3 bg-gray-100 dark:bg-gray-800 border border-transparent focus:bg-white dark:focus:bg-gray-950 focus:border-primary-500 rounded-xl focus:outline-none transition-all text-sm shadow-inner leading-snug"
                 disabled={isLoading}
                 autoComplete="off"
@@ -722,9 +722,9 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
                 type="button"
                 onClick={handleSendMessage}
                 disabled={isLoading || !userInput.trim()}
-                aria-label={isLoading ? 'Enviando…' : `Enviar al ${t('aiAssistant')}`}
+                aria-label={isLoading ? t("uiExpr.enviando.5e91dc") : t("uiTemplate.enviar-al-p0.1d73b1", { p0: String(t('aiAssistant')) })}
                 aria-busy={isLoading || undefined}
-                title={isLoading ? 'Enviando…' : 'Enviar (Enter) · Shift+Enter para nueva línea'}
+                title={isLoading ? t("uiExpr.enviando.5e91dc") : t("uiExpr.enviar-enter-shift-enter-par.d54e9e")}
                 className="flex-shrink-0 h-11 w-11 inline-flex items-center justify-center bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
             >
                 {isLoading ? (
@@ -735,7 +735,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
             </button>
         </div>
         <p className="mt-1.5 text-[10px] uppercase tracking-widest-2 text-gray-400 dark:text-gray-500">
-            Enter envía · Shift+Enter nueva línea
+            {t("ui.enter-envia-shift-enter-nuev.1e3d7f")}
         </p>
       </div>
     </div>

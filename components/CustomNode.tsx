@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { memo, useMemo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { getNodeIcon } from './NodeIcons';
@@ -132,6 +133,7 @@ function gradientFor(bg: string, accent: string, isDark: boolean): string {
 
 // --- Main component ----------------------------------------------------------
 const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
+  const t = useUiTranslation();
     const [isHovered, setIsHovered] = useState(false);
     // The runtime payload coming from `irToReactFlow.buildNode` carries a
     // superset of `DiagramNodeData`: every extended IR field
@@ -276,9 +278,9 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
     const kindLabel = String(nodeData.category ?? nodeData.type ?? nodeData.kind ?? '').trim();
     if (kindLabel) ariaParts.push(`tipo ${kindLabel}`);
     if (nodeData.description) ariaParts.push(String(nodeData.description));
-    if (nodeData.technology) ariaParts.push(`tecnología ${String(nodeData.technology)}`);
+    if (nodeData.technology) ariaParts.push(t("uiDynamicGenerated.tecnologia-p0.204f9d", { p0: String(String(nodeData.technology)) }));
     if (nodeData.owner) ariaParts.push(`responsable ${String(nodeData.owner)}`);
-    if (nodeData.dataClassification) ariaParts.push(`clasificación ${String(nodeData.dataClassification)}`);
+    if (nodeData.dataClassification) ariaParts.push(t("uiDynamicGenerated.clasificacion-p0.ededeb", { p0: String(String(nodeData.dataClassification)) }));
     if (nodeData.criticality) ariaParts.push(`criticidad ${String(nodeData.criticality)}`);
     if (Array.isArray(nodeData.compliance) && nodeData.compliance.length > 0) {
         ariaParts.push(`compliance ${nodeData.compliance.join(', ')}`);
@@ -437,10 +439,10 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
     // displaces the existing header layout.
     const bpmnTaskInfo: { glyph: string; label: string; tone: { bg: string; text: string } } | null = (() => {
         if (!bpmnElement) return null;
-        if (bpmnElement === 'user-task') return { glyph: '👤', label: 'Tarea de usuario', tone: { bg: BPMN_PALETTE['user-task'].bg, text: BPMN_PALETTE['user-task'].accent } };
-        if (bpmnElement === 'service-task') return { glyph: '⚙', label: 'Tarea de servicio', tone: { bg: BPMN_PALETTE['service-task'].bg, text: BPMN_PALETTE['service-task'].accent } };
-        if (bpmnElement === 'manual-task') return { glyph: '✋', label: 'Tarea manual', tone: { bg: BPMN_PALETTE['manual-task'].bg, text: BPMN_PALETTE['manual-task'].accent } };
-        if (bpmnElement === 'business-rule-task') return { glyph: '📋', label: 'Regla de negocio', tone: { bg: BPMN_PALETTE['business-rule-task'].bg, text: BPMN_PALETTE['business-rule-task'].accent } };
+        if (bpmnElement === 'user-task') return { glyph: '👤', label: t("Tarea de usuario"), tone: { bg: BPMN_PALETTE['user-task'].bg, text: BPMN_PALETTE['user-task'].accent } };
+        if (bpmnElement === 'service-task') return { glyph: '⚙', label: t("Tarea de servicio"), tone: { bg: BPMN_PALETTE['service-task'].bg, text: BPMN_PALETTE['service-task'].accent } };
+        if (bpmnElement === 'manual-task') return { glyph: '✋', label: t("Tarea manual"), tone: { bg: BPMN_PALETTE['manual-task'].bg, text: BPMN_PALETTE['manual-task'].accent } };
+        if (bpmnElement === 'business-rule-task') return { glyph: '📋', label: t("Regla de negocio"), tone: { bg: BPMN_PALETTE['business-rule-task'].bg, text: BPMN_PALETTE['business-rule-task'].accent } };
         return null;
     })();
 
@@ -504,13 +506,13 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
                     className="absolute -top-3 left-3 px-3 py-0.5 rounded-t-lg text-[9px] font-bold uppercase tracking-widest border-2 border-b-0 z-20"
                     style={{ borderColor: stroke, backgroundColor: headerBg, color: iconColor }}
                 >
-                    {nodeData.type?.split(/[\s-]+/).slice(0, 2).join(' ') || 'Container'}
+                    {nodeData.type?.split(/[\s-]+/).slice(0, 2).join(' ') || t("uiExpr.container.e6443a")}
                 </div>
             )}
 
             {hasDetail && (
                 <span aria-hidden className="absolute -top-2.5 right-4 z-20 rounded-md bg-primary-700 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white shadow-sm dark:bg-primary-700">
-                    Detalle ↘
+                    {t("ui.detalle.4b91ef")}
                 </span>
             )}
 
@@ -578,12 +580,12 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
                 <div className="flex flex-col items-end gap-1">
                     {hierarchyLevel === 'risk' && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
-                            Riesgo
+                            {t("iniPanel.riskField")}
                         </span>
                     )}
                     {hierarchyEmphasis === 'low' && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-300">
-                            Sec.
+                            {t("ui.sec.8f75d2")}
                         </span>
                     )}
                     {nodeData.status && <StatusDot status={nodeData.status} />}
@@ -615,11 +617,11 @@ const CustomNode: React.FC<NodeProps> = ({ data, isConnectable, selected }) => {
                 <div
                     className="absolute -bottom-2 left-3 z-30 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-400 dark:bg-amber-900/70 dark:text-amber-100 dark:border-amber-700 shadow-sm"
                     role="status"
-                    aria-label="Contraste insuficiente para WCAG AA en el color personalizado del nodo"
-                    title={`Color personalizado por debajo de WCAG AA (ratio ${contrastReport?.verdict?.ratio.toFixed(2) ?? '?'}). Se aplicó un texto seguro automáticamente.`}
+                    aria-label={t("ui.contraste-insuficiente-para.322959")}
+                    title={t("uiTemplate.color-personalizado-por-deba.d813b0", { p0: String(contrastReport?.verdict?.ratio.toFixed(2) ?? '?') })}
                 >
                     <span aria-hidden>!</span>
-                    <span>Bajo contraste</span>
+                    <span>{t("ui.bajo-contraste.99b0a6")}</span>
                 </div>
             )}
 

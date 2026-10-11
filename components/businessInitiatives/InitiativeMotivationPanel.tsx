@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * La motivación de una iniciativa: por qué existe.
  *
@@ -33,6 +34,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
   busy,
   assist,
 }) => {
+  const t = useUiTranslation();
   /*
    * El borrador local existe porque el driver se guarda al salir del campo, no
    * en cada pulsación: una escritura por tecla contra Firestore es una factura
@@ -48,19 +50,19 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
             <MotivationIcon className="h-4 w-4" aria-hidden strokeWidth={2} />
           </span>
           <div>
-            <CardTitle>Motivación</CardTitle>
+            <CardTitle>{t("ui.motivacion.2b0e27")}</CardTitle>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Por qué existe la iniciativa. Lo que dijo el negocio se conserva sin cambios.
+              {t("ui.por-que-existe-la-iniciativa.f429bf")}
             </p>
           </div>
         </div>
 
         <div>
           <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-            Necesidad del negocio
+            {t("ui.necesidad-del-negocio.d67ece")}
           </p>
           <p className="mt-1 whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm leading-relaxed text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">
-            {initiative.need || 'Sin descripción.'}
+            {initiative.need || t("uiExpr.sin-descripcion.d1973c")}
           </p>
         </div>
 
@@ -70,7 +72,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
               htmlFor="initiative-driver"
               className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400"
             >
-              Driver — la presión que la origina
+              {t("ui.driver-la-presion-que-la-ori.a909d0")}
             </label>
             {assist && (
               <CaptureAssist
@@ -99,7 +101,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
               setDriverDraft(null);
             }}
             rows={3}
-            placeholder="Ej. La regulación exige respuesta en 48 h y hoy el proceso tarda 5 días."
+            placeholder={t("ui.ej-la-regulacion-exige-respu.a8dab6")}
             className="mt-1 w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm leading-relaxed text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
         </div>
@@ -107,7 +109,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
         {initiative.affectedCapabilities.length > 0 && (
           <div>
             <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              Capacidades de negocio afectadas
+              {t("ui.capacidades-de-negocio-afect.127f55")}
             </p>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {initiative.affectedCapabilities.map((capability) => (
@@ -120,7 +122,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
         {initiative.regulatoryDrivers.length > 0 && (
           <div>
             <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              Marco regulatorio
+              {t("ui.marco-regulatorio.615ffb")}
             </p>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {initiative.regulatoryDrivers.map((driver) => (
@@ -135,7 +137,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
         <div className="grid gap-3 border-t border-gray-100 pt-3 sm:grid-cols-2 dark:border-gray-800">
           <div>
             <label htmlFor="initiative-start-date" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              Inicio previsto
+              {t("ui.inicio-previsto.6a0432")}
             </label>
             <Input
               id="initiative-start-date"
@@ -148,7 +150,7 @@ export const InitiativeMotivationPanel: React.FC<InitiativeMotivationPanelProps>
           </div>
           <div>
             <label htmlFor="initiative-target-date" className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              Fecha objetivo
+              {t("ui.fecha-objetivo.c69014")}
             </label>
             <Input
               id="initiative-target-date"

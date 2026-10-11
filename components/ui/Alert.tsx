@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { cn } from './cn';
 import {
@@ -108,6 +109,7 @@ export const Alert: React.FC<AlertProps> = ({
     children,
     ...rest
 }) => {
+  const t = useUiTranslation();
     const Icon = toneIcons[tone];
     const isSolid = variant === 'solid';
     const role = tone === 'danger' ? 'alert' : 'status';
@@ -146,7 +148,7 @@ export const Alert: React.FC<AlertProps> = ({
                 <button
                     type="button"
                     onClick={onDismiss}
-                    aria-label="Descartar alerta"
+                    aria-label={t("ui.descartar-alerta.08ad21")}
                     className={cn(
                         'flex-shrink-0 -mr-1 -mt-1 p-1 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                         isSolid

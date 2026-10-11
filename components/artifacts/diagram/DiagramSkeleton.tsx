@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { motion } from 'motion/react';
 import { SparklesIcon, XCircleIcon } from '../../Icons';
@@ -13,7 +14,7 @@ interface LoadingOverlayProps {
  * generation, document conversion) is in flight. Extracted from
  * `ArtifactCanvas` so the diagram view and Phase 4 shells can reuse it.
  */
-export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message, onCancel }) => (
+export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message, onCancel }) =>{ const t = useUiTranslation(); return  (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -34,11 +35,11 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message, onCance
         className="px-5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-full border border-gray-200 dark:border-gray-700 flex items-center transition-colors pointer-events-auto shadow-sm"
       >
         <XCircleIcon className="h-5 w-5 mr-2" />
-        Ver como documento
+        {t("ui.ver-como-documento.6576af")}
       </button>
     )}
   </motion.div>
-);
+); };
 
 interface DiagramSkeletonProps {
   onCancel?: () => void;
@@ -50,7 +51,7 @@ interface DiagramSkeletonProps {
  * Animated placeholder shown while the interactive diagram is being prepared.
  * Surfaces an observability `detail` line so users see why a render is slow.
  */
-export const DiagramSkeleton: React.FC<DiagramSkeletonProps> = ({ onCancel, message = 'Generando diagrama con IA...', detail }) => (
+export const DiagramSkeleton: React.FC<DiagramSkeletonProps> = ({ onCancel, message = 'Generando diagrama con IA...', detail }) =>{ const t = useUiTranslation(); return  (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -103,7 +104,7 @@ export const DiagramSkeleton: React.FC<DiagramSkeletonProps> = ({ onCancel, mess
           </div>
           {detail && (
             <div className="w-full rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-left">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">Observabilidad</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">{t("ui.observabilidad.2ea551")}</p>
               <p className="mt-1 text-xs leading-snug text-amber-800 dark:text-amber-100">{detail}</p>
             </div>
           )}
@@ -113,13 +114,13 @@ export const DiagramSkeleton: React.FC<DiagramSkeletonProps> = ({ onCancel, mess
               className="px-4 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-full border border-gray-200 dark:border-gray-700 flex items-center transition-colors pointer-events-auto"
             >
               <XCircleIcon className="h-4 w-4 mr-1.5" />
-              Ver como documento
+              {t("ui.ver-como-documento.6576af")}
             </button>
           )}
         </div>
       </div>
     </div>
   </motion.div>
-);
+); };
 
 export default DiagramSkeleton;

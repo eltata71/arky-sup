@@ -53,6 +53,7 @@ const useHarness = (initial: Artifact[]) => {
     { id: 'p1', name: 'Atención', artifacts: initial } as unknown as Project,
   ]);
   const state = useArtifactsState({
+    t: (key) => key,
     setProjects,
     getProject: (id) => projects.find((project) => project.id === id),
     reporter: {

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Breadcrumbs } from '../../Breadcrumbs';
 import { Tooltip } from '../../ui/Tooltip';
@@ -63,6 +64,8 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
   onModifyDiagram,
   onOpenDetailLinks,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const views = PRIMARY_VIEWS.filter((view) => availableViews.includes(view.value));
 
   return (
@@ -73,7 +76,7 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
           type="button"
           onClick={onBack}
           className="flex-shrink-0 rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-gray-800 dark:hover:text-white"
-            aria-label="Volver al hub del proyecto"
+            aria-label={t("ui.volver-al-hub-del-proyecto.05aa3a")}
         >
           <ArrowLeftIcon className="h-4 w-4" />
         </button>
@@ -93,7 +96,7 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
       {views.length > 0 && (
         <div
           role="tablist"
-          aria-label="Vista del artefacto"
+          aria-label={t("ui.vista-del-artefacto.8bf937")}
           className="pointer-events-auto flex flex-shrink-0 items-center gap-0.5 rounded-full border border-gray-200/60 bg-white/85 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/60 dark:bg-gray-900/85"
         >
           {views.map((view) => {
@@ -112,7 +115,7 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
                 }`}
               >
                 {view.icon}
-                <span className="hidden sm:inline">{view.label}</span>
+                <span className="hidden sm:inline">{translateConfig(view.label)}</span>
               </button>
             );
           })}
@@ -122,34 +125,34 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
       {/* Right — primary actions */}
       <div className="pointer-events-auto flex flex-shrink-0 items-center gap-1 rounded-full border border-gray-200/60 bg-white/85 p-1 shadow-sm backdrop-blur-md dark:border-gray-700/60 dark:bg-gray-900/85">
         {onModifyDiagram && (
-          <Tooltip label="Cambiar el diagrama con una instrucción, sin regenerarlo" side="bottom">
+          <Tooltip label={t("ui.cambiar-el-diagrama-con-una.765713")} side="bottom">
             <button
               type="button"
               onClick={onModifyDiagram}
-              aria-label="Modificar diagrama"
+              aria-label={t("ui.modificar-diagrama.f2c715")}
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
               aria-haspopup="dialog"
             >
               <SparklesIcon className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Modificar</span>
+              <span className="hidden md:inline">{t("ui.modificar.7f6f5a")}</span>
             </button>
           </Tooltip>
         )}
         {onOpenDetailLinks && (
-          <Tooltip label="Enlazar cada nodo con el diagrama del nivel siguiente" side="bottom">
+          <Tooltip label={t("ui.enlazar-cada-nodo-con-el-dia.4ede31")} side="bottom">
             <button
               type="button"
               onClick={onOpenDetailLinks}
-              aria-label="Niveles C4"
+              aria-label={t("ui.niveles-c4.799b3c")}
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
               aria-haspopup="dialog"
             >
               <Square2StackIcon className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Niveles</span>
+              <span className="hidden md:inline">{t("ui.niveles.e0281e")}</span>
             </button>
           </Tooltip>
         )}
-        <Tooltip label="Sugerencias de IA para mejorar la calidad del artefacto" side="bottom">
+        <Tooltip label={t("ui.sugerencias-de-ia-para-mejor.16b214")} side="bottom">
           <button
             type="button"
             onClick={onOpenSuggestions}
@@ -157,10 +160,10 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
             aria-haspopup="dialog"
           >
             <LightBulbIcon className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Sugerencias</span>
+            <span className="hidden sm:inline">{t("ui.sugerencias.15c477")}</span>
           </button>
         </Tooltip>
-        <Tooltip label="Inspeccionar: estado, calidad, comentarios y revisión" side="bottom">
+        <Tooltip label={t("ui.inspeccionar-estado-calidad.2d1edd")} side="bottom">
           <button
             type="button"
             onClick={onOpenInspector}
@@ -168,10 +171,10 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
             aria-haspopup="dialog"
           >
             <MagnifyingGlassIcon className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">Inspeccionar</span>
+            <span className="hidden md:inline">{t("diagramInspector.inspect")}</span>
           </button>
         </Tooltip>
-        <Tooltip label="Exportar el artefacto (PNG, SVG, PDF, Markdown…)" side="bottom">
+        <Tooltip label={t("ui.exportar-el-artefacto-png-sv.31eecb")} side="bottom">
           <button
             type="button"
             onClick={onOpenExport}
@@ -179,7 +182,7 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
             aria-haspopup="dialog"
           >
             <ArrowUpTrayIcon className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">Exportar</span>
+            <span className="hidden md:inline">{t("export")}</span>
           </button>
         </Tooltip>
       </div>

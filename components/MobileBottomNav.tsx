@@ -172,7 +172,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenGuide })
                             <AIArchitectAvatar size="sm" />
                             <div>
                                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{PRODUCT_SHORT_NAME}</p>
-                                <p className="text-2xs text-gray-500 dark:text-gray-400">Oficina de Arquitectura</p>
+                                <p className="text-2xs text-gray-500 dark:text-gray-400">{t("ui.oficina-de-arquitectura.2534eb")}</p>
                             </div>
                         </div>
                         {/* The theme flip lives here rather than in the bar:
@@ -188,7 +188,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenGuide })
                             <span className="text-gray-500 dark:text-gray-400">
                                 {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
                             </span>
-                            {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+                            {theme === 'dark' ? t("uiExpr.modo-claro.8212b7") : t("uiExpr.modo-oscuro.b8a1c6")}
                         </button>
 
                         {/* La ayuda va aquí y no en la barra: el pulgar tiene
@@ -204,7 +204,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenGuide })
                                 <span className="text-gray-500 dark:text-gray-400">
                                     <LifeBuoy className="h-5 w-5" />
                                 </span>
-                                Guía de uso
+                                {t("ui.guia-de-uso.a0b1ba")}
                             </button>
                         )}
 

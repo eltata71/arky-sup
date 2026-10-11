@@ -17,17 +17,19 @@ import React, { useMemo } from 'react';
 import type { Edge, Node } from 'reactflow';
 import { resolveEdgeCategoryLabel, resolveNodeCategoryLabel } from '../../lib/diagramCategoryLabels';
 import type { DiagramIREdge, DiagramIRNode } from '../../lib/diagram';
-import { useAppContext } from '../../context/AppContext';
+import { spanishFallback, type Translator } from '../../lib/i18n/spanishFallback';
 
 interface NodeInspectorProps {
     node: Node;
     nodes: Node[];
     edges: Edge[];
+    t?: Translator;
 }
 
 interface EdgeInspectorProps {
     edge: Edge;
     nodes: Node[];
+    t?: Translator;
 }
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
@@ -84,8 +86,7 @@ const sensitivityTone = (sensitivity?: string): 'neutral' | 'info' | 'warning' |
  * feature: it lets the user pivot through the graph without losing the
  * inspector context.
  */
-export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges }) => {
-    const { t } = useAppContext();
+export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges, t = spanishFallback }) => {
     const data = (node.data ?? {}) as Partial<DiagramIRNode> & { type?: string; category?: string };
     const nodesById = useMemo(() => {
         const map = new Map<string, Node>();
@@ -174,8 +175,7 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges
 /**
  * Edge inspector — surfaces the full IR metadata for a relationship.
  */
-export const EdgeInspector: React.FC<EdgeInspectorProps> = ({ edge, nodes }) => {
-    const { t } = useAppContext();
+export const EdgeInspector: React.FC<EdgeInspectorProps> = ({ edge, nodes, t = spanishFallback }) => {
     const data = (edge.data ?? {}) as Partial<DiagramIREdge> & {
         edgeType?: string;
         protocol?: string;

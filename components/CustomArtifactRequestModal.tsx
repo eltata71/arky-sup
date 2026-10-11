@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from './Modal';
 import { useAppContext, type Project } from '../context/AppContext';
@@ -44,6 +45,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
   onClose,
   onGenerate,
 }) => {
+  const t = useUiTranslation();
   const { settings } = useAppContext();
   const { addToast } = useToast();
   const [idea, setIdea] = useState('');
@@ -121,13 +123,13 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
       if (silentForMs >= GENERATION_STALL_WARNING_MS && !stallWarningShownRef.current) {
         stallWarningShownRef.current = true;
         const seconds = Math.round(silentForMs / 1000);
-        setGenerationPhase(`La operación sigue activa, pero no ha emitido nuevos eventos en ${seconds}s. Mantén esta ventana abierta; si falla, se mostrará diagnóstico técnico y opción de reintento.`);
+        setGenerationPhase(t("uiDynamicGenerated.la-operacion-sigue-activa-pe.004a1b", { p0: String(seconds) }));
         setPhaseEvents(prev => {
           const next: ArtifactGenerationPhaseEvent[] = [...prev, {
             stage: isGenerating ? 'ai-generation' : 'recommendation',
             status: 'warning',
-            message: 'Sin nuevos eventos recientes; la operación continúa bajo observación.',
-            detail: `Silencio operativo de ${seconds}s. Esto suele ocurrir con latencia de Gemini, red móvil/Safari o fallback de modelo.`,
+            message: t("Sin nuevos eventos recientes; la operación continúa bajo observación."),
+            detail: t("uiDynamicGenerated.silencio-operativo-de-p0-s-e.989457", { p0: String(seconds) }),
             at: new Date().toISOString(),
             meta: { silentForMs, totalMs },
           }];
@@ -142,7 +144,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
           const next: ArtifactGenerationPhaseEvent[] = [...prev, {
             stage: isGenerating ? 'ai-generation' : 'recommendation',
             status: 'warning',
-            message: 'Operación de larga duración detectada.',
+            message: t("Operación de larga duración detectada."),
             detail: `Tiempo acumulado ${seconds}s. Si el proveedor no responde, el servicio debe cerrar por timeout y dejar trazabilidad visible.`,
             at: new Date().toISOString(),
             meta: { totalMs },
@@ -153,7 +155,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
     }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [isAnalyzing, isGenerating]);
+  }, [isAnalyzing, isGenerating, t]);
 
   const featureFlags = useMemo(() => getArtifactGenerationFeatureFlags(), []);
   const structuredBriefEnabled = featureFlags.structuredBrief;
@@ -257,9 +259,9 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
       window.setTimeout(() => setReportCopied(false), 2200);
     } catch (err) {
       console.error('[CustomArtifactRequestModal] failed to copy technical report', err);
-      addToast('No se pudo copiar el reporte. Selecciona el texto técnico manualmente desde la línea de tiempo.', 'warning');
+      addToast(t("uiMessage.no-se-pudo-copiar-el-reporte.dfc41f"), 'warning');
     }
-  }, [technicalReport, addToast]);
+  }, [technicalReport, addToast, t]);
 
   const canAnalyze = idea.trim().length >= MIN_IDEA_LENGTH && !isAnalyzing && !isGenerating;
   const ideaCharsLeft = Math.max(0, MIN_IDEA_LENGTH - idea.trim().length);
@@ -299,13 +301,13 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
       } else {
         const result = await recommendationService.recommendCustomArtifactTemplate(project, idea, settings, { onPhase: handlePhase });
         setRecommendation(result);
-        setGenerationPhase('Recomendación lista. Revisa el plan y confirma la generación.');
+        setGenerationPhase(t('uiState.0'));
       }
     } catch (error) {
       const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
-      const message = `No se pudo analizar la solicitud. ${friendly.userMessage}`;
+      const message = t("uiDynamicGenerated.no-se-pudo-analizar-la-solic.99d175", { p0: String(friendly.userMessage) });
       setGenerationError(message);
-      setGenerationPhase('Análisis interrumpido. Puedes ajustar la solicitud y reintentar.');
+      setGenerationPhase(t('uiState.1'));
       addToast(message, 'warning');
     } finally {
       setIsAnalyzing(false);
@@ -372,20 +374,20 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
         stage: 'recommendation',
         status: 'success',
         message: 'recommendation.top3-built',
-        detail: `${candidates.length} candidato(s) ordenados por score determinístico y contrato estructurado.`,
+        detail: t("uiDynamicGenerated.p0-candidato-s-ordenados-por.6a1941", { p0: String(candidates.length) }),
         at: new Date().toISOString(),
         meta: { candidateCount: candidates.length, top3Enabled: featureFlags.top3Recommendations },
       });
-      setGenerationPhase('Recomendaciones listas. Selecciona un candidato y confirma la generación.');
+      setGenerationPhase(t('uiState.2'));
     } catch (error) {
       const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
-      const message = `No se pudieron construir recomendaciones. ${friendly.userMessage}`;
+      const message = t("uiDynamicGenerated.no-se-pudieron-construir-rec.2d41c3", { p0: String(friendly.userMessage) });
       setGenerationError(message);
       addToast(message, 'warning');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [addToast, featureFlags.top3Recommendations, generationContract, project]);
+  }, [addToast, featureFlags.top3Recommendations, generationContract, project, t]);
 
   const handleSelectCandidate = useCallback((candidate: ArtifactRecommendationCandidate) => {
     setSelectedCandidateId(candidate.id);
@@ -414,7 +416,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
     stallWarningShownRef.current = false;
     longRunningWarningShownRef.current = false;
     setGenerationError(null);
-    setGenerationPhase('Generando contenido, validando estructura y preparando el canvas...');
+    setGenerationPhase(t('uiState.3'));
     try {
       handlePhase({
         stage: 'prompt',
@@ -433,19 +435,19 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
       });
       const generated = await onGenerate(recommendation.template, handlePhase);
       if (generated) {
-        setGenerationPhase('Artefacto generado. Abriendo el canvas...');
+        setGenerationPhase(t('uiState.4'));
         onClose();
       } else {
         const message = 'La generación no se completó. Revisa la validación previa, conflictos de versión o reintenta con más contexto.';
         setGenerationError(message);
-        setGenerationPhase('Generación detenida antes de persistir el artefacto.');
+        setGenerationPhase(t('uiState.5'));
         addToast(message, 'warning');
       }
     } catch (error) {
       const friendly = error instanceof AIServiceError ? error : classifyAIError(error);
-      const message = `No se pudo generar el artefacto. ${friendly.userMessage}`;
+      const message = t("uiDynamicGenerated.no-se-pudo-generar-el-artefa.d81c60", { p0: String(friendly.userMessage) });
       setGenerationError(message);
-      setGenerationPhase('Generación fallida con diagnóstico visible.');
+      setGenerationPhase(t('uiState.6'));
       addToast(message, 'error');
     } finally {
       setIsGenerating(false);
@@ -460,13 +462,13 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Artefacto a solicitud"
+      title={t("projectHub.customArtifact")}
       description={structuredBriefEnabled ? "Describe la idea, revisa el brief estructurado, controla fuentes y elige una recomendación." : "Describe la idea y la IA recomendará el artefacto de arquitectura más adecuado."}
     >
       <div className="space-y-5">
         {structuredBriefEnabled && (
           <WizardStepProgress
-            steps={TOP_LEVEL_STEPS}
+            steps={TOP_LEVEL_STEPS.map(step => ({ ...step, label: t(step.label) }))}
             currentStep={currentTopStep}
             completedSteps={generationContract ? [1] : []}
             navigableSteps={generationContract ? [1, 2] : [1]}
@@ -482,7 +484,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
                 setRecommendationCandidates([]);
                 setSelectedCandidateId(undefined);
                 setRecommendation(null);
-                setGenerationPhase('Puedes ajustar la solicitud inicial y recrear el brief estructurado.');
+                setGenerationPhase(t('uiState.7'));
               }
             }}
           />
@@ -496,18 +498,18 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
                   <LightBulbIcon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Describe la idea en lenguaje natural</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t("ui.describe-la-idea-en-lenguaje.d84d79")}</h3>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     {structuredBriefEnabled
-                      ? 'Convertiremos tu idea en un brief editable. Después podrás revisar fuentes, elegir una recomendación y confirmar.'
-                      : 'La IA comparará tu intención con el catálogo y propondrá el artefacto más adecuado.'}
+                      ? t("uiExpr.convertiremos-tu-idea-en-un.0c1a77")
+                      : t("uiExpr.la-ia-comparara-tu-intencion.93ccb8")}
                   </p>
                 </div>
               </div>
             </div>
 
             <label className="block">
-              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Idea, concepto o mensaje arquitectónico</span>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("ui.idea-concepto-o-mensaje-arqu.e18fd2")}</span>
               <textarea
                 ref={ideaInputRef}
                 value={idea}
@@ -516,15 +518,15 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
                 aria-describedby="idea-hint"
                 aria-invalid={!canAnalyze && idea.trim().length > 0 && idea.trim().length < MIN_IDEA_LENGTH}
                 className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                placeholder="Ejemplo: Necesito explicar al comité gerencial cómo la modernización del core reducirá riesgos operativos, qué sistemas se impactan y qué decisiones deben aprobarse."
+                placeholder={t("ui.ejemplo-necesito-explicar-al.7c1dc3")}
               />
             </label>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p id="idea-hint" className="text-xs text-gray-500 dark:text-gray-400">
                 {ideaCharsLeft > 0
-                  ? `Añade ${ideaCharsLeft} carácter${ideaCharsLeft === 1 ? '' : 'es'} más para continuar.`
-                  : 'Listo. Incluye audiencia, decisión esperada y nivel de detalle si los conoces.'}
+                  ? t(ideaCharsLeft === 1 ? 'brief.moreCharacterOne' : 'brief.moreCharacterMany', { count: String(ideaCharsLeft) })
+                  : t("uiExpr.listo-incluye-audiencia-deci.c55df5")}
               </p>
               <button
                 onClick={handleAnalyze}
@@ -533,7 +535,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
                 className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 dark:focus-visible:ring-offset-gray-950"
               >
                 <SparklesIcon className="h-5 w-5" />
-                <span>{isAnalyzing ? 'Analizando...' : structuredBriefEnabled ? 'Crear brief estructurado' : 'Recomendar artefacto'}</span>
+                <span>{isAnalyzing ? t("ui.analizando.7cb616") : structuredBriefEnabled ? t("uiExpr.crear-brief-estructurado.ac0ee0") : t("uiExpr.recomendar-artefacto.e0cf62")}</span>
               </button>
             </div>
           </>
@@ -553,13 +555,13 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
             <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div className="h-full w-full progress-indeterminate" />
             </div>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Conceptualizando la necesidad y comparando contra el catálogo de arquitectura...</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{t("ui.conceptualizando-la-necesida.f46b0f")}</p>
           </div>
         )}
 
         {generationError && (
           <div className="rounded-xl border border-rose-200 bg-rose-50/90 p-4 text-sm text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-200" role="alert">
-            <p className="font-semibold">Generación no completada</p>
+            <p className="font-semibold">{t("ui.generacion-no-completada.052221")}</p>
             <p className="mt-1 leading-relaxed">{generationError}</p>
           </div>
         )}
@@ -600,7 +602,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
               setRecommendationCandidates([]);
               setSelectedCandidateId(undefined);
               setRecommendation(null);
-              setGenerationPhase('Puedes ajustar la solicitud inicial y recrear el brief estructurado.');
+              setGenerationPhase(t('uiState.7'));
             }}
           />
         )}
@@ -611,7 +613,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
               <div>
                 <div className="mb-2 inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-gray-900 dark:text-emerald-300 dark:ring-emerald-900/60">
                   <CheckCircleIcon className="mr-1.5 h-4 w-4" />
-                  Recomendación IA · {Math.round(recommendation.confidence * 100)}% confianza
+                  {t("ui.recomendacion-ia.1c918f")} {Math.round(recommendation.confidence * 100)}{t("ui.confianza.947a35")}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">{recommendation.template.name}</h3>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{recommendation.template.objective}</p>
@@ -623,36 +625,36 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
 
             <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               <div>
-                <dt className="font-semibold text-gray-800 dark:text-gray-200">Tipo</dt>
+                <dt className="font-semibold text-gray-800 dark:text-gray-200">{t("projectHub.type")}</dt>
                 <dd className="text-gray-600 dark:text-gray-400">{recommendation.template.type}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-800 dark:text-gray-200">Vista</dt>
+                <dt className="font-semibold text-gray-800 dark:text-gray-200">{t("ui.vista.462d2d")}</dt>
                 <dd className="text-gray-600 dark:text-gray-400">{recommendation.template.architecturalView}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-800 dark:text-gray-200">Fase</dt>
+                <dt className="font-semibold text-gray-800 dark:text-gray-200">{t("projectHub.phase")}</dt>
                 <dd className="text-gray-600 dark:text-gray-400">{recommendation.template.phase}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-800 dark:text-gray-200">Audiencia</dt>
+                <dt className="font-semibold text-gray-800 dark:text-gray-200">{t("ui.audiencia.af8f94")}</dt>
                 <dd className="text-gray-600 dark:text-gray-400">{recommendation.audience}</dd>
               </div>
             </dl>
 
             {recommendation.matchedCatalogTemplateName && (
               <p className="mt-4 rounded-xl bg-white/80 px-3 py-2 text-sm text-gray-700 ring-1 ring-emerald-100 dark:bg-gray-900/70 dark:text-gray-300 dark:ring-emerald-900/60">
-                Se reutilizará el estándar del catálogo: <strong>{recommendation.matchedCatalogTemplateName}</strong>.
+                {t("ui.se-reutilizara-el-estandar-d.4f7463")} <strong>{recommendation.matchedCatalogTemplateName}</strong>.
               </p>
             )}
 
             <div className="mt-4 space-y-3 text-sm">
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white">Por qué este artefacto</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">{t("ui.por-que-este-artefacto.ba0f2b")}</h4>
                 <p className="mt-1 text-gray-600 dark:text-gray-400">{recommendation.rationale}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900 dark:text-white">Qué se va a construir</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">{t("ui.que-se-va-a-construir.40703a")}</h4>
                 <ol className="mt-2 list-decimal space-y-1 pl-5 text-gray-600 dark:text-gray-400">
                   {recommendation.constructionPlan.map(step => <li key={step}>{step}</li>)}
                 </ol>
@@ -665,7 +667,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
                 className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
               >
                 <ArrowUturnLeftIcon className="mr-2 h-5 w-5" />
-                Ajustar solicitud
+                {t("ui.ajustar-solicitud.ee97e3")}
               </button>
               <button
                 onClick={handleGenerate}
@@ -673,7 +675,7 @@ export const CustomArtifactRequestModal: React.FC<CustomArtifactRequestModalProp
                 className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
               >
                 <SparklesIcon className="mr-2 h-5 w-5" />
-                {isGenerating ? 'Generando...' : 'Generar este artefacto'}
+                {isGenerating ? t("generating") : t("uiExpr.generar-este-artefacto.5b0720")}
               </button>
             </div>
           </div>

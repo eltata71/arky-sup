@@ -66,11 +66,16 @@ export const BUDGETS = {
    * descarga cuando algo va a hablar con la base de datos — que nunca es antes
    * de pintar la pantalla de inicio de sesión.
    *
+   * 13.2 (R-16, opción B): 340 → 398 KB gz, 397,8 medidos. La extracción
+   * de toda la interfaz, incluidos avisos, configuración y etiquetas de
+   * estado, añade el diccionario español al arranque; el inglés permanece
+   * diferido. El techo queda a 0,2 KB de la medición final.
+   *
    * El presupuesto baja con la mejora en vez de quedarse holgado, que es la
    * regla de todos los presupuestos de este repositorio: un número que ya no
    * mide nada no impide la siguiente regresión.
    */
-  eagerPayloadGzipKb: 340,
+  eagerPayloadGzipKb: 398,
   /**
    * The entry chunk alone, gzipped. 205 → 207 en 11.4: el diccionario español
    * es eager por diseño y las ~50 claves de /transition añaden 1,1 KB gz.
@@ -84,8 +89,10 @@ export const BUDGETS = {
    * intención; la barra misma vive en el chunk diferido del lienzo.
    * 210 → 212 en 13.2: 211,4 KB gz medidos tras traducir ProjectHub y los
    * inspectores de diagrama; el inglés permanece en un chunk diferido.
+   * 212 → 270 en el cierre de 13.2: 269,4 KB gz medidos tras cubrir JSX,
+   * expresiones, avisos, configuración y estados; el español es eager.
    */
-  entryChunkGzipKb: 212,
+  entryChunkGzipKb: 270,
   /**
    * Any single chunk, raw. Catches a lazy chunk exploding — Excalidraw is
    * already 2.4 MB raw, and this stops it (or a sibling) doubling unnoticed.
@@ -123,7 +130,7 @@ export const ROUTE_BUDGETS_GZIP_KB = {
   PortfolioPage: 30,
   TransitionPlanPage: 30,
   UserManagementPage: 15,
-  ProjectsPage: 712, // 12.0: 708,6 KB gz medidos: el chat guiado, la selección de plantilla, la consistencia y el asistente de entregables se cargan al abrirse (antes 754) · 10.2: 753,4 KB gz medidos; la cola persistente comparte el camino de generación con esta ruta, mientras el motor sigue fuera de la carga inicial (antes 752). · plan diagramas 8.3b: 751,0 KB gz medidos: la notación de secuencia, ERD y estados (lectores y escritores sin pérdida) viaja con el parser y la reescritura · plan diagramas 8.2a: 747,4 KB gz medidos: la gramática de Mermaid juzga el texto generado (el módulo de Mermaid sigue diferido) · plan artefactos 7.5a: medidos 746,5 KB gz: el grabador del manifiesto de contexto y su captura en cada compositor de prompt · plan artefactos 7.4a: medidos 742,7 → 745,0 KB gz: la guía de redacción de las 18 disciplinas viaja con la generación y no en la carga inicial · plan artefactos 7.3b: +0,9 KB gz medidos (741,3 → 742,2): el extractor de decisiones del chat y la oferta de memoria · plan artefactos 7.2b: +0,7 KB gz medidos (740,4 → 741,1): el prompt base y el camino IR leen el bundle, con el filtro de eco y el refuerzo de señales · plan artefactos 7.2a: +0,4 KB gz medidos (740,0 → 740,4): el ensamblador del contexto de artefacto viaja con la capa de IA
+  ProjectsPage: 713, // 13.2: 712,0 KB gz medidos, +0,1 por llamadas de traducción en la ruta; 12.0: 708,6 KB gz medidos: el chat guiado, la selección de plantilla, la consistencia y el asistente de entregables se cargan al abrirse (antes 754) · 10.2: 753,4 KB gz medidos; la cola persistente comparte el camino de generación con esta ruta, mientras el motor sigue fuera de la carga inicial (antes 752). · plan diagramas 8.3b: 751,0 KB gz medidos: la notación de secuencia, ERD y estados (lectores y escritores sin pérdida) viaja con el parser y la reescritura · plan diagramas 8.2a: 747,4 KB gz medidos: la gramática de Mermaid juzga el texto generado (el módulo de Mermaid sigue diferido) · plan artefactos 7.5a: medidos 746,5 KB gz: el grabador del manifiesto de contexto y su captura en cada compositor de prompt · plan artefactos 7.4a: medidos 742,7 → 745,0 KB gz: la guía de redacción de las 18 disciplinas viaja con la generación y no en la carga inicial · plan artefactos 7.3b: +0,9 KB gz medidos (741,3 → 742,2): el extractor de decisiones del chat y la oferta de memoria · plan artefactos 7.2b: +0,7 KB gz medidos (740,4 → 741,1): el prompt base y el camino IR leen el bundle, con el filtro de eco y el refuerzo de señales · plan artefactos 7.2a: +0,4 KB gz medidos (740,0 → 740,4): el ensamblador del contexto de artefacto viaja con la capa de IA
   InitiativesPage: 660,
   InitiativeRoom: 670,
   OfficePage: 650,

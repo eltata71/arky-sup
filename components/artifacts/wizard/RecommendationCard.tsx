@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { CheckCircleIcon } from '../../Icons';
 import { CollapsibleSection } from './CollapsibleSection';
@@ -33,6 +34,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
   isPrimary = false,
   onSelect,
 }) => {
+  const t = useUiTranslation();
   const confidencePct = Math.round(candidate.confidence * 100);
   const headingId = `recommendation-${candidate.id}`;
   return (
@@ -57,12 +59,12 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               {isPrimary && !isSelected && (
                 <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-700 ring-1 ring-primary-200 dark:bg-primary-950/40 dark:text-primary-200 dark:ring-primary-900/60">
-                  Sugerida
+                  {t("ui.sugerida.16676a")}
                 </span>
               )}
               {isSelected && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                  <CheckCircleIcon className="h-3 w-3" /> Seleccionada
+                  <CheckCircleIcon className="h-3 w-3" /> {t("ui.seleccionada.ec2675")}
                 </span>
               )}
               <h4 id={headingId} className="truncate text-sm font-bold text-gray-900 dark:text-white">
@@ -74,26 +76,26 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
             </p>
           </div>
           <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-gray-900 dark:text-emerald-300 dark:ring-emerald-900">
-            {confidencePct}% confianza
+            {confidencePct}{t("ui.confianza.947a35")}
           </span>
         </div>
         <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{candidate.rationale}</p>
         <p className="mt-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
-          Salida esperada: <span className="font-normal text-gray-600 dark:text-gray-400">{candidate.expectedOutput}</span>
+          {t("ui.salida-esperada.85ac70")} <span className="font-normal text-gray-600 dark:text-gray-400">{candidate.expectedOutput}</span>
         </p>
       </button>
 
-      <CollapsibleSection label="Ver análisis detallado" openLabel="Ocultar análisis detallado" tone="primary" className="mt-2">
+      <CollapsibleSection label={t("ui.ver-analisis-detallado.70c224")} openLabel={t("Ocultar análisis detallado")} tone="primary" className="mt-2">
         <div className="space-y-3 rounded-xl bg-gray-50 p-3 text-xs dark:bg-gray-900/60">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Score determinístico</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("ui.score-deterministico.ca127f")}</p>
             <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-gray-700 dark:text-gray-300">
               {SCORE_LABELS.map(({ key, label }) => {
                 const raw = candidate.scoreBreakdown[key];
                 if (typeof raw !== 'number') return null;
                 return (
                   <li key={key} className="flex items-baseline justify-between gap-2">
-                    <span>{label}</span>
+                    <span>{t(label)}</span>
                     <span className="font-mono text-[11px] font-semibold">{raw.toFixed(0)}</span>
                   </li>
                 );
@@ -102,7 +104,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
           </div>
           {candidate.tradeoffs.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Alternativas y trade-offs</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("ui.alternativas-y-trade-offs.406ad2")}</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-4 text-gray-700 dark:text-gray-300">
                 {candidate.tradeoffs.map(item => <li key={item}>{item}</li>)}
               </ul>
@@ -110,7 +112,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
           )}
           {candidate.risks.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Riesgos y advertencias</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">{t("ui.riesgos-y-advertencias.234690")}</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-4 text-amber-900 dark:text-amber-200">
                 {candidate.risks.map(item => <li key={item}>{item}</li>)}
               </ul>
@@ -118,7 +120,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
           )}
           {candidate.matchedCatalogTemplateName && (
             <p className="text-[11px] text-gray-500 dark:text-gray-400">
-              Catálogo base: <span className="font-semibold text-gray-700 dark:text-gray-200">{candidate.matchedCatalogTemplateName}</span>
+              {t("ui.catalogo-base.afd9d4")} <span className="font-semibold text-gray-700 dark:text-gray-200">{candidate.matchedCatalogTemplateName}</span>
             </p>
           )}
         </div>

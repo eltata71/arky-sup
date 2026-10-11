@@ -7,11 +7,13 @@
  * exactly the kind that survives review — nobody reads an 18 KB object literal
  * looking for a hole.
  *
- * Parity holds today at 168 keys each. The assertions below are on the *sets*
- * rather than on a count, so adding a pair of keys passes and adding one does
- * not.
+ * The assertions below are on the *sets* rather than a fixed count, so adding
+ * a pair of keys passes and adding one does not.
  */
 import { describe, expect, it } from 'vitest';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import * as ts from 'typescript';
 import { en } from '../../../lib/i18n/locales/en';
 import { es } from '../../../lib/i18n/locales/es';
 import { UI_LANGUAGES, loadDictionary } from '../../../lib/i18n';
@@ -58,5 +60,55 @@ describe('the dictionary', () => {
         `${key} does not substitute the same values in both languages`,
       ).toEqual(placeholders(translations.en[key]));
     }
+  });
+
+  it('defines every literal t() key used by interface code', () => {
+    const missing: string[] = [];
+    const files = (directory: string): string[] => readdirSync(directory).flatMap(name => {
+      const file = join(directory, name);
+      if (statSync(file).isDirectory()) return files(file);
+      return /\.tsx?$/.test(name) ? [file] : [];
+    });
+    for (const root of ['components', 'pages', 'hooks', 'context']) {
+      for (const file of files(root)) {
+        const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+        const visit = (node: ts.Node): void => {
+          if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 't'
+            && node.arguments[0] && ts.isStringLiteral(node.arguments[0])
+            && !Object.hasOwn(translations.es, node.arguments[0].text)) {
+            missing.push(`${file}: ${node.arguments[0].text}`);
+          }
+          ts.forEachChild(node, visit);
+        };
+        visit(source);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('covers configuration labels displayed by screens', () => {
+    const missing: string[] = [];
+    const files = (directory: string): string[] => readdirSync(directory).flatMap(name => {
+      const file = join(directory, name);
+      if (statSync(file).isDirectory()) return files(file);
+      return name.endsWith('.tsx') ? [file] : [];
+    });
+    const visibleProperty = new Set(['label', 'title', 'subtitle', 'description', 'hint', 'message', 'name', 'text']);
+    for (const root of ['components', 'pages']) {
+      for (const file of files(root)) {
+        const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+        const visit = (node: ts.Node): void => {
+          if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && visibleProperty.has(node.name.text)
+            && ts.isStringLiteral(node.initializer) && /[A-Za-zÁ-ÿ]{4}/.test(node.initializer.text)
+            && !/^(?:text-|[a-z]+\.[a-z-]+$|RETRY$)/.test(node.initializer.text)
+            && !Object.hasOwn(translations.es, node.initializer.text)) {
+            missing.push(`${file}: ${node.initializer.text}`);
+          }
+          ts.forEachChild(node, visit);
+        };
+        visit(source);
+      }
+    }
+    expect(missing).toEqual([]);
   });
 });

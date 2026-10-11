@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Search across the four levels, over the resolved graph.
  *
@@ -52,6 +53,7 @@ export const PortfolioSearchBox: React.FC<PortfolioSearchBoxProps> = ({
   placeholder = 'Buscar en iniciativas, proyectos, entregables y artefactos',
   className,
 }) => {
+  const t = useUiTranslation();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -90,12 +92,12 @@ export const PortfolioSearchBox: React.FC<PortfolioSearchBoxProps> = ({
         <ul
           id={listId}
           role="listbox"
-          aria-label="Resultados del portafolio"
+          aria-label={t("ui.resultados-del-portafolio.57d8ac")}
           className="max-h-80 space-y-1 overflow-y-auto"
         >
           {hits.length === 0 ? (
             <li className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-              Nada coincide con «{query.trim()}» en ningún nivel del portafolio.
+              {t("ui.nada-coincide-con.79df3f")}{query.trim()}{t("ui.en-ningun-nivel-del-portafol.438d5f")}
             </li>
           ) : (
             hits.map((hit) => {

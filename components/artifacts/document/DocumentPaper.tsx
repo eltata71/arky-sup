@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useEffect, useRef } from 'react';
 import { decodeMermaidSource } from '../../../hooks/artifacts/useDocumentRendering';
 import type { DocumentTheme } from './documentPresentation';
@@ -101,19 +102,20 @@ const hydrateMermaidEmbeds = async (
 };
 
 const CoverHeader: React.FC<{ cover: DocumentCoverMeta; isDark: boolean }> = ({ cover, isDark }) => {
+  const t = useUiTranslation();
   const chips: Array<{ label: string; value: string }> = [];
-  if (cover.projectName) chips.push({ label: 'Proyecto', value: cover.projectName });
-  if (cover.phase) chips.push({ label: 'Fase', value: cover.phase });
-  if (cover.version !== undefined) chips.push({ label: 'Versión', value: `v${cover.version}` });
+  if (cover.projectName) chips.push({ label: t('documentCover.project'), value: cover.projectName });
+  if (cover.phase) chips.push({ label: t('documentCover.phase'), value: cover.phase });
+  if (cover.version !== undefined) chips.push({ label: t('documentCover.version'), value: `v${cover.version}` });
   if (cover.updatedAt) {
     const date = new Date(cover.updatedAt);
     if (!Number.isNaN(date.getTime())) {
-      chips.push({ label: 'Actualizado', value: date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' }) });
+      chips.push({ label: t('documentCover.updated'), value: date.toLocaleDateString(document.documentElement.lang === 'en' ? 'en-US' : 'es-ES', { year: 'numeric', month: 'short', day: 'numeric' }) });
     }
   }
   return (
     <header className="document-cover px-[72px] pt-[56px]" data-export-cover>
-      <p className={`text-[10px] font-bold uppercase tracking-[0.22em] ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>Arky · Documento arquitectural</p>
+      <p className={`text-[10px] font-bold uppercase tracking-[0.22em] ${isDark ? 'text-primary-400' : 'text-primary-600'}`}>{t("ui.arky-documento-arquitectural.f864f4")}</p>
       <h1 className={`mt-2 text-[30px] font-bold leading-tight ${isDark ? 'text-gray-50' : 'text-gray-900'}`}>{cover.title}</h1>
       {cover.objective && (
         <p className={`mt-2 text-[13.5px] leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{cover.objective}</p>
@@ -146,6 +148,7 @@ const CoverHeader: React.FC<{ cover: DocumentCoverMeta; isDark: boolean }> = ({ 
  * without a diagnostic.
  */
 export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoom, theme, fallbackContent, cover }) => {
+  const t = useUiTranslation();
   const proseRef = useRef<HTMLDivElement>(null);
   const resolvedTheme: DocumentTheme = theme ?? 'dark';
   const isDark = resolvedTheme === 'dark';
@@ -196,7 +199,7 @@ export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoo
         >
           {fallbackContent && fallbackContent.length > 0
             ? fallbackContent
-            : 'El artefacto no contiene texto. Usa Regenerar para reconstruirlo desde la solicitud original.'}
+            : t("uiExpr.el-artefacto-no-contiene-tex.a502da")}
         </pre>
       )}
     </div>

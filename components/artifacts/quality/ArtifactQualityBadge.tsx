@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { tierLabel, type ArtifactQualityScore } from '../../../services/quality/artifactQualityModel';
 
@@ -20,6 +21,7 @@ const TIER_CLASSES: Record<string, string> = {
  * score. Clicking the badge opens the full ArtifactQualityPanel.
  */
 export const ArtifactQualityBadge: React.FC<ArtifactQualityBadgeProps> = ({ score, onClick, compact }) => {
+  const t = useUiTranslation();
   const cls = TIER_CLASSES[score.tier];
   const label = tierLabel(score.tier);
   // 8.4c: an unmeasured artifact shows no figure — a neutral default is not a score.
@@ -40,7 +42,7 @@ export const ArtifactQualityBadge: React.FC<ArtifactQualityBadgeProps> = ({ scor
       type="button"
       onClick={onClick}
       className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-90 ${cls}`}
-      title="Ver reporte de calidad del artefacto"
+      title={t("ui.ver-reporte-de-calidad-del-a.e8c8fb")}
     >
       {content}
     </button>

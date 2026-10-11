@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import type { Node, Edge } from 'reactflow';
 // Vite loads this package CSS with the lazy Workspace chunk, before the canvas renders.
@@ -121,6 +122,7 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
   onLayoutQualityComputed,
   onNodeDoubleClick,
 }) => {
+  const t = useUiTranslation();
   const hasDisplayFlowNodes = displayFlowNodes.length > 0;
   const hasDisplayFlowEdges = displayFlowEdges.length > 0;
   const showSkeletonBadge =
@@ -139,7 +141,7 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
 
       {diagramError && !hasDisplayFlowNodes && (
         <DiagramErrorPanel
-          title="Error al visualizar"
+          title={t("ui.error-al-visualizar.395f0d")}
           body={diagramError}
           mermaidSource={mermaidCode}
           onRetry={onRetryDiagram}
@@ -159,8 +161,8 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
         <CanvasErrorBoundary panelName="Canvas"
           fallback={(error, reset) => (
             <ViewerCrashFallback
-              title="El canvas interactivo falló al renderizar"
-              viewerLabel="Diagrama"
+              title={t("ui.el-canvas-interactivo-fallo.213387")}
+              viewerLabel={t("Diagrama")}
               error={error}
               onReset={() => {
                 onResetCanvas();
@@ -193,17 +195,17 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
 
       {showSkeletonBadge && (
         <div className="absolute right-4 top-4 z-20 max-w-sm rounded-xl border border-amber-400/60 bg-amber-50/95 px-3 py-2 text-xs text-amber-900 shadow-lg backdrop-blur-sm dark:border-amber-700 dark:bg-amber-950/85 dark:text-amber-100">
-          <p className="font-semibold">Esqueleto base — edítame</p>
-          <p className="mt-1 leading-snug">El generador agotó los reintentos automáticos y se construyó una estructura mínima local. Edita los nodos o pulsa Regenerar con más contexto del proyecto.</p>
+          <p className="font-semibold">{t("ui.esqueleto-base-editame.01aa8b")}</p>
+          <p className="mt-1 leading-snug">{t("ui.el-generador-agoto-los-reint.62eee0")}</p>
         </div>
       )}
 
       {artifact.lastDiagramError && hasDisplayFlowNodes && !isLoading && (
         <div className="absolute left-4 top-4 z-20 max-w-md rounded-xl border border-rose-400/40 bg-rose-50/95 px-3 py-2 text-xs text-rose-900 shadow-lg backdrop-blur-sm dark:border-rose-800 dark:bg-rose-950/85 dark:text-rose-100">
-          <p className="font-semibold">Última generación falló</p>
+          <p className="font-semibold">{t("ui.ultima-generacion-fallo.ad5793")}</p>
           <p className="mt-1 leading-snug">
-            Motivo técnico: <span className="font-mono">{artifact.lastDiagramError.reason}</span>
-            {artifact.lastDiagramError.attempt > 1 ? ` (tras ${artifact.lastDiagramError.attempt} intentos)` : ''}.
+            {t("ui.motivo-tecnico.87888b")} <span className="font-mono">{artifact.lastDiagramError.reason}</span>
+            {artifact.lastDiagramError.attempt > 1 ? t("uiTemplate.tras-p0-intentos.d976ad", { p0: String(artifact.lastDiagramError.attempt) }) : ''}.
             {artifact.lastDiagramError.message ? ` ${artifact.lastDiagramError.message}` : ''}
           </p>
         </div>
@@ -211,8 +213,8 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
 
       {!isLoading && !diagramError && !hasDisplayFlowNodes && (
         <DiagramErrorPanel
-          title="Diagrama sin elementos visibles"
-          body={`No hay nodos visibles para renderizar en esta vista.\nNodos base: ${renderable.counters.baseNodes}, nodos proyectados: ${renderable.counters.projectedNodes}, nodos visibles: ${renderable.counters.renderNodes}, aristas visibles: ${hasDisplayFlowEdges ? displayFlowEdges.length : 0}.${renderDiagnosticsSummary ? `\n${renderDiagnosticsSummary}` : ''}\n\nEsto suele ocurrir cuando la IA devolvió contenido incompleto o cuando el parseo dejó el diagrama sin estructura mínima.`}
+          title={t("ui.diagrama-sin-elementos-visib.4aa6a9")}
+          body={t("uiDynamicGenerated.no-hay-nodos-visibles-para-r.5b18ad", { p0: String(renderable.counters.baseNodes), p1: String(renderable.counters.projectedNodes), p2: String(renderable.counters.renderNodes), p3: String(hasDisplayFlowEdges ? displayFlowEdges.length : 0), p4: String(renderDiagnosticsSummary ? `\n${renderDiagnosticsSummary}` : '') })}
           mermaidSource={mermaidCode}
           onRetry={onRetryDiagram}
           onViewText={onViewText}
@@ -223,14 +225,14 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
       {!isLoading && (renderable.diagnostics.length > 0 || renderable.warnings.length > 0) && (
         <div className="absolute left-4 bottom-4 z-20 max-w-xl rounded-xl border border-amber-400/40 bg-amber-50/95 dark:bg-amber-950/80 dark:border-amber-800 px-3 py-2 text-xs text-amber-900 dark:text-amber-100 shadow-lg backdrop-blur-sm">
           <div className="mb-1 flex items-center justify-between gap-2">
-            <p className="font-semibold">Diagnóstico de renderizado</p>
+            <p className="font-semibold">{t("ui.diagnostico-de-renderizado.605fa6")}</p>
             <button
               type="button"
               onClick={onCopyDiagnosticReport}
               className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2 py-1 text-[11px] font-medium hover:bg-amber-100/80 dark:hover:bg-amber-900/40"
             >
               {diagnosticCopied ? <CheckCircleIcon className="h-3.5 w-3.5" /> : <Square2StackIcon className="h-3.5 w-3.5" />}
-              {diagnosticCopied ? 'Copiado' : 'Copiar reporte'}
+              {diagnosticCopied ? t("ui.copiado.9e4170") : t("kg.copy")}
             </button>
           </div>
           {renderable.diagnostics.slice(0, 2).map((diag, idx) => (
@@ -243,7 +245,7 @@ export const DiagramView: React.FC<DiagramViewProps> = ({
           ))}
           {renderable.repairActions.length > 0 && (
             <p className="mt-1 leading-snug text-amber-800 dark:text-amber-200">
-              Siguiente paso sugerido: {renderable.repairActions[0]}
+              {t("ui.siguiente-paso-sugerido.df8de4")} {renderable.repairActions[0]}
             </p>
           )}
         </div>

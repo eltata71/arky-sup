@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { observabilityService, type ObservabilityEvent } from '../services/observability';
@@ -42,6 +43,7 @@ const shouldBlockWithRecoveryOverlay = (event: ObservabilityEvent): boolean => (
  * global failures so the user never remains on an empty, silent screen.
  */
 export const RuntimeErrorOverlay: React.FC = () => {
+  const t = useUiTranslation();
     const [error, setError] = useState<ObservabilityEvent | null>(null);
 
     useEffect(() => observabilityService.subscribe((events) => {
@@ -88,13 +90,13 @@ export const RuntimeErrorOverlay: React.FC = () => {
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">
                     <AlertTriangle className="h-6 w-6" />
                 </div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600 dark:text-rose-300">Fallo observable</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600 dark:text-rose-300">{t("ui.fallo-observable.56570c")}</p>
                 <h2 id="runtime-error-title" className="mt-1 text-xl font-bold text-gray-900 dark:text-white">{error.title}</h2>
                 <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-                    La vista no continuará en blanco. Puedes recargar la aplicación o volver al inicio; el detalle técnico queda disponible para soporte.
+                    {t("ui.la-vista-no-continuara-en-bl.9c259f")}
                 </p>
                 <details className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900/70">
-                    <summary className="cursor-pointer text-xs font-semibold text-gray-600 dark:text-gray-300">Detalle técnico observable</summary>
+                    <summary className="cursor-pointer text-xs font-semibold text-gray-600 dark:text-gray-300">{t("ui.detalle-tecnico-observable.4218d7")}</summary>
                     <pre className="mt-2 max-h-44 overflow-auto whitespace-pre-wrap break-words text-[11px] text-gray-700 dark:text-gray-300">{technicalReport}</pre>
                 </details>
                 <div className="mt-5 flex flex-wrap justify-end gap-2">
@@ -103,28 +105,28 @@ export const RuntimeErrorOverlay: React.FC = () => {
                         onClick={dismiss}
                         className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
                     >
-                        Mantener sesión
+                        {t("ui.mantener-sesion.630a40")}
                     </button>
                     <button
                         type="button"
                         onClick={copyReport}
                         className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
                     >
-                        Copiar diagnóstico
+                        {t("ui.copiar-diagnostico.3e3d40")}
                     </button>
                     <button
                         type="button"
                         onClick={goHome}
                         className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
                     >
-                        Volver al inicio
+                        {t("ui.volver-al-inicio.1afb11")}
                     </button>
                     <button
                         type="button"
                         onClick={reload}
                         className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700"
                     >
-                        Recargar aplicación
+                        {t("ui.recargar-aplicacion.d11570")}
                     </button>
                 </div>
             </div>

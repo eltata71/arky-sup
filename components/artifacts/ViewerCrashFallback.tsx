@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { ExclamationTriangleIcon } from '../Icons';
 
@@ -25,7 +26,7 @@ export const ViewerCrashFallback: React.FC<ViewerCrashFallbackProps> = ({
   onReset,
   onSwitchToDocument,
   viewerLabel,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <div
     role="alert"
     className="absolute inset-0 z-30 flex items-center justify-center p-6 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm"
@@ -37,16 +38,15 @@ export const ViewerCrashFallback: React.FC<ViewerCrashFallbackProps> = ({
       <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
       {viewerLabel && (
         <p className="mt-1 text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Vista afectada: {viewerLabel}
+          {t("ui.vista-afectada.c33869")} {viewerLabel}
         </p>
       )}
       <p className="mt-2 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-        Capturamos el error para que el resto del artefacto siga siendo usable. Puedes reintentar el
-        renderizado o cambiar a la vista de documento.
+        {t("ui.capturamos-el-error-para-que.ee0a57")}
       </p>
       <details className="mt-3 text-left bg-gray-50 dark:bg-gray-950/50 rounded-md p-2 border border-gray-200 dark:border-gray-800">
         <summary className="cursor-pointer text-[11px] font-medium text-gray-500 dark:text-gray-400">
-          Detalles técnicos
+          {t("ui.detalles-tecnicos.cf279e")}
         </summary>
         <pre className="mt-2 text-[10px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words max-h-24 overflow-auto custom-scrollbar">
           {error.message}
@@ -58,7 +58,7 @@ export const ViewerCrashFallback: React.FC<ViewerCrashFallbackProps> = ({
           onClick={onReset}
           className="inline-flex items-center justify-center h-9 px-3 rounded-md text-xs font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors"
         >
-          Reintentar render
+          {t("ui.reintentar-render.ea0aca")}
         </button>
         {onSwitchToDocument && (
           <button
@@ -66,12 +66,12 @@ export const ViewerCrashFallback: React.FC<ViewerCrashFallbackProps> = ({
             onClick={onSwitchToDocument}
             className="inline-flex items-center justify-center h-9 px-3 rounded-md text-xs font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
-            Ver como documento
+            {t("ui.ver-como-documento.6576af")}
           </button>
         )}
       </div>
     </div>
   </div>
-);
+); };
 
 export default ViewerCrashFallback;

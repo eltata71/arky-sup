@@ -1,7 +1,7 @@
 import React from 'react';
 import type { DocumentTocEntry } from '../../../hooks/artifacts/useDocumentRendering';
 import { DOCUMENT_TYPE } from '../../../lib/designTokens';
-import { useOptionalAppContext } from '../../../context/AppContext';
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 
 interface DocumentSideIndexProps {
   toc: DocumentTocEntry[];
@@ -11,13 +11,13 @@ interface DocumentSideIndexProps {
 
 /** Fixed index beside the paper: the heading hierarchy, with the section being read marked. */
 export const DocumentSideIndex: React.FC<DocumentSideIndexProps> = ({ toc, activeId, onNavigate }) => {
-  const t = useOptionalAppContext()?.t;
+  const t = useUiTranslation();
   return (
   <nav
-    aria-label={t?.('doc.index.label') ?? 'Índice del documento'}
+    aria-label={t?.('doc.index.label') ?? t("doc.index.label")}
     className="hidden lg:block w-56 shrink-0 overflow-y-auto border-r border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/60 py-4 pl-3 pr-2"
   >
-    <p className={`${DOCUMENT_TYPE.indexLabel} px-2 mb-2`}>{t?.('doc.index.title') ?? 'Contenido'}</p>
+    <p className={`${DOCUMENT_TYPE.indexLabel} px-2 mb-2`}>{t?.('doc.index.title') ?? t("mem.content")}</p>
     <ol className="space-y-0.5">
       {toc.map((entry) => {
         const active = entry.id === activeId;

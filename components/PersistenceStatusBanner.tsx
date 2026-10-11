@@ -1,8 +1,10 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { AlertTriangle, CheckCircle2, CloudOff, Loader2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 export const PersistenceStatusBanner: React.FC = () => {
+  const t = useUiTranslation();
   const { persistenceStatus, persistenceMessage } = useAppContext();
 
   if (!persistenceMessage || persistenceStatus === 'ready') return null;
@@ -22,7 +24,7 @@ export const PersistenceStatusBanner: React.FC = () => {
         <Icon className={`mt-0.5 h-5 w-5 flex-none ${isSaving ? 'animate-spin' : ''}`} aria-hidden="true" />
         <div>
           <p className="text-sm font-semibold">
-            {isSaving ? 'Guardando…' : isDegraded ? 'Pendiente de sincronizar' : 'Error al guardar'}
+            {isSaving ? t("uiExpr.guardando.d61b04") : isDegraded ? t("ui.pendiente-de-sincronizar.3dfa6f") : t("uiExpr.error-al-guardar.557655")}
           </p>
           <p className="mt-0.5 text-sm opacity-90">{persistenceMessage}</p>
         </div>

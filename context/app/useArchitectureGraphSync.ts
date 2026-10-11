@@ -51,6 +51,7 @@ import {
 const ARCHITECTURE_GRAPH_REBUILD_DEBOUNCE_MS = 2500;
 
 interface ArchitectureGraphSyncPorts {
+  readonly t: (key: string, replacements?: Record<string, string>) => string;
   readonly projects: Project[];
   readonly projectsRef: React.MutableRefObject<Project[]>;
   readonly globalContext: string[];
@@ -63,6 +64,7 @@ interface ArchitectureGraphSyncPorts {
 }
 
 export const useArchitectureGraphSync = ({
+  t,
   projects,
   projectsRef,
   globalContext,
@@ -122,8 +124,8 @@ export const useArchitectureGraphSync = ({
       for (const failure of report.failed) {
         observabilityService.recordWarning({
           source: 'operation',
-          title: 'Reconstrucción del grafo pendiente',
-          message: `El grafo del proyecto ${failure.projectId} no se pudo reconstruir; queda pendiente y se reintentará: ${failure.message}`,
+          title: t('uiDynamic.graphRebuildPending'),
+          message: t('uiDynamic.graphRebuildFailed', { id: failure.projectId, reason: failure.message }),
           operationName: 'recoverGraphProjections',
           metadata: { projectId: failure.projectId },
           recoverable: true,
@@ -135,7 +137,7 @@ export const useArchitectureGraphSync = ({
       // lo encuentra. No hay nada que perder aquí, que es el punto de F5-04.
       return null;
     }
-  }, [globalContextRef, setProjects]);
+  }, [globalContextRef, setProjects, t]);
 
   // Start-up recovery: whatever a closed tab, a crash or another device left
   // pending is rebuilt once the projects have loaded. This is the path that did
@@ -150,8 +152,8 @@ export const useArchitectureGraphSync = ({
           severity: 'info',
           source: 'operation',
           status: 'observed',
-          title: 'Grafo de conocimiento recuperado',
-          message: `Se reconstruyeron ${report.recovered.length} grafo(s) que habían quedado pendientes.`,
+          title: t('uiDynamic.graphRecovered'),
+          message: t('uiDynamic.graphsRebuilt', { count: String(report.recovered.length) }),
           operationName: 'recoverGraphProjections',
           recoverable: true,
           userVisible: false,
@@ -159,7 +161,7 @@ export const useArchitectureGraphSync = ({
         });
       }
     });
-  }, [projects.length, processGraphProjections]);
+  }, [projects.length, processGraphProjections, t]);
 
   // Architecture Knowledge Graph — automatic, debounced freshness keeping.
   // Any artifact change (content, IR, objective, key concepts, envelope,

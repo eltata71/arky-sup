@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { ArrowUpTrayIcon, ChevronDownIcon, MoonIcon, PencilIcon, SunIcon } from '../../Icons';
 import {
@@ -43,10 +44,11 @@ export const DocumentViewToolbar: React.FC<DocumentViewToolbarProps> = ({
   onPrint,
   canEdit = true,
 }) => {
+  const t = useUiTranslation();
   return (
     <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-2 px-4 md:px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-white/85 dark:bg-gray-950/80 backdrop-blur-sm">
       <div className="flex items-center gap-2">
-        <label htmlFor="doc-page-size" className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Tamaño</label>
+        <label htmlFor="doc-page-size" className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("ui.tamano.78c6e9")}</label>
         <div className="relative">
           <select
             id="doc-page-size"
@@ -68,22 +70,22 @@ export const DocumentViewToolbar: React.FC<DocumentViewToolbarProps> = ({
             onClick={() => onChangeZoom(stepDocumentZoom(zoom, -1))}
             disabled={zoom <= DOCUMENT_ZOOM_LEVELS[0]}
             className="px-2 py-1 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Reducir zoom"
-            title="Reducir zoom"
+            aria-label={t("ui.reducir-zoom.7a82e8")}
+            title={t("ui.reducir-zoom.7a82e8")}
           >−</button>
           <button
             type="button"
             onClick={() => onChangeZoom(100)}
             className="px-2 py-1 min-w-[52px] text-xs font-semibold text-gray-700 dark:text-gray-200 border-x border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Restablecer zoom (100%)"
+            title={t("ui.restablecer-zoom-100.967903")}
           >{zoom}%</button>
           <button
             type="button"
             onClick={() => onChangeZoom(stepDocumentZoom(zoom, 1))}
             disabled={zoom >= DOCUMENT_ZOOM_LEVELS[DOCUMENT_ZOOM_LEVELS.length - 1]}
             className="px-2 py-1 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Ampliar zoom"
-            title="Ampliar zoom"
+            aria-label={t("ui.ampliar-zoom.764774")}
+            title={t("ui.ampliar-zoom.764774")}
           >+</button>
         </div>
         {onFitWidth && (
@@ -91,19 +93,19 @@ export const DocumentViewToolbar: React.FC<DocumentViewToolbarProps> = ({
             type="button"
             onClick={onFitWidth}
             className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Ajustar la página al ancho disponible"
-          >Ajustar</button>
+            title={t("ui.ajustar-la-pagina-al-ancho-d.7f9b34")}
+          >{t("ui.ajustar.8a91ae")}</button>
         )}
         {theme && onChangeTheme && (
           <button
             type="button"
             onClick={() => onChangeTheme(theme === 'dark' ? 'light' : 'dark')}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title={theme === 'dark' ? 'Leer en página clara' : 'Leer en página oscura'}
-            aria-label={theme === 'dark' ? 'Cambiar a página clara' : 'Cambiar a página oscura'}
+            title={theme === 'dark' ? t("uiExpr.leer-en-pagina-clara.c4309f") : t("uiExpr.leer-en-pagina-oscura.0e19f6")}
+            aria-label={theme === 'dark' ? t("uiExpr.cambiar-a-pagina-clara.9a2906") : t("uiExpr.cambiar-a-pagina-oscura.3b585c")}
           >
             {theme === 'dark' ? <SunIcon className="w-3.5 h-3.5" /> : <MoonIcon className="w-3.5 h-3.5" />}
-            {theme === 'dark' ? 'Clara' : 'Oscura'}
+            {theme === 'dark' ? t("uiExpr.clara.95b938") : t("uiExpr.oscura.92a864")}
           </button>
         )}
         {canEdit && onEdit && (
@@ -111,10 +113,10 @@ export const DocumentViewToolbar: React.FC<DocumentViewToolbarProps> = ({
             type="button"
             onClick={onEdit}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-            title="Editar contenido"
+            title={t("ui.editar-contenido.51e981")}
           >
             <PencilIcon className="w-3.5 h-3.5" />
-            Editar
+            {t("edit")}
           </button>
         )}
         {onPrint && (
@@ -122,12 +124,12 @@ export const DocumentViewToolbar: React.FC<DocumentViewToolbarProps> = ({
             type="button"
             onClick={onPrint}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-            title="Imprimir o guardar como PDF (vista limpia, sin interfaz)"
+            title={t("ui.imprimir-o-guardar-como-pdf.9582ed")}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V4h12v5M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" />
             </svg>
-            Imprimir
+            {t("ui.imprimir.6d7683")}
           </button>
         )}
         {onExport && (
@@ -135,10 +137,10 @@ export const DocumentViewToolbar: React.FC<DocumentViewToolbarProps> = ({
             type="button"
             onClick={onExport}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700"
-            title="Exportar documento"
+            title={t("ui.exportar-documento.ef6ff4")}
           >
             <ArrowUpTrayIcon className="w-3.5 h-3.5" />
-            Exportar
+            {t("export")}
           </button>
         )}
       </div>

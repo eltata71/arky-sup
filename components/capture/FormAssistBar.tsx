@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * La asistencia a nivel de formulario: un botón que propone de una vez todo lo
  * que falta, y el sitio donde se dice lo que el asistente NO pudo deducir.
@@ -33,16 +34,16 @@ export const FormAssistBar: React.FC<FormAssistBarProps> = ({
   openQuestions = [],
   subject,
   className,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <div className={cn('space-y-2', className)}>
     {pendingCount > 0 && (
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ai-200 bg-ai-50/60 px-3 py-2 dark:border-ai-800 dark:bg-ai-950/30">
         <p className="text-xs text-gray-700 dark:text-gray-200">
-          Quedan <span className="font-semibold">{pendingCount}</span> campo(s) por completar en {subject}.
+          {t("ui.quedan.34c2a1")} <span className="font-semibold">{pendingCount}</span> {t("ui.campo-s-por-completar-en.dd04f0")} {subject}.
         </p>
         <Button size="xs" variant="ai" onClick={onAsk} loading={loading}>
           <WandSparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-          Completar con el asistente
+          {t("ui.completar-con-el-asistente.b790f8")}
         </Button>
       </div>
     )}
@@ -50,7 +51,7 @@ export const FormAssistBar: React.FC<FormAssistBarProps> = ({
     {notice && <Alert tone="warning">{notice}</Alert>}
 
     {openQuestions.length > 0 && (
-      <Alert tone="info" title="Lo que hace falta preguntarle al negocio">
+      <Alert tone="info" title={t("ui.lo-que-hace-falta-preguntarl.a99609")}>
         <ul className="mt-1 space-y-1">
           {openQuestions.map((question) => (
             <li key={question} className="flex gap-2 text-sm">
@@ -62,6 +63,6 @@ export const FormAssistBar: React.FC<FormAssistBarProps> = ({
       </Alert>
     )}
   </div>
-);
+); };
 
 export default FormAssistBar;

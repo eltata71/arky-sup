@@ -16,11 +16,11 @@ export const ViewEntry: React.FC<ViewEntryProps> = ({ entry, isDerived, onEdit, 
             <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <span>{t('mem.entryDetail')}</span>
                 <span aria-hidden>·</span>
-                <span>{chars.toLocaleString()} caracteres</span>
+                <span>{chars.toLocaleString()} {t("ui.caracteres.04ff0b")}</span>
                 <span aria-hidden>·</span>
-                <span>{words.toLocaleString()} palabras</span>
+                <span>{words.toLocaleString()} {t("ui.palabras.6b05dc")}</span>
                 <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${PRIORITY_BADGE_CLASSES[entry.priority]}`}>
-                    Prioridad {MEMORY_PRIORITY_LABEL_ES[entry.priority]}
+                    {t("mem.priority")} {MEMORY_PRIORITY_LABEL_ES[entry.priority]}
                 </span>
                 {isDerived && (
                     <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">{t('mem.derived')}</span>
@@ -34,15 +34,15 @@ export const ViewEntry: React.FC<ViewEntryProps> = ({ entry, isDerived, onEdit, 
             </article>
             <div className="mt-4 flex flex-wrap gap-2">
                 <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.05]">
-                    Volver a la lista
+                    {t("ui.volver-a-la-lista.2a41f5")}
                 </button>
                 {!isDerived && (
                     <>
                         <button type="button" onClick={onEdit} className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400">
-                            <PencilIcon className="h-4 w-4" /> Modificar
+                            <PencilIcon className="h-4 w-4" /> {t("ui.modificar.7f6f5a")}
                         </button>
                         <button type="button" onClick={onDelete} className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 px-3 py-2 text-sm font-bold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/40 dark:text-rose-300 dark:hover:bg-rose-500/10">
-                            <TrashIcon className="h-4 w-4" /> Eliminar
+                            <TrashIcon className="h-4 w-4" /> {t("delete")}
                         </button>
                     </>
                 )}
@@ -66,7 +66,7 @@ export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority,
     <div className="flex flex-1 flex-col">
         <div className="mb-1 flex items-center justify-between">
             <label htmlFor="memory-edit-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.content')}</label>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">{draft.length.toLocaleString()} caracteres</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">{draft.length.toLocaleString()} {t("ui.caracteres.04ff0b")}</span>
         </div>
         <textarea
             id="memory-edit-textarea"
@@ -82,11 +82,11 @@ export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority,
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" onClick={onCancel} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.05]">
-                Cancelar
+                {t("ui.cancelar.c111e0")}
             </button>
             <button type="button" onClick={onSave} disabled={isSaving} className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-500 dark:hover:bg-primary-400">
                 {isSaving ? <ArrowPathIcon className="h-4 w-4 animate-spin" /> : <CheckCircleIcon className="h-4 w-4" />}
-                Guardar cambios
+                {t("ui.guardar-cambios.831d46")}
             </button>
         </div>
     </div>
@@ -118,9 +118,9 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
     <div className="flex flex-1 flex-col">
         <div className="mb-1 flex items-center justify-between">
             <label htmlFor="memory-create-textarea" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Contenido (opcional si vas a subir un documento)
+                {t("ui.contenido-opcional-si-vas-a.d1e607")}
             </label>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">{draft.length.toLocaleString()} caracteres</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">{draft.length.toLocaleString()} {t("ui.caracteres.04ff0b")}</span>
         </div>
         <textarea
             id="memory-create-textarea"
@@ -141,7 +141,7 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
                 <div>
                     <p className="text-sm font-bold text-primary-900 dark:text-primary-100">{t('mem.loadFromDoc')}</p>
                     <p className="mt-1 max-w-sm text-xs text-primary-800/80 dark:text-primary-200/80">
-                        Sube un PDF, Word, Google Doc, texto o markdown. La IA analizará el contenido y propondrá los apuntes relevantes para guardar.
+                        {t("ui.sube-un-pdf-word-google-doc.1c04e8")}
                     </p>
                 </div>
                 <button
@@ -151,12 +151,12 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
                     className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-500 dark:hover:bg-primary-400"
                 >
                     {isExtracting ? <ArrowPathIcon className="h-4 w-4 animate-spin" /> : <DocumentArrowUpIcon className="h-4 w-4" />}
-                    {isExtracting ? 'Analizando…' : 'Subir documento'}
+                    {isExtracting ? t("uiExpr.analizando.dee81f") : t("uiExpr.subir-documento.1c1fc0")}
                 </button>
             </div>
             {extractionFileName && !isExtracting && (
                 <p className="mt-2 text-[11px] font-medium text-primary-800/70 dark:text-primary-200/70">
-                    Documento analizado: <span className="font-bold">{extractionFileName}</span>
+                    {t("ui.documento-analizado.9375c3")} <span className="font-bold">{extractionFileName}</span>
                 </p>
             )}
         </div>
@@ -166,7 +166,7 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
                 <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.aiNotes')}</p>
                     <button type="button" onClick={onClearSuggestions} className="text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-                        <XMarkIcon className="inline h-3 w-3" /> Descartar todos
+                        <XMarkIcon className="inline h-3 w-3" /> {t("ui.descartar-todos.d1c324")}
                     </button>
                 </div>
                 <ul className="space-y-2">
@@ -194,11 +194,11 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
 
         <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" onClick={onCancel} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.05]">
-                Cancelar
+                {t("ui.cancelar.c111e0")}
             </button>
             <button type="button" onClick={onSave} disabled={isSaving || isExtracting} className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-500 dark:hover:bg-primary-400">
                 {isSaving ? <ArrowPathIcon className="h-4 w-4 animate-spin" /> : <CheckCircleIcon className="h-4 w-4" />}
-                Guardar
+                {t("save")}
             </button>
         </div>
     </div>

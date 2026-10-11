@@ -29,16 +29,29 @@ if (!rootElement) {
 
 const StartupRecoveryFallback: React.FC<{ error: unknown }> = ({ error }) => {
   const message = error instanceof Error ? error.message : String(error);
+  const copy = document.documentElement.lang === 'en' ? {
+    eyebrow: 'Protected startup',
+    title: 'Arky 10 could not start the session',
+    description: 'The application detected the error and kept a recovery screen available.',
+    home: 'Back to home',
+    reload: 'Reload',
+  } : {
+    eyebrow: 'Arranque protegido',
+    title: 'Arky 10 no pudo iniciar la sesión',
+    description: 'La aplicación detectó el fallo y conservó una pantalla de recuperación en lugar de quedar en blanco.',
+    home: 'Volver al inicio',
+    reload: 'Recargar',
+  };
   return (
     <div className="min-h-[100dvh] bg-gray-950 text-white flex items-center justify-center p-6" role="alert">
       <div className="max-w-lg w-full rounded-2xl border border-rose-900/60 bg-gray-900 p-6 shadow-pop">
-        <p className="text-xs uppercase tracking-[0.18em] text-rose-300 font-semibold">Arranque protegido</p>
-        <h1 className="mt-2 text-2xl font-bold">Arky 10 no pudo iniciar la sesión</h1>
-        <p className="mt-3 text-sm leading-relaxed text-gray-300">La aplicación detectó el fallo y conservó una pantalla de recuperación en lugar de quedar en blanco.</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-rose-300 font-semibold">{copy.eyebrow}</p>
+        <h1 className="mt-2 text-2xl font-bold">{copy.title}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-gray-300">{copy.description}</p>
         <pre className="mt-4 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-black/40 p-3 text-xs text-gray-200">{message}</pre>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={() => { window.location.href = '/'; }} className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200">Volver al inicio</button>
-          <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white">Recargar</button>
+          <button type="button" onClick={() => { window.location.href = '/'; }} className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200">{copy.home}</button>
+          <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white">{copy.reload}</button>
         </div>
       </div>
     </div>
@@ -52,7 +65,7 @@ const app = (
   <React.StrictMode>
     <MotionConfig reducedMotion="user">
     <ObservabilityProvider>
-      <ErrorBoundary fallbackTitle="Error crítico al iniciar Arky 10">
+      <ErrorBoundary fallbackTitle={document.documentElement.lang === 'en' ? 'Critical error starting Arky 10' : 'Error crítico al iniciar Arky 10'}>
         <AuthProvider>
           <AppContextProvider>
             {/* Initiatives sit above the Office: an initiative is the reason an

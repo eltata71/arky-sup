@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The initiative gate: an architecture attention cannot be opened without the
  * business need it answers.
@@ -39,6 +40,7 @@ export const AttentionInitiativeGate: React.FC<AttentionInitiativeGateProps> = (
   onCreateInitiative,
   onClose,
 }) => {
+  const t = useUiTranslation();
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export const AttentionInitiativeGate: React.FC<AttentionInitiativeGateProps> = (
     <Modal
       isOpen
       onClose={onClose}
-      title="¿Qué necesidad de negocio atiende?"
+      title={t("ui.que-necesidad-de-negocio-ati.d68f35")}
       description={`Antes de ${intent}, indica la iniciativa de negocio que la origina.`}
     >
       <div className="space-y-4">
@@ -65,13 +67,12 @@ export const AttentionInitiativeGate: React.FC<AttentionInitiativeGateProps> = (
 
         {initiatives.length === 0 ? (
           <Alert tone="warning">
-            <p className="font-medium">Todavía no hay iniciativas de negocio registradas.</p>
+            <p className="font-medium">{t("ui.todavia-no-hay-iniciativas-d.af4c09")}</p>
             <p className="mt-1 text-xs leading-relaxed">
-              Un proyecto de arquitectura es la respuesta a una necesidad del negocio, así que la
-              necesidad va primero. Regístrala y vuelve para abrir el proyecto que la atiende.
+              {t("ui.un-proyecto-de-arquitectura.256e7c")}
             </p>
             <Button className="mt-2" size="sm" variant="primary" onClick={onCreateInitiative}>
-              Registrar iniciativa de negocio
+              {t("ui.registrar-iniciativa-de-nego.b9d36e")}
             </Button>
           </Alert>
         ) : (
@@ -79,8 +80,8 @@ export const AttentionInitiativeGate: React.FC<AttentionInitiativeGateProps> = (
             initiatives={initiatives}
             value={selected}
             onChange={setSelected}
-            label="Iniciativa de negocio que atiende (obligatorio)"
-            hint="Se guarda por llave, nunca por el código escrito a mano. Puedes atender más de una."
+            label={t("ui.iniciativa-de-negocio-que-at.95fcc9")}
+            hint={t("Se guarda por llave, nunca por el código escrito a mano. Puedes atender más de una.")}
           />
         )}
 
@@ -91,11 +92,11 @@ export const AttentionInitiativeGate: React.FC<AttentionInitiativeGateProps> = (
               onClick={onCreateInitiative}
               className="text-xs font-medium text-primary-600 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-400"
             >
-              Registrar una iniciativa nueva
+              {t("ui.registrar-una-iniciativa-nue.f123e4")}
             </button>
           ) : <span />}
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+            <Button variant="ghost" onClick={onClose}>{t("ui.cancelar.c111e0")}</Button>
             <Button
               variant="primary"
               disabled={selected.length === 0}
@@ -104,7 +105,7 @@ export const AttentionInitiativeGate: React.FC<AttentionInitiativeGateProps> = (
                 codes: codesForInitiativeIds(selected, initiatives),
               })}
             >
-              Continuar
+              {t("ui.continuar.b8cb6f")}
             </Button>
           </div>
         </div>

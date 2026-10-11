@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Badge, BadgeTone } from '../ui';
 import type { ArtifactReviewStatus } from '../../services/review';
@@ -42,10 +43,12 @@ const STATUS_META: Record<ArtifactReviewStatus, { tone: BadgeTone; label: string
  * presented the same way everywhere.
  */
 export const ReviewStatusBadge: React.FC<ReviewStatusBadgeProps> = ({ status = 'draft', compact = false }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
     const meta = STATUS_META[status];
     return (
-        <Badge tone={meta.tone} dot size="sm" title={meta.description} aria-label={`Estado de revisión: ${meta.label}`}>
-            {compact ? null : meta.label}
+        <Badge tone={meta.tone} dot size="sm" title={translateConfig(meta.description)} aria-label={t("uiTemplate.estado-de-revision-p0.7c2531", { p0: t(meta.label) })}>
+            {compact ? null : t(meta.label)}
         </Badge>
     );
 };

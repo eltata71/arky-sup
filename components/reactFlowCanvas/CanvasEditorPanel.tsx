@@ -1,7 +1,8 @@
 import { type Node, type Edge, MarkerType, useReactFlow } from 'reactflow';
 import { XMarkIcon } from '../Icons';
 import { EdgeInspector, NodeInspector } from '../diagram/DiagramInspectorSection';
-import { useAppContext } from '../../context/AppContext';
+import { useOptionalAppContext } from '../../context/AppContext';
+import { spanishFallback } from '../../lib/i18n/spanishFallback';
 
 interface CanvasEditorPanelProps {
     selectedNode: Node | null;
@@ -20,7 +21,7 @@ interface CanvasEditorPanelProps {
 
 export function CanvasEditorPanel({ selectedNode, selectedEdge, nodes, edges, inspectorPinned, onTogglePinned, onClose, focusNeighbors, clearFocusFilters, duplicateSelectedNode, updateNodeData, updateEdgeData }: CanvasEditorPanelProps) {
     const reactFlowInstance = useReactFlow();
-    const { t } = useAppContext();
+    const t = useOptionalAppContext()?.t ?? spanishFallback;
     return (
 
                 <div className="diagram-editor-panel absolute top-4 right-4 w-96 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20 flex flex-col max-h-[calc(100%-2rem)] overflow-hidden animate-fade-in">
@@ -45,7 +46,7 @@ export function CanvasEditorPanel({ selectedNode, selectedEdge, nodes, edges, in
                     <div className="p-4 overflow-y-auto flex-1 space-y-4">
                         {selectedNode && (
                             <>
-                                <NodeInspector node={selectedNode} nodes={nodes} edges={edges} />
+                                <NodeInspector node={selectedNode} nodes={nodes} edges={edges} t={t} />
                                 <div className="border-t border-gray-100 dark:border-gray-700 -mx-4" />
                                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">{t('diagramEditor.edit')}</div>
                                 <div className="flex flex-wrap gap-2">
@@ -119,7 +120,7 @@ export function CanvasEditorPanel({ selectedNode, selectedEdge, nodes, edges, in
                         )}
                         {selectedEdge && (
                             <>
-                                <EdgeInspector edge={selectedEdge} nodes={nodes} />
+                                <EdgeInspector edge={selectedEdge} nodes={nodes} t={t} />
                                 <div className="border-t border-gray-100 dark:border-gray-700 -mx-4" />
                                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">{t('diagramEditor.edit')}</div>
                                 <div className="flex flex-wrap gap-2">

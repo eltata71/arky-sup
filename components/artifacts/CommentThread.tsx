@@ -1,3 +1,5 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
+import type { Translator } from '../../lib/i18n/spanishFallback';
 import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Button, Badge, EmptyState } from '../ui';
 import { ChatBubbleBottomCenterTextIcon, CheckCircleIcon, TrashIcon } from '../Icons';
@@ -29,31 +31,31 @@ function useComments(artifactId: string): ArtifactComment[] {
     );
 }
 
-function formatRelative(iso: string): string {
+function formatRelative(iso: string, t: Translator): string {
     const then = new Date(iso).getTime();
     if (Number.isNaN(then)) return iso;
     const diffMs = Date.now() - then;
     const seconds = Math.round(diffMs / 1000);
-    if (seconds < 60) return `hace ${Math.max(1, seconds)}s`;
+    if (seconds < 60) return t('uiDynamic.relativeSeconds', { count: String(Math.max(1, seconds)) });
     const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `hace ${minutes}m`;
+    if (minutes < 60) return t('uiDynamic.relativeMinutes', { count: String(minutes) });
     const hours = Math.round(minutes / 60);
-    if (hours < 24) return `hace ${hours}h`;
+    if (hours < 24) return t('uiDynamic.relativeHours', { count: String(hours) });
     const days = Math.round(hours / 24);
-    if (days < 7) return `hace ${days}d`;
-    return new Date(iso).toLocaleDateString();
+    if (days < 7) return t('uiDynamic.relativeDays', { count: String(days) });
+    return new Date(iso).toLocaleDateString(document.documentElement.lang || 'es');
 }
 
-function describeAnchor(anchor: ArtifactCommentAnchor): string {
+function describeAnchor(anchor: ArtifactCommentAnchor, t: Translator): string {
     switch (anchor.kind) {
         case 'artifact':
-            return 'Comentario general';
+            return t('uiDynamic.generalComment');
         case 'document-section':
-            return anchor.sectionTitle ? `Sección: ${anchor.sectionTitle}` : 'Sección del documento';
+            return anchor.sectionTitle ? t('uiDynamic.documentSectionName', { name: anchor.sectionTitle }) : t('uiDynamic.documentSection');
         case 'diagram-node':
-            return `Nodo ${anchor.nodeId}`;
+            return t('uiDynamic.diagramNodeName', { name: anchor.nodeId });
         case 'diagram-edge':
-            return `Conexión ${anchor.edgeId}`;
+            return t('uiDynamic.diagramEdgeName', { name: anchor.edgeId });
     }
 }
 
@@ -79,6 +81,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
     initialStatusFilter = 'open',
     readOnly = false,
 }) => {
+  const t = useUiTranslation();
     const all = useComments(artifactId);
     const { announce } = useAriaAnnouncer();
     const [statusFilter, setStatusFilter] = useState<ArtifactCommentStatus | 'all'>(initialStatusFilter);
@@ -101,7 +104,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
     const handleSubmit = () => {
         const body = draft.trim();
         if (body.length === 0) {
-            setError('Escribe un comentario antes de enviar.');
+            setError(t("uiMessage.escribe-un-comentario-antes.7eb41d"));
             return;
         }
         artifactReviewService.addComment({
@@ -134,17 +137,17 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
     };
 
     return (
-        <section className="flex flex-col gap-3" aria-label="Comentarios del artefacto">
+        <section className="flex flex-col gap-3" aria-label={t("ui.comentarios-del-artefacto.c1a878")}>
             <header className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                     <ChatBubbleBottomCenterTextIcon className="h-4 w-4 text-gray-400" aria-hidden />
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Comentarios</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("ui.comentarios.054de5")}</h3>
                     <Badge tone={openCount > 0 ? 'warning' : 'gray'} size="xs">
-                        {openCount} abierto{openCount === 1 ? '' : 's'}
+                        {openCount} {t("ui.abierto.bcd2bf")}{openCount === 1 ? '' : 's'}
                     </Badge>
                     <ReviewSyncBadge projectId={projectId} artifactId={artifactId} />
                 </div>
-                <div className="flex items-center gap-1" role="group" aria-label="Filtrar comentarios">
+                <div className="flex items-center gap-1" role="group" aria-label={t("ui.filtrar-comentarios.8c1cf0")}>
                     {(['open', 'resolved', 'all'] as const).map((value) => (
                         <button
                             key={value}
@@ -158,7 +161,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                                     : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200')
                             }
                         >
-                            {value === 'open' ? 'Abiertos' : value === 'resolved' ? 'Resueltos' : 'Todos'}
+                            {value === 'open' ? t("uiExpr.abiertos.7fe4b0") : value === 'resolved' ? t("uiExpr.resueltos.dd24ea") : t("ui.todos.a4114a")}
                         </button>
                     ))}
                 </div>
@@ -167,8 +170,8 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
             {filtered.length === 0 ? (
                 <EmptyState
                     icon={<ChatBubbleBottomCenterTextIcon className="h-5 w-5" />}
-                    title="Sin comentarios todavía"
-                    description="Inicia la conversación desde el composer para registrar decisiones, dudas o bloqueos."
+                    title={t("ui.sin-comentarios-todavia.36334e")}
+                    description={t("Inicia la conversación desde el composer para registrar decisiones, dudas o bloqueos.")}
                 />
             ) : (
                 <ol className="flex flex-col gap-3" aria-live="polite">
@@ -182,24 +185,24 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                         <span className="font-semibold text-gray-700 dark:text-gray-200">{comment.author.name}</span>
                                         <span aria-hidden>·</span>
-                                        <time dateTime={comment.createdAt}>{formatRelative(comment.createdAt)}</time>
+                                        <time dateTime={comment.createdAt}>{formatRelative(comment.createdAt, t)}</time>
                                         <span aria-hidden>·</span>
-                                        <span className="truncate">{describeAnchor(comment.anchor)}</span>
+                                        <span className="truncate">{describeAnchor(comment.anchor, t)}</span>
                                     </div>
                                     <p className="mt-1 text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words">
                                         {comment.body}
                                     </p>
                                     {comment.status === 'resolved' && comment.resolvedBy && comment.resolvedAt && (
                                         <p className="mt-1 text-2xs text-gray-400 dark:text-gray-500">
-                                            Resuelto por {comment.resolvedBy.name}
+                                            {t("ui.resuelto-por.3f440b")} {comment.resolvedBy.name}
                                             <span aria-hidden> · </span>
-                                            <time dateTime={comment.resolvedAt}>{formatRelative(comment.resolvedAt)}</time>
+                                            <time dateTime={comment.resolvedAt}>{formatRelative(comment.resolvedAt, t)}</time>
                                         </p>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
                                     <Badge tone={comment.status === 'resolved' ? 'success' : 'warning'} size="xs">
-                                        {comment.status === 'resolved' ? 'Resuelto' : 'Abierto'}
+                                        {comment.status === 'resolved' ? t("uiExpr.resuelto.92aa4b") : t("uiExpr.abierto.8708ae")}
                                     </Badge>
                                 </div>
                             </div>
@@ -211,7 +214,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                                             <div className="text-xs text-gray-500 dark:text-gray-400">
                                                 <span className="font-medium text-gray-700 dark:text-gray-200">{reply.author.name}</span>
                                                 <span aria-hidden> · </span>
-                                                <time dateTime={reply.createdAt}>{formatRelative(reply.createdAt)}</time>
+                                                <time dateTime={reply.createdAt}>{formatRelative(reply.createdAt, t)}</time>
                                             </div>
                                             <p className="mt-0.5 text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words">{reply.body}</p>
                                         </li>
@@ -222,14 +225,14 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                             {!readOnly && (
                                 <div className="mt-3 flex flex-col gap-2">
                                     <label className="sr-only" htmlFor={`reply-${comment.id}`}>
-                                        Responder al comentario de {comment.author.name}
+                                        {t("ui.responder-al-comentario-de.ab4f88")} {comment.author.name}
                                     </label>
                                     <textarea
                                         id={`reply-${comment.id}`}
                                         value={replyDrafts[comment.id] ?? ''}
                                         onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [comment.id]: e.target.value }))}
                                         rows={2}
-                                        placeholder="Responder…"
+                                        placeholder={t("ui.responder.c9668c")}
                                         className="w-full resize-y rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                                     />
                                     <div className="flex items-center justify-end gap-2">
@@ -238,9 +241,9 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                                             variant="ghost"
                                             leftIcon={<TrashIcon className="h-3.5 w-3.5" />}
                                             onClick={() => handleDelete(comment.id)}
-                                            aria-label="Eliminar comentario"
+                                            aria-label={t("ui.eliminar-comentario.936360")}
                                         >
-                                            Eliminar
+                                            {t("delete")}
                                         </Button>
                                         <Button
                                             size="xs"
@@ -248,7 +251,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                                             leftIcon={<CheckCircleIcon className="h-3.5 w-3.5" />}
                                             onClick={() => handleResolve(comment)}
                                         >
-                                            {comment.status === 'open' ? 'Marcar resuelto' : 'Reabrir'}
+                                            {comment.status === 'open' ? t("uiExpr.marcar-resuelto.dcca91") : t("uiExpr.reabrir.3a7b78")}
                                         </Button>
                                         <Button
                                             size="xs"
@@ -256,7 +259,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                                             disabled={(replyDrafts[comment.id] ?? '').trim().length === 0}
                                             onClick={() => handleReplySubmit(comment.id)}
                                         >
-                                            Responder
+                                            {t("ui.responder.20c9b5")}
                                         </Button>
                                     </div>
                                 </div>
@@ -270,15 +273,15 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                 <form
                     className="mt-1 flex flex-col gap-2"
                     onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
-                    aria-label="Publicar nuevo comentario"
+                    aria-label={t("ui.publicar-nuevo-comentario.00c21e")}
                 >
-                    <label className="sr-only" htmlFor={`new-comment-${artifactId}`}>Nuevo comentario</label>
+                    <label className="sr-only" htmlFor={`new-comment-${artifactId}`}>{t("ui.nuevo-comentario.94da9e")}</label>
                     <textarea
                         id={`new-comment-${artifactId}`}
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
                         rows={3}
-                        placeholder="Escribe un comentario para el equipo…"
+                        placeholder={t("ui.escribe-un-comentario-para-e.97a7ab")}
                         aria-invalid={error ? 'true' : undefined}
                         aria-describedby={error ? `new-comment-${artifactId}-error` : undefined}
                         className="w-full resize-y rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
@@ -290,7 +293,7 @@ export const CommentThread: React.FC<CommentThreadProps> = ({
                     )}
                     <div className="flex items-center justify-end">
                         <Button type="submit" size="sm" variant="primary" disabled={draft.trim().length === 0}>
-                            Publicar comentario
+                            {t("ui.publicar-comentario.bc0d10")}
                         </Button>
                     </div>
                 </form>

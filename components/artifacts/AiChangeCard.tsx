@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { aiChangeStore } from '../../services/artifacts/application/aiChangeSummary';
 import { useAiChangeHighlight } from '../../hooks/artifacts/useAiChangeHighlight';
@@ -5,28 +6,29 @@ import { useAriaAnnouncer } from '../../hooks/useAriaAnnouncer';
 
 /** Explica en una tarjeta qué cambió la IA en el último cambio (10.5). */
 export const AiChangeCard: React.FC = () => {
+  const t = useUiTranslation();
   const change = useSyncExternalStore(aiChangeStore.subscribe, aiChangeStore.get);
   const { announce } = useAriaAnnouncer();
   useAiChangeHighlight(change?.touchedNodeIds ?? [], change?.id ?? null);
 
   useEffect(() => {
-    if (change) announce(`La IA aplicó: ${change.headline}`);
-  }, [change, announce]);
+    if (change) announce(t("uiDynamicGenerated.la-ia-aplico-p0.9a19c0", { p0: String(change.headline) }));
+  }, [change, announce, t]);
 
   if (!change) return null;
   return (
     <section
-      aria-label="Qué cambió la IA"
+      aria-label={t("ui.que-cambio-la-ia.01fbf9")}
       className="fixed bottom-20 left-4 z-40 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-primary-200 bg-white p-4 shadow-lg dark:border-primary-800 dark:bg-gray-900 md:left-24"
     >
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Qué cambió la IA</h2>
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t("ui.que-cambio-la-ia.01fbf9")}</h2>
         <button
           type="button"
           onClick={() => aiChangeStore.clear(change.id)}
           className="rounded px-1 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-300"
         >
-          Cerrar
+          {t("sdd.close")}
         </button>
       </div>
       <p className="mt-1 text-xs text-gray-700 dark:text-gray-300">{change.headline}</p>

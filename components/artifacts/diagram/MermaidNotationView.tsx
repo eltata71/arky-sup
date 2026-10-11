@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useEffect, useRef, useState } from 'react';
 import DiagramErrorPanel from './DiagramErrorPanel';
 import { DiagramSkeleton } from './DiagramSkeleton';
@@ -24,6 +25,7 @@ let notationRenderCounter = 0;
  * artifact — editing stays on the canvas and in «Modificar diagrama».
  */
 export const MermaidNotationView: React.FC<MermaidNotationViewProps> = ({ source, artifactName, onViewText }) => {
+  const t = useUiTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'rendering' | 'ready' | 'error'>('rendering');
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export const MermaidNotationView: React.FC<MermaidNotationViewProps> = ({ source
     const render = async () => {
       if (!source?.trim()) {
         setStatus('error');
-        setError('El artefacto no contiene texto Mermaid que dibujar.');
+        setError(t("uiMessage.el-artefacto-no-contiene-tex.ef89bc"));
         return;
       }
       setStatus('rendering');
@@ -52,7 +54,7 @@ export const MermaidNotationView: React.FC<MermaidNotationViewProps> = ({ source
           drawn.removeAttribute('height');
           drawn.style.maxWidth = '100%';
           drawn.setAttribute('role', 'img');
-          drawn.setAttribute('aria-label', `Diagrama «${artifactName}» en su notación`);
+          drawn.setAttribute('aria-label', t("uiDynamicGenerated.diagrama-p0-en-su-notacion.473e38", { p0: String(artifactName) }));
         }
         setStatus('ready');
       } catch (caught) {
@@ -65,18 +67,18 @@ export const MermaidNotationView: React.FC<MermaidNotationViewProps> = ({ source
     return () => {
       cancelled = true;
     };
-  }, [source, artifactName, attempt]);
+  }, [source, artifactName, attempt, t]);
 
   const zoom = ZOOM_STEPS[zoomIndex];
 
   return (
     <div className="flex-1 relative min-h-0 bg-gray-100 dark:bg-gray-900 flex flex-col h-full w-full animate-fade-in">
       {status === 'rendering' && (
-        <DiagramSkeleton onCancel={onViewText} message="Dibujando el diagrama en su notación…" detail={null} />
+        <DiagramSkeleton onCancel={onViewText} message={t("Dibujando el diagrama en su notación…")} detail={null} />
       )}
       {status === 'error' && (
         <DiagramErrorPanel
-          title="No se pudo dibujar la notación"
+          title={t("ui.no-se-pudo-dibujar-la-notaci.cfa744")}
           body={error ?? 'Mermaid rechazó el texto del diagrama.'}
           mermaidSource={source}
           onRetry={() => setAttempt((value) => value + 1)}
@@ -94,12 +96,12 @@ export const MermaidNotationView: React.FC<MermaidNotationViewProps> = ({ source
       {status === 'ready' && (
         <div
           role="group"
-          aria-label="Zoom de la notación"
+          aria-label={t("ui.zoom-de-la-notacion.4506e2")}
           className="absolute right-4 top-4 z-20 flex items-center gap-1 rounded-full border border-gray-200/60 bg-white/90 p-1 text-xs shadow-sm dark:border-gray-700/60 dark:bg-gray-900/90"
         >
           <button
             type="button"
-            aria-label="Alejar"
+            aria-label={t("ui.alejar.b2ff57")}
             disabled={zoomIndex === 0}
             onClick={() => setZoomIndex((value) => Math.max(0, value - 1))}
             className="h-7 w-7 rounded-full font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -108,7 +110,7 @@ export const MermaidNotationView: React.FC<MermaidNotationViewProps> = ({ source
           </button>
           <button
             type="button"
-            aria-label="Restablecer zoom"
+            aria-label={t("ui.restablecer-zoom.884f03")}
             onClick={() => setZoomIndex(ZOOM_STEPS.indexOf(1))}
             className="min-w-[3rem] rounded-full px-2 py-1 tabular-nums text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
           >
@@ -116,7 +118,7 @@ export const MermaidNotationView: React.FC<MermaidNotationViewProps> = ({ source
           </button>
           <button
             type="button"
-            aria-label="Acercar"
+            aria-label={t("ui.acercar.f60922")}
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
             onClick={() => setZoomIndex((value) => Math.min(ZOOM_STEPS.length - 1, value + 1))}
             className="h-7 w-7 rounded-full font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-800"

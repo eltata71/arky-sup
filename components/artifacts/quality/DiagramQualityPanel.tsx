@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { DiagramQualityReport } from '../../../services/diagram';
@@ -85,6 +86,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
   onApplyIssueFix,
   onApplyAutoAction,
 }) => {
+  const t = useUiTranslation();
   return (
     <AnimatePresence>
       {open && qualityReport && (
@@ -94,13 +96,13 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
           exit={{ x: 24, opacity: 0 }}
           transition={{ duration: MOTION.duration.fast }}
           role="complementary"
-          aria-label="Calidad del diagrama"
+          aria-label={t("ui.calidad-del-diagrama.b04e17")}
           className="absolute top-20 right-4 z-30 w-[360px] max-h-[calc(100%-10rem)] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-4"
         >
           <div className="flex items-center justify-between gap-2 mb-3">
             <div>
               <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-                Calidad del diagrama
+                {t("ui.calidad-del-diagrama.b04e17")}
               </p>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                 {qualityReport.score}/100
@@ -109,9 +111,9 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
             <button
               onClick={onClose}
               className="text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-              title="Ocultar panel de calidad"
+              title={t("ui.ocultar-panel-de-calidad.0070b1")}
             >
-              Cerrar
+              {t("sdd.close")}
             </button>
           </div>
           <p className="text-xs text-gray-600 dark:text-gray-300 mb-2 leading-snug">
@@ -121,7 +123,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
             <div className="mb-3 rounded-lg border border-gray-200 dark:border-gray-700 p-2.5">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Visual Quality Gate 2.0
+                  {t("ui.visual-quality-gate-2-0.6e4f6f")}
                 </p>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${VISUAL_GATE_BADGE[qualityReport.visualGate.state]}`}>
                   {qualityReport.visualGate.state}
@@ -145,7 +147,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
               {qualityReport.visualGate.safeAutomaticActions.length > 0 && (
                 <div className="mt-2">
                   <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                    Acciones automáticas seguras
+                    {t("ui.acciones-automaticas-seguras.7f5f3e")}
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {qualityReport.visualGate.safeAutomaticActions.slice(0, 6).map((action) => {
@@ -155,7 +157,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
                           <span
                             key={action}
                             className={baseClasses}
-                            title="El gate sugiere esta acción como segura para aplicar automáticamente"
+                            title={t("ui.el-gate-sugiere-esta-accion.6640d9")}
                           >
                             {action}
                           </span>
@@ -167,8 +169,8 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
                           type="button"
                           onClick={() => onApplyAutoAction(action)}
                           className={`${baseClasses} hover:bg-emerald-100 dark:hover:bg-emerald-900/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer transition-colors`}
-                          title={`Aplicar ${action}`}
-                          aria-label={`Aplicar acción ${action}`}
+                          title={t("uiTemplate.aplicar-p0.07f647", { p0: String(action) })}
+                          aria-label={t("uiTemplate.aplicar-accion-p0.91b1e1", { p0: String(action) })}
                         >
                           {action}
                         </button>
@@ -176,7 +178,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
                     })}
                     {qualityReport.visualGate.safeAutomaticActions.length > 6 && (
                       <span className="text-[10px] italic text-gray-500 dark:text-gray-400">
-                        +{qualityReport.visualGate.safeAutomaticActions.length - 6} más
+                        +{qualityReport.visualGate.safeAutomaticActions.length - 6} {t("ui.mas.917ac7")}
                       </span>
                     )}
                   </div>
@@ -186,10 +188,10 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
           )}
           {qualityReport.score < 90 && (
             <p className="text-[11px] text-amber-700 dark:text-amber-300 mb-3 leading-snug">
-              Causa probable: {(() => {
+              {t("ui.causa-probable.5dfbce")} {(() => {
                 const lowest = Object.entries(qualityReport.breakdown)
                   .sort((a, b) => (a[1] as number) - (b[1] as number))[0];
-                return `dimensión más baja "${DIMENSION_LABEL_ES[lowest?.[0] ?? ''] ?? lowest?.[0]}" (${lowest?.[1]}/100).`;
+                return t("uiDynamicGenerated.dimension-mas-baja-p0-p1-100.72b1c3", { p0: String(DIMENSION_LABEL_ES[lowest?.[0] ?? ''] ?? lowest?.[0]), p1: String(lowest?.[1]) });
               })()}
             </p>
           )}
@@ -198,16 +200,16 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
               onClick={onAutoImprove}
               disabled={isAutoImproving}
               className="flex-1 px-2 py-1.5 rounded-lg text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 disabled:opacity-60 disabled:cursor-wait"
-              title="Aplica reparaciones determinísticas: orphans, labels, grupos, metadata."
+              title={t("ui.aplica-reparaciones-determin.4ea62b")}
             >
-              {isAutoImproving ? 'Mejorando…' : 'Auto-mejorar diagrama'}
+              {isAutoImproving ? t("uiExpr.mejorando.dde953") : t("ui.auto-mejorar-diagrama.6b16b8")}
             </button>
             <button
               onClick={onGenerateWorldClass}
               className="flex-1 px-2 py-1.5 rounded-lg text-[11px] font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-900/60"
-              title="Genera una nueva versión de clase mundial pasando por el quality gate completo."
+              title={t("ui.genera-una-nueva-version-de.3e6cee")}
             >
-              Generar clase mundial
+              {t("ui.generar-clase-mundial.ffcc07")}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-1.5 mb-3">
@@ -230,14 +232,14 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
           </div>
           {qualityReport.archetype && (
             <p className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 mb-2">
-              Arquetipo detectado · {ARCHETYPE_LABEL[qualityReport.archetype] ?? qualityReport.archetype}
+              {t("ui.arquetipo-detectado.1a3a3e")} {ARCHETYPE_LABEL[qualityReport.archetype] ?? qualityReport.archetype}
             </p>
           )}
 
           {qualityReport.suggestions && qualityReport.suggestions.length > 0 && (
             <div className="mb-4">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                Sugerencias por arquetipo · {qualityReport.suggestions.length}
+                {t("ui.sugerencias-por-arquetipo.fd5f77")} {qualityReport.suggestions.length}
               </p>
               <div className="space-y-2">
                 {qualityReport.suggestions.slice(0, 6).map((sugg) => (
@@ -260,7 +262,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
                   </div>
                 ))}
                 {qualityReport.suggestions.length > 6 && (
-                  <p className="text-[10px] italic text-gray-400">…y {qualityReport.suggestions.length - 6} más</p>
+                  <p className="text-[10px] italic text-gray-400">…y {qualityReport.suggestions.length - 6} {t("ui.mas.917ac7")}</p>
                 )}
               </div>
             </div>
@@ -282,7 +284,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
                 return (
                   <div key={sev}>
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
-                      Hallazgos {sevLabel} · {group.length}
+                      {t("ui.hallazgos.199824")} {sevLabel} · {group.length}
                     </p>
                     <div className="space-y-2">
                       {group.map((issue) => (
@@ -297,7 +299,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
                                   onClick={() => onApplyIssueFix(issue.id)}
                                   className="mt-1.5 px-2 py-1 rounded-md text-[10px] font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-900/60"
                                 >
-                                  Aplicar fix rápido
+                                  {t("ui.aplicar-fix-rapido.62503b")}
                                 </button>
                               )}
                             </div>
@@ -311,7 +313,7 @@ export const DiagramQualityPanel: React.FC<DiagramQualityPanelProps> = ({
             </div>
           ) : (
             <p className="text-xs text-emerald-700 dark:text-emerald-300">
-              Sin hallazgos. Excelente base para exportación.
+              {t("ui.sin-hallazgos-excelente-base.6f5b49")}
             </p>
           )}
         </motion.aside>

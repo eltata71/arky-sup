@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * DashboardPage — el centro de mando de la Oficina de Arquitectura.
  *
@@ -62,6 +63,7 @@ const region = (index: number, reduced: boolean) => ({
 });
 
 const DashboardPage: React.FC = () => {
+  const t = useUiTranslation();
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const { projects, isLoading: projectsLoading } = useAppContext();
@@ -94,7 +96,7 @@ const DashboardPage: React.FC = () => {
     return (
       <div className="min-h-[100dvh] bg-mesh-light px-4 py-6 pb-24 dark:bg-mesh-dark md:pb-8 md:pl-20 md:pr-8">
         <div className="mx-auto max-w-7xl">
-          <PageSkeleton label="Cargando el centro de mando" hero tiles={4} panels={2} />
+          <PageSkeleton label={t("ui.cargando-el-centro-de-mando.d778bc")} hero tiles={4} panels={2} />
         </div>
       </div>
     );
@@ -110,22 +112,21 @@ const DashboardPage: React.FC = () => {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className={TYPE.labelAccent}>{PRODUCT_NAME}</p>
-            <h1 className={`mt-1 ${TYPE.pageTitle}`}>Centro de mando</h1>
+            <h1 className={`mt-1 ${TYPE.pageTitle}`}>{t("rail.dashboard.long")}</h1>
             <p className={`mt-1 max-w-3xl ${TYPE.body}`}>
               {EA_LEVELS.initiative.short} → {EA_LEVELS.engagementProject.short} →{' '}
-              {EA_LEVELS.deliverable.short} → {EA_LEVELS.artifact.singular}. En qué estado está
-              todo, qué avanza y qué espera por una persona.
+              {EA_LEVELS.deliverable.short} → {EA_LEVELS.artifact.singular}{t("ui.en-que-estado-esta-todo-que.2421a4")}
             </p>
           </div>
         </header>
 
         {nothingYet ? (
           <EmptyState
-            title="El portafolio todavía está vacío"
-            description="Empieza por la necesidad: registra una iniciativa de negocio y abre después el proyecto de arquitectura que lo sirva. El tablero mostrará la cadena completa."
+            title={t("ui.el-portafolio-todavia-esta-v.08aac6")}
+            description={t("Empieza por la necesidad: registra una iniciativa de negocio y abre después el proyecto de arquitectura que lo sirva. El tablero mostrará la cadena completa.")}
             actions={(
               <Button variant="primary" onClick={() => navigate('/initiatives')}>
-                Registrar la primera iniciativa
+                {t("ui.registrar-la-primera-iniciat.e5b6bf")}
               </Button>
             )}
             flavor="ai"
@@ -151,7 +152,7 @@ const DashboardPage: React.FC = () => {
                 cuatro números sería una fila de tarjetas sin pregunta propia. */}
             <motion.div {...region(1, reducedMotion)} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatTile
-                label="Tareas completadas"
+                label={t("ui.tareas-completadas.12fa06")}
                 value={tasksDelta.current}
                 icon={CheckCheck}
                 tone="primary"
@@ -164,7 +165,7 @@ const DashboardPage: React.FC = () => {
                   : undefined}
               />
               <StatTile
-                label="Entregas cerradas"
+                label={t("ui.entregas-cerradas.dfb0e6")}
                 value={deliveriesDelta.current}
                 icon={PackageCheck}
                 tone="success"
@@ -181,7 +182,7 @@ const DashboardPage: React.FC = () => {
                 planificado. Sin plan, la tarjeta lo dice.
               */}
               <StatTile
-                label="Avance planificado"
+                label={t("ui.avance-planificado.be5321")}
                 value={planned ? `${Math.round(rollup.completionRatio * 100)}%` : 'Sin plan'}
                 icon={Gauge}
                 tone={planned && rollup.completionRatio < 0.4 ? 'warning' : 'primary'}
@@ -191,7 +192,7 @@ const DashboardPage: React.FC = () => {
                   : 'Se planifica al aprobar el charter de un entregable'}
               />
               <StatTile
-                label="Artefactos producidos"
+                label={t("ui.artefactos-producidos.2bb3a6")}
                 value={rollup.artifactsProduced}
                 icon={Layers}
                 tone="ai"
@@ -213,14 +214,14 @@ const DashboardPage: React.FC = () => {
               <Card className="space-y-3">
                 <SectionHeader
                   as="h2"
-                  title="Actividad del portafolio"
+                  title={t("ui.actividad-del-portafolio.86af80")}
                   // El lienzo imprime abajo los tres niveles y la instrucción de
                   // uso. Repetirlas aquí hacía que la tarjeta dijera lo mismo
                   // dos veces con dos redacciones distintas.
-                  description="Dónde está el trabajo ahora mismo, y de qué iniciativa cuelga cada cosa."
+                  description={t("Dónde está el trabajo ahora mismo, y de qué iniciativa cuelga cada cosa.")}
                   actions={(
                     <Button variant="ghost" size="xs" onClick={() => navigate('/office')}>
-                      Ir a la Oficina
+                      {t("ui.ir-a-la-oficina.6babe9")}
                       <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden />
                     </Button>
                   )}

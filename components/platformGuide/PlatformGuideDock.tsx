@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * La ayuda de la plataforma, abierta desde el raíl.
  *
@@ -39,6 +40,7 @@ export interface PlatformGuideDockProps {
 }
 
 export const PlatformGuideDock: React.FC<PlatformGuideDockProps> = ({ open, onClose, settings }) => {
+  const t = useUiTranslation();
   const { turns, loading, suggestions, ask } = usePlatformGuide(settings);
   const [input, setInput] = useState('');
   const dialogRef = useFocusTrap<HTMLDivElement>(open);
@@ -56,7 +58,7 @@ export const PlatformGuideDock: React.FC<PlatformGuideDockProps> = ({ open, onCl
       className="fixed inset-0 z-[120] flex justify-end bg-gray-950/40 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Guía de uso de la plataforma"
+      aria-label={t("ui.guia-de-uso-de-la-plataforma.9a853b")}
       onClick={onClose}
     >
       <div
@@ -69,14 +71,14 @@ export const PlatformGuideDock: React.FC<PlatformGuideDockProps> = ({ open, onCl
             <AIArchitectAvatar size="sm" />
             <div className="min-w-0">
               <p className="text-2xs font-semibold uppercase tracking-widest-2 text-primary-600 dark:text-primary-400">
-                Guía de uso · {PRODUCT_NAME}
+                {t("ui.guia-de-uso.0c58c2")} {PRODUCT_NAME}
               </p>
               <h2 className="truncate text-base font-bold text-gray-900 dark:text-gray-50">
-                ¿Cómo funciona la plataforma?
+                {t("ui.como-funciona-la-plataforma.1e2117")}
               </h2>
             </div>
           </div>
-          <Button variant="ghost" size="sm" iconOnly aria-label="Cerrar la guía" onClick={onClose}>
+          <Button variant="ghost" size="sm" iconOnly aria-label={t("ui.cerrar-la-guia.6f1727")} onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </header>
@@ -86,13 +88,10 @@ export const PlatformGuideDock: React.FC<PlatformGuideDockProps> = ({ open, onCl
             <div className="rounded-2xl border border-dashed border-gray-300 p-5 dark:border-gray-700">
               <p className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                 <BookOpen className="h-4 w-4 shrink-0 text-primary-500" aria-hidden />
-                Pregunta cómo se usa el producto: para qué es cada nivel, cómo se crea algo, qué hace
-                cada agente.
+                {t("ui.pregunta-como-se-usa-el-prod.f908f6")}
               </p>
               <p className="mt-2 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                Para una pregunta de arquitectura sobre un registro concreto, abre el equipo de la
-                Oficina desde su iniciativa, su proyecto o su entregable: allí responde el equipo
-                completo con el contexto de ese registro.
+                {t("ui.para-una-pregunta-de-arquite.8416e0")}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {suggestions.map((topic) => (
@@ -125,7 +124,7 @@ export const PlatformGuideDock: React.FC<PlatformGuideDockProps> = ({ open, onCl
 
                 {turn.source === 'guide' && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <Badge tone="warning" size="xs">Respuesta de la guía</Badge>
+                    <Badge tone="warning" size="xs">{t("ui.respuesta-de-la-guia.f6fe7c")}</Badge>
                     {turn.notice && (
                       <span className="text-2xs text-gray-500 dark:text-gray-400">{turn.notice}</span>
                     )}
@@ -138,7 +137,7 @@ export const PlatformGuideDock: React.FC<PlatformGuideDockProps> = ({ open, onCl
           {loading && (
             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400" role="status">
               <Spinner />
-              Buscando en la guía…
+              {t("ui.buscando-en-la-guia.ffa34f")}
             </div>
           )}
         </div>
@@ -161,12 +160,12 @@ export const PlatformGuideDock: React.FC<PlatformGuideDockProps> = ({ open, onCl
             // texto a propósito: VoiceOver lee los dos seguidos, y dos frases
             // distintas son el mismo campo leído dos veces. Los ejemplos ya
             // están arriba, como preguntas que se pueden pulsar.
-            aria-label="Pregunta sobre el uso de la plataforma"
-            placeholder="Pregunta sobre el uso de la plataforma"
+            aria-label={t("ui.pregunta-sobre-el-uso-de-la.4fc3bc")}
+            placeholder={t("ui.pregunta-sobre-el-uso-de-la.4fc3bc")}
             className="min-h-[44px] flex-1 resize-none rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
           <Button type="submit" variant="primary" disabled={loading || input.trim().length === 0}>
-            Preguntar
+            {t("ui.preguntar.b4c2d0")}
           </Button>
         </form>
       </div>

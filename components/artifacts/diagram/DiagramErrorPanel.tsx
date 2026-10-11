@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { ExclamationTriangleIcon } from '../../Icons';
 
@@ -41,6 +42,7 @@ export const DiagramErrorPanel: React.FC<DiagramErrorPanelProps> = ({
   onAutoFix,
   mermaidSource,
 }) => {
+  const t = useUiTranslation();
   const line = extractMermaidErrorLine(body);
   const ctx = sliceMermaidContext(mermaidSource ?? null, line);
   return (
@@ -51,7 +53,7 @@ export const DiagramErrorPanel: React.FC<DiagramErrorPanelProps> = ({
       <div className="max-w-md">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
         <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 whitespace-pre-line">{body}</p>
-        {line && <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">Línea probable: {line}</p>}
+        {line && <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">{t("ui.linea-probable.ede5a5")} {line}</p>}
         {ctx && (
           <pre className="mt-3 text-left text-[11px] font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 overflow-x-auto">
             {ctx.map(({ n, text, offending }) => (
@@ -71,7 +73,7 @@ export const DiagramErrorPanel: React.FC<DiagramErrorPanelProps> = ({
             onClick={onAutoFix}
             className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg shadow-sm"
           >
-            Auto-Reparar
+            {t("ui.auto-reparar.55b5b6")}
           </button>
         )}
         {onRetry && (
@@ -79,7 +81,7 @@ export const DiagramErrorPanel: React.FC<DiagramErrorPanelProps> = ({
             onClick={onRetry}
             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg shadow-sm"
           >
-            Reintentar
+            {t("lucid.retry")}
           </button>
         )}
         {onViewText && (
@@ -87,7 +89,7 @@ export const DiagramErrorPanel: React.FC<DiagramErrorPanelProps> = ({
             onClick={onViewText}
             className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-sm font-medium rounded-lg"
           >
-            Ver como documento
+            {t("ui.ver-como-documento.6576af")}
           </button>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * Compact chip that shows how an artifact was generated (catalog,
  * on-demand, regeneration, or unknown). Used in the Project Hub artifact
@@ -47,6 +48,7 @@ export const ArtifactOriginBadge: React.FC<ArtifactOriginBadgeProps> = ({
   variant = 'default',
   className,
 }) => {
+  const t = useUiTranslation();
   const origin = getArtifactOrigin(artifact);
   const tone = TONE_BY_KIND[origin.kind];
 
@@ -54,7 +56,7 @@ export const ArtifactOriginBadge: React.FC<ArtifactOriginBadgeProps> = ({
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${tone.container} ${className ?? ''}`.trim()}
       title={origin.description}
-      aria-label={`Modo de generación: ${origin.label}`}
+      aria-label={t("uiTemplate.modo-de-generacion-p0.e8d54c", { p0: String(origin.label) })}
     >
       {variant === 'default' && tone.icon}
       {origin.label}

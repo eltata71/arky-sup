@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useCallback, forwardRef, useImperativeHandle, useState, useRef } from 'react';
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import ReactFlow, {
   Controls,
   Background,
@@ -221,6 +222,7 @@ export interface ReactFlowCanvasHandle {
 
 
 const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(({ nodes: initialNodes, edges: initialEdges, layoutHint, theme = 'editorial', density = 'standard', onChange, presentation, showMiniMap = false, preserveExternalLayout = false, externalLayoutPlan = null, onLayoutQualityComputed, onNodeDoubleClick }, ref) => {
+    const t = useUiTranslation();
     const containerRef = useRef<HTMLDivElement>(null);
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -765,12 +767,12 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
                     // minimap, panels, inspector, legend. Skip anything whose
                     // rect is degenerate (display:none).
                     const obstacleSelectors: Array<{ sel: string; label: string }> = [
-                        { sel: '.react-flow__controls',     label: 'Controles ReactFlow' },
-                        { sel: '.react-flow__minimap',      label: 'Minimap' },
-                        { sel: '.react-flow__panel',        label: 'Panel flotante' },
-                        { sel: '.diagram-toolbar',          label: 'Toolbar inferior' },
-                        { sel: '.diagram-editor-panel',     label: 'Inspector' },
-                        { sel: '[data-canvas-obstacle]',    label: 'Panel flotante' },
+                        { sel: '.react-flow__controls',     label: t("Controles ReactFlow") },
+                        { sel: '.react-flow__minimap',      label: t("Minimap") },
+                        { sel: '.react-flow__panel',        label: t("Panel flotante") },
+                        { sel: '.diagram-toolbar',          label: t("Toolbar inferior") },
+                        { sel: '.diagram-editor-panel',     label: t("Inspector") },
+                        { sel: '[data-canvas-obstacle]',    label: t("Panel flotante") },
                     ];
                     const seen = new Set<HTMLElement>();
                     const obstacles: Array<{ x: number; y: number; width: number; height: number; label?: string }> = [];
@@ -867,7 +869,7 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
             });
         }, 250);
         return () => clearTimeout(handle);
-    }, [nodes, edges, externalLayoutPlan, onLayoutQualityComputed, reactFlowInstance, smartViewportHint]);
+    }, [nodes, edges, externalLayoutPlan, onLayoutQualityComputed, reactFlowInstance, smartViewportHint, t]);
 
     const onLayout = useCallback((direction: 'TB' | 'LR') => {
         setLayoutDirection(direction);
@@ -986,7 +988,7 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
             position,
             selected: true,
             data: {
-                label: 'Nuevo componente',
+                label: t("Nuevo componente"),
                 kind: 'Component',
                 type: 'Component',
                 description: '',
@@ -1000,7 +1002,7 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
         });
         setSelectedNode(newNode);
         setSelectedEdge(null);
-    }, [nodes, edges, pushSnapshot, reactFlowInstance, normalizedDensity, setNodes, notifyChange]);
+    }, [nodes, edges, pushSnapshot, reactFlowInstance, normalizedDensity, setNodes, notifyChange, t]);
 
     /** Clone the selected node 48px down-right and select the copy. */
     const duplicateSelectedNode = useCallback(() => {
@@ -1306,7 +1308,7 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
             ref={containerRef}
             className="relative w-full h-full"
             role="region"
-            aria-label="Lienzo de diagrama de arquitectura"
+            aria-label={t("ui.lienzo-de-diagrama-de-arquit.00ba39")}
         >
             {/* Off-screen accessible description: read by assistive tech as
                 the canvas region is focused / announced. Hidden visually
@@ -1319,26 +1321,23 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
                 <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none p-6">
                     <div className="pointer-events-auto max-w-lg w-full rounded-2xl border border-amber-200 dark:border-amber-700/50 bg-amber-50/95 dark:bg-amber-900/30 backdrop-blur-md px-6 py-5 shadow-xl">
                         <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                            El diagrama no se está renderizando.
+                            {t("ui.el-diagrama-no-se-esta-rende.4977cb")}
                         </p>
                         <p className="mt-2 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                             {emptyStateDetail.layoutStalled
-                                ? (emptyStateDetail.domRenderStalled ? 'ReactFlow recibió nodos y estado interno, pero no hay nodos visibles en el DOM. Conteos por capa:' : 'ReactFlow recibió nodos, pero el layout no terminó de materializarlos en pantalla. Conteos por capa:')
+                                ? (emptyStateDetail.domRenderStalled ? t("uiExpr.reactflow-recibio-nodos-y-es.ffa3bf") : t("uiExpr.reactflow-recibio-nodos-pero.b84c45"))
                                 : irNodes > 0
-                                    ? 'El IR tiene nodos pero la conversión a vista visual quedó vacía. Conteos por capa:'
-                                    : 'No se pudo construir un IR renderizable. Conteos por capa:'}
+                                    ? t("uiExpr.el-ir-tiene-nodos-pero-la-co.29880a")
+                                    : t("uiExpr.no-se-pudo-construir-un-ir-r.f82420")}
                         </p>
                         <ul className="mt-2 text-[11px] font-mono text-amber-900 dark:text-amber-200 space-y-0.5">
-                            <li>IR.nodes: {emptyStateDetail.irNodes}</li>
-                            <li>IR.edges: {emptyStateDetail.irEdges}</li>
-                            <li>ReactFlow.nodes: {emptyStateDetail.initialNodes}</li>
-                            <li>ReactFlow.edges: {emptyStateDetail.initialEdges}</li>
+                            <li>{t("ui.ir-nodes.b35629")} {emptyStateDetail.irNodes}</li>
+                            <li>{t("ui.ir-edges.55ac60")} {emptyStateDetail.irEdges}</li>
+                            <li>{t("ui.reactflow-nodes.bf5ae9")} {emptyStateDetail.initialNodes}</li>
+                            <li>{t("ui.reactflow-edges.96621b")} {emptyStateDetail.initialEdges}</li>
                         </ul>
                         <p className="mt-3 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                            Posibles causas: el modelo devolvió Mermaid inválido,
-                            la audiencia filtró todos los elementos, o el contenido
-                            del artefacto está corrupto. Regenera el artefacto o
-                            cambia la audiencia desde la barra inferior.
+                            {t("ui.posibles-causas-el-modelo-de.c17b7b")}
                         </p>
                     </div>
                 </div>
@@ -1373,7 +1372,7 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
                 onlyRenderVisibleElements={enableVirtualization}
                 elevateEdgesOnSelect
                 elevateNodesOnSelect
-                aria-label={presentation?.title ?? 'Diagrama de arquitectura'}
+                aria-label={presentation?.title ?? t("uiExpr.diagrama-de-arquitectura.810b55")}
                 aria-describedby="diagram-canvas-aria-description"
             >
                 <Controls showInteractive={false} className="!rounded-xl !shadow-lg !border !border-gray-200 dark:!border-gray-700" />
@@ -1381,8 +1380,8 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
                     <div
                         className="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-gray-200/80 dark:border-gray-700/80 shadow-sm text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300"
                         role="status"
-                        aria-label="Plan de layout aplicado"
-                        title={externalLayoutPlan.rationale ?? 'Plan de layout aplicado por el motor canónico.'}
+                        aria-label={t("ui.plan-de-layout-aplicado.278c2c")}
+                        title={externalLayoutPlan.rationale ?? t("uiExpr.plan-de-layout-aplicado-por.0e9c84")}
                     >
                         <span className={`inline-block w-1.5 h-1.5 rounded-full ${externalLayoutPlan.backend === 'elk' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                         <span>{externalLayoutPlan.backend.toUpperCase()}</span>

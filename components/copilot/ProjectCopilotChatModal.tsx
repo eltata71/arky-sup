@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Project-scoped Arquitecto Agente — agentic variant.
  *
@@ -63,6 +64,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
   project,
   onOpenArtifact,
 }) => {
+  const t = useUiTranslation();
   const {
     settings,
     updateSettings,
@@ -337,7 +339,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
       } else if (result.status === 'cancelled') {
         ackParts.push(result.messages[0] ?? 'Acción cancelada.');
       } else {
-        ackParts.push(`No pude completar la acción: ${result.messages[0] ?? 'error desconocido'}`);
+        ackParts.push(t("uiDynamicGenerated.no-pude-completar-la-accion.937216", { p0: String(result.messages[0] ?? 'error desconocido') }));
       }
       setMessages((prev) => [...prev, createChatMessage('model', `*${ackParts.join('\n\n')}*`)]);
     },
@@ -357,6 +359,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
       profile?.displayName,
       getArtifact,
       offerVersionUndo,
+      t,
     ],
   );
 
@@ -402,8 +405,8 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Arquitecto Agente"
-      description={`Agente operativo del proyecto · ${project.name}`}
+      title={t("aiAssistant")}
+      description={t("uiDynamicGenerated.agente-operativo-del-proyect.4f6a0d", { p0: String(project.name) })}
     >
       <div className="flex flex-col h-[70vh]">
         <OfficeAgentPicker onSelect={(persona) => setUserInput(`@${persona.alias} `)} />
@@ -414,14 +417,14 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                 <AIArchitectAvatar size="sm" />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                    Soy tu Arquitecto Agente
+                    {t("ui.soy-tu-arquitecto-agente.9b5832")}
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">
-                    Puedo crear artefactos, mejorar los existentes, guardar contexto del proyecto o responder consultas usando el contexto completo. Empieza con algo como
+                    {t("ui.puedo-crear-artefactos-mejor.e784f6")}
                     {' '}
-                    <em>"Crea un diagrama de integración…"</em>
+                    <em>{t("ui.crea-un-diagrama-de-integrac.74c376")}</em>
                     {' '}o{' '}
-                    <em>"Mejora el diagrama de contexto…"</em>.
+                    <em>{t("ui.mejora-el-diagrama-de-contex.68b488")}</em>.
                   </p>
                 </div>
               </div>
@@ -439,12 +442,12 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                   <button
                     onClick={() => handleCopyMessage(msg.content, index)}
                     className="absolute -bottom-6 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1"
-                    aria-label="Copiar mensaje"
+                    aria-label={t("ui.copiar-mensaje.65b61b")}
                   >
                     {copiedIndex === index ? (
-                      <><Check className="h-3 w-3" /> Copiado</>
+                      <><Check className="h-3 w-3" /> {t("ui.copiado.9e4170")}</>
                     ) : (
-                      <><Copy className="h-3 w-3" /> Copiar</>
+                      <><Copy className="h-3 w-3" /> {t("copy")}</>
                     )}
                   </button>
                 )}
@@ -460,7 +463,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                   <span className="h-2 w-2 rounded-full bg-primary-500 animate-bounce [animation-delay:-0.3s]" />
                   <span className="h-2 w-2 rounded-full bg-primary-500 animate-bounce [animation-delay:-0.15s]" />
                   <span className="h-2 w-2 rounded-full bg-primary-500 animate-bounce" />
-                  <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">Analizando proyecto…</span>
+                  <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{t("ui.analizando-proyecto.c73d4d")}</span>
                 </div>
               </div>
             </div>
@@ -476,7 +479,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                   onSelect={(artifact) => setPendingDisambiguation((curr) => curr ? { ...curr, selectedId: artifact.id } : curr)}
                   onConfirm={handleConfirmSelection}
                   onCancel={() => setPendingDisambiguation(null)}
-                  prompt={`Tu instrucción "${pendingDisambiguation.intent.userInstruction}" coincide con varios artefactos. Selecciona el objetivo:`}
+                  prompt={t("uiDynamicGenerated.tu-instruccion-p0-coincide-c.6bbf73", { p0: String(pendingDisambiguation.intent.userInstruction) })}
                 />
               </div>
             </div>
@@ -523,7 +526,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                   <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 dark:text-amber-300 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-0.5 uppercase tracking-widest">
-                      Error temporal
+                      {t("ui.error-temporal.6d4c79")}
                     </p>
                     <p className="text-sm text-amber-900 dark:text-amber-100 leading-snug">{lastError.userMessage}</p>
                     {lastError.retryable && (
@@ -533,7 +536,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                         className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors"
                       >
                         <ArrowPathIcon className="h-3.5 w-3.5" />
-                        Reintentar
+                        {t("lucid.retry")}
                       </button>
                     )}
                     <button
@@ -541,7 +544,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                       onClick={() => setLastError(null)}
                       className="mt-2 ml-2 inline-flex items-center px-2 py-1.5 rounded-md text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
                     >
-                      Descartar
+                      {t("ui.descartar.63a77c")}
                     </button>
                   </div>
                 </div>
@@ -566,17 +569,16 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
                 void handleSendMessage();
               }
             }}
-            placeholder='Pide acciones o consulta al proyecto…  p.ej. "Crea un diagrama de integración entre A y B"'
             className="flex-grow px-2 py-3 bg-transparent focus:outline-none text-sm min-h-[44px]"
             disabled={isLoading || !!agent.pendingPlan}
-            aria-label="Mensaje al Arquitecto Agente"
+            aria-label={t("ui.mensaje-al-arquitecto-agente.710078")}
           />
           <button
             type="button"
             onClick={() => void handleSendMessage()}
             disabled={isLoading || !!agent.pendingPlan || !userInput.trim()}
             className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-primary-600 hover:text-primary-700 disabled:text-gray-400 disabled:cursor-not-allowed"
-            aria-label="Enviar mensaje"
+            aria-label={t("ui.enviar-mensaje.b25cab")}
           >
             <ArrowUpTrayIcon className="h-4 w-4" />
           </button>

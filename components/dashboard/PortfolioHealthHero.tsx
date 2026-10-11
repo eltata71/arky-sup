@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * La cabecera del centro de mando: una cifra de salud, la cadena de los cuatro
  * niveles y el desglose de lo que baja esa cifra.
@@ -76,6 +77,7 @@ export const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
   counts,
   className,
 }) => {
+  const t = useUiTranslation();
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
   const band = model.band ? BAND_VISUALS[model.band] : null;
@@ -109,10 +111,10 @@ export const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
       <div className="relative grid gap-5 lg:grid-cols-[auto_1fr_minmax(0,20rem)] lg:items-center">
         {/* 1 · La cifra */}
         <div className="flex flex-col items-center gap-2 lg:items-start">
-          <p className={TYPE.labelAccent}>Salud del portafolio</p>
+          <p className={TYPE.labelAccent}>{t("ui.salud-del-portafolio.d42c9f")}</p>
           <RadialGauge
             value={model.health}
-            title="Salud del portafolio"
+            title={t("ui.salud-del-portafolio.d42c9f")}
             caption={
               model.governed === 0
                 ? 'Nada gobernado todavía'
@@ -132,8 +134,8 @@ export const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
           <SectionHeader
             as="h2"
             titleId="portfolio-health-title"
-            title="Cadena de arquitectura empresarial"
-            description="Cada nivel abre el siguiente. Los recuentos son de todo el portafolio."
+            title={t("ui.cadena-de-arquitectura-empre.820b22")}
+            description={t("Cada nivel abre el siguiente. Los recuentos son de todo el portafolio.")}
             compact
           />
           {/*
@@ -189,13 +191,13 @@ export const PortfolioHealthHero: React.FC<PortfolioHealthHeroProps> = ({
 
         {/* 3 · El desglose. La mitad honesta de la cifra. */}
         <div className="min-w-0 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-gray-950/50">
-          <h3 className={cn(TYPE.label, 'mb-2')}>Qué baja la cifra</h3>
+          <h3 className={cn(TYPE.label, 'mb-2')}>{t("ui.que-baja-la-cifra.2f31a3")}</h3>
           {model.drags.length === 0 ? (
             <p className="flex items-start gap-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#047857] dark:text-[#34d399]" aria-hidden strokeWidth={2} />
               {model.governed === 0
-                ? 'Todavía no hay nada gobernado que medir. La cifra aparece con la primera iniciativa.'
-                : 'Nada deteriorado: ninguna iniciativa en riesgo, ningún proyecto huérfano y ningún entregable detenido.'}
+                ? t("uiExpr.todavia-no-hay-nada-gobernad.4ddb4a")
+                : t("uiExpr.nada-deteriorado-ninguna-ini.b75181")}
             </p>
           ) : (
             <ul className="space-y-1.5">
