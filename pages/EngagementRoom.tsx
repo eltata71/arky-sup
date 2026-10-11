@@ -20,6 +20,7 @@ import { useInitiatives } from '../context/InitiativeContext';
 import { useToast } from '../context/ToastContext';
 import { useAriaAnnouncer } from '../hooks/useAriaAnnouncer';
 import { Alert, Badge, Button, Card, CardTitle, Spinner, StatTile, cn } from '../components/ui';
+import { CompletionMark } from '../components/ui/micro';
 import { EngagementRoomFallback } from '../components/architectureOffice/EngagementRoomFallback';
 import { FilePlus2, Layers, ListChecks, Play, ScrollText, Sparkles, Square } from 'lucide-react';
 import { EngagementTaskBoard } from '../components/architectureOffice/EngagementTaskBoard';
@@ -65,7 +66,7 @@ const SECTIONS = [
 const EngagementRoom: React.FC = () => {
   const { engagementId } = useParams<{ engagementId: string }>();
   const navigate = useNavigate();
-  const { projects, settings, isLoading: projectsLoading } = useAppContext();
+  const { projects, settings, isLoading: projectsLoading, t } = useAppContext();
   const {
     engagements,
     isResolving,
@@ -405,6 +406,7 @@ const EngagementRoom: React.FC = () => {
                   <Badge tone="gray" size="xs" outline>
                     {engagement.charter.provenance === 'ai-refined' ? 'Refinado con IA' : 'Determinista'}
                   </Badge>
+                  <CompletionMark done={charterApproved} label={t('micro.charterApproved')} className="h-5 w-5" />
                   {engagement.charter.approvedBy && (
                     <Badge tone="success" size="xs">
                       Aprobado por {engagement.charter.approvedBy.name}
