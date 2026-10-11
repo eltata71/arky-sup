@@ -794,11 +794,11 @@ presupuesto que consumirán las olas 11 y 12.
 | 11.4 Brechas y hoja de ruta | Hecha | #190 |
 | 11.5 TIME, radar y contrato | Hecha | #192 |
 | 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |
-| 12.1 Partir los cinco ficheros grandes | Pendiente | |
+| 12.1 Partir los cinco ficheros grandes | Hecha · #178 | Los cinco tienen subcomponentes o hooks y un techo rebajado: ReactFlowCanvas 1 468, ProjectHub 976, MemoryCenterModal 584, CustomArtifactRequestModal 685 y CustomArtifactBriefWizard 455 líneas (`check:module-size`). Suite existente: 5 680 pruebas; build y presupuestos de bundle en verde. |
 | 12.2 Documento editorial | Hecha · #194 | |
 | 12.3 Zoom semántico C4 | Hecha · #196 | |
-| 12.4 Modo presentación | Pendiente | |
-| 12.5 Barras por intención | Pendiente | |
+| 12.4 Modo presentación | Hecha · #198 | |
+| 12.5 Barras por intención | Hecha · #199 | |
 | 13.0 axe y regresión visual | Hecha (#169) | axe y regresión visual en E2E con referencias medidas en CI. Cerró también un defecto real: el enlace profundo `?artifact=` no reintentaba la hidratación si el portafolio llegaba tras montar `Workspace` (`useProjectArtifacts` depende ahora de la llegada del proyecto) |
 | 13.1 Movimiento reducido | Hecha | `MotionConfig reducedMotion="user"` en la raíz, `MOTION` en `lib/designTokens.ts` como fuente única de duraciones y curvas, y un escáner que impide literales en `motion/react` |
 | 13.2 Idioma | En curso (R-16: B, tamaño L) | Infraestructura entregada: un módulo por idioma, inglés lazy, presupuesto monótono de literales (1 321 medidos, 1 117 tras el lote 5, #188); raíl y navegación móvil migrados. Falta la campaña de extracción hasta 0 |
