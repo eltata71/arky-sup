@@ -21,7 +21,8 @@ import { useAppContext } from '../context/AppContext';
 import { useOffice } from '../context/OfficeContext';
 import { useInitiatives } from '../context/InitiativeContext';
 import { useToast } from '../context/ToastContext';
-import { Button, PageSkeleton, Tab, TabList, TabPanel, Tabs } from '../components/ui';
+import { Button, EmptyState, PageSkeleton, Tab, TabList, TabPanel, Tabs } from '../components/ui';
+import { ScreenLoadError } from '../components/ScreenLoadError';
 import { Activity, LayoutDashboard, LayoutGrid, Network, Plus, Users } from 'lucide-react';
 import {
   EngagementIntakeWizard,
@@ -45,11 +46,13 @@ const DECISION_QUEUE_ID = 'oficina-decisiones';
 
 const OfficePage: React.FC = () => {
   const navigate = useNavigate();
-  const { projects, isLoading: projectsLoading } = useAppContext();
+  const { projects, isLoading: projectsLoading, loadError: projectsError, reload: reloadProjects, t } = useAppContext();
   const {
     engagements,
     runningEngagementIds,
     isLoading,
+    loadError: officeError,
+    retryLoad,
     canApprove,
     loadEngagements,
     createEngagement,
@@ -137,6 +140,7 @@ const OfficePage: React.FC = () => {
     );
   }
 
+  const loadError = projectsError ?? officeError;
   const programCount = portfolio.programs.filter((program) => !program.isUnassigned).length;
 
   return (
@@ -162,6 +166,32 @@ const OfficePage: React.FC = () => {
           </Button>
         </header>
 
+        {loadError ? (
+          // 13.4: a failed read is not an Office with no work.
+          <ScreenLoadError
+            subject={t('load.subject.deliverables')}
+            error={loadError}
+            onRetry={() => { if (projectsError) reloadProjects(); if (officeError) retryLoad(); }}
+          />
+        ) : portfolio.rollup.engagements === 0 ? (
+          // 13.4: the empty Office says the next step of the hierarchy, not a row of zeros.
+          projects.length === 0 ? (
+            <EmptyState
+              flavor="ai"
+              title={t('office.empty.noProjectsTitle')}
+              description={t('office.empty.noProjectsHint')}
+              actions={<Button variant="primary" onClick={() => navigate('/projects')}>{t('office.empty.openProjects')}</Button>}
+            />
+          ) : (
+            <EmptyState
+              flavor="ai"
+              title={t('office.empty.title')}
+              description={t('office.empty.hint')}
+              actions={<Button variant="primary" onClick={openIntake}>{t('office.empty.request')}</Button>}
+            />
+          )
+        ) : (
+        <>
         <PortfolioSearchBox graph={graph} onSelect={openSearchHit} />
 
         <OfficeKpiRow
@@ -241,6 +271,8 @@ const OfficePage: React.FC = () => {
             <SpecialistLoadPanel specialists={portfolio.specialists} />
           </TabPanel>
         </Tabs>
+        </>
+        )}
       </div>
 
       <EngagementIntakeWizard
