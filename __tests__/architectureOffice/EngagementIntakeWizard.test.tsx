@@ -66,7 +66,6 @@ interface Harness {
 
 const setup = ({ projects = [], initiatives = [], initialProjectId, onPropose }: Harness = {}) => {
   const propose = vi.fn(onPropose ?? ((input: EngagementIntakeSubmit) => Promise.resolve(engagement(input.projectId))));
-  const approveAndRun = vi.fn(() => Promise.resolve());
   const createAttention = vi.fn();
   const createInitiative = vi.fn();
 
@@ -79,12 +78,11 @@ const setup = ({ projects = [], initiatives = [], initialProjectId, onPropose }:
       onCreateAttention={createAttention}
       onCreateInitiative={createInitiative}
       onPropose={propose}
-      onApproveAndRun={approveAndRun}
       onClose={() => {}}
     />,
   );
 
-  return { propose, approveAndRun, createAttention, createInitiative };
+  return { propose, createAttention, createInitiative };
 };
 
 /*
@@ -210,6 +208,6 @@ describe('EngagementIntakeWizard — la jerarquía es obligatoria', () => {
     submitBrief();
 
     expect(await screen.findByText(/Proyecto: Núcleo de pólizas/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Aprobar charter y ejecutar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Enviar a aprobación/i })).toBeInTheDocument();
   });
 });

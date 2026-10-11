@@ -71,6 +71,8 @@ export interface EngagementWritePort {
     engagement: OfficeEngagement,
     decision: OfficeArbDecision,
   ): Promise<PersistenceResult<OfficeEngagement>>;
+  /** Aprueba el charter en el servidor (14.1): firma, fecha y auditoría son suyas. */
+  approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
 }
 
 /** Pedirle al modelo un charter mejor. Devuelve el texto crudo; puede fallar. */
@@ -217,7 +219,21 @@ export const approveCharterOperation = async (
   // Una aprobación que no se guardó no es una aprobación: el paso siguiente es
   // ejecutar, y ejecutar sobre un charter que el servidor no tiene aprobado es
   // justo lo que la regla de gobierno impide.
-  return confirmed(await persist(deps, result.engagement), result.engagement);
+  deps.onDraft?.(result.engagement);
+  const approved = await deps.writes.approveCharter(engagement);
+  if (!approved.success) {
+    deps.onDraft?.(engagement);
+    const failure = describePersistenceFailure(approved, engagement);
+    return {
+      ...failure,
+      reason: approved.status === 'permission-denied'
+        ? 'No puedes aprobar este charter: exige el permiso de aprobación y no ser el autor del encargo.'
+        : failure.reason,
+    };
+  }
+  const confirmedEngagement = approved.data ?? result.engagement;
+  deps.onDraft?.(confirmedEngagement);
+  return { ok: true, engagement: confirmedEngagement, persistence: approved.status };
 };
 
 export const evaluateGatesOperation = async (

@@ -6,6 +6,8 @@ import { createOperationId, supabaseFailure, type PersistenceResult } from '../.
 export interface SupabaseOfficeClientLike {
   rpc(name: 'load_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'load_arb_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
+  rpc(name: 'load_charter_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
+  rpc(name: 'approve_charter', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'save_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'delete_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   // `record_arb_decision` ya no se llama desde aquí: la escribía la mitad de
@@ -24,6 +26,14 @@ export interface SupabaseOfficeEngagementRepository {
   list(projectId: string): Promise<OfficeEngagement[]>;
   /** Encargos ajenos pendientes de decisión para miembros del ARB. */
   listForArb(): Promise<OfficeEngagement[]>;
+  /** Bandeja de quien aprueba charters: encargos ajenos esperando firma. */
+  listForCharterApproval(): Promise<OfficeEngagement[]>;
+  /**
+   * Un aprobador distinto del autor firma el charter y el servidor mueve el
+   * encargo a `in-progress` (14.1 · R-02). Firma, fecha y auditoría son del
+   * servidor; devuelve el encargo tal y como quedó.
+   */
+  approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
   /**
    * Devuelve el encargo **tal y como quedó guardado**, con su revisión nueva.
    *
@@ -63,6 +73,29 @@ const asRemoteRecord = (value: unknown, projectId: string): RemoteEngagementReco
   if (!Number.isInteger(row.revision) || (row.revision as number) < 1) return null;
   const engagement = normalizeEngagement(row.data, projectId);
   return engagement ? { engagement, revision: row.revision as number } : null;
+};
+
+/** Lee una bandeja de encargos ajenos (ARB o charters): misma forma, otra RPC. */
+const readForeignInbox = async (
+  client: SupabaseOfficeClientLike,
+  rpc: 'load_arb_engagements' | 'load_charter_engagements',
+  label: string,
+): Promise<OfficeEngagement[]> => {
+  const { data, error } = rpc === 'load_arb_engagements'
+    ? await client.rpc('load_arb_engagements', {})
+    : await client.rpc('load_charter_engagements', {});
+  if (error) throw error;
+  if (!Array.isArray(data)) throw new Error(`La respuesta remota ${label} no es una lista.`);
+  return data.map((row: unknown) => {
+    const projectId = row && typeof row === 'object'
+      && 'data' in row && row.data && typeof row.data === 'object'
+      && 'projectId' in row.data && typeof row.data.projectId === 'string'
+      ? row.data.projectId
+      : '';
+    const record = projectId ? asRemoteRecord(row, projectId) : null;
+    if (!record) throw new Error(`La respuesta remota ${label} contiene una fila inválida.`);
+    return { ...record.engagement, revision: record.revision };
+  });
 };
 
 /**
@@ -123,19 +156,34 @@ export function createSupabaseOfficeEngagementRepository(
     },
 
     async listForArb() {
-      const { data, error } = await client.rpc('load_arb_engagements', {});
-      if (error) throw error;
-      if (!Array.isArray(data)) throw new Error('La respuesta remota de la bandeja ARB no es una lista.');
-      return data.map((row) => {
-        const projectId = row && typeof row === 'object'
-          && 'data' in row && row.data && typeof row.data === 'object'
-          && 'projectId' in row.data && typeof row.data.projectId === 'string'
-          ? row.data.projectId
-          : '';
-        const record = projectId ? asRemoteRecord(row, projectId) : null;
-        if (!record) throw new Error('La respuesta remota de la bandeja ARB contiene una fila inválida.');
-        return { ...record.engagement, revision: record.revision };
+      return readForeignInbox(client, 'load_arb_engagements', 'de la bandeja ARB');
+    },
+
+    async listForCharterApproval() {
+      return readForeignInbox(client, 'load_charter_engagements', 'de la bandeja de charters');
+    },
+
+    async approveCharter(engagement) {
+      const operationId = createOperationId('approveCharter');
+      const { data, error } = await client.rpc('approve_charter', {
+        p_project_id: engagement.projectId,
+        p_engagement_id: engagement.id,
+        p_expected_revision: engagement.revision ?? 0,
       });
+      if (error) {
+        return failed<OfficeEngagement>(operationId, error, 'No se pudo confirmar la aprobación del charter en Supabase.');
+      }
+      const record = asRemoteRecord(data, engagement.projectId);
+      if (!record) {
+        return {
+          status: 'failed', success: false, operationId, target: 'supabase',
+          message: 'Supabase confirmó una respuesta de aprobación inválida.',
+        };
+      }
+      return {
+        status: 'success', success: true, operationId, target: 'supabase',
+        data: { ...record.engagement, revision: record.revision },
+      };
     },
 
     async save(engagement) {

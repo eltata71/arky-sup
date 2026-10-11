@@ -72,6 +72,7 @@ const EngagementRoom: React.FC = () => {
     isResolving,
     runningEngagementIds,
     arbEligibility,
+    charterEligibility,
     loadEngagements,
     approveCharter,
     runEngagementNow,
@@ -245,6 +246,7 @@ const EngagementRoom: React.FC = () => {
 
   const progress = summarizeEngagementProgress(engagement.tasks);
   const charterApproved = Boolean(engagement.charter.approvedAt);
+  const charterAccess = charterEligibility(engagement);
   const bucket = healthBucketOf(engagement.status);
   const visual = OFFICE_HEALTH_VISUALS[bucket];
   const StatusGlyph = ENGAGEMENT_STATUS_ICONS[engagement.status];
@@ -314,11 +316,18 @@ const EngagementRoom: React.FC = () => {
                 <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
                 Equipo de arquitectura
               </Button>
-              {!charterApproved && (
+              {!charterApproved && charterAccess.allowed && (
                 <Button variant="primary" size="sm" onClick={handleApprove} loading={busy}>
                   <ScrollText className="mr-1.5 h-4 w-4" aria-hidden />
                   Aprobar charter
                 </Button>
+              )}
+              {!charterApproved && !charterAccess.allowed && (
+                <span className="text-xs text-gray-600 dark:text-gray-300">
+                  {charterAccess.reason === 'own-engagement'
+                    ? 'Otra persona con permiso debe aprobar este charter: no puedes aprobar el tuyo.'
+                    : 'Tu rol no puede aprobar charters.'}
+                </span>
               )}
               {charterApproved && !running && engagement.status !== 'delivered' && (
                 <Button variant="primary" size="sm" onClick={handleRun}>

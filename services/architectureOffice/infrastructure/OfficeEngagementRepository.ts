@@ -28,6 +28,10 @@ export interface OfficeEngagementRepository {
   list(projectId: string): Promise<OfficeEngagement[]>;
   /** Bandeja global de encargos ajenos para quien tenga `arb:decide`. */
   listForArb(): Promise<OfficeEngagement[]>;
+  /** Bandeja de charters ajenos esperando la firma de quien tiene `charter:approve`. */
+  listForCharterApproval(): Promise<OfficeEngagement[]>;
+  /** Firma el charter en el servidor (14.1): devuelve el encargo tal y como quedó. */
+  approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
   /**
    * Guarda y devuelve el encargo **tal y como quedó**, con su revisión nueva.
    *
@@ -93,6 +97,31 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
       // como si fueran encargos revisables violaría la separación adoptada.
       return [];
     }
+  }
+
+  async listForCharterApproval(): Promise<OfficeEngagement[]> {
+    try {
+      return (await (await getRemote()).listForCharterApproval())
+        .map((item) => normalizeEngagement(item, item.projectId))
+        .filter((item): item is OfficeEngagement => item !== null)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    } catch {
+      // Igual que el ARB: nunca se sirve el espejo propio como bandeja ajena.
+      return [];
+    }
+  }
+
+  async approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>> {
+    let result: PersistenceResult<OfficeEngagement>;
+    try {
+      result = await (await getRemote()).approveCharter(engagement);
+    } catch (error) {
+      result = createFailureResult('approveCharter', error);
+    }
+    // Sólo lo confirmado entra al espejo: una firma que el servidor rechazó no
+    // puede volver como buena.
+    if (result.success && result.data) mirror.upsert(result.data.projectId, result.data, result);
+    return result;
   }
 
   private async fetch(projectId: string): Promise<OfficeEngagement[]> {

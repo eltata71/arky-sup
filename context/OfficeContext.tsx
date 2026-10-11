@@ -27,6 +27,7 @@ import { useEngagementLoading } from './office/useEngagementLoading';
 import {
   officeEngagementRepository,
 } from '../services/architectureOffice/infrastructure/OfficeEngagementRepository';
+import { can } from '../lib/authz';
 import {
   approveCharterOperation,
   createEngagementOperation,
@@ -39,7 +40,9 @@ import {
 import {
   canActAsArb,
   describeArbDecisionEligibility,
+  describeCharterApprovalEligibility,
   type ArbDecisionEligibility,
+  type CharterApprovalEligibility,
 } from '../services/architectureOffice/domain/OfficeArbService';
 import {
   type OfficeActor,
@@ -81,6 +84,10 @@ interface OfficeContextType {
    * no decide lo suyo aunque tenga el permiso (ADR-101, opción C).
    */
   arbEligibility: (engagement: OfficeEngagement) => ArbDecisionEligibility;
+  /** True when the role may sign charters (`charter:approve`). */
+  canApproveCharters: boolean;
+  /** Whether the signed-in user may approve **this** charter: not their own (R-02). */
+  charterEligibility: (engagement: OfficeEngagement) => CharterApprovalEligibility;
 
   loadEngagements: (projectId: string) => Promise<void>;
   getEngagement: (engagementId: string) => OfficeEngagement | undefined;
@@ -197,6 +204,13 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const canApprove = canActAsArb(actor);
 
+  const canApproveCharters = useMemo(() => can(actor, 'charter:approve'), [actor]);
+
+  const charterEligibility = useCallback(
+    (engagement: OfficeEngagement) => describeCharterApprovalEligibility(engagement, actor),
+    [actor],
+  );
+
   const arbEligibility = useCallback(
     (engagement: OfficeEngagement) => describeArbDecisionEligibility(engagement, actor),
     [actor],
@@ -248,7 +262,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const projectIds = useMemo(() => projects.map((project) => project.id), [projects]);
   const { isLoading, isResolving, loadError, loadEngagements, retryLoad } = useEngagementLoading({
-    repository: officeEngagementRepository, projectIds, canApprove, authLoading, engagementsRef, commit,
+    repository: officeEngagementRepository, projectIds, canApprove, canApproveCharters, authLoading, engagementsRef, commit,
   });
 
   const getEngagement = useCallback(
@@ -402,6 +416,8 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     retryLoad,
     canApprove,
     arbEligibility,
+    canApproveCharters,
+    charterEligibility,
     loadEngagements,
     getEngagement,
     listEngagementsForProject,
@@ -413,7 +429,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     decideEngagement,
     deleteEngagement,
   }), [
-    engagements, runningEngagementIds, isLoading, isResolving, loadError, retryLoad, canApprove, arbEligibility,
+    engagements, runningEngagementIds, isLoading, isResolving, loadError, retryLoad, canApprove, arbEligibility, canApproveCharters, charterEligibility,
     loadEngagements, getEngagement, listEngagementsForProject,
     createEngagement, approveCharter, runEngagementNow, cancelRun,
     evaluateGates, decideEngagement, deleteEngagement,

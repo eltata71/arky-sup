@@ -5,6 +5,7 @@ import {
   canActAsArb,
   decideEngagement,
   describeArbDecisionEligibility,
+  describeCharterApprovalEligibility,
 } from '../../services/architectureOffice/domain/OfficeArbService';
 import {
   DEFAULT_OFFICE_BUDGET,
@@ -78,16 +79,16 @@ const engagement = (
 
 describe('OfficeArbService — charter approval', () => {
   it('releases the engagement to the runner and records who approved', () => {
-    const result = approveCharter(engagement('awaiting-charter'), AUTHOR);
+    const result = approveCharter(engagement('awaiting-charter'), ADMIN);
     expect(result.ok).toBe(true);
     expect(result.engagement.status).toBe('in-progress');
-    expect(result.engagement.charter.approvedBy).toEqual(AUTHOR);
+    expect(result.engagement.charter.approvedBy).toEqual(ADMIN);
     expect(result.engagement.charter.approvedAt).toBeTruthy();
     expect(result.engagement.auditTrail.map((entry) => entry.action)).toContain('charter-approved');
   });
 
   it('refuses to approve from an illegal state', () => {
-    const result = approveCharter(engagement('delivered'), AUTHOR);
+    const result = approveCharter(engagement('delivered'), ADMIN);
     expect(result.ok).toBe(false);
     expect(result.engagement.status).toBe('delivered');
     expect(result.reason).toMatch(/delivered/);
@@ -97,10 +98,26 @@ describe('OfficeArbService — charter approval', () => {
     const empty = engagement('awaiting-charter');
     const result = approveCharter(
       { ...empty, charter: { ...empty.charter, deliverables: [] } },
-      AUTHOR,
+      ADMIN,
     );
     expect(result.ok).toBe(false);
     expect(result.reason).toMatch(/entregables/);
+  });
+
+  it('refuses the author approving their own charter', () => {
+    const own = engagement('awaiting-charter', { createdBy: ADMIN });
+    const result = approveCharter(own, ADMIN);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/autor/);
+  });
+
+  it('refuses an actor without charter:approve', () => {
+    const result = approveCharter(engagement('awaiting-charter'), { id: 'v', name: 'Vera', role: 'viewer' });
+    expect(result.ok).toBe(false);
+    expect(describeCharterApprovalEligibility(engagement('awaiting-charter'), null)).toEqual({
+      allowed: false,
+      reason: 'missing-permission',
+    });
   });
 
   it('never mutates the input engagement', () => {
