@@ -805,7 +805,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 13.3 Primitivas | Hecha | #187 |
 | 13.4 Estados vacío, carga y error | Hecha · #202 | Los fallos de lectura dejan de mostrarse como portafolio vacío: «Reintentar» y «Ver diagnóstico» en las cinco pantallas principales; esqueletos donde se conoce la forma |
 | 13.5 Microinteracciones | Hecha · #204 | Vocabulario `MICRO` (aparecer, completar, reordenar, celebrar una vez) con su evento de dominio en `docs/microinteracciones.md`; nada en bucle salvo los indicadores de progreso |
-| 14.0 Ciclo de vida visible | Pendiente | |
+| 14.0 Ciclo de vida visible | Hecha · #206 | Etapa derivada (`lib/artifacts/artifactLifecycle.ts`) con la misma etiqueta en lienzo, ProjectHub y tablero; el tablero cuenta «sin medir» lo que `artifactIndex` no permite medir (añadir `reviewStatus` al índice requiere migración) |
 | 14.1 Separación de funciones | Pendiente (R-02) | |
 | 14.2 Trazabilidad | Pendiente | |
 | 14.3 Chat sin pérdida | Pendiente (R-03) | |
