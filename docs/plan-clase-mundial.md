@@ -794,7 +794,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 11.4 Brechas y hoja de ruta | Hecha | #190 |
 | 11.5 TIME, radar y contrato | Hecha | #192 |
 | 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |
-| 12.1 Partir los cinco ficheros grandes | Pendiente | |
+| 12.1 Partir los cinco ficheros grandes | Hecha · #178 | Los cinco tienen subcomponentes o hooks y un techo rebajado: ReactFlowCanvas 1 468, ProjectHub 976, MemoryCenterModal 584, CustomArtifactRequestModal 685 y CustomArtifactBriefWizard 455 líneas (`check:module-size`). Suite existente: 5 680 pruebas; build y presupuestos de bundle en verde. |
 | 12.2 Documento editorial | Hecha · #194 | |
 | 12.3 Zoom semántico C4 | Hecha · #196 | |
 | 12.4 Modo presentación | Pendiente | |
