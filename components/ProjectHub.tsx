@@ -29,6 +29,7 @@ import { useToast } from '../context/ToastContext';
 import { buildProjectHubScope } from '../services/architectureOffice/application/assistantConsultation';
 import { ProjectTimeline } from './ProjectTimeline';
 import { LatestArtifactCard } from './LatestArtifactCard';
+import { ArtifactVersionLifecycle } from './artifacts/ArtifactLifecycleBadge';
 import { ArtifactSortControl } from './ArtifactSortControl';
 import { ArtifactActionsMenu } from './projectHub/ArtifactActionsMenu';
 import { ArtifactOriginBadge } from './ArtifactOriginBadge';
@@ -351,6 +352,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                         {/* A. Último artefacto generado o modificado */}
                         <LatestArtifactCard
                             artifact={latestArtifact}
+                            packages={project.publicationPackages}
                             onOpen={onOpenArtifact}
                             onChat={(artifact) => setChatArtifact(artifact)}
                             onExploreCatalog={() => setActiveTab('catalog')}
@@ -636,9 +638,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                             <div className={`rounded-2xl p-3 ${artifact.representation === 'diagram' ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300'}`}>
                                                                 {artifact.representation === 'diagram' ? <Squares2X2Icon className="h-6 w-6" /> : <DocumentTextIcon className="h-6 w-6" />}
                                                             </div>
-                                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200 dark:bg-white/[0.06] dark:text-slate-300 dark:ring-white/10">
-                                                                v{artifact.version}
-                                                            </span>
+                                                            <ArtifactVersionLifecycle artifact={artifact} packages={project.publicationPackages} />
                                                         </div>
                                                         <h3 className="line-clamp-2 text-lg font-black text-slate-950 dark:text-white">{artifact.name}</h3>
                                                         <p className="mt-2 line-clamp-3 flex-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{artifact.objective}</p>
@@ -718,7 +718,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                                 </td>
                                                                 <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{artifact.type}</td>
                                                                 <td className="px-6 py-4 text-center">
-                                                                    <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">v{artifact.version}</span>
+                                                                    <ArtifactVersionLifecycle artifact={artifact} packages={project.publicationPackages} />
                                                                 </td>
                                                                 <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">{formatDateTime(getArtifactActivityDate(artifact))}</td>
                                                                 <td className="relative px-6 py-4 text-right">

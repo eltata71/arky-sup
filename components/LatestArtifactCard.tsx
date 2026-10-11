@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Artifact } from '../lib/artifacts';
-import type { ArtifactReviewStatus } from '../services/review';
+import { deriveArtifactLifecycle, type LifecyclePublication } from '../lib/artifacts/artifactLifecycle';
+import { ArtifactLifecycleBadge } from './artifacts/ArtifactLifecycleBadge';
 import {
   ClockIcon,
   SparklesIcon,
@@ -12,43 +13,11 @@ import {
 import { formatDateTime, formatRelativeDateTime } from '../utils/datetime';
 import { getArtifactActivityDate, getPhaseLabel } from '../utils/artifactExploration';
 
-interface ReviewStatusStyle {
-  label: string;
-  className: string;
-}
-
-/** Visual styling for each review status, with a safe default for `draft`. */
-const REVIEW_STATUS_STYLES: Record<ArtifactReviewStatus, ReviewStatusStyle> = {
-  draft: {
-    label: 'Borrador',
-    className:
-      'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-white/[0.06] dark:text-slate-300 dark:ring-white/10',
-  },
-  'pending-review': {
-    label: 'En revisión',
-    className:
-      'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
-  },
-  'changes-requested': {
-    label: 'Cambios solicitados',
-    className:
-      'bg-orange-50 text-orange-700 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-500/20',
-  },
-  approved: {
-    label: 'Aprobado',
-    className:
-      'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
-  },
-  rejected: {
-    label: 'Rechazado',
-    className:
-      'bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20',
-  },
-};
-
 interface LatestArtifactCardProps {
   /** Most recent artifact, or `null` when the project has none yet. */
   artifact: Artifact | null;
+  /** The project's publication packages — whether this version is published (14.0). */
+  packages?: readonly LifecyclePublication[];
   onOpen: (artifactId: string) => void;
   onChat: (artifact: Artifact) => void;
   /** Invoked from the empty state to start creating the first artifact. */
@@ -61,6 +30,7 @@ interface LatestArtifactCardProps {
  */
 export const LatestArtifactCard: React.FC<LatestArtifactCardProps> = ({
   artifact,
+  packages = [],
   onOpen,
   onChat,
   onExploreCatalog,
@@ -96,7 +66,6 @@ export const LatestArtifactCard: React.FC<LatestArtifactCardProps> = ({
   }
 
   const isDiagram = artifact.representation === 'diagram';
-  const status = REVIEW_STATUS_STYLES[artifact.reviewStatus ?? 'draft'];
   const activityDate = getArtifactActivityDate(artifact);
 
   return (
@@ -146,11 +115,7 @@ export const LatestArtifactCard: React.FC<LatestArtifactCardProps> = ({
           <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200 dark:bg-black/30 dark:text-slate-300 dark:ring-white/10">
             {getPhaseLabel(artifact.phase)}
           </span>
-          <span
-            className={`rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${status.className}`}
-          >
-            {status.label}
-          </span>
+          <ArtifactLifecycleBadge {...deriveArtifactLifecycle(artifact, packages)} />
         </div>
 
         <p

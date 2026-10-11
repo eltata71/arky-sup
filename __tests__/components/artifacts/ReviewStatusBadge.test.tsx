@@ -12,14 +12,14 @@ describe('ReviewStatusBadge', () => {
     it('maps each status to its localized label', () => {
         expect(reviewStatusLabel('approved')).toBe('Aprobado');
         expect(reviewStatusLabel('pending-review')).toBe('En revisión');
-        expect(reviewStatusLabel('changes-requested')).toBe('Requiere cambios');
+        expect(reviewStatusLabel('changes-requested')).toBe('Cambios pedidos');
         expect(reviewStatusLabel('rejected')).toBe('Rechazado');
         expect(reviewStatusLabel('draft')).toBe('Borrador');
     });
 
     it('renders an aria-label that announces the workflow state', () => {
         render(<ReviewStatusBadge status="changes-requested" />);
-        expect(screen.getByLabelText(/Requiere cambios/)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Cambios pedidos/)).toBeInTheDocument();
     });
 
     it('hides the text in compact mode but keeps the aria-label', () => {
