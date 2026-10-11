@@ -18,17 +18,17 @@ import ReactFlow, {
 import CustomNode from './CustomNode';
 import CustomEdge from './CustomEdge';
 import PresentationMode from './PresentationMode';
-import { XMarkIcon, ChevronDownIcon, ArrowUturnLeftIcon, ArrowPathIcon, ViewfinderCircleIcon, PresentationChartBarIcon, SparklesIcon } from './Icons';
-import { Dropdown, type DropdownItem } from './ui/Dropdown';
 import { CANVAS_BACKGROUND, DIAGRAM_SNAP_GRID, MARKER_TOKENS } from '../lib/diagramTokens';
 import type { DiagramDensity, DiagramIR, DiagramTheme } from '../lib/diagram';
-import { EdgeInspector, NodeInspector } from './diagram/DiagramInspectorSection';
 import { applySmartFit } from '../services/diagram/smartFit';
 import { computeSmartViewportDecision } from '../services/diagram/smartViewportFit';
 import { buildAccessibleSummary, buildShortAriaDescription, type AccessibleSummary } from '../services/diagram/accessibleSummary';
 import { buildInfiniteCanvasState } from '../services/diagram/infiniteCanvasService';
 import { computeFocalBoundingBox, pickPrimaryFocus } from '../services/diagram/focusPrimaryFit';
 import { assignEdgeAnchors } from '../services/diagram/edgeHandleAssignment';
+import { CanvasAccessibleDialog } from './reactFlowCanvas/CanvasAccessibleDialog';
+import { CanvasEditorPanel } from './reactFlowCanvas/CanvasEditorPanel';
+import { CanvasToolbar } from './reactFlowCanvas/CanvasToolbar';
 
 /**
  * The canvas's own modules.
@@ -1269,6 +1269,38 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
         domRenderStalled,
     } : null;
 
+    const onDensityChange = (preset: LayoutPreset) => {
+        setLayoutPreset(preset);
+        pushSnapshot({ nodes, edges });
+        const contentNodes = nodes.filter(n => n.type !== 'groupZone');
+        const directiveTitle = presentation?.ir?.metadata?.title ?? presentation?.title;
+        const dir = layoutDirection === 'auto' ? detectOptimalDirection(contentNodes, edges, { title: directiveTitle }) : layoutDirection;
+        const { nodes: nextNodes, edges: nextEdges } = calculateLayout(contentNodes, edges, dir, preset);
+        const zones = buildGroupZoneNodes(nextNodes, groupHints);
+        const scenes = buildNarrativeScenes(nextNodes, nextEdges, presentation?.ir);
+        setStoryScenes(scenes);
+        setStoryStep(0);
+        applyScene(nextNodes, nextEdges, zones, scenes, 0, storyMode);
+        notifyChange({ nodes: nextNodes, edges: nextEdges });
+        window.requestAnimationFrame(() => runSmartFit(500));
+    };
+    const onToggleStory = () => {
+        const enabled = !storyMode;
+        setStoryMode(enabled);
+        setStoryStep(0);
+        applyStoryState(enabled, 0);
+    };
+    const onPreviousScene = () => {
+        const next = Math.max(storyStep - 1, 0);
+        setStoryStep(next);
+        applyStoryState(storyMode, next);
+    };
+    const onNextScene = () => {
+        const next = Math.min(storyStep + 1, Math.max(0, storyScenes.length - 1));
+        setStoryStep(next);
+        applyStoryState(storyMode, next);
+    };
+
     return (
         <div
             ref={containerRef}
@@ -1379,346 +1411,21 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
                     style={{ backgroundColor: canvasBg.bg }}
                 />
 
-                {/* Diagram toolbar — redesigned: grouped under three dropdowns
-                    (Vista, Narrativa, Historial) plus Presentar as the only
-                    primary action. Reduces 13 controls down to 4 visible chips. */}
-                <div className="diagram-toolbar absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-1.5 rounded-xl shadow-lg border border-gray-200/80 dark:border-gray-700/80">
-                   {(() => {
-                       const layoutItems: DropdownItem[] = [
-                           {
-                               id: 'tb',
-                               label: 'Vertical (de arriba a abajo)',
-                               description: 'TB · jerarquías y flujos descendentes',
-                               icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>,
-                               active: layoutDirection === 'TB',
-                               onClick: () => onLayout('TB'),
-                           },
-                           {
-                               id: 'lr',
-                               label: 'Horizontal (izquierda → derecha)',
-                               description: 'LR · procesos y secuencias',
-                               icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>,
-                               active: layoutDirection === 'LR',
-                               onClick: () => onLayout('LR'),
-                           },
-                       ];
-                       const densityItems: DropdownItem[] = (['compact', 'normal', 'spacious'] as LayoutPreset[]).map(p => ({
-                           id: p,
-                           label: p === 'compact' ? 'Compacto' : p === 'normal' ? 'Normal' : 'Amplio',
-                           description: p === 'compact' ? 'Densidad alta · ideal en monitores pequeños' : p === 'normal' ? 'Densidad equilibrada' : 'Más aire alrededor de cada nodo',
-                           active: layoutPreset === p,
-                           onClick: () => {
-                               setLayoutPreset(p);
-                               pushSnapshot({ nodes, edges });
-                               const contentNodes = nodes.filter(n => n.type !== 'groupZone');
-                               const directiveTitle = presentation?.ir?.metadata?.title ?? presentation?.title;
-                               const dir = layoutDirection === 'auto' ? detectOptimalDirection(contentNodes, edges, { title: directiveTitle }) : layoutDirection;
-                               const { nodes: ln, edges: le } = calculateLayout(contentNodes, edges, dir, p);
-                               const zn = buildGroupZoneNodes(ln, groupHints);
-                               const scenes = buildNarrativeScenes(ln, le, presentation?.ir);
-                               setStoryScenes(scenes);
-                               setStoryStep(0);
-                               applyScene(ln, le, zn, scenes, 0, storyMode);
-                               notifyChange({ nodes: ln, edges: le });
-                               window.requestAnimationFrame(() => runSmartFit(500));
-                           },
-                       }));
-
-                       const historyItems: DropdownItem[] = [
-                           { id: 'undo', icon: <ArrowUturnLeftIcon className="w-4 h-4" />, label: 'Deshacer', description: 'Ctrl/⌘+Z', onClick: handleUndo },
-                           { id: 'redo', icon: <ArrowUturnLeftIcon className="w-4 h-4" style={{ transform: 'scaleX(-1)' }} />, label: 'Rehacer', description: 'Ctrl/⌘+Shift+Z', onClick: handleRedo },
-                           { id: 'fit',  icon: <ViewfinderCircleIcon className="w-4 h-4" />, label: 'Ajustar a pantalla', description: 'Tecla F', onClick: () => runSmartFit(500) },
-                       ];
-
-                       const densityLabel = layoutPreset === 'compact' ? 'Compacto' : layoutPreset === 'normal' ? 'Normal' : 'Amplio';
-                       const dirLabel = layoutDirection === 'TB' ? '↓' : layoutDirection === 'LR' ? '→' : '⤵';
-
-                       return (
-                           <>
-                               {/* Vista del diagrama: layout direction + density */}
-                               <Dropdown
-                                   align="center"
-                                   direction="up"
-                                   width="md"
-                                   aria-label="Vista del diagrama"
-                                   trigger={({ open, toggle }) => (
-                                       <button
-                                           type="button"
-                                           onClick={toggle}
-                                           aria-expanded={open}
-                                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                           title="Layout y densidad"
-                                       >
-                                           <span className="text-base leading-none">{dirLabel}</span>
-                                           <span>{densityLabel}</span>
-                                           <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-                                       </button>
-                                   )}
-                                   sections={[
-                                       { label: 'Dirección', items: layoutItems },
-                                       { label: 'Densidad', items: densityItems },
-                                   ]}
-                               />
-
-                               {/* Añadir nodo — edición topológica directa en el lienzo */}
-                               <button
-                                   type="button"
-                                   onClick={addNewNode}
-                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                   title="Añadir un nodo nuevo al diagrama (se guarda automáticamente)"
-                               >
-                                   <span className="text-sm leading-none">＋</span>
-                                   <span>Nodo</span>
-                               </button>
-
-                               <div className="w-px h-6 bg-gray-200 dark:bg-gray-600" aria-hidden />
-                               {smartViewportHint.explore && (
-                                   <span
-                                       className="px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700"
-                                       title={smartViewportHint.reason ? `Legibilidad: ${smartViewportHint.reason}` : undefined}
-                                   >
-                                       Explora: hay contenido fuera de vista
-                                   </span>
-                               )}
-                               {smartViewportHint.viewAllSecondary && (
-                                   <button
-                                       type="button"
-                                       onClick={() => fitView({ padding: 0.08, duration: 240 })}
-                                       className="px-2 py-1 rounded-lg text-[10px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
-                                       title="Ver todo (puede comprometer legibilidad)"
-                                   >
-                                       Ver todo
-                                   </button>
-                               )}
-                               {(smartViewportHint.explore || smartViewportHint.viewAllSecondary || focusPrimaryActive) && nodes.filter(n => n.type !== 'groupZone').length > 6 && (
-                                   <button
-                                       type="button"
-                                       onClick={toggleFocusPrimary}
-                                       aria-pressed={focusPrimaryActive}
-                                       className={`px-2 py-1 rounded-lg text-[10px] font-medium border transition-colors ${focusPrimaryActive
-                                           ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/50 dark:text-primary-200 dark:border-primary-700'
-                                           : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600'}`}
-                                       title={focusPrimaryActive
-                                           ? 'Volver a la vista completa'
-                                           : 'Resaltar nodos clave y atenuar el resto · prioriza legibilidad'}
-                                   >
-                                       {focusPrimaryActive ? 'Salir del foco' : 'Foco principal'}
-                                   </button>
-                               )}
-                               <div className="w-px h-6 bg-gray-200 dark:bg-gray-600" aria-hidden />
-
-                               {/* Narrativa: Story mode + scenes */}
-                               <Dropdown
-                                   align="center"
-                                   direction="up"
-                                   width="md"
-                                   aria-label="Narrativa por escenas"
-                                   trigger={({ open, toggle }) => (
-                                       <button
-                                           type="button"
-                                           onClick={toggle}
-                                           aria-expanded={open}
-                                           aria-pressed={storyMode}
-                                           className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${storyMode ? 'bg-cyan-100 dark:bg-cyan-900/50 text-cyan-700 dark:text-cyan-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                                           title="Modo narrativo por escenas"
-                                       >
-                                           <SparklesIcon className="w-3.5 h-3.5" />
-                                           <span>{storyMode && storyScenes.length > 0 ? (storyScenes[storyStep]?.title ?? `Escena ${storyStep + 1}`) : 'Narrativa'}</span>
-                                           <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-                                       </button>
-                                   )}
-                                   sections={[
-                                       {
-                                           items: [
-                                               {
-                                                   id: 'toggle',
-                                                   icon: <SparklesIcon className="w-4 h-4" />,
-                                                   label: storyMode ? 'Salir del modo narrativo' : 'Activar modo narrativo',
-                                                   description: 'Cuenta la historia escena por escena',
-                                                   active: storyMode,
-                                                   onClick: () => {
-                                                       const enabled = !storyMode;
-                                                       setStoryMode(enabled);
-                                                       setStoryStep(0);
-                                                       applyStoryState(enabled, 0);
-                                                   },
-                                               },
-                                           ],
-                                       },
-                                       {
-                                           label: 'Escenas',
-                                           items: [
-                                               {
-                                                   id: 'prev',
-                                                   icon: <span className="text-sm leading-none">←</span>,
-                                                   label: 'Escena anterior',
-                                                   description: storyScenes.length > 0 ? `Paso ${Math.max(storyStep, 0) + 1} de ${storyScenes.length}` : 'Sin escenas',
-                                                   disabled: !storyMode || storyScenes.length === 0 || storyStep === 0,
-                                                   onClick: () => {
-                                                       const next = Math.max(storyStep - 1, 0);
-                                                       setStoryStep(next);
-                                                       applyStoryState(storyMode, next);
-                                                   },
-                                               },
-                                               {
-                                                   id: 'next',
-                                                   icon: <span className="text-sm leading-none">→</span>,
-                                                   label: 'Escena siguiente',
-                                                   description: storyScenes.length > 0 ? `Paso ${Math.max(storyStep, 0) + 1} de ${storyScenes.length}` : 'Sin escenas',
-                                                   disabled: !storyMode || storyScenes.length === 0 || storyStep >= storyScenes.length - 1,
-                                                   onClick: () => {
-                                                       const next = Math.min(storyStep + 1, Math.max(0, storyScenes.length - 1));
-                                                       setStoryStep(next);
-                                                       applyStoryState(storyMode, next);
-                                                   },
-                                               },
-                                           ],
-                                       },
-                                   ]}
-                               />
-
-                               <div className="w-px h-6 bg-gray-200 dark:bg-gray-600" aria-hidden />
-
-                               {/* Historial + Fit */}
-                               <Dropdown
-                                   align="center"
-                                   direction="up"
-                                   width="md"
-                                   aria-label="Historial y vista"
-                                   trigger={({ open, toggle }) => (
-                                       <button
-                                           type="button"
-                                           onClick={toggle}
-                                           aria-expanded={open}
-                                           aria-label="Historial y ajuste de vista"
-                                           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
-                                           title="Deshacer · Rehacer · Ajustar"
-                                       >
-                                           <ArrowPathIcon className="w-4 h-4" />
-                                       </button>
-                                   )}
-                                   items={historyItems}
-                               />
-
-                               <div className="w-px h-6 bg-gray-200 dark:bg-gray-600" aria-hidden />
-
-                               {/* Descripción accesible / narrativa textual */}
-                               <button
-                                   type="button"
-                                   onClick={() => setA11yOpen(true)}
-                                   aria-label="Abrir descripción accesible del diagrama"
-                                   title="Descripción accesible (lectores de pantalla / handoff)"
-                                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
-                               >
-                                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                                       <circle cx="12" cy="6" r="2.2" />
-                                       <path d="M9 11h6" />
-                                       <path d="M12 11v9" />
-                                       <path d="M9 16l3-1 3 1" />
-                                   </svg>
-                               </button>
-
-                               <div className="w-px h-6 bg-gray-200 dark:bg-gray-600" aria-hidden />
-
-                               {/* Presentar — única acción primaria visible */}
-                               <button
-                                   onClick={() => setPresentationOpen(true)}
-                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider bg-gradient-to-r from-cyan-500 via-indigo-500 to-fuchsia-500 text-white hover:scale-[1.03] active:scale-95 transition shadow-md"
-                                   title="Modo presentación cinemático"
-                               >
-                                   <PresentationChartBarIcon className="w-3.5 h-3.5" />
-                                   Presentar
-                               </button>
-                           </>
-                       );
-                   })()}
-                </div>
+                <CanvasToolbar
+                    layoutDirection={layoutDirection} layoutPreset={layoutPreset}
+                    storyMode={storyMode} storyStep={storyStep} storyScenes={storyScenes}
+                    smartViewportHint={smartViewportHint} focusPrimaryActive={focusPrimaryActive}
+                    nodeCount={nodes.filter(n => n.type !== 'groupZone').length}
+                    onLayout={onLayout} onDensityChange={onDensityChange} addNewNode={addNewNode}
+                    onViewAll={() => fitView({ padding: 0.08, duration: 240 })}
+                    toggleFocusPrimary={toggleFocusPrimary} onToggleStory={onToggleStory}
+                    onPreviousScene={onPreviousScene} onNextScene={onNextScene}
+                    handleUndo={handleUndo} handleRedo={handleRedo} onFit={() => runSmartFit(500)}
+                    onOpenA11y={() => setA11yOpen(true)} onStartPresentation={() => setPresentationOpen(true)}
+                />
             </ReactFlow>
 
-            {/* Accessible description dialog — visible alternative to the
-                sr-only summary. Built from the IR so it stays in sync with
-                the canonical semantic model. Includes a "Copiar" button so
-                the description can be reused as a handoff document. */}
-            {a11yOpen && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="a11y-dialog-title"
-                    className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6 animate-fade-in"
-                    onClick={(e) => { if (e.target === e.currentTarget) setA11yOpen(false); }}
-                >
-                    <div className="w-full max-w-2xl max-h-[85vh] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col">
-                        <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-                            <div>
-                                <h2 id="a11y-dialog-title" className="text-sm font-semibold text-gray-900 dark:text-white">Descripción accesible del diagrama</h2>
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Resumen textual usado por lectores de pantalla. Útil como handoff cuando el lector no puede ver el lienzo.</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setA11yOpen(false)}
-                                aria-label="Cerrar descripción accesible"
-                                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                            >
-                                <XMarkIcon className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4 text-sm text-gray-700 dark:text-gray-200">
-                            {accessibleSummary ? (
-                                <>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{accessibleSummary.headline}</p>
-                                    {accessibleSummary.boundaries.length > 0 && (
-                                        <section>
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-1">Agrupaciones / límites</p>
-                                            <ul className="list-disc pl-5 space-y-0.5 text-[12.5px]">
-                                                {accessibleSummary.boundaries.map((b, i) => <li key={i}>{b}</li>)}
-                                            </ul>
-                                        </section>
-                                    )}
-                                    {accessibleSummary.keyNodes.length > 0 && (
-                                        <section>
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-1">Elementos clave</p>
-                                            <ul className="list-disc pl-5 space-y-0.5 text-[12.5px]">
-                                                {accessibleSummary.keyNodes.map((n, i) => <li key={i}>{n}</li>)}
-                                            </ul>
-                                        </section>
-                                    )}
-                                    {accessibleSummary.keyFlows.length > 0 && (
-                                        <section>
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-1">Relaciones clave</p>
-                                            <ul className="list-disc pl-5 space-y-0.5 text-[12.5px]">
-                                                {accessibleSummary.keyFlows.map((f, i) => <li key={i}>{f}</li>)}
-                                            </ul>
-                                        </section>
-                                    )}
-                                </>
-                            ) : (
-                                <p className="text-gray-500 dark:text-gray-400 italic">El diagrama todavía no tiene una representación semántica (IR) disponible. Carga o regenera el artefacto para producir un resumen accesible.</p>
-                            )}
-                        </div>
-                        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (accessibleSummary?.fullText && typeof navigator !== 'undefined' && navigator.clipboard) {
-                                        void navigator.clipboard.writeText(accessibleSummary.fullText);
-                                    }
-                                }}
-                                disabled={!accessibleSummary?.fullText}
-                                className="text-[11px] font-medium px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                            >
-                                Copiar texto
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setA11yOpen(false)}
-                                className="text-[11px] font-medium px-3 py-1.5 rounded-md bg-primary-600 text-white hover:bg-primary-700 transition-colors"
-                            >
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {a11yOpen && <CanvasAccessibleDialog summary={accessibleSummary} onClose={() => setA11yOpen(false)} />}
 
             {/* Cinematic presentation overlay */}
             <PresentationMode
@@ -1738,177 +1445,12 @@ const ReactFlowCanvas = forwardRef<ReactFlowCanvasHandle, ReactFlowCanvasProps>(
             {/* Toggleable Legend */}
             <DiagramLegend show={showLegend} onToggle={() => setShowLegend(v => !v)} legendData={legendData} />
 
-            {/* Editor Panel */}
-            {(selectedNode || selectedEdge) && (
-                <div className="diagram-editor-panel absolute top-4 right-4 w-96 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20 flex flex-col max-h-[calc(100%-2rem)] overflow-hidden animate-fade-in">
-                    <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-                            {selectedNode ? 'Inspeccionar / Editar Nodo' : 'Inspeccionar / Editar Conexión'}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setInspectorPinned((v) => !v)}
-                                className="text-[10px] px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
-                                aria-label={inspectorPinned ? 'Desfijar inspector' : 'Fijar inspector'}
-                            >
-                                {inspectorPinned ? 'Unpin' : 'Pin'}
-                            </button>
-                        <button onClick={() => { if (inspectorPinned) return; onPaneClick(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                            <XMarkIcon className="w-5 h-5" />
-                        </button>
-                        </div>
-                    </div>
-                    <div className="p-4 overflow-y-auto flex-1 space-y-4">
-                        {selectedNode && (
-                            <>
-                                <NodeInspector node={selectedNode} nodes={nodes} edges={edges} />
-                                <div className="border-t border-gray-100 dark:border-gray-700 -mx-4" />
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Editar</div>
-                                <div className="flex flex-wrap gap-2">
-                                    <button type="button" onClick={focusNeighbors} className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Enfocar vecinos</button>
-                                    <button type="button" onClick={clearFocusFilters} className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Mostrar secundarios</button>
-                                    <button
-                                        type="button"
-                                        onClick={duplicateSelectedNode}
-                                        className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700"
-                                        title="Duplicar nodo (Ctrl/⌘+D)"
-                                    >
-                                        Duplicar
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (!selectedNode) return;
-                                            try {
-                                                reactFlowInstance.deleteElements({ nodes: [{ id: selectedNode.id }] });
-                                            } catch { /* deleteElements unavailable in this ReactFlow build */ }
-                                        }}
-                                        className="text-xs px-2 py-1 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
-                                        title="Eliminar nodo (Supr / Retroceso)"
-                                    >
-                                        Eliminar
-                                    </button>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
-                                    <input
-                                        type="text"
-                                        value={selectedNode.data.label || ''}
-                                        onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo / Tecnología</label>
-                                    <input
-                                        type="text"
-                                        value={selectedNode.data.type || ''}
-                                        onChange={(e) => updateNodeData(selectedNode.id, { type: e.target.value })}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white"
-                                        placeholder="Ej: Database, API, Web..."
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                                    <textarea
-                                        value={selectedNode.data.description || ''}
-                                        onChange={(e) => updateNodeData(selectedNode.id, { description: e.target.value })}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white resize-none h-24"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Color Personalizado</label>
-                                    <input
-                                        type="color"
-                                        value={selectedNode.data.color || '#ffffff'}
-                                        onChange={(e) => updateNodeData(selectedNode.id, { color: e.target.value })}
-                                        className="w-full h-10 p-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer"
-                                    />
-                                    <button
-                                        onClick={() => updateNodeData(selectedNode.id, { color: undefined })}
-                                        className="mt-1 text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                                    >
-                                        Restablecer color por defecto
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                        {selectedEdge && (
-                            <>
-                                <EdgeInspector edge={selectedEdge} nodes={nodes} />
-                                <div className="border-t border-gray-100 dark:border-gray-700 -mx-4" />
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Editar</div>
-                                <div className="flex flex-wrap gap-2">
-                                    <button type="button" onClick={focusNeighbors} className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Enfocar vecinos</button>
-                                    <button type="button" onClick={clearFocusFilters} className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">Mostrar secundarios</button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (!selectedEdge) return;
-                                            try {
-                                                reactFlowInstance.deleteElements({ edges: [{ id: selectedEdge.id }] });
-                                            } catch { /* deleteElements unavailable in this ReactFlow build */ }
-                                        }}
-                                        className="text-xs px-2 py-1 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
-                                        title="Eliminar conexión (Supr / Retroceso)"
-                                    >
-                                        Eliminar
-                                    </button>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Etiqueta de la Conexión</label>
-                                    <input
-                                        type="text"
-                                        value={selectedEdge.label as string || ''}
-                                        onChange={(e) => updateEdgeData(selectedEdge.id, { label: e.target.value })}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Relación</label>
-                                    <select
-                                        value={selectedEdge.data?.edgeType || 'default'}
-                                        onChange={(e) => updateEdgeData(selectedEdge.id, { data: { ...selectedEdge.data, edgeType: e.target.value } })}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white"
-                                    >
-                                        <option value="default">Por defecto</option>
-                                        <option value="sync">Síncrona (HTTP/REST)</option>
-                                        <option value="async">Asíncrona (Eventos)</option>
-                                        <option value="data-flow">Flujo de datos</option>
-                                        <option value="dependency">Dependencia</option>
-                                        <option value="inheritance">Herencia/Composición</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Color de la Conexión</label>
-                                    <input
-                                        type="color"
-                                        value={selectedEdge.style?.stroke || '#64748b'}
-                                        onChange={(e) => updateEdgeData(selectedEdge.id, {
-                                            style: { ...selectedEdge.style, stroke: e.target.value },
-                                            markerEnd: { type: MarkerType.ArrowClosed, color: e.target.value }
-                                        })}
-                                        className="w-full h-10 p-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer"
-                                    />
-                                </div>
-                                <div className="flex items-center mt-2">
-                                    <input
-                                        type="checkbox"
-                                        id="animated-edge"
-                                        checked={selectedEdge.data?.animated || false}
-                                        onChange={(e) => updateEdgeData(selectedEdge.id, { data: { ...selectedEdge.data, animated: e.target.checked } })}
-                                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                                    />
-                                    <label htmlFor="animated-edge" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                                        Animar flujo
-                                    </label>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
+            {(selectedNode || selectedEdge) && <CanvasEditorPanel
+                selectedNode={selectedNode} selectedEdge={selectedEdge} nodes={nodes} edges={edges}
+                inspectorPinned={inspectorPinned} onTogglePinned={() => setInspectorPinned(v => !v)} onClose={onPaneClick}
+                focusNeighbors={focusNeighbors} clearFocusFilters={clearFocusFilters} duplicateSelectedNode={duplicateSelectedNode}
+                updateNodeData={updateNodeData} updateEdgeData={updateEdgeData}
+            />}
         </div>
     );
 });
