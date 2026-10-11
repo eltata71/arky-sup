@@ -31,7 +31,7 @@ do $$ declare n int; begin
   insert into f9_probe values ('01 portafolio propio', case when n = 1 then 'OK' else 'FALLO' end);
   insert into f9_probe values ('01b portafolio sin cuerpos',
     case when (api.list_project_aggregates() -> 0 -> 'artifacts') = '[]'::jsonb then 'OK' else 'FALLO' end);
-  perform api.save_chat_history('proj_f9_probe', '[{"role":"user","text":"hola"}]'::jsonb);
+  perform api.append_chat_messages('proj_f9_probe', '[{"id":"p1","role":"user","content":"hola"}]'::jsonb);
   select jsonb_array_length(api.load_chat_history('proj_f9_probe')) into n;
   insert into f9_probe values ('02 historial ida y vuelta', case when n = 1 then 'OK' else 'FALLO' end);
   perform api.append_agent_action('proj_f9_probe', '{"traceId":"t1"}'::jsonb);
@@ -59,7 +59,7 @@ do $$ begin
   set local role authenticated;
   perform set_config('request.jwt.claims', '{"sub":"95000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"96000000-0000-4000-8000-000000000001"}', true);
   begin
-    perform api.save_chat_history('proj_f9_probe', '[{"aiConfig":{"apiKey":"x"}}]'::jsonb);
+    perform api.append_chat_messages('proj_f9_probe', '[{"id":"p2","aiConfig":{"apiKey":"x"}}]'::jsonb);
     insert into f9_probe values ('09 clave en historial', 'FALLO');
   exception when others then
     insert into f9_probe values ('09 clave en historial', 'OK ('||sqlstate||')');
@@ -81,7 +81,7 @@ do $$ begin
   set local role authenticated;
   perform set_config('request.jwt.claims', '{"sub":"95000000-0000-4000-8000-000000000002","role":"authenticated","session_id":"96000000-0000-4000-8000-000000000002"}', true);
   begin
-    perform api.save_chat_history('proj_f9_probe', '[]'::jsonb);
+    perform api.append_chat_messages('proj_f9_probe', '[]'::jsonb);
     insert into f9_probe values ('11 ajeno no escribe historial', 'FALLO');
   exception when insufficient_privilege then
     insert into f9_probe values ('11 ajeno no escribe historial', 'OK');

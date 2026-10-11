@@ -808,7 +808,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 14.0 Ciclo de vida visible | Hecha · #206 | Etapa derivada (`lib/artifacts/artifactLifecycle.ts`) con la misma etiqueta en lienzo, ProjectHub y tablero; el tablero cuenta «sin medir» lo que `artifactIndex` no permite medir (añadir `reviewStatus` al índice requiere migración) |
 | 14.1 Separación de funciones | Hecha · #210 | R-02 cerrada: `api.approve_charter` exige `charter:approve` y un firmante distinto del autor; el aprobador recibe su bandeja por `load_charter_engagements`. Migración pendiente de aplicar en ArkyDB-US antes del despliegue. La parte «pedir cambios → tarea enlazada» queda fuera |
 | 14.2 Trazabilidad | Hecha · #209 | Pestaña «Cadena» del panel del grafo: `analyzeTraceabilityChains` (requisito sin decisión, decisión sin artefacto, relación rota, artefacto inexistente) y `explainEntity` («¿por qué existe?» / «¿qué rompe?»). La unión con KPI y resultados de la iniciativa queda fuera: exige un puerto con `portfolioGraph` y subir el fan-out del panel |
-| 14.3 Chat sin pérdida | Pendiente (R-03) | |
+| 14.3 Chat sin pérdida | Hecha · #211 | |
 
 ---
 

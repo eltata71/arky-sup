@@ -35,6 +35,14 @@ const authenticatedGrants = (): Set<string> => {
         roles: match[3],
       });
     }
+    for (const match of sql.matchAll(/drop\s+function\s+(?:if\s+exists\s+)?api\.([a-z0-9_]+)\s*\(([^)]*)\)/gi)) {
+      events.push({
+        index: match.index,
+        kind: 'revoke',
+        signature: normalizedSignature(match[1], match[2]),
+        roles: 'authenticated',
+      });
+    }
     for (const event of events.sort((left, right) => left.index - right.index)) {
       if (!/\bauthenticated\b/i.test(event.roles)) continue;
       if (event.kind === 'grant') live.add(event.signature);
