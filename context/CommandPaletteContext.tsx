@@ -122,3 +122,16 @@ export function useRegisterCommands(commands: Command[] | undefined | null) {
         return register(commands);
     }, [commands, register]);
 }
+
+/**
+ * The same registration for a component that can also render without the
+ * palette — a toolbar inside a test, or inside a preview. Outside the
+ * provider it registers nothing instead of throwing.
+ */
+export function useOptionalRegisterCommands(commands: Command[] | undefined | null) {
+    const register = useContext(CommandPaletteContext)?.register;
+    useEffect(() => {
+        if (!register || !commands || commands.length === 0) return;
+        return register(commands);
+    }, [commands, register]);
+}
