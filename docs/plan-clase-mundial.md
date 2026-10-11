@@ -797,7 +797,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 12.1 Partir los cinco ficheros grandes | Pendiente | |
 | 12.2 Documento editorial | Hecha · #194 | |
 | 12.3 Zoom semántico C4 | Hecha · #196 | |
-| 12.4 Modo presentación | Pendiente | |
+| 12.4 Modo presentación | Hecha · #198 | |
 | 12.5 Barras por intención | Pendiente | |
 | 13.0 axe y regresión visual | Hecha (#169) | axe y regresión visual en E2E con referencias medidas en CI. Cerró también un defecto real: el enlace profundo `?artifact=` no reintentaba la hidratación si el portafolio llegaba tras montar `Workspace` (`useProjectArtifacts` depende ahora de la llegada del proyecto) |
 | 13.1 Movimiento reducido | Hecha | `MotionConfig reducedMotion="user"` en la raíz, `MOTION` en `lib/designTokens.ts` como fuente única de duraciones y curvas, y un escáner que impide literales en `motion/react` |
