@@ -54,6 +54,8 @@ export interface ArtifactSummary {
   version: number;
   architecturalView?: ArchitecturalView;
   phase?: string;
+  /** Review stage, projected by the server (14.4); absent in entries written before it. */
+  reviewStatus?: ArtifactReviewStatus;
   updatedAt?: string;
   createdAt?: string;
 }

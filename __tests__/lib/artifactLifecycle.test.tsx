@@ -59,6 +59,22 @@ describe('countArtifactLifecycle', () => {
     expect(counts.byStage.published).toBe(1);
     expect(counts.unmeasured).toBe(1);
   });
+
+  it('measures an unopened project from the review status its index carries (14.4)', () => {
+    const counts = countArtifactLifecycle([
+      {
+        artifactsLoaded: false,
+        artifactIndex: [
+          { versionGroupId: 'a', version: 1, reviewStatus: 'approved' },
+          { versionGroupId: 'b', version: 1, reviewStatus: 'draft' },
+          { versionGroupId: 'c', version: 1 },
+        ],
+      },
+    ]);
+    expect(counts.byStage.approved).toBe(1);
+    expect(counts.byStage.draft).toBe(1);
+    expect(counts.unmeasured).toBe(1);
+  });
 });
 
 describe('buildArtifactTimeline', () => {

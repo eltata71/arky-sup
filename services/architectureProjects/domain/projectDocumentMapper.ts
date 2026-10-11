@@ -169,6 +169,7 @@ export const toArtifactSummary = (artifact: Artifact): ArtifactSummary => saniti
     version: artifact.version,
     architecturalView: artifact.architecturalView,
     phase: artifact.phase,
+    reviewStatus: artifact.reviewStatus,
     createdAt: artifact.createdAt,
     updatedAt: (artifact as Artifact & { updatedAt?: string }).updatedAt,
 }) as ArtifactSummary;
