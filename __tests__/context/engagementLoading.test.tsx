@@ -17,17 +17,32 @@ const setup = (repository: EngagementReads) => {
   const engagementsRef = { current: [] as OfficeEngagement[] };
   const commit = vi.fn((next: OfficeEngagement[]) => { engagementsRef.current = next; });
   const hook = renderHook(() => useEngagementLoading({
-    repository, projectIds: ['p-1'], canApprove: false, authLoading: false, engagementsRef, commit,
+    repository, projectIds: ['p-1'], canApprove: false, canApproveCharters: false, authLoading: false, engagementsRef, commit,
   }));
   return { hook, commit, engagementsRef };
 };
 
 describe('useEngagementLoading', () => {
+  it('un aprobador de charters recibe la bandeja ajena, sin duplicar lo del ARB', async () => {
+    const repository: EngagementReads = {
+      list: vi.fn().mockResolvedValue([]),
+      listForArb: vi.fn().mockResolvedValue([engagement]),
+      listForCharterApproval: vi.fn().mockResolvedValue([engagement, { ...engagement, id: 'e-2' }]),
+    };
+    const engagementsRef = { current: [] as OfficeEngagement[] };
+    const commit = vi.fn((next: OfficeEngagement[]) => { engagementsRef.current = next; });
+    const hook = renderHook(() => useEngagementLoading({
+      repository, projectIds: [], canApprove: true, canApproveCharters: true, authLoading: false, engagementsRef, commit,
+    }));
+    await waitFor(() => expect(hook.result.current.isResolving).toBe(false));
+    expect(engagementsRef.current.map((e) => e.id).sort()).toEqual(['e-1', 'e-2']);
+  });
+
   it('reports a failed read as an error — decided, not still resolving — and retries it', async () => {
     const list = vi.fn()
       .mockRejectedValueOnce(new Error('network down'))
       .mockResolvedValueOnce([engagement]);
-    const { hook, engagementsRef } = setup({ list, listForArb: vi.fn() });
+    const { hook, engagementsRef } = setup({ list, listForArb: vi.fn(), listForCharterApproval: vi.fn() });
 
     await act(async () => { await hook.result.current.loadEngagements('p-1'); });
     expect(hook.result.current.loadError).toBe('network down');
@@ -42,7 +57,7 @@ describe('useEngagementLoading', () => {
 
   it('a project that loaded is not asked again', async () => {
     const list = vi.fn().mockResolvedValue([engagement]);
-    const { hook } = setup({ list, listForArb: vi.fn() });
+    const { hook } = setup({ list, listForArb: vi.fn(), listForCharterApproval: vi.fn() });
     await act(async () => { await hook.result.current.loadEngagements('p-1'); });
     await act(async () => { await hook.result.current.loadEngagements('p-1'); });
     expect(list).toHaveBeenCalledTimes(1);

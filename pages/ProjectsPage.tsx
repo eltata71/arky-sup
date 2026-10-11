@@ -280,7 +280,7 @@ const CREATION_INTENT: Record<string, string> = {
 const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
   const { projects, deleteProject, runProjectCommand, t, settings, isLoading, loadError, reload } = useAppContext();
   const { initiatives } = useInitiatives();
-  const { engagements, loadEngagements, createEngagement, approveCharter, runEngagementNow } = useOffice();
+  const { engagements, loadEngagements, createEngagement } = useOffice();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -409,17 +409,6 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
     return result.engagement;
   }, [createEngagement, addToast]);
 
-  const handleApproveAndRun = useCallback(async (engagementId: string) => {
-    const approved = await approveCharter(engagementId);
-    if (!approved.ok) {
-      addToast(approved.reason ?? 'No se pudo aprobar el charter.', 'error');
-      return;
-    }
-    addToast('Charter aprobado. La Oficina está ejecutando el entregable.', 'success');
-    const run = await runEngagementNow(engagementId);
-    addToast(run.reason ?? 'Ejecución finalizada.', run.ok ? 'info' : 'warning');
-    navigate('/office');
-  }, [approveCharter, runEngagementNow, addToast, navigate]);
 
   /**
    * Creating an attention always asks for its initiative first. Talking to an
@@ -883,7 +872,6 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
         onCreateAttention={() => { setIntakeProjectId(null); startCreation({ kind: 'chat', purpose: 'guided-creation' }); }}
         onCreateInitiative={() => navigate('/initiatives')}
         onPropose={handleProposeEngagement}
-        onApproveAndRun={handleApproveAndRun}
         onClose={() => setIntakeProjectId(null)}
       /></React.Suspense>}
     </div>

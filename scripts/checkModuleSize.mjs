@@ -121,7 +121,7 @@ export const BYTE_CEILINGS = {
   // y la pantalla le ofrecía un botón que el servidor rechaza siempre. La regla
   // vive en `describeArbDecisionEligibility`; lo que creció es la llamada, no
   // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
-  'pages/EngagementRoom.tsx': 23347,
+  'pages/EngagementRoom.tsx': 23855, // 14.1: +508, el aviso de quién puede aprobar el charter
   'pages/LMS/LMSCatalog.tsx': 22959,
   'components/ChatInterface.tsx': 22492, // plan artefactos 7.3d: +27, el chat pasa su proyecto a los turnos del agente
   'services/diagram/diagramTypeQualityGates.ts': 22356,
@@ -223,7 +223,7 @@ export const CEILINGS = {
   'services/architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes.ts': 565,
   'context/LMSContext.tsx': 530,
   'services/diagram/irToReactFlow.ts': 545,
-  'pages/EngagementRoom.tsx': 540,
+  'pages/EngagementRoom.tsx': 543, // 14.1: +3 líneas, ídem
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 540,
   'components/artifacts/ArtifactInspectorPanel.tsx': 505,
 };

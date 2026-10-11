@@ -37,6 +37,7 @@ const writes = (over: Partial<EngagementWritePort> = {}): EngagementWritePort =>
   save: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
   remove: vi.fn(async () => ok<void>(undefined)),
   decide: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
+  approveCharter: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
   ...over,
 });
 
@@ -100,7 +101,7 @@ describe('una escritura no confirmada nunca es un éxito', () => {
   });
 
   it('no dice que aprobó el charter cuando la aprobación no se guardó', async () => {
-    const port = writes({ save: vi.fn(async () => fail<OfficeEngagement>('conflict')) });
+    const port = writes({ approveCharter: vi.fn(async () => fail<OfficeEngagement>('conflict')) });
     const result = await approveCharterOperation({ writes: port }, approvable(), admin);
     expect(result.ok).toBe(false);
     expect(result.persistence).toBe('conflict');
@@ -117,6 +118,30 @@ describe('una escritura no confirmada nunca es un éxito', () => {
     const refused = await approveCharterOperation({ writes: port }, alreadyApproved, admin);
     expect(refused.ok).toBe(false);
     expect(refused.persistence).toBeUndefined();
+    expect(port.approveCharter).not.toHaveBeenCalled();
+  });
+
+  it('el autor no aprueba su propio charter y no se llega a llamar al servidor (R-02)', async () => {
+    const port = writes();
+    const refused = await approveCharterOperation({ writes: port }, approvable(), architect);
+    expect(refused.ok).toBe(false);
+    expect(refused.persistence).toBeUndefined();
+    expect(port.approveCharter).not.toHaveBeenCalled();
+  });
+
+  it('un rol sin charter:approve no aprueba aunque no sea el autor', async () => {
+    const port = writes();
+    const viewer: OfficeActor = { id: 'u9', name: 'Vera', role: 'viewer' };
+    const refused = await approveCharterOperation({ writes: port }, approvable(), viewer);
+    expect(refused.ok).toBe(false);
+    expect(port.approveCharter).not.toHaveBeenCalled();
+  });
+
+  it('un aprobador distinto del autor aprueba por la RPC del servidor', async () => {
+    const port = writes();
+    const result = await approveCharterOperation({ writes: port }, approvable(), admin);
+    expect(result.ok).toBe(true);
+    expect(port.approveCharter).toHaveBeenCalledTimes(1);
     expect(port.save).not.toHaveBeenCalled();
   });
 });

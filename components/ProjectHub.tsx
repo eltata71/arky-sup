@@ -87,7 +87,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
 }) => {
     const { runProjectCommand, settings } = useAppContext();
     const { initiatives } = useInitiatives();
-    const { createEngagement, approveCharter, runEngagementNow } = useOffice();
+    const { createEngagement } = useOffice();
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<'workspace' | 'catalog'>('workspace');
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
@@ -131,16 +131,6 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
         return result.engagement;
     }, [createEngagement, addToast]);
 
-    const handleApproveAndRun = useCallback(async (engagementId: string) => {
-        const approved = await approveCharter(engagementId);
-        if (!approved.ok) {
-            addToast(approved.reason ?? 'No se pudo aprobar el charter.', 'error');
-            return;
-        }
-        addToast('Charter aprobado. La Oficina está ejecutando el entregable.', 'success');
-        const run = await runEngagementNow(engagementId);
-        addToast(run.reason ?? 'Ejecución finalizada.', run.ok ? 'info' : 'warning');
-    }, [approveCharter, runEngagementNow, addToast]);
 
     /**
      * The project's briefing for the office team, with the initiatives it
@@ -929,7 +919,6 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                 initiatives={initiatives}
                 onCreateInitiative={() => { setIntakeOpen(false); onBack(); }}
                 onPropose={handleProposeEngagement}
-                onApproveAndRun={handleApproveAndRun}
                 onClose={() => setIntakeOpen(false)}
             /></React.Suspense>}
 

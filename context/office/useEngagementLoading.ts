@@ -18,12 +18,14 @@ import { observabilityService } from '../../services/observability';
 export interface EngagementReads {
   list: (projectId: string) => Promise<OfficeEngagement[]>;
   listForArb: () => Promise<OfficeEngagement[]>;
+  listForCharterApproval: () => Promise<OfficeEngagement[]>;
 }
 
 interface EngagementLoadingPorts {
   readonly repository: EngagementReads;
   readonly projectIds: readonly string[];
   readonly canApprove: boolean;
+  readonly canApproveCharters: boolean;
   readonly authLoading: boolean;
   readonly engagementsRef: MutableRefObject<OfficeEngagement[]>;
   readonly commit: (next: OfficeEngagement[]) => void;
@@ -51,7 +53,7 @@ const reportLoadFailure = (error: unknown, operationName: string): string => {
   return errorMessageOf(error, 'No se pudieron leer los entregables.');
 };
 
-export function useEngagementLoading({ repository, projectIds, canApprove, authLoading, engagementsRef, commit }: EngagementLoadingPorts): EngagementLoadingState {
+export function useEngagementLoading({ repository, projectIds, canApprove, canApproveCharters, authLoading, engagementsRef, commit }: EngagementLoadingPorts): EngagementLoadingState {
   const [pending, setPending] = useState(0);
   const [arbInboxSettled, setArbInboxSettled] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -82,7 +84,8 @@ export function useEngagementLoading({ repository, projectIds, canApprove, authL
   // proyectos propios. Al perder el permiso se retiran esos snapshots.
   useEffect(() => {
     let cancelled = false;
-    if (!canApprove) {
+    const inboxEnabled = canApprove || canApproveCharters;
+    if (!inboxEnabled) {
       const ids = loadedArbEngagementIds.current;
       if (ids.size > 0) {
         commit(engagementsRef.current.filter((item) => !ids.has(item.id)));
@@ -91,9 +94,20 @@ export function useEngagementLoading({ repository, projectIds, canApprove, authL
       return undefined;
     }
     setPending((n) => n + 1);
-    void repository.listForArb()
-      .then((loaded) => {
+    // 14.1: quien firma charters ve los ajenos; el ARB, los suyos. Un mismo
+    // encargo no entra dos veces.
+    void Promise.all([
+      canApprove ? repository.listForArb() : Promise.resolve<OfficeEngagement[]>([]),
+      canApproveCharters ? repository.listForCharterApproval() : Promise.resolve<OfficeEngagement[]>([]),
+    ])
+      .then(([arbInbox, charterInbox]) => {
         if (cancelled) return;
+        const seen = new Set<string>();
+        const loaded = [...arbInbox, ...charterInbox].filter((item) => {
+          if (seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        });
         const previousIds = loadedArbEngagementIds.current;
         loadedArbEngagementIds.current = new Set(loaded.map((item) => item.id));
         commit([
@@ -109,20 +123,20 @@ export function useEngagementLoading({ repository, projectIds, canApprove, authL
         if (!cancelled) setArbInboxSettled(true);
       });
     return () => { cancelled = true; };
-  }, [repository, canApprove, commit, engagementsRef, loadedArbEngagementIds, arbAttempt]);
+  }, [repository, canApprove, canApproveCharters, commit, engagementsRef, loadedArbEngagementIds, arbAttempt]);
 
   const retryLoad = useCallback(() => {
     setLoadError(null);
     for (const projectId of projectIds) void loadEngagements(projectId);
-    if (canApprove) setArbAttempt((n) => n + 1);
-  }, [projectIds, loadEngagements, canApprove]);
+    if (canApprove || canApproveCharters) setArbAttempt((n) => n + 1);
+  }, [projectIds, loadEngagements, canApprove, canApproveCharters]);
 
   const isLoading = pending > 0;
   // A failed read is decided: it is an error, not something still on its way.
   const isResolving = loadError === null && (
     authLoading
     || isLoading
-    || (canApprove && !arbInboxSettled)
+    || ((canApprove || canApproveCharters) && !arbInboxSettled)
     || projectIds.some((projectId) => !loadedProjectIds.has(projectId))
   );
 

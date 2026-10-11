@@ -101,18 +101,40 @@ export const describeArbDecisionEligibility = (
 // Charter approval
 // ---------------------------------------------------------------------------
 
+export type CharterApprovalEligibility =
+  | { allowed: true }
+  | { allowed: false; reason: 'missing-permission' | 'own-engagement' };
+
+/** ¿Puede *este* actor aprobar el charter de *este* encargo? El autor no (R-02). */
+export const describeCharterApprovalEligibility = (
+  engagement: OfficeEngagement,
+  actor: OfficeActor | null | undefined,
+): CharterApprovalEligibility => {
+  if (!can(actor, 'charter:approve')) return { allowed: false, reason: 'missing-permission' };
+  if (actor && engagement.createdBy.id === actor.id) return { allowed: false, reason: 'own-engagement' };
+  return { allowed: true };
+};
+
 const CHARTER_APPROVABLE_FROM: readonly OfficeEngagementStatus[] = ['awaiting-charter', 'planning'];
 
 /**
  * Approves the proposed charter and releases the engagement to the runner.
  *
- * Charter approval is deliberately *not* admin-gated: it is the project owner
- * saying "yes, this is the work". The board gate is at delivery.
+ * Desde 14.1 (R-02) aprobar exige `charter:approve` y que quien firma no sea
+ * el autor del encargo (`describeCharterApprovalEligibility`). Esto es la regla
+ * de negocio; quien la hace cumplir es `api.approve_charter`, que además pone
+ * la firma y la fecha.
  */
 export const approveCharter = (
   engagement: OfficeEngagement,
   actor: OfficeActor,
 ): OfficeTransitionResult => {
+  const eligibility = describeCharterApprovalEligibility(engagement, actor);
+  if (!eligibility.allowed) {
+    return fail(engagement, eligibility.reason === 'own-engagement'
+      ? 'El autor del encargo no puede aprobar su propio charter.'
+      : 'Tu rol no permite aprobar charters.');
+  }
   if (!CHARTER_APPROVABLE_FROM.includes(engagement.status)) {
     return fail(engagement, `No se puede aprobar el charter desde el estado "${engagement.status}".`);
   }

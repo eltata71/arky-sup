@@ -19,7 +19,7 @@ Las decisiones que desbloquearon esta tarea son del propietario, del
 | # | Qué | Decisión | Revisar cuando |
 |---|---|---|---|
 | **R-01** | **Archivado y retención (D-2).** Borrar es definitivo, no existe el estado «archivado», y cuatro tablas sólo crecen (acciones del agente, versiones de artefactos, decisiones del comité, auditoría) | **Opción A**: mientras sea PoC se conserva todo y el borrado sigue siendo manual. Las alternativas quedan descritas para entonces: **B**, archivado lógico reversible; **C**, retención con plazos; **D**, B ahora y C después | **Antes de cargar datos productivos**, o si una tabla supera un volumen que se note al leerla. Se elige entre B, C o D |
-| **R-02** | **`charter:approve` no lo exige nadie.** El permiso existe en la matriz (reviewer, admin, superadmin) y en SQL, pero cualquier arquitecto aprueba el charter de su propio encargo. El diseño lo quería así («es el dueño del proyecto diciendo sí»), y entonces el permiso sobra | **Sin decidir**: encontrado al llevar E-02 al servidor. Es una regla de producto | Cuando haya más de un usuario con roles distintos. Opciones: exigir el permiso (el autor deja de aprobar lo suyo, como ya pasa en el comité) o retirarlo de la matriz |
+| **R-02** | ~~`charter:approve` no lo exige nadie~~ **Cerrada en 14.1 (2026-10-10).** Aprobar un charter exige `charter:approve` y que quien aprueba no sea el autor del encargo; lo hace sólo `api.approve_charter`, que pone firma, fecha y rol en el servidor. `save_engagement` ya no admite una primera aprobación (42501). El aprobador ve los encargos ajenos pendientes por `api.load_charter_engagements` | **Decidida** (propietario): exigir el permiso y separar funciones, como en el comité | Hecha |
 
 ## 2. Riesgos aceptados
 

@@ -1,4 +1,5 @@
--- F6-08 · E-02 / H06: nadie ejecuta un charter sin aprobar — en el servidor.
+-- F6-08 · E-02 / H06 y 14.1 · R-02: nadie ejecuta un charter sin aprobar, y quien
+-- aprueba no es quien lo escribió — en el servidor.
 --
 -- Cada regla con su caso negativo, el camino que usa la aplicación (aprobar y
 -- pasar a `in-progress` en una sola escritura, firmado por la sesión), que un
@@ -16,15 +17,18 @@ select ok(not has_function_privilege('authenticated', 'private.assert_charter_ap
 
 insert into auth.users (id, email) values
   ('68000000-0000-4000-8000-000000000001', 'charter-owner@example.invalid'),
-  ('68000000-0000-4000-8000-000000000002', 'charter-other@example.invalid')
+  ('68000000-0000-4000-8000-000000000002', 'charter-other@example.invalid'),
+  ('68000000-0000-4000-8000-000000000003', 'charter-author-reviewer@example.invalid')
 on conflict (id) do nothing;
 insert into api.user_profiles (id, role, status) values
   ('68000000-0000-4000-8000-000000000001', 'architect', 'active'),
-  ('68000000-0000-4000-8000-000000000002', 'architect', 'active')
+  ('68000000-0000-4000-8000-000000000002', 'reviewer', 'active'),
+  ('68000000-0000-4000-8000-000000000003', 'reviewer', 'active')
 on conflict (id) do nothing;
 insert into auth.sessions (id, user_id, not_after) values
   ('78000000-0000-4000-8000-000000000001', '68000000-0000-4000-8000-000000000001', null),
-  ('78000000-0000-4000-8000-000000000002', '68000000-0000-4000-8000-000000000002', null)
+  ('78000000-0000-4000-8000-000000000002', '68000000-0000-4000-8000-000000000002', null),
+  ('78000000-0000-4000-8000-000000000003', '68000000-0000-4000-8000-000000000003', null)
 on conflict (id) do nothing;
 
 -- Un encargo con el estado y la aprobación que se pidan.
@@ -38,7 +42,7 @@ returns jsonb language sql as $$
     'charter', jsonb_strip_nulls(jsonb_build_object(
       'kind', 'new-solution', 'objectives', '[]'::jsonb, 'scope', '[]'::jsonb,
       'outOfScope', '[]'::jsonb, 'constraints', '[]'::jsonb, 'regulatoryDrivers', '[]'::jsonb,
-      'deliverables', '[]'::jsonb, 'participantIds', '[]'::jsonb,
+      'deliverables', jsonb_build_array(jsonb_build_object('id', 'd1', 'title', 'Artefacto')), 'participantIds', '[]'::jsonb,
       'coordinatorId', 'lucia', 'consolidatorId', 'alejandro', 'provenance', 'deterministic',
       'proposedAt', '2026-09-26T00:00:00.000Z',
       'approvedAt', p_approved_at,
@@ -76,38 +80,71 @@ select throws_ok($$select api.save_engagement('proj_charter', pg_temp.engagement
   '22023', 'El charter debe aprobarse antes de ejecutar el encargo',
   'Pasar a in-progress sin aprobar el charter se rechaza: ya no basta con saltarse el runner');
 
--- ───────────────────────────────────────────── regla 3: la firma es de la sesión
+-- ───────────────────────────────────────────── regla 3 (14.1): save_engagement no aprueba
 select throws_ok($$select api.save_engagement('proj_charter',
-    pg_temp.engagement('eng_c1', 'in-progress', '2026-09-26T01:00:00.000Z', '68000000-0000-4000-8000-000000000002'), 1)$$,
-  '42501', 'El charter lo aprueba la sesión que lo firma',
-  'Nadie aprueba en nombre de otro');
+    pg_temp.engagement('eng_c1', 'in-progress', '2026-09-26T01:00:00.000Z', '68000000-0000-4000-8000-000000000001'), 1)$$,
+  '42501', 'El charter se aprueba sólo con api.approve_charter',
+  'Ni el propio autor firma su charter por una escritura genérica');
 select throws_ok($$select api.save_engagement('proj_charter',
-    pg_temp.engagement('eng_c1', 'in-progress', 'mañana', '68000000-0000-4000-8000-000000000001'), 1)$$,
-  '22023', 'La fecha de aprobación del charter no es válida',
-  'Una fecha de aprobación que no es una fecha se rechaza');
+    pg_temp.engagement('eng_c1', 'awaiting-charter', '2026-09-26T01:00:00.000Z', '68000000-0000-4000-8000-000000000002'), 1)$$,
+  '42501', 'El charter se aprueba sólo con api.approve_charter',
+  'Ni con la firma de otro, ni sin cambiar de estado');
+
+-- ───────────────────────────────────────────── aprobar exige charter:approve
+select throws_ok($$select api.approve_charter('proj_charter', 'eng_c1', 1)$$,
+  '42501', 'Permiso insuficiente: charter:approve',
+  'Un arquitecto no aprueba charters');
+select throws_ok($$select api.load_charter_engagements()$$,
+  '42501', 'Permiso insuficiente: charter:approve',
+  'Ni ve la bandeja de aprobación');
+
+-- ───────────────────────────────────────────── el autor no aprueba el suyo
+reset role;
+insert into api.office_engagements (id, project_id, owner_id, data, revision)
+values ('eng_c3', 'proj_charter', '68000000-0000-4000-8000-000000000003',
+  pg_temp.engagement('eng_c3', 'awaiting-charter', null, null), 1);
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"68000000-0000-4000-8000-000000000003","role":"authenticated","session_id":"78000000-0000-4000-8000-000000000003"}';
+select throws_ok($$select api.approve_charter('proj_charter', 'eng_c3', 1)$$,
+  '42501', 'El autor no puede aprobar su propio charter',
+  'Un revisor autor de su encargo tampoco aprueba el suyo');
 
 -- ───────────────────────────────────────────── el camino de la aplicación
-select is((api.save_engagement('proj_charter',
-    pg_temp.engagement('eng_c1', 'in-progress', '2026-09-26T01:00:00.000Z', '68000000-0000-4000-8000-000000000001'), 1)).revision,
-  2::bigint, 'Aprobar, firmado por la sesión, y pasar a in-progress en una sola escritura');
+set local request.jwt.claims = '{"sub":"68000000-0000-4000-8000-000000000002","role":"authenticated","session_id":"78000000-0000-4000-8000-000000000002"}';
+select ok((api.load_charter_engagements()) @> '[{"data":{"id":"eng_c1"}}]'::jsonb,
+  'La bandeja del aprobador incluye el encargo ajeno que espera charter');
+select throws_ok($$select api.approve_charter('proj_charter', 'eng_c1', 5)$$,
+  'P0001', 'Conflicto de encargo: recarga antes de guardar',
+  'Una revisión vieja no aprueba');
+select is((api.approve_charter('proj_charter', 'eng_c1', 1)).revision,
+  2::bigint, 'Otra persona con charter:approve firma y el encargo pasa a in-progress');
+select is((select data -> 'charter' -> 'approvedBy' ->> 'id' from api.office_engagements where id = 'eng_c1'),
+  '68000000-0000-4000-8000-000000000002', 'La firma es de la sesión que aprueba, puesta por el servidor');
+select is((select data ->> 'status' from api.office_engagements where id = 'eng_c1'), 'in-progress',
+  'El estado lo mueve la misma transacción');
+select is((select data -> 'auditTrail' -> 0 ->> 'action' from api.office_engagements where id = 'eng_c1'), 'charter-approved',
+  'Con su entrada de auditoría');
+select is((api.approve_charter('proj_charter', 'eng_c1', 1)).revision,
+  2::bigint, 'Un reintento de red de la misma sesión devuelve lo guardado');
 
 -- ───────────────────────────────────────────── regla 2: lo aprobado se queda aprobado
+set local request.jwt.claims = '{"sub":"68000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"78000000-0000-4000-8000-000000000001"}';
 select throws_ok($$select api.save_engagement('proj_charter', pg_temp.engagement('eng_c1', 'in-progress', null, null), 2)$$,
   '22023', 'La aprobación del charter no se puede retirar ni reescribir',
   'Una aprobación no se retira');
 select throws_ok($$select api.save_engagement('proj_charter',
     pg_temp.engagement('eng_c1', 'in-progress', '2026-09-26T05:00:00.000Z', '68000000-0000-4000-8000-000000000001'), 2)$$,
   '22023', 'La aprobación del charter no se puede retirar ni reescribir',
-  'Ni se reescribe su fecha');
-select is((api.save_engagement('proj_charter',
-    pg_temp.engagement('eng_c1', 'awaiting-arb', '2026-09-26T01:00:00.000Z', '68000000-0000-4000-8000-000000000001'), 2)).revision,
-  3::bigint, 'Conservándola, el encargo sigue su curso');
+  'Ni se reescribe');
 
 -- ───────────────────────────────────────────── un encargo ajeno no revela su aprobación
 set local request.jwt.claims = '{"sub":"68000000-0000-4000-8000-000000000002","role":"authenticated","session_id":"78000000-0000-4000-8000-000000000002"}';
-select throws_ok($$select api.save_engagement('proj_charter', pg_temp.engagement('eng_c1', 'awaiting-arb', null, null), 3)$$,
+select throws_ok($$select api.save_engagement('proj_charter', pg_temp.engagement('eng_c1', 'awaiting-arb', null, null), 2)$$,
   'P0002', 'El encargo no existe o es ajeno',
   'Sobre un encargo ajeno responde «ajeno», nunca «la aprobación no se puede retirar»');
+select throws_ok($$select api.approve_charter('proj_charter', 'eng_c1', 2)$$,
+  '22023', 'El charter ya está aprobado',
+  'Un charter aprobado por otra sesión no se vuelve a aprobar');
 
 -- ───────────────────────────────────────────── compatibilidad: una aprobación antigua sin firmante
 reset role;

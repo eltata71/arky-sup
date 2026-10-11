@@ -56,8 +56,6 @@ const OfficePage: React.FC = () => {
     canApprove,
     loadEngagements,
     createEngagement,
-    approveCharter,
-    runEngagementNow,
   } = useOffice();
   const { addToast } = useToast();
   const { initiatives } = useInitiatives();
@@ -95,16 +93,6 @@ const OfficePage: React.FC = () => {
     return result.engagement ?? null;
   }, [createEngagement, addToast]);
 
-  const handleApproveAndRun = useCallback(async (engagementId: string) => {
-    const approved = await approveCharter(engagementId);
-    if (!approved.ok) {
-      addToast(approved.reason ?? 'No se pudo aprobar el charter.', 'error');
-      return;
-    }
-    addToast('Charter aprobado. La Oficina está ejecutando el entregable.', 'success');
-    const run = await runEngagementNow(engagementId);
-    addToast(run.reason ?? 'Ejecución finalizada.', run.ok ? 'info' : 'warning');
-  }, [approveCharter, runEngagementNow, addToast]);
 
   const openIntake = useCallback(() => setIntakeOpen(true), []);
   const openEngagement = useCallback(
@@ -286,7 +274,6 @@ const OfficePage: React.FC = () => {
         onCreateAttention={() => navigate('/projects')}
         onCreateInitiative={() => navigate('/initiatives')}
         onPropose={handlePropose}
-        onApproveAndRun={handleApproveAndRun}
         onClose={() => setIntakeOpen(false)}
       />
     </div>
