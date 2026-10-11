@@ -125,6 +125,43 @@ export const MOTION = {
 } as const;
 
 /**
+ * The four microinteractions (13.5), and the domain event that earns each.
+ *
+ * A short vocabulary on purpose: every animation answers to something that
+ * happened in the work — content arrived, a generation finished, a charter
+ * was approved, a package was published, the portfolio changed order — and
+ * none plays for its own sake or repeats. `docs/microinteracciones.md` is the
+ * table; `MotionConfig reducedMotion="user"` and the components that use these
+ * turn all four off for whoever asks for less motion.
+ *
+ * - `appear`: content arriving — fade and an 8 px rise, 180 ms.
+ * - `complete`: a check that draws itself, 400 ms — only when a generation
+ *   finishes or a charter is approved, never for something already done when
+ *   the screen opened.
+ * - `reorder`: a list of the portfolio re-sorting itself animates the move.
+ * - `celebrate`: once, when a package is published; never again for the same
+ *   package, and never confetti.
+ */
+export const MICRO = {
+  appear: {
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.18, ease: EASING.enter },
+  },
+  complete: { duration: 0.4, ease: EASING.enter },
+  reorder: { duration: DURATION_S.base, ease: EASING.standard },
+  celebrate: { duration: 0.6, ease: EASING.emphasis },
+} as const;
+
+/** The event behind each microinteraction — the table in the doc, as data. */
+export const MICRO_EVENTS = {
+  appear: ['contenido que llega a una lista o a un panel'],
+  complete: ['generación terminada', 'charter aprobado'],
+  reorder: ['el portafolio cambia de orden'],
+  celebrate: ['paquete publicado'],
+} as const satisfies Record<keyof typeof MICRO, readonly string[]>;
+
+/**
  * How long to wait between siblings in a staggered entrance.
  *
  * Small on purpose. A stagger exists to make a group read as a group; past

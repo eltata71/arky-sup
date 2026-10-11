@@ -119,7 +119,7 @@ export const AttentionCenter: React.FC<AttentionCenterProps> = ({
         }
         compact
       />
-      <StatusBars rows={rows} title="Señales del portafolio, por gravedad" unit="elemento(s)" />
+      <StatusBars rows={rows} title="Señales del portafolio, por gravedad" unit="elemento(s)" animateReorder />
     </Card>
   );
 };

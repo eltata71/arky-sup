@@ -150,8 +150,8 @@ export const BYTE_CEILINGS = {
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   'components/ArtifactSelectionStep.tsx': 20101,
   'pages/UserManagementPage.tsx': 20037,
-  'lib/i18n/locales/es.ts': 36435, // 13.4: claves load.* y office.empty.*; 12.5: claves canvas.* de la barra por intención; 12.4: claves deck.* y pm.* del modo presentación; 12.2: claves doc.* del documento de lectura; 11.5: claves pf.* y rail.portfolio.* del portafolio y radar (es/en juntas); 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
-  'lib/i18n/locales/en.ts': 34357, // 13.4: claves load.* y office.empty.*; 12.5: claves canvas.*; 12.4: claves deck.* y pm.*; 12.2: claves doc.*; 11.5: claves pf.* y rail.portfolio.*; 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
+  'lib/i18n/locales/es.ts': 36621, // 13.5: claves micro.*; 13.4: claves load.* y office.empty.*; 12.5: claves canvas.* de la barra por intención; 12.4: claves deck.* y pm.* del modo presentación; 12.2: claves doc.* del documento de lectura; 11.5: claves pf.* y rail.portfolio.* del portafolio y radar (es/en juntas); 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
+  'lib/i18n/locales/en.ts': 34538, // 13.5: claves micro.*; 13.4: claves load.* y office.empty.*; 12.5: claves canvas.*; 12.4: claves deck.* y pm.*; 12.2: claves doc.*; 11.5: claves pf.* y rail.portfolio.*; 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
 };
 
 /**
