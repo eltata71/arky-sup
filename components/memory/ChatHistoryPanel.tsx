@@ -13,6 +13,7 @@ import {
 } from '../Icons';
 import { compactChatMessages } from '../../services/ai';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { Skeleton } from '../ui';
 
 interface ChatHistoryPanelProps {
     project: Project;
@@ -90,7 +91,7 @@ const formatDay = (day: string): string => {
  * doesn't have to coordinate.
  */
 export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) => {
-    const { loadChatHistory, replaceChatHistory, settings } = useAppContext();
+    const { loadChatHistory, replaceChatHistory, settings, t } = useAppContext();
     const { addToast } = useToast();
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -281,10 +282,10 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
 
     // ── Render ──────────────────────────────────────────────────────────────
     if (isLoading) {
+        // 13.4: rows, not a spinner.
         return (
-            <div className="flex items-center gap-2 px-3 py-6 text-sm text-slate-500 dark:text-slate-400" role="status">
-                <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                Cargando historial de chat…
+            <div className="space-y-2 px-3 py-4" role="status" aria-busy="true" aria-label={t('load.chatHistory')}>
+                {[0, 1, 2, 3].map((row) => <Skeleton key={row} className={`h-12 rounded-xl ${row % 2 ? 'ml-8' : 'mr-8'}`} />)}
             </div>
         );
     }

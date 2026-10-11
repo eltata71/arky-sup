@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Clipboard, ShieldCheck, X } from 'lucide-react';
 import { useObservability } from '../context/ObservabilityContext';
 import type { ObservabilityEvent, ObservabilitySeverity } from '../services/observability';
@@ -36,8 +36,7 @@ const buildDiagnostics = (events: ObservabilityEvent[]): string => events.map((e
 ].filter((line): line is string => Boolean(line)).join('\n')).join('\n\n');
 
 export const GlobalObservabilityCenter: React.FC<GlobalObservabilityCenterProps> = ({ project }) => {
-  const { events, summary, clear } = useObservability();
-  const [open, setOpen] = useState(false);
+  const { events, summary, clear, centerOpen: open, openCenter, closeCenter } = useObservability();
   const latestVisibleEvents = useMemo(() => events.filter((event) => event.userVisible).slice(0, 12), [events]);
   const lastEvent = summary.lastEvent;
   const officeAssessment = useMemo(
@@ -64,7 +63,7 @@ export const GlobalObservabilityCenter: React.FC<GlobalObservabilityCenterProps>
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openCenter}
         className={`fixed bottom-20 right-4 z-[180] flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold shadow-pop backdrop-blur transition hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 md:bottom-4 ${statusConfig.classes}`}
         aria-label="Abrir centro de monitoreo global"
       >
@@ -83,7 +82,7 @@ export const GlobalObservabilityCenter: React.FC<GlobalObservabilityCenterProps>
                   <h2 id="observability-title" className="mt-1 text-lg font-bold text-gray-900 dark:text-white">Estado operativo de Arky</h2>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Monitoreo general de render, ejecución, red, recursos y operaciones. No depende de un artefacto específico.</p>
                 </div>
-                <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-white" aria-label="Cerrar monitoreo">
+                <button type="button" onClick={closeCenter} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-white" aria-label="Cerrar monitoreo">
                   <X className="h-5 w-5" />
                 </button>
               </div>

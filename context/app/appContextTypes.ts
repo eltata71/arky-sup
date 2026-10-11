@@ -44,6 +44,10 @@ export interface AppContextType {
   projects: Project[];
   settings: Settings;
   isLoading: boolean;
+  /** Why the first read of projects failed, or `null` (13.4). Never shown as an empty portfolio. */
+  loadError: string | null;
+  /** Read the projects again after `loadError`. */
+  reload: () => void;
   /**
    * The initiative link travels with the creation write rather than as a
    * follow-up update: an attention that exists for a moment with no declared

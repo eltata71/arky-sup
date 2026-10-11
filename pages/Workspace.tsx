@@ -12,6 +12,8 @@ import { VersionConflictModal } from '../components/VersionConflictModal';
 import { DataIntegrityCheckModal } from '../components/DataIntegrityCheckModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { HubSkeleton } from '../components/ui';
+import { ScreenLoadError } from '../components/ScreenLoadError';
 import { CopilotSidebar } from '../components/CopilotSidebar';
 import { ArtifactReadinessModal } from '../components/ArtifactReadinessModal';
 import { useRegisterCommands, type Command } from '../context/CommandPaletteContext';
@@ -35,7 +37,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
   // The portfolio loads an index, not the documents. This screen edits their
   // content, so it asks for the real artifacts on mount.
   useProjectArtifacts(projectId);
-  const { projects, t, deleteArtifact, settings, findLatestArtifactByName, removeCorruptArtifacts, isLoading: isGlobalLoading } = useAppContext();
+  const { projects, t, deleteArtifact, settings, findLatestArtifactByName, removeCorruptArtifacts, isLoading: isGlobalLoading, loadError, reload } = useAppContext();
   const { enqueue } = useGenerationQueue();
   const { addToast } = useToast();
   const navigate = useNavigate();
@@ -271,14 +273,16 @@ const Workspace: React.FC<WorkspaceProps> = ({ projectId }) => {
 
   if (isGlobalLoading) {
     return (
-        <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950" role="status" aria-label="Cargando proyecto">
-            <div className="flex flex-col items-center gap-3 animate-fade-in">
-                <div className="relative h-12 w-12">
-                    <div className="absolute inset-0 rounded-full bg-primary-200/50 dark:bg-primary-900/40 animate-ping" />
-                    <div className="relative h-12 w-12 border-[3px] border-primary-200 dark:border-primary-900 border-t-primary-600 dark:border-t-primary-300 rounded-full animate-spin" />
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Cargando proyecto…</p>
-            </div>
+        <div className="h-[100dvh] overflow-hidden bg-gray-50 dark:bg-gray-950 md:pl-14">
+            <HubSkeleton label={t('load.loadingWorkspace')} />
+        </div>
+    );
+  }
+  if (loadError) {
+    // 13.4: a failed read is not «proyecto no encontrado».
+    return (
+        <div className="flex h-[100dvh] items-center justify-center bg-gray-50 p-6 dark:bg-gray-950 md:pl-14">
+            <ScreenLoadError className="w-full max-w-xl" subject={t('load.subject.workspace')} error={loadError} onRetry={reload} />
         </div>
     );
   }

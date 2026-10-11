@@ -69,7 +69,7 @@ export const BYTE_CEILINGS = {
   'components/MemoryCenterModal.tsx': 55654, // 13.2 (4): t() en los literales, +102 B // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/ArtifactCanvas.tsx': 43577, // 12.5: −589, la paleta ⌘K del lienzo la registra su barra (una sola lista) // 12.3: +234, monta «C4LevelNavigator» (migas, Entrar, Esc y zoom; el lienzo sólo lo envuelve) // 12.2: +103, pasa `review` al documento (comentarios anclados por sección; el lienzo sólo entrega la identidad) // ola 10.4: +99, «Deshacer» tras aplicar mejoras con IA (la regla vive en `aiUndo`, el lienzo sólo la ofrece) // plan diagramas 8.3a: +181, monta la vista «Notación» (secuencia, Gantt y estados abren en Mermaid nativo; el lienzo los aplanaba) // plan diagramas 8.1a: +49, «Guardar» del lienzo pasa lo que el lienzo mostraba y dice si el texto se conservó (antes convertía cualquier diagrama en React Flow) // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 58691, // 11.5: dos plantillas (contrato de arquitectura, evaluación de cumplimiento; datos) · 11.1 ArchiMate: plantillas de los viewpoints ArchiMate (datos) · , // 11.0: `standard` y `admPhase` en cada plantilla del catálogo (datos)
-  'pages/ProjectsPage.tsx': 44541, // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
+  'pages/ProjectsPage.tsx': 44921, // 13.4: +380, esqueleto mientras carga y error con «Reintentar» (antes enseñaba «todavía no hay proyectos» sobre una lectura en curso o fallida) // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   'pages/LMS/LessonModal.tsx': 43207,
   'components/artifacts/export/ArtifactExportModal.tsx': 28422, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
   'components/CustomArtifactRequestModal.tsx': 42394, // 10.1: las etiquetas de fase salen al catálogo · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
@@ -150,8 +150,8 @@ export const BYTE_CEILINGS = {
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   'components/ArtifactSelectionStep.tsx': 20101,
   'pages/UserManagementPage.tsx': 20037,
-  'lib/i18n/locales/es.ts': 35137, // 12.5: claves canvas.* de la barra por intención; 12.4: claves deck.* y pm.* del modo presentación; 12.2: claves doc.* del documento de lectura; 11.5: claves pf.* y rail.portfolio.* del portafolio y radar (es/en juntas); 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
-  'lib/i18n/locales/en.ts': 33080, // 12.5: claves canvas.*; 12.4: claves deck.* y pm.*; 12.2: claves doc.*; 11.5: claves pf.* y rail.portfolio.*; 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
+  'lib/i18n/locales/es.ts': 36435, // 13.4: claves load.* y office.empty.*; 12.5: claves canvas.* de la barra por intención; 12.4: claves deck.* y pm.* del modo presentación; 12.2: claves doc.* del documento de lectura; 11.5: claves pf.* y rail.portfolio.* del portafolio y radar (es/en juntas); 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
+  'lib/i18n/locales/en.ts': 34357, // 13.4: claves load.* y office.empty.*; 12.5: claves canvas.*; 12.4: claves deck.* y pm.*; 12.2: claves doc.*; 11.5: claves pf.* y rail.portfolio.*; 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
 };
 
 /**
@@ -184,7 +184,7 @@ export const CEILINGS = {
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
   'services/agent/agentExecutor.ts': 904, // 7.3d: los puertos, una vez para todas las llamadas · 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
-  'pages/ProjectsPage.tsx': 890, // F5-02
+  'pages/ProjectsPage.tsx': 894, // 13.4: +4, los estados de carga y de error de la lista // F5-02
   'services/diagram/mermaidToIR.ts': 747, // 11.1 ArchiMate: +7 líneas · , // plan diagramas 8.3b: 873 → 740 · plan diagramas 8.2a: +2 · plan diagramas 2.1
   'components/artifacts/export/ArtifactExportModal.tsx': 564, // plan de clase mundial 9.4: 596 → 564 // plan diagramas 3.4: 844 → 596
   'components/CustomArtifactBriefWizard.tsx': 845,
