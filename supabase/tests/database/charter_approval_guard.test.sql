@@ -118,12 +118,14 @@ select throws_ok($$select api.approve_charter('proj_charter', 'eng_c1', 5)$$,
   'Una revisión vieja no aprueba');
 select is((api.approve_charter('proj_charter', 'eng_c1', 1)).revision,
   2::bigint, 'Otra persona con charter:approve firma y el encargo pasa a in-progress');
+reset role;
 select is((select data -> 'charter' -> 'approvedBy' ->> 'id' from api.office_engagements where id = 'eng_c1'),
   '68000000-0000-4000-8000-000000000002', 'La firma es de la sesión que aprueba, puesta por el servidor');
 select is((select data ->> 'status' from api.office_engagements where id = 'eng_c1'), 'in-progress',
   'El estado lo mueve la misma transacción');
 select is((select data -> 'auditTrail' -> 0 ->> 'action' from api.office_engagements where id = 'eng_c1'), 'charter-approved',
   'Con su entrada de auditoría');
+set local role authenticated;
 select is((api.approve_charter('proj_charter', 'eng_c1', 1)).revision,
   2::bigint, 'Un reintento de red de la misma sesión devuelve lo guardado');
 
