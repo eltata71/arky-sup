@@ -68,7 +68,6 @@ const deriveInitialCaptureFallback = (project: Project): string[] => {
     });
     return fallback;
 };
-
 export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, onClose, project }) => {
     const { settings, updateSettings, runProjectCommand, updateArtifact, t } = useAppContext();
     const { profile } = useAuth();

@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import { ArtifactTemplate } from '../types';
 import type { Artifact, ArtifactGenerationPhaseListener } from '../lib/artifacts';
 import { type Project, useAppContext } from '../context/AppContext';
@@ -9,7 +9,6 @@ import {
     DocumentTextIcon,
     Squares2X2Icon,
     PlusIcon,
-    TrashIcon,
     ClockIcon,
     MagnifyingGlassIcon,
     ArrowRightIcon,
@@ -18,8 +17,6 @@ import {
     TableCellsIcon,
     EllipsisHorizontalIcon,
     SparklesIcon,
-    DocumentTextIcon as DocIcon,
-    PresentationChartBarIcon,
     ArrowPathIcon,
     ChatBubbleLeftRightIcon,
     CpuChipIcon,
@@ -33,6 +30,7 @@ import { buildProjectHubScope } from '../services/architectureOffice/application
 import { ProjectTimeline } from './ProjectTimeline';
 import { LatestArtifactCard } from './LatestArtifactCard';
 import { ArtifactSortControl } from './ArtifactSortControl';
+import { ArtifactActionsMenu } from './projectHub/ArtifactActionsMenu';
 import { ArtifactOriginBadge } from './ArtifactOriginBadge';
 import { OfficeCapabilitiesPanel } from './architectureOffice/OfficeCapabilitiesPanel';
 import { AttentionDetailsPanel } from './attentions';
@@ -74,99 +72,6 @@ interface ProjectHubProps {
     onBack: () => void;
     onOpenSDD?: () => void;
 }
-
-const ArtifactActionsMenu: React.FC<{
-    artifact: Artifact;
-    isOpen: boolean;
-    onClose: () => void;
-    onDelete: () => void;
-    onShowHistory: () => void;
-    onOpen: () => void;
-    onChat: () => void;
-    onGenerateWorldClass: () => void;
-    viewMode: 'grid' | 'table';
-}> = ({ artifact, isOpen, onClose, onDelete, onShowHistory, onOpen, onChat, onGenerateWorldClass, viewMode }) => {
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                onClose();
-            }
-        };
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, onClose]);
-
-    if (!isOpen) return null;
-
-    // Posicionamiento dinámico: En tabla flota encima del resto, en grid sube desde el footer
-    const positionClasses = viewMode === 'grid' 
-        ? "right-0 bottom-12 origin-bottom-right" 
-        : "right-8 top-0 origin-top-right mt-1"; // Ajustado para tabla: a la izquierda del botón de 3 puntos
-
-    return (
-        <div 
-            ref={menuRef} 
-            className={`absolute z-[100] w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 dark:ring-white dark:ring-opacity-10 py-1 text-sm animate-fade-in ${positionClasses}`}
-        >
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50">
-                <p className="font-semibold text-gray-900 dark:text-white truncate pr-2">{artifact.name}</p>
-                <div className="flex items-center mt-1">
-                    <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
-                        v{artifact.version} (Actual)
-                    </span>
-                </div>
-            </div>
-
-            <div className="py-1">
-                {/* NEW ACTION: Conversar con IA (First Item) */}
-                <button onClick={() => { onChat(); onClose(); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-400 flex items-center group transition-colors font-medium">
-                    <ChatBubbleLeftRightIcon className="w-4 h-4 mr-3" /> 
-                    Conversar sobre este Artefacto
-                </button>
-
-                <button onClick={() => { onOpen(); onClose(); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center group transition-colors">
-                    <ArrowRightIcon className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary-600" /> 
-                    Abrir y Gestionar
-                </button>
-                <button onClick={() => { onShowHistory(); onClose(); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center group transition-colors">
-                    <ClockIcon className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary-600" /> 
-                    Ver Historial de Versiones
-                </button>
-                <button className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center group transition-colors">
-                    <DocIcon className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary-600" /> 
-                    Ver Contexto del Artefacto
-                </button>
-            </div>
-
-            <div className="border-t border-gray-100 dark:border-gray-700/50 py-1">
-                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Inteligencia Artificial</div>
-                <button
-                    onClick={() => { onGenerateWorldClass(); onClose(); }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-400 flex items-center transition-colors font-semibold"
-                    title="Genera una nueva versión del artefacto seleccionado con estándar World Class."
-                >
-                    <SparklesIcon className="w-4 h-4 mr-3" /> Generación de clase mundial
-                </button>
-                <button className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-400 flex items-center transition-colors">
-                    <SparklesIcon className="w-4 h-4 mr-3" /> Generar Tests
-                </button>
-                <button className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-400 flex items-center transition-colors">
-                    <PresentationChartBarIcon className="w-4 h-4 mr-3" /> Revisión IA
-                </button>
-            </div>
-
-            <div className="border-t border-gray-100 dark:border-gray-700/50 py-1">
-                <button onClick={() => { onDelete(); onClose(); }} className="w-full text-left px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center transition-colors">
-                    <TrashIcon className="w-4 h-4 mr-3" /> Eliminar Artefacto
-                </button>
-            </div>
-        </div>
-    );
-};
 
 export const ProjectHub: React.FC<ProjectHubProps> = ({
     project,
