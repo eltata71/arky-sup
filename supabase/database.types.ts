@@ -721,10 +721,6 @@ export type Database = {
         Args: { p_action: Json; p_project_id: string }
         Returns: undefined
       }
-      create_artifact: {
-        Args: { p_artifact: Json; p_project_id: string }
-        Returns: Json
-      }
       approve_charter: {
         Args: {
           p_engagement_id: string
@@ -746,6 +742,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_artifact: {
+        Args: { p_artifact: Json; p_project_id: string }
+        Returns: Json
       }
       create_artifact_version: {
         Args: { p_artifact: Json; p_project_id: string }
