@@ -57,10 +57,24 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
             ],
         },
         {
+            title: 'Lienzo del artefacto',
+            items: [
+                { keys: <><Kbd>⌥</Kbd><Kbd>⇧</Kbd><Kbd>R</Kbd></>, label: 'Revisar: revalidar la calidad' },
+                { keys: <><Kbd>⌥</Kbd><Kbd>⇧</Kbd><Kbd>M</Kbd></>, label: 'Mejorar: sugerencias con IA' },
+                { keys: <><Kbd>⌥</Kbd><Kbd>⇧</Kbd><Kbd>P</Kbd></>, label: 'Compartir: modo presentación' },
+                { keys: <><Kbd>⌥</Kbd><Kbd>⇧</Kbd><Kbd>E</Kbd></>, label: 'Editar contenido o salir de la edición' },
+                { keys: <><Kbd>⌥</Kbd><Kbd>⇧</Kbd><Kbd>D</Kbd></>, label: 'Detalle técnico: traza de generación' },
+            ],
+        },
+        {
             title: 'Presentación',
             items: [
-                { keys: <><Kbd>←</Kbd><Kbd>→</Kbd></>, label: 'Navegar entre escenas' },
-                { keys: <Kbd>Espacio</Kbd>, label: 'Avanzar a la siguiente escena' },
+                { keys: <><Kbd>←</Kbd><Kbd>→</Kbd></>, label: 'Navegar entre escenas o diapositivas' },
+                { keys: <Kbd>Espacio</Kbd>, label: 'Avanzar a la siguiente escena o diapositiva' },
+                { keys: <Kbd>L</Kbd>, label: 'Encender o apagar el puntero láser' },
+                { keys: <><Kbd>←</Kbd><Kbd>↑</Kbd><Kbd>→</Kbd><Kbd>↓</Kbd></>, label: 'Con el láser encendido: moverlo (⇧ para pasos largos)' },
+                { keys: <><Kbd>⇞</Kbd><Kbd>⇟</Kbd></>, label: 'Con el láser encendido: cambiar de diapositiva' },
+                { keys: <Kbd>P</Kbd>, label: 'Abrir la vista del presentador en otra ventana' },
                 { keys: <Kbd>Esc</Kbd>, label: 'Salir del modo presentación' },
             ],
         },
