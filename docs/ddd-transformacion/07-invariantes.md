@@ -101,7 +101,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | T-03 | Un secreto no entra en el bundle | gate de build | ✅ | — |
 | T-04 | El grafo derivado acaba reflejando los artefactos actuales | `SQL` (disparador en la transacción del artefacto) + `RPC` (`save_graph_projection` idempotente) + recuperación al arrancar | ✅ cierra **H11** — ADR-107. Eventual: se procesa la próxima vez que alguien abre la aplicación | F5-04, F5-05 |
 | T-05 | Cada chunk del build se evalúa sin error | gate E2E (`chunks.spec.ts`) + `noBarrelSelfImport.test.ts` | ✅ — ADR-109 | F6-04, F6-05 |
-| T-06 | Dos pestañas no se borran mutuamente el historial de chat | **ninguna**: `save_chat_history` reescribe la lista entera sin revisión | ❌ necesita migración; en F6-08 | F6-05 (hallazgo) |
+| T-06 | Dos pestañas no se borran mutuamente el historial de chat | `SQL` (una fila por mensaje, PK `(proyecto, id)`) + `RPC` (`append_chat_messages` idempotente y sin borrar; `replace_chat_history` sólo desde el Centro de Memoria) | ✅ cierra **R-03** | F6-05 (hallazgo), 14.3 |
 
 ---
 
@@ -109,7 +109,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 
 | Autoridad suficiente | Insuficiente | Total |
 |---|---|---|
-| **39 ✅** | 1 ❌ + 4 ⚠️ | 44 |
+| **40 ✅** | 0 ❌ + 4 ⚠️ | 44 |
 
 En la línea base eran 17 ✅, 8 ❌ y 8 ⚠️ sobre 33. **De las ocho sin autoridad
 efectiva, siete tienen hoy servidor detrás.** H02 se cerró en sus tres partes
@@ -121,7 +121,7 @@ A-02 ya estaba marcada ✅ en el catálogo anterior.
 - **E-04, E-05** y **E-14**: reglas que hoy sólo aplica TypeScript. T-01
   tiene prueba desde la revisión de deuda técnica, y E-01 servidor desde el
   2026-09-27.
-- **T-06**: el único ❌, encontrado en F6-05.
+- **T-06** se cerró en 14.3 con un registro por mensaje (R-03).
 
 Todas están en el registro de deuda residual (`13-deuda-residual.md`), con responsable y condición de revisión. E-02 se cerró en F6-08 y E-01 el 2026-09-27.
 
