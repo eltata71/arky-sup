@@ -76,8 +76,12 @@ export const BUDGETS = {
    * es eager por diseño y las ~50 claves de /transition añaden 1,1 KB gz.
    * 207 → 208 en 11.5: las ~40 claves pf.* del portafolio y radar (0,6 KB gz) y su
    * entrada de raíl y de paleta; la página en sí es lazy (8,6 KB gz).
+   * 208 → 209 en 12.4: 208,9 KB gz medidos, las ~80 claves deck.* y pm.* del modo
+   * presentación (el modo de diagramas pasó a `t()`); el presentador, el láser y la
+   * segunda ventana son un chunk diferido, y la marca y las reglas del modo son
+   * puertas pequeñas, no el barril que comparten las rutas.
    */
-  entryChunkGzipKb: 208,
+  entryChunkGzipKb: 209,
   /**
    * Any single chunk, raw. Catches a lazy chunk exploding — Excalidraw is
    * already 2.4 MB raw, and this stops it (or a sibling) doubling unnoticed.

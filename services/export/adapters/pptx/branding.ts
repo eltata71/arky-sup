@@ -1,31 +1,15 @@
 import type { PresentationLayout } from '../../../presentation';
+// A declared small door: the deck schema's barrel is shared by every route, the brand only by the canvas and the exporter.
+import { SLIDE_FONT, SLIDE_LAYOUT_BRAND, SLIDE_PALETTE, type SlideDecoration } from '../../../presentation/slideBrand';
 
-/** The one place the deck's look is declared. Hex values mirror `tailwind.config.cjs`. */
-export const PPTX_PALETTE = {
-  ink: '18181B',
-  inkMuted: '52525B',
-  surface: 'FAFAFA',
-  surfaceAlt: 'F4F4F5',
-  border: 'D4D4D8',
-  primary: '4F46E5',
-  primaryDark: '312E81',
-  primaryTint: 'E0E7FF',
-  onDark: 'FFFFFF',
-  darkSurface: '18181B',
-  tone: {
-    info: { solid: '4F46E5', tint: 'EEF2FF', label: 'Información' },
-    success: { solid: '15803D', tint: 'F0FDF4', label: 'Logro' },
-    warning: { solid: 'B45309', tint: 'FFFBEB', label: 'Atención' },
-    risk: { solid: 'B91C1C', tint: 'FEF2F2', label: 'Riesgo' },
-  },
-  trend: {
-    up: { color: '15803D', glyph: '▲', word: 'Sube' },
-    down: { color: 'B91C1C', glyph: '▼', word: 'Baja' },
-    flat: { color: '52525B', glyph: '■', word: 'Estable' },
-  },
-} as const;
+/**
+ * The deck's look comes from `services/presentation/slideBrand.ts`, which the
+ * on-screen slides read too (12.4): what is presented is what is exported.
+ * This file adds only what a PPTX needs on top — geometry in EMU.
+ */
+export const PPTX_PALETTE = SLIDE_PALETTE;
 
-export const PPTX_FONT = 'Inter';
+export const PPTX_FONT = SLIDE_FONT;
 
 export const SLIDE_WIDTH_EMU = 9_144_000;
 export const SLIDE_HEIGHT_EMU = 6_858_000;
@@ -33,7 +17,7 @@ export const MARGIN_X = 457_200;
 export const CONTENT_WIDTH = SLIDE_WIDTH_EMU - MARGIN_X * 2;
 export const BODY_BOTTOM = 6_400_000;
 
-export type LayoutDecoration = 'bar' | 'band' | 'none';
+export type LayoutDecoration = SlideDecoration;
 
 export interface LayoutSpec {
   /** Order in the package: the layout is `slideLayout{index + 1}.xml`. */
@@ -48,42 +32,41 @@ export interface LayoutSpec {
   columns: 1 | 2;
 }
 
-const content = (overrides: Partial<LayoutSpec> & { index: number }): LayoutSpec => ({
-  title: { x: MARGIN_X, y: 274_320, cx: CONTENT_WIDTH, cy: 820_000 },
-  titleSize: 2800,
-  align: 'l',
-  hero: false,
-  decoration: 'bar',
-  columns: 1,
-  ...overrides,
-});
+type Geometry = Pick<LayoutSpec, 'index'> & Partial<Pick<LayoutSpec, 'title' | 'titleSize'>>;
 
-const hero = (overrides: Partial<LayoutSpec> & { index: number }): LayoutSpec => ({
-  title: { x: MARGIN_X, y: 2_200_000, cx: CONTENT_WIDTH, cy: 1_400_000 },
-  titleSize: 4000,
-  align: 'ctr',
-  hero: true,
-  decoration: 'band',
-  columns: 1,
-  ...overrides,
-});
+const CONTENT_TITLE = { x: MARGIN_X, y: 274_320, cx: CONTENT_WIDTH, cy: 820_000 };
+const HERO_TITLE = { x: MARGIN_X, y: 2_200_000, cx: CONTENT_WIDTH, cy: 1_400_000 };
+
+/** The brand decides how a layout looks; this adds where its title sits. */
+const spec = (layout: PresentationLayout, geometry: Geometry): LayoutSpec => {
+  const brand = SLIDE_LAYOUT_BRAND[layout];
+  return {
+    index: geometry.index,
+    title: geometry.title ?? (brand.hero ? HERO_TITLE : CONTENT_TITLE),
+    titleSize: geometry.titleSize ?? (brand.hero ? 4000 : 2800),
+    align: brand.align === 'center' ? 'ctr' : 'l',
+    hero: brand.hero,
+    decoration: brand.decoration,
+    columns: brand.columns,
+  };
+};
 
 /** One master layout per `PresentationLayout`; the slide names it, never infers it. */
 export const LAYOUT_SPECS: Record<PresentationLayout, LayoutSpec> = {
-  titleSlide: hero({ index: 0 }),
-  executiveSummary: content({ index: 1 }),
-  sectionDivider: hero({ index: 2, titleSize: 3600, title: { x: MARGIN_X, y: 2_600_000, cx: CONTENT_WIDTH, cy: 1_200_000 } }),
-  twoColumn: content({ index: 3, columns: 2 }),
-  problemSolution: content({ index: 4, columns: 2 }),
-  architectureOverview: content({ index: 5, titleSize: 2600 }),
-  roadmap: content({ index: 6 }),
-  riskMatrix: content({ index: 7 }),
-  decisionSlide: content({ index: 8, decoration: 'band', hero: false }),
-  diagramFocused: content({ index: 9, titleSize: 2400, title: { x: MARGIN_X, y: 200_000, cx: CONTENT_WIDTH, cy: 700_000 } }),
-  comparisonTable: content({ index: 10 }),
-  timeline: content({ index: 11 }),
-  metricsKpi: content({ index: 12 }),
-  closingSlide: hero({ index: 13, title: { x: MARGIN_X, y: 2_400_000, cx: CONTENT_WIDTH, cy: 1_300_000 } }),
+  titleSlide: spec('titleSlide', { index: 0 }),
+  executiveSummary: spec('executiveSummary', { index: 1 }),
+  sectionDivider: spec('sectionDivider', { index: 2, titleSize: 3600, title: { x: MARGIN_X, y: 2_600_000, cx: CONTENT_WIDTH, cy: 1_200_000 } }),
+  twoColumn: spec('twoColumn', { index: 3 }),
+  problemSolution: spec('problemSolution', { index: 4 }),
+  architectureOverview: spec('architectureOverview', { index: 5, titleSize: 2600 }),
+  roadmap: spec('roadmap', { index: 6 }),
+  riskMatrix: spec('riskMatrix', { index: 7 }),
+  decisionSlide: spec('decisionSlide', { index: 8 }),
+  diagramFocused: spec('diagramFocused', { index: 9, titleSize: 2400, title: { x: MARGIN_X, y: 200_000, cx: CONTENT_WIDTH, cy: 700_000 } }),
+  comparisonTable: spec('comparisonTable', { index: 10 }),
+  timeline: spec('timeline', { index: 11 }),
+  metricsKpi: spec('metricsKpi', { index: 12 }),
+  closingSlide: spec('closingSlide', { index: 13, title: { x: MARGIN_X, y: 2_400_000, cx: CONTENT_WIDTH, cy: 1_300_000 } }),
 };
 
 export const LAYOUT_ORDER = (Object.keys(LAYOUT_SPECS) as PresentationLayout[]).sort(
