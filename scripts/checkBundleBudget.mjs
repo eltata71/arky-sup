@@ -82,8 +82,10 @@ export const BUDGETS = {
    * puertas pequeñas, no el barril que comparten las rutas.
    * 209 → 210 en 12.5: 209,1 KB gz medidos, las 15 claves canvas.* de la barra por
    * intención; la barra misma vive en el chunk diferido del lienzo.
+   * 210 → 212 en 13.2: 211,4 KB gz medidos tras traducir ProjectHub y los
+   * inspectores de diagrama; el inglés permanece en un chunk diferido.
    */
-  entryChunkGzipKb: 210,
+  entryChunkGzipKb: 212,
   /**
    * Any single chunk, raw. Catches a lazy chunk exploding — Excalidraw is
    * already 2.4 MB raw, and this stops it (or a sibling) doubling unnoticed.
