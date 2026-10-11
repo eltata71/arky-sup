@@ -803,7 +803,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 13.1 Movimiento reducido | Hecha | `MotionConfig reducedMotion="user"` en la raíz, `MOTION` en `lib/designTokens.ts` como fuente única de duraciones y curvas, y un escáner que impide literales en `motion/react` |
 | 13.2 Idioma | En curso (R-16: B, tamaño L) | Infraestructura entregada: un módulo por idioma, inglés lazy, presupuesto monótono de literales (1 321 medidos, 1 117 tras el lote 5, #188); raíl y navegación móvil migrados. Falta la campaña de extracción hasta 0 |
 | 13.3 Primitivas | Hecha | #187 |
-| 13.4 Estados vacío, carga y error | Pendiente | |
+| 13.4 Estados vacío, carga y error | Hecha · #202 | Los fallos de lectura dejan de mostrarse como portafolio vacío: «Reintentar» y «Ver diagnóstico» en las cinco pantallas principales; esqueletos donde se conoce la forma |
 | 13.5 Microinteracciones | Pendiente | |
 | 14.0 Ciclo de vida visible | Pendiente | |
 | 14.1 Separación de funciones | Pendiente (R-02) | |
