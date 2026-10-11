@@ -52,14 +52,22 @@ export const DeckPresenter: React.FC<DeckPresenterProps> = ({ deck, index, onInd
   const nextSlide = deck.slides[index + 1] ?? null;
   const presenter = usePresenterWindow(presenterRequested, t('deck.presenterWindowTitle', { title: deck.title }), () => setPresenterRequested(false));
 
+  // The index a key press counts from. Reading `index` from the render would
+  // drop a press that lands before React re-subscribes the key handler: two
+  // quick → would both start from the same slide and advance one.
+  const indexRef = useRef(index);
+  indexRef.current = index;
+
   const goTo = useCallback((target: number) => {
+    const from = indexRef.current;
     const clamped = Math.min(total - 1, Math.max(0, target));
-    if (clamped === index) return;
-    direction.current = clamped > index ? 1 : -1;
+    if (clamped === from) return;
+    direction.current = clamped > from ? 1 : -1;
+    indexRef.current = clamped;
     onIndexChange(clamped);
-  }, [index, total, onIndexChange]);
-  const goNext = useCallback(() => goTo(index + 1), [goTo, index]);
-  const goPrev = useCallback(() => goTo(index - 1), [goTo, index]);
+  }, [total, onIndexChange]);
+  const goNext = useCallback(() => goTo(indexRef.current + 1), [goTo]);
+  const goPrev = useCallback(() => goTo(indexRef.current - 1), [goTo]);
 
   const toggleLaser = useCallback(() => {
     setStatus(laser ? t('deck.laserOff') : t('deck.laserOn'));

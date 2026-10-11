@@ -94,6 +94,16 @@ describe('presentation mode', () => {
     expect(screen.getByText('Diapositiva 14 de 14')).toBeInTheDocument();
   });
 
+  it('counts every press, even several before React re-renders', async () => {
+    renderViewer();
+    const dialog = await present();
+    // Dispatched outside act(): the handler sees no re-render between them.
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+    expect(await within(dialog).findByText('Diapositiva 4 de 14')).toBeInTheDocument();
+  });
+
   it('moves the laser with the arrows while it is on, and the slides with Page Down', async () => {
     renderViewer();
     const dialog = await present();
