@@ -14,6 +14,7 @@ import {
 } from '../Icons';
 import { compactChatMessages } from '../../services/ai';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { Skeleton } from '../ui';
 
 interface ChatHistoryPanelProps {
     project: Project;
@@ -91,9 +92,7 @@ const formatDay = (day: string): string => {
  * doesn't have to coordinate.
  */
 export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) => {
-  const translateConfig = useUiTranslation();
-  const t = useUiTranslation();
-    const { loadChatHistory, replaceChatHistory, settings } = useAppContext();
+    const { loadChatHistory, replaceChatHistory, settings, t } = useAppContext();
     const { addToast } = useToast();
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -284,10 +283,10 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
 
     // ── Render ──────────────────────────────────────────────────────────────
     if (isLoading) {
+        // 13.4: rows, not a spinner.
         return (
-            <div className="flex items-center gap-2 px-3 py-6 text-sm text-slate-500 dark:text-slate-400" role="status">
-                <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                {t("ui.cargando-historial-de-chat.f54077")}
+            <div className="space-y-2 px-3 py-4" role="status" aria-busy="true" aria-label={t('load.chatHistory')}>
+                {[0, 1, 2, 3].map((row) => <Skeleton key={row} className={`h-12 rounded-xl ${row % 2 ? 'ml-8' : 'mr-8'}`} />)}
             </div>
         );
     }
@@ -381,12 +380,12 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                 <div className="sm:col-span-12 flex flex-wrap items-center gap-1.5">
                     {QUICK_RANGES.map((range) => (
                         <button
-                            key={translateConfig(range.label)}
+                            key={t(range.label)}
                             type="button"
                             onClick={() => applyQuickRange(range.getRange())}
                             className="inline-flex items-center rounded-full border border-slate-200 px-2 py-0.5 text-2xs font-medium text-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
                         >
-                            {translateConfig(range.label)}
+                            {t(range.label)}
                         </button>
                     ))}
                     <label className="ml-2 flex items-center gap-1.5 text-2xs font-medium text-slate-600 dark:text-slate-300">

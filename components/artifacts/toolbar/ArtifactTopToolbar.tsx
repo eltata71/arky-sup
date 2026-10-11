@@ -3,6 +3,8 @@ import React from 'react';
 import { Breadcrumbs } from '../../Breadcrumbs';
 import { Tooltip } from '../../ui/Tooltip';
 import { ArtifactStatusBadge } from '../ArtifactStatusBadge';
+import { ArtifactLifecycleBadge } from '../ArtifactLifecycleBadge';
+import { deriveArtifactLifecycle, type LifecyclePublication } from '../../../lib/artifacts/artifactLifecycle';
 import {
   ArrowLeftIcon,
   ArrowUpTrayIcon,
@@ -21,6 +23,8 @@ import type { ArtifactViewMode } from '../../../lib/artifacts/contracts';
 export interface ArtifactTopToolbarProps {
   projectName: string;
   artifact: Artifact;
+  /** The project's publication packages, for the artifact's stage (14.0). */
+  publicationPackages?: readonly LifecyclePublication[];
   viewMode: ArtifactViewMode;
   /** View modes the active artifact can actually render. */
   availableViews: ArtifactViewMode[];
@@ -54,6 +58,7 @@ const PRIMARY_VIEWS: Array<{ value: ArtifactViewMode; label: string; icon: React
 export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
   projectName,
   artifact,
+  publicationPackages = [],
   viewMode,
   availableViews,
   onBack,
@@ -87,7 +92,8 @@ export const ArtifactTopToolbar: React.FC<ArtifactTopToolbarProps> = ({
             { label: artifact.name, meta: `v${artifact.version}` },
           ]}
         />
-        <span className="hidden flex-shrink-0 sm:block">
+        <span className="hidden flex-shrink-0 items-center gap-1.5 sm:flex">
+          <ArtifactLifecycleBadge {...deriveArtifactLifecycle(artifact, publicationPackages)} />
           <ArtifactStatusBadge artifact={artifact} compact />
         </span>
       </div>

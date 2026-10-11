@@ -68,7 +68,7 @@ export const BYTE_CEILINGS = {
   'services/ai/prompts/diagramPrompts.ts': 45933, // 11.1 ArchiMate: +995 bytes, el prompt de ArchiMate (capas, viewpoints, relaciones) · , // plan artefactos 7.5a: +673, el puerto onContextCaptured llega a los tres constructores (la captura vive en contextManifestCapture) · plan diagramas 6.4: 52 524 → 44265, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
   'components/MemoryCenterModal.tsx': 31469, // 12.1: subcomponentes a components/memory/ // 13.2 (4): t() en los literales, +102 B // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'components/ArtifactCanvas.tsx': 43711, // 12.5: −589, la paleta ⌘K del lienzo la registra su barra (una sola lista) // 12.3: +234, monta «C4LevelNavigator» (migas, Entrar, Esc y zoom; el lienzo sólo lo envuelve) // 12.2: +103, pasa `review` al documento (comentarios anclados por sección; el lienzo sólo entrega la identidad) // ola 10.4: +99, «Deshacer» tras aplicar mejoras con IA (la regla vive en `aiUndo`, el lienzo sólo la ofrece) // plan diagramas 8.3a: +181, monta la vista «Notación» (secuencia, Gantt y estados abren en Mermaid nativo; el lienzo los aplanaba) // plan diagramas 8.1a: +49, «Guardar» del lienzo pasa lo que el lienzo mostraba y dice si el texto se conservó (antes convertía cualquier diagrama en React Flow) // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
+  'components/ArtifactCanvas.tsx': 43730, // 13.2 + 14.0: traducción del lienzo y nuevo estado de ciclo de vida combinados; +19 B medidos. // 12.5: −589, la paleta ⌘K del lienzo la registra su barra (una sola lista) // 12.3: +234, monta «C4LevelNavigator» (migas, Entrar, Esc y zoom; el lienzo sólo lo envuelve) // 12.2: +103, pasa `review` al documento (comentarios anclados por sección; el lienzo sólo entrega la identidad) // ola 10.4: +99, «Deshacer» tras aplicar mejoras con IA (la regla vive en `aiUndo`, el lienzo sólo la ofrece) // plan diagramas 8.3a: +181, monta la vista «Notación» (secuencia, Gantt y estados abren en Mermaid nativo; el lienzo los aplanaba) // plan diagramas 8.1a: +49, «Guardar» del lienzo pasa lo que el lienzo mostraba y dice si el texto se conservó (antes convertía cualquier diagrama en React Flow) // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 58691, // 11.5: dos plantillas (contrato de arquitectura, evaluación de cumplimiento; datos) · 11.1 ArchiMate: plantillas de los viewpoints ArchiMate (datos) · , // 11.0: `standard` y `admPhase` en cada plantilla del catálogo (datos)
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/ProjectsPage.tsx': 44806, // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
@@ -126,7 +126,7 @@ export const BYTE_CEILINGS = {
   'services/diagram/quality/diagramQualityService.ts': 26699, // plan diagramas 8.4a: +257, el análisis puntúa sin lo derivado y siempre clasificado
   'services/publicationPipeline/PublicationPreflightService.ts': 26117, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'components/artifacts/ArtifactInspectorPanel.tsx': 25780, // plan diagramas 8.4c: +47, «Sin medir» en vez de una cifra neutra · F4-05: la coordinación salió a `services/artifacts/application`
+  'components/artifacts/ArtifactInspectorPanel.tsx': 25962, // 13.2 + 14.0: estado del ciclo de vida y textos del inspector integrados; 25 962 B medidos. // plan diagramas 8.4c: +47, «Sin medir» en vez de una cifra neutra · F4-05: la coordinación salió a `services/artifacts/application`
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/LMS/CourseView.tsx': 25216,
   'services/diagram/irToReactFlow.ts': 23966, // plan diagramas 4.1: +100, el enlace de detalle viaja en los datos del nodo
@@ -139,7 +139,7 @@ export const BYTE_CEILINGS = {
   // vive en `describeArbDecisionEligibility`; lo que creció es la llamada, no
   // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'pages/EngagementRoom.tsx': 23805, // 13.2: mensajes de aprobación traducidos; +75 B medidos
+  'pages/EngagementRoom.tsx': 24329, // 13.2 + 14.1: textos de aprobación separados por permiso y autor; 24 329 B medidos. // 13.2: mensajes de aprobación traducidos; +75 B medidos
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/LMS/LMSCatalog.tsx': 23293, // 13.2: estado de catálogo traducido; +34 B medidos
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
@@ -173,9 +173,9 @@ export const BYTE_CEILINGS = {
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/UserManagementPage.tsx': 20084,
   // 13.2: la copia del idioma sale a módulos acotados; se baja el techo.
-  'lib/i18n/locales/es.ts': 36673, // 13.2: +231 B por importar los lotes de mensajes; las cadenas viven en módulos separados // 13.2: +8769 B de traducciones para ProjectHub y los inspectores de diagrama; el diccionario español único es eager por contrato R-16
+  'lib/i18n/locales/es.ts': 40187, // 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 40 187 B medidos. // 13.2: +231 B por importar los lotes de mensajes; las cadenas viven en módulos separados // 13.2: +8769 B de traducciones para ProjectHub y los inspectores de diagrama; el diccionario español único es eager por contrato R-16
   // 13.2: la copia del idioma sale a módulos acotados; se baja el techo.
-  'lib/i18n/locales/en.ts': 34615, // 13.2: +230 B por importar los lotes de mensajes; inglés sigue diferido // 13.2: +8371 B del mismo lote; inglés sigue en su módulo cargado con import()
+  'lib/i18n/locales/en.ts': 38056, // 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 38 056 B medidos. // 13.2: +230 B por importar los lotes de mensajes; inglés sigue diferido // 13.2: +8371 B del mismo lote; inglés sigue en su módulo cargado con import()
 };
 
 /**
@@ -255,7 +255,7 @@ export const CEILINGS = {
   'services/architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes.ts': 565,
   'context/LMSContext.tsx': 530,
   'services/diagram/irToReactFlow.ts': 545,
-  'pages/EngagementRoom.tsx': 540,
+  'pages/EngagementRoom.tsx': 543, // 14.1: +3 líneas, ídem
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 540,
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/artifacts/ArtifactInspectorPanel.tsx': 509,

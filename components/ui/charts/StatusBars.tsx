@@ -12,6 +12,8 @@
  * actually makes when triaging.
  */
 
+import { motion } from 'motion/react';
+import { MICRO } from '../../../lib/designTokens';
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
@@ -41,6 +43,12 @@ export interface StatusBarsProps {
   emptyMessage?: string;
   /** Word for the unit, used in each row's accessible name. */
   unit?: string;
+  /**
+   * 13.5 «reordenar»: when the rows re-sort because the data changed, slide
+   * them to their new place instead of jumping. Off by default; off with
+   * reduced motion (the root `MotionConfig` drops layout animation).
+   */
+  animateReorder?: boolean;
   className?: string;
 }
 
@@ -49,6 +57,7 @@ export const StatusBars: React.FC<StatusBarsProps> = ({
   title,
   emptyMessage,
   unit = '',
+  animateReorder = false,
   className,
 }) => {
   const max = rows.reduce((highest, row) => Math.max(highest, row.value), 0);
@@ -64,7 +73,7 @@ export const StatusBars: React.FC<StatusBarsProps> = ({
         const width = max === 0 ? 0 : Math.max(row.value > 0 ? 4 : 0, (row.value / max) * 100);
         const Row = row.onSelect ? 'button' : 'div';
         return (
-          <li key={row.id}>
+          <motion.li key={row.id} layout={animateReorder ? 'position' : false} transition={MICRO.reorder}>
             <Row
               {...(row.onSelect
                 ? {
@@ -100,7 +109,7 @@ export const StatusBars: React.FC<StatusBarsProps> = ({
                 <p className="mt-1 text-2xs leading-snug text-gray-500 dark:text-gray-400">{row.hint}</p>
               )}
             </Row>
-          </li>
+          </motion.li>
         );
       })}
     </ul>

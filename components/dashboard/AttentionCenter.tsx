@@ -121,7 +121,7 @@ export const AttentionCenter: React.FC<AttentionCenterProps> = ({
         }
         compact
       />
-      <StatusBars rows={rows} title={t("ui.senales-del-portafolio-por-g.f9167c")} unit="elemento(s)" />
+      <StatusBars rows={rows} title={t("ui.senales-del-portafolio-por-g.f9167c")} unit="elemento(s)" animateReorder />
     </Card>
   );
 };

@@ -16,14 +16,14 @@ describe('ReviewStatusBadge', () => {
     it('maps each status to its localized label', () => {
         expect(reviewStatusLabel('approved')).toBe('Aprobado');
         expect(reviewStatusLabel('pending-review')).toBe('En revisión');
-        expect(reviewStatusLabel('changes-requested')).toBe('Requiere cambios');
+        expect(reviewStatusLabel('changes-requested')).toBe('Cambios pedidos');
         expect(reviewStatusLabel('rejected')).toBe('Rechazado');
         expect(reviewStatusLabel('draft')).toBe('Borrador');
     });
 
     it('renders an aria-label that announces the workflow state', () => {
         render(<ReviewStatusBadge status="changes-requested" />);
-        expect(screen.getByLabelText(/Requiere cambios/)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Cambios pedidos/)).toBeInTheDocument();
     });
 
     it('hides the text in compact mode but keeps the aria-label', () => {
@@ -34,7 +34,7 @@ describe('ReviewStatusBadge', () => {
 
     it('translates both the badge and its accessible description in English', () => {
         render(<UiTranslationProvider t={(key, replacements) => translate({ es, en }, 'en', key, replacements)}><ReviewStatusBadge status="changes-requested" /></UiTranslationProvider>);
-        expect(screen.getByText('Changes required')).toBeInTheDocument();
-        expect(screen.getByLabelText(/Changes required/)).toHaveAttribute('title', 'A reviewer requested adjustments');
+        expect(screen.getByText('Changes requested')).toBeInTheDocument();
+        expect(screen.getByLabelText(/Changes requested/)).toHaveAttribute('title', 'A reviewer requested adjustments');
     });
 });

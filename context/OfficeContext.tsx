@@ -23,9 +23,11 @@ import React, {
 import { useAppContext } from './AppContext';
 import { useAuth } from './AuthContext';
 import { useInitiatives } from './InitiativeContext';
+import { useEngagementLoading } from './office/useEngagementLoading';
 import {
   officeEngagementRepository,
 } from '../services/architectureOffice/infrastructure/OfficeEngagementRepository';
+import { can } from '../lib/authz';
 import {
   approveCharterOperation,
   createEngagementOperation,
@@ -38,7 +40,9 @@ import {
 import {
   canActAsArb,
   describeArbDecisionEligibility,
+  describeCharterApprovalEligibility,
   type ArbDecisionEligibility,
+  type CharterApprovalEligibility,
 } from '../services/architectureOffice/domain/OfficeArbService';
 import {
   type OfficeActor,
@@ -69,6 +73,10 @@ interface OfficeContextType {
   isLoading: boolean;
   /** Whether an engagement's absence is still undecided (see `EngagementRoomFallback`). */
   isResolving: boolean;
+  /** Why a read failed, or `null` (13.4): an empty board is only shown when every read succeeded. */
+  loadError: string | null;
+  /** Ask again for whatever failed to load. */
+  retryLoad: () => void;
   /** True when the signed-in user may sit on the review board. */
   canApprove: boolean;
   /**
@@ -76,6 +84,10 @@ interface OfficeContextType {
    * no decide lo suyo aunque tenga el permiso (ADR-101, opción C).
    */
   arbEligibility: (engagement: OfficeEngagement) => ArbDecisionEligibility;
+  /** True when the role may sign charters (`charter:approve`). */
+  canApproveCharters: boolean;
+  /** Whether the signed-in user may approve **this** charter: not their own (R-02). */
+  charterEligibility: (engagement: OfficeEngagement) => CharterApprovalEligibility;
 
   loadEngagements: (projectId: string) => Promise<void>;
   getEngagement: (engagementId: string) => OfficeEngagement | undefined;
@@ -149,11 +161,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const { user, profile, isLoading: authLoading } = useAuth();
 
   const [engagements, setEngagements] = useState<OfficeEngagement[]>([]);
-  const [arbInboxSettled, setArbInboxSettled] = useState(false);
   const [runningEngagementIds, setRunningEngagementIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const loadedProjectIds = useRef(new Set<string>());
-  const loadedArbEngagementIds = useRef(new Set<string>());
   const abortControllers = useRef(new Map<string, AbortController>());
 
   // The runner reads the project fresh on every task: artifacts produced by
@@ -195,6 +203,13 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }), [user, profile]);
 
   const canApprove = canActAsArb(actor);
+
+  const canApproveCharters = useMemo(() => can(actor, 'charter:approve'), [actor]);
+
+  const charterEligibility = useCallback(
+    (engagement: OfficeEngagement) => describeCharterApprovalEligibility(engagement, actor),
+    [actor],
+  );
 
   const arbEligibility = useCallback(
     (engagement: OfficeEngagement) => describeArbDecisionEligibility(engagement, actor),
@@ -245,57 +260,10 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return result;
   }, [upsert]);
 
-  const loadEngagements = useCallback(async (projectId: string) => {
-    if (loadedProjectIds.current.has(projectId)) return;
-    loadedProjectIds.current.add(projectId);
-    setIsLoading(true);
-    try {
-      const loaded = await officeEngagementRepository.list(projectId);
-      commit([
-        ...engagementsRef.current.filter((item) => item.projectId !== projectId),
-        ...loaded,
-      ].sort(byRecency));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [commit]);
-
-  // La opción C de ADR-101 necesita una bandeja independiente del portafolio:
-  // los revisores descubren encargos ajenos sin convertir sus proyectos en
-  // proyectos propios. Al perder el permiso se retiran esos snapshots.
-  useEffect(() => {
-    let cancelled = false;
-    if (!canApprove) {
-      const ids = loadedArbEngagementIds.current;
-      if (ids.size > 0) {
-        commit(engagementsRef.current.filter((item) => !ids.has(item.id)));
-        ids.clear();
-      }
-      return undefined;
-    }
-    setIsLoading(true);
-    void officeEngagementRepository.listForArb()
-      .then((loaded) => {
-        if (cancelled) return;
-        const previousIds = loadedArbEngagementIds.current;
-        loadedArbEngagementIds.current = new Set(loaded.map((item) => item.id));
-        commit([
-          ...engagementsRef.current.filter((item) => !previousIds.has(item.id)),
-          ...loaded,
-        ].sort(byRecency));
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setIsLoading(false);
-        setArbInboxSettled(true);
-      });
-    return () => { cancelled = true; };
-  }, [canApprove, commit]);
-
-  const isResolving = authLoading
-    || isLoading
-    || (canApprove && !arbInboxSettled)
-    || projects.some((project) => !loadedProjectIds.current.has(project.id));
+  const projectIds = useMemo(() => projects.map((project) => project.id), [projects]);
+  const { isLoading, isResolving, loadError, loadEngagements, retryLoad } = useEngagementLoading({
+    repository: officeEngagementRepository, projectIds, canApprove, canApproveCharters, authLoading, engagementsRef, commit,
+  });
 
   const getEngagement = useCallback(
     (engagementId: string) => engagements.find((item) => item.id === engagementId),
@@ -444,8 +412,12 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     runningEngagementIds,
     isLoading,
     isResolving,
+    loadError,
+    retryLoad,
     canApprove,
     arbEligibility,
+    canApproveCharters,
+    charterEligibility,
     loadEngagements,
     getEngagement,
     listEngagementsForProject,
@@ -457,7 +429,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     decideEngagement,
     deleteEngagement,
   }), [
-    engagements, runningEngagementIds, isLoading, isResolving, canApprove, arbEligibility,
+    engagements, runningEngagementIds, isLoading, isResolving, loadError, retryLoad, canApprove, arbEligibility, canApproveCharters, charterEligibility,
     loadEngagements, getEngagement, listEngagementsForProject,
     createEngagement, approveCharter, runEngagementNow, cancelRun,
     evaluateGates, decideEngagement, deleteEngagement,

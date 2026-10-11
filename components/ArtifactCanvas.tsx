@@ -477,7 +477,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
   return (
     <div className="flex flex-col h-full w-full relative bg-white dark:bg-gray-950 min-h-0">
       <ArtifactTopToolbar
-        projectName={project.name}
+        projectName={project.name} publicationPackages={project.publicationPackages}
         artifact={artifact}
         viewMode={viewMode}
         availableViews={capabilities.availableViews as ArtifactViewMode[]}

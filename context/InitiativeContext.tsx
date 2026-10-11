@@ -21,6 +21,8 @@ import React, {
   type ReactNode,
 } from 'react';
 import { useAuth } from './AuthContext';
+import { errorMessageOf } from '../lib/errorMessage';
+import { observabilityService } from '../services/observability';
 import {
   createBusinessInitiative,
   deleteInitiative as deleteInitiativeRemote,
@@ -50,6 +52,8 @@ export interface InitiativeOperationResult {
 interface InitiativeContextType {
   initiatives: BusinessInitiative[];
   isLoading: boolean;
+  /** Why the last read failed, or `null` (13.4). An empty list is only shown when the read succeeded. */
+  loadError: string | null;
   /** Codes already in use — the wizard needs them to allocate the next one. */
   usedCodes: string[];
   reload: () => Promise<void>;
@@ -79,6 +83,7 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
   const { user } = useAuth();
   const [initiatives, setInitiatives] = useState<BusinessInitiative[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   /**
    * Operations read from here, never from the `initiatives` state closure.
@@ -107,8 +112,19 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const reload = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       commit(await listInitiatives(userId));
+    } catch (error) {
+      setLoadError(errorMessageOf(error, 'No se pudieron leer las iniciativas.'));
+      observabilityService.reportError(error, {
+        title: 'No se pudieron cargar las iniciativas',
+        source: 'operation',
+        severity: 'error',
+        recoverable: true,
+        userVisible: true,
+        operationName: 'initiatives.load',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -211,6 +227,7 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
   const value = useMemo<InitiativeContextType>(() => ({
     initiatives,
     isLoading,
+    loadError,
     usedCodes,
     reload,
     getInitiative,
@@ -219,7 +236,7 @@ export const InitiativeProvider: React.FC<{ children: ReactNode }> = ({ children
     runInitiativeCommand,
     deleteInitiative,
   }), [
-    initiatives, isLoading, usedCodes, reload, getInitiative,
+    initiatives, isLoading, loadError, usedCodes, reload, getInitiative,
     getByCode, createInitiative, runInitiativeCommand, deleteInitiative,
   ]);
 

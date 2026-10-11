@@ -23,7 +23,8 @@ import { LayoutDashboard, ListFilter } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import ProjectCreationStatus from '../components/ProjectCreationStatus';
 import ArtifactSelectionStep from '../components/ArtifactSelectionStep';
-import { Button, EmptyState, Input, Tab, TabList, TabPanel, Tabs, cn } from '../components/ui';
+import { Button, EmptyState, Input, PageSkeleton, Tab, TabList, TabPanel, Tabs, cn } from '../components/ui';
+import { ScreenLoadError } from '../components/ScreenLoadError';
 import { useInitiatives } from '../context/InitiativeContext';
 import { useOffice } from '../context/OfficeContext';
 import { useToast } from '../context/ToastContext';
@@ -281,9 +282,9 @@ const CREATION_INTENT: Record<string, string> = {
 };
 
 const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
-  const { projects, deleteProject, runProjectCommand, t, settings } = useAppContext();
+  const { projects, deleteProject, runProjectCommand, t, settings, isLoading, loadError, reload } = useAppContext();
   const { initiatives } = useInitiatives();
-  const { engagements, loadEngagements, createEngagement, approveCharter, runEngagementNow } = useOffice();
+  const { engagements, loadEngagements, createEngagement } = useOffice();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -412,17 +413,6 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
     return result.engagement;
   }, [createEngagement, addToast, t]);
 
-  const handleApproveAndRun = useCallback(async (engagementId: string) => {
-    const approved = await approveCharter(engagementId);
-    if (!approved.ok) {
-      addToast(approved.reason ?? t("projectHub.approveFailed"), 'error');
-      return;
-    }
-    addToast(t("projectHub.charterApproved"), 'success');
-    const run = await runEngagementNow(engagementId);
-    addToast(run.reason ?? t("projectHub.runFinished"), run.ok ? 'info' : 'warning');
-    navigate('/office');
-  }, [approveCharter, runEngagementNow, addToast, navigate, t]);
 
   /**
    * Creating an attention always asks for its initiative first. Talking to an
@@ -642,7 +632,11 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                 </Button>
             </header>
 
-            {projects.length === 0 ? (
+            {isLoading ? (
+                <PageSkeleton label={t('load.loadingProjects')} header={false} tiles={4} panels={2} />
+            ) : loadError ? (
+                <ScreenLoadError subject={t('load.subject.projects')} error={loadError} onRetry={reload} />
+            ) : projects.length === 0 ? (
                 <EmptyState
                     flavor="ai"
                     icon={<FolderOpenIcon className="h-7 w-7" />}
@@ -880,7 +874,6 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
         onCreateAttention={() => { setIntakeProjectId(null); startCreation({ kind: 'chat', purpose: 'guided-creation' }); }}
         onCreateInitiative={() => navigate('/initiatives')}
         onPropose={handleProposeEngagement}
-        onApproveAndRun={handleApproveAndRun}
         onClose={() => setIntakeProjectId(null)}
       /></React.Suspense>}
     </div>

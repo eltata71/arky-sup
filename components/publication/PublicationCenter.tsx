@@ -1,10 +1,11 @@
-import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { XMarkIcon } from '../Icons';
 import { Badge, Button, Tabs, TabList, Tab, TabPanel } from '../ui';
+import { CelebrateOnce } from '../ui/micro';
+import { useUiText } from '../../hooks/useUiText';
 import {
   SYSTEM_PUBLICATION_ACTOR,
   listPublicationProfiles,
@@ -59,7 +60,6 @@ interface PublicationCenterProps {
  * focus rings), dark-mode aware and degrades gracefully on every error.
  */
 export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, onClose, projectId }) => {
-  const t = useUiTranslation();
   const { getProject, savePublicationPackages, getArchitectureGraphFreshness } = useAppContext();
   const { user, profile } = useAuth();
   const containerRef = useFocusTrap<HTMLDivElement>(isOpen);
@@ -69,6 +69,9 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
   const [recalcKey, setRecalcKey] = useState(0);
   const [feedback, setFeedback] = useState<{ tone: 'ok' | 'error'; message: string } | null>(null);
   const [manifest, setManifest] = useState<PublicationManifest | null>(null);
+  // 13.5 «celebrar una vez»: set only by a publish that succeeded here, never by opening a published package.
+  const [publishedNow, setPublishedNow] = useState<string | null>(null);
+  const t = useUiText();
   const [preflight, setPreflight] = useState<PublicationPreflightReport | null>(null);
   const [preflightOpen, setPreflightOpen] = useState(false);
   const [lastBatch, setLastBatch] = useState<PublicationExportBatchResult | null>(null);
@@ -171,6 +174,7 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
     });
     setManifest(generated);
     applyTransition(result);
+    if (result.ok && result.package.status === 'published') setPublishedNow(result.package.id);
   }, [projectInput, selectedPackage, actor, applyTransition]);
 
   const handleExport = useCallback(async (jobs: PublicationExportJob[]) => {
@@ -264,6 +268,7 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
                   {feedback.message}
                 </div>
               )}
+              {publishedNow && <CelebrateOnce id={publishedNow} active message={t('micro.packagePublished')} />}
 
               {!selectedPackage || !evaluation ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">

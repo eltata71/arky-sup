@@ -14,7 +14,7 @@ const decidedEngagements: unknown[] = [];
 type Outcome = { status: string; success: boolean; operationId: string; target: string; message?: string };
 
 /** Lo que devolverá la siguiente escritura. Por defecto, éxito. */
-const nextOutcome: { save: Outcome | null; arb: Outcome | null; remove: Outcome | null } = {
+const nextOutcome: { approve?: Outcome | null; save: Outcome | null; arb: Outcome | null; remove: Outcome | null } = {
   save: null, arb: null, remove: null,
 };
 const ok = (data?: unknown): Outcome & { data?: unknown } => ({
@@ -33,6 +33,8 @@ vi.mock('../../services/architectureOffice/infrastructure/OfficeEngagementReposi
     officeEngagementRepository: {
       list: vi.fn(async () => seededEngagements),
       listForArb: vi.fn(async () => []),
+      listForCharterApproval: vi.fn(async () => []),
+      approveCharter: vi.fn(async () => nextOutcome.approve ?? ok()),
       save: vi.fn(async (engagement: unknown) => {
         savedEngagements.push(engagement);
         return nextOutcome.save ?? ok(engagement);
@@ -53,7 +55,7 @@ vi.mock('../../services/ai/generation/assistant/projectChat', async (importOrigi
   generateProjectChatReply: vi.fn(async () => { throw new Error('sin proveedor de IA'); }),
 }));
 
-const mockAuth = { user: { uid: 'u1', email: 'ana@example.com' }, profile: { role: 'admin', displayName: 'Ana' } };
+const mockAuth: { user: { uid: string; email: string }; profile: { role: string; displayName: string } } = { user: { uid: 'u1', email: 'ana@example.com' }, profile: { role: 'admin', displayName: 'Ana' } };
 vi.mock('../../context/AuthContext', () => ({
   useAuth: () => mockAuth,
 }));
@@ -118,6 +120,7 @@ beforeAll(async () => {
 
 describe('OfficeContext', () => {
   let office: ReturnType<typeof useOffice>;
+  let rerenderOffice: (ui: React.ReactElement) => void;
 
   beforeEach(() => {
     savedEngagements.length = 0;
@@ -126,12 +129,26 @@ describe('OfficeContext', () => {
     nextOutcome.save = null;
     nextOutcome.arb = null;
     nextOutcome.remove = null;
-    render(
+    mockAuth.user = { uid: 'u1', email: 'ana@example.com' };
+    mockAuth.profile = { role: 'admin', displayName: 'Ana' };
+    nextOutcome.approve = null;
+    ({ rerender: rerenderOffice } = render(
+      <OfficeProvider>
+        <Harness onReady={(value) => { office = value; }} />
+      </OfficeProvider>,
+    ));
+  });
+
+  /** 14.1: el charter lo firma otra persona con permiso, nunca su autor. */
+  const switchToApprover = () => {
+    mockAuth.user = { uid: 'u2', email: 'bea@example.com' };
+    mockAuth.profile = { role: 'admin', displayName: 'Bea' };
+    rerenderOffice(
       <OfficeProvider>
         <Harness onReady={(value) => { office = value; }} />
       </OfficeProvider>,
     );
-  });
+  };
 
   it('recognises an admin as a board member', () => {
     expect(screen.getByTestId('can-approve')).toHaveTextContent('true');
@@ -196,9 +213,14 @@ describe('OfficeContext', () => {
     });
     const id = office.engagements[0].id;
 
+    let own: Awaited<ReturnType<typeof office.approveCharter>>;
+    await act(async () => { own = await office.approveCharter(id); });
+    expect(own!.ok).toBe(false);
+
+    switchToApprover();
     await act(async () => { await office.approveCharter(id); });
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('in-progress'));
-    expect(office.engagements[0].charter.approvedBy?.name).toBe('Ana');
+    expect(office.engagements[0].charter.approvedBy?.name).toBe('Bea');
   });
 
   it('approves and runs in the same invocation without a stale snapshot', async () => {
@@ -214,6 +236,7 @@ describe('OfficeContext', () => {
       });
     });
     const id = office.engagements[0].id;
+    switchToApprover();
     const { approveCharter, runEngagementNow } = office;
 
     let result: Awaited<ReturnType<typeof runEngagementNow>>;

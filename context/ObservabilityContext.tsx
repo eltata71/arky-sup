@@ -21,6 +21,13 @@ interface ObservabilityContextType {
   reportError: (error: unknown, input?: ObservabilityErrorInput) => ObservabilityEvent;
   trackEvent: typeof observabilityService.trackEvent;
   clear: () => void;
+  /**
+   * Whether the global centre is open. It lives here, not in the centre, so a
+   * screen whose load failed can offer «Ver diagnóstico» and open it (13.4).
+   */
+  centerOpen: boolean;
+  openCenter: () => void;
+  closeCenter: () => void;
 }
 
 const ObservabilityContext = createContext<ObservabilityContextType | undefined>(undefined);
@@ -64,6 +71,9 @@ export const ObservabilityProvider: React.FC<{ children: ReactNode }> = ({ child
   ), []);
 
   const clear = useCallback(() => observabilityService.clear(), []);
+  const [centerOpen, setCenterOpen] = useState(false);
+  const openCenter = useCallback(() => setCenterOpen(true), []);
+  const closeCenter = useCallback(() => setCenterOpen(false), []);
 
   const value = useMemo<ObservabilityContextType>(() => ({
     events,
@@ -71,7 +81,10 @@ export const ObservabilityProvider: React.FC<{ children: ReactNode }> = ({ child
     reportError,
     trackEvent: observabilityService.trackEvent.bind(observabilityService),
     clear,
-  }), [clear, events, reportError]);
+    centerOpen,
+    openCenter,
+    closeCenter,
+  }), [clear, events, reportError, centerOpen, openCenter, closeCenter]);
 
   return (
     <ObservabilityContext.Provider value={value}>
@@ -87,3 +100,6 @@ export const useObservability = (): ObservabilityContextType => {
   }
   return context;
 };
+
+/** For a component that can also render outside the provider (a test, a preview). */
+export const useOptionalObservability = (): ObservabilityContextType | undefined => useContext(ObservabilityContext);

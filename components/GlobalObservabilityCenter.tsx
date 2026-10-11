@@ -1,5 +1,5 @@
 import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Clipboard, ShieldCheck, X } from 'lucide-react';
 import { useObservability } from '../context/ObservabilityContext';
 import type { ObservabilityEvent, ObservabilitySeverity } from '../services/observability';
@@ -37,10 +37,9 @@ const buildDiagnostics = (events: ObservabilityEvent[]): string => events.map((e
 ].filter((line): line is string => Boolean(line)).join('\n')).join('\n\n');
 
 export const GlobalObservabilityCenter: React.FC<GlobalObservabilityCenterProps> = ({ project }) => {
-  const translateConfig = useUiTranslation();
   const t = useUiTranslation();
-  const { events, summary, clear } = useObservability();
-  const [open, setOpen] = useState(false);
+  const translateConfig = t;
+  const { events, summary, clear, centerOpen: open, openCenter, closeCenter } = useObservability();
   const latestVisibleEvents = useMemo(() => events.filter((event) => event.userVisible).slice(0, 12), [events]);
   const lastEvent = summary.lastEvent;
   const officeAssessment = useMemo(
@@ -67,7 +66,7 @@ export const GlobalObservabilityCenter: React.FC<GlobalObservabilityCenterProps>
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openCenter}
         className={`fixed bottom-20 right-4 z-[180] flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold shadow-pop backdrop-blur transition hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 md:bottom-4 ${statusConfig.classes}`}
         aria-label={t("ui.abrir-centro-de-monitoreo-gl.142e9e")}
       >
@@ -86,7 +85,7 @@ export const GlobalObservabilityCenter: React.FC<GlobalObservabilityCenterProps>
                   <h2 id="observability-title" className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{t("ui.estado-operativo-de-arky.4ab872")}</h2>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{t("ui.monitoreo-general-de-render.866bd9")}</p>
                 </div>
-                <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-white" aria-label={t("ui.cerrar-monitoreo.0b085c")}>
+                <button type="button" onClick={closeCenter} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-white" aria-label={t("ui.cerrar-monitoreo.0b085c")}>
                   <X className="h-5 w-5" />
                 </button>
               </div>

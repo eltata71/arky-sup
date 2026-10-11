@@ -10,3 +10,5 @@ export { PortfolioHealthHero } from './PortfolioHealthHero';
 export type { PortfolioHealthHeroProps } from './PortfolioHealthHero';
 export { AttentionCenter } from './AttentionCenter';
 export type { AttentionCenterProps } from './AttentionCenter';
+export { ArtifactLifecyclePanel } from './ArtifactLifecyclePanel';
+export type { ArtifactLifecyclePanelProps } from './ArtifactLifecyclePanel';

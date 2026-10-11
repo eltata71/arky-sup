@@ -6,6 +6,7 @@ import type { Artifact } from '../../lib/artifacts';
 import { type ArtifactCommentAuthor, type ArtifactReviewStatus, artifactReviewService } from '../../services/review';
 import { OutlineSection } from '../../utils/markdownOutline';
 import { ArtifactStatusBadge, deriveArtifactStatus } from './ArtifactStatusBadge';
+import { ArtifactLifecycleStage, ArtifactLifecycleTimeline } from './ArtifactLifecycleTimeline';
 import { ContextGraphPanel } from '../ContextGraphPanel';
 import { ArchitectureKnowledgeGraphPanel } from '../ArchitectureKnowledgeGraphPanel';
 import { CommentThread } from './CommentThread';
@@ -47,7 +48,7 @@ const TRACE_STATUS_TONE = {
     failed: 'danger',
 } as const;
 
-const StatusTab: React.FC<{ artifact: Artifact }> = ({ artifact }) => {
+const StatusTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artifact, projectId }) => {
   const t = useUiTranslation();
     const trace = artifact.generationTrace;
     const status = deriveArtifactStatus(artifact);
@@ -63,9 +64,7 @@ const StatusTab: React.FC<{ artifact: Artifact }> = ({ artifact }) => {
                         {t("ui.traza.0521e7")} {trace.status}
                     </Badge>
                 )}
-                {artifact.reviewStatus && (
-                    <Badge tone="gray" size="sm">{t("ui.revision.a2b41b")} {artifact.reviewStatus}</Badge>
-                )}
+                <ArtifactLifecycleStage artifact={artifact} projectId={projectId} />
             </div>
 
             {errorCount > 0 && (
@@ -433,7 +432,7 @@ export const ArtifactInspectorPanel: React.FC<ArtifactInspectorPanelProps> = ({
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4">
                     <TabPanel value="estado">
-                        <StatusTab artifact={artifact} />
+                        <StatusTab artifact={artifact} projectId={projectId} />
                     </TabPanel>
                     {hasDocument && (
                         <TabPanel value="secciones">
@@ -490,7 +489,8 @@ export const ArtifactInspectorPanel: React.FC<ArtifactInspectorPanelProps> = ({
                             defaultAnchor={{ kind: 'artifact' }}
                         />
                     </TabPanel>
-                    <TabPanel value="revision">
+                    <TabPanel value="revision" className="space-y-5">
+                        <ArtifactLifecycleTimeline artifact={artifact} projectId={projectId} />
                         <ReviewPanel
                             artifactId={artifact.id}
                             projectId={projectId}

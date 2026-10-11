@@ -1,4 +1,3 @@
-import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * EngagementRoom — the working surface of a single engagement.
  *
@@ -21,6 +20,7 @@ import { useInitiatives } from '../context/InitiativeContext';
 import { useToast } from '../context/ToastContext';
 import { useAriaAnnouncer } from '../hooks/useAriaAnnouncer';
 import { Alert, Badge, Button, Card, CardTitle, Spinner, StatTile, cn } from '../components/ui';
+import { CompletionMark } from '../components/ui/micro';
 import { EngagementRoomFallback } from '../components/architectureOffice/EngagementRoomFallback';
 import { FilePlus2, Layers, ListChecks, Play, ScrollText, Sparkles, Square } from 'lucide-react';
 import { EngagementTaskBoard } from '../components/architectureOffice/EngagementTaskBoard';
@@ -41,7 +41,7 @@ import {
   GATE_STATUS_LABELS,
   GATE_STATUS_TONES,
 } from '../components/architectureOffice/officeUiLabels';
-import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/agents';
 import { AssistantDock } from '../components/architectureOffice/AssistantDock';
 import { AssistantLauncher } from '../components/architectureOffice/AssistantLauncher';
 import type { CoordinationScope } from '../services/architectureOffice';
@@ -49,7 +49,7 @@ import {
   buildOfficePortfolio,
   healthBucketOf,
   UNASSIGNED_PROGRAM_NAME,
-} from '../services/architectureOffice/domain/officePortfolio';
+} from '../services/architectureOffice/portfolio';
 import {
   summarizeEngagementProgress,
   type OfficeArbVerdict,
@@ -64,16 +64,16 @@ const SECTIONS = [
 ] as const;
 
 const EngagementRoom: React.FC = () => {
-  const translateConfig = useUiTranslation();
-  const t = useUiTranslation();
   const { engagementId } = useParams<{ engagementId: string }>();
   const navigate = useNavigate();
-  const { projects, settings, isLoading: projectsLoading } = useAppContext();
+  const { projects, settings, isLoading: projectsLoading, t } = useAppContext();
+  const translateConfig = t;
   const {
     engagements,
     isResolving,
     runningEngagementIds,
     arbEligibility,
+    charterEligibility,
     loadEngagements,
     approveCharter,
     runEngagementNow,
@@ -247,6 +247,7 @@ const EngagementRoom: React.FC = () => {
 
   const progress = summarizeEngagementProgress(engagement.tasks);
   const charterApproved = Boolean(engagement.charter.approvedAt);
+  const charterAccess = charterEligibility(engagement);
   const bucket = healthBucketOf(engagement.status);
   const visual = OFFICE_HEALTH_VISUALS[bucket];
   const StatusGlyph = ENGAGEMENT_STATUS_ICONS[engagement.status];
@@ -316,11 +317,18 @@ const EngagementRoom: React.FC = () => {
                 <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
                 {t("projectHub.architectureTeam")}
               </Button>
-              {!charterApproved && (
+              {!charterApproved && charterAccess.allowed && (
                 <Button variant="primary" size="sm" onClick={handleApprove} loading={busy}>
                   <ScrollText className="mr-1.5 h-4 w-4" aria-hidden />
                   {t("ui.aprobar-charter.62bfd1")}
                 </Button>
+              )}
+              {!charterApproved && !charterAccess.allowed && (
+                <span className="text-xs text-gray-600 dark:text-gray-300">
+                  {charterAccess.reason === 'own-engagement'
+                    ? t('uiDynamic.charterOtherApprover')
+                    : t('uiDynamic.charterRoleCannotApprove')}
+                </span>
               )}
               {charterApproved && !running && engagement.status !== 'delivered' && (
                 <Button variant="primary" size="sm" onClick={handleRun}>
@@ -407,6 +415,7 @@ const EngagementRoom: React.FC = () => {
                   <Badge tone="gray" size="xs" outline>
                     {engagement.charter.provenance === 'ai-refined' ? t("uiExpr.refinado-con-ia.004086") : t("uiExpr.determinista.e0f722")}
                   </Badge>
+                  <CompletionMark done={charterApproved} label={t('micro.charterApproved')} className="h-5 w-5" />
                   {engagement.charter.approvedBy && (
                     <Badge tone="success" size="xs">
                       {t("ui.aprobado-por.7e7eb8")} {engagement.charter.approvedBy.name}

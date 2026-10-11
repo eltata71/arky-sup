@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import type { PresentationDeck } from '../../../services/presentation';
@@ -78,7 +78,9 @@ export const DeckPresenter: React.FC<DeckPresenterProps> = ({ deck, index, onInd
     if (slide) setStatus(t('deck.slideStatus', { current: String(index + 1), total: String(total), title: slide.title }));
   }, [index, total, slide, t]);
 
-  useEffect(() => {
+  // Layout effect, not a passive one: the stage is painted the moment the
+  // keys must work, and a press between paint and a deferred effect was lost.
+  useLayoutEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
       const key = event.key;

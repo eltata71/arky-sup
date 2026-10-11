@@ -1,4 +1,3 @@
-import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * OfficePage — the front door of the product.
  *
@@ -22,7 +21,8 @@ import { useAppContext } from '../context/AppContext';
 import { useOffice } from '../context/OfficeContext';
 import { useInitiatives } from '../context/InitiativeContext';
 import { useToast } from '../context/ToastContext';
-import { Button, PageSkeleton, Tab, TabList, TabPanel, Tabs } from '../components/ui';
+import { Button, EmptyState, PageSkeleton, Tab, TabList, TabPanel, Tabs } from '../components/ui';
+import { ScreenLoadError } from '../components/ScreenLoadError';
 import { Activity, LayoutDashboard, LayoutGrid, Network, Plus, Users } from 'lucide-react';
 import {
   EngagementIntakeWizard,
@@ -37,26 +37,25 @@ import {
 } from '../components/architectureOffice/dashboard';
 import { BrokenLinksPanel, PortfolioCanvas, PortfolioSearchBox } from '../components/navigation';
 import { resolvePortfolioGraph, type PortfolioSearchHit } from '../services/portfolioGraph';
-import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
-import { buildOfficePortfolio } from '../services/architectureOffice/domain/officePortfolio';
+import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/agents';
+import { buildOfficePortfolio } from '../services/architectureOffice/portfolio';
 
 type OfficeTabId = 'resumen' | 'portafolio' | 'canvas' | 'especialistas';
 
 const DECISION_QUEUE_ID = 'oficina-decisiones';
 
 const OfficePage: React.FC = () => {
-  const t = useUiTranslation();
   const navigate = useNavigate();
-  const { projects, isLoading: projectsLoading } = useAppContext();
+  const { projects, isLoading: projectsLoading, loadError: projectsError, reload: reloadProjects, t } = useAppContext();
   const {
     engagements,
     runningEngagementIds,
     isLoading,
+    loadError: officeError,
+    retryLoad,
     canApprove,
     loadEngagements,
     createEngagement,
-    approveCharter,
-    runEngagementNow,
   } = useOffice();
   const { addToast } = useToast();
   const { initiatives } = useInitiatives();
@@ -94,16 +93,6 @@ const OfficePage: React.FC = () => {
     return result.engagement ?? null;
   }, [createEngagement, addToast, t]);
 
-  const handleApproveAndRun = useCallback(async (engagementId: string) => {
-    const approved = await approveCharter(engagementId);
-    if (!approved.ok) {
-      addToast(approved.reason ?? t("projectHub.approveFailed"), 'error');
-      return;
-    }
-    addToast(t("projectHub.charterApproved"), 'success');
-    const run = await runEngagementNow(engagementId);
-    addToast(run.reason ?? t("projectHub.runFinished"), run.ok ? 'info' : 'warning');
-  }, [approveCharter, runEngagementNow, addToast, t]);
 
   const openIntake = useCallback(() => setIntakeOpen(true), []);
   const openEngagement = useCallback(
@@ -139,6 +128,7 @@ const OfficePage: React.FC = () => {
     );
   }
 
+  const loadError = projectsError ?? officeError;
   const programCount = portfolio.programs.filter((program) => !program.isUnassigned).length;
 
   return (
@@ -163,6 +153,32 @@ const OfficePage: React.FC = () => {
           </Button>
         </header>
 
+        {loadError ? (
+          // 13.4: a failed read is not an Office with no work.
+          <ScreenLoadError
+            subject={t('load.subject.deliverables')}
+            error={loadError}
+            onRetry={() => { if (projectsError) reloadProjects(); if (officeError) retryLoad(); }}
+          />
+        ) : portfolio.rollup.engagements === 0 ? (
+          // 13.4: the empty Office says the next step of the hierarchy, not a row of zeros.
+          projects.length === 0 ? (
+            <EmptyState
+              flavor="ai"
+              title={t('office.empty.noProjectsTitle')}
+              description={t('office.empty.noProjectsHint')}
+              actions={<Button variant="primary" onClick={() => navigate('/projects')}>{t('office.empty.openProjects')}</Button>}
+            />
+          ) : (
+            <EmptyState
+              flavor="ai"
+              title={t('office.empty.title')}
+              description={t('office.empty.hint')}
+              actions={<Button variant="primary" onClick={openIntake}>{t('office.empty.request')}</Button>}
+            />
+          )
+        ) : (
+        <>
         <PortfolioSearchBox graph={graph} onSelect={openSearchHit} />
 
         <OfficeKpiRow
@@ -242,6 +258,8 @@ const OfficePage: React.FC = () => {
             <SpecialistLoadPanel specialists={portfolio.specialists} />
           </TabPanel>
         </Tabs>
+        </>
+        )}
       </div>
 
       <EngagementIntakeWizard
@@ -255,7 +273,6 @@ const OfficePage: React.FC = () => {
         onCreateAttention={() => navigate('/projects')}
         onCreateInitiative={() => navigate('/initiatives')}
         onPropose={handlePropose}
-        onApproveAndRun={handleApproveAndRun}
         onClose={() => setIntakeOpen(false)}
       />
     </div>

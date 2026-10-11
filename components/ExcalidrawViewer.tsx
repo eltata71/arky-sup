@@ -1,10 +1,22 @@
 import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { Suspense, useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ExternalLink, Download, RefreshCw, AlertTriangle, Loader2, Layers } from 'lucide-react';
+import { ExternalLink, Download, RefreshCw, AlertTriangle, Layers } from 'lucide-react';
 import { inferPalette } from '../lib/diagramTokens';
 import { lazyWithRetry } from './routing/lazyWithRetry';
 import { MOTION } from '../lib/designTokens';
+import { Skeleton } from './ui';
+import { useUiText } from '../hooks/useUiText';
+
+/** 13.4: a whiteboard is a known shape — the surface, not a spinner, while it loads. */
+const CanvasSkeleton: React.FC = () => {
+    const t = useUiText();
+    return (
+        <div role="status" aria-busy="true" aria-label={t('load.whiteboard')} className="h-full w-full">
+            <Skeleton className="h-full w-full rounded-xl" />
+        </div>
+    );
+};
 
 // Lazy-load Excalidraw to keep the initial bundle small. Routed through
 // `lazyWithRetry` so a transient failure loading this heavy ESM chunk
@@ -363,18 +375,14 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
                             </motion.button>
                         </motion.div>
                     ) : elements.length === 0 ? (
-                        <motion.div key="empty" className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-950"
+                        <motion.div key="empty" className="absolute inset-0 bg-white p-4 dark:bg-gray-950"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                            <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+                            <CanvasSkeleton />
                         </motion.div>
                     ) : (
                         <motion.div key="canvas" className="absolute inset-0"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: MOTION.duration.slow }}>
-                            <Suspense fallback={
-                                <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-950">
-                                    <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
-                                </div>
-                            }>
+                            <Suspense fallback={<div className="absolute inset-0 bg-white p-4 dark:bg-gray-950"><CanvasSkeleton /></div>}>
                                 <ExcalidrawCanvas elements={elements} isDark={isDark} onElementCountChange={setElementCount} />
                             </Suspense>
                         </motion.div>

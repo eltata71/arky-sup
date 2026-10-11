@@ -797,17 +797,17 @@ presupuesto que consumirán las olas 11 y 12.
 | 12.1 Partir los cinco ficheros grandes | Hecha · #178 | Los cinco tienen subcomponentes o hooks y un techo rebajado: ReactFlowCanvas 1 468, ProjectHub 976, MemoryCenterModal 584, CustomArtifactRequestModal 685 y CustomArtifactBriefWizard 455 líneas (`check:module-size`). Suite existente: 5 680 pruebas; build y presupuestos de bundle en verde. |
 | 12.2 Documento editorial | Hecha · #194 | |
 | 12.3 Zoom semántico C4 | Hecha · #196 | |
-| 12.4 Modo presentación | Pendiente | |
-| 12.5 Barras por intención | Pendiente | |
+| 12.4 Modo presentación | Hecha · #198 | |
+| 12.5 Barras por intención | Hecha · #199 | |
 | 13.0 axe y regresión visual | Hecha (#169) | axe y regresión visual en E2E con referencias medidas en CI. Cerró también un defecto real: el enlace profundo `?artifact=` no reintentaba la hidratación si el portafolio llegaba tras montar `Workspace` (`useProjectArtifacts` depende ahora de la llegada del proyecto) |
 | 13.1 Movimiento reducido | Hecha | `MotionConfig reducedMotion="user"` en la raíz, `MOTION` en `lib/designTokens.ts` como fuente única de duraciones y curvas, y un escáner que impide literales en `motion/react` |
-| 13.2 Idioma | Hecha en rama (R-16: B, tamaño L) | Diccionarios `es`/`en` con las mismas claves e inglés diferido; JSX estático, expresiones JSX y propiedades visibles de componentes con presupuesto AST 0. También se extrajeron avisos, errores, estados y etiquetas de configuración. Las 5.694 pruebas de Vitest pasan (606 archivos); TypeScript, lint y límites de módulos pasan. El escáner regex heredado conserva 23 coincidencias de sintaxis o marca fija. Publicación pendiente del flujo PR → `main` → CI. |
+| 13.2 Idioma | Hecha en rama (R-16: B, tamaño L) | Diccionarios `es`/`en` con las mismas claves e inglés diferido; JSX estático, expresiones JSX y propiedades visibles de componentes con presupuesto AST 0. También se extrajeron avisos, errores, estados y etiquetas de configuración. Integrada con `main`: 5.739 pruebas de Vitest pasan (611 archivos); TypeScript, lint, build y límites de módulos y bundle pasan. El escáner regex heredado conserva 23 coincidencias de sintaxis o marca fija. Publicación pendiente del flujo PR → `main` → CI. |
 | 13.3 Primitivas | Hecha | #187 |
-| 13.4 Estados vacío, carga y error | Pendiente | |
-| 13.5 Microinteracciones | Pendiente | |
-| 14.0 Ciclo de vida visible | Pendiente | |
-| 14.1 Separación de funciones | Pendiente (R-02) | |
-| 14.2 Trazabilidad | Pendiente | |
+| 13.4 Estados vacío, carga y error | Hecha · #202 | Los fallos de lectura dejan de mostrarse como portafolio vacío: «Reintentar» y «Ver diagnóstico» en las cinco pantallas principales; esqueletos donde se conoce la forma |
+| 13.5 Microinteracciones | Hecha · #204 | Vocabulario `MICRO` (aparecer, completar, reordenar, celebrar una vez) con su evento de dominio en `docs/microinteracciones.md`; nada en bucle salvo los indicadores de progreso |
+| 14.0 Ciclo de vida visible | Hecha · #206 | Etapa derivada (`lib/artifacts/artifactLifecycle.ts`) con la misma etiqueta en lienzo, ProjectHub y tablero; el tablero cuenta «sin medir» lo que `artifactIndex` no permite medir (añadir `reviewStatus` al índice requiere migración) |
+| 14.1 Separación de funciones | Hecha · #210 | R-02 cerrada: `api.approve_charter` exige `charter:approve` y un firmante distinto del autor; el aprobador recibe su bandeja por `load_charter_engagements`. Migración pendiente de aplicar en ArkyDB-US antes del despliegue. La parte «pedir cambios → tarea enlazada» queda fuera |
+| 14.2 Trazabilidad | Hecha · #209 | Pestaña «Cadena» del panel del grafo: `analyzeTraceabilityChains` (requisito sin decisión, decisión sin artefacto, relación rota, artefacto inexistente) y `explainEntity` («¿por qué existe?» / «¿qué rompe?»). La unión con KPI y resultados de la iniciativa queda fuera: exige un puerto con `portfolioGraph` y subir el fan-out del panel |
 | 14.3 Chat sin pérdida | Pendiente (R-03) | |
 
 ---

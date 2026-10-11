@@ -62,8 +62,6 @@ interface EngagementIntakeWizardProps {
   onCreateInitiative?: () => void;
   /** Proposes the charter. Resolves with the created engagement. */
   onPropose: (input: EngagementIntakeSubmit) => Promise<OfficeEngagement | null>;
-  /** Approves the charter and starts execution. */
-  onApproveAndRun: (engagementId: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -77,7 +75,6 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
   onCreateAttention,
   onCreateInitiative,
   onPropose,
-  onApproveAndRun,
   onClose,
 }) => {
   const t = useUiTranslation();
@@ -89,7 +86,6 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [engagement, setEngagement] = useState<OfficeEngagement | null>(null);
   const [destinationName, setDestinationName] = useState('');
-  const [starting, setStarting] = useState(false);
 
   const dialogRef = useFocusTrap<HTMLDivElement>(open);
 
@@ -122,7 +118,6 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
     setError(null);
     setEngagement(null);
     setDestinationName('');
-    setStarting(false);
   }, [initialProjectId]);
 
   const close = useCallback(() => {
@@ -179,18 +174,6 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
       setStep('brief');
     }
   }, [title, brief, initiativeIds, initiatives, projectChoice, projects, onPropose, t]);
-
-  const approve = useCallback(async () => {
-    if (!engagement) return;
-    setStarting(true);
-    try {
-      await onApproveAndRun(engagement.id);
-      close();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-      setStarting(false);
-    }
-  }, [engagement, onApproveAndRun, close]);
 
   if (!open) return null;
 
@@ -395,12 +378,12 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
             <div className="space-y-5">
               <EngagementCharterReview engagement={engagement} />
 
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                {t('uiDynamic.charterPendingApproval')}
+              </p>
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={close} disabled={starting}>
-                  {t("ui.guardar-sin-ejecutar.fe7bb8")}
-                </Button>
-                <Button variant="primary" onClick={approve} loading={starting}>
-                  {t("ui.aprobar-charter-y-ejecutar.870a97")}
+                <Button variant="primary" onClick={close}>
+                  {t('uiDynamic.submitForApproval')}
                 </Button>
               </div>
             </div>

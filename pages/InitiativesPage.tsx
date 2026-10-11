@@ -1,4 +1,3 @@
-import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * InitiativesPage — management of business initiatives, the top of the
  * hierarchy.
@@ -19,6 +18,7 @@ import { useAppContext } from '../context/AppContext';
 import { useInitiatives } from '../context/InitiativeContext';
 import { useToast } from '../context/ToastContext';
 import { Button, EmptyState, Input, PageSkeleton, Tab, TabList, TabPanel, Tabs, cn } from '../components/ui';
+import { ScreenLoadError } from '../components/ScreenLoadError';
 import { LayoutDashboard, ListFilter, Plus, Search, Sparkles, SquarePen, Trash2 } from 'lucide-react';
 import {
   InitiativeCard,
@@ -41,12 +41,13 @@ const STATUS_FILTERS: (InitiativeStatus | 'all')[] = [
 ];
 
 const InitiativesPage: React.FC = () => {
-  const t = useUiTranslation();
   const navigate = useNavigate();
-  const { projects, settings } = useAppContext();
+  const { projects, settings, t } = useAppContext();
   const {
     initiatives,
     isLoading,
+    loadError,
+    reload,
     usedCodes,
     createInitiative,
     runInitiativeCommand,
@@ -172,7 +173,10 @@ const InitiativesPage: React.FC = () => {
           </Button>
         </header>
 
-        {initiatives.length === 0 ? (
+        {loadError ? (
+          // 13.4: a failed read is not «todavía no hay iniciativas».
+          <ScreenLoadError subject={t('load.subject.initiatives')} error={loadError} onRetry={reload} />
+        ) : initiatives.length === 0 ? (
           <EmptyState
             title={t("ui.todavia-no-hay-iniciativas-d.455737")}
             description={t("Registra la primera necesidad del negocio. El asistente propondrá su driver, objetivos, resultados e indicadores, y desde ahí podrás abrir las proyectos de arquitectura que la sirvan.")}

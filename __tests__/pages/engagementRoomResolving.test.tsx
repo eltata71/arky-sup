@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ isResolving: true, projectsLoading: false }));
 
 vi.mock('../../context/AppContext', () => ({
-  useAppContext: () => ({ projects: [], settings: { aiConfig: {} }, isLoading: state.projectsLoading }),
+  useAppContext: () => ({ projects: [], settings: { aiConfig: {} }, isLoading: state.projectsLoading, t: (key: string) => key }),
 }));
 vi.mock('../../context/OfficeContext', () => ({
   useOffice: () => ({

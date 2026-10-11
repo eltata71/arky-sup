@@ -721,6 +721,28 @@ export type Database = {
         Args: { p_action: Json; p_project_id: string }
         Returns: undefined
       }
+      approve_charter: {
+        Args: {
+          p_engagement_id: string
+          p_expected_revision: number
+          p_project_id: string
+        }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "office_engagements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_artifact: {
         Args: { p_artifact: Json; p_project_id: string }
         Returns: Json
@@ -853,6 +875,7 @@ export type Database = {
       list_project_aggregates: { Args: never; Returns: Json }
       list_user_profiles: { Args: never; Returns: Json }
       load_arb_engagements: { Args: never; Returns: Json }
+      load_charter_engagements: { Args: never; Returns: Json }
       load_chat_history: { Args: { p_project_id: string }; Returns: Json }
       load_context: { Args: never; Returns: Json }
       load_engagements: { Args: { p_project_id: string }; Returns: Json }

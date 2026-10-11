@@ -57,7 +57,7 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | # | Invariante | Autoridad | ¿Basta? | Desde |
 |---|---|---|---|---|
 | E-01 | Un encargo tiene título, atención e iniciativa | `TS` (`officeEngagementFactory`) + `RPC` (`save_engagement`: título, brief y proyecto; nace con un vínculo a iniciativa —id o código `NEG-AAAA-NNN`— y no lo pierde) + contrato `engagement_initiative_guard` | ✅ | deuda técnica, 2026-09-27 |
-| E-02 | **Nadie ejecuta un charter sin aprobar** | `TS` en el runner (`canRunEngagement`) + `RPC` (`save_engagement`: `in-progress` exige charter aprobado; la aprobación es inmutable y la firma la sesión) + contrato `charter_approval_guard` | ✅ cierra **H06** | fase 2, F6-08 |
+| E-02 | **Nadie ejecuta un charter sin aprobar** | `TS` en el runner (`canRunEngagement`) + `RPC` (`save_engagement`: `in-progress` exige charter aprobado; la aprobación es inmutable; desde 14.1 sólo entra por `approve_charter`, exige `charter:approve` y un firmante distinto del autor, y la firma la pone el servidor) + contrato `charter_approval_guard` | ✅ cierra **H06** | fase 2, F6-08 |
 | E-03 | El estado sigue transiciones legales | `RPC` (`office_engagement_transition_allowed`) | ✅ cierra **H02** (transiciones) | fase 2 |
 | E-04 | Un cambio de estado deja su rastro de auditoría | `TS` (`transitionEngagement`) + gate de pruebas | ⚠️ sólido en TS, invisible al servidor | — |
 | E-05 | Productor y revisor de un entregable son distintos | `TS` (planificador y enrutador) | ⚠️ | — |

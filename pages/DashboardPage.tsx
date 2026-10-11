@@ -1,4 +1,3 @@
-import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * DashboardPage — el centro de mando de la Oficina de Arquitectura.
  *
@@ -34,13 +33,15 @@ import { useAppContext } from '../context/AppContext';
 import { useInitiatives } from '../context/InitiativeContext';
 import { useOffice } from '../context/OfficeContext';
 import { Button, Card, EmptyState, PageSkeleton, SectionHeader, StatTile } from '../components/ui';
+import { ScreenLoadError } from '../components/ScreenLoadError';
 import { ArrowRight, CheckCheck, Gauge, Layers, PackageCheck } from 'lucide-react';
 import {
   BrokenLinksPanel,
   PortfolioCanvas,
   PortfolioSearchBox,
 } from '../components/navigation';
-import { AttentionCenter, PortfolioHealthHero } from '../components/dashboard';
+import { ArtifactLifecyclePanel, AttentionCenter, PortfolioHealthHero } from '../components/dashboard';
+import { countArtifactLifecycle } from '../lib/artifacts/artifactLifecycle';
 import { DecisionQueue } from '../components/architectureOffice/dashboard';
 import { usePortfolioCommandCenter } from '../hooks/usePortfolioCommandCenter';
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -63,12 +64,18 @@ const region = (index: number, reduced: boolean) => ({
 });
 
 const DashboardPage: React.FC = () => {
-  const t = useUiTranslation();
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
-  const { projects, isLoading: projectsLoading } = useAppContext();
-  const { initiatives, isLoading: initiativesLoading } = useInitiatives();
-  const { engagements, canApprove, loadEngagements } = useOffice();
+  const { projects, isLoading: projectsLoading, loadError: projectsError, reload: reloadProjects, t } = useAppContext();
+  const { initiatives, isLoading: initiativesLoading, loadError: initiativesError, reload: reloadInitiatives } = useInitiatives();
+  const { engagements, canApprove, loadEngagements, loadError: officeError, retryLoad } = useOffice();
+  // A failed read is not an empty portfolio (13.4): it gets its own state, and the retry repeats only what failed.
+  const loadError = projectsError ?? initiativesError ?? officeError;
+  const retryFailedReads = useCallback(() => {
+    if (projectsError) reloadProjects();
+    if (initiativesError) void reloadInitiatives();
+    if (officeError) retryLoad();
+  }, [projectsError, initiativesError, officeError, reloadProjects, reloadInitiatives, retryLoad]);
 
   const {
     graph,
@@ -97,6 +104,16 @@ const DashboardPage: React.FC = () => {
       <div className="min-h-[100dvh] bg-mesh-light px-4 py-6 pb-24 dark:bg-mesh-dark md:pb-8 md:pl-20 md:pr-8">
         <div className="mx-auto max-w-7xl">
           <PageSkeleton label={t("ui.cargando-el-centro-de-mando.d778bc")} hero tiles={4} panels={2} />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-[100dvh] bg-mesh-light px-4 py-6 pb-24 dark:bg-mesh-dark md:pb-8 md:pl-20 md:pr-8">
+        <div className="mx-auto max-w-7xl">
+          <ScreenLoadError subject={t('load.subject.portfolio')} error={loadError} onRetry={retryFailedReads} />
         </div>
       </div>
     );
@@ -255,6 +272,11 @@ const DashboardPage: React.FC = () => {
                   else navigate(`/initiatives/${issue.sourceId}`);
                 }}
               />
+            </motion.div>
+
+            {/* 6 · En qué etapa está cada artefacto (14.0): las mismas etiquetas que el lienzo y el hub. */}
+            <motion.div {...region(5, reducedMotion)}>
+              <ArtifactLifecyclePanel counts={countArtifactLifecycle(projects)} />
             </motion.div>
           </>
         )}

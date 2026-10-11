@@ -1,12 +1,13 @@
-import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { useEffect, useState } from 'react';
 import { useGenerationQueue } from '../../hooks/artifacts/useGenerationQueue';
 import { GenerationPreview } from './GenerationPreview';
 import { GENERATION_PHASE_COPY } from '../../lib/artifacts/generationPhaseCopy';
+import { Appear, CompletionMark } from '../ui/micro';
+import { useUiText } from '../../hooks/useUiText';
 
 export function GenerationCenter() {
-  const t = useUiTranslation();
   const { jobs, panelOpen, setPanelOpen, cancel, retry, open } = useGenerationQueue();
+  const t = useUiText();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     if (!jobs.some(job => job.status === 'running')) return;
@@ -25,8 +26,9 @@ export function GenerationCenter() {
         {jobs.map(job => {
           const phase = job.phase && job.phase in GENERATION_PHASE_COPY
             ? GENERATION_PHASE_COPY[job.phase as keyof typeof GENERATION_PHASE_COPY].label : job.phase;
-          return <article key={job.id} role="listitem" className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
-            <div className="flex justify-between gap-2"><h3 className="min-w-0 truncate text-sm font-semibold">{job.artifactName}</h3><span className="text-xs text-gray-500">{job.status === 'queued' ? t("uiExpr.en-cola.89b245") : job.status === 'running' ? t("ui.en-curso.f9ade3") : job.status === 'done' ? t("uiExpr.listo.91acde") : job.status === 'failed' ? t("uiExpr.fallo.125216") : t("uiExpr.cancelado.519684")}</span></div>
+          // 13.5: a job arrives with «aparecer», the list re-sorts with «reordenar», and finishing draws «completar».
+          return <Appear key={job.id} reorder><article role="listitem" className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
+            <div className="flex justify-between gap-2"><h3 className="min-w-0 truncate text-sm font-semibold">{job.artifactName}</h3><span className="inline-flex items-center gap-1 text-xs text-gray-500"><CompletionMark done={job.status === 'done'} label={t('micro.generationDone')} className="h-4 w-4" />{job.status === 'queued' ? t("uiExpr.en-cola.89b245") : job.status === 'running' ? t("ui.en-curso.f9ade3") : job.status === 'done' ? t("uiExpr.listo.91acde") : job.status === 'failed' ? t("uiExpr.fallo.125216") : t("uiExpr.cancelado.519684")}</span></div>
             {job.status === 'running' && <p data-generation-phase={job.phase} role="status" className="mt-2 text-sm text-primary-700 dark:text-primary-300">{phase} · {Math.floor((now - (job.startedAt ?? now)) / 1000)} s</p>}
             {job.status === 'running' && job.partial && <GenerationPreview text={job.partial} title={job.artifactName} />}
             {job.failure && <div className="mt-2 text-sm text-rose-700 dark:text-rose-300"><p>{job.failure.headline}: {job.failure.message}</p><details className="mt-1"><summary>{t("canvas.intent.detail")}</summary><pre className="whitespace-pre-wrap break-words text-xs">{job.failure.detail}</pre></details></div>}
@@ -35,7 +37,7 @@ export function GenerationCenter() {
               {job.status === 'done' && <button type="button" onClick={() => open(job)} className="rounded-lg bg-primary-600 px-3 py-1 font-medium text-white">{t("open")}</button>}
               {job.status === 'failed' && job.failure?.retryable && <button type="button" onClick={() => retry(job.id)} className="rounded-lg bg-primary-600 px-3 py-1 font-medium text-white">{t("lucid.retry")}</button>}
             </div>
-          </article>;
+          </article></Appear>;
         })}
       </div>
     </aside>
