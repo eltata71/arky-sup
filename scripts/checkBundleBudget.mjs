@@ -80,8 +80,10 @@ export const BUDGETS = {
    * presentación (el modo de diagramas pasó a `t()`); el presentador, el láser y la
    * segunda ventana son un chunk diferido, y la marca y las reglas del modo son
    * puertas pequeñas, no el barril que comparten las rutas.
+   * 209 → 210 en 12.5: 209,1 KB gz medidos, las 15 claves canvas.* de la barra por
+   * intención; la barra misma vive en el chunk diferido del lienzo.
    */
-  entryChunkGzipKb: 209,
+  entryChunkGzipKb: 210,
   /**
    * Any single chunk, raw. Catches a lazy chunk exploding — Excalidraw is
    * already 2.4 MB raw, and this stops it (or a sibling) doubling unnoticed.

@@ -14,7 +14,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ExportErrorBoundary, PresentationErrorBoundary } from './diagram/CanvasErrorBoundaries';
 import { ConfirmDialog } from './ConfirmDialog';
 import { observabilityService } from '../services/observability';
-import { useRegisterCommands } from '../context/CommandPaletteContext';
 import { buildGenerationObservabilityAlert } from './artifactCanvasObservability';
 import {
   ArtifactExportModal,
@@ -60,7 +59,6 @@ import { useArtifactExportActions } from '../hooks/artifacts/useArtifactExportAc
 import { useArtifactEditing } from '../hooks/artifacts/useArtifactEditing';
 import { useArtifactFullscreen } from '../hooks/artifacts/useArtifactFullscreen';
 import { useArtifactSpeech } from '../hooks/artifacts/useArtifactSpeech';
-import { useCanvasStorytellingCommands } from '../hooks/artifacts/useCanvasStorytellingCommands';
 import { useSuggestionActionRunner } from '../hooks/artifacts/useSuggestionActionRunner';
 import type { ArtifactViewMode } from '../lib/artifacts/contracts';
 import { useArtifactAssessment } from '../hooks/artifacts/useArtifactAssessment';
@@ -333,16 +331,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     });
   }, [suggestions.report, renderable.ir, qualityReport, diagram.layoutPlan]);
 
-  // ─── Storytelling commands (Cmd+K palette) ───────────────────────────────
-  const openExecutiveBrief = useCallback(() => { setShowOnePager(true); }, []);
-  const canvasCommands = useCanvasStorytellingCommands({
-    representation: artifact.representation,
-    hasIR: Boolean(renderable.ir),
-    reactFlowRef,
-    onOpenBrief: openExecutiveBrief,
-    onAudienceChange: handleAudienceChange,
-  });
-  useRegisterCommands(canvasCommands);
+  // ⌘K: the canvas's actions are registered by its toolbar (12.5), one list for both.
 
   // Initialize Mermaid theme based on the current theme.
   useEffect(() => {
