@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useMemo, useState } from 'react';
 import { Badge, Button } from '../ui';
 import type { Artifact } from '../../lib/artifacts';
@@ -36,6 +37,7 @@ const latestArtifacts = (artifacts: Artifact[]): Artifact[] => {
 export const PublicationPackagePanel: React.FC<PublicationPackagePanelProps> = ({
   packages, profiles, artifacts, selectedId, onSelect, onCreate,
 }) => {
+  const t = useUiTranslation();
   const [creating, setCreating] = useState(packages.length === 0);
   const [name, setName] = useState('');
   const [profileId, setProfileId] = useState(profiles[0]?.id ?? '');
@@ -73,32 +75,32 @@ export const PublicationPackagePanel: React.FC<PublicationPackagePanelProps> = (
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-2 dark:border-white/10">
-        <h2 className="text-sm font-bold text-slate-900 dark:text-white">Paquetes</h2>
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white">{t("ui.paquetes.fe6b29")}</h2>
         <Button variant="ghost" size="sm" onClick={() => setCreating((v) => !v)}
-          aria-label={creating ? 'Cerrar el formulario de creación' : 'Crear un nuevo paquete'}>
-          {creating ? 'Cerrar' : '+ Nuevo'}
+          aria-label={creating ? t("uiExpr.cerrar-el-formulario-de-crea.0e28ba") : t("uiExpr.crear-un-nuevo-paquete.582d68")}>
+          {creating ? t("sdd.close") : t("uiExpr.nuevo.b06d14")}
         </Button>
       </div>
 
       {creating && (
         <div className="space-y-2 border-b border-slate-200 p-3 dark:border-white/10">
           <label className="block">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Nombre</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{t("users.name")}</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-white/15 dark:bg-white/[0.04] dark:text-white"
-              placeholder="Paquete de publicación"
-              aria-label="Paquete de publicación"
+              placeholder={t("ui.paquete-de-publicacion.bede81")}
+              aria-label={t("ui.paquete-de-publicacion.bede81")}
             />
           </label>
           <label className="block">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Perfil de publicación</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{t("ui.perfil-de-publicacion.82cc09")}</span>
             <select
               value={profileId}
               onChange={(e) => setProfileId(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-white/15 dark:bg-white/[0.04] dark:text-white"
-              aria-label="Perfil de publicación"
+              aria-label={t("ui.perfil-de-publicacion.82cc09")}
             >
               {profiles.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -110,20 +112,20 @@ export const PublicationPackagePanel: React.FC<PublicationPackagePanelProps> = (
           )}
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Artefactos ({selectedArtifactIds.size})
+              {t("ui.artefactos.386c69")}{selectedArtifactIds.size})
             </span>
             <button
               type="button"
               onClick={applySuggestion}
               className="text-xs font-bold text-primary-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-300"
             >
-              Sugerir por perfil
+              {t("ui.sugerir-por-perfil.b343e2")}
             </button>
           </div>
           <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-1.5 dark:border-white/10">
             {latest.length === 0 && (
               <p className="px-1 py-2 text-xs text-slate-500 dark:text-slate-400">
-                El proyecto no tiene artefactos todavía.
+                {t("ui.el-proyecto-no-tiene-artefac.f12dc1")}
               </p>
             )}
             {latest.map((a) => (
@@ -139,8 +141,8 @@ export const PublicationPackagePanel: React.FC<PublicationPackagePanelProps> = (
             ))}
           </div>
           <Button variant="primary" size="sm" onClick={submit} disabled={!profileId}
-            aria-label="Crear el paquete">
-            Crear paquete
+            aria-label={t("ui.crear-el-paquete.78020b")}>
+            {t("ui.crear-paquete.48a65f")}
           </Button>
         </div>
       )}
@@ -148,7 +150,7 @@ export const PublicationPackagePanel: React.FC<PublicationPackagePanelProps> = (
       <ul className="min-h-0 flex-1 overflow-y-auto p-2">
         {packages.length === 0 && !creating && (
           <li className="px-2 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-            Aún no hay paquetes. Crea el primero para empezar a publicar.
+            {t("ui.aun-no-hay-paquetes-crea-el.c8b1ae")}
           </li>
         )}
         {packages.map((pkg) => (
@@ -169,7 +171,7 @@ export const PublicationPackagePanel: React.FC<PublicationPackagePanelProps> = (
               <span className="mt-1 flex items-center gap-1.5">
                 <Badge tone={statusTone(pkg.status)} size="xs">{publicationStatusLabel(pkg.status)}</Badge>
                 <Badge tone="gray" size="xs" outline>v{pkg.version}</Badge>
-                {pkg.freshness !== 'current' && <Badge tone="warning" size="xs">drift</Badge>}
+                {pkg.freshness !== 'current' && <Badge tone="warning" size="xs">{t("ui.drift.40f150")}</Badge>}
               </span>
             </button>
           </li>

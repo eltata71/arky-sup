@@ -17,16 +17,19 @@ import React, { useMemo } from 'react';
 import type { Edge, Node } from 'reactflow';
 import { resolveEdgeCategoryLabel, resolveNodeCategoryLabel } from '../../lib/diagramCategoryLabels';
 import type { DiagramIREdge, DiagramIRNode } from '../../lib/diagram';
+import { spanishFallback, type Translator } from '../../lib/i18n/spanishFallback';
 
 interface NodeInspectorProps {
     node: Node;
     nodes: Node[];
     edges: Edge[];
+    t?: Translator;
 }
 
 interface EdgeInspectorProps {
     edge: Edge;
     nodes: Node[];
+    t?: Translator;
 }
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
@@ -83,7 +86,7 @@ const sensitivityTone = (sensitivity?: string): 'neutral' | 'info' | 'warning' |
  * feature: it lets the user pivot through the graph without losing the
  * inspector context.
  */
-export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges }) => {
+export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges, t = spanishFallback }) => {
     const data = (node.data ?? {}) as Partial<DiagramIRNode> & { type?: string; category?: string };
     const nodesById = useMemo(() => {
         const map = new Map<string, Node>();
@@ -98,28 +101,28 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges
 
     return (
         <div className="space-y-1.5">
-            <SectionHeader>Inspeccionar</SectionHeader>
-            <Field label="Categoría">{category}</Field>
+            <SectionHeader>{t('diagramInspector.inspect')}</SectionHeader>
+            <Field label={t('diagramInspector.category')}>{category}</Field>
             {data.kind && data.kind !== category && (
-                <Field label="Kind (IR)"><code className="text-[11px]">{data.kind}</code></Field>
+                <Field label={t('diagramInspector.kind')}><code className="text-[11px]">{data.kind}</code></Field>
             )}
-            {data.semanticRole && <Field label="Rol semántico"><Pill>{data.semanticRole}</Pill></Field>}
+            {data.semanticRole && <Field label={t('diagramInspector.semanticRole')}><Pill>{data.semanticRole}</Pill></Field>}
             {data.semanticType && data.semanticType !== 'generic' && (
-                <Field label="Tipo semántico"><Pill tone="info">{data.semanticType}</Pill></Field>
+                <Field label={t('diagramInspector.semanticType')}><Pill tone="info">{data.semanticType}</Pill></Field>
             )}
-            {data.technology && <Field label="Tecnología">{data.technology}</Field>}
-            {data.group && <Field label="Grupo">{data.group}</Field>}
-            {data.description && <Field label="Descripción"><span className="block leading-snug">{data.description}</span></Field>}
+            {data.technology && <Field label={t('diagramInspector.technology')}>{data.technology}</Field>}
+            {data.group && <Field label={t('diagramInspector.group')}>{data.group}</Field>}
+            {data.description && <Field label={t('diagramInspector.description')}><span className="block leading-snug">{data.description}</span></Field>}
             {data.status && (
-                <Field label="Estado"><Pill tone={data.status === 'error' ? 'critical' : data.status === 'warning' ? 'warning' : 'success'}>{data.status}</Pill></Field>
+                <Field label={t('diagramInspector.status')}><Pill tone={data.status === 'error' ? 'critical' : data.status === 'warning' ? 'warning' : 'success'}>{data.status}</Pill></Field>
             )}
 
             {(incoming.length > 0 || outgoing.length > 0) && (
                 <>
-                    <SectionHeader>Relaciones</SectionHeader>
+                    <SectionHeader>{t('diagramInspector.relations')}</SectionHeader>
                     {outgoing.length > 0 && (
                         <div>
-                            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Salientes ({outgoing.length})</div>
+                            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{t('diagramInspector.outgoing', { count: String(outgoing.length) })}</div>
                             <ul className="space-y-1">
                                 {outgoing.slice(0, 8).map((e) => {
                                     const target = nodesById.get(e.target);
@@ -135,14 +138,14 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges
                                     );
                                 })}
                                 {outgoing.length > 8 && (
-                                    <li className="text-[10px] text-gray-400 italic">…y {outgoing.length - 8} más</li>
+                                    <li className="text-[10px] text-gray-400 italic">{t('diagramInspector.andMore', { count: String(outgoing.length - 8) })}</li>
                                 )}
                             </ul>
                         </div>
                     )}
                     {incoming.length > 0 && (
                         <div className="mt-2">
-                            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Entrantes ({incoming.length})</div>
+                            <div className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{t('diagramInspector.incoming', { count: String(incoming.length) })}</div>
                             <ul className="space-y-1">
                                 {incoming.slice(0, 8).map((e) => {
                                     const source = nodesById.get(e.source);
@@ -158,7 +161,7 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges
                                     );
                                 })}
                                 {incoming.length > 8 && (
-                                    <li className="text-[10px] text-gray-400 italic">…y {incoming.length - 8} más</li>
+                                    <li className="text-[10px] text-gray-400 italic">{t('diagramInspector.andMore', { count: String(incoming.length - 8) })}</li>
                                 )}
                             </ul>
                         </div>
@@ -172,7 +175,7 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, nodes, edges
 /**
  * Edge inspector — surfaces the full IR metadata for a relationship.
  */
-export const EdgeInspector: React.FC<EdgeInspectorProps> = ({ edge, nodes }) => {
+export const EdgeInspector: React.FC<EdgeInspectorProps> = ({ edge, nodes, t = spanishFallback }) => {
     const data = (edge.data ?? {}) as Partial<DiagramIREdge> & {
         edgeType?: string;
         protocol?: string;
@@ -197,27 +200,27 @@ export const EdgeInspector: React.FC<EdgeInspectorProps> = ({ edge, nodes }) => 
 
     return (
         <div className="space-y-1.5">
-            <SectionHeader>Inspeccionar</SectionHeader>
-            <Field label="Origen"><strong>{sourceLabel}</strong></Field>
-            <Field label="Destino"><strong>{targetLabel}</strong></Field>
-            {category && <Field label="Mecanismo">{category}</Field>}
-            {data.edgeType && <Field label="Relación"><Pill>{data.edgeType}</Pill></Field>}
+            <SectionHeader>{t('diagramInspector.inspect')}</SectionHeader>
+            <Field label={t('diagramInspector.source')}><strong>{sourceLabel}</strong></Field>
+            <Field label={t('diagramInspector.target')}><strong>{targetLabel}</strong></Field>
+            {category && <Field label={t('diagramInspector.mechanism')}>{category}</Field>}
+            {data.edgeType && <Field label={t('diagramInspector.relation')}><Pill>{data.edgeType}</Pill></Field>}
             {data.semanticType && data.semanticType !== 'generic' && (
-                <Field label="Tipo semántico"><Pill tone="info">{data.semanticType}</Pill></Field>
+                <Field label={t('diagramInspector.semanticType')}><Pill tone="info">{data.semanticType}</Pill></Field>
             )}
-            {data.protocol && <Field label="Protocolo"><code className="text-[11px]">{data.protocol}</code></Field>}
+            {data.protocol && <Field label={t('diagramInspector.protocol')}><code className="text-[11px]">{data.protocol}</code></Field>}
             {data.direction && (
-                <Field label="Dirección"><Pill>{data.direction === 'bidirectional' ? '↔ Bidireccional' : '→ Unidireccional'}</Pill></Field>
+                <Field label={t('diagramInspector.direction')}><Pill>{data.direction === 'bidirectional' ? t('diagramInspector.bidirectional') : t('diagramInspector.unidirectional')}</Pill></Field>
             )}
             {data.criticality && (
-                <Field label="Criticidad"><Pill tone={criticalityTone(data.criticality)}>{data.criticality}</Pill></Field>
+                <Field label={t('diagramInspector.criticality')}><Pill tone={criticalityTone(data.criticality)}>{data.criticality}</Pill></Field>
             )}
             {data.dataSensitivity && (
-                <Field label="Sensibilidad"><Pill tone={sensitivityTone(data.dataSensitivity)}>{data.dataSensitivity}</Pill></Field>
+                <Field label={t('diagramInspector.sensitivity')}><Pill tone={sensitivityTone(data.dataSensitivity)}>{data.dataSensitivity}</Pill></Field>
             )}
-            {data.retryPolicy && <Field label="Reintentos"><span className="block leading-snug">{data.retryPolicy}</span></Field>}
+            {data.retryPolicy && <Field label={t('diagramInspector.retries')}><span className="block leading-snug">{data.retryPolicy}</span></Field>}
             {edge.label && (
-                <Field label="Etiqueta completa"><span className="block leading-snug">{String(edge.label)}</span></Field>
+                <Field label={t('diagramInspector.fullLabel')}><span className="block leading-snug">{String(edge.label)}</span></Field>
             )}
         </div>
     );

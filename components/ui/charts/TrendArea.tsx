@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * Throughput over time — a thin line over a soft area fill, with a crosshair
  * and a tooltip on hover and on keyboard focus.
@@ -47,6 +48,7 @@ export const TrendArea: React.FC<TrendAreaProps> = ({
   emptyMessage,
   className,
 }) => {
+  const t = useUiTranslation();
   const [hovered, setHovered] = useState<number | null>(null);
   const tableId = useId();
   const [tableOpen, setTableOpen] = useState(false);
@@ -104,7 +106,7 @@ export const TrendArea: React.FC<TrendAreaProps> = ({
           style={{ height }}
           preserveAspectRatio="none"
           role="img"
-          aria-label={`${title}. ${total} en total en el periodo.`}
+          aria-label={t("uiTemplate.p0-p1-en-total-en-el-periodo.f38374", { p0: String(title), p1: String(total) })}
           onMouseMove={handleMove}
           onMouseLeave={() => setHovered(null)}
         >
@@ -179,7 +181,7 @@ export const TrendArea: React.FC<TrendAreaProps> = ({
           aria-controls={tableId}
           className="font-medium text-gray-500 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded dark:text-gray-400"
         >
-          {tableOpen ? 'Ocultar datos' : 'Ver datos'}
+          {tableOpen ? t("uiExpr.ocultar-datos.77545a") : t("uiExpr.ver-datos.0a4347")}
         </button>
         <span>{points[points.length - 1]?.label}</span>
       </div>
@@ -192,8 +194,8 @@ export const TrendArea: React.FC<TrendAreaProps> = ({
             <caption className="sr-only">{title}</caption>
             <thead className="sticky top-0 bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th scope="col" className="px-2 py-1 text-left font-semibold text-gray-500 dark:text-gray-400">Día</th>
-                <th scope="col" className="px-2 py-1 text-right font-semibold text-gray-500 dark:text-gray-400">Valor</th>
+                <th scope="col" className="px-2 py-1 text-left font-semibold text-gray-500 dark:text-gray-400">{t("ui.dia.f57194")}</th>
+                <th scope="col" className="px-2 py-1 text-right font-semibold text-gray-500 dark:text-gray-400">{t("ui.valor.4271eb")}</th>
               </tr>
             </thead>
             <tbody>

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The one navigation control that makes the hierarchy legible everywhere.
  *
@@ -54,8 +55,8 @@ const KIND_LABELS: Readonly<Record<HierarchyLevelKind, string>> = Object.freeze(
 
 const crumbBase = 'inline-flex max-w-[14rem] items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
 
-export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({ levels, className }) => (
-  <nav aria-label="Jerarquía del portafolio" className={cn('min-w-0', className)}>
+export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({ levels, className }) =>{ const t = useUiTranslation(); return  (
+  <nav aria-label={t("ui.jerarquia-del-portafolio.6a1f2a")} className={cn('min-w-0', className)}>
     <ol className="flex flex-wrap items-center gap-0.5">
       {levels.map((level, index) => {
         const Icon = HIERARCHY_ICONS[level.kind];
@@ -104,7 +105,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({ levels
                   align="left"
                   direction="down"
                   width="lg"
-                  aria-label={`Cambiar de ${KIND_LABELS[level.kind].toLowerCase()}`}
+                  aria-label={t("uiTemplate.cambiar-de-p0.cefa18", { p0: String(KIND_LABELS[level.kind].toLowerCase()) })}
                   items={siblings.map((sibling) => ({
                     id: sibling.id,
                     label: sibling.label,
@@ -116,7 +117,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({ levels
                     <button
                       type="button"
                       onClick={toggle}
-                      aria-label={`Cambiar de ${KIND_LABELS[level.kind].toLowerCase()}`}
+                      aria-label={t("uiTemplate.cambiar-de-p0.cefa18", { p0: String(KIND_LABELS[level.kind].toLowerCase()) })}
                       className="ml-0.5 inline-flex h-6 w-5 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                     >
                       <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden>
@@ -132,6 +133,6 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({ levels
       })}
     </ol>
   </nav>
-);
+); };
 
 export default HierarchyBreadcrumb;

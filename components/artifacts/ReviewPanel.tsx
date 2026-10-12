@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useCallback, useState, useSyncExternalStore } from 'react';
 import { Button, Alert, Badge } from '../ui';
 import { ReviewStatusBadge, reviewStatusLabel } from './ReviewStatusBadge';
@@ -61,6 +62,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     currentStatus,
     onStatusChange,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
     const decisions = useDecisions(artifactId);
     const { announce } = useAriaAnnouncer();
     const latest = decisions.length > 0 ? decisions[decisions.length - 1].status : currentStatus ?? 'draft';
@@ -96,13 +99,13 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         onStatusChange?.(status);
         setRationale('');
         setPendingStatus(null);
-        announce(`Estado de revisión actualizado: ${reviewStatusLabel(status)}.`, 'assertive');
+        announce(t("uiDynamicGenerated.estado-de-revision-actualiza.4ecaec", { p0: String(reviewStatusLabel(status)) }), 'assertive');
     };
 
     return (
-        <section className="flex flex-col gap-4" aria-label="Revisión del artefacto">
+        <section className="flex flex-col gap-4" aria-label={t("ui.revision-del-artefacto.4ce657")}>
             <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Estado de revisión</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t("ui.estado-de-revision.7a7b1f")}</h3>
                 <div className="flex items-center gap-2">
                     <ReviewSyncBadge projectId={projectId} artifactId={artifactId} />
                     <ReviewStatusBadge status={latest} />
@@ -110,13 +113,13 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             </div>
 
             {latest === 'approved' && (
-                <Alert tone="success" variant="soft">Este artefacto está aprobado y listo para usarse.</Alert>
+                <Alert tone="success" variant="soft">{t("ui.este-artefacto-esta-aprobado.59f881")}</Alert>
             )}
             {latest === 'changes-requested' && (
-                <Alert tone="warning" variant="soft">Un revisor solicitó cambios. Resuélvelos y vuelve a enviarlo.</Alert>
+                <Alert tone="warning" variant="soft">{t("ui.un-revisor-solicito-cambios.130a77")}</Alert>
             )}
             {latest === 'rejected' && (
-                <Alert tone="danger" variant="soft">Este artefacto fue rechazado. Revisa la bitácora para conocer el motivo.</Alert>
+                <Alert tone="danger" variant="soft">{t("ui.este-artefacto-fue-rechazado.a428d7")}</Alert>
             )}
 
             {transitionError && (
@@ -126,7 +129,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             )}
 
             <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Acciones de revisión</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{t("ui.acciones-de-revision.0b9f47")}</p>
                 <div className="flex flex-wrap gap-2">
                     {TRANSITIONS.filter((t) => t.status !== latest && canTransitionReviewStatus(latest, t.status)).map((t) => (
                         <Button
@@ -136,7 +139,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                             leftIcon={t.icon}
                             onClick={() => applyTransition(t.status, t.needsRationale)}
                         >
-                            {t.label}
+                            {translateConfig(t.label)}
                         </Button>
                     ))}
                 </div>
@@ -144,21 +147,21 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
             <div>
                 <label htmlFor={`review-rationale-${artifactId}`} className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Justificación {pendingStatus ? '(requerida para esta acción)' : '(opcional)'}
+                    {t("ui.justificacion.0aabb1")} {pendingStatus ? t("uiExpr.requerida-para-esta-accion.668f81") : t("ui.opcional.813486")}
                 </label>
                 <textarea
                     id={`review-rationale-${artifactId}`}
                     value={rationale}
                     onChange={(e) => setRationale(e.target.value)}
                     rows={2}
-                    placeholder="Explica la decisión para la bitácora…"
+                    placeholder={t("ui.explica-la-decision-para-la.9c87e8")}
                     aria-invalid={pendingStatus ? 'true' : undefined}
                     className="mt-1 w-full resize-y rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 />
                 {pendingStatus && (
                     <div className="mt-2 flex items-center gap-2">
                         <p role="alert" className="text-xs text-amber-600 dark:text-amber-300 flex-1">
-                            Escribe una justificación y confirma la acción.
+                            {t("ui.escribe-una-justificacion-y.b5108c")}
                         </p>
                         <Button
                             size="xs"
@@ -166,20 +169,20 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                             disabled={rationale.trim().length === 0}
                             onClick={() => applyTransition(pendingStatus)}
                         >
-                            Confirmar
+                            {t("ui.confirmar.81b4b6")}
                         </Button>
-                        <Button size="xs" variant="ghost" onClick={() => setPendingStatus(null)}>Cancelar</Button>
+                        <Button size="xs" variant="ghost" onClick={() => setPendingStatus(null)}>{t("ui.cancelar.c111e0")}</Button>
                     </div>
                 )}
             </div>
 
             <div>
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    Bitácora de decisiones
+                    {t("ui.bitacora-de-decisiones.162114")}
                 </p>
                 {decisions.length === 0 ? (
                     <p className="text-xs text-gray-400 dark:text-gray-500 italic">
-                        Sin decisiones registradas. Las transiciones de estado se guardan aquí como historial.
+                        {t("ui.sin-decisiones-registradas-l.a3b875")}
                     </p>
                 ) : (
                     <ol className="space-y-2">
@@ -202,8 +205,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             </div>
 
             <p className="text-2xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-                <Badge tone="gray" size="xs">Fase 2</Badge>
-                Revisión local-first con sincronización a Firestore cuando hay sesión y conexión.
+                <Badge tone="gray" size="xs">{t("ui.fase-2.7ec3d1")}</Badge>
+                {t("ui.revision-local-first-con-sin.62ebed")}
             </p>
         </section>
     );

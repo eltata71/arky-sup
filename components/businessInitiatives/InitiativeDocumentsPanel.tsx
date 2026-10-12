@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Los documentos que sostienen una iniciativa.
  *
@@ -37,6 +38,8 @@ const formatSize = (bytes: number): string => (bytes >= 1_048_576
 export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: string | null }> = ({
   initiative, onCommand, busy, addedBy, ownerId,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const [name, setName] = useState('');
   const [kind, setKind] = useState<InitiativeDocumentKind>('business-case');
   const [url, setUrl] = useState('');
@@ -90,17 +93,17 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
     <SectionCard
       id="documentos"
       icon={INITIATIVE_SECTION_ICONS.documents}
-      title="Documentos de soporte"
-      hint="Enlaza el documento donde ya vive, adjunta el archivo, o pega su contenido si no existe en otro sitio."
+      title={t("ui.documentos-de-soporte.ee71de")}
+      hint={t("Enlaza el documento donde ya vive, adjunta el archivo, o pega su contenido si no existe en otro sitio.")}
       count={initiative.documents.length}
     >
       {initiative.documents.length === 0 ? (
-        <EmptyRow>Sin documentos. El caso de negocio y la normativa aplicable suelen ir aquí.</EmptyRow>
+        <EmptyRow>{t("ui.sin-documentos-el-caso-de-ne.d8a964")}</EmptyRow>
       ) : (
         <ul className="space-y-1.5">
           {initiative.documents.map((document) => (
             <li key={document.id} className="flex items-start gap-2 rounded-lg border border-gray-200 px-2.5 py-2 dark:border-gray-800">
-              <Badge tone="info" size="xs" outline>{DOCUMENT_KIND_LABELS[document.kind]}</Badge>
+              <Badge tone="info" size="xs" outline>{translateConfig(DOCUMENT_KIND_LABELS[document.kind])}</Badge>
               <div className="min-w-0 flex-1">
                 {document.url ? (
                   <a
@@ -130,7 +133,7 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
                 {!document.url && document.content && (
                   <details className="mt-1">
                     <summary className="cursor-pointer text-2xs text-gray-500 hover:underline dark:text-gray-400">
-                      Ver contenido
+                      {t("ui.ver-contenido.1429ee")}
                     </summary>
                     <p className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-2 text-2xs text-gray-600 dark:bg-gray-900/60 dark:text-gray-300">
                       {document.content}
@@ -139,7 +142,7 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
                 )}
               </div>
               <RemoveButton
-                label={`Quitar documento ${document.name}`}
+                label={t("uiTemplate.quitar-documento-p0.b3a6f2", { p0: String(document.name) })}
                 disabled={busy}
                 onClick={() => onCommand({ kind: 'remove-document', documentId: document.id })}
               />
@@ -150,38 +153,38 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
 
       <div className="space-y-2">
         <div className="grid gap-2 sm:grid-cols-[2fr_1fr]">
-          <Input aria-label="Nombre del documento" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del documento" />
+          <Input aria-label={t("ui.nombre-del-documento.16e673")} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("ui.nombre-del-documento.16e673")} />
           <select
-            aria-label="Tipo de documento"
+            aria-label={t("ui.tipo-de-documento.ac7906")}
             value={kind}
             onChange={(event) => setKind(event.target.value as InitiativeDocumentKind)}
             className={selectClass}
           >
             {(Object.keys(DOCUMENT_KIND_LABELS) as InitiativeDocumentKind[]).map((value) => (
-              <option key={value} value={value}>{DOCUMENT_KIND_LABELS[value]}</option>
+              <option key={value} value={value}>{translateConfig(DOCUMENT_KIND_LABELS[value])}</option>
             ))}
           </select>
         </div>
         <Input
-          aria-label="https://… (donde ya vive el documento)"
+          aria-label={t("ui.https-donde-ya-vive-el-docum.29197c")}
           value={url}
           onChange={(event) => setUrl(event.target.value)}
-          placeholder="https://… (donde ya vive el documento)"
+          placeholder={t("ui.https-donde-ya-vive-el-docum.29197c")}
         />
         {showPaste && (
           <textarea
-            aria-label="Pega aquí el contenido si el documento no existe en ningún otro sitio."
+            aria-label={t("ui.pega-aqui-el-contenido-si-el.21c308")}
             value={content}
             onChange={(event) => setContent(event.target.value)}
             rows={4}
-            placeholder="Pega aquí el contenido si el documento no existe en ningún otro sitio."
+            placeholder={t("ui.pega-aqui-el-contenido-si-el.21c308")}
             className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs leading-relaxed text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
         )}
         <input
           ref={fileInput}
           type="file"
-          aria-label="Adjuntar archivo"
+          aria-label={t("ui.adjuntar-archivo.85bdff")}
           className="sr-only"
           onChange={(event) => {
             const chosen = event.target.files?.[0];
@@ -190,7 +193,7 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
         />
         {attached && (
           <p className="text-2xs text-gray-600 dark:text-gray-300">
-            Adjunto: <span className="font-medium">{attachedName}</span> ({formatSize(attached.sizeBytes)})
+            {t("ui.adjunto.c39c8e")} <span className="font-medium">{attachedName}</span> ({formatSize(attached.sizeBytes)})
           </p>
         )}
         {files.error && (
@@ -199,7 +202,7 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" size="xs" onClick={() => setShowPaste((open) => !open)}>
-              {showPaste ? 'Ocultar el contenido pegado' : 'Pegar contenido en vez de enlazar'}
+              {showPaste ? t("uiExpr.ocultar-el-contenido-pegado.436b0a") : t("uiExpr.pegar-contenido-en-vez-de-en.d249d6")}
             </Button>
             <Button
               variant="ghost"
@@ -208,7 +211,7 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
               disabled={busy || files.busy || !ownerId}
             >
               <Paperclip className="mr-1 h-3.5 w-3.5" aria-hidden />
-              {files.busy ? 'Subiendo…' : attached ? 'Cambiar archivo' : 'Adjuntar archivo'}
+              {files.busy ? t("uiExpr.subiendo.83681a") : attached ? t("uiExpr.cambiar-archivo.cd24fb") : t("ui.adjuntar-archivo.85bdff")}
             </Button>
           </div>
           <Button
@@ -218,7 +221,7 @@ export const DocumentsPanel: React.FC<PanelProps & { addedBy: string; ownerId?: 
             disabled={busy || files.busy || !name.trim() || (!url.trim() && !content.trim() && !attached)}
           >
             <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
-            Añadir documento
+            {t("ui.anadir-documento.a272ed")}
           </Button>
         </div>
       </div>

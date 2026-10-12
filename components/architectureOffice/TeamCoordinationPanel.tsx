@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * What the office is doing, while it does it.
  *
@@ -139,6 +140,8 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
   expanded = false,
   className,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const reducedMotion = useReducedMotion();
   /**
    * The agent the reader is inspecting. Filtering the log to one persona is
@@ -213,10 +216,10 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
     return (
       <div className={cn('rounded-2xl border border-dashed border-gray-300 p-6 text-center dark:border-gray-700', className)}>
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-          El equipo aparece aquí en cuanto envíes una solicitud.
+          {t("ui.el-equipo-aparece-aqui-en-cu.88361f")}
         </p>
         <p className="mt-1 text-2xs text-gray-400 dark:text-gray-500">
-          Verás quién coordina, qué recibe cada especialista y quién firma la recomendación.
+          {t("ui.veras-quien-coordina-que-rec.9cefca")}
         </p>
       </div>
     );
@@ -237,20 +240,20 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
             className="inline-flex items-center gap-1 rounded text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-400 dark:hover:text-gray-100"
           >
             <ChevronDown className={cn('h-3 w-3 transition-transform', !diagramOpen && '-rotate-90')} aria-hidden />
-            Coordinación del equipo
+            {t("ui.coordinacion-del-equipo.327258")}
           </button>
           <div className="flex items-center gap-2">
             {running && (
               <span className="inline-flex items-center gap-1.5 text-2xs font-medium text-[#4f46e5] dark:text-[#6366f1]">
                 <span className={cn('inline-block h-1.5 w-1.5 rounded-full bg-[#4f46e5] dark:bg-[#6366f1]', !reducedMotion && 'animate-pulse')} />
-                En curso
+                {t("ui.en-curso.f9ade3")}
               </span>
             )}
             {onToggleExpand && (
               <button
                 type="button"
                 onClick={onToggleExpand}
-                aria-label={expanded ? 'Contraer el panel de coordinación' : 'Expandir el panel de coordinación'}
+                aria-label={expanded ? t("uiExpr.contraer-el-panel-de-coordin.b719cd") : t("uiExpr.expandir-el-panel-de-coordin.e9fe02")}
                 className="inline-flex h-6 w-6 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-gray-800 dark:hover:text-gray-200"
               >
                 {expanded ? <Minimize2 className="h-3.5 w-3.5" aria-hidden /> : <Maximize2 className="h-3.5 w-3.5" aria-hidden />}
@@ -265,7 +268,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
           className="w-full"
           style={{ maxHeight: `${height}px` }}
           role="img"
-          aria-label={`Topología del equipo: ${coordinatorNode ? OFFICE_AGENT_PERSONAS[coordinatorNode.personaId].alias : 'coordinador'} reparte a ${specialistNodes.length} especialista(s) y ${consolidatorNode ? OFFICE_AGENT_PERSONAS[consolidatorNode.personaId].alias : 'el consolidador'} firma la recomendación.`}
+          aria-label={t("uiTemplate.topologia-del-equipo-p0-repa.7d7ec3", { p0: String(coordinatorNode ? OFFICE_AGENT_PERSONAS[coordinatorNode.personaId].alias : 'coordinador'), p1: String(specialistNodes.length), p2: String(consolidatorNode ? OFFICE_AGENT_PERSONAS[consolidatorNode.personaId].alias : 'el consolidador') })}
         >
           {/* Edges first, so the nodes sit on top of them. */}
           <g>
@@ -333,9 +336,9 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
                     {persona.alias}
                   </span>
                   <span className={cn('text-[8px] font-medium leading-none', styles.ink)}>
-                    {node.role === 'coordinator' ? 'Coordina'
-                      : node.role === 'consolidator' ? 'Consolida'
-                        : styles.label}
+                    {node.role === 'coordinator' ? t("uiExpr.coordina.6db29f")
+                      : node.role === 'consolidator' ? t("uiExpr.consolida.685e97")
+                        : t(styles.label)}
                   </span>
                 </div>
               </foreignObject>
@@ -347,14 +350,14 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
         {/* Each agent is a control: selecting one filters the log to its
             thread. With four specialists working in parallel their events
             interleave, and no single thread is followable end to end. */}
-        <div className="mt-2 flex flex-wrap gap-1" role="group" aria-label="Filtrar la bitácora por agente">
+        <div className="mt-2 flex flex-wrap gap-1" role="group" aria-label={t("ui.filtrar-la-bitacora-por-agen.7495f5")}>
           <button
             type="button"
             onClick={() => setFocusedAgent(null)}
             aria-pressed={focusedAgent === null}
             className={cn(FILTER_CHIP, focusedAgent === null ? FILTER_CHIP_ON : FILTER_CHIP_OFF)}
           >
-            Todo el equipo
+            {t("ui.todo-el-equipo.9763cb")}
           </button>
           {layout.map((node) => {
             const persona = OFFICE_AGENT_PERSONAS[node.personaId];
@@ -376,7 +379,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
                   className={cn('ml-1 inline-block h-1.5 w-1.5 rounded-full align-middle', AGENT_STATE_DOTS[state])}
                   aria-hidden
                 />
-                <span className="sr-only">{`, ${AGENT_STATE_STYLES[state].label}`}</span>
+                <span className="sr-only">{`, ${t(AGENT_STATE_STYLES[state].label)}`}</span>
               </button>
             );
           })}
@@ -387,15 +390,15 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
       <ol
         className={cn('space-y-1.5 overflow-y-auto pr-1', expanded ? 'max-h-[26rem]' : 'max-h-56')}
         aria-label={focusedAgent
-          ? `Bitácora de coordinación, filtrada por ${OFFICE_AGENT_PERSONAS[focusedAgent].alias}`
-          : 'Bitácora de coordinación'}
+          ? t("uiTemplate.bitacora-de-coordinacion-fil.e21697", { p0: String(OFFICE_AGENT_PERSONAS[focusedAgent].alias) })
+          : t("uiExpr.bitacora-de-coordinacion.5928f3")}
       >
         {/* Only a *filter* that hides everything needs explaining. An empty
             log with no filter means the operation has not started, which the
             header already says. */}
         {visibleEvents.length === 0 && focusedAgent !== null && (
           <li className="rounded-lg bg-gray-50 px-3 py-4 text-center text-2xs text-gray-500 dark:bg-gray-900/60 dark:text-gray-400">
-            {OFFICE_AGENT_PERSONAS[focusedAgent].alias} todavía no ha intervenido.
+            {OFFICE_AGENT_PERSONAS[focusedAgent].alias} {t("ui.todavia-no-ha-intervenido.9dde01")}
           </li>
         )}
         {visibleEvents.map((event) => {
@@ -417,7 +420,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
               <span className="min-w-0 flex-1">
                 <span className="block leading-snug">{event.summary}</span>
                 <span className="mt-0.5 block text-[9px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                  {PHASE_LABELS[event.phase]} · {(event.elapsedMs / 1000).toFixed(1)} s
+                  {translateConfig(PHASE_LABELS[event.phase])} · {(event.elapsedMs / 1000).toFixed(1)} s
                 </span>
               </span>
             </li>

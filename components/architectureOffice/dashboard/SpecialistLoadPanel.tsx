@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * Who is carrying what.
  *
@@ -22,14 +23,15 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
   specialists,
   className,
 }) => {
+  const t = useUiTranslation();
   const busiest = Math.max(1, ...specialists.map((entry) => entry.active));
   const working = specialists.filter((entry) => entry.active > 0 || entry.completed > 0 || entry.reviewed > 0);
 
   if (working.length === 0) {
     return (
       <EmptyState
-        title="Ningún especialista tiene trabajo asignado"
-        description="En cuanto apruebes un charter, la Oficina repartirá las tareas entre los 13 especialistas y verás aquí su carga real."
+        title={t("ui.ningun-especialista-tiene-tr.a2dea9")}
+        description={t("En cuanto apruebes un charter, la Oficina repartirá las tareas entre los 13 especialistas y verás aquí su carga real.")}
         flavor="ai"
         className={className}
       />
@@ -49,13 +51,13 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
                   {persona?.alias ?? entry.personaId}
                 </p>
                 <p className="truncate text-2xs text-gray-500 dark:text-gray-400">
-                  {persona?.role ?? 'Especialista'}
+                  {persona?.role ?? t("uiExpr.especialista.8c8c55")}
                 </p>
               </div>
               {entry.active > 0 ? (
-                <Badge tone="primary" size="xs" dot>{entry.active} activa(s)</Badge>
+                <Badge tone="primary" size="xs" dot>{entry.active} {t("ui.activa-s.58c017")}</Badge>
               ) : (
-                <Badge tone="gray" size="xs" outline>Libre</Badge>
+                <Badge tone="gray" size="xs" outline>{t("ui.libre.a68851")}</Badge>
               )}
             </div>
 
@@ -67,7 +69,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
               aria-valuenow={entry.active}
               aria-valuemin={0}
               aria-valuemax={busiest}
-              aria-label={`Carga de ${persona?.alias ?? entry.personaId}`}
+              aria-label={t("uiTemplate.carga-de-p0.27097a", { p0: String(persona?.alias ?? entry.personaId) })}
             >
               <div
                 className={cn('h-full rounded-full transition-all duration-500', OFFICE_HEALTH_VISUALS.running.surface)}
@@ -77,11 +79,11 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
 
             <dl className="flex gap-4 text-2xs">
               <div>
-                <dt className="text-gray-500 dark:text-gray-400">Completadas</dt>
+                <dt className="text-gray-500 dark:text-gray-400">{t("ui.completadas.149714")}</dt>
                 <dd className="font-semibold tabular-nums text-gray-900 dark:text-gray-100">{entry.completed}</dd>
               </div>
               <div>
-                <dt className="text-gray-500 dark:text-gray-400">Revisiones</dt>
+                <dt className="text-gray-500 dark:text-gray-400">{t("ui.revisiones.b64b61")}</dt>
                 <dd className="font-semibold tabular-nums text-gray-900 dark:text-gray-100">{entry.reviewed}</dd>
               </div>
             </dl>
@@ -98,7 +100,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
                 ))}
                 {entry.activeTaskTitles.length > 3 && (
                   <li className="text-2xs text-gray-400 dark:text-gray-500">
-                    y {entry.activeTaskTitles.length - 3} más
+                    y {entry.activeTaskTitles.length - 3} {t("ui.mas.917ac7")}
                   </li>
                 )}
               </ul>

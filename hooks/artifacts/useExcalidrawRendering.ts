@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
@@ -32,6 +33,7 @@ export interface UseExcalidrawRenderingResult {
  * via `VITE_DIAGRAM_AI_FALLBACK`.
  */
 export const useExcalidrawRendering = (input: UseExcalidrawRenderingInput): UseExcalidrawRenderingResult => {
+  const t = useUiTranslation();
   const { artifact, settings, viewMode, mermaidCode, setViewMode } = input;
 
   const [excalidrawData, setExcalidrawData] = useState<ExcalidrawPayload | null>(null);
@@ -56,7 +58,7 @@ export const useExcalidrawRendering = (input: UseExcalidrawRenderingInput): UseE
     }
 
     if (artifact.representation === 'document' && !mermaidCode) {
-      setError('Este artefacto no contiene diagrama. Usa la vista Documento o Markdown.');
+      setError(t("uiMessage.este-artefacto-no-contiene-d.139daa"));
       return;
     }
 
@@ -82,11 +84,11 @@ export const useExcalidrawRendering = (input: UseExcalidrawRenderingInput): UseE
           cache.current.set(artifact.id, result);
           setExcalidrawData(result);
         } else {
-          setError('No se pudieron generar los elementos del diagrama. Inténtalo de nuevo.');
+          setError(t("uiMessage.no-se-pudieron-generar-los-e.779efe"));
         }
       } catch (err) {
         if (isMounted.current) {
-          setError(err instanceof Error ? err.message : 'Error al generar el diagrama Excalidraw.');
+          setError(err instanceof Error ? err.message : t("uiMessage.error-al-generar-el-diagrama.13141f"));
         }
       } finally {
         if (isMounted.current) setIsLoading(false);

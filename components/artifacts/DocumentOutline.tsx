@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useMemo } from 'react';
 import { Badge, EmptyState } from '../ui';
 import { DocumentTextIcon, ExclamationTriangleIcon } from '../Icons';
@@ -26,6 +27,7 @@ export const DocumentOutline: React.FC<DocumentOutlineProps> = ({
     onNavigate,
     activeSectionId,
 }) => {
+  const t = useUiTranslation();
     const { sections, completion } = useMemo(() => extractOutline(content), [content]);
     const emptyCount = useMemo(() => sections.filter((s) => s.isEmpty).length, [sections]);
     const completionPct = Math.round(completion * 100);
@@ -34,17 +36,17 @@ export const DocumentOutline: React.FC<DocumentOutlineProps> = ({
         return (
             <EmptyState
                 icon={<DocumentTextIcon className="h-5 w-5" />}
-                title="Sin estructura de secciones"
-                description="Este documento no tiene encabezados Markdown. Agrega títulos (#, ##, ###) para habilitar la navegación por secciones."
+                title={t("ui.sin-estructura-de-secciones.cb8d89")}
+                description={t("Este documento no tiene encabezados Markdown. Agrega títulos (#, ##, ###) para habilitar la navegación por secciones.")}
             />
         );
     }
 
     return (
-        <nav className="flex flex-col gap-3" aria-label="Tabla de contenido del documento">
+        <nav className="flex flex-col gap-3" aria-label={t("ui.tabla-de-contenido-del-docum.8bf08f")}>
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
                 <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-medium text-gray-600 dark:text-gray-300">Completitud</span>
+                    <span className="font-medium text-gray-600 dark:text-gray-300">{t("ui.completitud.3fbd84")}</span>
                     <span className="tabular-nums font-semibold text-gray-900 dark:text-white">{completionPct}%</span>
                 </div>
                 <div
@@ -53,7 +55,7 @@ export const DocumentOutline: React.FC<DocumentOutlineProps> = ({
                     aria-valuenow={completionPct}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label={`Completitud del documento: ${completionPct}%`}
+                    aria-label={t("uiTemplate.completitud-del-documento-p0.b56b6e", { p0: String(completionPct) })}
                 >
                     <div
                         className={
@@ -66,7 +68,7 @@ export const DocumentOutline: React.FC<DocumentOutlineProps> = ({
                 {emptyCount > 0 && (
                     <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-300">
                         <ExclamationTriangleIcon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-                        {emptyCount} sección{emptyCount === 1 ? '' : 'es'} sin contenido por completar
+                        {emptyCount} {t("ui.seccion.cf8ff2")}{emptyCount === 1 ? '' : 'es'} {t("ui.sin-contenido-por-completar.3eddd1")}
                     </p>
                 )}
             </div>
@@ -94,11 +96,11 @@ export const DocumentOutline: React.FC<DocumentOutlineProps> = ({
                                     <span
                                         className="h-1.5 w-1.5 rounded-full bg-amber-400 flex-shrink-0"
                                        
-                                        aria-label="Sección vacía"
+                                        aria-label={t("ui.seccion-vacia.ce6641")}
                                     />
                                 )}
                                 {count > 0 && (
-                                    <Badge tone="warning" size="xs" aria-label={`${count} comentarios abiertos`}>
+                                    <Badge tone="warning" size="xs" aria-label={t("uiTemplate.p0-comentarios-abiertos.cadae9", { p0: String(count) })}>
                                         {count}
                                     </Badge>
                                 )}

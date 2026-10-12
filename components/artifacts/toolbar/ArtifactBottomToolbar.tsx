@@ -36,11 +36,13 @@ const shortcutBadge = (action: CanvasAction): React.ReactNode => {
   return shortcut ? <kbd className="font-sans text-[10px] text-gray-400">{shortcut.label}</kbd> : undefined;
 };
 
-const toItem = (action: CanvasAction): DropdownItem => ({
+const toItem = (action: CanvasAction, t: (key: string, replacements?: Record<string, string>) => string, traceErrors: number): DropdownItem => ({
   id: action.id,
   icon: action.icon,
-  label: action.label,
-  description: action.description,
+  label: t(action.label),
+  description: action.id === 'trace' && traceErrors > 0
+    ? t('uiDynamic.traceErrors', { count: String(traceErrors) })
+    : action.description ? t(action.description) : undefined,
   disabled: action.disabled,
   active: action.active,
   onClick: action.run,
@@ -68,7 +70,7 @@ export const ArtifactBottomToolbar: React.FC<ArtifactBottomToolbarProps> = (prop
   const sectionsFor = (intent: CanvasIntent): DropdownSection[] => SECTION_ORDER
     .map((section) => ({
       label: section === 'main' ? undefined : t(`canvas.section.${section}`),
-      items: byIntent[intent].filter((action) => CANVAS_ACTION_PLACEMENT[action.id].section === section).map(toItem),
+      items: byIntent[intent].filter((action) => CANVAS_ACTION_PLACEMENT[action.id].section === section).map(action => toItem(action, t, props.traceErrors)),
     }))
     .filter((section) => section.items.length > 0);
 
@@ -96,7 +98,7 @@ export const ArtifactBottomToolbar: React.FC<ArtifactBottomToolbarProps> = (prop
                   disabled={main.disabled}
                   aria-pressed={main.active === undefined ? undefined : main.active}
                   aria-keyshortcuts={ariaShortcutFor(main.id)}
-                  aria-label={`${intentLabel}: ${main.label}`}
+                  aria-label={`${intentLabel}: ${t(main.label)}`}
                   className={`${buttonBase} rounded-l-xl pl-2.5 pr-2 ${main.active ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-200' : ''}`}
                 >
                   {INTENT_ICON[intent]}

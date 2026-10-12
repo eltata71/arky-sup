@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useId } from 'react';
 import { ListOrderedIcon, ChevronDownIcon } from './Icons';
 import type { ArtifactSortKey, ArtifactSortOption } from '../utils/artifactExploration';
@@ -22,6 +23,7 @@ export const ArtifactSortControl: React.FC<ArtifactSortControlProps> = ({
   onChange,
   context,
 }) => {
+  const t = useUiTranslation();
   const selectId = useId();
   const safeValue = options.some((option) => option.key === value)
     ? value
@@ -30,7 +32,7 @@ export const ArtifactSortControl: React.FC<ArtifactSortControlProps> = ({
   return (
     <section
       className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
-      aria-label="Ordenar artefactos"
+      aria-label={t("ui.ordenar-artefactos.b6e129")}
     >
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-300">
@@ -38,14 +40,14 @@ export const ArtifactSortControl: React.FC<ArtifactSortControlProps> = ({
         </span>
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-            Ordenar
+            {t("ui.ordenar.b18b39")}
           </p>
-          <p className="text-sm font-bold text-slate-900 dark:text-white">Criterio de orden</p>
+          <p className="text-sm font-bold text-slate-900 dark:text-white">{t("ui.criterio-de-orden.898635")}</p>
         </div>
       </div>
 
       <label htmlFor={selectId} className="sr-only">
-        Ordenar {context === 'workspace' ? 'mis artefactos' : 'el catálogo'} por
+        {t("ui.ordenar.b18b39")} {context === 'workspace' ? t("uiExpr.mis-artefactos.251a38") : t("uiExpr.el-catalogo.2e5861")} {t("ui.por.0e4434")}
       </label>
       <div className="relative">
         <select
@@ -65,8 +67,8 @@ export const ArtifactSortControl: React.FC<ArtifactSortControlProps> = ({
 
       <p className="mt-2 text-[11px] leading-4 text-slate-400 dark:text-slate-500">
         {safeValue === 'ai-recommended' && context === 'catalog'
-          ? 'La IA ordena cada fase por dependencias y prioridad arquitectónica para reducir inconsistencias.'
-          : `Se aplica a ${context === 'workspace' ? 'tus artefactos activos' : 'las plantillas del catálogo'}.`}
+          ? t("uiExpr.la-ia-ordena-cada-fase-por-d.a1db73")
+          : t("uiTemplate.se-aplica-a-p0.555958", { p0: String(context === 'workspace' ? 'tus artefactos activos' : 'las plantillas del catálogo') })}
       </p>
     </section>
   );

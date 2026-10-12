@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * Subir y abrir el archivo de un documento de iniciativa.
  *
@@ -45,6 +46,7 @@ const describe = (error: unknown): string => {
 };
 
 export const useDocumentFile = (ownerId: string | null | undefined): DocumentFileUpload => {
+  const t = useUiTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,13 +55,13 @@ export const useDocumentFile = (ownerId: string | null | undefined): DocumentFil
     descriptor: Omit<StorageObjectDescriptor, 'context'>,
   ): Promise<InitiativeDocumentFile | null> => {
     if (!ownerId) {
-      setError('Necesitas una sesión activa para adjuntar archivos.');
+      setError(t("uiMessage.necesitas-una-sesion-activa.56eeb6"));
       return null;
     }
     if (file.size > MAX_DOCUMENT_BYTES) {
       // Se comprueba aquí *además* de en el servidor: decirlo antes de subir
       // 60 MB es la diferencia entre un aviso y un minuto perdido.
-      setError('El archivo supera los 50 MB permitidos.');
+      setError(t("uiMessage.el-archivo-supera-los-50-mb.329ff8"));
       return null;
     }
     setBusy(true);
@@ -83,7 +85,7 @@ export const useDocumentFile = (ownerId: string | null | undefined): DocumentFil
     } finally {
       setBusy(false);
     }
-  }, [ownerId]);
+  }, [ownerId, t]);
 
   const open = useCallback(async (file: InitiativeDocumentFile): Promise<void> => {
     setError(null);
@@ -92,9 +94,9 @@ export const useDocumentFile = (ownerId: string | null | undefined): DocumentFil
       const url = await storage.signedUrl(file.bucket, file.path);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch {
-      setError('No se pudo abrir el archivo. Puede que ya no exista o que tu sesión haya caducado.');
+      setError(t("uiMessage.no-se-pudo-abrir-el-archivo.fb3eae"));
     }
-  }, []);
+  }, [t]);
 
   return { busy, error, upload, open, clearError: () => setError(null) };
 };

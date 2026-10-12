@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Chronological record of what the office did on an engagement.
  *
@@ -57,6 +58,7 @@ export const OfficeTimeline: React.FC<OfficeTimelineProps> = ({
   entries,
   agentActionLimit = 30,
 }) => {
+  const t = useUiTranslation();
   const { listAgentActions } = useAppContext();
   const [agentActions, setAgentActions] = useState<AgentActionRecord[]>([]);
 
@@ -88,11 +90,11 @@ export const OfficeTimeline: React.FC<OfficeTimelineProps> = ({
   ].sort((a, b) => b.at.localeCompare(a.at));
 
   if (items.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">Todavía no hay actividad registrada.</p>;
+    return <p className="text-sm text-gray-500 dark:text-gray-400">{t("ui.todavia-no-hay-actividad-reg.d86df5")}</p>;
   }
 
   return (
-    <ol className="space-y-2" aria-label="Actividad de la Oficina">
+    <ol className="space-y-2" aria-label={t("ui.actividad-de-la-oficina.2466ae")}>
       {items.map((item) => (
         <li key={item.id} className="flex gap-3">
           <span

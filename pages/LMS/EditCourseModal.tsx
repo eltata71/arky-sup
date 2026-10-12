@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 
 import React, { useState, useEffect } from 'react';
 import { Course, CourseLevel, ArchitectRole, CourseCategory } from '../../types/lms';
@@ -11,6 +12,7 @@ interface EditCourseModalProps {
 }
 
 export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, isOpen, onClose, onSave }) => {
+  const t = useUiTranslation();
     const [title, setTitle] = useState(course.title);
     const [description, setDescription] = useState(course.description);
     const [courseContext, setCourseContext] = useState(course.courseContext || '');
@@ -52,10 +54,10 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, isOpen
     const categories: CourseCategory[] = ['Architecture', 'Business', 'Tooling'];
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Editar Curso">
+        <Modal isOpen={isOpen} onClose={onClose} title={t("ui.editar-curso.169f87")}>
             <div className="space-y-5">
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Título</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t("ui.titulo.98a5ef")}</label>
                     <input
                         type="text"
                         value={title}
@@ -64,7 +66,7 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, isOpen
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Descripción</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t("lmsDash.description")}</label>
                     <textarea
                         value={description}
                         onChange={e => setDescription(e.target.value)}
@@ -74,19 +76,19 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, isOpen
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                        Contexto del Curso <span className="font-normal text-gray-400">(guía para la generación de contenido IA)</span>
+                        {t("ui.contexto-del-curso.a02e0b")} <span className="font-normal text-gray-400">{t("ui.guia-para-la-generacion-de-c.6e7ccf")}</span>
                     </label>
                     <textarea
                         value={courseContext}
                         onChange={e => setCourseContext(e.target.value)}
                         rows={4}
-                        placeholder="Ej: Este curso asume un sistema core basado en COBOL. El equipo evalúa migrar a microservicios Java con integración hospitalaria..."
+                        placeholder={t("ui.ej-este-curso-asume-un-siste.88492c")}
                         className="w-full border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                     />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Nivel</label>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t("cap.export.col.level")}</label>
                         <select
                             value={level}
                             onChange={e => setLevel(e.target.value as CourseLevel)}
@@ -96,7 +98,7 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, isOpen
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Categoría</label>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t("diagramInspector.category")}</label>
                         <select
                             value={category}
                             onChange={e => setCategory(e.target.value as CourseCategory)}
@@ -106,7 +108,7 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, isOpen
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Rol</label>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t("users.role")}</label>
                         <select
                             value={role}
                             onChange={e => setRole(e.target.value as ArchitectRole)}
@@ -121,14 +123,14 @@ export const EditCourseModal: React.FC<EditCourseModalProps> = ({ course, isOpen
                         onClick={onClose}
                         className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                     >
-                        Cancelar
+                        {t("ui.cancelar.c111e0")}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={!title.trim()}
                         className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Guardar Cambios
+                        {t("saveChanges")}
                     </button>
                 </div>
             </div>

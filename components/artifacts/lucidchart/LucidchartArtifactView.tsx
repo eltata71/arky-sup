@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
@@ -38,12 +39,12 @@ export const LucidchartArtifactView: React.FC<LucidchartArtifactViewProps> = ({
   onRetry,
   onOpenExternal,
   onSwitchToDocument,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <ErrorBoundary
     fallback={(boundaryError, reset) => (
       <ViewerCrashFallback
-        title="Lucidchart falló al renderizar"
-        viewerLabel="Lucidchart"
+        title={t("ui.lucidchart-fallo-al-renderiz.3911b9")}
+        viewerLabel={t("Lucidchart")}
         error={boundaryError}
         onReset={reset}
         onSwitchToDocument={() => {
@@ -66,6 +67,6 @@ export const LucidchartArtifactView: React.FC<LucidchartArtifactViewProps> = ({
       onOpenExternal={onOpenExternal}
     />
   </ErrorBoundary>
-);
+); };
 
 export default LucidchartArtifactView;

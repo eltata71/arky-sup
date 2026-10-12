@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from '../../Modal';
 import type { Artifact } from '../../../lib/artifacts';
@@ -133,6 +134,7 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
   visualGateHardBlockContext,
   onVisualGateHardBlock,
 }) => {
+  const t = useUiTranslation();
   const [confirmFormat, setConfirmFormat] = useState<ExportFormat | null>(null);
   const [includeQualityReport, setIncludeQualityReport] = useState(false);
   const [exportAsPublication, setExportAsPublication] = useState(false);
@@ -210,10 +212,10 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
       : false,
   };
   const publicationModes: Array<{ mode: PublicationExportMode; label: string; description: string; disabled: boolean; reason: string }> = [
-    { mode: 'publication', label: 'Publicación completa', description: 'Portada, calidad, secciones, diagramas, tablas y trazabilidad.', disabled: !(publicationContent.hasDocument || publicationContent.hasDiagram || publicationContent.hasTables), reason: 'El modelo de presentación no tiene contenido exportable.' },
-    { mode: 'document-diagram', label: 'Documento + diagrama', description: 'Secciones documentales y diagramas, sin tablas independientes.', disabled: !(publicationContent.hasDocument || publicationContent.hasDiagram), reason: 'No hay documento ni diagrama útil para este modo.' },
-    { mode: 'diagram-only', label: 'Sólo diagrama', description: 'Diagramas, leyendas, métricas y notas de lectura.', disabled: !publicationContent.hasDiagram, reason: 'El artefacto no contiene diagramas exportables.' },
-    { mode: 'table-only', label: 'Sólo tabla/matriz', description: 'Tablas y matrices normalizadas con metadatos mínimos.', disabled: !publicationContent.hasTables, reason: 'El artefacto no contiene tablas o matrices.' },
+    { mode: 'publication', label: t("Publicación completa"), description: t("Portada, calidad, secciones, diagramas, tablas y trazabilidad."), disabled: !(publicationContent.hasDocument || publicationContent.hasDiagram || publicationContent.hasTables), reason: 'El modelo de presentación no tiene contenido exportable.' },
+    { mode: 'document-diagram', label: t("Documento + diagrama"), description: t("Secciones documentales y diagramas, sin tablas independientes."), disabled: !(publicationContent.hasDocument || publicationContent.hasDiagram), reason: 'No hay documento ni diagrama útil para este modo.' },
+    { mode: 'diagram-only', label: t("Sólo diagrama"), description: t("Diagramas, leyendas, métricas y notas de lectura."), disabled: !publicationContent.hasDiagram, reason: 'El artefacto no contiene diagramas exportables.' },
+    { mode: 'table-only', label: t("Sólo tabla/matriz"), description: t("Tablas y matrices normalizadas con metadatos mínimos."), disabled: !publicationContent.hasTables, reason: 'El artefacto no contiene tablas o matrices.' },
   ];
   const activePublicationMode: PublicationExportMode = publicationModes.some((entry) => entry.mode === publicationMode && !entry.disabled)
     ? publicationMode
@@ -329,28 +331,28 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
       void (onDownloadExport?.(prepared.file) ?? Promise.resolve()).finally(() => { setDownloading(false); onClose(); });
     };
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Exportar" description={`Vista activa: ${viewLabel}`}>
+      <Modal isOpen={isOpen} onClose={onClose} title={t("export")} description={`Vista activa: ${viewLabel}`}>
         <ExportReceiptPanel file={prepared.file} formatLabel={prepared.label} downloading={downloading} onDownload={download} onBack={() => setPrepared(null)} />
       </Modal>
     );
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Exportar" description={`Vista activa: ${viewLabel}`}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t("export")} description={`Vista activa: ${viewLabel}`}>
       {showVisualGateBanner && (
         <section
           className={`mb-4 rounded-xl border p-3 text-xs ${visualGateBannerClass}`}
           role="alert"
-          aria-label="Estado del Visual Quality Gate"
+          aria-label={t("ui.estado-del-visual-quality-ga.8aac1d")}
         >
           <div className="flex items-start justify-between gap-2">
             <div>
               <strong>
-                Visual Quality Gate: {visualGuard.hardBlock
-                  ? 'bloqueo duro'
+                {t("ui.visual-quality-gate.3e7cdb")} {visualGuard.hardBlock
+                  ? t("uiExpr.bloqueo-duro.165a51")
                   : visualGateState === 'blocked'
-                    ? 'bloqueado'
-                    : 'con advertencias'}
+                    ? t("uiExpr.bloqueado.b92b45")
+                    : t("uiExpr.con-advertencias.a06fa9")}
               </strong>
               <p className="mt-1 leading-snug">{visualGuard.message}</p>
               {visualGuard.hardBlockCode && (
@@ -358,49 +360,49 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
               )}
             </div>
             <span className="rounded-full bg-white/60 px-2 py-1 text-[10px] font-bold uppercase tracking-wider dark:bg-white/10">
-              {visualGuard.hardBlock ? 'HARD-BLOCK' : (visualGateState ?? '')}
+              {visualGuard.hardBlock ? t("uiExpr.hard-block.6fffb5") : (visualGateState ?? '')}
             </span>
           </div>
         </section>
       )}
       {presentationModel && (
-        <section className="mb-4 rounded-xl border border-primary-200 bg-primary-50 p-3 text-xs text-primary-900 dark:border-primary-900/60 dark:bg-primary-950/30 dark:text-primary-100" aria-label="Perfil de exportación de publicación">
+        <section className="mb-4 rounded-xl border border-primary-200 bg-primary-50 p-3 text-xs text-primary-900 dark:border-primary-900/60 dark:bg-primary-950/30 dark:text-primary-100" aria-label={t("ui.perfil-de-exportacion-de-pub.e33afc")}>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <strong>Versión publicación:</strong> {presentationModel.quality.readyForPublication ? 'lista' : 'requiere revisión'} · score {presentationModel.quality.score}/100
+              <strong>{t("ui.version-publicacion.0199b0")}</strong> {presentationModel.quality.readyForPublication ? t("uiExpr.lista.22d01c") : t("uiExpr.requiere-revision.32184c")} {t("ui.score.27c918")} {presentationModel.quality.score}/100
               <p className="mt-1 text-primary-800/80 dark:text-primary-100/80">
-                Recomendado: {presentationModel.exportProfile.recommendedFormats.join(', ') || 'sin recomendación'} · default {presentationModel.exportProfile.defaultFormat.toUpperCase()}
+                {t("ui.recomendado.951f9c")} {presentationModel.exportProfile.recommendedFormats.join(', ') || t("uiExpr.sin-recomendacion.043713")} {t("ui.default.0044b4")} {presentationModel.exportProfile.defaultFormat.toUpperCase()}
               </p>
             </div>
             <span className="rounded-full bg-white/70 px-2 py-1 font-bold dark:bg-white/10">
-              {publicationExportEnabled ? 'Export publicación habilitado' : 'Export publicación deshabilitado'}
+              {publicationExportEnabled ? t("uiExpr.export-publicacion-habilitad.bea34d") : t("uiExpr.export-publicacion-deshabili.177924")}
             </span>
           </div>
           {!presentationModel.exportProfile.canExportAsPublication && (
-            <p className="mt-2 text-[11px]">Se conserva la exportación original. La versión publicación queda preparada por quality gate para evitar archivos vacíos o engañosos.</p>
+            <p className="mt-2 text-[11px]">{t("ui.se-conserva-la-exportacion-o.96c6ec")}</p>
           )}
         </section>
       )}
 
       {presentationModel && (
-        <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-white/10 dark:bg-gray-900" aria-label="Seleccionar origen de exportación">
-          <p className="font-bold text-slate-900 dark:text-white">Origen del entregable</p>
+        <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-white/10 dark:bg-gray-900" aria-label={t("ui.seleccionar-origen-de-export.0503a7")}>
+          <p className="font-bold text-slate-900 dark:text-white">{t("ui.origen-del-entregable.d584cd")}</p>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <label className="flex items-start gap-2 rounded-lg border border-slate-200 p-2 dark:border-white/10">
               <input type="radio" name="export-source" checked={!exportAsPublication} onChange={() => setExportAsPublication(false)} />
-              <span><strong>Contenido original</strong><br /><span className="text-slate-500 dark:text-slate-400">Exporta el artefacto tal como fue generado/editado.</span></span>
+              <span><strong>{t("ui.contenido-original.dafed1")}</strong><br /><span className="text-slate-500 dark:text-slate-400">{t("ui.exporta-el-artefacto-tal-com.3d9acb")}</span></span>
             </label>
             {publicationExportEnabled ? (
               <label className="flex items-start gap-2 rounded-lg border border-primary-200 p-2 dark:border-primary-900/60">
                 <input type="radio" name="export-source" checked={exportAsPublication} onChange={() => setExportAsPublication(true)} />
-                <span><strong>Versión publicación</strong><br /><span className="text-slate-500 dark:text-slate-400">Usa el modelo compilado con portada, calidad, diagramas y trazabilidad.</span></span>
+                <span><strong>{t("ui.version-publicacion.bcbcb0")}</strong><br /><span className="text-slate-500 dark:text-slate-400">{t("ui.usa-el-modelo-compilado-con.425683")}</span></span>
               </label>
             ) : (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">La exportación publicación está deshabilitada por feature flag.</div>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">{t("ui.la-exportacion-publicacion-e.8565e7")}</div>
             )}
           </div>
           {exportAsPublication && publicationAvailable && (
-            <div className="mt-3 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Modo de publicación">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={t("ui.modo-de-publicacion.035b86")}>
               {publicationModes.map(({ mode, label, description, disabled, reason }) => (
                 <label
                   key={mode}
@@ -420,7 +422,7 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
                     <strong>{label}</strong>
                     <br />
                     <span id={`publication-mode-${mode}-desc`} className="text-slate-500 dark:text-slate-400">
-                      {disabled ? `No disponible: ${reason}` : description}
+                      {disabled ? t("uiTemplate.no-disponible-p0.248f8f", { p0: String(reason) }) : description}
                     </span>
                   </span>
                 </label>
@@ -428,10 +430,10 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
             </div>
           )}
           {exportAsPublication && publicationAvailable && publicationBlockers.length > 0 && (
-            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-amber-800 dark:bg-amber-950/30 dark:text-amber-100">Esta versión tiene bloqueadores y se exportará como borrador sólo con confirmación: {publicationBlockers.slice(0, 2).join(' · ')}</p>
+            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-amber-800 dark:bg-amber-950/30 dark:text-amber-100">{t("ui.esta-version-tiene-bloqueado.7a174f")} {publicationBlockers.slice(0, 2).join(' · ')}</p>
           )}
           {exportAsPublication && publicationAvailable && publicationBlockers.length === 0 && publicationWarnings.length > 0 && (
-            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-amber-800 dark:bg-amber-950/30 dark:text-amber-100">Esta versión tiene advertencias y solicitará confirmación antes de exportar: {publicationWarnings.slice(0, 2).join(' · ')}</p>
+            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-amber-800 dark:bg-amber-950/30 dark:text-amber-100">{t("ui.esta-version-tiene-advertenc.822e92")} {publicationWarnings.slice(0, 2).join(' · ')}</p>
           )}
         </section>
       )}
@@ -452,14 +454,14 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
           className="mt-0.5"
         />
         <span>
-          <strong>Incluir reporte de calidad</strong> en la exportación documental (DOCX / PDF / HTML / Markdown / JSON).
-          {' '}Anexa el score formal, dimensiones, hallazgos y próximos pasos. No aplica a CSV/XLSX para no romper la estructura tabular.
+          <strong>{t("ui.incluir-reporte-de-calidad.09f3fa")}</strong> {t("ui.en-la-exportacion-documental.058703")}
+          {' '}{t("ui.anexa-el-score-formal-dimens.57d014")}
         </span>
       </label>
 
       {preflightWarnings.length > 0 && (
         <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200">
-          <strong>Preflight visual del diagrama:</strong>
+          <strong>{t("ui.preflight-visual-del-diagram.40f287")}</strong>
           <ul className="mt-1 list-disc pl-4 space-y-0.5">
             {preflightWarnings.slice(0, 3).map((c) => <li key={c.id}>{c.label}: {c.detail}</li>)}
           </ul>
@@ -474,13 +476,13 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
         >
           <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
             {confirmIsPublication
-              ? `¿Exportar ${confirmFormat.toUpperCase()} como borrador de la versión publicación?`
-              : `¿Exportar ${confirmFormat.toUpperCase()} con advertencias de calidad?`}
+              ? t("uiTemplate.exportar-p0-como-borrador-de.2b3583", { p0: String(confirmFormat.toUpperCase()) })
+              : t("uiTemplate.exportar-p0-con-advertencias.6733ec", { p0: String(confirmFormat.toUpperCase()) })}
           </h4>
           <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
             {confirmIsPublication
-              ? 'La versión publicación tiene hallazgos abiertos. El archivo no quedará vacío ni corrupto, pero conviene revisarlo antes de compartirlo.'
-              : `${RISK_META[confirmGate.risk].label}. El archivo no quedará vacío ni corrupto, pero la calidad está por debajo de lo recomendado.`}
+              ? t("uiExpr.la-version-publicacion-tiene.55fc74")
+              : t("uiTemplate.p0-el-archivo-no-quedara-vac.29ea4c", { p0: String(RISK_META[confirmGate.risk].label) })}
           </p>
           <ul className="mt-2 list-disc pl-4 text-xs text-amber-800 dark:text-amber-200 space-y-0.5">
             {(confirmIsPublication ? confirmIssues : confirmGate.warnings.map((warning) => warning.message)).slice(0, 4).map((message, index) => (
@@ -493,14 +495,14 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
               onClick={() => setConfirmFormat(null)}
               className="px-3 py-1.5 rounded-md text-xs font-medium border border-amber-400 dark:border-amber-700 text-amber-900 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
             >
-              Cancelar
+              {t("ui.cancelar.c111e0")}
             </button>
             <button
               type="button"
               onClick={confirmExport}
               className="px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors"
             >
-              Exportar de todos modos
+              {t("ui.exportar-de-todos-modos.15f222")}
             </button>
           </div>
         </div>
@@ -508,7 +510,7 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
         <>
           {groupedOfferable.length === 0 && (
             <div role="status" className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-800 dark:text-red-200">
-              No hay formatos exportables para esta vista. Revisa los bloqueos de exportabilidad arriba.
+              {t("ui.no-hay-formatos-exportables.c400ea")}
             </div>
           )}
           <div className="space-y-4">
@@ -533,7 +535,7 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
                         disabled={preparing !== null}
                         aria-busy={preparing === option.format}
                         className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-left transition-colors min-h-[96px] focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        aria-label={`Exportar como ${option.label}`}
+                        aria-label={t("uiTemplate.exportar-como-p0.683c2e", { p0: String(option.label) })}
                       >
                         <span className="flex items-center justify-between gap-2">
                           <span className="font-semibold text-gray-900 dark:text-white">{option.label}</span>
@@ -544,7 +546,7 @@ export const ArtifactExportModal: React.FC<ArtifactExportModalProps> = ({
                           )}
                         </span>
                         <span className="mt-1 block text-[11px] text-gray-600 dark:text-gray-300 leading-snug">
-                          {preparing === option.format ? 'Generando el fichero…' : option.description}
+                          {preparing === option.format ? t("uiExpr.generando-el-fichero.34aec8") : option.description}
                         </span>
                       </button>
                     );

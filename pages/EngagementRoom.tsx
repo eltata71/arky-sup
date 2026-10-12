@@ -41,7 +41,7 @@ import {
   GATE_STATUS_LABELS,
   GATE_STATUS_TONES,
 } from '../components/architectureOffice/officeUiLabels';
-import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/agents';
 import { AssistantDock } from '../components/architectureOffice/AssistantDock';
 import { AssistantLauncher } from '../components/architectureOffice/AssistantLauncher';
 import type { CoordinationScope } from '../services/architectureOffice';
@@ -49,7 +49,7 @@ import {
   buildOfficePortfolio,
   healthBucketOf,
   UNASSIGNED_PROGRAM_NAME,
-} from '../services/architectureOffice/domain/officePortfolio';
+} from '../services/architectureOffice/portfolio';
 import {
   summarizeEngagementProgress,
   type OfficeArbVerdict,
@@ -67,6 +67,7 @@ const EngagementRoom: React.FC = () => {
   const { engagementId } = useParams<{ engagementId: string }>();
   const navigate = useNavigate();
   const { projects, settings, isLoading: projectsLoading, t } = useAppContext();
+  const translateConfig = t;
   const {
     engagements,
     isResolving,
@@ -198,26 +199,26 @@ const EngagementRoom: React.FC = () => {
     const result = await approveCharter(engagementId);
     setBusy(false);
     addToast(
-      result.ok ? 'Charter aprobado.' : result.reason ?? 'No se pudo aprobar el charter.',
+      result.ok ? t("uiMessage.charter-aprobado.f29213") : result.reason ?? t("projectHub.approveFailed"),
       result.ok ? 'success' : 'error',
     );
-  }, [engagementId, approveCharter, addToast]);
+  }, [engagementId, approveCharter, addToast, t]);
 
   const handleRun = useCallback(async () => {
     if (!engagementId) return;
     announce('La Oficina comenzó a ejecutar el entregable.');
     const result = await runEngagementNow(engagementId);
-    addToast(result.reason ?? 'Ejecución finalizada.', result.ok ? 'info' : 'warning');
+    addToast(result.reason ?? t("projectHub.runFinished"), result.ok ? 'info' : 'warning');
     announce(result.reason ?? 'Ejecución finalizada.');
-  }, [engagementId, runEngagementNow, addToast, announce]);
+  }, [engagementId, runEngagementNow, addToast, announce, t]);
 
   const handleEvaluateGates = useCallback(async () => {
     if (!engagementId) return;
     setBusy(true);
     const result = await evaluateGates(engagementId);
     setBusy(false);
-    if (!result.ok) addToast(result.reason ?? 'No se pudieron evaluar los gates.', 'error');
-  }, [engagementId, evaluateGates, addToast]);
+    if (!result.ok) addToast(result.reason ?? t("uiMessage.no-se-pudieron-evaluar-los-g.5d400b"), 'error');
+  }, [engagementId, evaluateGates, addToast, t]);
 
   const handleDecide = useCallback(async (verdict: OfficeArbVerdict, rationale: string) => {
     if (!engagementId) return;
@@ -225,10 +226,10 @@ const EngagementRoom: React.FC = () => {
     const result = await decideEngagement(engagementId, verdict, rationale);
     setBusy(false);
     addToast(
-      result.ok ? 'Decisión del comité registrada.' : result.reason ?? 'No se pudo registrar la decisión.',
+      result.ok ? t("uiMessage.decision-del-comite-registra.471581") : result.reason ?? t("uiMessage.no-se-pudo-registrar-la-deci.904a1c"),
       result.ok ? 'success' : 'error',
     );
-  }, [engagementId, decideEngagement, addToast]);
+  }, [engagementId, decideEngagement, addToast, t]);
 
   const openArtifact = useCallback((artifactId: string) => {
     if (!engagement) return;
@@ -282,19 +283,19 @@ const EngagementRoom: React.FC = () => {
                 </h1>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   <Badge tone={ENGAGEMENT_STATUS_TONES[engagement.status]} size="xs">
-                    {ENGAGEMENT_STATUS_LABELS[engagement.status]}
+                    {translateConfig(ENGAGEMENT_STATUS_LABELS[engagement.status])}
                   </Badge>
                   <Badge tone="gray" size="xs" outline>
                     <KindGlyph className="mr-1 h-3 w-3" aria-hidden />
-                    {ENGAGEMENT_KIND_LABELS[engagement.charter.kind]}
+                    {translateConfig(ENGAGEMENT_KIND_LABELS[engagement.charter.kind])}
                   </Badge>
                   {gateStatus && GateGlyph && (
                     <Badge tone={GATE_STATUS_TONES[gateStatus]} size="xs">
                       <GateGlyph className="mr-1 h-3 w-3" aria-hidden />
-                      Gates: {GATE_STATUS_LABELS[gateStatus]}
+                      {t("ui.gates.c632ff")} {translateConfig(GATE_STATUS_LABELS[gateStatus])}
                     </Badge>
                   )}
-                  {running && <Badge tone="primary" size="xs" dot>En ejecución</Badge>}
+                  {running && <Badge tone="primary" size="xs" dot>{t("ui.en-ejecucion.d668ba")}</Badge>}
                 </div>
               </div>
             </div>
@@ -310,35 +311,35 @@ const EngagementRoom: React.FC = () => {
                 onClick={() => navigate(`/workspace/${engagement.projectId}?crear=artefacto`)}
               >
                 <FilePlus2 className="mr-1.5 h-4 w-4" aria-hidden />
-                Nuevo artefacto
+                {t("ui.nuevo-artefacto.c994a6")}
               </Button>
               <Button variant="ai" size="sm" onClick={() => setAssistantOpen(true)}>
                 <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
-                Equipo de arquitectura
+                {t("projectHub.architectureTeam")}
               </Button>
               {!charterApproved && charterAccess.allowed && (
                 <Button variant="primary" size="sm" onClick={handleApprove} loading={busy}>
                   <ScrollText className="mr-1.5 h-4 w-4" aria-hidden />
-                  Aprobar charter
+                  {t("ui.aprobar-charter.62bfd1")}
                 </Button>
               )}
               {!charterApproved && !charterAccess.allowed && (
                 <span className="text-xs text-gray-600 dark:text-gray-300">
                   {charterAccess.reason === 'own-engagement'
-                    ? 'Otra persona con permiso debe aprobar este charter: no puedes aprobar el tuyo.'
-                    : 'Tu rol no puede aprobar charters.'}
+                    ? t('uiDynamic.charterOtherApprover')
+                    : t('uiDynamic.charterRoleCannotApprove')}
                 </span>
               )}
               {charterApproved && !running && engagement.status !== 'delivered' && (
                 <Button variant="primary" size="sm" onClick={handleRun}>
                   <Play className="mr-1.5 h-4 w-4" aria-hidden />
-                  {progress.completed > 0 ? 'Reanudar ejecución' : 'Ejecutar entregable'}
+                  {progress.completed > 0 ? t("uiExpr.reanudar-ejecucion.3973d6") : t("uiExpr.ejecutar-entregable.a09b9e")}
                 </Button>
               )}
               {running && (
                 <Button variant="secondary" size="sm" onClick={() => cancelRun(engagement.id)}>
                   <Square className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                  Detener
+                  {t("ui.detener.ef1874")}
                 </Button>
               )}
             </div>
@@ -347,7 +348,7 @@ const EngagementRoom: React.FC = () => {
           {/* The four numbers that say how the engagement is going. */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile
-              label="Avance"
+              label={t("ui.avance.4ee76d")}
               value={formatPercent(progress.ratio)}
               icon={ListChecks}
               tone={progress.failed > 0 ? 'warning' : 'primary'}
@@ -355,14 +356,14 @@ const EngagementRoom: React.FC = () => {
               hint={`${progress.completed}/${progress.total} tareas${progress.failed > 0 ? ` · ${progress.failed} con problemas` : ''}`}
             />
             <StatTile
-              label="Artefactos"
+              label={t("ui.artefactos.636c41")}
               value={artifactsProduced}
               icon={Layers}
               tone="neutral"
               hint={`${engagement.charter.deliverables.length} artefacto(s) planificado(s)`}
             />
             <StatTile
-              label="Presupuesto de IA"
+              label={t("ui.presupuesto-de-ia.06347f")}
               value={`${engagement.budget.consumedAiCalls}/${engagement.budget.maxAiCalls}`}
               icon={Sparkles}
               tone="ai"
@@ -370,7 +371,7 @@ const EngagementRoom: React.FC = () => {
               hint={`${formatPercent(budgetRatio)} del presupuesto usado`}
             />
             <StatTile
-              label="Gates"
+              label={t("ui.gates.c63ff6")}
               value={gateStatus ? GATE_STATUS_LABELS[gateStatus] : 'Sin evaluar'}
               icon={GateGlyph ?? GATE_STATUS_ICONS.conditional}
               tone={gateStatus === 'blocked' ? 'danger' : gateStatus === 'pass' ? 'success' : 'warning'}
@@ -382,8 +383,7 @@ const EngagementRoom: React.FC = () => {
             <Alert tone="info" role="status">
               <span className="inline-flex items-center gap-2">
                 <Spinner />
-                La Oficina está ejecutando el entregable. Puedes cerrar esta pestaña: el progreso se guarda
-                en cada tarea y se reanuda al volver.
+                {t("ui.la-oficina-esta-ejecutando-e.8428ad")}
               </span>
             </Alert>
           )}
@@ -392,7 +392,7 @@ const EngagementRoom: React.FC = () => {
         {/* Section rail — the page stays whole, but is no longer a long scroll
             you have to hunt through on a tablet. */}
         <nav
-          aria-label="Secciones del entregable"
+          aria-label={t("ui.secciones-del-entregable.7b4df2")}
           className="sticky top-0 z-20 -mx-1 flex gap-1 overflow-x-auto rounded-xl bg-white/85 px-1 py-1.5 backdrop-blur-md dark:bg-gray-950/85"
         >
           {SECTIONS.map((section) => (
@@ -401,7 +401,7 @@ const EngagementRoom: React.FC = () => {
               href={`#${section.id}`}
               className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
             >
-              {section.label}
+              {translateConfig(section.label)}
             </a>
           ))}
         </nav>
@@ -410,15 +410,15 @@ const EngagementRoom: React.FC = () => {
           <div className="space-y-5">
             <Card id="charter" className="scroll-mt-16 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle>Charter</CardTitle>
+                <CardTitle>{t("ui.charter.b260c4")}</CardTitle>
                 <div className="flex flex-wrap gap-1.5">
                   <Badge tone="gray" size="xs" outline>
-                    {engagement.charter.provenance === 'ai-refined' ? 'Refinado con IA' : 'Determinista'}
+                    {engagement.charter.provenance === 'ai-refined' ? t("uiExpr.refinado-con-ia.004086") : t("uiExpr.determinista.e0f722")}
                   </Badge>
                   <CompletionMark done={charterApproved} label={t('micro.charterApproved')} className="h-5 w-5" />
                   {engagement.charter.approvedBy && (
                     <Badge tone="success" size="xs">
-                      Aprobado por {engagement.charter.approvedBy.name}
+                      {t("ui.aprobado-por.7e7eb8")} {engagement.charter.approvedBy.name}
                     </Badge>
                   )}
                 </div>
@@ -429,7 +429,7 @@ const EngagementRoom: React.FC = () => {
               {engagement.charter.objectives.length > 0 && (
                 <div>
                   <h3 className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-                    Objetivos
+                    {t("iniPanel.objectives")}
                   </h3>
                   <ul className="mt-1.5 space-y-1">
                     {engagement.charter.objectives.map((objective) => (
@@ -444,7 +444,7 @@ const EngagementRoom: React.FC = () => {
 
               <div>
                 <h3 className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-                  Equipo asignado
+                  {t("ui.equipo-asignado.816245")}
                 </h3>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {engagement.charter.participantIds.map((personaId) => (
@@ -456,7 +456,7 @@ const EngagementRoom: React.FC = () => {
               {engagement.charter.regulatoryDrivers.length > 0 && (
                 <div>
                   <h3 className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-                    Marco regulatorio
+                    {t("ui.marco-regulatorio.615ffb")}
                   </h3>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {engagement.charter.regulatoryDrivers.map((driver) => (
@@ -471,7 +471,7 @@ const EngagementRoom: React.FC = () => {
               {engagement.businessProjectIds.length > 0 && (
                 <div>
                   <h3 className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-                    Iniciativas de negocio
+                    {t("ui.iniciativas-de-negocio.0d618f")}
                   </h3>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {engagement.businessProjectIds.map((id) => (
@@ -482,13 +482,13 @@ const EngagementRoom: React.FC = () => {
               )}
             </Card>
 
-            <section id="tablero" className="scroll-mt-16 space-y-3" aria-label="Tablero del entregable">
+            <section id="tablero" className="scroll-mt-16 space-y-3" aria-label={t("ui.tablero-del-entregable.f88a1a")}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Tablero de trabajo
+                  {t("ui.tablero-de-trabajo.fa99fd")}
                 </h2>
                 <span className="text-2xs text-gray-400 dark:text-gray-500">
-                  {progress.total} tarea(s) · {Object.keys(OFFICE_AGENT_PERSONAS).length} especialistas disponibles
+                  {progress.total} {t("ui.tarea-s.1f92e6")} {Object.keys(OFFICE_AGENT_PERSONAS).length} {t("ui.especialistas-disponibles.c68abd")}
                 </span>
               </div>
               <EngagementTaskBoard tasks={engagement.tasks} onOpenArtifact={openArtifact} />
@@ -507,7 +507,7 @@ const EngagementRoom: React.FC = () => {
             </div>
 
             <Card id="actividad" className="scroll-mt-16 space-y-3">
-              <CardTitle>Actividad de la Oficina</CardTitle>
+              <CardTitle>{t("ui.actividad-de-la-oficina.2466ae")}</CardTitle>
               <OfficeTimeline projectId={engagement.projectId} entries={engagement.auditTrail} />
             </Card>
           </div>
@@ -517,7 +517,7 @@ const EngagementRoom: React.FC = () => {
       {assistantScope && (
         <AssistantLauncher
           onOpen={() => setAssistantOpen(true)}
-          label={`Abrir el equipo de arquitectura para ${engagement.title}`}
+          label={t("uiTemplate.abrir-el-equipo-de-arquitect.acac15", { p0: String(engagement.title) })}
         />
       )}
 

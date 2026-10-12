@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -72,6 +73,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
   onChangeMemoryBullets,
   onRetryMemoryExtraction,
 }) => {
+  const t = useUiTranslation();
   const [target, setTarget] = useState<AgentExecutionTarget>(plan.target);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -83,7 +85,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
   return (
     <motion.div
       role="region"
-      aria-label="Plan de acción del Arquitecto Agente"
+      aria-label={t("ui.plan-de-accion-del-arquitect.312a12")}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 4 }}
@@ -98,7 +100,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
             <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{plan.title}</h4>
             <span
               className="text-2xs uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded bg-primary-600/15 text-primary-700 dark:text-primary-300"
-              aria-label="Tipo de acción agencial"
+              aria-label={t("ui.tipo-de-accion-agencial.426ee8")}
             >
               {plan.actionType.replace('artifact.', '')}
             </span>
@@ -118,7 +120,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
             className="text-2xs uppercase tracking-widest font-semibold text-primary-700 dark:text-primary-300 hover:underline"
             aria-expanded={showDetails}
           >
-            {showDetails ? 'Ocultar detalles' : 'Ver plan'}
+            {showDetails ? t("uiExpr.ocultar-detalles.59068e") : t("uiExpr.ver-plan.798dbe")}
           </button>
           <AnimatePresence initial={false}>
             {showDetails && (
@@ -132,7 +134,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
                 <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-2xs uppercase tracking-widest font-semibold text-gray-500 mb-1">
-                      Áreas afectadas
+                      {t("ui.areas-afectadas.356aee")}
                     </p>
                     <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                       {plan.affectedAreas.map((area, i) => (
@@ -142,7 +144,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
                   </div>
                   <div>
                     <p className="text-2xs uppercase tracking-widest font-semibold text-gray-500 mb-1">
-                      Riesgos
+                      {t("kg.risks")}
                     </p>
                     <ul className="space-y-1 text-xs text-amber-700 dark:text-amber-300">
                       {plan.risks.map((risk, i) => (
@@ -154,7 +156,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
                 {plan.intent.extractedRequirements.length > 0 && (
                   <div className="mt-3">
                     <p className="text-2xs uppercase tracking-widest font-semibold text-gray-500 mb-1">
-                      Requisitos extraídos
+                      {t("ui.requisitos-extraidos.64f395")}
                     </p>
                     <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
                       {plan.intent.extractedRequirements.map((r, i) => (
@@ -164,7 +166,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
                   </div>
                 )}
                 <p className="mt-2 text-2xs text-gray-500">
-                  Confianza: {(plan.intent.confidence * 100).toFixed(0)}% · Trace:{' '}
+                  {t("ui.confianza.ba83e6")} {(plan.intent.confidence * 100).toFixed(0)}{t("ui.trace.058ba5")}{' '}
                   <code className="font-mono">{plan.traceId.slice(-6)}</code>
                 </p>
               </motion.div>
@@ -189,7 +191,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
       {!isExecuting && !isMemoryAction && plan.actionType !== 'artifact.explainOnly' && (
         <fieldset className="mt-3" disabled={isExecuting}>
           <legend className="text-2xs uppercase tracking-widest font-semibold text-gray-500 mb-1">
-            Destino
+            {t("diagramInspector.target")}
           </legend>
           <div className="flex gap-2">
             <label className="flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg border bg-white dark:bg-gray-900 cursor-pointer text-xs border-gray-200 dark:border-gray-700 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 dark:has-[:checked]:bg-primary-900/40">
@@ -201,7 +203,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
                 onChange={() => setTarget('new_version')}
                 className="accent-primary-600"
               />
-              <span className="text-gray-800 dark:text-gray-200">Nueva versión (recomendado)</span>
+              <span className="text-gray-800 dark:text-gray-200">{t("ui.nueva-version-recomendado.6e95b2")}</span>
             </label>
             <label className="flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg border bg-white dark:bg-gray-900 cursor-pointer text-xs border-gray-200 dark:border-gray-700 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 dark:has-[:checked]:bg-primary-900/40">
               <input
@@ -212,7 +214,7 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
                 onChange={() => setTarget('current')}
                 className="accent-primary-600"
               />
-              <span className="text-gray-800 dark:text-gray-200">Sobrescribir actual</span>
+              <span className="text-gray-800 dark:text-gray-200">{t("ui.sobrescribir-actual.2d2b2f")}</span>
             </label>
           </div>
         </fieldset>
@@ -229,17 +231,17 @@ export const AgentActionCard: React.FC<AgentActionCardProps> = ({
           >
             <SparklesIcon className="h-3.5 w-3.5" />
             {isMemoryAction
-              ? `Guardar en ${memoryDraft?.scope === 'global' ? 'memoria global' : memoryDraft?.scope === 'artifact' ? 'memoria del artefacto' : 'memoria del proyecto'}`
+              ? t("uiTemplate.guardar-en-p0.9b7dd0", { p0: String(memoryDraft?.scope === 'global' ? 'memoria global' : memoryDraft?.scope === 'artifact' ? 'memoria del artefacto' : 'memoria del proyecto') })
               : target === 'current'
-                ? 'Aplicar al artefacto'
-                : 'Crear nueva versión'}
+                ? t("uiExpr.aplicar-al-artefacto.dcdac9")
+                : t("uiExpr.crear-nueva-version.0aef33")}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-colors"
           >
-            Cancelar
+            {t("ui.cancelar.c111e0")}
           </button>
         </div>
       ) : (
@@ -290,6 +292,7 @@ export const AgentResultCard: React.FC<AgentResultCardProps> = ({
   onRollback,
   isRollingBack,
 }) => {
+  const t = useUiTranslation();
   const isSuccess = result.status === 'success';
   const isFailed = result.status === 'failed';
 
@@ -316,7 +319,7 @@ export const AgentResultCard: React.FC<AgentResultCardProps> = ({
         )}
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-widest mb-0.5">
-            {isSuccess ? 'Acción completada' : isFailed ? 'Acción no aplicada' : 'Acción cancelada'}
+            {isSuccess ? t("uiExpr.accion-completada.603130") : isFailed ? t("uiExpr.accion-no-aplicada.1a0bc6") : t("uiExpr.accion-cancelada.4177e8")}
           </p>
           {result.messages.map((msg, i) => (
             <p key={i} className="text-sm leading-snug text-gray-800 dark:text-gray-200">
@@ -332,7 +335,7 @@ export const AgentResultCard: React.FC<AgentResultCardProps> = ({
           )}
           {result.validationResult && (
             <p className="mt-2 text-2xs uppercase tracking-widest text-gray-500">
-              Validación: {result.validationResult.summary}
+              {t("ui.validacion.b30b27")} {result.validationResult.summary}
             </p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -343,8 +346,8 @@ export const AgentResultCard: React.FC<AgentResultCardProps> = ({
                 className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
               >
                 {result.newArtifactId && !result.newArtifactVersionId
-                  ? 'Abrir artefacto creado'
-                  : 'Abrir nueva versión'}
+                  ? t("uiExpr.abrir-artefacto-creado.51e1e7")
+                  : t("uiExpr.abrir-nueva-version.72187a")}
               </button>
             )}
             {(isSuccess || result.status === 'partial') && result.newArtifactVersionId && onRollback && (
@@ -353,10 +356,10 @@ export const AgentResultCard: React.FC<AgentResultCardProps> = ({
                 onClick={onRollback}
                 disabled={isRollingBack}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors disabled:opacity-50"
-                aria-label="Revertir a la versión anterior"
+                aria-label={t("ui.revertir-a-la-version-anteri.579f4a")}
               >
                 <ArrowPathIcon className="h-3.5 w-3.5" />
-                {isRollingBack ? 'Revirtiendo…' : 'Revertir'}
+                {isRollingBack ? t("uiExpr.revirtiendo.b8e8b6") : t("uiExpr.revertir.5ec27b")}
               </button>
             )}
             <button
@@ -364,7 +367,7 @@ export const AgentResultCard: React.FC<AgentResultCardProps> = ({
               onClick={onDismiss}
               className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-colors"
             >
-              Cerrar
+              {t("sdd.close")}
             </button>
           </div>
         </div>
@@ -391,10 +394,10 @@ export const ProactiveAgentSuggestionCard: React.FC<ProactiveAgentSuggestionCard
   preview,
   onAccept,
   onDismiss,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <motion.div
     role="region"
-    aria-label="Sugerencia accionable del Arquitecto Agente"
+    aria-label={t("ui.sugerencia-accionable-del-ar.e6f101")}
     initial={{ opacity: 0, y: 6 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0 }}
@@ -406,7 +409,7 @@ export const ProactiveAgentSuggestionCard: React.FC<ProactiveAgentSuggestionCard
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-2xs uppercase tracking-widest font-semibold text-purple-700 dark:text-purple-300 mb-0.5">
-          Acción recomendada
+          {t("ui.accion-recomendada.ef0ecc")}
         </p>
         <p className="text-xs text-gray-800 dark:text-gray-200 line-clamp-3">{preview}</p>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -423,10 +426,10 @@ export const ProactiveAgentSuggestionCard: React.FC<ProactiveAgentSuggestionCard
             onClick={onDismiss}
             className="inline-flex items-center px-2 py-1 rounded-md text-2xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-800 transition-colors"
           >
-            Descartar
+            {t("ui.descartar.63a77c")}
           </button>
         </div>
       </div>
     </div>
   </motion.div>
-);
+); };

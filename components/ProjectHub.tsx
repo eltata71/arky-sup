@@ -85,7 +85,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
     onBack,
     onOpenSDD
 }) => {
-    const { runProjectCommand, settings } = useAppContext();
+    const { runProjectCommand, settings, t } = useAppContext();
     const { initiatives } = useInitiatives();
     const { createEngagement } = useOffice();
     const { addToast } = useToast();
@@ -125,11 +125,11 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
     const handleProposeEngagement = useCallback(async (input: EngagementIntakeSubmit) => {
         const result = await createEngagement(input);
         if (!result.ok || !result.engagement) {
-            addToast(result.reason ?? 'No se pudo proponer el entregable.', 'error');
+            addToast(result.reason ?? t('projectHub.proposeFailed'), 'error');
             return null;
         }
         return result.engagement;
-    }, [createEngagement, addToast]);
+    }, [createEngagement, addToast, t]);
 
 
     /**
@@ -145,8 +145,8 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
 
     const createGlobalProjectArtifact = (): Artifact => ({
         id: 'global',
-        name: 'Proyecto Completo',
-        objective: 'Asistencia global de arquitectura',
+        name: t('projectHub.fullProject'),
+        objective: t('projectHub.globalAssistance'),
         content: '',
         type: 'markdown',
         phase: 'General',
@@ -270,10 +270,10 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
     const nextPhaseSummary = phaseSummaries.find(summary => summary.templateCount > 0 && summary.artifactCount < summary.templateCount) ?? phaseSummaries[0];
     const latestActivityLabel = latestArtifact
         ? formatDate(getArtifactActivityDate(latestArtifact))
-        : 'Sin actividad';
+        : t('projectHub.noActivity');
 
-    const catalogTitle = selectedPhaseSummary ? `Catálogo · ${selectedPhaseSummary.label}` : 'Catálogo completo';
-    const workspaceTitle = selectedPhaseSummary ? `Mis artefactos · ${selectedPhaseSummary.label}` : 'Mis artefactos activos';
+    const catalogTitle = selectedPhaseSummary ? t('projectHub.catalogPhase', { phase: selectedPhaseSummary.label }) : t('projectHub.fullCatalog');
+    const workspaceTitle = selectedPhaseSummary ? t('projectHub.artifactsPhase', { phase: selectedPhaseSummary.label }) : t('projectHub.activeArtifacts');
 
     const clearFilters = () => {
         setSearchTerm('');
@@ -290,9 +290,9 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                             className="mb-2 inline-flex items-center text-sm font-medium text-slate-500 transition hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-300"
                         >
                             <HomeIcon className="mr-1.5 h-4 w-4" />
-                            Volver a Proyectos
+                            {t('projectHub.backProjects')}
                         </button>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-600 dark:text-primary-300">Centro de acción del proyecto</p>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-600 dark:text-primary-300">{t('projectHub.actionCenter')}</p>
                         <h1 className="mt-1 max-w-5xl truncate text-2xl font-black leading-tight tracking-tight text-slate-950 dark:text-white md:text-3xl">
                             {project.name}
                         </h1>
@@ -302,35 +302,35 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                         <button
                             onClick={() => setIsMemoryCenterOpen(true)}
                             className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-100 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200 dark:hover:bg-violet-500/20"
-                            title="Centro de memoria: gestiona memoria global, del agente, del proyecto, captura inicial y por artefacto"
+                            title={t('projectHub.memoryTitle')}
                         >
                             <CpuChipIcon className="mr-2 h-5 w-5" />
-                            Centro de Memoria
+                            {t('projectHub.memoryCenter')}
                         </button>
                         {onOpenSDD && (
                             <button
                                 onClick={onOpenSDD}
                                 className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
-                                title="Abrir el panel de proceso SDD para este proyecto"
+                                title={t('projectHub.sddTitle')}
                             >
                                 <span className="mr-2 text-base leading-none">📋</span>
-                                Proceso SDD
+                                {t('projectHub.sddProcess')}
                             </button>
                         )}
                         <button
                             onClick={() => setIsPublicationCenterOpen(true)}
                             className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/20"
-                            title="Abrir el Centro de Publicación: convierte artefactos en entregables profesionales, accesibles y gobernados"
+                            title={t('projectHub.publicationTitle')}
                         >
                             <CheckBadgeIcon className="mr-2 h-5 w-5" />
-                            Publicación
+                            {t('projectHub.publication')}
                         </button>
                         <button
                             onClick={() => setChatArtifact(createGlobalProjectArtifact())}
                                 className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-primary-700 px-4 py-2 text-sm font-bold text-white shadow-primary-500/20 transition hover:bg-primary-800 dark:bg-primary-700 dark:hover:bg-primary-800"
                         >
                             <ChatBubbleLeftRightIcon className="mr-2 h-5 w-5" />
-                            Arquitecto Agente
+                            {t('projectHub.agentArchitect')}
                         </button>
                     </div>
                 </div>
@@ -360,9 +360,9 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                 <SparklesIcon className="h-5 w-5" />
                             </span>
                             <span className="min-w-0 flex-1">
-                                <span className="block text-sm font-bold text-slate-900 dark:text-white">Equipo de arquitectura</span>
+                                <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('projectHub.architectureTeam')}</span>
                                 <span className="block text-[11px] leading-snug text-slate-500 dark:text-slate-400">
-                                    La solicitud entra por la Oficina, se reparte entre especialistas y se consolida.
+                                    {t('projectHub.teamDescription')}
                                 </span>
                             </span>
                         </button>
@@ -376,9 +376,9 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                 <PlusIcon className="h-5 w-5" />
                             </span>
                             <span className="min-w-0 flex-1">
-                                <span className="block text-sm font-bold text-slate-900 dark:text-white">Nueva solicitud de entregable</span>
+                                <span className="block text-sm font-bold text-slate-900 dark:text-white">{t('projectHub.newDeliverable')}</span>
                                 <span className="block text-[11px] leading-snug text-slate-500 dark:text-slate-400">
-                                    La Oficina planifica los artefactos, asigna especialistas y los revisa.
+                                    {t('projectHub.deliverableDescription')}
                                 </span>
                             </span>
                         </button>
@@ -401,14 +401,14 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                         />
 
                         {/* B. Exploración de artefactos */}
-                        <section className="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label="Exploración de artefactos">
-                            <p className="px-3 pb-1 pt-2 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Exploración</p>
+                        <section className="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label={t('projectHub.explorationLabel')}>
+                            <p className="px-3 pb-1 pt-2 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t('projectHub.exploration')}</p>
                             <button
                                 onClick={() => setActiveTab('workspace')}
                                 aria-pressed={activeTab === 'workspace'}
                                 className={`flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${activeTab === 'workspace' ? 'bg-primary-50 text-primary-900 ring-1 ring-primary-200 dark:bg-primary-500/15 dark:text-primary-100 dark:ring-primary-500/30' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/[0.06]'}`}
                             >
-                                <span className="inline-flex items-center gap-3 text-sm font-bold"><DocumentTextIcon className="h-5 w-5" />Mis artefactos</span>
+                                <span className="inline-flex items-center gap-3 text-sm font-bold"><DocumentTextIcon className="h-5 w-5" />{t('projectHub.myArtifacts')}</span>
                                 <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-slate-600 ring-1 ring-slate-200 dark:bg-black/20 dark:text-slate-300 dark:ring-white/10">{sortedArtifacts.length}</span>
                             </button>
                             <button
@@ -416,49 +416,49 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                 aria-pressed={activeTab === 'catalog'}
                                 className={`mt-1 flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${activeTab === 'catalog' ? 'bg-primary-50 text-primary-900 ring-1 ring-primary-200 dark:bg-primary-500/15 dark:text-primary-100 dark:ring-primary-500/30' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/[0.06]'}`}
                             >
-                                <span className="inline-flex items-center gap-3 text-sm font-bold"><SparklesIcon className="h-5 w-5" />Catálogo</span>
+                                <span className="inline-flex items-center gap-3 text-sm font-bold"><SparklesIcon className="h-5 w-5" />{t('projectHub.catalog')}</span>
                                 <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-slate-600 ring-1 ring-slate-200 dark:bg-black/20 dark:text-slate-300 dark:ring-white/10">{filteredTemplates.length}</span>
                             </button>
                         </section>
 
                         {/* C. Filtros por fase */}
-                        <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label="Filtros por fase">
+                        <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label={t('projectHub.phaseFilters')}>
                             <div className="mb-3 flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-300">
                                         <FunnelIcon className="h-4 w-4" />
                                     </span>
                                     <div>
-                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Filtros</p>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Buscar y enfocar</p>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t('projectHub.filters')}</p>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{t('projectHub.searchFocus')}</p>
                                     </div>
                                 </div>
                                 {hasActiveFilters && (
                                     <button onClick={clearFilters} className="rounded-lg px-2 py-1 text-xs font-bold text-primary-600 transition hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-300 dark:hover:bg-primary-500/10 dark:hover:text-primary-200">
-                                        Limpiar
+                                        {t('projectHub.clear')}
                                     </button>
                                 )}
                             </div>
 
                             <label className="relative block">
-                                <span className="sr-only">Buscar artefactos o plantillas</span>
+                                <span className="sr-only">{t('projectHub.searchArtifactsTemplates')}</span>
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                                 <input
                                     type="text"
-                                    placeholder={activeTab === 'workspace' ? 'Buscar artefactos...' : 'Buscar plantillas...'}
+                                    placeholder={activeTab === 'workspace' ? t('projectHub.searchArtifacts') : t('projectHub.searchTemplates')}
                                     value={searchTerm}
                                     onChange={(event) => setSearchTerm(event.target.value)}
                                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus-visible:border-primary-400 focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-primary-500/10 dark:border-white/10 dark:bg-black/20 dark:text-white dark:placeholder:text-slate-500 dark:focus-visible:border-primary-400 dark:focus-visible:bg-black/30"
                                 />
                             </label>
 
-                            <div className="mt-4 space-y-1.5" role="group" aria-label="Filtrar por fase del proyecto">
+                            <div className="mt-4 space-y-1.5" role="group" aria-label={t('projectHub.filterPhase')}>
                                 <button
                                     onClick={() => setSelectedPhase('all')}
                                     aria-pressed={selectedPhase === 'all'}
                                     className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${selectedPhase === 'all' ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/[0.06]'}`}
                                 >
-                                    <span className="font-bold">Todo</span>
+                                    <span className="font-bold">{t('projectHub.all')}</span>
                                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${selectedPhase === 'all' ? 'bg-white/15 text-white dark:bg-slate-950/10 dark:text-slate-950' : 'bg-slate-100 text-slate-500 dark:bg-white/[0.08] dark:text-slate-400'}`}>{activeTab === 'workspace' ? uniqueArtifactsCount : ARTIFACT_TEMPLATES.length}</span>
                                 </button>
                                 {phaseSummaries.map(summary => (
@@ -484,7 +484,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                         />
 
                         {/* E. Artefacto a solicitud · F. Conversar con IA */}
-                        <section className="grid gap-2" aria-label="Acciones de artefacto y asistencia">
+                        <section className="grid gap-2" aria-label={t('projectHub.artifactActions')}>
                             <button
                                 onClick={() => {
                                     setActiveTab('catalog');
@@ -493,26 +493,26 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                 className="inline-flex min-h-[46px] items-center justify-center rounded-2xl border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-bold text-primary-800 transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-100 dark:hover:bg-primary-500/20 dark:focus-visible:ring-offset-[#101014]"
                             >
                                 <SparklesIcon className="mr-2 h-5 w-5" />
-                                Artefacto a solicitud
+                                {t('projectHub.customArtifact')}
                             </button>
                             <button
                                 onClick={() => setChatArtifact(createGlobalProjectArtifact())}
                                 className="inline-flex min-h-[46px] items-center justify-center rounded-2xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 dark:focus-visible:ring-offset-[#101014]"
                             >
                                 <ChatBubbleLeftRightIcon className="mr-2 h-5 w-5" />
-                                Conversar con IA
+                                {t('projectHub.chatWithAI')}
                             </button>
                         </section>
 
                         {/* G. Resto de opciones del proyecto */}
                         <div className="space-y-3 border-t border-slate-200 pt-4 dark:border-white/10">
-                            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Más del proyecto</p>
+                            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t('projectHub.moreProject')}</p>
 
-                            <section className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label="Pulso del proyecto">
+                            <section className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label={t('projectHub.pulseLabel')}>
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Pulso</p>
-                                        <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{uniqueArtifactsCount}/{totalRecommendedArtifacts} artefactos activos</p>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t('projectHub.pulse')}</p>
+                                        <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{t('projectHub.activeArtifactCount', { count: String(uniqueArtifactsCount), total: String(totalRecommendedArtifacts) })}</p>
                                     </div>
                                     <span className="rounded-2xl bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20">{overallCompletion}%</span>
                                 </div>
@@ -520,28 +520,28 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                     <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-primary-500 to-violet-500 transition-[width] duration-500" style={{ width: `${overallCompletion}%` }} />
                                 </div>
                                 <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                                    <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200 dark:bg-black/20 dark:ring-white/10">Próximo: {nextPhaseSummary?.label ?? 'General'}</span>
-                                    <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200 dark:bg-black/20 dark:ring-white/10">Actividad: {latestActivityLabel}</span>
+                                    <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200 dark:bg-black/20 dark:ring-white/10">{t('projectHub.nextPhase', { phase: nextPhaseSummary?.label ?? t('projectHub.general') })}</span>
+                                    <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200 dark:bg-black/20 dark:ring-white/10">{t('projectHub.activity', { activity: latestActivityLabel })}</span>
                                 </div>
                             </section>
 
-                            <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label="Narrativa del proyecto">
+                            <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]" aria-label={t('projectHub.narrativeLabel')}>
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Narrativa</p>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Historia y contexto</p>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t('projectHub.narrative')}</p>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{t('projectHub.historyContext')}</p>
                                     </div>
                                     <button
                                         onClick={() => setShowNarrative((value) => !value)}
                                         aria-expanded={showNarrative}
                                         className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.06]"
                                     >
-                                        {showNarrative ? 'Ocultar' : 'Ver'}
+                                        {showNarrative ? t('projectHub.hide') : t('projectHub.view')}
                                     </button>
                                 </div>
                                 {showNarrative && (
                                     <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                        {project.description || 'Gestión centralizada de arquitectura.'}
+                                        {project.description || t('projectHub.defaultDescription')}
                                     </p>
                                 )}
                             </section>
@@ -556,18 +556,18 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-600 dark:text-slate-300">
-                                            {activeTab === 'workspace' ? 'Exploración enfocada' : 'Generación guiada'}
+                                            {activeTab === 'workspace' ? t('projectHub.focusedExploration') : t('projectHub.guidedGeneration')}
                                         </p>
-                                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">{overallCompletion}% madurez</span>
-                                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">{uniqueArtifactsCount} activos</span>
+                                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">{t('projectHub.maturity', { percent: String(overallCompletion) })}</span>
+                                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">{t('projectHub.activeCount', { count: String(uniqueArtifactsCount) })}</span>
                                     </div>
                                     <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white md:text-3xl">
                                         {activeTab === 'workspace' ? workspaceTitle : catalogTitle}
                                     </h2>
                                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                                         {activeTab === 'workspace'
-                                            ? 'Superficie limpia para abrir, conversar y gestionar artefactos. La narrativa permanece disponible bajo demanda.'
-                                            : 'Busca, filtra y crea artefactos desde el catálogo sin navegar por contenido irrelevante.'}
+                                            ? t('projectHub.workspaceDescription')
+                                            : t('projectHub.catalogDescription')}
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -577,24 +577,24 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                 onClick={() => setShowNarrative((value) => !value)}
                                                 className="inline-flex min-h-[40px] items-center justify-center rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.06]"
                                             >
-                                                {showNarrative ? 'Ocultar narrativa' : 'Ver narrativa'}
+                                                {showNarrative ? t('projectHub.hideNarrative') : t('projectHub.showNarrative')}
                                             </button>
-                                            <div className="flex items-center rounded-2xl bg-slate-100 p-1 dark:bg-white/[0.06]" aria-label="Cambiar vista de artefactos">
+                                            <div className="flex items-center rounded-2xl bg-slate-100 p-1 dark:bg-white/[0.06]" aria-label={t('projectHub.changeArtifactView')}>
                                                 <button
                                                     onClick={() => setViewMode('table')}
                                                     className={`inline-flex min-h-[38px] items-center rounded-xl px-3 text-sm font-bold transition ${viewMode === 'table' ? 'bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-200' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
-                                                    title="Vista de lista"
+                                                    title={t('projectHub.listView')}
                                                 >
                                                     <TableCellsIcon className="mr-2 h-5 w-5" />
-                                                    Lista
+                                                    {t('projectHub.list')}
                                                 </button>
                                                 <button
                                                     onClick={() => setViewMode('grid')}
                                                     className={`inline-flex min-h-[38px] items-center rounded-xl px-3 text-sm font-bold transition ${viewMode === 'grid' ? 'bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-200' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
-                                                    title="Vista de tarjetas"
+                                                    title={t('projectHub.cardView')}
                                                 >
                                                     <Squares2X2Icon className="mr-2 h-5 w-5" />
-                                                    Tarjetas
+                                                    {t('projectHub.cards')}
                                                 </button>
                                             </div>
                                         </>
@@ -604,7 +604,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                             className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-slate-950 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
                                         >
                                             <SparklesIcon className="mr-2 h-5 w-5" />
-                                            Artefacto a solicitud
+                                            {t('projectHub.customArtifact')}
                                         </button>
                                     )}
                                 </div>
@@ -637,7 +637,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                                 <span className="rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">{getPhaseLabel(artifact.phase)}</span>
                                                                 <ArtifactOriginBadge artifact={artifact} />
                                                             </div>
-                                                            <span className="inline-flex items-center whitespace-nowrap" title={`Última modificación: ${formatDateTime(getArtifactActivityDate(artifact))}`}>
+                                                            <span className="inline-flex items-center whitespace-nowrap" title={t('projectHub.lastModifiedAt', { date: formatDateTime(getArtifactActivityDate(artifact)) })}>
                                                                 <ClockIcon className="mr-1 h-3.5 w-3.5" />
                                                                 {formatDateTime(getArtifactActivityDate(artifact))}
                                                             </span>
@@ -648,12 +648,12 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                             onClick={() => onOpenArtifact(artifact.id)}
                                                             className="flex min-h-[48px] flex-1 items-center justify-center text-sm font-bold text-primary-600 transition hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10"
                                                         >
-                                                            Abrir
+                                                            {t('projectHub.open')}
                                                         </button>
                                                         <button
                                                             onClick={() => setOpenMenuId(openMenuId === artifact.id ? null : artifact.id)}
                                                             className={`flex w-14 items-center justify-center transition hover:bg-slate-50 dark:hover:bg-white/[0.06] ${openMenuId === artifact.id ? 'bg-slate-100 dark:bg-white/[0.08]' : ''}`}
-                                                            aria-label={`Abrir acciones de ${artifact.name}`}
+                                                            aria-label={t('projectHub.openActionsFor', { name: artifact.name })}
                                                         >
                                                             <EllipsisHorizontalIcon className="h-5 w-5 text-slate-500" />
                                                         </button>
@@ -678,12 +678,12 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                 <table className="w-full min-w-[860px] text-left">
                                                     <thead>
                                                         <tr className="border-b border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
-                                                            <th className="px-6 py-4">Nombre</th>
-                                                            <th className="px-6 py-4">Fase</th>
-                                                            <th className="px-6 py-4">Tipo</th>
-                                                            <th className="px-6 py-4 text-center">Versión</th>
-                                                            <th className="px-6 py-4">Última modificación</th>
-                                                            <th className="px-6 py-4 text-right">Acciones</th>
+                                                            <th className="px-6 py-4">{t('projectHub.name')}</th>
+                                                            <th className="px-6 py-4">{t('projectHub.phase')}</th>
+                                                            <th className="px-6 py-4">{t('projectHub.type')}</th>
+                                                            <th className="px-6 py-4 text-center">{t('projectHub.version')}</th>
+                                                            <th className="px-6 py-4">{t('projectHub.lastModified')}</th>
+                                                            <th className="px-6 py-4 text-right">{t('projectHub.actions')}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100 dark:divide-white/10">
@@ -717,12 +717,12 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                                             onClick={() => onOpenArtifact(artifact.id)}
                                                                             className="rounded-xl bg-primary-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-primary-700"
                                                                         >
-                                                                            Abrir
+                                                                            {t('projectHub.open')}
                                                                         </button>
                                                                         <button
                                                                             onClick={() => setOpenMenuId(openMenuId === artifact.id ? null : artifact.id)}
                                                                             className={`rounded-xl p-2 transition ${openMenuId === artifact.id ? 'bg-slate-200 text-slate-900 dark:bg-white/10 dark:text-white' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/[0.06] dark:hover:text-white'}`}
-                                                                            aria-label={`Abrir acciones de ${artifact.name}`}
+                                                                            aria-label={t('projectHub.openActionsFor', { name: artifact.name })}
                                                                         >
                                                                             <EllipsisHorizontalIcon className="h-5 w-5" />
                                                                         </button>
@@ -751,15 +751,15 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary-50 shadow-inner dark:bg-primary-500/10">
                                             <SparklesIcon className="h-10 w-10 text-primary-500 dark:text-primary-300" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-slate-950 dark:text-white">No hay artefactos con este enfoque</h3>
+                                        <h3 className="text-2xl font-black text-slate-950 dark:text-white">{t('projectHub.noArtifactsFocus')}</h3>
                                         <p className="mt-3 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
-                                            Ajusta los filtros o explora el catálogo para generar el siguiente activo de arquitectura.
+                                            {t('projectHub.noArtifactsDescription')}
                                         </p>
                                         <button
                                             onClick={() => setActiveTab('catalog')}
                                             className="mt-6 inline-flex min-h-[44px] items-center rounded-2xl bg-slate-950 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
                                         >
-                                            Explorar catálogo
+                                            {t('projectHub.exploreCatalog')}
                                             <ArrowRightIcon className="ml-2 h-4 w-4" />
                                         </button>
                                     </div>
@@ -771,20 +771,20 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                             <div className="space-y-8 animate-slide-up pb-24">
                                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
                                     <input type="checkbox" checked={groupByAdm} onChange={event => setGroupByAdm(event.target.checked)} />
-                                    Agrupar por fase TOGAF ADM
+                                    {t('projectHub.groupByAdm')}
                                 </label>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111116]">
-                                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Plantillas visibles</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('projectHub.visibleTemplates')}</p>
                                         <p className="mt-2 text-3xl font-black text-slate-950 dark:text-white">{filteredTemplates.length}</p>
                                     </div>
                                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111116]">
-                                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Listas para crear</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('projectHub.readyToCreate')}</p>
                                         <p className="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-300">{readyTemplateCount}</p>
                                     </div>
                                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111116]">
-                                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Filtro activo</p>
-                                        <p className="mt-2 truncate text-lg font-black text-slate-950 dark:text-white">{selectedPhaseSummary?.label || 'Todas las fases'}</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('projectHub.activeFilter')}</p>
+                                        <p className="mt-2 truncate text-lg font-black text-slate-950 dark:text-white">{selectedPhaseSummary?.label || t('projectHub.allPhases')}</p>
                                     </div>
                                 </div>
 
@@ -798,11 +798,11 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                 <div className="min-w-0">
                                                     <h3 className="text-xl font-black text-slate-950 dark:text-white">{phase}</h3>
                                                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                        {templates.length} opciones relevantes para este enfoque
+                                                        {t('projectHub.relevantOptions', { count: String(templates.length) })}
                                                         {effectiveSortKey === 'ai-recommended' && (
                                                             <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-700 ring-1 ring-primary-200 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-500/20">
                                                                 <SparklesIcon className="h-3 w-3" />
-                                                                Orden recomendado por IA
+                                                                {t('projectHub.aiOrder')}
                                                             </span>
                                                         )}
                                                     </p>
@@ -828,23 +828,23 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                                         {sequenceLabel && (
                                                                             <span
                                                                                 className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-black text-white dark:bg-white dark:text-slate-900"
-                                                                                title="Posición sugerida por la IA dentro de la fase para evitar inconsistencias."
+                                                                                title={t('projectHub.recommendedPosition')}
                                                                             >
                                                                                 <SparklesIcon className="h-2.5 w-2.5" />
-                                                                                Paso {sequenceLabel}
+                                                                                {t('projectHub.step', { number: sequenceLabel })}
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                     <h4 className="text-lg font-black text-slate-950 dark:text-white">{template.name}</h4>
                                                                 </div>
                                                                 {existing ? (
-                                                                    <CheckBadgeIcon className="h-6 w-6 flex-none text-emerald-500" role="img" aria-label="Ya existe en el proyecto" />
+                                                                    <CheckBadgeIcon className="h-6 w-6 flex-none text-emerald-500" role="img" aria-label={t('projectHub.alreadyExists')} />
                                                                 ) : (
                                                                     <span className="h-6 w-6 flex-none rounded-full border border-slate-300 dark:border-white/20" />
                                                                 )}
                                                             </div>
                                                             <p className="line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-slate-500 dark:text-slate-400">{template.objective}</p>
-                                                            <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">Secuencia guiada · {template.representation}</p>
+                                                            <p className="mt-4 text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">{t('projectHub.guidedSequence', { representation: template.representation })}</p>
                                                             <button
                                                                 onClick={() => onCreateArtifact(template)}
                                                                 className={`mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl px-4 py-2 text-sm font-bold transition ${existing ? 'bg-white text-slate-800 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:bg-white/[0.06] dark:text-white dark:ring-emerald-500/20 dark:hover:bg-white/[0.1]' : 'bg-primary-600 text-white shadow-sm hover:bg-primary-700'}`}
@@ -852,12 +852,12 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                                                 {existing ? (
                                                                     <>
                                                                         <ArrowPathIcon className="mr-2 h-4 w-4" />
-                                                                        Generar de Nuevo
+                                                                        {t('projectHub.generateAgain')}
                                                                     </>
                                                                 ) : (
                                                                     <>
                                                                         <PlusIcon className="mr-2 h-4 w-4" />
-                                                                        Crear Artefacto
+                                                                        {t('projectHub.createArtifact')}
                                                                     </>
                                                                 )}
                                                             </button>
@@ -870,9 +870,9 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                                 ) : (
                                     <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-20 text-center shadow-sm dark:border-white/15 dark:bg-[#111116]">
                                         <SparklesIcon className="mx-auto mb-4 h-10 w-10 text-slate-400" />
-                                        <h3 className="text-2xl font-black text-slate-950 dark:text-white">No encontramos plantillas</h3>
-                                        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">Prueba con otra búsqueda o cambia la fase seleccionada.</p>
-                                        <button onClick={clearFilters} className="mt-6 text-sm font-bold text-primary-600 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200">Limpiar filtros</button>
+                                        <h3 className="text-2xl font-black text-slate-950 dark:text-white">{t('projectHub.noTemplates')}</h3>
+                                        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">{t('projectHub.tryOtherSearch')}</p>
+                                        <button onClick={clearFilters} className="mt-6 text-sm font-bold text-primary-600 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200">{t('projectHub.clearFilters')}</button>
                                     </div>
                                 )}
                             </div>
@@ -924,7 +924,7 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
 
             <AssistantLauncher
                 onOpen={() => setAssistantOpen(true)}
-                label={`Abrir el equipo de arquitectura para ${project.name}`}
+                label={t('projectHub.openTeamFor', { name: project.name })}
             />
 
             {assistantOpen && <React.Suspense fallback={null}><AssistantDock
@@ -934,9 +934,9 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                 settings={settings}
                 project={project}
                 suggestions={[
-                    '¿Qué artefactos le faltan a este proyecto para estar completo?',
-                    'Revisa la coherencia entre los artefactos que ya existen',
-                    'Propón los entregables que la Oficina debería abrir aquí',
+                    t('projectHub.suggestionMissing'),
+                    t('projectHub.suggestionReview'),
+                    t('projectHub.suggestionDeliverables'),
                 ]}
             /></React.Suspense>}
 
@@ -953,8 +953,8 @@ export const ProjectHub: React.FC<ProjectHubProps> = ({
                     isOpen={!!chatArtifact}
                     onClose={() => setChatArtifact(null)}
                     purpose="project-chat"
-                    title={`Chat: ${chatArtifact.name}`}
-                    initialPrompt="Continuando conversación sobre el proyecto..."
+                    title={t('projectHub.chatTitle', { name: chatArtifact.name })}
+                    initialPrompt={t('projectHub.continuingChat')}
                     projectId={project.id}
                     contextData={`Nombre del Artefacto: ${chatArtifact.name}\nObjetivo: ${chatArtifact.objective}\nContenido Actual (Resumen):\n${chatArtifact.content.substring(0, 1000)}...`}
                 /></React.Suspense>

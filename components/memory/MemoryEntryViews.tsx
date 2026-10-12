@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import type { MemoryEntry, MemoryPriority } from '../../types';
@@ -23,7 +24,7 @@ export const PrioritySelector: React.FC<{
                     type="button"
                     disabled={disabled}
                     onClick={() => { if (!isActive) onChange(priority); }}
-                    title={`Prioridad ${MEMORY_PRIORITY_LABEL_ES[priority].toLowerCase()}`}
+                    title={t("uiTemplate.prioridad-p0.b54266", { p0: String(MEMORY_PRIORITY_LABEL_ES[priority].toLowerCase()) })}
                     className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition disabled:cursor-not-allowed disabled:opacity-40 ${
                         isActive
                             ? PRIORITY_BADGE_CLASSES[priority]
@@ -40,21 +41,22 @@ export const PrioritySelector: React.FC<{
 
 /** Línea de metadatos de una nota: fecha/hora de creación y autor. */
 export const EntryMetaLine: React.FC<{ entry: MemoryEntry }> = ({ entry }) => {
+  const t = useUiTranslation();
     const created = formatEntryTimestamp(entry.createdAt);
     const updated = formatEntryTimestamp(entry.updatedAt ?? null);
     return (
         <>
-            <span>{created ? `Creada: ${created}` : 'Sin fecha (nota previa al registro de metadatos)'}</span>
+            <span>{created ? t("uiTemplate.creada-p0.f388c4", { p0: String(created) }) : t("uiExpr.sin-fecha-nota-previa-al-reg.706410")}</span>
             {updated && (
                 <>
                     <span aria-hidden>•</span>
-                    <span>Editada: {updated}</span>
+                    <span>{t("ui.editada.c6b8ef")} {updated}</span>
                 </>
             )}
             {entry.authorName && (
                 <>
                     <span aria-hidden>•</span>
-                    <span>Por: {entry.authorName}</span>
+                    <span>{t("ui.por.34b983")} {entry.authorName}</span>
                 </>
             )}
         </>
@@ -94,7 +96,7 @@ export const ListView: React.FC<ListViewProps> = ({
                 <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                     type="text"
-                    placeholder={`Buscar en "${scopeLabel}"…`}
+                    placeholder={t("uiTemplate.buscar-en-p0.813f98", { p0: String(scopeLabel) })}
                     value={search}
                     onChange={(event) => onSearchChange(event.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-gray-800 dark:text-white"
@@ -108,7 +110,7 @@ export const ListView: React.FC<ListViewProps> = ({
                     <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">{t('mem.noRecordsHint')}</p>
                 </div>
             ) : entries.length === 0 ? (
-                <p className="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs text-slate-500 dark:bg-white/[0.03] dark:text-slate-400">No hay resultados para "{search}".</p>
+                <p className="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs text-slate-500 dark:bg-white/[0.03] dark:text-slate-400">{t("ui.no-hay-resultados-para.3796f3")}{search}".</p>
             ) : (
                 <ul className="flex-1 space-y-2 overflow-y-auto pr-1">
                     {entries.map((item) => (
@@ -169,16 +171,16 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete,
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                         <EntryMetaLine entry={entry} />
                         <span aria-hidden>•</span>
-                        <span>{chars.toLocaleString()} car.</span>
+                        <span>{chars.toLocaleString()} {t("ui.car.f1cd9d")}</span>
                         <span aria-hidden>•</span>
-                        <span>{words.toLocaleString()} pal.</span>
+                        <span>{words.toLocaleString()} {t("ui.pal.7b6f04")}</span>
                         {isLong && (
                             <button
                                 type="button"
                                 onClick={onView}
                                 className="font-bold text-primary-600 transition hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200"
                             >
-                                Ver completo →
+                                {t("ui.ver-completo.2c8c74")}
                             </button>
                         )}
                     </div>
@@ -193,11 +195,11 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete,
     );
 };
 
-const ActionButton: React.FC<{ label: string; icon: React.ReactNode; onClick: () => void; variant?: 'default' | 'danger'; disabled?: boolean }> = ({ label, icon, onClick, variant = 'default', disabled }) => (
+const ActionButton: React.FC<{ label: string; icon: React.ReactNode; onClick: () => void; variant?: 'default' | 'danger'; disabled?: boolean }> = ({ label, icon, onClick, variant = 'default', disabled }) => { const t = useUiTranslation(); return (
     <button
         type="button"
         onClick={onClick}
-        aria-label={disabled ? `${label} (no disponible)` : label}
+        aria-label={disabled ? t("uiTemplate.p0-no-disponible.f2688b", { p0: String(label) }) : label}
         disabled={disabled}
         className={`rounded-lg p-1.5 transition disabled:cursor-not-allowed disabled:opacity-40 ${
             variant === 'danger'
@@ -207,4 +209,4 @@ const ActionButton: React.FC<{ label: string; icon: React.ReactNode; onClick: ()
     >
         {icon}
     </button>
-);
+); };

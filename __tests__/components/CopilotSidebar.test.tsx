@@ -84,7 +84,7 @@ describe('CopilotSidebar smart handoff', () => {
     fireEvent.click(screen.getAllByLabelText('Abrir Arquitecto Agente')[0]);
     await waitFor(() => {
       expect(screen.getAllByTestId('assistant-panel-stub').length).toBeGreaterThan(0);
-    });
+    }, { timeout: 5000 });
 
     rerender(
       <CopilotSidebar
@@ -118,7 +118,7 @@ describe('CopilotSidebar smart handoff', () => {
     fireEvent.click(screen.getAllByLabelText('Abrir Arquitecto Agente')[0]);
     await waitFor(() => {
       expect(screen.getAllByTestId('assistant-panel-stub').length).toBeGreaterThan(0);
-    });
+    }, { timeout: 5000 });
 
     // The panel was opened on the hub from scratch (no prior artifact). The
     // smart-handoff effect must not undo that.

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Cómo va la iniciativa según lo que están haciendo sus proyectos.
  *
@@ -56,6 +57,8 @@ const AttentionRow: React.FC<{
   initiative: BusinessInitiative;
   onOpen: () => void;
 }> = ({ report, initiative, onOpen }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const outcomeById = new Map(initiative.expectedOutcomes.map((entry) => [entry.id, entry]));
   const kpiById = new Map(initiative.kpis.map((entry) => [entry.id, entry]));
 
@@ -72,14 +75,14 @@ const AttentionRow: React.FC<{
             {report.name}
           </span>
           <span className="text-2xs text-gray-500 dark:text-gray-400">
-            {report.architectureLead ?? 'Sin líder asignado'}
+            {report.architectureLead ?? t("uiExpr.sin-lider-asignado.ca7e86")}
             {report.targetEndDate && ` · ${formatDate(report.targetEndDate)}`}
             {report.progress !== null && ` · ${percent(report.progress)}`}
             {report.progressSource === 'milestones' && ' (deducido de los hitos)'}
           </span>
         </span>
         <Badge tone={ATTENTION_HEALTH_TONES[report.health]} size="xs">
-          {ATTENTION_HEALTH_LABELS[report.health]}
+          {translateConfig(ATTENTION_HEALTH_LABELS[report.health])}
         </Badge>
         <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" aria-hidden />
       </button>
@@ -103,10 +106,10 @@ const AttentionRow: React.FC<{
                     {contribution.statement}
                   </span>
                   <span className="text-2xs text-gray-500 dark:text-gray-400">
-                    {CONTRIBUTION_STATE_LABELS[contribution.state]}
+                    {translateConfig(CONTRIBUTION_STATE_LABELS[contribution.state])}
                     {outcome && ` · Resultado: ${outcome.statement}`}
                     {kpi && ` · Indicador: ${kpi.name}`}
-                    {contribution.weight ? ` · Peso ${contribution.weight}` : ''}
+                    {contribution.weight ? t("uiTemplate.peso-p0.1b9d47", { p0: String(contribution.weight) }) : ''}
                   </span>
                 </span>
               </li>
@@ -124,6 +127,8 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
   projects,
   id,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const navigate = useNavigate();
   const { reports, rollup } = useInitiativeDelivery(initiative, initiatives, projects);
 
@@ -136,14 +141,13 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
       id={id}
       icon={INITIATIVE_SECTION_ICONS.attentions}
       title={EA_LEVELS.engagementProject.plural}
-      hint="La arquitectura que responde a esta iniciativa, y lo que mueve en ella."
+      hint={t("La arquitectura que responde a esta iniciativa, y lo que mueve en ella.")}
       count={rollup.total}
     >
       {rollup.total === 0 ? (
         <div className="space-y-2">
           <EmptyRow>
-            Ningún proyecto de arquitectura responde todavía a {initiative.code || 'esta iniciativa'}.
-            Ábrelo desde aquí y el asistente arrancará con el contexto de esta iniciativa.
+            {t("ui.ningun-proyecto-de-arquitect.8134f8")} {initiative.code || t("uiExpr.esta-iniciativa.997f57")}{t("ui.abrelo-desde-aqui-y-el-asist.897599")}
           </EmptyRow>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -152,11 +156,11 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
               onClick={() => navigate(`/projects?iniciativa=${initiative.id}&crear=guiado`)}
             >
               <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-              Nuevo proyecto de arquitectura
+              {t("ui.nuevo-proyecto-de-arquitectu.2efc6a")}
             </Button>
             <Button variant="secondary" size="sm" onClick={() => navigate('/office')}>
               <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
-              Abrir un entregable en la Oficina
+              {t("ui.abrir-un-entregable-en-la-of.85eb25")}
             </Button>
           </div>
         </div>
@@ -164,7 +168,7 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
         <>
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             <StatTile
-              label="Avance de la entrega"
+              label={t("ui.avance-de-la-entrega.d514a7")}
               value={percent(rollup.progress)}
               hint={rollup.progress === null
                 ? 'Ningún proyecto declara avance todavía'
@@ -173,21 +177,21 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
                   : 'Todos los proyectos pesan igual: nadie ha declarado pesos')}
             />
             <StatTile
-              label="Proyectos midiendo"
+              label={t("ui.proyectos-midiendo.d1a244")}
               value={`${rollup.measured}/${rollup.total}`}
-              hint="Con avance declarado o deducible de sus hitos"
+              hint={t("Con avance declarado o deducible de sus hitos")}
               tone={rollup.measured === 0 && rollup.total > 0 ? 'warning' : undefined}
             />
             <StatTile
-              label="Fuera de rumbo"
+              label={t("ui.fuera-de-rumbo.69c9fa")}
               value={String(rollup.offTrack)}
-              hint={ATTENTION_HEALTH_HINTS['off-track']}
+              hint={translateConfig(ATTENTION_HEALTH_HINTS['off-track'])}
               tone={rollup.offTrack > 0 ? 'danger' : undefined}
             />
             <StatTile
-              label="Riesgos severos heredados"
+              label={t("ui.riesgos-severos-heredados.3360e1")}
               value={String(rollup.inheritedSevereRisks)}
-              hint="Altos y críticos que sus proyectos han registrado"
+              hint={t("Altos y críticos que sus proyectos han registrado")}
               tone={rollup.inheritedSevereRisks > 0 ? 'warning' : undefined}
             />
           </div>
@@ -195,7 +199,7 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
           {uncoveredOutcomes.length > 0 && (
             <Alert tone="warning">
               <span className="font-semibold">
-                {uncoveredOutcomes.length} resultado(s) esperado(s) sin proyecto que los sirva:
+                {uncoveredOutcomes.length} {t("ui.resultado-s-esperado-s-sin-p.a908d3")}
               </span>{' '}
               {uncoveredOutcomes.map((outcome) => outcome.statement).join(' · ')}
             </Alert>
@@ -203,14 +207,14 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
 
           {uncoveredKpis.length > 0 && (
             <Alert tone="info">
-              <span className="font-semibold">{uncoveredKpis.length} indicador(es) que ningún proyecto declara mover:</span>{' '}
+              <span className="font-semibold">{uncoveredKpis.length} {t("ui.indicador-es-que-ningun-proy.921c21")}</span>{' '}
               {uncoveredKpis.map((kpi) => kpi.name).join(' · ')}
             </Alert>
           )}
 
           {rollup.blocked.length > 0 && (
             <Alert tone="danger">
-              {rollup.blocked.length} aporte(s) bloqueado(s):{' '}
+              {rollup.blocked.length} {t("ui.aporte-s-bloqueado-s.457818")}{' '}
               {rollup.blocked.map((entry) => entry.contribution.statement).join(' · ')}
             </Alert>
           )}
@@ -219,8 +223,7 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
               hay que arreglar, no una fila que deba desaparecer del informe. */}
           {rollup.danglingReferences.length > 0 && (
             <Alert tone="warning">
-              {rollup.danglingReferences.length} aporte(s) citan un resultado o un indicador que ya no
-              existe en esta iniciativa. Ábrelos en su proyecto y vuelve a elegirlo.
+              {rollup.danglingReferences.length} {t("ui.aporte-s-citan-un-resultado.4afbe5")}
             </Alert>
           )}
 
@@ -241,7 +244,7 @@ export const InitiativeDeliveryPanel: React.FC<InitiativeDeliveryPanelProps> = (
             onClick={() => navigate(`/projects?iniciativa=${initiative.id}&crear=guiado`)}
           >
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Nuevo proyecto de arquitectura
+            {t("ui.nuevo-proyecto-de-arquitectu.2efc6a")}
           </Button>
         </>
       )}

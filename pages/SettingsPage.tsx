@@ -94,14 +94,14 @@ const SettingsPage: React.FC = () => {
         setAvailableModels(models);
       } catch (error) {
         console.error('Error loading Gemini models', error);
-        setModelsError('No se pudo actualizar la lista de modelos desde la API de Gemini.');
+        setModelsError(t('uiState.21'));
       } finally {
         setIsLoadingModels(false);
       }
     };
 
     loadModels();
-  }, [localSettings.aiConfig?.apiKeySource, modelRefreshTick]);
+  }, [localSettings.aiConfig?.apiKeySource, modelRefreshTick, t]);
 
   useEffect(() => {
     if (localSettings.aiConfig?.provider !== 'openrouter') return;
@@ -114,7 +114,7 @@ const SettingsPage: React.FC = () => {
         setAvailableOpenRouterModels(models);
       } catch (error) {
         console.error('Error loading OpenRouter models', error);
-        setOpenRouterModelsError('No se pudo actualizar la lista de modelos de OpenRouter.');
+        setOpenRouterModelsError(t('uiState.22'));
         setAvailableOpenRouterModels([]);
       } finally {
         setIsLoadingOpenRouterModels(false);
@@ -122,7 +122,7 @@ const SettingsPage: React.FC = () => {
     };
 
     loadOpenRouterModels();
-  }, [localSettings.aiConfig?.provider, openRouterKeyTick]);
+  }, [localSettings.aiConfig?.provider, openRouterKeyTick, t]);
 
   useEffect(() => {
     if (!localSettings.aiConfig?.model) {
@@ -225,7 +225,7 @@ const SettingsPage: React.FC = () => {
     <div className="flex-1 flex flex-col p-4 md:p-8 md:pl-20 overflow-y-auto bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" iconOnly aria-label="Volver al Dashboard" onClick={() => navigate('/')}>
+          <Button variant="ghost" iconOnly aria-label={t("ui.volver-al-dashboard.4a3744")} onClick={() => navigate('/')}>
             <ArrowLeftIcon className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-bold tracking-tight">{t('settings')}</h1>
@@ -236,7 +236,7 @@ const SettingsPage: React.FC = () => {
         <TabButton label={t('aiConfig')} isActive={activeTab === 'ai'} onClick={() => setActiveTab('ai')} />
         <TabButton label={t('context')} isActive={activeTab === 'context'} onClick={() => setActiveTab('context')} />
         <TabButton label={t('appearance')} isActive={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} />
-        <TabButton label="Cuenta" isActive={activeTab === 'account'} onClick={() => setActiveTab('account')} />
+        <TabButton label={t("ui.cuenta.f431c8")} isActive={activeTab === 'account'} onClick={() => setActiveTab('account')} />
       </div>
 
       <div className="max-w-3xl w-full space-y-8">
@@ -313,7 +313,7 @@ const SettingsPage: React.FC = () => {
                     <label className="flex items-center justify-between gap-4 cursor-pointer">
                         <div>
                             <h3 className="font-medium text-sm text-gray-900 dark:text-white">{t('includeChatHistoryByDefault')}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Deshabilitado por defecto para reducir costo, ruido contextual y riesgo de contaminación entre conversaciones.</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("ui.deshabilitado-por-defecto-pa.83fecb")}</p>
                         </div>
                         <input
                             type="checkbox"
@@ -341,7 +341,7 @@ const SettingsPage: React.FC = () => {
                                 <Button variant="secondary" onClick={handleSaveUserKey}>{t('saveKey')}</Button>
                             </div>
                             <p className="text-xs text-gray-400 mt-2">
-                                Esta llave se guarda únicamente en tu navegador.
+                                {t("ui.esta-llave-se-guarda-unicame.1ba2c8")}
                             </p>
                         </div>
                     )}
@@ -354,11 +354,11 @@ const SettingsPage: React.FC = () => {
                         {t('aiModel')}
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        {t('aiModelHelp')} Valor por omisión: <span className="font-semibold">{DEFAULT_TEXT_MODEL}</span>.
+                        {t('aiModelHelp')} {t("ui.valor-por-omision.48b3de")} <span className="font-semibold">{DEFAULT_TEXT_MODEL}</span>.
                     </p>
                     {isLoadingModels && (
                         <p className="text-xs text-primary-600 dark:text-primary-400 mb-2">
-                            Consultando modelos vigentes de Google Gemini...
+                            {t("ui.consultando-modelos-vigentes.dde434")}
                         </p>
                     )}
                     {modelsError && (
@@ -377,7 +377,7 @@ const SettingsPage: React.FC = () => {
                                 >
                                     <div className="flex items-center justify-between">
                                         <span className="font-semibold text-gray-900 dark:text-white">{model.name}</span>
-                                        {isSelected && <Badge tone="primary" size="xs" dot>Activo</Badge>}
+                                        {isSelected && <Badge tone="primary" size="xs" dot>{t("ui.activo.10140f")}</Badge>}
                                     </div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{model.description}</p>
                                     <p className="text-[11px] text-gray-400 mt-1 font-mono">{model.id}</p>
@@ -406,7 +406,7 @@ const SettingsPage: React.FC = () => {
                                 <Button variant="secondary" onClick={handleSaveOpenRouterKey}>{t('saveKey')}</Button>
                             </div>
                             <p className="text-xs text-gray-400 mt-2">
-                                Esta llave se guarda únicamente en tu navegador. El modelo se ajusta a <span className="font-mono">openrouter/auto</span> por defecto.
+                                {t("ui.esta-llave-se-guarda-unicame.127fa3")} <span className="font-mono">{t("ui.openrouter-auto.08b3a1")}</span> {t("ui.por-defecto.03b483")}
                             </p>
                         </div>
 
@@ -416,7 +416,7 @@ const SettingsPage: React.FC = () => {
                             </label>
                             {isLoadingOpenRouterModels && (
                                 <p className="text-xs text-primary-600 dark:text-primary-400 mb-2">
-                                    Consultando modelos vigentes de OpenRouter...
+                                    {t("ui.consultando-modelos-vigentes.bad12a")}
                                 </p>
                             )}
                             {openRouterModelsError && (
@@ -435,7 +435,7 @@ const SettingsPage: React.FC = () => {
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="font-semibold text-gray-900 dark:text-white">{model.name}</span>
-                                                {isSelected && <Badge tone="primary" size="xs" dot>Activo</Badge>}
+                                                {isSelected && <Badge tone="primary" size="xs" dot>{t("ui.activo.10140f")}</Badge>}
                                             </div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{model.description}</p>
                                             <p className="text-[11px] text-gray-400 mt-1 font-mono">{model.id}</p>
@@ -482,10 +482,10 @@ const SettingsPage: React.FC = () => {
                         onChange={(e) => handleAIConfigChange('tone', e.target.value)}
                         className="w-full h-10 px-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                     >
-                        <option value="Profesional y Técnico">Profesional y Técnico</option>
-                        <option value="Ejecutivo y Conciso">Ejecutivo y Conciso</option>
-                        <option value="Didáctico y Explicativo">Didáctico y Explicativo</option>
-                        <option value="Creativo e Innovador">Creativo e Innovador</option>
+                        <option value="Profesional y Técnico">{t("ui.profesional-y-tecnico.03cb58")}</option>
+                        <option value="Ejecutivo y Conciso">{t("ui.ejecutivo-y-conciso.782a79")}</option>
+                        <option value="Didáctico y Explicativo">{t("ui.didactico-y-explicativo.04dfe2")}</option>
+                        <option value="Creativo e Innovador">{t("ui.creativo-e-innovador.ccd88e")}</option>
                     </select>
                 </div>
             </Card>
@@ -505,13 +505,13 @@ const SettingsPage: React.FC = () => {
                                 value={note}
                                 onChange={(e) => handleContextChange(index, e.target.value)}
                                 className="flex-grow"
-                                aria-label={`Nota global ${index + 1}`}
+                                aria-label={t("uiTemplate.nota-global-p0.a3c12e", { p0: String(index + 1) })}
                             />
                             <Button
                                 variant="ghost"
                                 iconOnly
                                 size="sm"
-                                aria-label={`Eliminar nota ${index + 1}`}
+                                aria-label={t("uiTemplate.eliminar-nota-p0.3bb1db", { p0: String(index + 1) })}
                                 onClick={() => removeContextNote(index)}
                                 className="text-gray-500 hover:text-red-500"
                             >
@@ -594,18 +594,18 @@ const SettingsPage: React.FC = () => {
         {activeTab !== 'account' && (
         <div className="flex justify-end mt-8">
             <Button onClick={handleSave} loading={isSaving} size="lg">
-                {isSaving ? 'Guardando...' : t('save')}
+                {isSaving ? t("uiExpr.guardando.c63871") : t('save')}
             </Button>
         </div>
         )}
 
         <div className="mt-12 pt-8 border-t border-dashed border-red-500/30">
             <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50">
-                <CardEyebrow className="text-red-600 dark:text-red-300">Zona Peligrosa</CardEyebrow>
+                <CardEyebrow className="text-red-600 dark:text-red-300">{t("ui.zona-peligrosa.0223c9")}</CardEyebrow>
                 <h2 className="text-xl font-semibold text-red-700 dark:text-red-300 mt-1">{t('dangerZone')}</h2>
                 <p className="text-sm text-red-600 dark:text-red-400 mt-2 mb-4">{t('clearDataDescription')}</p>
                 <Button variant="danger" onClick={handleClearRemoteData}>
-                    {showClearConfirm ? '¿Estás seguro? Haz clic de nuevo' : t('clearData')}
+                    {showClearConfirm ? t("uiExpr.estas-seguro-haz-clic-de-nue.acd13f") : t('clearData')}
                 </Button>
             </Card>
         </div>

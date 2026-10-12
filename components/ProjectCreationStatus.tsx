@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { type Project, useAppContext } from '../context/AppContext';
 import type { DiagramErrorRecord } from '../lib/diagram';
@@ -20,6 +21,7 @@ interface CreationLogEntry {
 }
 
 const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, initialArtifactNames, onComplete }) => {
+  const t = useUiTranslation();
     const { settings, createArtifact } = useAppContext();
     const generationPorts = useArtifactGenerationPorts(project);
     const [creationLog, setCreationLog] = useState<CreationLogEntry[]>([]);
@@ -95,7 +97,7 @@ const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, 
                                 attempt: e.attempts,
                                 at: new Date().toISOString(),
                                 sample: e.sampleMermaid.slice(0, 240),
-                                message: 'C4 generation fell back to a deterministic skeleton after retries.',
+                                message: t("C4 generation fell back to a deterministic skeleton after retries."),
                             };
                             createArtifact(project.id, {
                                 name: template.name,
@@ -112,7 +114,7 @@ const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, 
                             updateLog(name, {
                                 status: 'skeleton',
                                 reason: 'Esqueleto base — edítame',
-                                detail: `Tras ${e.attempts} reintento(s) automático(s) el modelo no produjo un diagrama válido. Se generó una estructura mínima local.`,
+                                detail: t("uiDynamicGenerated.tras-p0-reintento-s-automati.5c1bb2", { p0: String(e.attempts) }),
                             });
                             console.warn(`[ProjectCreationStatus] Skeleton fallback for "${name}":`, e.warnings);
                         } else {
@@ -131,17 +133,17 @@ const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, 
         };
 
         createAllArtifacts();
-    }, [uniqueArtifactNames, project, settings, createArtifact, onComplete, generationPorts]);
+    }, [uniqueArtifactNames, project, settings, createArtifact, onComplete, generationPorts, t]);
 
     const allDone = creationLog.length > 0 && creationLog.every(log => log.status === 'done' || log.status === 'failed' || log.status === 'skeleton');
 
     return (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-50 dark:bg-gray-900">
-            <h1 className="text-3xl font-bold mb-4">Creando tu proyecto: <span className="text-primary-600">{project.name}</span></h1>
+            <h1 className="text-3xl font-bold mb-4">{t("ui.creando-tu-proyecto.dad3f5")} <span className="text-primary-600">{project.name}</span></h1>
             <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-2xl">
                 {allDone
-                    ? "La configuración ha finalizado. ¡Todo listo para que empieces a diseñar!"
-                    : "Estamos generando los artefactos iniciales para darte un punto de partida sólido."
+                    ? t("uiExpr.la-configuracion-ha-finaliza.3ee7dd")
+                    : t("uiExpr.estamos-generando-los-artefa.53e2ce")
                 }
             </p>
 
@@ -150,13 +152,13 @@ const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, 
                     <div key={index} className="text-sm">
                         <div className="flex items-center justify-between">
                             <span className="text-gray-700 dark:text-gray-300">{log.name}</span>
-                            {log.status === 'pending' && <span className="text-gray-400">Pendiente...</span>}
+                            {log.status === 'pending' && <span className="text-gray-400">{t("ui.pendiente.d83883")}</span>}
                             {log.status === 'creating' && <svg className="animate-spin h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
                             {log.status === 'done' && <CheckCircleIcon className="h-5 w-5 text-green-500" />}
                             {log.status === 'failed' && <XCircleIcon className="h-5 w-5 text-red-500" />}
                             {log.status === 'skeleton' && (
                                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-                                    Esqueleto base
+                                    {t("ui.esqueleto-base.bd80df")}
                                 </span>
                             )}
                         </div>
@@ -171,13 +173,13 @@ const ProjectCreationStatus: React.FC<ProjectCreationStatusProps> = ({ project, 
                  {creationLog.length === 0 && (
                      <div className="flex items-center justify-center text-sm p-4">
                         <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                        <span className="text-gray-700 dark:text-gray-300">Proyecto base configurado.</span>
+                        <span className="text-gray-700 dark:text-gray-300">{t("ui.proyecto-base-configurado.4fdbdb")}</span>
                     </div>
                  )}
             </div>
 
             {allDone &&
-                <p className="mt-8 text-lg text-gray-600 dark:text-gray-300 animate-pulse">Redirigiendo al lienzo...</p>
+                <p className="mt-8 text-lg text-gray-600 dark:text-gray-300 animate-pulse">{t("ui.redirigiendo-al-lienzo.dfe9aa")}</p>
             }
         </div>
     );

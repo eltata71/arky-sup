@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Course } from '../../types/lms';
@@ -13,6 +14,7 @@ interface Props {
 type GenerationPhase = 'idle' | 'validating' | 'generating' | 'building' | 'done';
 
 export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
+  const t = useUiTranslation();
     const { settings } = useAppContext();
     const [topic, setTopic] = useState('');
     const [courseContext, setCourseContext] = useState('');
@@ -43,7 +45,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
 
         // Validate topic
         if (!topicToUse) {
-            setValidationHint('Escribe un tema para generar el curso. Ej: "Arquitectura de Microservicios con Kafka"');
+            setValidationHint(t('uiState.14'));
             inputRef.current?.focus();
             return;
         }
@@ -120,20 +122,20 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
             if (isMountedRef.current) {
                 const errMsg = error instanceof Error ? error.message : String(error);
                 if (errMsg.includes('API Key') || errMsg.includes('API key') || errMsg.includes('apiKey')) {
-                    setErrorMessage('API Key no válida o no configurada. Ve a Ajustes > Configuración IA para verificar tu llave.');
+                    setErrorMessage(t('uiState.15'));
                 } else if (errMsg.includes('fetch failed') || errMsg.includes('network') || errMsg.includes('Network')) {
-                    setErrorMessage('Error de conexión. Verifica tu acceso a internet e intenta de nuevo.');
+                    setErrorMessage(t('uiState.16'));
                 } else if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('rate')) {
-                    setErrorMessage('Se alcanzó el límite de peticiones de la API. Espera unos segundos e intenta de nuevo.');
+                    setErrorMessage(t('uiState.17'));
                 } else if (errMsg.includes('503') || errMsg.includes('unavailable')) {
-                    setErrorMessage('El servicio de IA está temporalmente no disponible. Intenta de nuevo en unos momentos.');
+                    setErrorMessage(t('uiState.18'));
                 } else {
                     setErrorMessage(errMsg || 'Error al generar el curso. Revisa tu conexión y la configuración de la API Key en Ajustes.');
                 }
                 setPhase('idle');
             }
         }
-    }, [topic, courseContext, settings, onCourseGenerated]);
+    }, [topic, courseContext, settings, onCourseGenerated, t]);
 
     const handleSurpriseMe = useCallback(() => {
         const topics = [
@@ -180,8 +182,8 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                         <BeakerIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Laboratorio IA</h2>
-                        <p className="text-gray-500 dark:text-gray-400">Genera un curso completo y personalizado sobre cualquier tema arquitectónico en segundos.</p>
+                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t("ui.laboratorio-ia.e25992")}</h2>
+                        <p className="text-gray-500 dark:text-gray-400">{t("ui.genera-un-curso-completo-y-p.4125e5")}</p>
                     </div>
                 </div>
 
@@ -192,7 +194,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                     </div>
                     <div className="relative z-10 space-y-6">
                         <div>
-                            <label className="block text-sm font-bold text-indigo-200 mb-3 uppercase tracking-wider">¿Qué quieres aprender hoy?</label>
+                            <label className="block text-sm font-bold text-indigo-200 mb-3 uppercase tracking-wider">{t("ui.que-quieres-aprender-hoy.4c420d")}</label>
                             <input
                                 ref={inputRef}
                                 type="text"
@@ -200,7 +202,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                                 onChange={handleTopicChange}
                                 onKeyDown={handleKeyDown}
                                 disabled={isGenerating}
-                                placeholder="Ej. Arquitectura Orientada a Eventos con Kafka..."
+                                placeholder={t("ui.ej-arquitectura-orientada-a.f95651")}
                                 className={`w-full px-5 py-4 bg-white/10 border rounded-xl text-white placeholder-indigo-300/70 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white/20 transition-all text-lg shadow-inner disabled:opacity-60 ${validationHint ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-white/20'}`}
                             />
                             {validationHint && (
@@ -211,12 +213,12 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                             )}
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-indigo-200 mb-2 uppercase tracking-wider">Contexto del Curso <span className="font-normal normal-case text-indigo-300/70">(opcional)</span></label>
+                            <label className="block text-sm font-bold text-indigo-200 mb-2 uppercase tracking-wider">{t("ui.contexto-del-curso.a02e0b")} <span className="font-normal normal-case text-indigo-300/70">{t("ui.opcional.813486")}</span></label>
                             <textarea
                                 value={courseContext}
                                 onChange={e => setCourseContext(e.target.value)}
                                 disabled={isGenerating}
-                                placeholder="Ej: Este curso asume una plataforma core basada en COBOL. El equipo conoce Java y está evaluando migrar a arquitectura de microservicios. Enfócate en integración con sistemas hospitalarios..."
+                                placeholder={t("ui.ej-este-curso-asume-una-plat.0b1070")}
                                 className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-indigo-300/60 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white/20 transition-all resize-none h-24 text-sm disabled:opacity-60"
                             />
                         </div>
@@ -236,7 +238,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                             >
                                 {phase === 'done' ? (
                                     <span className="flex items-center">
-                                        <CheckCircle2Icon className="h-5 w-5 mr-2" /> Curso creado
+                                        <CheckCircle2Icon className="h-5 w-5 mr-2" /> {t("ui.curso-creado.4cea15")}
                                     </span>
                                 ) : isGenerating ? (
                                     <span className="flex items-center">
@@ -244,7 +246,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                                     </span>
                                 ) : (
                                     <span className="flex items-center">
-                                        <SparklesIcon className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform" /> Generar Curso
+                                        <SparklesIcon className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform" /> {t("ui.generar-curso.5fbb61")}
                                     </span>
                                 )}
                             </button>
@@ -253,7 +255,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                                 disabled={isGenerating}
                                 className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold py-4 px-6 rounded-xl border border-white/20 transition-all flex items-center justify-center backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <SparklesIcon className="h-5 w-5 mr-2" /> Sorpréndeme
+                                <SparklesIcon className="h-5 w-5 mr-2" /> {t("ui.sorprendeme.c1a394")}
                             </button>
                         </div>
 
@@ -268,7 +270,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                                     </div>
                                     <p className="text-sm text-indigo-200">
                                         {phase === 'validating' && 'Validando configuración...'}
-                                        {phase === 'generating' && `Generando sílabo sobre "${topic.trim() || 'tema seleccionado'}"...`}
+                                        {phase === 'generating' && t("uiDynamicGenerated.generando-silabo-sobre-p0.6f044e", { p0: String(topic.trim() || 'tema seleccionado') })}
                                         {phase === 'building' && 'Construyendo estructura del curso...'}
                                     </p>
                                 </div>
@@ -279,7 +281,7 @@ export const LMSAILab: React.FC<Props> = ({ onCourseGenerated }) => {
                             <div className="mt-2 p-4 bg-red-500/20 border border-red-400/40 rounded-xl text-red-200 text-sm flex items-start gap-3">
                                 <AlertTriangleIcon className="h-5 w-5 text-red-300 mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <strong className="block mb-1">Error al generar el curso</strong>
+                                    <strong className="block mb-1">{t("ui.error-al-generar-el-curso.af8f70")}</strong>
                                     {errorMessage}
                                 </div>
                             </div>

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Modal } from '../Modal';
 import { Badge } from '../ui';
@@ -16,36 +17,36 @@ interface PublicationPreflightModalProps {
  */
 export const PublicationPreflightModal: React.FC<PublicationPreflightModalProps> = ({
   isOpen, onClose, report,
-}) => (
+}) =>{ const t = useUiTranslation(); return  (
   <Modal
     isOpen={isOpen}
     onClose={onClose}
-    title="Preflight de publicación"
-    description="Resultado detallado de las 27 verificaciones de preparación para publicación."
+    title={t("ui.preflight-de-publicacion.2049cd")}
+    description={t("Resultado detallado de las 27 verificaciones de preparación para publicación.")}
   >
     {!report ? (
-      <p className="text-sm text-slate-500 dark:text-slate-400">Aún no se ha ejecutado el preflight.</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">{t("ui.aun-no-se-ha-ejecutado-el-pr.23838c")}</p>
     ) : (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={verdictTone(report.verdict)} size="sm">{verdictLabel(report.verdict)}</Badge>
           <Badge tone={scoreTone(report.score)} size="sm" outline>{report.score}/100</Badge>
           <span className="text-sm text-slate-500 dark:text-slate-400">
-            {report.findings.length} hallazgo(s) · {report.requiredActions.length} acción(es) requerida(s)
+            {report.findings.length} {t("ui.hallazgo-s.aa57d6")} {report.requiredActions.length} {t("ui.accion-es-requerida-s.d53375")}
           </span>
         </div>
 
-        <section aria-label="Hallazgos del preflight">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Hallazgos</h3>
+        <section aria-label={t("ui.hallazgos-del-preflight.7d6b36")}>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t("ui.hallazgos.199824")}</h3>
           {report.findings.length === 0 ? (
-            <p className="mt-1 text-sm text-green-700 dark:text-green-300">Sin hallazgos — el paquete superó el preflight.</p>
+            <p className="mt-1 text-sm text-green-700 dark:text-green-300">{t("ui.sin-hallazgos-el-paquete-sup.f95dee")}</p>
           ) : (
             <ul className="mt-2 space-y-2">
               {report.findings.map((f) => (
                 <li key={f.id} className="rounded-xl border border-slate-200 bg-white p-3 text-sm dark:border-white/10 dark:bg-white/[0.03]">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={severityTone(f.severity)} size="xs">{severityLabel(f.severity)}</Badge>
-                    {f.blocking && <Badge tone="danger" size="xs" outline>Bloqueante</Badge>}
+                    {f.blocking && <Badge tone="danger" size="xs" outline>{t("ui.bloqueante.afb2a3")}</Badge>}
                     <code className="text-[11px] text-slate-400 dark:text-slate-500">{f.code}</code>
                     {f.artifactName && (
                       <span className="text-[11px] text-slate-500 dark:text-slate-400">· {f.artifactName}</span>
@@ -60,8 +61,8 @@ export const PublicationPreflightModal: React.FC<PublicationPreflightModalProps>
         </section>
 
         {report.artifactResults.length > 0 && (
-          <section aria-label="Resultado por artefacto">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Por artefacto</h3>
+          <section aria-label={t("ui.resultado-por-artefacto.94ccaf")}>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t("ui.por-artefacto.fbb89c")}</h3>
             <ul className="mt-2 space-y-1.5">
               {report.artifactResults.map((r) => (
                 <li key={r.artifactId} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-white/[0.03]">
@@ -78,4 +79,4 @@ export const PublicationPreflightModal: React.FC<PublicationPreflightModalProps>
       </div>
     )}
   </Modal>
-);
+); };

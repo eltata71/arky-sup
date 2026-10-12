@@ -142,8 +142,8 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
       return;
     }
     persist(upsertPublicationPackage(packages, result.package));
-    setFeedback({ tone: 'ok', message: 'Operación aplicada correctamente.' });
-  }, [packages, persist]);
+    setFeedback({ tone: 'ok', message: t("Operación aplicada correctamente.") });
+  }, [packages, persist, t]);
 
   const handleCreate = useCallback((input: Omit<CreatePublicationPackageInput, 'projectId'>) => {
     if (!projectInput) return;
@@ -157,15 +157,15 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
     if (!projectInput || !selectedPackage) return;
     setPreflight(runProjectPackagePreflight(projectInput, selectedPackage));
     setRecalcKey((k) => k + 1);
-    setFeedback({ tone: 'ok', message: 'Preflight y readiness recalculados.' });
-  }, [projectInput, selectedPackage]);
+    setFeedback({ tone: 'ok', message: t("Preflight y readiness recalculados.") });
+  }, [projectInput, selectedPackage, t]);
 
   const handleGenerateManifest = useCallback(() => {
     if (!projectInput || !selectedPackage) return;
     const { manifest: generated } = generateProjectPackageManifest(projectInput, selectedPackage, { generatedBy: actor });
     setManifest(generated);
-    setFeedback({ tone: 'ok', message: 'Manifiesto generado.' });
-  }, [projectInput, selectedPackage, actor]);
+    setFeedback({ tone: 'ok', message: t("Manifiesto generado.") });
+  }, [projectInput, selectedPackage, actor, t]);
 
   const handlePublish = useCallback((override: boolean, overrideReason: string) => {
     if (!projectInput || !selectedPackage) return;
@@ -212,7 +212,7 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Centro de Publicación Profesional"
+      aria-label={t("ui.centro-de-publicacion-profes.72dfbe")}
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
       <div
@@ -222,16 +222,16 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
         <header className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-300">
-              Pipeline de Publicación Profesional
+              {t("ui.pipeline-de-publicacion-prof.a4b0f5")}
             </p>
             <h1 className="text-lg font-black text-slate-900 dark:text-white">
-              Centro de Publicación — {project?.name ?? 'Proyecto'}
+              {t("ui.centro-de-publicacion.16ac6d")} {project?.name ?? t("tp.project")}
             </h1>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar el Centro de Publicación"
+            aria-label={t("ui.cerrar-el-centro-de-publicac.65a0bc")}
             className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-slate-400 dark:hover:bg-white/10"
           >
             <XMarkIcon className="h-5 w-5" />
@@ -240,7 +240,7 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
 
         {!project || !projectInput ? (
           <div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            No se encontró el proyecto. Cierra y vuelve a abrir el Centro de Publicación.
+            {t("ui.no-se-encontro-el-proyecto-c.13ee0c")}
           </div>
         ) : (
           <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)]">
@@ -273,10 +273,10 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
               {!selectedPackage || !evaluation ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    Selecciona o crea un paquete de publicación
+                    {t("ui.selecciona-o-crea-un-paquete.de9d7f")}
                   </p>
                   <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
-                    Un paquete agrupa artefactos en un entregable profesional, accesible, gobernado y auditable.
+                    {t("ui.un-paquete-agrupa-artefactos.25a30b")}
                   </p>
                 </div>
               ) : (
@@ -286,34 +286,34 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
                     <Badge tone="primary" size="sm" outline>{resolvePackageProfile(selectedPackage).name}</Badge>
                     <Button variant="ghost" size="sm"
                       onClick={() => { handleRecalc(); setPreflightOpen(true); }}
-                      aria-label="Ver el detalle del preflight">
-                      Ver preflight
+                      aria-label={t("ui.ver-el-detalle-del-preflight.c93492")}>
+                      {t("ui.ver-preflight.3bc427")}
                     </Button>
                   </div>
 
                   {presentationReadiness.length > 0 && (
-                    <section className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5" aria-label="Estado de presentación por artefacto">
+                    <section className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5" aria-label={t("ui.estado-de-presentacion-por-a.23113f")}>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Compilador de presentación</p>
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("ui.compilador-de-presentacion.38d695")}</p>
                           <p className="text-sm text-slate-700 dark:text-slate-200">
-                            {presentationReadiness.filter((item) => item.ready).length}/{presentationReadiness.length} artefactos listos para publicación profesional.
+                            {presentationReadiness.filter((item) => item.ready).length}/{presentationReadiness.length} {t("ui.artefactos-listos-para-publi.38dd3d")}
                           </p>
                         </div>
                         <Badge tone={presentationReadiness.every((item) => item.ready) ? 'success' : 'warning'} size="sm" outline>
-                          {presentationReadiness.every((item) => item.ready) ? 'Listos' : 'Requieren ajustes'}
+                          {presentationReadiness.every((item) => item.ready) ? t("uiExpr.listos.2a684e") : t("uiExpr.requieren-ajustes.5cc9d7")}
                         </Badge>
                       </div>
                       <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
                         {isPresentationExportEnabled()
-                          ? 'La versión publicación profesional se exporta por artefacto desde el lienzo (Exportar → Versión publicación). La exportación batch de este paquete entrega el contenido original.'
-                          : 'La exportación de la versión publicación está deshabilitada por feature flag; la exportación batch entrega el contenido original.'}
+                          ? t("uiExpr.la-version-publicacion-profe.871672")
+                          : t("uiExpr.la-exportacion-de-la-version.0e529f")}
                       </p>
                       <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         {presentationReadiness.slice(0, 6).map((item) => (
                           <div key={item.artifactId} className="rounded-lg bg-white px-2 py-1.5 text-xs dark:bg-black/20">
                             <div className="flex items-center justify-between gap-2"><span className="truncate font-medium">{item.name}</span><span>{item.score ?? 'N/A'}/100</span></div>
-                            <p className={item.ready ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'}>{item.ready ? 'Listo' : `${item.warnings} ajuste(s) · ${item.blockers} bloqueador(es)`}</p><p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{item.recommendedFormats.join(', ') || 'Sin formatos recomendados'}{item.isFallback ? ' · fallback' : ''}{item.requiresReview ? ' · requiere revisión' : ''}</p>
+                            <p className={item.ready ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'}>{item.ready ? t("uiExpr.listo.91acde") : t("uiTemplate.p0-ajuste-s-p1-bloqueador-es.dc6e46", { p0: String(item.warnings), p1: String(item.blockers) })}</p><p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{item.recommendedFormats.join(', ') || t("uiExpr.sin-formatos-recomendados.d1aa3c")}{item.isFallback ? t("uiExpr.fallback.96bb4b") : ''}{item.requiresReview ? t("uiExpr.requiere-revision.e8cbf9") : ''}</p>
                           </div>
                         ))}
                       </div>
@@ -321,12 +321,12 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
                   )}
 
                   <Tabs value={tab} onChange={setTab}>
-                    <TabList aria-label="Secciones del paquete de publicación">
-                      <Tab value="readiness">Readiness</Tab>
-                      <Tab value="accesibilidad">Accesibilidad</Tab>
-                      <Tab value="aprobacion">Aprobación</Tab>
-                      <Tab value="manifiesto">Manifiesto</Tab>
-                      <Tab value="exportar">Exportar</Tab>
+                    <TabList aria-label={t("ui.secciones-del-paquete-de-pub.514029")}>
+                      <Tab value="readiness">{t("ui.readiness.6dc122")}</Tab>
+                      <Tab value="accesibilidad">{t("ui.accesibilidad.92bcf9")}</Tab>
+                      <Tab value="aprobacion">{t("ui.aprobacion.5bf106")}</Tab>
+                      <Tab value="manifiesto">{t("ui.manifiesto.4d62a7")}</Tab>
+                      <Tab value="exportar">{t("export")}</Tab>
                     </TabList>
 
                     <TabPanel value="readiness">
@@ -360,7 +360,7 @@ export const PublicationCenter: React.FC<PublicationCenterProps> = ({ isOpen, on
                             actor,
                           );
                           persist(upsertPublicationPackage(packages, aligned));
-                          setFeedback({ tone: 'ok', message: `Versión ${versioned.version} creada.` });
+                          setFeedback({ tone: 'ok', message: t("uiDynamicGenerated.version-p0-creada.54a08b", { p0: String(versioned.version) }) });
                         }}
                       />
                     </TabPanel>

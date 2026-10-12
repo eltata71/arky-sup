@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The diagram legend.
  */
@@ -121,6 +122,8 @@ export function buildLegendData(
 }
 
 export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; legendData: LegendData }> = ({ show, onToggle, legendData }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
     // De-dupe + cap to the most informative dozen so the panel never grows
     // taller than the canvas. Stable ordering keeps the panel from flickering
     // between renders.
@@ -139,26 +142,26 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
             <button
                 onClick={onToggle}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/80 dark:border-gray-700/80 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all"
-                title="Mostrar / ocultar leyenda"
+                title={t("ui.mostrar-ocultar-leyenda.9c9330")}
             >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                Leyenda
+                {t("ui.leyenda.5f931e")}
             </button>
             {show && (
                 <div className="absolute bottom-full right-0 mb-2 w-64 max-h-[60vh] overflow-y-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 animate-fade-in">
                     {rows.c4Elements.length > 0 && (
                         <>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Elementos C4</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">{t("ui.elementos-c4.e8644d")}</p>
                             <div className="space-y-1.5 mb-3">
                                 {rows.c4Elements.map((entry) => (
-                                    <div key={entry.label} className="flex items-center gap-2">
+                                    <div key={translateConfig(entry.label)} className="flex items-center gap-2">
                                         <span
                                             className={`w-4 h-4 rounded flex-shrink-0 ${entry.dash ? 'border-2 border-dashed' : ''}`}
                                             style={entry.dash ? { borderColor: entry.color } : { backgroundColor: entry.color }}
                                         />
-                                        <span className="text-[11px] text-gray-600 dark:text-gray-300">{entry.label}</span>
+                                        <span className="text-[11px] text-gray-600 dark:text-gray-300">{translateConfig(entry.label)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -166,7 +169,7 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
                     )}
                     {rows.dedupedNodeTypes.length > 0 && (
                         <>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Tipos de elemento</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">{t("ui.tipos-de-elemento.4a6757")}</p>
                             <div className="space-y-1.5 mb-3">
                                 {rows.dedupedNodeTypes.map((type) => {
                                     const role = SEMANTIC_TYPE_TO_ROLE[type] ?? 'generic';
@@ -183,7 +186,7 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
                     )}
                     {rows.dedupedRelations.length > 0 && (
                         <>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Tipos de conexión</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">{t("ui.tipos-de-conexion.a1bf91")}</p>
                             <div className="space-y-1.5 mb-3">
                                 {rows.dedupedRelations.map((relation) => {
                                     const entry = EDGE_RELATION_LEGEND[relation] ?? EDGE_RELATION_LEGEND.default;
@@ -197,7 +200,7 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
                                                 />
                                                 <polygon points="22,2 28,5 22,8" fill={entry.color} />
                                             </svg>
-                                            <span className="text-[11px] text-gray-600 dark:text-gray-300">{entry.label}</span>
+                                            <span className="text-[11px] text-gray-600 dark:text-gray-300">{translateConfig(entry.label)}</span>
                                         </div>
                                     );
                                 })}
@@ -206,7 +209,7 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
                     )}
                     {rows.dedupedEdgeTypes.length > 0 && (
                         <>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Mecanismos de integración</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">{t("ui.mecanismos-de-integracion.86974d")}</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {rows.dedupedEdgeTypes.map((type) => (
                                     <span
@@ -221,7 +224,7 @@ export const DiagramLegend: React.FC<{ show: boolean; onToggle: () => void; lege
                     )}
                     {showFallback && (
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 italic">
-                            La leyenda se completará cuando el diagrama tenga nodos clasificados.
+                            {t("ui.la-leyenda-se-completara-cua.072e06")}
                         </p>
                     )}
                 </div>

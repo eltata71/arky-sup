@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { Tabs, TabList, Tab, TabPanel, Badge, Alert, Button } from '../ui';
 import { ArrowLeftIcon } from '../Icons';
@@ -48,6 +49,7 @@ const TRACE_STATUS_TONE = {
 } as const;
 
 const StatusTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artifact, projectId }) => {
+  const t = useUiTranslation();
     const trace = artifact.generationTrace;
     const status = deriveArtifactStatus(artifact);
     const warnings = trace?.warnings ?? [];
@@ -59,19 +61,19 @@ const StatusTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artifa
                 <ArtifactStatusBadge status={status} />
                 {trace && (
                     <Badge tone={TRACE_STATUS_TONE[trace.status]} size="sm">
-                        Traza: {trace.status}
+                        {t("ui.traza.0521e7")} {trace.status}
                     </Badge>
                 )}
                 <ArtifactLifecycleStage artifact={artifact} projectId={projectId} />
             </div>
 
             {errorCount > 0 && (
-                <Alert tone="danger" variant="soft" title={`${errorCount} error${errorCount === 1 ? '' : 'es'} en la generación`}>
-                    Abre la traza técnica del artefacto para ver el detalle y reintentar.
+                <Alert tone="danger" variant="soft" title={t(errorCount === 1 ? 'artifactInspector.generationErrorOne' : 'artifactInspector.generationErrorMany', { count: String(errorCount) })}>
+                    {t("ui.abre-la-traza-tecnica-del-ar.61802a")}
                 </Alert>
             )}
             {warnings.length > 0 && (
-                <Alert tone="warning" variant="soft" title={`${warnings.length} advertencia${warnings.length === 1 ? '' : 's'}`}>
+                <Alert tone="warning" variant="soft" title={t("uiTemplate.p0-advertencia-p1.5aa006", { p0: String(warnings.length), p1: String(warnings.length === 1 ? '' : 's') })}>
                     <ul className="list-disc pl-4 space-y-0.5">
                         {warnings.slice(0, 4).map((w, i) => <li key={i}>{w}</li>)}
                     </ul>
@@ -79,25 +81,25 @@ const StatusTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artifa
             )}
 
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 px-3">
-                <Row label="Tipo">{artifact.type}</Row>
-                <Row label="Versión">v{artifact.version}</Row>
-                <Row label="Representación">{artifact.representation}</Row>
-                {artifact.audience && <Row label="Audiencia">{artifact.audience}</Row>}
-                {trace?.modelEffective && <Row label="Modelo">{trace.modelEffective.id}</Row>}
-                {trace?.source && <Row label="Origen">{trace.source}</Row>}
+                <Row label={t("projectHub.type")}>{artifact.type}</Row>
+                <Row label={t("projectHub.version")}>v{artifact.version}</Row>
+                <Row label={t("ui.representacion.6cca4e")}>{artifact.representation}</Row>
+                {artifact.audience && <Row label={t("ui.audiencia.af8f94")}>{artifact.audience}</Row>}
+                {trace?.modelEffective && <Row label={t("ui.modelo.b3a01b")}>{trace.modelEffective.id}</Row>}
+                {trace?.source && <Row label={t("diagramInspector.source")}>{trace.source}</Row>}
                 {typeof trace?.durationMs === 'number' && (
-                    <Row label="Duración">{(trace.durationMs / 1000).toFixed(1)}s</Row>
+                    <Row label={t("ui.duracion.63ce53")}>{(trace.durationMs / 1000).toFixed(1)}s</Row>
                 )}
                 {trace?.irCounters && (
-                    <Row label="Estructura">{trace.irCounters.nodes} nodos · {trace.irCounters.edges} relaciones</Row>
+                    <Row label={t("deck.viewOutline")}>{trace.irCounters.nodes} {t("ui.nodos.e6de13")} {trace.irCounters.edges} {t("ui.relaciones.303934")}</Row>
                 )}
             </div>
 
             <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Persistencia</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">{t("ui.persistencia.eb7b52")}</p>
                 <div className="flex gap-2">
                     <Badge tone={trace?.persistence?.local === 'success' ? 'success' : 'gray'} size="sm" dot>
-                        Local: {trace?.persistence?.local ?? 'n/d'}
+                        {t("ui.local.d7b87d")} {trace?.persistence?.local ?? 'n/d'}
                     </Badge>
                     <Badge
                         tone={
@@ -108,14 +110,14 @@ const StatusTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artifa
                         size="sm"
                         dot
                     >
-                        Remoto: {trace?.persistence?.remote ?? 'n/d'}
+                        {t("ui.remoto.1eff49")} {trace?.persistence?.remote ?? 'n/d'}
                     </Badge>
                 </div>
             </div>
 
             {trace?.lifecycle && trace.lifecycle.length > 0 && (
                 <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Ciclo de vida</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">{t("ui.ciclo-de-vida.b118a6")}</p>
                     <ol className="flex flex-wrap gap-1.5">
                         {trace.lifecycle.map((state, i) => (
                             <li key={`${state}-${i}`}>
@@ -167,6 +169,7 @@ const GraphInsightCard: React.FC<{ projectId: string; artifact: Artifact }> = ({
     projectId,
     artifact,
 }) => {
+  const t = useUiTranslation();
     // Optional context: the card is a peripheral consumer, so it degrades to
     // nothing when rendered outside a provider (keeps the panel testable).
     const app = useOptionalAppContext();
@@ -191,15 +194,15 @@ const GraphInsightCard: React.FC<{ projectId: string; artifact: Artifact }> = ({
     return (
         <div>
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
-                Grafo de conocimiento arquitectónico
+                {t("ui.grafo-de-conocimiento-arquit.b66c76")}
             </p>
             <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-3 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={QUALITY_TONE(insight.coverageScore)} size="sm">
-                        Cobertura {insight.coverageScore}/100
+                        {t("cap.layer.coverage")} {insight.coverageScore}/100
                     </Badge>
-                    <Badge tone="gray" size="xs">{insight.detectedEntityIds.length} entidades</Badge>
-                    <Badge tone="gray" size="xs">{insight.detectedRelationIds.length} relaciones</Badge>
+                    <Badge tone="gray" size="xs">{insight.detectedEntityIds.length} {t("ui.entidades.98c070")}</Badge>
+                    <Badge tone="gray" size="xs">{insight.detectedRelationIds.length} {t("ui.relaciones.303934")}</Badge>
                     <Badge tone={freshnessInfo.tone} size="xs" dot>{freshnessInfo.label}</Badge>
                 </div>
                 <Alert tone={tone} variant="soft">
@@ -207,8 +210,7 @@ const GraphInsightCard: React.FC<{ projectId: string; artifact: Artifact }> = ({
                 </Alert>
                 {(insight.consistencyIssues.length > 0 || insight.traceabilityGaps.length > 0) && (
                     <p className="text-2xs text-gray-500 dark:text-gray-400">
-                        {insight.consistencyIssues.length} inconsistencia(s) · {insight.traceabilityGaps.length} vacío(s)
-                        de trazabilidad asociados a este artefacto.
+                        {insight.consistencyIssues.length} {t("ui.inconsistencia-s.4c5398")} {insight.traceabilityGaps.length} {t("ui.vacio-s-de-trazabilidad-asoc.0feb6b")}
                     </p>
                 )}
             </div>
@@ -225,6 +227,7 @@ const GraphInsightCard: React.FC<{ projectId: string; artifact: Artifact }> = ({
  * Knowledge Graph contributes an extra, graph-grounded insight dimension.
  */
 const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artifact, projectId }) => {
+  const t = useUiTranslation();
     const { report, state } = useMemo(
         () => assessExportability(artifact),
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -237,10 +240,10 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
         <div className="space-y-4">
             <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-center">
                 <p className="text-2xs uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
-                    Reporte de calidad formal
+                    {t("ui.reporte-de-calidad-formal.f686e5")}
                 </p>
                 <div className="text-4xl font-bold text-gray-900 dark:text-white tabular-nums">
-                    {report.score.unmeasured ? 'Sin medir' : <>{score}<span className="text-lg text-gray-400">/100</span></>}
+                    {report.score.unmeasured ? t("iniKpi.unmeasured") : <>{score}<span className="text-lg text-gray-400">/100</span></>}
                 </div>
                 <div className="mt-1 flex items-center justify-center gap-2">
                     <Badge tone={tone} size="sm">{describeQualityTier(report.score.tier)}</Badge>
@@ -252,7 +255,7 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
                     aria-valuenow={score}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label={`Score de calidad ${score} de 100`}
+                    aria-label={t("uiTemplate.score-de-calidad-p0-de-100.5e52cd", { p0: String(score) })}
                 >
                     <div
                         className={
@@ -267,19 +270,19 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
 
             <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-2 text-center">
-                    <p className="text-2xs uppercase tracking-wider text-gray-400">Documento</p>
+                    <p className="text-2xs uppercase tracking-wider text-gray-400">{t("ui.documento.8ae11c")}</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {report.document ? `${report.document.score}/100` : 'N/A'}
                     </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-2 text-center">
-                    <p className="text-2xs uppercase tracking-wider text-gray-400">Diagrama</p>
+                    <p className="text-2xs uppercase tracking-wider text-gray-400">{t("lucid.diagramView")}</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {report.diagram ? `${report.diagram.score}/100` : 'N/A'}
                     </p>
                 </div>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-2 text-center">
-                    <p className="text-2xs uppercase tracking-wider text-gray-400">Tablas</p>
+                    <p className="text-2xs uppercase tracking-wider text-gray-400">{t("ui.tablas.54f708")}</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {report.tables ? `${report.tables.count}` : 'N/A'}
                     </p>
@@ -287,7 +290,7 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
             </div>
 
             <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Exportabilidad por familia</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">{t("ui.exportabilidad-por-familia.7e3ad7")}</p>
                 <div className="space-y-1">
                     {(['document', 'diagram', 'table'] as const).map((family) => {
                         const gate = state[family];
@@ -296,7 +299,7 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
                             <div key={family} className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-gray-600 dark:text-gray-300">{label}</span>
                                 <Badge tone={gate.passed ? (gate.warnings.length > 0 ? 'warning' : 'success') : 'danger'} size="xs">
-                                    {gate.passed ? (gate.warnings.length > 0 ? `Riesgo ${gate.risk}` : 'Listo') : 'Bloqueado'}
+                                    {gate.passed ? (gate.warnings.length > 0 ? t("uiTemplate.riesgo-p0.16709e", { p0: String(gate.risk) }) : t("uiExpr.listo.91acde")) : t("uiExpr.bloqueado.99c1b4")}
                                 </Badge>
                             </div>
                         );
@@ -306,7 +309,7 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
 
             <div>
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
-                    Dimensiones evaluadas ({report.dimensions.length})
+                    {t("ui.dimensiones-evaluadas.23721f")}{report.dimensions.length})
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
                     {report.dimensions.map((dim) => (
@@ -325,7 +328,7 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
             {report.issues.length > 0 ? (
                 <div>
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                        Hallazgos ({report.issues.length})
+                        {t("ui.hallazgos.97688d")}{report.issues.length})
                     </p>
                     <ul className="space-y-2">
                         {SEVERITY_ORDER.flatMap((sev) =>
@@ -344,12 +347,12 @@ const QualityTab: React.FC<{ artifact: Artifact; projectId: string }> = ({ artif
                     </ul>
                 </div>
             ) : (
-                <Alert tone="success" variant="soft">Sin hallazgos de calidad pendientes.</Alert>
+                <Alert tone="success" variant="soft">{t("ui.sin-hallazgos-de-calidad-pen.43167b")}</Alert>
             )}
 
             {report.recommendations.length > 0 && (
                 <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Próximos pasos</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">{t("ui.proximos-pasos.afb25f")}</p>
                     <ul className="space-y-1.5">
                         {report.recommendations.map((rec) => (
                             <li key={rec.id} className="text-xs text-gray-700 dark:text-gray-200">
@@ -377,6 +380,7 @@ export const ArtifactInspectorPanel: React.FC<ArtifactInspectorPanelProps> = ({
     onReviewStatusChange,
     initialTab = 'estado',
 }) => {
+  const t = useUiTranslation();
     const [tab, setTab] = useState<InspectorTab>(initialTab);
     const [selectedSection, setSelectedSection] = useState<OutlineSection | null>(null);
     const hasDocument = artifact.representation === 'document' || artifact.representation === 'hybrid';
@@ -411,19 +415,19 @@ export const ArtifactInspectorPanel: React.FC<ArtifactInspectorPanelProps> = ({
                 className="flex-1 min-h-0"
             >
                 <div className="px-4 pt-3">
-                    <TabList aria-label="Inspector del artefacto">
-                        <Tab value="estado">Estado</Tab>
-                        {hasDocument && <Tab value="secciones">Secciones</Tab>}
-                        <Tab value="calidad">Calidad</Tab>
-                        <Tab value="contexto">Contexto</Tab>
-                        <Tab value="grafo">Grafo</Tab>
+                    <TabList aria-label={t("ui.inspector-del-artefacto.c9f4ec")}>
+                        <Tab value="estado">{t("diagramInspector.status")}</Tab>
+                        {hasDocument && <Tab value="secciones">{t("ui.secciones.69cc52")}</Tab>}
+                        <Tab value="calidad">{t("ui.calidad.b2e6a4")}</Tab>
+                        <Tab value="contexto">{t("context")}</Tab>
+                        <Tab value="grafo">{t("ui.grafo.7b19fd")}</Tab>
                         <Tab
                             value="comentarios"
                             badge={openComments > 0 ? <Badge tone="warning" size="xs">{openComments}</Badge> : undefined}
                         >
-                            Comentarios
+                            {t("ui.comentarios.054de5")}
                         </Tab>
-                        <Tab value="revision">Revisión</Tab>
+                        <Tab value="revision">{t("doc.mode.review")}</Tab>
                     </TabList>
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4">
@@ -441,11 +445,11 @@ export const ArtifactInspectorPanel: React.FC<ArtifactInspectorPanelProps> = ({
                                             leftIcon={<ArrowLeftIcon className="h-3.5 w-3.5" />}
                                             onClick={() => setSelectedSection(null)}
                                         >
-                                            Todas las secciones
+                                            {t("ui.todas-las-secciones.f5097f")}
                                         </Button>
                                     </div>
                                     <div className="rounded-lg bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 px-3 py-2">
-                                        <p className="text-2xs uppercase tracking-wider text-gray-400 dark:text-gray-500">Comentando la sección</p>
+                                        <p className="text-2xs uppercase tracking-wider text-gray-400 dark:text-gray-500">{t("ui.comentando-la-seccion.a1b95a")}</p>
                                         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{selectedSection.title}</p>
                                     </div>
                                     <CommentThread

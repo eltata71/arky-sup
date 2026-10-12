@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * What a person may do with their own account, and nothing beyond it.
  *
@@ -22,6 +23,7 @@ import { Button, Card, Input } from '../ui';
 const MIN_PASSWORD_LENGTH = 8;
 
 export const AccountPanel: React.FC = () => {
+  const t = useUiTranslation();
   const { profile, user, changePassword, updateOwnDisplayName } = useAuth();
 
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
@@ -54,7 +56,7 @@ export const AccountPanel: React.FC = () => {
     setIsSavingName(true);
     try {
       await updateOwnDisplayName(displayName);
-      setNameNotice('Tu nombre quedó actualizado.');
+      setNameNotice(t('uiState.9'));
     } catch (err) {
       setNameError(err instanceof Error ? err.message : 'No se pudo actualizar el nombre.');
     } finally {
@@ -70,22 +72,22 @@ export const AccountPanel: React.FC = () => {
     // Checked here so the person learns both problems before a round trip, not
     // one at a time from the server.
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setPasswordError(`La contraseña nueva debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
+      setPasswordError(t("uiDynamicGenerated.la-contrasena-nueva-debe-ten.fe3692", { p0: String(MIN_PASSWORD_LENGTH) }));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError('La confirmación no coincide con la contraseña nueva.');
+      setPasswordError(t('uiState.10'));
       return;
     }
     if (newPassword === currentPassword) {
-      setPasswordError('La contraseña nueva tiene que ser distinta de la actual.');
+      setPasswordError(t('uiState.11'));
       return;
     }
 
     setIsChanging(true);
     try {
       await changePassword(currentPassword, newPassword);
-      setPasswordNotice('Tu contraseña quedó cambiada.');
+      setPasswordNotice(t('uiState.12'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -100,7 +102,7 @@ export const AccountPanel: React.FC = () => {
     return (
       <Card>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          No hay una cuenta cargada en esta sesión.
+          {t("ui.no-hay-una-cuenta-cargada-en.b09475")}
         </p>
       </Card>
     );
@@ -109,64 +111,62 @@ export const AccountPanel: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <h2 className="text-xl font-semibold mb-1">Tu cuenta</h2>
+        <h2 className="text-xl font-semibold mb-1">{t("ui.tu-cuenta.e92a19")}</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-          Estos datos son tuyos y solo tú los cambias.
+          {t("ui.estos-datos-son-tuyos-y-solo.d42755")}
         </p>
 
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div>
-            <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Correo</dt>
+            <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("users.email")}</dt>
             <dd className="mt-1 text-sm text-gray-900 dark:text-white">{profile.email ?? '—'}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Rol</dt>
+            <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("users.role")}</dt>
             <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-              {role ? ROLE_LABELS[role] : 'rol desconocido'}
+              {role ? ROLE_LABELS[role] : t("ui.rol-desconocido.9f5ca8")}
             </dd>
             <dd className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {role
                 ? ROLE_DESCRIPTIONS[role]
-                : 'Pide a un administrador que revise tu cuenta.'}
+                : t("uiExpr.pide-a-un-administrador-que.8c77c4")}
             </dd>
           </div>
         </dl>
 
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-          El rol lo asigna un administrador desde la gestión de usuarios. Si necesitas
-          otro alcance, pídeselo a quien administra la herramienta.
+          {t("ui.el-rol-lo-asigna-un-administ.06fe6e")}
         </p>
 
         <form onSubmit={handleNameSubmit} className="space-y-3">
           <label htmlFor="cuenta-nombre" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Nombre para mostrar
+            {t("ui.nombre-para-mostrar.ff89de")}
           </label>
           <Input
             id="cuenta-nombre"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Tu nombre"
+            placeholder={t("ui.tu-nombre.f07e1b")}
           />
           {nameError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{nameError}</p>}
           {nameNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{nameNotice}</p>}
           <Button type="submit" loading={isSavingName} disabled={displayName.trim() === (profile.displayName ?? '').trim()}>
-            Guardar nombre
+            {t("ui.guardar-nombre.f0c6e6")}
           </Button>
         </form>
       </Card>
 
       {hasPasswordCredential ? (
         <Card>
-          <h2 className="text-xl font-semibold mb-1">Cambiar contraseña</h2>
+          <h2 className="text-xl font-semibold mb-1">{t("ui.cambiar-contrasena.0d53f4")}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Te pedimos la contraseña actual antes de cambiarla: sin ese paso, una sesión
-            abierta y olvidada bastaría para quedarse con la cuenta.
+            {t("ui.te-pedimos-la-contrasena-act.b8292a")}
           </p>
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-sm">
             <div>
               <label htmlFor="cuenta-actual" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Contraseña actual
+                {t("ui.contrasena-actual.6848bf")}
               </label>
               <Input
                 id="cuenta-actual"
@@ -179,7 +179,7 @@ export const AccountPanel: React.FC = () => {
             </div>
             <div>
               <label htmlFor="cuenta-nueva" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Contraseña nueva
+                {t("ui.contrasena-nueva.374a32")}
               </label>
               <Input
                 id="cuenta-nueva"
@@ -191,12 +191,12 @@ export const AccountPanel: React.FC = () => {
                 onChange={(e) => setNewPassword(e.target.value)}
               />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Al menos {MIN_PASSWORD_LENGTH} caracteres.
+                {t("ui.al-menos.6a0e6c")} {MIN_PASSWORD_LENGTH} {t("ui.caracteres.e24f9c")}
               </p>
             </div>
             <div>
               <label htmlFor="cuenta-confirmar" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Repite la contraseña nueva
+                {t("ui.repite-la-contrasena-nueva.a97ce6")}
               </label>
               <Input
                 id="cuenta-confirmar"
@@ -211,15 +211,14 @@ export const AccountPanel: React.FC = () => {
             {passwordError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>}
             {passwordNotice && <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">{passwordNotice}</p>}
 
-            <Button type="submit" loading={isChanging}>Cambiar contraseña</Button>
+            <Button type="submit" loading={isChanging}>{t("ui.cambiar-contrasena.0d53f4")}</Button>
           </form>
         </Card>
       ) : (
         <Card>
-          <h2 className="text-xl font-semibold mb-1">Contraseña</h2>
+          <h2 className="text-xl font-semibold mb-1">{t("ui.contrasena.5a6d1c")}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Entras con Google, así que tu contraseña la gestionas en tu cuenta de Google.
-            Arky no guarda ninguna.
+            {t("ui.entras-con-google-asi-que-tu.aa4a86")}
           </p>
         </Card>
       )}

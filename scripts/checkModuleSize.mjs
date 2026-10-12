@@ -64,16 +64,22 @@ export const BYTE_CEILINGS = {
   'services/ai/generation/legacyTransport.ts': 22100, // plan clase mundial 10.3: +1 970, la vista previa en streaming de la ruta de texto, con vuelta al camino completo si el flujo falla
   'services/ai/generation/artifacts/artifactGenerationEngine.ts': 81400, // 11.1 ArchiMate: +100 bytes, el tipo mermaid-archimate en los mapas de la generación · , // plan clase mundial 10.3: +106, `onPartial` viaja al transporte y nunca en diagramas · plan diagramas 8.2c: −4 001, la ruta IR de flujo y React Flow sale a `diagram/structuredDiagramArtifactGeneration` · 8.2b anterior: 85 101, // plan diagramas 8.2b: +842, el brief de texto y las reglas de formato sustituyen instrucciones de tamaño y protocolos que se contradecían · plan diagramas 8.2a: −2 248, la evaluación del texto sale a `diagram/diagramTextAssessment` · plan artefactos 7.5a: +415, registra los bloques complementarios en el manifiesto de contexto · plan diagramas 6.3: 86 126 → 86092 · plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
   'components/ReactFlowCanvas.tsx': 73772, // 12.1: barra, inspector y descripción accesible a subcomponentes · // plan diagramas 8.4c: −943, la leyenda sale a `buildLegendData` · plan diagramas 4.1: +237, `onNodeDoubleClick` para abrir el nivel C4 siguiente // plan diagramas 3.3: +91, rejilla de 8 px al arrastrar (ADR-007) // 2.3: −122, `exportImage` nombra `CanvasExportOptions`
-  'components/ProjectHub.tsx': 75216, // 12.1: menú de acciones a projectHub/ · // 11.0: conmutador de agrupación por fase ADM // 12.0: el motor de plantillas y los modales se cargan con import() y sus Suspense suman bytes // F6-03 corte 2b: bajó al emitir comandos // F3-07: el import de `Artifact`/`Project` nombra su módulo
+  'components/ProjectHub.tsx': 75746, // 13.2: +530 B por t() en los textos visibles; el archivo queda en 976 líneas y el catálogo/menú siguen separados
   'services/ai/prompts/diagramPrompts.ts': 45933, // 11.1 ArchiMate: +995 bytes, el prompt de ArchiMate (capas, viewpoints, relaciones) · , // plan artefactos 7.5a: +673, el puerto onContextCaptured llega a los tres constructores (la captura vive en contextManifestCapture) · plan diagramas 6.4: 52 524 → 44265, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
   'components/MemoryCenterModal.tsx': 31469, // 12.1: subcomponentes a components/memory/ // 13.2 (4): t() en los literales, +102 B // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/ArtifactCanvas.tsx': 43627, // 14.0: +50, pasa los paquetes de publicación a su barra para la etapa del artefacto // 12.5: −589, la paleta ⌘K del lienzo la registra su barra (una sola lista) // 12.3: +234, monta «C4LevelNavigator» (migas, Entrar, Esc y zoom; el lienzo sólo lo envuelve) // 12.2: +103, pasa `review` al documento (comentarios anclados por sección; el lienzo sólo entrega la identidad) // ola 10.4: +99, «Deshacer» tras aplicar mejoras con IA (la regla vive en `aiUndo`, el lienzo sólo la ofrece) // plan diagramas 8.3a: +181, monta la vista «Notación» (secuencia, Gantt y estados abren en Mermaid nativo; el lienzo los aplanaba) // plan diagramas 8.1a: +49, «Guardar» del lienzo pasa lo que el lienzo mostraba y dice si el texto se conservó (antes convertía cualquier diagrama en React Flow) // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/ArtifactCanvas.tsx': 43730, // 13.2 + 14.0: traducción del lienzo y nuevo estado de ciclo de vida combinados; +19 B medidos. // 12.5: −589, la paleta ⌘K del lienzo la registra su barra (una sola lista) // 12.3: +234, monta «C4LevelNavigator» (migas, Entrar, Esc y zoom; el lienzo sólo lo envuelve) // 12.2: +103, pasa `review` al documento (comentarios anclados por sección; el lienzo sólo entrega la identidad) // ola 10.4: +99, «Deshacer» tras aplicar mejoras con IA (la regla vive en `aiUndo`, el lienzo sólo la ofrece) // plan diagramas 8.3a: +181, monta la vista «Notación» (secuencia, Gantt y estados abren en Mermaid nativo; el lienzo los aplanaba) // plan diagramas 8.1a: +49, «Guardar» del lienzo pasa lo que el lienzo mostraba y dice si el texto se conservó (antes convertía cualquier diagrama en React Flow) // plan diagramas 4.3: −360, los tres paneles de diagrama salen a `DiagramPanels` // plan diagramas 4.1: +296, monta «Niveles C4» y el doble clic (13 líneas menos: el guardado del lienzo salió a `planCanvasDiagramSave`) // plan diagramas 2.3: +54, pasa `publicationPackages` al export (el artefacto no sabe su proyecto) // plan diagramas 1.4: +140, guardar texto pasa por `withDiagramContent` (el IR viejo sobrevivía) // plan diagramas 1.1: +79 bytes por montar «Modificar diagrama» (7 líneas menos: `useIsMobile` salió a `hooks/`) // F4-05: la coordinación salió a `services/artifacts/application`
   'constants.ts': 58691, // 11.5: dos plantillas (contrato de arquitectura, evaluación de cumplimiento; datos) · 11.1 ArchiMate: plantillas de los viewpoints ArchiMate (datos) · , // 11.0: `standard` y `admPhase` en cada plantilla del catálogo (datos)
-  'pages/ProjectsPage.tsx': 44921, // 13.4: +380, esqueleto mientras carga y error con «Reintentar» (antes enseñaba «todavía no hay proyectos» sobre una lectura en curso o fallida) // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
-  'pages/LMS/LessonModal.tsx': 43207,
-  'components/artifacts/export/ArtifactExportModal.tsx': 28422, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
-  'components/CustomArtifactRequestModal.tsx': 35711, // 12.1: estado y trazabilidad salen a components/artifacts/requestModal/ · 10.1: las etiquetas de fase salen al catálogo · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
-  'components/CustomArtifactBriefWizard.tsx': 23813, // 12.1: el asistente partido en hook, modelo y piezas
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/ProjectsPage.tsx': 44806, // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/LMS/LessonModal.tsx': 43923, // 13.2: mensajes de estado y errores traducidos; +144 B medidos
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/artifacts/export/ArtifactExportModal.tsx': 28560, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/CustomArtifactRequestModal.tsx': 35771, // 12.1: estado y trazabilidad salen a components/artifacts/requestModal/ · 10.1: las etiquetas de fase salen al catálogo · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/`
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/CustomArtifactBriefWizard.tsx': 24295, // 12.1: el asistente partido en hook, modelo y piezas
   'context/OfficeContext.tsx': 20370, // 6.5: la motivación de la iniciativa llega a la producción del encargo (lectura diferida del portafolio)
   'pages/SDDProcessView.tsx': 41713, // 13.1: duraciones desde MOTION (+69 B). Antes: F5-01 corte 13: el llamante entrega la persona, que el motor ya no busca en la Oficina
   /**
@@ -84,34 +90,45 @@ export const BYTE_CEILINGS = {
    * while gaining a guarantee.
    */
   'services/agent/agentExecutor.ts': 37846, // plan artefactos 7.3d: +31, las mejoras del agente reciben motivación y conversación · plan artefactos 7.4b: −503, el cambio puntual sale a `agentPatchAction` (parche de documento o reescritura) · plan artefactos 7.3b: +30, las generaciones del agente reciben las decisiones de su historial · 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente · 7.1a: −4 125, la validación de contenido salió a `agentContentValidation` · 7.1b: +228, el cambio puntual se niega si el modelo no puede ver el artefacto entero
-  'components/AssistantPanel.tsx': 37650, // 10.4b: +974, «Deshacer» en las tres escrituras de IA del asistente (modificar, versión nueva, agente) · plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
-  'pages/Workspace.tsx': 20514, // 12.0: el lienzo del artefacto se carga con React.lazy + Suspense // 10.2: la ejecución y el diagnóstico pasan a la cola persistente; 33 921 → 20 097 bytes. El pequeño margen sobre 20 KB evita un techo de líneas innecesario.
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/AssistantPanel.tsx': 38069, // 10.4b: +974, «Deshacer» en las tres escrituras de IA del asistente (modificar, versión nueva, agente) · plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/Workspace.tsx': 20625, // 13.2: mensajes de la cola y de generación traducidos; +70 B medidos // 12.0: el lienzo del artefacto se carga con React.lazy + Suspense // 10.2: la ejecución y el diagnóstico pasan a la cola persistente; 33 921 → 20 097 bytes. El pequeño margen sobre 20 KB evita un techo de líneas innecesario.
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 35725, // plan diagramas 8.4c: +274, sin medida no hay pasadas de refinamiento · plan diagramas 8.2d: +148, compara la fidelidad con el IR que persistirá, incluidos sus metadatos · plan artefactos 7.5a: +38, la crítica y el refinamiento reciben onContextCaptured · plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
-  'components/CustomNode.tsx': 35990, // plan diagramas 4.1: +186, marca «Detalle» y su texto accesible
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/CustomNode.tsx': 36197, // plan diagramas 4.1: +186, marca «Detalle» y su texto accesible
   'services/diagram/mermaidToIR.ts': 30304, // 11.1 ArchiMate: lee la notación ArchiMate · , // plan diagramas 8.3b: −5 661, los lectores de secuencia, ER y estados salen a `notation/` · plan diagramas 8.2a: +172, Gantt, journey y mindmap dejan de leerse como flowchart · 6.5: +6, el ER conserva sus relaciones; antes: plan diagramas 2.1: +1 063, leer `:::clase` y `class` (la lógica vive en `mermaidClasses.ts`)
   'pages/LMS/LMSDashboard.tsx': 34428, // 13.2 (4): t() en los literales
   'services/diagram/suggestionActionExecutors.ts': 33643,
-  'components/memory/ChatHistoryPanel.tsx': 32783,
-  'components/copilot/ProjectCopilotChatModal.tsx': 24926, // 10.4b: +473, «Deshacer» tras la acción confirmada del copiloto · F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
-  'components/artifacts/fable/FableDiagramCanvas.tsx': 32543, // 13.1: duraciones desde MOTION (+90 B)
-  'components/CustomEdge.tsx': 32345, // plan diagramas 8.3d: +322, dibuja la ruta ortogonal de ELK (la decisión vive en `hooks/useEngineRoute`)
-  'components/businessInitiatives/InitiativeDetailPanels.tsx': 25617, // F3-05; 13.2 (5): t() en los cinco paneles
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/memory/ChatHistoryPanel.tsx': 33413, // 13.2: títulos visibles de historial pasan por t(); +59 B medidos.
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/copilot/ProjectCopilotChatModal.tsx': 25118, // 10.4b: +473, «Deshacer» tras la acción confirmada del copiloto · F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/artifacts/fable/FableDiagramCanvas.tsx': 32954, // 13.1: duraciones desde MOTION (+90 B)
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/CustomEdge.tsx': 32695, // plan diagramas 8.3d: +322, dibuja la ruta ortogonal de ELK (la decisión vive en `hooks/useEngineRoute`)
+  'components/businessInitiatives/InitiativeDetailPanels.tsx': 25929, // F3-05; 13.2 (5): t() en los cinco paneles
   'services/agent/agentContextComposer.ts': 23023, // plan artefactos 7.3d: +775, entregables en curso, razón de negocio y extractos de hermanos en el copiloto · plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
   // F6-05: +18 bytes, the import path to the model-directory door instead of
   // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
-  'pages/SettingsPage.tsx': 30973,
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/SettingsPage.tsx': 31138,
   'hooks/artifacts/useDiagramRendering.ts': 24203, // plan diagramas 8.3d: −3 183, la pasada de ELK sale a `useElkLayoutPass` · plan diagramas 8.1d: −1 896, abrir ya no escribe el plan de layout · F3-07: el import de `Artifact`/`Project` nombra su módulo
   'lib/semanticRoleResolver.ts': 28881,
   'services/diagram/qualityRepair.ts': 27154, // plan diagramas 8.4a: la reagrupación sale a `qualityRepairGrouping.ts` y cada reparación anota lo que escribe · plan diagramas 8.3b: +135, el clon del IR conserva `notation` · plan diagramas 8.1b: +741, el alcance `structural` (repara sin decidir la arquitectura) frente a `full`, que sólo pide «Auto-mejora»
-  'components/LucidchartViewer.tsx': 27863, // 13.1: duraciones desde MOTION (+90 B)
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/LucidchartViewer.tsx': 27899, // 13.1: duraciones desde MOTION (+90 B)
   'services/diagram/layoutQualityService.ts': 27648,
   'services/publicationPipeline/PublicationPipelineTypes.ts': 27231, // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'services/artifactCompiler/profiles/contractDefinitions.ts': 26764,
   'services/diagram/quality/diagramQualityService.ts': 26699, // plan diagramas 8.4a: +257, el análisis puntúa sin lo derivado y siempre clasificado
   'services/publicationPipeline/PublicationPreflightService.ts': 26117, // F3-07: el import de `Artifact`/`Project` nombra su módulo
-  'components/artifacts/ArtifactInspectorPanel.tsx': 24979, // 14.0: +197, monta la línea de tiempo del ciclo de vida y la etapa en lugar del estado de revisión en crudo // plan diagramas 8.4c: +47, «Sin medir» en vez de una cifra neutra · F4-05: la coordinación salió a `services/artifacts/application`
-  'pages/LMS/CourseView.tsx': 24745,
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/artifacts/ArtifactInspectorPanel.tsx': 25962, // 13.2 + 14.0: estado del ciclo de vida y textos del inspector integrados; 25 962 B medidos. // plan diagramas 8.4c: +47, «Sin medir» en vez de una cifra neutra · F4-05: la coordinación salió a `services/artifacts/application`
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/LMS/CourseView.tsx': 25216,
   'services/diagram/irToReactFlow.ts': 23966, // plan diagramas 4.1: +100, el enlace de detalle viaja en los datos del nodo
   'services/architectureOffice/domain/officePortfolio.ts': 23879, // F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 3: rutas de `domain/`
   // 23338 → 23347 el 2026-09-22: nueve bytes, y la razón es la que el gate
@@ -121,9 +138,12 @@ export const BYTE_CEILINGS = {
   // y la pantalla le ofrecía un botón que el servidor rechaza siempre. La regla
   // vive en `describeArbDecisionEligibility`; lo que creció es la llamada, no
   // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
-  'pages/EngagementRoom.tsx': 23855, // 14.1: +508, el aviso de quién puede aprobar el charter
-  'pages/LMS/LMSCatalog.tsx': 22959,
-  'components/ChatInterface.tsx': 22492, // plan artefactos 7.3d: +27, el chat pasa su proyecto a los turnos del agente
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/EngagementRoom.tsx': 24329, // 13.2 + 14.1: textos de aprobación separados por permiso y autor; 24 329 B medidos. // 13.2: mensajes de aprobación traducidos; +75 B medidos
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/LMS/LMSCatalog.tsx': 23293, // 13.2: estado de catálogo traducido; +34 B medidos
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/ChatInterface.tsx': 22632, // plan artefactos 7.3d: +27, el chat pasa su proyecto a los turnos del agente
   'services/diagram/diagramTypeQualityGates.ts': 22356,
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,
@@ -148,10 +168,14 @@ export const BYTE_CEILINGS = {
    * fichero, sólo obliga a tocar este archivo.
    */
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
-  'components/ArtifactSelectionStep.tsx': 20101,
-  'pages/UserManagementPage.tsx': 20037,
-  'lib/i18n/locales/es.ts': 38650, // 14.2: claves kg.chain* de la pestaña Cadena; 14.0: claves lifecycle.*; 13.5: claves micro.*; 13.4: claves load.* y office.empty.*; 12.5: claves canvas.* de la barra por intención; 12.4: claves deck.* y pm.* del modo presentación; 12.2: claves doc.* del documento de lectura; 11.5: claves pf.* y rail.portfolio.* del portafolio y radar (es/en juntas); 11.4: claves tp.* del plan de transición (es/en juntas); 11.3: claves cap.* y cap.export.* del mapa de capacidades (es/en en el mismo lote)
-  'lib/i18n/locales/en.ts': 36520, // 14.2: claves kg.chain* de la pestaña Cadena; 14.0: claves lifecycle.*; 13.5: claves micro.*; 13.4: claves load.* y office.empty.*; 12.5: claves canvas.*; 12.4: claves deck.* y pm.*; 12.2: claves doc.*; 11.5: claves pf.* y rail.portfolio.*; 11.4: claves tp.* del plan de transición; 11.3: claves cap.* y cap.export.* del mapa de capacidades
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/ArtifactSelectionStep.tsx': 20185,
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/UserManagementPage.tsx': 20084,
+  // 13.2: la copia del idioma sale a módulos acotados; se baja el techo.
+  'lib/i18n/locales/es.ts': 40187, // 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 40 187 B medidos. // 13.2: +231 B por importar los lotes de mensajes; las cadenas viven en módulos separados // 13.2: +8769 B de traducciones para ProjectHub y los inspectores de diagrama; el diccionario español único es eager por contrato R-16
+  // 13.2: la copia del idioma sale a módulos acotados; se baja el techo.
+  'lib/i18n/locales/en.ts': 38056, // 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 38 056 B medidos. // 13.2: +230 B por importar los lotes de mensajes; inglés sigue diferido // 13.2: +8371 B del mismo lote; inglés sigue en su módulo cargado con import()
 };
 
 /**
@@ -174,7 +198,8 @@ export const CEILINGS = {
   'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1458, // 11.1 ArchiMate: +3 líneas · , // plan diagramas 8.2c: −69, la ruta IR de flujo y React Flow sale a la vertical de diagramas · 8.2b anterior: 1 520, // plan diagramas 8.2b: +6 líneas para incluir el brief común y atender a la audiencia · plan diagramas 8.2a: 1 568 → 1 514 · plan diagramas 6.3: 1 571 → 1568 · plan diagramas 6.2: 1 592 → 1571 · plan diagramas 6.1: 1 723 → 1 592, el camino C4 salió a la vertical de diagramas · F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
   'components/ReactFlowCanvas.tsx': 1468, // 12.1: barra, inspector y descripción accesible fuera del lienzo
   'services/diagram/quality/diagramQualityService.ts': 575,
-  'components/ArtifactCanvas.tsx': 955, // 12.5: 966 → 955, los comandos de storytelling duplicados salen // 12.3: +3, import y envoltorio de «C4LevelNavigator» // 12.2: +1, la prop `review` del documento // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/ArtifactCanvas.tsx': 957, // 12.5: 966 → 955, los comandos de storytelling duplicados salen // 12.3: +3, import y envoltorio de «C4LevelNavigator» // 12.2: +1, la prop `review` del documento // plan diagramas 4.3: 964 → 962 // plan diagramas 4.1: 977 → 964 // plan diagramas 2.3: +1 // plan diagramas 1.4: +1, el import de `withDiagramContent` // plan diagramas 1.1: 981 → 975
   'services/ai/prompts/diagramPrompts.ts': 841, // 11.1 ArchiMate: +10 líneas · , // plan artefactos 7.5a: el import de la captura de contexto · plan diagramas 6.4: 1 030 → 830, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 1 145 → 1030
   'components/ProjectHub.tsx': 976, // 12.1: menú de acciones separado // 11.0 // 12.0 // F6-03 corte 2b // F3-07: el import de `Artifact`/`Project` nombra su módulo
   'components/MemoryCenterModal.tsx': 584, // 12.1: subcomponentes a components/memory/ // 13.2 (4): +12 líneas, `useAppContext` en seis subcomponentes // F3-07: el import de `Artifact`/`Project` nombra su módulo
@@ -184,30 +209,37 @@ export const CEILINGS = {
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
   'services/agent/agentExecutor.ts': 904, // 7.3d: los puertos, una vez para todas las llamadas · 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
-  'pages/ProjectsPage.tsx': 894, // 13.4: +4, los estados de carga y de error de la lista // F5-02
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/ProjectsPage.tsx': 891, // F5-02
   'services/diagram/mermaidToIR.ts': 747, // 11.1 ArchiMate: +7 líneas · , // plan diagramas 8.3b: 873 → 740 · plan diagramas 8.2a: +2 · plan diagramas 2.1
-  'components/artifacts/export/ArtifactExportModal.tsx': 564, // plan de clase mundial 9.4: 596 → 564 // plan diagramas 3.4: 844 → 596
-  'components/CustomArtifactRequestModal.tsx': 685, // 12.1: estado y trazabilidad salen a components/artifacts/requestModal/ · 10.1: las etiquetas de fase salen al catálogo
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/artifacts/export/ArtifactExportModal.tsx': 566, // plan de clase mundial 9.4: 596 → 564 // plan diagramas 3.4: 844 → 596
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/CustomArtifactRequestModal.tsx': 687, // 12.1: estado y trazabilidad salen a components/artifacts/requestModal/ · 10.1: las etiquetas de fase salen al catálogo
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
   'constants.ts': 1006, // 11.5: dos plantillas · 11.1 ArchiMate: plantillas ArchiMate · , // 11.0: una línea más por plantilla
   'components/AssistantPanel.tsx': 744, // 10.4b: +12 · plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
   'components/artifacts/fable/FableDiagramCanvas.tsx': 790,
-  'pages/SDDProcessView.tsx': 785,
+  'pages/SDDProcessView.tsx': 788,
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 732, // plan diagramas 8.4c: +5, sin medida no hay pasadas · plan diagramas 8.2d: +2 para comparar el IR que persistirá · 7.3c: la petición extiende ArtifactContextPorts · 7.3a: la crítica y el refinamiento comparten una llamada · 7.1a: `lib/artifacts/contentPreservation`
-  'components/copilot/ProjectCopilotChatModal.tsx': 590, // 10.4b: +8 · F5-02
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/copilot/ProjectCopilotChatModal.tsx': 593, // 10.4b: +8 · F5-02
   'services/diagram/suggestionActionExecutors.ts': 760,
-  'components/businessInitiatives/InitiativeDetailPanels.tsx': 582, // F3-05; 13.2 (5): useAppContext en cada panel: las reglas bajaron a domain/initiativeCommands
-  'pages/LMS/LessonModal.tsx': 739,
+  'components/businessInitiatives/InitiativeDetailPanels.tsx': 586, // F3-05; 13.2 (5): useAppContext en cada panel: las reglas bajaron a domain/initiativeCommands
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'pages/LMS/LessonModal.tsx': 743,
   'services/diagram/qualityRepair.ts': 642, // plan diagramas 8.4a: 710 → 642 · plan diagramas 8.3b: +2, el clon del IR conserva `notation` · plan diagramas 8.1b: +3, el alcance `structural`
-  'hooks/artifacts/useDiagramRendering.ts': 561, // plan diagramas 8.3d: 630 → 561 · plan diagramas 8.1d: 685 → 630
+  'hooks/artifacts/useDiagramRendering.ts': 562, // 13.2: +1 línea por el traductor de errores; la lógica de render permanece en sus hooks extraídos // plan diagramas 8.3d: 630 → 561 · plan diagramas 8.1d: 685 → 630
   'services/artifactCompiler/profiles/contractDefinitions.ts': 685,
   'services/architectureOffice/domain/officePortfolio.ts': 680,
   'components/memory/ChatHistoryPanel.tsx': 650,
-  'components/CustomNode.tsx': 641, // plan diagramas 4.1: +1, texto accesible del enlace de detalle
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/CustomNode.tsx': 642, // plan diagramas 4.1: +1, texto accesible del enlace de detalle
   // 636, not 635: splitting `import { ChatMessage } from '../../types'` into an
   // import from `services/chat` — where that model now lives — costs exactly one
   // line. A boundary paid for in line count, not in logic.
-  'components/CustomEdge.tsx': 630,
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/CustomEdge.tsx': 631,
   'services/diagram/layoutQualityService.ts': 630,
   'services/publicationPipeline/PublicationPreflightService.ts': 630,
   'pages/SettingsPage.tsx': 619,
@@ -225,7 +257,8 @@ export const CEILINGS = {
   'services/diagram/irToReactFlow.ts': 545,
   'pages/EngagementRoom.tsx': 543, // 14.1: +3 líneas, ídem
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 540,
-  'components/artifacts/ArtifactInspectorPanel.tsx': 505,
+  // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
+  'components/artifacts/ArtifactInspectorPanel.tsx': 509,
 };
 
 const SOURCE_ROOTS = [

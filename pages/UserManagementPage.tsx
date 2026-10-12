@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useState, useEffect } from 'react';
 import { provisionUser, resendInvitation, userService, type UserProfile } from '../services/identity';
 import { useAuth } from '../context/AuthContext';
@@ -39,22 +40,25 @@ interface RoleBadgeProps {
  * attention, not a plausible-looking label.
  */
 const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const parsed = parseAuthRole(role);
   if (!parsed) {
     return (
       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-        rol desconocido
+        {t("ui.rol-desconocido.9f5ca8")}
       </span>
     );
   }
   return (
     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${ROLE_TINT[parsed]}`}>
-      {ROLE_LABELS[parsed]}
+      {translateConfig(ROLE_LABELS[parsed])}
     </span>
   );
 };
 
 export const UserManagementPage: React.FC = () => {
+  const translateConfig = useUiTranslation();
   const { profile } = useAuth();
   const { t } = useAppContext();
   const navigate = useNavigate();
@@ -105,13 +109,13 @@ export const UserManagementPage: React.FC = () => {
     // Re-checked here rather than trusted from the dropdown: the options are a
     // convenience, and a convenience is not a control.
     if (!canAssignRole(profile, editRole)) {
-      setNotice('No puedes asignar ese rol.');
+      setNotice(t('uiState.23'));
       return;
     }
     if (uid === profile?.uid) {
       // Nobody edits their own role, administrator included. The rules refuse
       // it too; this only makes the refusal legible.
-      setNotice('No puedes cambiar tu propio rol. Pídeselo a otro administrador.');
+      setNotice(t('uiState.24'));
       return;
     }
     try {
@@ -148,7 +152,7 @@ export const UserManagementPage: React.FC = () => {
     const result = await provisionUser({ email: newEmail, displayName: newName, role: newRole });
 
     if (!result.ok) {
-      setCreateError(result.message ?? 'No se pudo crear la cuenta.');
+      setCreateError(result.message ?? t('uiDynamic.accountCreateFailed'));
       setIsCreating(false);
       return;
     }
@@ -158,7 +162,7 @@ export const UserManagementPage: React.FC = () => {
     setNewEmail('');
     setNewName('');
     setNewRole('viewer');
-    setNotice(`Cuenta creada. Se envió a ${result.profile?.email} un correo para que fije su contraseña.`);
+    setNotice(t('uiDynamic.accountCreated', { email: result.profile?.email ?? '' }));
     setIsCreating(false);
   };
 
@@ -166,14 +170,14 @@ export const UserManagementPage: React.FC = () => {
     if (!email) return;
     const sent = await resendInvitation(email);
     setNotice(sent
-      ? `Se reenvió la invitación a ${email}.`
-      : 'No se pudo reenviar la invitación. Revisa la consola de observabilidad.');
+      ? t('uiDynamic.invitationResent', { email })
+      : t('uiDynamic.invitationResendFailed'));
   };
 
   if (!can(profile, 'users:read')) {
     return (
       <div className="p-8 text-center text-gray-600 dark:text-gray-400">
-        Esta sección es para administrar cuentas. Tu rol no la incluye.
+        {t("ui.esta-seccion-es-para-adminis.e60d42")}
       </div>
     );
   }
@@ -186,13 +190,13 @@ export const UserManagementPage: React.FC = () => {
           className="flex items-center text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
-          Volver al panel
+          {t("ui.volver-al-panel.c82cdd")}
         </button>
       </div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Shield className="h-6 w-6 text-indigo-500" />
-          Gestión de usuarios
+          {t("ui.gestion-de-usuarios.b791f6")}
         </h1>
         {can(profile, 'users:create') && (
           <button
@@ -200,15 +204,13 @@ export const UserManagementPage: React.FC = () => {
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <UserPlus className="h-4 w-4" />
-            Crear cuenta
+            {t("ui.crear-cuenta.11bd80")}
           </button>
         )}
       </div>
 
       <p className="mb-6 text-sm text-gray-600 dark:text-gray-400 max-w-3xl">
-        Las cuentas se crean únicamente desde aquí. Nadie puede darse de alta por su
-        cuenta: quien recibe la invitación fija su propia contraseña y luego puede
-        cambiarla o recuperarla desde la pantalla de acceso.
+        {t("ui.las-cuentas-se-crean-unicame.efdfc6")}
       </p>
 
       {notice && (
@@ -254,7 +256,7 @@ export const UserManagementPage: React.FC = () => {
               {users.map((u) => (
                 <tr key={u.uid}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {u.displayName || 'Sin nombre'}
+                    {u.displayName || t("uiExpr.sin-nombre.4b9a18")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {u.email || '—'}
@@ -264,14 +266,14 @@ export const UserManagementPage: React.FC = () => {
                       <select
                         value={editRole}
                         onChange={(e) => setEditRole(e.target.value as AuthRole)}
-                        aria-label={`Rol de ${u.displayName || u.email || 'la cuenta'}`}
+                        aria-label={t("uiTemplate.rol-de-p0.110f67", { p0: String(u.displayName || u.email || 'la cuenta') })}
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                       >
                         {/* Only the roles this administrator may actually grant.
                             A superadmin option an admin cannot use would be a
                             control that lies about what it does. */}
                         {grantable.map((role) => (
-                          <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                          <option key={role} value={role}>{translateConfig(ROLE_LABELS[role])}</option>
                         ))}
                       </select>
                     ) : (
@@ -294,7 +296,7 @@ export const UserManagementPage: React.FC = () => {
                           <button
                             onClick={() => handleResendInvitation(u.email)}
                             className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 p-1 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                            aria-label={`Reenviar invitación a ${u.displayName || u.email}`}
+                            aria-label={t("uiTemplate.reenviar-invitacion-a-p0.80e012", { p0: String(u.displayName || u.email) })}
                           >
                             <Mail className="h-4 w-4" />
                           </button>
@@ -306,7 +308,7 @@ export const UserManagementPage: React.FC = () => {
                           <button
                             onClick={() => { setEditingId(u.uid); setEditRole(parseAuthRole(u.role) ?? 'viewer'); }}
                             className="text-indigo-600 hover:text-indigo-900 dark:hover:text-indigo-400 p-1 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                            aria-label={`Editar rol de ${u.displayName || u.email}`}
+                            aria-label={t("uiTemplate.editar-rol-de-p0.d1bc56", { p0: String(u.displayName || u.email) })}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
@@ -315,7 +317,7 @@ export const UserManagementPage: React.FC = () => {
                           <button
                             onClick={() => handleDeleteUser(u.uid)}
                             className="text-red-600 hover:text-red-900 dark:hover:text-red-400 p-1 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                            aria-label={`Eliminar usuario ${u.displayName || u.email}`}
+                            aria-label={t("uiTemplate.eliminar-usuario-p0.a90be8", { p0: String(u.displayName || u.email) })}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -379,7 +381,7 @@ export const UserManagementPage: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   {grantable.map((role) => (
-                    <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                    <option key={role} value={role}>{translateConfig(ROLE_LABELS[role])}</option>
                   ))}
                 </select>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -390,8 +392,7 @@ export const UserManagementPage: React.FC = () => {
               {/* Said plainly, because the absent password field is the part an
                   administrator will look for. */}
               <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                No se fija una contraseña aquí. La cuenta se crea con un secreto de un solo
-                uso que nadie ve y la persona recibe un correo para elegir la suya.
+                {t("ui.no-se-fija-una-contrasena-aq.33687d")}
               </p>
               
               <div className="pt-4 flex justify-end gap-3">
@@ -400,14 +401,14 @@ export const UserManagementPage: React.FC = () => {
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  Cancel
+                  {t("ui.cancel.77dfd2")}
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
                   className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {isCreating ? 'Creando…' : 'Crear e invitar'}
+                  {isCreating ? t("uiExpr.creando.60e876") : t("uiExpr.crear-e-invitar.33465f")}
                 </button>
               </div>
             </form>
@@ -418,9 +419,9 @@ export const UserManagementPage: React.FC = () => {
       <ConfirmDialog
           isOpen={!!deleteConfirm}
           title={t('users.deleteProfile')}
-          message={`¿Estás seguro de que deseas eliminar el perfil de "${deleteConfirm?.name}"? Esto no elimina su cuenta de autenticación.`}
-          confirmLabel="Eliminar"
-          cancelLabel="Cancelar"
+          message={t('uiDynamic.deleteUserConfirm', { name: deleteConfirm?.name ?? '' })}
+          confirmLabel={t("Eliminar")}
+          cancelLabel={t("Cancelar")}
           variant="danger"
           onConfirm={confirmDeleteUser}
           onCancel={() => setDeleteConfirm(null)}

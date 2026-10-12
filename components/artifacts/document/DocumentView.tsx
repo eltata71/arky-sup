@@ -9,7 +9,7 @@ import type { DocumentTocEntry } from '../../../hooks/artifacts/useDocumentRende
 import DocumentSideIndex from './DocumentSideIndex';
 import CommentThread from '../CommentThread';
 import type { ArtifactCommentAuthor } from '../../../services/review';
-import { useOptionalAppContext } from '../../../context/AppContext';
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import { activeSectionId, adjacentSectionId, sectionFromHash } from './documentSections';
 
 export interface DocumentViewProps {
@@ -64,7 +64,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
   isSplit = false,
   review,
 }) => {
-  const t = useOptionalAppContext()?.t;
+  const t = useUiTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [tocOpen, setTocOpen] = useState(false);
 
@@ -144,7 +144,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
         onPrint={onPrint}
       />
       {review && (
-        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70" role="group" aria-label={t?.('doc.mode.label') ?? 'Modo del documento'}>
+        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70" role="group" aria-label={t?.('doc.mode.label') ?? t("doc.mode.label")}>
           {(['read', 'review'] as const).map((value) => (
             <button
               key={value}
@@ -157,7 +157,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
-              {value === 'read' ? (t?.('doc.mode.read') ?? 'Lectura') : (t?.('doc.mode.review') ?? 'Revisión')}
+              {value === 'read' ? (t?.('doc.mode.read') ?? t("doc.mode.read")) : (t?.('doc.mode.review') ?? t("doc.mode.review"))}
             </button>
           ))}
         </div>
@@ -165,8 +165,8 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
       <ErrorBoundary
         fallback={(error, reset) => (
           <ViewerCrashFallback
-            title="El documento falló al renderizar"
-            viewerLabel="Documento"
+            title={t("ui.el-documento-fallo-al-render.68eab1")}
+            viewerLabel={t("Documento")}
             error={error}
             onReset={reset}
           />
@@ -182,16 +182,16 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
                 onClick={() => setTocOpen((v) => !v)}
                 aria-expanded={tocOpen}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/80 dark:border-gray-700/80 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all"
-                title="Tabla de contenidos"
+                title={t("ui.tabla-de-contenidos.14c0e9")}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h7" />
                 </svg>
-                Contenido
+                {t("mem.content")}
               </button>
               {tocOpen && (
                 <nav
-                  aria-label="Tabla de contenidos del documento"
+                  aria-label={t("ui.tabla-de-contenidos-del-docu.314a5f")}
                   className="mt-2 w-72 max-h-[60vh] overflow-y-auto bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-2 animate-fade-in"
                 >
                   {toc.map((entry) => (
@@ -218,16 +218,16 @@ export const DocumentView: React.FC<DocumentViewProps> = ({
             tabIndex={0}
             onScroll={trackActiveSection}
             onKeyDown={onKeyDown}
-            aria-label={t?.('doc.scroller.label') ?? 'Documento. Con [ y ] pasas a la sección anterior o siguiente'}
+            aria-label={t?.('doc.scroller.label') ?? t("doc.scroller.label")}
             className="h-full overflow-auto px-4 md:px-8 py-6 md:py-10"
           >
             <DocumentPaper html={markdownHtml} widthPx={pageWidthPx} zoom={zoom} theme={theme} fallbackContent={rawContent} cover={cover} />
           </div>
           </div>
           {review && mode === 'review' && (
-            <aside aria-label={t?.('doc.comments.label') ?? 'Comentarios de la sección'} className="hidden md:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3">
+            <aside aria-label={t?.('doc.comments.label') ?? t("doc.comments.label")} className="hidden md:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3">
               <p className="mb-2 text-xs font-semibold text-gray-700 dark:text-gray-200">
-                {activeEntry ? `Sección: ${activeEntry.text}` : 'Documento'}
+                {activeEntry ? t("uiTemplate.seccion-p0.876bad", { p0: String(activeEntry.text) }) : t("ui.documento.8ae11c")}
               </p>
               <CommentThread
                 key={activeEntry?.id ?? 'doc'}

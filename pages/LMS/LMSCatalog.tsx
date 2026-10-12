@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 
 import React, { useState } from 'react';
 import { activatable } from '../../lib/a11y';
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, onNavigate, onAddCourses }) => {
+  const t = useUiTranslation();
     const { settings } = useAppContext();
     const { addToast } = useToast();
     const [selectedRole, setSelectedRole] = useState<ArchitectRole>('Arquitecto de Soluciones');
@@ -81,14 +83,14 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
             }));
 
             if (newCourses.length === 0) {
-                addToast('La IA no devolvió cursos. Intenta de nuevo.', 'warning');
+                addToast(t("uiMessage.la-ia-no-devolvio-cursos-int.ac4f4b"), 'warning');
             } else {
                 onAddCourses(newCourses);
-                addToast(`Catálogo generado: ${newCourses.length} cursos para ${selectedRole}.`, 'success');
+                addToast(t("uiMessage.catalogo-generado-p0-cursos.9c8da6", { p0: String(newCourses.length), p1: String(selectedRole) }), 'success');
             }
         } catch (error) {
             console.error("Error generating catalog:", error);
-            addToast(errorMessageOf(error, 'Hubo un error al generar el catálogo. Intenta de nuevo.'), 'error');
+            addToast(errorMessageOf(error, t("uiMessage.hubo-un-error-al-generar-el.d2ccb0")), 'error');
         } finally {
             setIsGenerating(false);
         }
@@ -96,7 +98,7 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
 
     const getLastAccessed = (courseId: string) => {
         const lastTs = progress.courseLastAccessed?.[courseId];
-        return lastTs ? new Date(lastTs).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Sin actividad';
+        return lastTs ? new Date(lastTs).toLocaleDateString(document.documentElement.lang === 'en' ? 'en-US' : 'es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('lms.noActivity');
     };
 
     return (
@@ -105,15 +107,15 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                 {/* Left Panel: Filters & Controls */}
                 <div className="lg:col-span-3 space-y-6">
                     <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm sticky top-6">
-                        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight">Catálogo de Rutas</h2>
+                        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight">{t("ui.catalogo-de-rutas.1986f7")}</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                            Selecciona tu rol y descubre rutas de aprendizaje diseñadas para ti.
+                            {t("ui.selecciona-tu-rol-y-descubre.7fbc1f")}
                         </p>
 
                         <div className="space-y-6">
                             {/* Role Selector */}
                             <div>
-                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Rol Profesional</div>
+                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("ui.rol-profesional.d08cbe")}</div>
                                 <div className="flex flex-col gap-2">
                                     {roles.map(role => (
                                         <button
@@ -130,7 +132,7 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                             <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
                                 {/* Category Pills */}
                                 <div>
-                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Categoría</div>
+                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("diagramInspector.category")}</div>
                                     <div className="flex flex-wrap gap-2">
                                         {categories.map(cat => (
                                             <button
@@ -146,7 +148,7 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
 
                                 {/* Level Pills */}
                                 <div>
-                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Nivel</div>
+                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("cap.export.col.level")}</div>
                                     <div className="flex flex-wrap gap-2">
                                         {levels.map(lvl => (
                                             <button
@@ -169,19 +171,19 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                     {/* View Toggle Header */}
                     {!isGenerating && filteredCourses.length > 0 && (
                         <div className="flex items-center justify-between mb-4">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{filteredCourses.length} cursos encontrados</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{filteredCourses.length} {t("ui.cursos-encontrados.ee4b48")}</p>
                             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
                                 <button
                                     onClick={() => setViewMode('table')}
                                     className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                                    title="Vista tabla"
+                                    title={t("lmsDash.tableView")}
                                 >
                                     <TableIcon className="h-4 w-4" />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('cards')}
                                     className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
-                                    title="Vista tarjetas"
+                                    title={t("lmsDash.cardView")}
                                 >
                                     <LayoutGridIcon className="h-4 w-4" />
                                 </button>
@@ -195,16 +197,15 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                             <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6">
                                 <SparklesIcon className="h-10 w-10 text-indigo-500" />
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Catálogo no disponible</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t("ui.catalogo-no-disponible.b3b488")}</h3>
                             <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
-                                Aún no tenemos cursos predeterminados para el rol de <strong>{selectedRole}</strong>.
-                                Podemos generar un catálogo completo de 8 cursos especializados usando IA ahora mismo.
+                                {t("ui.aun-no-tenemos-cursos-predet.f7e001")} <strong>{selectedRole}</strong>{t("ui.podemos-generar-un-catalogo.72a5e8")}
                             </p>
                             <button
                                 onClick={handleGenerateCatalog}
                                 className="bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center"
                             >
-                                <SparklesIcon className="h-5 w-5 mr-2" /> Generar Catálogo con IA
+                                <SparklesIcon className="h-5 w-5 mr-2" /> {t("ui.generar-catalogo-con-ia.bb07c6")}
                             </button>
                         </div>
                     )}
@@ -213,9 +214,9 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                     {isGenerating && (
                         <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 border border-gray-200 dark:border-gray-800 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px]">
                             <Loader2Icon className="h-12 w-12 text-indigo-600 animate-spin mb-6" />
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Diseñando el Catálogo...</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t("ui.disenando-el-catalogo.c3b365")}</h3>
                             <p className="text-gray-500 dark:text-gray-400 max-w-md">
-                                Nuestra IA está estructurando 8 cursos completos con módulos y tarjetas de conocimiento para el rol de {selectedRole}. Esto tomará unos segundos.
+                                {t("ui.nuestra-ia-esta-estructurand.1afbad")} {selectedRole}{t("ui.esto-tomara-unos-segundos.801850")}
                             </p>
                         </div>
                     )}
@@ -227,12 +228,12 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                                 <table className="w-full text-sm text-left">
                                     <thead>
                                         <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Curso</th>
-                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Descripción</th>
-                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Categoría</th>
-                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Nivel</th>
-                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Módulos</th>
-                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap">Última Actividad</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t("lmsDash.course")}</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t("lmsDash.description")}</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t("diagramInspector.category")}</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t("cap.export.col.level")}</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">{t("lmsDash.modules")}</th>
+                                            <th className="px-4 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider whitespace-nowrap">{t("lmsDash.lastActivity")}</th>
                                             <th className="px-4 py-3"></th>
                                         </tr>
                                     </thead>
@@ -266,7 +267,7 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <button className="inline-flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline whitespace-nowrap">
-                                                        Ver Curso <ChevronRightIcon className="h-3.5 w-3.5 ml-1" />
+                                                        {t("ui.ver-curso.21350c")} <ChevronRightIcon className="h-3.5 w-3.5 ml-1" />
                                                     </button>
                                                 </td>
                                             </tr>
@@ -288,12 +289,12 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                                 <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-md mb-4 group-hover:scale-110 transition-transform">
                                     <SparklesIcon className="h-8 w-8 text-yellow-500" />
                                 </div>
-                                <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 mb-2">¿Falta algo?</h3>
+                                <h3 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 mb-2">{t("ui.falta-algo.e32ee2")}</h3>
                                 <p className="text-sm text-indigo-700/70 dark:text-indigo-300/70 mb-6">
-                                    Genera un curso completamente personalizado sobre cualquier tecnología usando IA.
+                                    {t("ui.genera-un-curso-completament.bbb9f3")}
                                 </p>
                                 <span className="inline-flex items-center font-bold text-indigo-600 dark:text-indigo-400 group-hover:underline">
-                                    Ir al Laboratorio IA <ChevronRightIcon className="h-4 w-4 ml-1" />
+                                    {t("ui.ir-al-laboratorio-ia.ef4d88")} <ChevronRightIcon className="h-4 w-4 ml-1" />
                                 </span>
                             </div>
 
@@ -314,10 +315,10 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
                                     <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
                                         <div className="flex items-center text-xs font-medium text-gray-500">
                                             <BookOpenIcon className="h-4 w-4 mr-1.5" />
-                                            {course.modules.length} Módulos
+                                            {course.modules.length} {t("lmsDash.modules")}
                                         </div>
                                         <div className="flex items-center text-sm font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
-                                            Ver Curso <ChevronRightIcon className="h-4 w-4 ml-1" />
+                                            {t("ui.ver-curso.21350c")} <ChevronRightIcon className="h-4 w-4 ml-1" />
                                         </div>
                                     </div>
                                 </div>

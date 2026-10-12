@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppContext, type Project } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
@@ -213,16 +214,16 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
             const next = removeMessagesById(messages, selectedIds);
             const ok = await replaceChatHistory(project.id, next);
             if (!ok) {
-                addToast('No se pudo eliminar el historial. Reintenta en unos segundos.', 'error');
+                addToast(t("uiMessage.no-se-pudo-eliminar-el-histo.350c52"), 'error');
                 return;
             }
             setMessages(next);
             setSelectedIds(new Set());
-            addToast(`Se eliminaron ${selectedIds.size} mensaje(s) del historial.`, 'success');
+            addToast(t("uiMessage.se-eliminaron-p0-mensaje-s-d.309528", { p0: String(selectedIds.size) }), 'success');
         } finally {
             setBusyAction(null);
         }
-    }, [selectedIds, busyAction, messages, replaceChatHistory, project.id, addToast]);
+    }, [selectedIds, busyAction, messages, replaceChatHistory, project.id, addToast, t]);
 
     const handleBulkCompact = useCallback(async () => {
         if (selectedIds.size === 0 || busyAction) return;
@@ -264,21 +265,21 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
             const next = spliceCompactionMarker(messages, selectedIds, marker);
             const ok = await replaceChatHistory(project.id, next);
             if (!ok) {
-                addToast('No se pudo guardar la compactación. Reintenta en unos segundos.', 'error');
+                addToast(t("uiMessage.no-se-pudo-guardar-la-compac.b456f5"), 'error');
                 return;
             }
             setMessages(next);
             setSelectedIds(new Set());
             addToast(
                 usedFallback
-                    ? `Se compactaron ${selectedMessages.length} mensaje(s) con resumen determinístico (la IA no estuvo disponible).`
-                    : `Se compactaron ${selectedMessages.length} mensaje(s) en una sola entrada.`,
+                    ? t("uiMessage.se-compactaron-p0-mensaje-s.924332", { p0: String(selectedMessages.length) })
+                    : t("uiMessage.se-compactaron-p0-mensaje-s.0670ac", { p0: String(selectedMessages.length) }),
                 usedFallback ? 'warning' : 'success',
             );
         } finally {
             setBusyAction(null);
         }
-    }, [selectedIds, busyAction, messages, settings, replaceChatHistory, project.id, addToast]);
+    }, [selectedIds, busyAction, messages, settings, replaceChatHistory, project.id, addToast, t]);
 
     // ── Render ──────────────────────────────────────────────────────────────
     if (isLoading) {
@@ -295,10 +296,10 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
             {/* Header stats + selection actions */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-slate-500 dark:text-slate-400" aria-live="polite">
-                    <span className="font-semibold text-slate-700 dark:text-slate-200">{totals.totalSessions}</span> sesion(es) ·{' '}
-                    <span className="font-semibold text-slate-700 dark:text-slate-200">{totals.totalMessages}</span> mensaje(s) ·{' '}
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{totals.totalSessions}</span> {t("ui.sesion-es.cb0da3")}{' '}
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{totals.totalMessages}</span> {t("ui.mensaje-s.0293aa")}{' '}
                     {totals.filteredSessions < totals.totalSessions && (
-                        <span>filtrando {totals.filteredSessions} sesion(es)</span>
+                        <span>{t("ui.filtrando.91bdcb")} {totals.filteredSessions} {t("ui.sesion-es.664a70")}</span>
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -308,7 +309,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                         className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
                     >
                         <ArrowPathIcon className="h-3.5 w-3.5" />
-                        Refrescar
+                        {t("ui.refrescar.513362")}
                     </button>
                     <button
                         type="button"
@@ -316,7 +317,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                         disabled={filtered.length === 0}
                         className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10"
                     >
-                        Seleccionar visibles
+                        {t("ui.seleccionar-visibles.1e6857")}
                     </button>
                     {selectedIds.size > 0 && (
                         <button
@@ -325,7 +326,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                             className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
                         >
                             <XMarkIcon className="h-3.5 w-3.5" />
-                            Limpiar selección
+                            {t("ui.limpiar-seleccion.1b1389")}
                         </button>
                     )}
                 </div>
@@ -334,7 +335,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
             {/* Filters */}
             <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-white/10 dark:bg-white/[0.03] sm:grid-cols-12">
                 <div className="sm:col-span-5">
-                    <label htmlFor="chat-history-query" className="sr-only">Buscar</label>
+                    <label htmlFor="chat-history-query" className="sr-only">{t("ui.buscar.a62405")}</label>
                     <div className="relative">
                         <MagnifyingGlassIcon className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                         <input
@@ -342,13 +343,13 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                             type="search"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            placeholder="Buscar por palabra clave…"
+                            placeholder={t("ui.buscar-por-palabra-clave.1ce963")}
                             className="w-full rounded-md border border-slate-200 bg-white py-1.5 pl-7 pr-2 text-sm text-slate-800 focus:border-primary-500 focus:outline-none dark:border-white/10 dark:bg-slate-950 dark:text-slate-100"
                         />
                     </div>
                 </div>
                 <div className="sm:col-span-3">
-                    <label htmlFor="chat-history-from" className="block text-2xs font-semibold uppercase tracking-widest text-slate-500">Desde</label>
+                    <label htmlFor="chat-history-from" className="block text-2xs font-semibold uppercase tracking-widest text-slate-500">{t("ui.desde.966c7c")}</label>
                     <input
                         id="chat-history-from"
                         type="date"
@@ -358,7 +359,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                     />
                 </div>
                 <div className="sm:col-span-3">
-                    <label htmlFor="chat-history-to" className="block text-2xs font-semibold uppercase tracking-widest text-slate-500">Hasta</label>
+                    <label htmlFor="chat-history-to" className="block text-2xs font-semibold uppercase tracking-widest text-slate-500">{t("ui.hasta.ccdaad")}</label>
                     <input
                         id="chat-history-to"
                         type="date"
@@ -373,30 +374,30 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                         onClick={clearFilters}
                         className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-2xs font-medium text-slate-600 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-white/10"
                     >
-                        Limpiar
+                        {t("projectHub.clear")}
                     </button>
                 </div>
                 <div className="sm:col-span-12 flex flex-wrap items-center gap-1.5">
                     {QUICK_RANGES.map((range) => (
                         <button
-                            key={range.label}
+                            key={t(range.label)}
                             type="button"
                             onClick={() => applyQuickRange(range.getRange())}
                             className="inline-flex items-center rounded-full border border-slate-200 px-2 py-0.5 text-2xs font-medium text-slate-600 hover:border-primary-300 hover:bg-primary-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
                         >
-                            {range.label}
+                            {t(range.label)}
                         </button>
                     ))}
                     <label className="ml-2 flex items-center gap-1.5 text-2xs font-medium text-slate-600 dark:text-slate-300">
-                        <span>Rol</span>
+                        <span>{t("users.role")}</span>
                         <select
                             value={filters.role ?? 'all'}
                             onChange={(e) => setFilters((c) => ({ ...c, role: e.target.value as RoleFilter }))}
                             className="rounded-md border border-slate-200 bg-white py-0.5 px-1 text-2xs text-slate-700 focus:border-primary-500 focus:outline-none dark:border-white/10 dark:bg-slate-950 dark:text-slate-200"
                         >
-                            <option value="all">Todos</option>
-                            <option value="user">Usuario</option>
-                            <option value="model">Arquitecto Agente</option>
+                            <option value="all">{t("ui.todos.a4114a")}</option>
+                            <option value="user">{t("ui.usuario.3f2ecd")}</option>
+                            <option value="model">{t("aiAssistant")}</option>
                         </select>
                     </label>
                     <label className="flex items-center gap-1 text-2xs font-medium text-slate-600 dark:text-slate-300">
@@ -406,7 +407,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                             onChange={(e) => setFilters((c) => ({ ...c, onlyCompacted: e.target.checked || undefined, onlyUncompacted: undefined }))}
                             className="accent-primary-600"
                         />
-                        Sólo compactados
+                        {t("ui.solo-compactados.393ef5")}
                     </label>
                     <label className="flex items-center gap-1 text-2xs font-medium text-slate-600 dark:text-slate-300">
                         <input
@@ -415,16 +416,16 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                             onChange={(e) => setFilters((c) => ({ ...c, onlyUncompacted: e.target.checked || undefined, onlyCompacted: undefined }))}
                             className="accent-primary-600"
                         />
-                        Sólo sin compactar
+                        {t("ui.solo-sin-compactar.21a70b")}
                     </label>
                 </div>
             </div>
 
             {/* Bulk action bar */}
             {selectedIds.size > 0 && (
-                <div role="region" aria-label="Acciones masivas" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary-200 bg-primary-50/70 px-3 py-2 dark:border-primary-700/50 dark:bg-primary-900/20">
+                <div role="region" aria-label={t("ui.acciones-masivas.0b9192")} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary-200 bg-primary-50/70 px-3 py-2 dark:border-primary-700/50 dark:bg-primary-900/20">
                     <div className="text-xs font-semibold text-primary-700 dark:text-primary-200">
-                        {selectedIds.size} mensaje(s) seleccionado(s)
+                        {selectedIds.size} {t("ui.mensaje-s-seleccionado-s.78f971")}
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -438,7 +439,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                             ) : (
                                 <ArrowsPointingInIcon className="h-3.5 w-3.5" />
                             )}
-                            Compactar selección
+                            {t("ui.compactar-seleccion.7a2770")}
                         </button>
                         <button
                             type="button"
@@ -451,7 +452,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                             ) : (
                                 <TrashIcon className="h-3.5 w-3.5" />
                             )}
-                            Eliminar selección
+                            {t("ui.eliminar-seleccion.da1116")}
                         </button>
                     </div>
                 </div>
@@ -460,12 +461,12 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
             {/* Empty state */}
             {sessions.length === 0 && (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
-                    Aún no hay historial de chat para este proyecto.
+                    {t("ui.aun-no-hay-historial-de-chat.fc60e6")}
                 </div>
             )}
             {sessions.length > 0 && filtered.length === 0 && (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
-                    Ningún chat coincide con los filtros actuales.
+                    {t("ui.ningun-chat-coincide-con-los.88777a")}
                 </div>
             )}
 
@@ -474,7 +475,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
                 {sessionsByDay.map(([day, daySessions]) => (
                     <section key={day}>
                         <header className="sticky top-0 z-10 -mx-1 mb-1 bg-white/95 px-1 py-1 text-2xs font-bold uppercase tracking-widest text-slate-500 backdrop-blur dark:bg-slate-900/95 dark:text-slate-400">
-                            {formatDay(day)} · {daySessions.length} sesion(es)
+                            {formatDay(day)} · {daySessions.length} {t("ui.sesion-es.664a70")}
                         </header>
                         <div className="space-y-1.5">
                             {daySessions.map((session) => {
@@ -506,9 +507,9 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ project }) =
 
             <ConfirmDialog
                 isOpen={deleteConfirmOpen}
-                title="Eliminar mensajes"
-                message={`Se eliminarán ${selectedIds.size} mensaje(s) del historial de este proyecto. La acción no se puede deshacer.`}
-                confirmLabel="Eliminar"
+                title={t("ui.eliminar-mensajes.145a69")}
+                message={t("uiDynamicGenerated.se-eliminaran-p0-mensaje-s-d.700dec", { p0: String(selectedIds.size) })}
+                confirmLabel={t("Eliminar")}
                 variant="danger"
                 onConfirm={() => { void handleBulkDelete(); }}
                 onCancel={() => setDeleteConfirmOpen(false)}
@@ -526,6 +527,7 @@ interface SessionRowProps {
 }
 
 const SessionRow: React.FC<SessionRowProps> = ({ session, fullySelected, partiallySelected, onToggle, onPreview }) => {
+  const t = useUiTranslation();
     const checkboxRef = React.useRef<HTMLInputElement | null>(null);
     useEffect(() => {
         if (checkboxRef.current) checkboxRef.current.indeterminate = partiallySelected;
@@ -542,7 +544,7 @@ const SessionRow: React.FC<SessionRowProps> = ({ session, fullySelected, partial
                 type="checkbox"
                 checked={fullySelected}
                 onChange={onToggle}
-                aria-label="Seleccionar sesión"
+                aria-label={t("ui.seleccionar-sesion.d0a95b")}
                 className="mt-1 accent-primary-600"
             />
             <div className="min-w-0 flex-1">
@@ -552,7 +554,7 @@ const SessionRow: React.FC<SessionRowProps> = ({ session, fullySelected, partial
                             {session.stats.hasCompaction && (
                                 <span className="mr-1 inline-flex items-center gap-1 rounded bg-purple-100 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider text-purple-700 dark:bg-purple-900/40 dark:text-purple-200">
                                     <ArrowsPointingInIcon className="h-3 w-3" />
-                                    Compactada
+                                    {t("ui.compactada.7935b2")}
                                 </span>
                             )}
                             {getSessionTitle(session)}
@@ -565,16 +567,16 @@ const SessionRow: React.FC<SessionRowProps> = ({ session, fullySelected, partial
                         type="button"
                         onClick={onPreview}
                         className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-2xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
-                        aria-label="Ver sesión"
+                        aria-label={t("ui.ver-sesion.1aef8b")}
                     >
                         <EyeIcon className="h-3.5 w-3.5" />
-                        Ver
+                        {t("view")}
                     </button>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-2xs text-slate-500 dark:text-slate-400">
-                    <span>{session.messages.length} mensaje(s)</span>
-                    <span>{session.stats.userMessages} del usuario</span>
-                    <span>{session.stats.modelMessages} del Arquitecto Agente</span>
+                    <span>{session.messages.length} {t("ui.mensaje-s.184872")}</span>
+                    <span>{session.stats.userMessages} {t("ui.del-usuario.571b8f")}</span>
+                    <span>{session.stats.modelMessages} {t("ui.del-arquitecto-agente.befa02")}</span>
                     <span>{(session.stats.totalCharacters / 1024).toFixed(1)} KB</span>
                 </div>
             </div>
@@ -587,11 +589,11 @@ interface SessionPreviewProps {
     onClose: () => void;
 }
 
-const SessionPreview: React.FC<SessionPreviewProps> = ({ session, onClose }) => (
+const SessionPreview: React.FC<SessionPreviewProps> = ({ session, onClose }) =>{ const t = useUiTranslation(); return  (
     <div
         role="dialog"
         aria-modal="true"
-        aria-label="Vista previa de la sesión"
+        aria-label={t("ui.vista-previa-de-la-sesion.498890")}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         onClick={onClose}
     >
@@ -604,7 +606,7 @@ const SessionPreview: React.FC<SessionPreviewProps> = ({ session, onClose }) => 
                     <h3 className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{getSessionTitle(session)}</h3>
                     <p className="text-2xs text-slate-500">{formatTime(session.startedAt)} → {formatTime(session.endedAt)}</p>
                 </div>
-                <button type="button" onClick={onClose} className="rounded-md p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10" aria-label="Cerrar">
+                <button type="button" onClick={onClose} className="rounded-md p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10" aria-label={t("sdd.close")}>
                     <XMarkIcon className="h-4 w-4" />
                 </button>
             </header>
@@ -629,9 +631,9 @@ const SessionPreview: React.FC<SessionPreviewProps> = ({ session, onClose }) => 
             <footer className="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-2 dark:border-white/10">
                 <button type="button" onClick={onClose} className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10">
                     <CheckCircleIcon className="h-3.5 w-3.5" />
-                    Cerrar
+                    {t("sdd.close")}
                 </button>
             </footer>
         </div>
     </div>
-);
+); };

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import type { DiagramIR, DiagramNarrative } from '../lib/diagram';
 import { motion } from 'motion/react';
@@ -40,6 +41,7 @@ const keyNumber = (n: number, label: string, hint: string) => (
 );
 
 export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, narrative, ir, onClose, onDownload, exportName = 'brief-ejecutivo', onSaveNarrative }) => {
+  const t = useUiTranslation();
     const totalNodes = ir.nodes.length;
     const externalActors = ir.nodes.filter(n => /person|external|partner|cliente|stakeholder/i.test(n.kind)).length;
     const dataStores = ir.nodes.filter(n => /data|db|storage|warehouse|cache/i.test(n.kind)).length;
@@ -114,16 +116,16 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
             <header className="flex items-start justify-between mb-6 gap-4">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] uppercase tracking-[0.16em] text-primary-600 dark:text-primary-300 font-medium">Brief ejecutivo</span>
-                        {isEditing && <Badge tone="ai" size="xs">Editando</Badge>}
+                        <span className="text-[11px] uppercase tracking-[0.16em] text-primary-600 dark:text-primary-300 font-medium">{t("ui.brief-ejecutivo.7b6554")}</span>
+                        {isEditing && <Badge tone="ai" size="xs">{t("ui.editando.14f61c")}</Badge>}
                     </div>
                     {isEditing ? (
                         <input
                             type="text"
                             value={draftTitle}
                             onChange={(e) => setDraftTitle(e.target.value)}
-                            placeholder="Título del brief"
-                            aria-label="Título del brief"
+                            placeholder={t("ui.titulo-del-brief.41b609")}
+                            aria-label={t("ui.titulo-del-brief.41b609")}
                             className="w-full text-3xl font-bold text-gray-900 dark:text-white leading-tight bg-transparent border-b-2 border-primary-400 focus:border-primary-600 outline-none py-0.5"
                             autoFocus
                         />
@@ -138,9 +140,9 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
                             size="sm"
                             leftIcon={<PencilIcon className="h-3.5 w-3.5" />}
                             onClick={startEditing}
-                            aria-label="Editar narrativa"
+                            aria-label={t("ui.editar-narrativa.c3eff6")}
                         >
-                            Editar narrativa
+                            {t("ui.editar-narrativa.c3eff6")}
                         </Button>
                     )}
                     {isEditing && (
@@ -151,7 +153,7 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
                                 leftIcon={<CheckCircleIcon className="h-3.5 w-3.5" />}
                                 onClick={saveEditing}
                             >
-                                Guardar
+                                {t("save")}
                             </Button>
                             <Button
                                 variant="ghost"
@@ -159,17 +161,17 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
                                 leftIcon={<XMarkIcon className="h-3.5 w-3.5" />}
                                 onClick={cancelEditing}
                             >
-                                Cancelar
+                                {t("ui.cancelar.c111e0")}
                             </Button>
                         </>
                     )}
                     {!isEditing && (
                         <Button variant="secondary" size="sm" onClick={handleDownload}>
-                            Descargar PNG
+                            {t("ui.descargar-png.239954")}
                         </Button>
                     )}
                     {!isEditing && onClose && (
-                        <Button variant="ghost" size="sm" onClick={onClose}>Cerrar</Button>
+                        <Button variant="ghost" size="sm" onClick={onClose}>{t("sdd.close")}</Button>
                     )}
                 </div>
             </header>
@@ -178,18 +180,18 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
             {isEditing ? (
                 <div className="mb-6">
                     <label htmlFor="narrative-summary" className="block text-2xs uppercase tracking-widest-2 font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
-                        Resumen narrativo
+                        {t("ui.resumen-narrativo.39c5eb")}
                     </label>
                     <textarea
                         id="narrative-summary"
                         value={draftSummary}
                         onChange={(e) => setDraftSummary(e.target.value)}
-                        placeholder="Cuenta la historia: el problema, la solución, el valor entregado y los próximos pasos."
+                        placeholder={t("ui.cuenta-la-historia-el-proble.1bc124")}
                         rows={5}
                         className="w-full px-4 py-3 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 leading-relaxed"
                     />
                     <p className="mt-2 text-2xs text-gray-500 dark:text-gray-400">
-                        Tip: empieza por el "para quién", luego "qué problema resuelve" y termina con la métrica de éxito.
+                        {t("ui.tip-empieza-por-el-para-quie.6ba37b")}
                     </p>
                 </div>
             ) : narrativeText ? (
@@ -202,7 +204,7 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
                     onClick={startEditing}
                     className="w-full text-left mb-6 px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white/40 dark:bg-gray-900/40 hover:border-primary-400 dark:hover:border-primary-600 transition-colors text-sm text-gray-500 dark:text-gray-400 italic"
                 >
-                    Aún no hay narrativa. Haz clic para escribir el resumen ejecutivo.
+                    {t("ui.aun-no-hay-narrativa-haz-cli.be26c3")}
                 </button>
             ) : null}
 
@@ -231,7 +233,7 @@ export const ExecutiveOnePager: React.FC<ExecutiveOnePagerProps> = ({ title, nar
 
             <section>
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
-                    Capacidades clave
+                    {t("ui.capacidades-clave.fb5cb8")}
                 </h2>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {ir.nodes.slice(0, 8).map(n => (

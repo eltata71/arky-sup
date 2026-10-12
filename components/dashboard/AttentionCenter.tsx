@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * El centro de riesgo y atención: todo lo que está mal, en un sitio, ordenado
  * por gravedad.
@@ -60,6 +61,7 @@ export const AttentionCenter: React.FC<AttentionCenterProps> = ({
   urgentSignals,
   className,
 }) => {
+  const t = useUiTranslation();
   const navigate = useNavigate();
 
   if (signals.length === 0) {
@@ -69,9 +71,9 @@ export const AttentionCenter: React.FC<AttentionCenterProps> = ({
           <CheckCircle2 className="h-5 w-5" aria-hidden strokeWidth={2} />
         </span>
         <div className="min-w-0">
-          <h2 className={TYPE.cardTitle}>Nada reclama atención</h2>
+          <h2 className={TYPE.cardTitle}>{t("ui.nada-reclama-atencion.cee7ec")}</h2>
           <p className={cn(TYPE.metadata, 'mt-0.5')}>
-            Ningún riesgo abierto, ningún vínculo roto y ningún elemento fuera de plazo en el portafolio.
+            {t("ui.ningun-riesgo-abierto-ningun.74aa77")}
           </p>
         </div>
       </Card>
@@ -97,10 +99,10 @@ export const AttentionCenter: React.FC<AttentionCenterProps> = ({
     <Card className={cn('space-y-3', className)}>
       <SectionHeader
         as="h2"
-        title="Riesgo y atención"
+        title={t("ui.riesgo-y-atencion.2e5d02")}
         description={
           urgentSignals > 0
-            ? `${urgentSignals} señal(es) de gravedad alta. Empieza por la barra más larga.`
+            ? t('uiDynamic.urgentSignals', { count: String(urgentSignals) })
             : 'Nada crítico abierto. Lo de abajo es seguimiento, no urgencia.'
         }
         icon={
@@ -119,7 +121,7 @@ export const AttentionCenter: React.FC<AttentionCenterProps> = ({
         }
         compact
       />
-      <StatusBars rows={rows} title="Señales del portafolio, por gravedad" unit="elemento(s)" animateReorder />
+      <StatusBars rows={rows} title={t("ui.senales-del-portafolio-por-g.f9167c")} unit="elemento(s)" animateReorder />
     </Card>
   );
 };

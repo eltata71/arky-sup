@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React from 'react';
 import type { Artifact } from '../lib/artifacts';
 import { deriveArtifactLifecycle, type LifecyclePublication } from '../lib/artifacts/artifactLifecycle';
@@ -35,30 +36,31 @@ export const LatestArtifactCard: React.FC<LatestArtifactCardProps> = ({
   onChat,
   onExploreCatalog,
 }) => {
+  const t = useUiTranslation();
   if (!artifact) {
     return (
       <section
         className="rounded-3xl border border-dashed border-slate-300 bg-white p-5 text-center shadow-sm dark:border-white/15 dark:bg-white/[0.03]"
-        aria-label="Último artefacto generado"
+        aria-label={t("ui.ultimo-artefacto-generado.2dd6ba")}
       >
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-500 dark:bg-primary-500/10 dark:text-primary-300">
           <SparklesIcon className="h-6 w-6" />
         </div>
         <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-300">
-          Último artefacto
+          {t("ui.ultimo-artefacto.0f8641")}
         </p>
         <h3 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
-          Aún no hay artefactos
+          {t("ui.aun-no-hay-artefactos.ef2f3d")}
         </h3>
         <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-          Genera tu primer activo de arquitectura desde el catálogo guiado.
+          {t("ui.genera-tu-primer-activo-de-a.448ba3")}
         </p>
         <button
           type="button"
           onClick={onExploreCatalog}
           className="mt-4 inline-flex min-h-[42px] w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#101014]"
         >
-          Generar primer artefacto
+          {t("ui.generar-primer-artefacto.f929f4")}
           <ArrowRightIcon className="ml-2 h-4 w-4" />
         </button>
       </section>
@@ -71,13 +73,13 @@ export const LatestArtifactCard: React.FC<LatestArtifactCardProps> = ({
   return (
     <section
       className="overflow-hidden rounded-3xl border border-primary-200 bg-gradient-to-br from-primary-50 via-white to-white shadow-sm dark:border-primary-500/30 dark:from-primary-500/10 dark:via-[#101014] dark:to-[#101014]"
-      aria-label={`Último artefacto generado: ${artifact.name}`}
+      aria-label={t("uiTemplate.ultimo-artefacto-generado-p0.b59e76", { p0: String(artifact.name) })}
     >
       <div className="p-4">
         <div className="flex items-center justify-between gap-2">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-primary-600 dark:text-primary-300">
             <ClockIcon className="h-3.5 w-3.5" />
-            Último artefacto
+            {t("ui.ultimo-artefacto.0f8641")}
           </p>
           <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-slate-600 ring-1 ring-slate-200 dark:bg-black/30 dark:text-slate-300 dark:ring-white/10">
             v{artifact.version}
@@ -136,15 +138,15 @@ export const LatestArtifactCard: React.FC<LatestArtifactCardProps> = ({
           onClick={() => onOpen(artifact.id)}
           className="flex min-h-[46px] flex-1 items-center justify-center gap-1.5 text-sm font-bold text-primary-700 transition hover:bg-primary-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 dark:text-primary-200 dark:hover:bg-primary-500/10"
         >
-          Abrir artefacto
+          {t("ui.abrir-artefacto.98781c")}
           <ArrowRightIcon className="h-4 w-4" />
         </button>
         <button
           type="button"
           onClick={() => onChat(artifact)}
           className="flex min-h-[46px] w-14 items-center justify-center border-l border-primary-100 text-primary-700 transition hover:bg-primary-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 dark:border-white/10 dark:text-primary-200 dark:hover:bg-primary-500/10"
-          aria-label={`Conversar sobre ${artifact.name}`}
-          title="Conversar sobre este artefacto"
+          aria-label={t("uiTemplate.conversar-sobre-p0.7743a9", { p0: String(artifact.name) })}
+          title={t("ui.conversar-sobre-este-artefac.748bce")}
         >
           <ChatBubbleLeftRightIcon className="h-5 w-5" />
         </button>

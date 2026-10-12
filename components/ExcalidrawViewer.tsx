@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { Suspense, useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ExternalLink, Download, RefreshCw, AlertTriangle, Layers } from 'lucide-react';
@@ -249,6 +250,7 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
     onRetry,
     onOpenExternal,
 }) => {
+  const t = useUiTranslation();
     const isDark = useIsDark();
     const [elementCount, setElementCount] = useState(0);
 
@@ -282,15 +284,15 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
                         <path d="M12 20h9" />
                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                     </svg>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Excalidraw</span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 hidden lg:inline flex-shrink-0">— diagrama interactivo de pizarra</span>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("ui.excalidraw.c58219")}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 hidden lg:inline flex-shrink-0">{t("ui.diagrama-interactivo-de-piza.082070")}</span>
                     {elementCount > 0 && (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                             className="hidden md:flex items-center gap-1 ml-1 px-2 py-0.5 bg-violet-50 dark:bg-violet-900/30 rounded-full"
                         >
                             <Layers className="w-3 h-3 text-[#6965db]" />
-                            <span className="text-xs text-[#6965db] font-medium">{elementCount} elementos</span>
+                            <span className="text-xs text-[#6965db] font-medium">{elementCount} {t("ui.elementos.e6ef79")}</span>
                         </motion.div>
                     )}
                 </div>
@@ -298,22 +300,22 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
                     <motion.button
                         onClick={handleDownload}
                         disabled={elements.length === 0}
-                        title="Descargar como archivo .excalidraw"
+                        title={t("ui.descargar-como-archivo-excal.d263e6")}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-40"
                         whileTap={{ scale: 0.96 }}
                     >
                         <Download className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Descargar .excalidraw</span>
+                        <span className="hidden sm:inline">{t("ui.descargar-excalidraw.2b19fb")}</span>
                     </motion.button>
                     <motion.button
                         onClick={onOpenExternal}
-                        title="Abrir en Excalidraw.com"
+                        title={t("ui.abrir-en-excalidraw-com.f1f5b9")}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#6965db] rounded-lg"
                         whileHover={{ backgroundColor: '#5b58c4' }}
                         whileTap={{ scale: 0.96 }}
                     >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Abrir en Excalidraw.com</span>
+                        <span className="hidden sm:inline">{t("ui.abrir-en-excalidraw-com.f1f5b9")}</span>
                     </motion.button>
                 </div>
             </div>
@@ -336,8 +338,8 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
                                 </div>
                             </div>
                             <div className="text-center">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Generando diagrama Excalidraw</p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">La IA está convirtiendo el diagrama de arquitectura…</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("ui.generando-diagrama-excalidra.ada7a2")}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t("ui.la-ia-esta-convirtiendo-el-d.f05121")}</p>
                             </div>
                             <div className="relative w-64 h-32 mt-2">
                                 {[{ x: '10%', y: '10%', w: 100, h: 40 }, { x: '55%', y: '55%', w: 90, h: 36 }, { x: '5%', y: '65%', w: 80, h: 32 }].map((box, i) => (
@@ -363,13 +365,13 @@ const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
                                 <AlertTriangle className="w-7 h-7 text-amber-500" />
                             </div>
                             <div className="text-center max-w-sm">
-                                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">Error al generar vista Excalidraw</h3>
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{t("ui.error-al-generar-vista-excal.f8a6c9")}</h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{error}</p>
                             </div>
                             <motion.button onClick={onRetry}
                                 className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl shadow-sm"
                                 whileHover={{ backgroundColor: '#4338ca' }} whileTap={{ scale: 0.96 }}>
-                                <RefreshCw className="w-4 h-4" /> Reintentar
+                                <RefreshCw className="w-4 h-4" /> {t("lucid.retry")}
                             </motion.button>
                         </motion.div>
                     ) : elements.length === 0 ? (

@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setProfile(null);
         setUser(null);
         setError(
-          'Tu identidad es válida pero no tiene una cuenta en Arky. Un administrador debe crearla antes de que puedas entrar.',
+          'uiMessage.tu-identidad-es-valida-pero.2100d8',
         );
         await signOutCurrentUser();
         return;
@@ -200,7 +200,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await fetchUserProfile(signedIn.uid, signedIn);
     } catch (err: unknown) {
       const authError = err as { message?: string };
-      setError(authError.message ?? 'Login failed');
+      setError(authError.message ?? 'uiMessage.login-failed.c00f66');
       throw err;
     } finally {
       setIsLoading(false);
@@ -248,7 +248,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setProfile(null);
     } catch (err: unknown) {
       const authError = err as { message?: string };
-      setError(authError.message ?? 'Logout failed');
+      setError(authError.message ?? 'uiMessage.logout-failed.d2313d');
       throw err;
     } finally {
       setIsLoading(false);

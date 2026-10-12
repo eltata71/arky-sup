@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * Copilot Sidebar — persistent right-side rail in the Workspace.
  *
@@ -79,6 +80,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
     setActiveArtifactId,
     onRequestArtifactGeneration,
 }) => {
+  const t = useUiTranslation();
     const [open, setOpen] = useState<boolean>(() => readPersistedOpen());
     const panel = useResizablePanel({
         defaultWidth: DEFAULT_WIDTH,
@@ -135,20 +137,20 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         exit={{ x: 16, opacity: 0 }}
                         transition={{ duration: MOTION.duration.base, ease: MOTION.ease.enter }}
                         className="hidden md:flex w-12 flex-shrink-0 flex-col items-center justify-between py-4 border-l border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/40 backdrop-blur-sm"
-                        aria-label="Arquitecto Agente colapsado"
+                        aria-label={t("ui.arquitecto-agente-colapsado.130331")}
                     >
-                        <Tooltip label="Abrir Arquitecto Agente · ⌘ ." side="left">
+                        <Tooltip label={t("ui.abrir-arquitecto-agente.534d6e")} side="left">
                             <button
                                 type="button"
                                 onClick={() => setOpen(true)}
                                 className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                                aria-label="Abrir Arquitecto Agente"
+                                aria-label={t("ui.abrir-arquitecto-agente.843240")}
                             >
                                 <AIArchitectAvatar size="sm" state="idle" />
                             </button>
                         </Tooltip>
                         <div className="text-[10px] tracking-widest-2 font-bold text-gray-600 dark:text-gray-300 [writing-mode:vertical-rl] rotate-180 select-none">
-                            AGENTE · IA
+                            {t("ui.agente-ia.e9cf4c")}
                         </div>
                         <div className="h-5" />
                     </motion.aside>
@@ -168,22 +170,22 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         // cerrar, que es cuando nadie está apuntando a nada.
                         transition={panel.resizing ? { duration: 0 } : { duration: MOTION.duration.slow, ease: MOTION.ease.enter }}
                         className="hidden md:flex flex-shrink-0 overflow-hidden bg-white dark:bg-gray-900"
-                        aria-label="Arquitecto Agente"
+                        aria-label={t("aiAssistant")}
                     >
                       <ResizeHandle
                         {...panel.handleProps}
-                        label="Ancho del Arquitecto Agente"
+                        label={t("ui.ancho-del-arquitecto-agente.b552bc")}
                         active={panel.resizing}
                       />
                       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                         <header className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-ai-50/60 via-white to-primary-50/60 dark:from-ai-950/30 dark:via-gray-900 dark:to-primary-950/30 flex-shrink-0">
-                            <AIArchitectChip subtitle="Soporte continuo de arquitectura" />
-                            <Tooltip label="Cerrar Arquitecto Agente · ⌘ ." side="left">
+                            <AIArchitectChip subtitle={t("Soporte continuo de arquitectura")} />
+                            <Tooltip label={t("ui.cerrar-arquitecto-agente.2226aa")} side="left">
                                 <button
                                     type="button"
                                     onClick={() => setOpen(false)}
                                     className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                                    aria-label="Cerrar Arquitecto Agente"
+                                    aria-label={t("ui.cerrar-arquitecto-agente.89019c")}
                                 >
                                     <XMarkIcon className="h-4 w-4" />
                                 </button>
@@ -196,14 +198,14 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         <div className="flex-shrink-0 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/40">
                             {activeArtifact ? (
                                 <div className="flex items-center gap-2 text-2xs">
-                                    <span className="uppercase tracking-widest-2 text-gray-400">Contexto activo</span>
+                                    <span className="uppercase tracking-widest-2 text-gray-400">{t("ui.contexto-activo.c8f5f3")}</span>
                                     <ArrowRightIcon className="h-3 w-3 text-gray-400" />
                                     <span className="font-medium text-gray-700 dark:text-gray-200 truncate">{activeArtifact.name}</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2 text-2xs">
                                     <SparklesIcon className="h-3 w-3 text-ai-500" />
-                                    <span className="text-gray-500 dark:text-gray-400">Trabajando con el proyecto completo</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t("ui.trabajando-con-el-proyecto-c.684873")}</span>
                                 </div>
                             )}
                         </div>
@@ -242,7 +244,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                             onClick={(e) => e.stopPropagation()}
                             role="dialog"
                             aria-modal="true"
-                            aria-label="Arquitecto Agente"
+                            aria-label={t("aiAssistant")}
                         >
                             <header className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
                                 <AIArchitectChip />
@@ -250,7 +252,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                                     type="button"
                                     onClick={() => setOpen(false)}
                                     className="p-1.5 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                                    aria-label="Cerrar Arquitecto Agente"
+                                    aria-label={t("ui.cerrar-arquitecto-agente.89019c")}
                                 >
                                     <XMarkIcon className="h-4 w-4" />
                                 </button>
@@ -279,7 +281,7 @@ export const CopilotSidebar: React.FC<CopilotSidebarProps> = ({
                         'flex items-center justify-center active:scale-95 transition-transform',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-ai-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950',
                     )}
-                    aria-label="Abrir Arquitecto Agente"
+                    aria-label={t("ui.abrir-arquitecto-agente.843240")}
                 >
                     <SparklesIcon className="h-6 w-6" />
                 </button>

@@ -66,13 +66,17 @@ export const BUDGETS = {
    * descarga cuando algo va a hablar con la base de datos — que nunca es antes
    * de pintar la pantalla de inicio de sesión.
    *
+   * 13.2 (R-16, opción B): 340 → 398 KB gz, 397,8 medidos. La extracción
+   * de toda la interfaz, incluidos avisos, configuración y etiquetas de
+   * estado, añade el diccionario español al arranque; el inglés permanece
+   * diferido. Tras integrar 13.4–14.2, el diccionario eager también contiene
+   * sus estados, ciclo de vida y trazabilidad: 402,5 KB gz medidos, techo 403.
+   *
    * El presupuesto baja con la mejora en vez de quedarse holgado, que es la
    * regla de todos los presupuestos de este repositorio: un número que ya no
    * mide nada no impide la siguiente regresión.
    */
-  // 340 → 345 en 14.2: 341,5 KB gz medidos; las claves kg.chain* de la pestaña Cadena
-  // viven en el diccionario español, que es eager por diseño.
-  eagerPayloadGzipKb: 345,
+  eagerPayloadGzipKb: 403,
   /**
    * The entry chunk alone, gzipped. 205 → 207 en 11.4: el diccionario español
    * es eager por diseño y las ~50 claves de /transition añaden 1,1 KB gz.
@@ -84,12 +88,14 @@ export const BUDGETS = {
    * puertas pequeñas, no el barril que comparten las rutas.
    * 209 → 210 en 12.5: 209,1 KB gz medidos, las 15 claves canvas.* de la barra por
    * intención; la barra misma vive en el chunk diferido del lienzo.
-   * 210 → 211 en 13.4: +1,0 KB gz medidos contra main (208,6 → 209,6), las claves
-   * load.* y office.empty.* y el error de carga de los tres contextos del arranque
-   * (proyectos, iniciativas, Oficina), que antes se tragaban el fallo.
+   * 210 → 212 en 13.2: 211,4 KB gz medidos tras traducir ProjectHub y los
+   * inspectores de diagrama; el inglés permanece en un chunk diferido.
+   * 212 → 270 en el cierre de 13.2: 269,4 KB gz medidos tras cubrir JSX,
+   * expresiones, avisos, configuración y estados; el español es eager.
+   * Integrado con 13.4–14.2: 274,2 KB gz medidos por sus claves adicionales;
+   * el techo 275 conserva menos de 1 KB de margen.
    */
-  // 211 → 215 en 14.2: 213,2 KB gz medidos, mismas claves kg.chain* del diccionario eager.
-  entryChunkGzipKb: 215,
+  entryChunkGzipKb: 275,
   /**
    * Any single chunk, raw. Catches a lazy chunk exploding — Excalidraw is
    * already 2.4 MB raw, and this stops it (or a sibling) doubling unnoticed.

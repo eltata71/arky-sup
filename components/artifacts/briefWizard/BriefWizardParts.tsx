@@ -1,8 +1,9 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { CheckCircleIcon, InformationCircleIcon, MagnifyingGlassIcon, XCircleIcon } from '../../Icons';
 import { CollapsibleSection } from '../wizard';
 
-export const ReadinessCard: React.FC<{ ready: boolean; message: string }> = ({ ready, message }) => (
+export const ReadinessCard: React.FC<{ ready: boolean; message: string }> = ({ ready, message }) =>{ const t = useUiTranslation(); return  (
   <div
     role="status"
     aria-live="polite"
@@ -14,21 +15,21 @@ export const ReadinessCard: React.FC<{ ready: boolean; message: string }> = ({ r
   >
     {ready ? <CheckCircleIcon className="mt-0.5 h-4 w-4" /> : <InformationCircleIcon className="mt-0.5 h-4 w-4" />}
     <div>
-      <p className="font-semibold">Criterio para avanzar</p>
+      <p className="font-semibold">{t("ui.criterio-para-avanzar.31c2bc")}</p>
       <p className="mt-0.5 leading-snug">{message}</p>
     </div>
   </div>
-);
+); };
 
 interface BriefTraceabilityProps {
   briefAcceptedAiFields: string[];
   briefRejectedAiFields: string[];
 }
 
-export const BriefTraceabilityDisclosure: React.FC<BriefTraceabilityProps> = ({ briefAcceptedAiFields, briefRejectedAiFields }) => (
+export const BriefTraceabilityDisclosure: React.FC<BriefTraceabilityProps> = ({ briefAcceptedAiFields, briefRejectedAiFields }) =>{ const t = useUiTranslation(); return  (
   <CollapsibleSection
-    label="Ver trazabilidad del brief"
-    openLabel="Ocultar trazabilidad del brief"
+    label={t("ui.ver-trazabilidad-del-brief.c396fc")}
+    openLabel={t("Ocultar trazabilidad del brief")}
     tone="subtle"
     className="mt-4"
   >
@@ -36,36 +37,37 @@ export const BriefTraceabilityDisclosure: React.FC<BriefTraceabilityProps> = ({ 
       <div className="flex flex-wrap items-center gap-2">
         {briefAcceptedAiFields.length > 0 && (
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-900/60">
-            IA aceptó {briefAcceptedAiFields.length} campo(s)
+            {t("ui.ia-acepto.100487")} {briefAcceptedAiFields.length} {t("ui.campo-s.4c2c20")}
           </span>
         )}
         {briefRejectedAiFields.length > 0 && (
           <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900/60">
-            IA rechazó {briefRejectedAiFields.length} campo(s)
+            {t("ui.ia-rechazo.2cae5e")} {briefRejectedAiFields.length} {t("ui.campo-s.4c2c20")}
           </span>
         )}
       </div>
       {briefAcceptedAiFields.length > 0 && (
-        <p>Campos sugeridos por IA y aceptados tras validación determinística: <span className="font-semibold">{briefAcceptedAiFields.join(', ')}</span>.</p>
+        <p>{t("ui.campos-sugeridos-por-ia-y-ac.f5c5ed")} <span className="font-semibold">{briefAcceptedAiFields.join(', ')}</span>.</p>
       )}
       {briefRejectedAiFields.length > 0 && (
-        <p>Campos descartados por seguridad o por fallo de validación: <span className="font-semibold">{briefRejectedAiFields.join(', ')}</span>.</p>
+        <p>{t("ui.campos-descartados-por-segur.99c997")} <span className="font-semibold">{briefRejectedAiFields.join(', ')}</span>.</p>
       )}
     </div>
   </CollapsibleSection>
-);
+); };
 
 interface SourceCountSummaryProps {
   counts: { suggested: number; required: number; optional: number; excluded: number };
 }
 
 export const OriginalIdeaPreview: React.FC<{ originalRequest: string }> = ({ originalRequest }) => {
+  const t = useUiTranslation();
   const trimmed = originalRequest.trim();
   if (!trimmed) return null;
   return (
     <CollapsibleSection
-      label="Ver idea original"
-      openLabel="Ocultar idea original"
+      label={t("ui.ver-idea-original.0a8621")}
+      openLabel={t("Ocultar idea original")}
       tone="subtle"
       className="mt-3"
     >
@@ -83,10 +85,10 @@ interface SourceFilterInputProps {
   totalCount: number;
 }
 
-export const SourceFilterInput: React.FC<SourceFilterInputProps> = ({ query, onChange, matchedCount, totalCount }) => (
+export const SourceFilterInput: React.FC<SourceFilterInputProps> = ({ query, onChange, matchedCount, totalCount }) =>{ const t = useUiTranslation(); return  (
   <div className="mt-3 space-y-1.5">
     <label className="block">
-      <span className="sr-only">Filtrar fuentes</span>
+      <span className="sr-only">{t("ui.filtrar-fuentes.6fa43f")}</span>
       <span className="relative block">
         <MagnifyingGlassIcon
           aria-hidden
@@ -96,14 +98,14 @@ export const SourceFilterInput: React.FC<SourceFilterInputProps> = ({ query, onC
           type="search"
           value={query}
           onChange={event => onChange(event.target.value)}
-          placeholder="Filtrar por nombre, tipo, vista o fase..."
+          placeholder={t("ui.filtrar-por-nombre-tipo-vist.1ce151")}
           className="w-full min-h-[44px] rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-10 text-sm text-gray-900 transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
         />
         {query.length > 0 && (
           <button
             type="button"
             onClick={() => onChange('')}
-            aria-label="Limpiar filtro de fuentes"
+            aria-label={t("ui.limpiar-filtro-de-fuentes.e36e72")}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-gray-800 dark:hover:text-gray-200"
           >
             <XCircleIcon className="h-4 w-4" />
@@ -113,20 +115,20 @@ export const SourceFilterInput: React.FC<SourceFilterInputProps> = ({ query, onC
     </label>
     <p className="text-[11px] text-gray-500 dark:text-gray-400" aria-live="polite">
       {query.length === 0
-        ? `Mostrando ${totalCount} fuente${totalCount === 1 ? '' : 's'}.`
-        : `Mostrando ${matchedCount} de ${totalCount} fuente${totalCount === 1 ? '' : 's'}.`}
+        ? t("uiTemplate.mostrando-p0-fuente-p1.b7cf50", { p0: String(totalCount), p1: String(totalCount === 1 ? '' : 's') })
+        : t("uiTemplate.mostrando-p0-de-p1-fuente-p2.a7fa7c", { p0: String(matchedCount), p1: String(totalCount), p2: String(totalCount === 1 ? '' : 's') })}
     </p>
   </div>
-);
+); };
 
-export const SourceCountSummary: React.FC<SourceCountSummaryProps> = ({ counts }) => (
+export const SourceCountSummary: React.FC<SourceCountSummaryProps> = ({ counts }) =>{ const t = useUiTranslation(); return  (
   <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-    <SummaryStat label="Fuentes sugeridas" value={counts.suggested} tone="neutral" />
-    <SummaryStat label="Obligatorias" value={counts.required} tone="emerald" />
-    <SummaryStat label="Opcionales" value={counts.optional} tone="blue" />
-    <SummaryStat label="Excluidas" value={counts.excluded} tone="rose" />
+    <SummaryStat label={t("ui.fuentes-sugeridas.77f892")} value={counts.suggested} tone="neutral" />
+    <SummaryStat label={t("ui.obligatorias.cdeffe")} value={counts.required} tone="emerald" />
+    <SummaryStat label={t("ui.opcionales.353167")} value={counts.optional} tone="blue" />
+    <SummaryStat label={t("ui.excluidas.40e7af")} value={counts.excluded} tone="rose" />
   </dl>
-);
+); };
 
 const SummaryStat: React.FC<{ label: string; value: number; tone: 'neutral' | 'emerald' | 'blue' | 'rose' }> = ({ label, value, tone }) => {
   const palette = {
@@ -156,26 +158,26 @@ interface ConfirmationSummaryProps {
   acceptanceCriteria: string[];
 }
 
-export const ConfirmationSummary: React.FC<ConfirmationSummaryProps> = ({ artifactName, catalogName, audience, purpose, detailLevel, family, requiredCount, optionalCount, excludedCount, acceptanceCriteria }) => (
+export const ConfirmationSummary: React.FC<ConfirmationSummaryProps> = ({ artifactName, catalogName, audience, purpose, detailLevel, family, requiredCount, optionalCount, excludedCount, acceptanceCriteria }) =>{ const t = useUiTranslation(); return  (
   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-    <SummaryRow label="Artefacto" value={artifactName} emphasis />
-    <SummaryRow label="Catálogo base" value={catalogName} />
-    <SummaryRow label="Audiencia" value={audience} />
-    <SummaryRow label="Propósito" value={purpose} />
-    <SummaryRow label="Nivel de detalle" value={detailLevel} />
-    <SummaryRow label="Familia" value={family} />
-    <SummaryRow label="Fuentes seleccionadas" value={String(requiredCount + optionalCount)} />
-    <SummaryRow label="Excluidas" value={String(excludedCount)} />
+    <SummaryRow label={t("ui.artefacto.609eed")} value={artifactName} emphasis />
+    <SummaryRow label={t("ui.catalogo-base.dfa729")} value={catalogName} />
+    <SummaryRow label={t("ui.audiencia.af8f94")} value={audience} />
+    <SummaryRow label={t("ui.proposito.810050")} value={purpose} />
+    <SummaryRow label={t("ui.nivel-de-detalle.b7fed9")} value={detailLevel} />
+    <SummaryRow label={t("ui.familia.9772ba")} value={family} />
+    <SummaryRow label={t("ui.fuentes-seleccionadas.e02550")} value={String(requiredCount + optionalCount)} />
+    <SummaryRow label={t("ui.excluidas.40e7af")} value={String(excludedCount)} />
     {acceptanceCriteria.length > 0 && (
       <div className="sm:col-span-2 rounded-xl bg-white/80 p-3 text-sm shadow-sm ring-1 ring-emerald-100 dark:bg-gray-900/70 dark:ring-emerald-900/60">
-        <p className="font-semibold text-gray-900 dark:text-white">Criterios de aceptación</p>
+        <p className="font-semibold text-gray-900 dark:text-white">{t("ui.criterios-de-aceptacion.9dea2d")}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">
           {acceptanceCriteria.map(item => <li key={item}>{item}</li>)}
         </ul>
       </div>
     )}
   </div>
-);
+); };
 
 const SummaryRow: React.FC<{ label: string; value: string; emphasis?: boolean }> = ({ label, value, emphasis = false }) => (
   <div className="rounded-xl bg-white/80 px-3 py-2 ring-1 ring-emerald-100 dark:bg-gray-900/70 dark:ring-emerald-900/60">

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { CheckCircleIcon, Square2StackIcon } from '../../Icons';
 import type { GenerationObservabilityAlert } from '../../artifactCanvasObservability';
@@ -23,6 +24,7 @@ export const ObservabilityBanner: React.FC<ObservabilityBannerProps> = ({
   onCopyDiagnosticReport,
   onOpenTracePanel,
 }) => {
+  const t = useUiTranslation();
   if (!alert) return null;
   const toneClass = alert.tone === 'rose'
     ? 'border-rose-300/70 bg-rose-50/95 text-rose-900 dark:border-rose-800 dark:bg-rose-950/90 dark:text-rose-100'
@@ -49,7 +51,7 @@ export const ObservabilityBanner: React.FC<ObservabilityBannerProps> = ({
           onClick={onOpenTracePanel}
           className="shrink-0 rounded-lg bg-white/80 px-2.5 py-1.5 text-[11px] font-semibold text-gray-900 ring-1 ring-black/10 hover:bg-white dark:bg-gray-900/80 dark:text-white dark:ring-white/10"
         >
-          Ver traza
+          {t("ui.ver-traza.65f7a4")}
         </button>
       </div>
       {diagnosticReport && (
@@ -61,7 +63,7 @@ export const ObservabilityBanner: React.FC<ObservabilityBannerProps> = ({
           {diagnosticCopied
             ? <CheckCircleIcon className="h-3.5 w-3.5" />
             : <Square2StackIcon className="h-3.5 w-3.5" />}
-          {diagnosticCopied ? 'Reporte copiado' : 'Copiar reporte técnico'}
+          {diagnosticCopied ? t("uiExpr.reporte-copiado.89dc78") : t("uiExpr.copiar-reporte-tecnico.dbc88b")}
         </button>
       )}
     </div>

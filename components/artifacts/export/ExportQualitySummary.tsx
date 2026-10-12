@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import {
   describeQualityTier,
@@ -25,30 +26,31 @@ export interface ExportQualitySummaryProps {
 
 /** La calidad formal y la exportabilidad por categoría (salió de `ArtifactExportModal` en 9.4). */
 export const ExportQualitySummary: React.FC<ExportQualitySummaryProps> = ({ assessment }) => {
+  const t = useUiTranslation();
   const { report, state } = assessment;
   return (
     <>
       {/* Formal quality summary */}
       <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <span className="block text-gray-500 dark:text-gray-400">Calidad global</span>
-          <strong className={`text-base ${scoreTone(report.score.value)}`}>{report.score.unmeasured ? 'Sin medir' : `${report.score.value}/100`}</strong>
-          <span className="block text-[10px] text-gray-500 dark:text-gray-400">{describeQualityTier(report.score.tier)}</span>
+          <span className="block text-gray-500 dark:text-gray-400">{t("ui.calidad-global.e7d3ca")}</span>
+          <strong className={`text-base ${scoreTone(report.score.value)}`}>{report.score.unmeasured ? t("iniKpi.unmeasured") : `${report.score.value}/100`}</strong>
+          <span className="block text-[10px] text-gray-500 dark:text-gray-400">{t(describeQualityTier(report.score.tier))}</span>
         </div>
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <span className="block text-gray-500 dark:text-gray-400">Documento</span>
+          <span className="block text-gray-500 dark:text-gray-400">{t("ui.documento.8ae11c")}</span>
           <strong className={report.document ? scoreTone(report.document.score) : 'text-gray-400'}>
             {report.document ? `${report.document.score}/100` : 'N/A'}
           </strong>
         </div>
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <span className="block text-gray-500 dark:text-gray-400">Diagrama</span>
+          <span className="block text-gray-500 dark:text-gray-400">{t("lucid.diagramView")}</span>
           <strong className={report.diagram ? scoreTone(report.diagram.score) : 'text-gray-400'}>
             {report.diagram ? `${report.diagram.score}/100` : 'N/A'}
           </strong>
         </div>
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <span className="block text-gray-500 dark:text-gray-400">Tablas</span>
+          <span className="block text-gray-500 dark:text-gray-400">{t("ui.tablas.54f708")}</span>
           <strong className={report.tables ? 'text-gray-900 dark:text-white' : 'text-gray-400'}>
             {report.tables ? `${report.tables.count} · ${(report.tables.completeness * 100).toFixed(0)}%` : 'N/A'}
           </strong>
@@ -56,15 +58,15 @@ export const ExportQualitySummary: React.FC<ExportQualitySummaryProps> = ({ asse
       </div>
 
       {/* Per-category exportability */}
-      <section aria-label="Exportabilidad por categoría" className="mb-4 space-y-1.5">
+      <section aria-label={t("ui.exportabilidad-por-categoria.ab033d")} className="mb-4 space-y-1.5">
         {(['document', 'diagram', 'table'] as const).map((family) => {
           const gate = state[family];
           const meta = RISK_META[gate.risk];
           const familyLabel = family === 'document' ? 'Documento' : family === 'diagram' ? 'Diagrama' : 'Tablas';
           return (
             <div key={family} className={`text-[11px] rounded-md px-2.5 py-1.5 flex items-center justify-between gap-2 ${meta.tone}`}>
-              <span><strong>{familyLabel}:</strong> {gate.message}</span>
-              <span className="font-semibold whitespace-nowrap">{gate.passed ? meta.label : 'Bloqueado'}</span>
+              <span><strong>{t(familyLabel)}:</strong> {t(gate.message)}</span>
+              <span className="font-semibold whitespace-nowrap">{gate.passed ? t(meta.label) : t("uiExpr.bloqueado.99c1b4")}</span>
             </div>
           );
         })}

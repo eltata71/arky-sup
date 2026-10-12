@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { Marked } from 'marked';
 import { decorateContextCitationsHtml, type Artifact } from '../../lib/artifacts';
 import { sanitizeGeneratedHtml } from '../../lib/security';
@@ -136,6 +137,7 @@ export const renderDocumentMarkdown = async (
  * duplicated alongside the rendered canvas.
  */
 export const useDocumentRendering = (artifact: Artifact): UseDocumentRenderingResult => {
+  const t = useUiTranslation();
   const [markdownHtml, setMarkdownHtml] = useState('');
   const [toc, setToc] = useState<DocumentTocEntry[]>([]);
   const isMounted = useRef(true);
@@ -160,7 +162,7 @@ export const useDocumentRendering = (artifact: Artifact): UseDocumentRenderingRe
           contentToParse = artifact.content.replace(matchJson[0], '').trim();
         }
       } else if (artifact.type === 'react-flow-graph') {
-        contentToParse = `### Diagrama Interactivo\n\nEste diagrama ha sido editado visualmente. Su código fuente es JSON:\n\n\`\`\`json\n${artifact.content}\n\`\`\``;
+        contentToParse = t('uiDynamic.interactiveDiagramSource', { content: artifact.content });
       } else if (artifact.representation === 'diagram') {
         contentToParse = `### Diagrama\n\`\`\`mermaid\n${artifact.content}\n\`\`\``;
       }
@@ -173,7 +175,7 @@ export const useDocumentRendering = (artifact: Artifact): UseDocumentRenderingRe
       }
     };
     parse();
-  }, [artifact.content, artifact.representation, artifact.type, contextManifest]);
+  }, [artifact.content, artifact.representation, artifact.type, contextManifest, t]);
 
   const mermaidCode = useMemo(
     () => extractMermaidCode(artifact.content, artifact.representation),

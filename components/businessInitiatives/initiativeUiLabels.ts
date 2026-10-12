@@ -24,6 +24,7 @@
  */
 
 import type { BadgeTone } from '../ui';
+import type { Translator } from '../../lib/i18n/spanishFallback';
 import {
   type LucideIcon,
   AlertTriangle,
@@ -240,15 +241,15 @@ export const formatDate = (iso: string | undefined): string => {
   if (!iso) return '—';
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return '—';
-  return new Intl.DateTimeFormat('es', {
+  return new Intl.DateTimeFormat(typeof document === 'undefined' ? 'es' : document.documentElement.lang || 'es', {
     day: 'numeric', month: 'short', year: 'numeric',
   }).format(parsed);
 };
 
 /** How a remaining-days count should read to a person. */
-export const describeRemaining = (days: number | null): { text: string; overdue: boolean } | null => {
+export const describeRemaining = (days: number | null, t: Translator): { text: string; overdue: boolean } | null => {
   if (days === null) return null;
-  if (days < 0) return { text: `Vencida hace ${Math.abs(days)} día(s)`, overdue: true };
-  if (days === 0) return { text: 'Vence hoy', overdue: true };
-  return { text: `Faltan ${days} día(s)`, overdue: false };
+  if (days < 0) return { text: t('uiDynamic.daysOverdue', { count: String(Math.abs(days)) }), overdue: true };
+  if (days === 0) return { text: t('Vence hoy'), overdue: true };
+  return { text: t('uiDynamic.daysRemaining', { count: String(days) }), overdue: false };
 };

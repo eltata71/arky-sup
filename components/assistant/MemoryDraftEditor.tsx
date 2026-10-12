@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { PlusCircleIcon, TrashIcon, ArrowPathIcon, SparklesIcon } from '../Icons';
@@ -47,6 +48,8 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
   onChangeBullets,
   onRetryExtraction,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   // Local mirror so each <textarea> stays responsive without rerendering
   // the entire tree on every keystroke. We commit upward on blur.
   const [bullets, setBullets] = useState<string[]>(draft.bullets);
@@ -77,12 +80,12 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       className="mt-3 space-y-3"
-      aria-label="Editor de memoria"
+      aria-label={t("ui.editor-de-memoria.a0f696")}
     >
       {/* Scope picker */}
       <fieldset disabled={isExecuting}>
         <legend className="text-2xs uppercase tracking-widest font-semibold text-gray-500 mb-1">
-          Alcance
+          {t("ui.alcance.f03a23")}
         </legend>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
           {(['global', 'project', 'artifact'] as MemoryScope[]).map((scope) => {
@@ -110,7 +113,7 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
                     className="accent-primary-600"
                   />
                   <span className="font-medium text-gray-800 dark:text-gray-200">
-                    {SCOPE_LABELS[scope]}
+                    {translateConfig(SCOPE_LABELS[scope])}
                   </span>
                 </span>
                 <span className="text-2xs text-gray-500 ml-5 leading-snug">
@@ -127,13 +130,13 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
       {draft.status === 'extracting' && (
         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300" role="status">
           <ArrowPathIcon className="h-3.5 w-3.5 animate-spin text-primary-600" />
-          <span>Extrayendo conceptos clave de la conversación…</span>
+          <span>{t("ui.extrayendo-conceptos-clave-d.078b61")}</span>
         </div>
       )}
 
       {draft.status === 'failed' && (
         <div className="flex items-start justify-between gap-2 p-2 rounded-md bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200">
-          <span>{draft.errorMessage ?? 'No pude extraer conceptos automáticamente.'}</span>
+          <span>{draft.errorMessage ?? t("uiExpr.no-pude-extraer-conceptos-au.2530dc")}</span>
           <button
             type="button"
             onClick={onRetryExtraction}
@@ -141,7 +144,7 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-2xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className="h-3 w-3" />
-            Reintentar
+            {t("lucid.retry")}
           </button>
         </div>
       )}
@@ -149,12 +152,12 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
       {draft.status !== 'extracting' && (
         <fieldset disabled={isExecuting}>
           <legend className="text-2xs uppercase tracking-widest font-semibold text-gray-500 mb-1">
-            Conceptos a guardar
+            {t("ui.conceptos-a-guardar.e040cc")}
           </legend>
           <div className="space-y-1.5">
             {bullets.length === 0 && draft.status === 'ready' && (
               <p className="text-xs text-gray-500 italic">
-                No hay conceptos. Añade al menos uno o reintenta la extracción.
+                {t("ui.no-hay-conceptos-anade-al-me.b8e020")}
               </p>
             )}
             {bullets.map((bullet, index) => (
@@ -167,13 +170,13 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
                   onBlur={() => commitBullets(bullets)}
                   maxLength={MAX_BULLET_LENGTH}
                   className="flex-1 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1 focus:border-primary-500 focus:outline-none resize-y text-gray-800 dark:text-gray-200"
-                  aria-label={`Concepto ${index + 1}`}
+                  aria-label={t("uiTemplate.concepto-p0.c3f812", { p0: String(index + 1) })}
                 />
                 <button
                   type="button"
                   onClick={() => removeAt(index)}
                   className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
-                  aria-label="Eliminar concepto"
+                  aria-label={t("ui.eliminar-concepto.8bb1dd")}
                 >
                   <TrashIcon className="h-3.5 w-3.5" />
                 </button>
@@ -187,7 +190,7 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
               className="inline-flex items-center gap-1 text-xs text-primary-700 dark:text-primary-300 hover:underline"
             >
               <PlusCircleIcon className="h-3.5 w-3.5" />
-              Añadir concepto
+              {t("ui.anadir-concepto.a80204")}
             </button>
             {draft.status === 'ready' && (
               <button
@@ -196,7 +199,7 @@ export const MemoryDraftEditor: React.FC<MemoryDraftEditorProps> = ({
                 className="ml-auto inline-flex items-center gap-1 text-2xs text-gray-500 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
               >
                 <SparklesIcon className="h-3 w-3" />
-                Reextraer con IA
+                {t("ui.reextraer-con-ia.e3bd63")}
               </button>
             )}
           </div>

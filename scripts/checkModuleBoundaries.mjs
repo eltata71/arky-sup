@@ -281,7 +281,7 @@ export const DEEP_IMPORT_BUDGET = {
   'hooks -> services/artifacts': 3,
   'hooks -> services/diagram': 2,
   'hooks -> services/export': 2,
-  'pages -> services/architectureOffice': 6, // F5-02: `InitiativesPage` y `ProjectsPage` salen por hooks
+  'pages -> services/architectureOffice': 2, // 13.2 + 14.1: portafolio y personas entran por puertas pequeñas; sólo quedan las dos consultas que requieren hoja propia
   // `services (raíz) -> …` — cinco pares, 16 imports profundos — se fueron con
   // el motor el 2026-09-24 (F5-01, corte 14). Dentro de `services/ai` entra por
   // los barriles de cada contexto: es código perezoso, y la regla del barril

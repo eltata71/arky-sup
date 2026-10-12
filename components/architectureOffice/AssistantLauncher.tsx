@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The office, always within reach.
  *
@@ -22,7 +23,7 @@ export interface AssistantLauncherProps {
   className?: string;
 }
 
-export const AssistantLauncher: React.FC<AssistantLauncherProps> = ({ onOpen, label, className }) => (
+export const AssistantLauncher: React.FC<AssistantLauncherProps> = ({ onOpen, label, className }) =>{ const t = useUiTranslation(); return  (
   <button
     type="button"
     onClick={onOpen}
@@ -38,8 +39,8 @@ export const AssistantLauncher: React.FC<AssistantLauncherProps> = ({ onOpen, la
     <Sparkles className="h-4 w-4" aria-hidden />
     {/* The word is hidden on narrow screens, where the icon plus the
         accessible name is enough and a label would crowd the viewport. */}
-    <span className="hidden text-xs font-bold sm:inline" aria-hidden>Equipo de arquitectura</span>
+    <span className="hidden text-xs font-bold sm:inline" aria-hidden>{t("projectHub.architectureTeam")}</span>
   </button>
-);
+); };
 
 export default AssistantLauncher;

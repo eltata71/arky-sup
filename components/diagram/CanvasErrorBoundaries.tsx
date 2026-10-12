@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { ErrorBoundary } from '../ErrorBoundary';
 
@@ -16,17 +17,18 @@ interface BoundaryProps {
 }
 
 const FallbackPanel: React.FC<{ panelName: string; error: Error; onRetry: () => void }> = ({ panelName, error, onRetry }) => {
+  const t = useUiTranslation();
   const copy = async () => {
     const payload = `[${panelName}] ${error.name}: ${error.message}`;
     try { await navigator.clipboard.writeText(payload); } catch { /* noop */ }
   };
   return (
     <div className="rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-4 text-sm">
-      <p className="font-semibold text-amber-900 dark:text-amber-100">No se pudo renderizar este panel</p>
-      <p className="mt-1 text-amber-800 dark:text-amber-200">Panel: {panelName}. La sesión se mantiene activa.</p>
+      <p className="font-semibold text-amber-900 dark:text-amber-100">{t("ui.no-se-pudo-renderizar-este-p.cd7b0e")}</p>
+      <p className="mt-1 text-amber-800 dark:text-amber-200">{t("ui.panel.42ad28")} {panelName}{t("ui.la-sesion-se-mantiene-activa.3779b4")}</p>
       <div className="mt-3 flex gap-2">
-        <button className="px-3 py-1.5 rounded-md bg-amber-600 text-white" onClick={onRetry}>Reintentar render</button>
-        <button className="px-3 py-1.5 rounded-md border border-amber-400 text-amber-900 dark:text-amber-100" onClick={() => { void copy(); }}>Copiar diagnóstico</button>
+        <button className="px-3 py-1.5 rounded-md bg-amber-600 text-white" onClick={onRetry}>{t("ui.reintentar-render.ea0aca")}</button>
+        <button className="px-3 py-1.5 rounded-md border border-amber-400 text-amber-900 dark:text-amber-100" onClick={() => { void copy(); }}>{t("ui.copiar-diagnostico.3e3d40")}</button>
       </div>
     </div>
   );

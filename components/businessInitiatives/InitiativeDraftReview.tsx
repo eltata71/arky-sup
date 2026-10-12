@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * La propuesta del asistente, mostrada para que alguien la revise.
  *
@@ -23,41 +24,42 @@ export interface InitiativeDraftReviewProps {
   draft: InitiativeDraft | null;
 }
 
-export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ draft }) => (
+export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ draft }) =>{
+  const translateConfig = useUiTranslation(); const t = useUiTranslation(); return  (
   <>
             {draft ? (
               <>
                 <div className="flex items-center gap-2">
                   <Badge tone="ai" size="xs">
                     <Sparkles className="mr-1 h-3 w-3" aria-hidden />
-                    Propuesta del asistente
+                    {t("ui.propuesta-del-asistente.9218a5")}
                   </Badge>
                   <span className="text-2xs text-gray-500 dark:text-gray-400">
-                    Podrás editar cada sección después de crearla.
+                    {t("ui.podras-editar-cada-seccion-d.f2c704")}
                   </span>
                 </div>
 
                 {draft.driver && (
-                  <DraftBlock title="Driver / motivación">
+                  <DraftBlock title={t("ui.driver-motivacion.b9a0fb")}>
                     <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-200">{draft.driver}</p>
                   </DraftBlock>
                 )}
 
                 {draft.objectives.length > 0 && (
-                  <DraftBlock title="Objetivos">
+                  <DraftBlock title={t("iniPanel.objectives")}>
                     <DraftList items={draft.objectives} />
                   </DraftBlock>
                 )}
 
                 {draft.outcomes.length > 0 && (
-                  <DraftBlock title="Resultados esperados">
+                  <DraftBlock title={t("iniPanel.outcomes")}>
                     <ul className="space-y-1.5">
                       {draft.outcomes.map((outcome) => (
                         <li key={outcome.statement} className="text-sm text-gray-700 dark:text-gray-200">
                           {outcome.statement}
                           {outcome.measure && (
                             <span className="block text-2xs text-gray-500 dark:text-gray-400">
-                              Se evidencia con: {outcome.measure}
+                              {t("ui.se-evidencia-con.71a78f")} {outcome.measure}
                             </span>
                           )}
                         </li>
@@ -67,7 +69,7 @@ export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ dr
                 )}
 
                 {draft.kpis.length > 0 && (
-                  <DraftBlock title="Indicadores propuestos">
+                  <DraftBlock title={t("ui.indicadores-propuestos.fe222c")}>
                     <ul className="space-y-1">
                       {draft.kpis.map((kpi) => (
                         <li key={kpi.name} className="flex flex-wrap items-baseline gap-2 text-sm text-gray-700 dark:text-gray-200">
@@ -84,7 +86,7 @@ export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ dr
                 )}
 
                 {draft.affectedCapabilities.length > 0 && (
-                  <DraftBlock title="Capacidades de negocio afectadas">
+                  <DraftBlock title={t("ui.capacidades-de-negocio-afect.127f55")}>
                     <div className="flex flex-wrap gap-1.5">
                       {draft.affectedCapabilities.map((capability) => (
                         <Badge key={capability} tone="info" size="xs" outline>{capability}</Badge>
@@ -94,12 +96,12 @@ export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ dr
                 )}
 
                 {draft.risks.length > 0 && (
-                  <DraftBlock title="Riesgos identificados">
+                  <DraftBlock title={t("ui.riesgos-identificados.c1506e")}>
                     <ul className="space-y-1.5">
                       {draft.risks.map((risk) => (
                         <li key={risk.description} className="flex items-start gap-2 text-sm">
                           <Badge tone={risk.level === 'low' ? 'gray' : risk.level === 'medium' ? 'warning' : 'danger'} size="xs">
-                            {RISK_LEVEL_LABELS[risk.level]}
+                            {translateConfig(RISK_LEVEL_LABELS[risk.level])}
                           </Badge>
                           <span className="text-gray-700 dark:text-gray-200">{risk.description}</span>
                         </li>
@@ -109,7 +111,7 @@ export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ dr
                 )}
 
                 {draft.regulatoryDrivers.length > 0 && (
-                  <DraftBlock title="Marco regulatorio">
+                  <DraftBlock title={t("ui.marco-regulatorio.615ffb")}>
                     <div className="flex flex-wrap gap-1.5">
                       {draft.regulatoryDrivers.map((driver) => (
                         <Badge key={driver} tone="warning" size="xs" outline>{driver}</Badge>
@@ -119,7 +121,7 @@ export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ dr
                 )}
 
                 {draft.openQuestions.length > 0 && (
-                  <Alert tone="info" title="Lo que hace falta preguntarle al negocio">
+                  <Alert tone="info" title={t("ui.lo-que-hace-falta-preguntarl.a99609")}>
                     <ul className="mt-1 list-disc space-y-0.5 pl-5">
                       {draft.openQuestions.map((question) => (
                         <li key={question} className="text-sm">{question}</li>
@@ -130,12 +132,11 @@ export const InitiativeDraftReview: React.FC<InitiativeDraftReviewProps> = ({ dr
               </>
             ) : (
               <Alert tone="info">
-                La iniciativa se creará con lo capturado. Podrás completar driver, objetivos,
-                resultados, indicadores y documentos desde su ficha.
+                {t("ui.la-iniciativa-se-creara-con.212987")}
               </Alert>
             )}
   </>
-);
+); };
 
 const DraftBlock: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="rounded-xl border border-gray-200 p-3 dark:border-gray-800">

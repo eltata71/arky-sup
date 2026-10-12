@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext, type Project } from '../context/AppContext';
@@ -53,6 +54,7 @@ const ProjectContextModal: React.FC<{
     onClose: () => void;
     project: Project;
 }> = ({ isOpen, onClose, project }) => {
+  const t = useUiTranslation();
     const { updateProjectContext } = useAppContext();
     const [contextLines, setContextLines] = useState<string[]>([]);
 
@@ -82,10 +84,10 @@ const ProjectContextModal: React.FC<{
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Contexto: ${project.name}`}>
+        <Modal isOpen={isOpen} onClose={onClose} title={t("uiTemplate.contexto-p0.108425", { p0: String(project.name) })}>
             <div className="space-y-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Define las reglas, restricciones y tecnologías que la IA debe considerar para este proyecto específico.
+                    {t("ui.define-las-reglas-restriccio.5d216c")}
                 </p>
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                     {contextLines.map((line, index) => (
@@ -94,7 +96,7 @@ const ProjectContextModal: React.FC<{
                                 type="text"
                                 value={line}
                                 onChange={(e) => handleChangeLine(index, e.target.value)}
-                                placeholder="Ej. Usar React y Node.js..."
+                                placeholder={t("ui.ej-usar-react-y-node-js.b2cc7a")}
                                 className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                             />
                             <button 
@@ -107,7 +109,7 @@ const ProjectContextModal: React.FC<{
                     ))}
                     {contextLines.length === 0 && (
                         <div className="text-center py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-                            <p className="text-sm text-gray-400">No hay contexto definido.</p>
+                            <p className="text-sm text-gray-400">{t("ui.no-hay-contexto-definido.f2c800")}</p>
                         </div>
                     )}
                 </div>
@@ -118,14 +120,14 @@ const ProjectContextModal: React.FC<{
                         className="flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
                     >
                         <PlusCircleIcon className="h-5 w-5 mr-1" />
-                        Añadir Regla
+                        {t("ui.anadir-regla.3db09b")}
                     </button>
                     <div className="flex space-x-3">
                         <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                            Cancelar
+                            {t("ui.cancelar.c111e0")}
                         </button>
                         <button onClick={handleSave} className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm font-medium">
-                            Guardar Cambios
+                            {t("saveChanges")}
                         </button>
                     </div>
                 </div>
@@ -144,6 +146,7 @@ const ProjectActionsMenu: React.FC<{
     onCheckConsistency: () => void;
     onChat: () => void;
 }> = ({ isOpen, onClose, onDelete, onManageContext, onCheckConsistency, onChat }) => {
+  const t = useUiTranslation();
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -161,7 +164,7 @@ const ProjectActionsMenu: React.FC<{
     return (
         <div ref={menuRef} className="absolute right-0 top-10 z-50 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 text-sm animate-fade-in origin-top-right">
             <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700/50">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Acciones de Proyecto</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t("ui.acciones-de-proyecto.d9d929")}</p>
             </div>
             
             <div className="py-1">
@@ -171,7 +174,7 @@ const ProjectActionsMenu: React.FC<{
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-primary-600 dark:text-primary-400 flex items-center group transition-colors font-medium"
                 >
                     <ChatBubbleLeftRightIcon className="w-4 h-4 mr-3" /> 
-                    Conversar con Arquitecto IA
+                    {t("ui.conversar-con-arquitecto-ia.17932f")}
                 </button>
 
                 <button 
@@ -179,14 +182,14 @@ const ProjectActionsMenu: React.FC<{
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center group transition-colors"
                 >
                     <DocumentTextIcon className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary-600" /> 
-                    Gestionar Contexto
+                    {t("ui.gestionar-contexto.d65c64")}
                 </button>
                 <button 
                     onClick={(e) => { e.stopPropagation(); onCheckConsistency(); onClose(); }} 
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center group transition-colors"
                 >
                     <CheckBadgeIcon className="w-4 h-4 mr-3 text-gray-400 group-hover:text-primary-600" /> 
-                    Verificar Consistencia
+                    {t("ui.verificar-consistencia.beb8ae")}
                 </button>
             </div>
 
@@ -196,7 +199,7 @@ const ProjectActionsMenu: React.FC<{
                     className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center transition-colors"
                 >
                     <TrashIcon className="w-4 h-4 mr-3" /> 
-                    Eliminar Proyecto
+                    {t("ui.eliminar-proyecto.a91597")}
                 </button>
             </div>
         </div>
@@ -232,6 +235,7 @@ const ActionCard: React.FC<{
     onClick: () => void;
     theme: keyof typeof CARD_THEMES;
 }> = ({ icon, title, description, onClick, theme }) => {
+  const t = useUiTranslation();
     const styles = CARD_THEMES[theme];
     
     return (
@@ -248,7 +252,7 @@ const ActionCard: React.FC<{
             <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{title}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{description}</p>
             <div className="mt-4 flex items-center text-xs font-semibold text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                Comenzar <ArrowRightIcon className="ml-1 h-3 w-3" />
+                {t("ui.comenzar.d1b9bb")} <ArrowRightIcon className="ml-1 h-3 w-3" />
             </div>
         </button>
     );
@@ -403,11 +407,11 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
   const handleProposeEngagement = useCallback(async (input: EngagementIntakeSubmit) => {
     const result = await createEngagement(input);
     if (!result.ok || !result.engagement) {
-      addToast(result.reason ?? 'No se pudo proponer el entregable.', 'error');
+      addToast(result.reason ?? t("projectHub.proposeFailed"), 'error');
       return null;
     }
     return result.engagement;
-  }, [createEngagement, addToast]);
+  }, [createEngagement, addToast, t]);
 
 
   /**
@@ -434,8 +438,8 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
     } else if (purpose === 'project-chat' && project) {
         setChatModalConfig({
             purpose,
-            title: `Conversación: ${project.name}`,
-            initialPrompt: `Hola, soy el arquitecto de soluciones asignado al proyecto "${project.name}". ¿En qué puedo ayudarte hoy?`,
+            title: t('uiDynamic.projectConversation', { name: project.name }),
+            initialPrompt: t('uiDynamic.projectGreeting', { name: project.name }),
             projectId: project.id
         });
     }
@@ -613,7 +617,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
             <header className="flex flex-wrap items-end justify-between gap-4 animate-fade-in">
                 <div className="min-w-0">
                     <p className="text-2xs font-semibold uppercase tracking-widest-2 text-primary-600 dark:text-primary-400">
-                        Arquitectura Empresarial · capa de respuesta
+                        {t("ui.arquitectura-empresarial-cap.ce5fce")}
                     </p>
                     <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50 md:text-display-sm">
                         {EA_LEVELS.engagementProject.plural}
@@ -624,7 +628,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                 </div>
                 <Button variant="primary" onClick={() => startCreation({ kind: 'chat', purpose: 'guided-creation' })}>
                     <PlusIcon className="mr-1.5 h-4 w-4" aria-hidden />
-                    Nuevo proyecto
+                    {t("ui.nuevo-proyecto.11536d")}
                 </Button>
             </header>
 
@@ -636,15 +640,15 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                 <EmptyState
                     flavor="ai"
                     icon={<FolderOpenIcon className="h-7 w-7" />}
-                    title="Todavía no hay proyectos de arquitectura"
-                    description="Un proyecto de arquitectura es la respuesta a una necesidad del negocio. Créalo aquí y desde él abrirás los entregables que la Oficina va a producir."
+                    title={t("ui.todavia-no-hay-proyectos-de.77b2f8")}
+                    description={t("Un proyecto de arquitectura es la respuesta a una necesidad del negocio. Créalo aquí y desde él abrirás los entregables que la Oficina va a producir.")}
                     actions={
                         <Button
                             variant="ai"
                             leftIcon={<PlusIcon className="h-4 w-4" />}
                             onClick={() => startCreation({ kind: 'chat', purpose: 'guided-creation' })}
                         >
-                            Crear el primer proyecto
+                            {t("ui.crear-el-primer-proyecto.2c6f9b")}
                         </Button>
                     }
                 />
@@ -664,18 +668,18 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                         value={view}
                         onChange={(next) => setView(next as ViewId)}
                         variant="pill"
-                        aria-label="Vistas de proyectos de arquitectura"
+                        aria-label={t("ui.vistas-de-proyectos-de-arqui.b3eb7f")}
                     >
                         <TabList className="w-full overflow-x-auto sm:w-auto">
                             <Tab value="resumen" icon={<LayoutDashboard className="h-4 w-4" aria-hidden />}>
-                                Resumen
+                                {t("kg.tabSummary")}
                             </Tab>
                             <Tab
                                 value="listado"
                                 icon={<ListFilter className="h-4 w-4" aria-hidden />}
                                 badge={projects.length}
                             >
-                                Listado
+                                {t("ui.listado.82eb87")}
                             </Tab>
                         </TabList>
 
@@ -699,26 +703,24 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                                     </span>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600 dark:text-primary-400">
-                                            Recomendado
+                                            {t("ui.recomendado.fef9d9")}
                                         </p>
                                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                            Abrir un entregable en la Oficina de Arquitectura
+                                            {t("ui.abrir-un-entregable-en-la-of.8e74ca")}
                                         </h3>
                                         <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                                            Describe el entregable y la Oficina propone el plan de artefactos, asigna un
-                                            especialista a cada uno con un revisor distinto, ejecuta el trabajo y lo lleva
-                                            al comité de arquitectura.
+                                            {t("ui.describe-el-entregable-y-la.e9502d")}
                                         </p>
                                     </div>
                                     <span className="inline-flex items-center text-sm font-semibold text-primary-600 dark:text-primary-400">
-                                        Ir a la Oficina <ArrowRightIcon className="ml-1 h-4 w-4" />
+                                        {t("ui.ir-a-la-oficina.6babe9")} <ArrowRightIcon className="ml-1 h-4 w-4" />
                                     </span>
                                 </div>
                             </button>
 
                             <div className="space-y-3">
                                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                    Modo directo
+                                    {t("ui.modo-directo.58b6ba")}
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <ActionCard
@@ -751,10 +753,10 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                                 <div className="relative min-w-0 flex-1 sm:max-w-xs">
                                     <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden />
                                     <Input
-                                        aria-label="Buscar por nombre o descripción"
+                                        aria-label={t("ui.buscar-por-nombre-o-descripc.cdba3a")}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Buscar por nombre o descripción"
+                                        placeholder={t("ui.buscar-por-nombre-o-descripc.cdba3a")}
                                         className="pl-8"
                                     />
                                 </div>
@@ -772,7 +774,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                                                     : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
                                             )}
                                         >
-                                            {label}
+                                            {t(label)}
                                         </button>
                                     ))}
                                 </div>
@@ -780,7 +782,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
 
                             {visibleNodes.length === 0 ? (
                                 <p className="rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-                                    Ningún proyecto coincide con el filtro.
+                                    {t("ui.ningun-proyecto-coincide-con.69ff87")}
                                 </p>
                             ) : (
                                 <div className="space-y-2">
@@ -799,7 +801,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({ navigateToWorkspace }) => {
                                                     variant="ghost"
                                                     iconOnly
                                                     size="sm"
-                                                    aria-label={`Acciones de ${node.name}`}
+                                                    aria-label={t("uiTemplate.acciones-de-p0.712aa9", { p0: String(node.name) })}
                                                     onClick={() => setOpenMenuId(openMenuId === node.projectId ? null : node.projectId)}
                                                     className={openMenuId === node.projectId ? 'bg-gray-100 dark:bg-gray-800' : ''}
                                                 >

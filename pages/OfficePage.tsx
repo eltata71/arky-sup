@@ -37,8 +37,8 @@ import {
 } from '../components/architectureOffice/dashboard';
 import { BrokenLinksPanel, PortfolioCanvas, PortfolioSearchBox } from '../components/navigation';
 import { resolvePortfolioGraph, type PortfolioSearchHit } from '../services/portfolioGraph';
-import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
-import { buildOfficePortfolio } from '../services/architectureOffice/domain/officePortfolio';
+import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/agents';
+import { buildOfficePortfolio } from '../services/architectureOffice/portfolio';
 
 type OfficeTabId = 'resumen' | 'portafolio' | 'canvas' | 'especialistas';
 
@@ -87,11 +87,11 @@ const OfficePage: React.FC = () => {
   const handlePropose = useCallback(async (input: EngagementIntakeSubmit) => {
     const result = await createEngagement(input);
     if (!result.ok) {
-      addToast(result.reason ?? 'No se pudo crear el entregable.', 'error');
+      addToast(result.reason ?? t("uiMessage.no-se-pudo-crear-el-entregab.c0bf53"), 'error');
       return null;
     }
     return result.engagement ?? null;
-  }, [createEngagement, addToast]);
+  }, [createEngagement, addToast, t]);
 
 
   const openIntake = useCallback(() => setIntakeOpen(true), []);
@@ -123,7 +123,7 @@ const OfficePage: React.FC = () => {
   if (projectsLoading || isLoading) {
     return (
       <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
-        <PageSkeleton label="Cargando el tablero de la Oficina" tiles={4} panels={2} />
+        <PageSkeleton label={t("ui.cargando-el-tablero-de-la-of.ca9d45")} tiles={4} panels={2} />
       </div>
     );
   }
@@ -137,20 +137,19 @@ const OfficePage: React.FC = () => {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-2xs font-semibold uppercase tracking-widest-2 text-primary-600 dark:text-primary-400">
-              Oficina de Arquitectura Empresarial
+              {t("ui.oficina-de-arquitectura-empr.8b8173")}
             </p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50 md:text-display-sm">
-              Panel de la Oficina
+              {t("ui.panel-de-la-oficina.b792ce")}
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {programCount} iniciativa(s) de negocio · {portfolio.projects.length} proyecto(s) de
-              arquitectura · {portfolio.rollup.engagements} entregable(s) ·{' '}
-              {Object.keys(OFFICE_AGENT_PERSONAS).length} especialistas
+              {programCount} {t("ui.iniciativa-s-de-negocio.f75029")} {portfolio.projects.length} {t("ui.proyecto-s-de-arquitectura.7df382")} {portfolio.rollup.engagements} {t("ui.entregable-s.8efa7e")}{' '}
+              {Object.keys(OFFICE_AGENT_PERSONAS).length} {t("ui.especialistas.f93e3d")}
             </p>
           </div>
           <Button variant="primary" onClick={openIntake}>
             <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-            Nuevo entregable
+            {t("ui.nuevo-entregable.64c97a")}
           </Button>
         </header>
 
@@ -192,24 +191,24 @@ const OfficePage: React.FC = () => {
           value={tab}
           onChange={(next) => setTab(next as OfficeTabId)}
           variant="pill"
-          aria-label="Vistas de la Oficina"
+          aria-label={t("ui.vistas-de-la-oficina.7ee7ce")}
         >
           <TabList className="w-full overflow-x-auto sm:w-auto">
             <Tab value="resumen" icon={<LayoutDashboard className="h-4 w-4" aria-hidden />}>
-              Resumen
+              {t("kg.tabSummary")}
             </Tab>
             <Tab
               value="portafolio"
               icon={<Network className="h-4 w-4" aria-hidden />}
               badge={portfolio.rollup.engagements || undefined}
             >
-              Portafolio
+              {t("rail.portfolio.label")}
             </Tab>
             <Tab value="canvas" icon={<LayoutGrid className="h-4 w-4" aria-hidden />}>
-              Canvas
+              {t("ui.canvas.a3f80b")}
             </Tab>
             <Tab value="especialistas" icon={<Users className="h-4 w-4" aria-hidden />}>
-              Especialistas
+              {t("ui.especialistas.fb9e65")}
             </Tab>
           </TabList>
 
@@ -254,7 +253,7 @@ const OfficePage: React.FC = () => {
           <TabPanel value="especialistas" className="space-y-3 pt-4">
             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <Activity className="h-4 w-4" aria-hidden />
-              Carga real de los especialistas, calculada sobre las tareas del DAG de cada entregable.
+              {t("ui.carga-real-de-los-especialis.b1ddcb")}
             </div>
             <SpecialistLoadPanel specialists={portfolio.specialists} />
           </TabPanel>

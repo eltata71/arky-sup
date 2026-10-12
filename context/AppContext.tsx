@@ -35,6 +35,7 @@ import { useProjectsState } from './app/useProjectsState';
 import { useArtifactsState } from './app/useArtifactsState';
 import { useProjectHistory } from './app/useProjectHistory';
 import { useArchitectureGraphSync } from './app/useArchitectureGraphSync';
+import { UiTranslationProvider } from '../lib/i18n/UiTranslationContext';
 
 export type { AppContextType, ChatMessage, Project, ProjectAttentionTracking, ProjectCommand, ProjectCommandOutcome, ProjectMemoryArea } from './app/appContextTypes';
 
@@ -58,7 +59,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     deleteProject,
     updateProjectContext,
     loadProjects,
-  } = useProjectsState(reporter);
+  } = useProjectsState(reporter, t);
 
   const { isLoading, loadError, reload } = useAppBootstrap({ setProjects, setSettings, loadProjects, reporter });
 
@@ -75,7 +76,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     getArtifactVersions,
     restoreArtifactVersion,
     removeCorruptArtifacts,
-  } = useArtifactsState({ setProjects, getProject, reporter });
+  } = useArtifactsState({ setProjects, getProject, reporter, t });
 
   const {
     saveChatHistory,
@@ -90,6 +91,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     getArchitectureGraphFreshness,
     savePublicationPackages,
   } = useArchitectureGraphSync({
+    t,
     projects,
     projectsRef,
     globalContext: settings.globalContext,
@@ -129,7 +131,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
   ]);
 
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={value}><UiTranslationProvider t={t}>{children}</UiTranslationProvider></AppContext.Provider>;
 };
 
 export const useAppContext = (): AppContextType => {

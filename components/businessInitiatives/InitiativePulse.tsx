@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The shape of the initiative portfolio: what state it is in, how it is spread
  * across the roadmap horizons, and where the risk sits.
@@ -44,6 +45,7 @@ export const InitiativePulse: React.FC<InitiativePulseProps> = ({
   rollup,
   className,
 }) => {
+  const t = useUiTranslation();
   const healthSegments = useMemo(
     () => INITIATIVE_HEALTH_ORDER.map((health) => {
       const visual = initiativeHealthVisual(health);
@@ -110,21 +112,21 @@ export const InitiativePulse: React.FC<InitiativePulseProps> = ({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="space-y-4">
           <div>
-            <CardTitle>Estado del portafolio de iniciativas</CardTitle>
+            <CardTitle>{t("ui.estado-del-portafolio-de-ini.1a87cb")}</CardTitle>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              El estado se deduce de las fechas y los riesgos, no solo de lo que alguien marcó.
+              {t("ui.el-estado-se-deduce-de-las-f.7fe58e")}
             </p>
           </div>
           <DonutChart
             segments={healthSegments}
-            centerLabel="Iniciativas"
-            title="Iniciativas de negocio por estado"
-            emptyMessage="Sin iniciativas registradas. La primera necesidad de negocio que captures aparecerá aquí."
+            centerLabel={t("Iniciativas")}
+            title={t("ui.iniciativas-de-negocio-por-e.b95366")}
+            emptyMessage={t("Sin iniciativas registradas. La primera necesidad de negocio que captures aparecerá aquí.")}
           />
           {atRiskNames.length > 0 && (
             <div className="rounded-lg bg-red-50 px-3 py-2 dark:bg-red-950/30">
               <p className="text-2xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">
-                En riesgo ahora
+                {t("ui.en-riesgo-ahora.7d299d")}
               </p>
               <ul className="mt-0.5 space-y-0.5">
                 {atRiskNames.map((name) => (
@@ -138,29 +140,29 @@ export const InitiativePulse: React.FC<InitiativePulseProps> = ({
         <div className="space-y-4">
           <Card className="space-y-3">
             <div>
-              <CardTitle>Horizonte de la hoja de ruta</CardTitle>
+              <CardTitle>{t("ui.horizonte-de-la-hoja-de-ruta.2ea23c")}</CardTitle>
               <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                Cuándo espera el negocio que se atienda cada iniciativa.
+                {t("ui.cuando-espera-el-negocio-que.4b39ea")}
               </p>
             </div>
             <FlowBars
               stages={horizonStages}
-              title="Iniciativas por horizonte"
-              emptyMessage="Ninguna iniciativa declara todavía su horizonte temporal."
+              title={t("ui.iniciativas-por-horizonte.d80840")}
+              emptyMessage={t("Ninguna iniciativa declara todavía su horizonte temporal.")}
             />
           </Card>
 
           <Card className="space-y-3">
             <div>
-              <CardTitle>Exposición al riesgo</CardTitle>
+              <CardTitle>{t("ui.exposicion-al-riesgo.e4fe1d")}</CardTitle>
               <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                Nivel de riesgo declarado en cada iniciativa.
+                {t("ui.nivel-de-riesgo-declarado-en.884ffb")}
               </p>
             </div>
             <FlowBars
               stages={riskStages}
-              title="Iniciativas por nivel de riesgo"
-              emptyMessage="Ninguna iniciativa declara todavía riesgos."
+              title={t("ui.iniciativas-por-nivel-de-rie.8e7596")}
+              emptyMessage={t("Ninguna iniciativa declara todavía riesgos.")}
             />
           </Card>
         </div>

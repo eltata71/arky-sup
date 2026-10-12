@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useMemo, useState } from 'react';
 import type { Artifact } from '../lib/artifacts';
 import { buildDiffHunks, computeLineDiff, summarizeDiff } from '../lib/textDiff';
@@ -25,6 +26,7 @@ export interface ArtifactVersionComparisonProps {
  * Se carga en diferido desde el historial: sólo lo descarga quien compara.
  */
 const ArtifactVersionComparison: React.FC<ArtifactVersionComparisonProps> = ({ oldVersion, current, models }) => {
+  const t = useUiTranslation();
     const [showText, setShowText] = useState(false);
     const diff = useMemo(() => (models ? diffDiagramIR(models.before, models.after) : null), [models]);
 
@@ -38,7 +40,7 @@ const ArtifactVersionComparison: React.FC<ArtifactVersionComparisonProps> = ({ o
                 aria-expanded={showText}
                 className="text-[11px] font-semibold text-primary-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
             >
-                {showText ? 'Ocultar cambios en el texto' : 'Ver cambios en el texto'}
+                {showText ? t("uiExpr.ocultar-cambios-en-el-texto.d65869") : t("uiExpr.ver-cambios-en-el-texto.0e2cd3")}
             </button>
             {showText && <TextVersionDiff oldVersion={oldVersion} current={current} />}
         </div>
@@ -71,17 +73,18 @@ const TONE: Record<DiffLine['tone'], { mark: string; className: string }> = {
 
 /** Lo que cambió en el modelo, agrupado por clase de elemento. */
 const SemanticVersionDiff: React.FC<{ diff: DiagramDiff; from: number; to: number }> = ({ diff, from, to }) => {
+  const t = useUiTranslation();
     if (diff.identical) {
         return (
             <p className="rounded-lg bg-gray-100 dark:bg-gray-700/60 px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
-                Mismo diagrama: no cambió ningún elemento, conexión ni agrupación. El orden del texto o la posición de las cajas pueden variar.
+                {t("ui.mismo-diagrama-no-cambio-nin.d0f962")}
             </p>
         );
     }
 
     const sections: Array<{ title: string; lines: DiffLine[] }> = [
         {
-            title: 'Elementos',
+            title: t("Elementos"),
             lines: [
                 ...diff.nodes.added.map((n) => ({ key: `n+${n.id}`, tone: 'added' as const, text: n.label })),
                 ...diff.nodes.removed.map((n) => ({ key: `n-${n.id}`, tone: 'removed' as const, text: n.label })),
@@ -89,7 +92,7 @@ const SemanticVersionDiff: React.FC<{ diff: DiagramDiff; from: number; to: numbe
             ],
         },
         {
-            title: 'Conexiones',
+            title: t("Conexiones"),
             lines: [
                 ...diff.edges.added.map((e, i) => ({ key: `e+${i}`, tone: 'added' as const, text: edgeText(e) })),
                 ...diff.edges.removed.map((e, i) => ({ key: `e-${i}`, tone: 'removed' as const, text: edgeText(e) })),
@@ -97,7 +100,7 @@ const SemanticVersionDiff: React.FC<{ diff: DiagramDiff; from: number; to: numbe
             ],
         },
         {
-            title: 'Agrupaciones',
+            title: t("Agrupaciones"),
             lines: [
                 ...diff.groups.added.map((g) => ({ key: `g+${g.id}`, tone: 'added' as const, text: g.label })),
                 ...diff.groups.removed.map((g) => ({ key: `g-${g.id}`, tone: 'removed' as const, text: g.label })),
@@ -109,7 +112,7 @@ const SemanticVersionDiff: React.FC<{ diff: DiagramDiff; from: number; to: numbe
     return (
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-700 text-[11px] font-semibold text-gray-700 dark:text-gray-200">
-                Cambios en el diagrama · v{from} → v{to}
+                {t("ui.cambios-en-el-diagrama-v.6827b6")}{from} → v{to}
             </div>
             <div className="max-h-72 overflow-auto bg-white dark:bg-gray-900 px-3 py-2 space-y-3 text-xs">
                 {sections.map((section) => (
@@ -119,7 +122,7 @@ const SemanticVersionDiff: React.FC<{ diff: DiagramDiff; from: number; to: numbe
                             {section.lines.map((line) => (
                                 <li key={line.key} className={TONE[line.tone].className}>
                                     <span className="inline-block w-4 font-mono select-none" aria-hidden>{TONE[line.tone].mark}</span>
-                                    <span className="sr-only">{line.tone === 'added' ? 'Añadido: ' : line.tone === 'removed' ? 'Eliminado: ' : 'Modificado: '}</span>
+                                    <span className="sr-only">{line.tone === 'added' ? t("uiExpr.anadido.d193d4") : line.tone === 'removed' ? t("uiExpr.eliminado.25af86") : t("uiExpr.modificado.48a679")}</span>
                                     {line.text}
                                     {line.detail && (
                                         <ul className="pl-5 text-gray-600 dark:text-gray-300">
@@ -133,7 +136,7 @@ const SemanticVersionDiff: React.FC<{ diff: DiagramDiff; from: number; to: numbe
                 ))}
                 {diff.reidentified > 0 && (
                     <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        {diff.reidentified === 1 ? 'Un elemento cambió' : `${diff.reidentified} elementos cambiaron`} de identificador y se reconoció por su nombre (típico de una regeneración).
+                        {diff.reidentified === 1 ? t("uiExpr.un-elemento-cambio.da10be") : t("uiTemplate.p0-elementos-cambiaron.bdd5fc", { p0: String(diff.reidentified) })} {t("ui.de-identificador-y-se-recono.6a9783")}
                     </p>
                 )}
             </div>
@@ -148,6 +151,7 @@ const SemanticVersionDiff: React.FC<{ diff: DiagramDiff; from: number; to: numbe
  * leaving the history modal.
  */
 const TextVersionDiff: React.FC<{ oldVersion: Artifact; current: Artifact }> = ({ oldVersion, current }) => {
+  const t = useUiTranslation();
     const { summary, hunks } = useMemo(() => {
         const lines = computeLineDiff(oldVersion.content ?? '', current.content ?? '');
         return { summary: summarizeDiff(lines), hunks: buildDiffHunks(lines, 2) };
@@ -156,7 +160,7 @@ const TextVersionDiff: React.FC<{ oldVersion: Artifact; current: Artifact }> = (
     if (summary.identical) {
         return (
             <p className="mt-2 rounded-lg bg-gray-100 dark:bg-gray-700/60 px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
-                El contenido es idéntico a la versión actual.
+                {t("ui.el-contenido-es-identico-a-l.96597a")}
             </p>
         );
     }
@@ -173,7 +177,7 @@ const TextVersionDiff: React.FC<{ oldVersion: Artifact; current: Artifact }> = (
                 <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 font-semibold">
                     −{summary.removed}
                 </span>
-                <span className="text-gray-400 dark:text-gray-500">{summary.unchanged} sin cambios</span>
+                <span className="text-gray-400 dark:text-gray-500">{summary.unchanged} {t("ui.sin-cambios.4c2166")}</span>
             </div>
             <div className="max-h-72 overflow-auto bg-white dark:bg-gray-900 font-mono text-[11px] leading-5">
                 {hunks.map((hunk, hIdx) => (

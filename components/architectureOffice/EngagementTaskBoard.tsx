@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The engagement board: every task of the DAG, grouped by the stage it is in,
  * with the persona accountable for it and — where a reviewer has spoken — the
@@ -58,6 +59,8 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
   tasks,
   onOpenArtifact,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const reviewer = task.reviewerId ? OFFICE_AGENT_PERSONAS[task.reviewerId] : undefined;
   const aging = describeAging(task.dueAt);
   const StatusGlyph = TASK_STATUS_ICONS[task.status];
@@ -73,21 +76,21 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
         <p className="text-sm font-semibold leading-snug text-gray-900 dark:text-gray-100">{task.title}</p>
         <Badge tone={TASK_STATUS_TONES[task.status]} size="xs">
           <StatusGlyph className="mr-1 h-3 w-3" aria-hidden />
-          {TASK_STATUS_LABELS[task.status]}
+          {translateConfig(TASK_STATUS_LABELS[task.status])}
         </Badge>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone="gray" size="xs" outline>
           <KindGlyph className="mr-1 h-3 w-3" aria-hidden />
-          {TASK_KIND_LABELS[task.kind]}
+          {translateConfig(TASK_KIND_LABELS[task.kind])}
         </Badge>
         <PersonaChip personaId={task.assigneeId} />
         {reviewer && task.kind === 'produce-artifact' && (
-          <PersonaChip personaId={reviewer.id} prefix="Revisa" />
+          <PersonaChip personaId={reviewer.id} prefix={t("Revisa")} />
         )}
         {task.attempts > 1 && (
-          <Badge tone="warning" size="xs" outline>Intento {task.attempts}/{task.maxAttempts}</Badge>
+          <Badge tone="warning" size="xs" outline>{t("ui.intento.7766b1")} {task.attempts}/{task.maxAttempts}</Badge>
         )}
       </div>
 
@@ -102,7 +105,7 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
 
       {blockers.length > 0 && (
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          Espera a: {blockers.map((dependency) => dependency.title).join(', ')}
+          {t("ui.espera-a.71dd31")} {blockers.map((dependency) => dependency.title).join(', ')}
         </p>
       )}
 
@@ -114,7 +117,7 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
         <div className="space-y-1.5 rounded-lg bg-gray-50 p-2 dark:bg-gray-800/60">
           <div className="flex items-center gap-1.5">
             <Badge tone={REVIEW_VERDICT_TONES[task.review.verdict]} size="xs">
-              {REVIEW_VERDICT_LABELS[task.review.verdict]}
+              {translateConfig(REVIEW_VERDICT_LABELS[task.review.verdict])}
             </Badge>
             {task.review.deterministicScore !== undefined && (
               <Badge tone="gray" size="xs" outline>{task.review.deterministicScore}/100</Badge>
@@ -129,7 +132,7 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
                   <li key={`${finding.message}-${index}`} className="flex items-start gap-1.5 text-xs">
                     <Badge tone={SEVERITY_TONES[finding.severity]} size="xs">
                       <SeverityGlyph className="mr-0.5 h-3 w-3" aria-hidden />
-                      {SEVERITY_LABELS[finding.severity]}
+                      {translateConfig(SEVERITY_LABELS[finding.severity])}
                     </Badge>
                     <span className="leading-snug text-gray-600 dark:text-gray-300">{finding.message}</span>
                   </li>
@@ -137,7 +140,7 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
               })}
               {task.review.findings.length > 4 && (
                 <li className="text-xs text-gray-500 dark:text-gray-400">
-                  y {task.review.findings.length - 4} hallazgo(s) más
+                  y {task.review.findings.length - 4} {t("ui.hallazgo-s-mas.295b7e")}
                 </li>
               )}
             </ul>
@@ -151,7 +154,7 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
           onClick={() => onOpenArtifact(task.producedArtifactId!)}
           className="inline-flex items-center gap-1 rounded text-xs font-semibold text-primary-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-400"
         >
-          Abrir artefacto
+          {t("ui.abrir-artefacto.98781c")}
           <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
         </button>
       )}
@@ -160,10 +163,11 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
 };
 
 export const EngagementTaskBoard: React.FC<EngagementTaskBoardProps> = ({ tasks, onOpenArtifact }) => {
+  const t = useUiTranslation();
   if (tasks.length === 0) {
     return (
       <p className="text-sm text-gray-500 dark:text-gray-400">
-        Este entregable todavía no tiene tareas planificadas.
+        {t("ui.este-entregable-todavia-no-t.cf9f5e")}
       </p>
     );
   }
@@ -179,7 +183,7 @@ export const EngagementTaskBoard: React.FC<EngagementTaskBoardProps> = ({ tasks,
     <div
       className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
       role="group"
-      aria-label="Tareas del entregable"
+      aria-label={t("ui.tareas-del-entregable.f46fa7")}
     >
       {columns.map((column) => {
         // Every column takes its glyph from the first status it collects, so

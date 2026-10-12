@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import {
   OFFICE_AGENT_PERSONAS,
@@ -8,12 +9,12 @@ interface OfficeAgentPickerProps {
   onSelect: (persona: OfficeAgentPersona) => void;
 }
 
-export const OfficeAgentPicker: React.FC<OfficeAgentPickerProps> = ({ onSelect }) => (
+export const OfficeAgentPicker: React.FC<OfficeAgentPickerProps> = ({ onSelect }) =>{ const t = useUiTranslation(); return  (
   <div className="border-b border-gray-200 pb-3 dark:border-gray-800">
     <p className="mb-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
-      Selecciona una persona o escribe <code>@Nombre</code> en tu mensaje
+      {t("ui.selecciona-una-persona-o-esc.8cdfa7")} <code>{t("ui.nombre.3f0597")}</code> {t("ui.en-tu-mensaje.953cda")}
     </p>
-    <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Personas de la Oficina de Arquitectura">
+    <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t("ui.personas-de-la-oficina-de-ar.b35b72")}>
       {Object.values(OFFICE_AGENT_PERSONAS).map((persona) => (
         <button
           key={persona.id}
@@ -28,6 +29,6 @@ export const OfficeAgentPicker: React.FC<OfficeAgentPickerProps> = ({ onSelect }
       ))}
     </div>
   </div>
-);
+); };
 
 export default OfficeAgentPicker;

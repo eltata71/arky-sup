@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * What is waiting on a person.
  *
@@ -30,6 +31,8 @@ export const DecisionQueue: React.FC<DecisionQueueProps> = ({
   className,
   id,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   if (items.length === 0) {
     return (
       <Card id={id} className={cn('flex items-center gap-3', className)}>
@@ -37,9 +40,9 @@ export const DecisionQueue: React.FC<DecisionQueueProps> = ({
           <HEALTH_ICONS.delivered className="h-5 w-5" aria-hidden strokeWidth={2} />
         </span>
         <div>
-          <CardTitle>Nada espera por ti</CardTitle>
+          <CardTitle>{t("ui.nada-espera-por-ti.abb405")}</CardTitle>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            Ningún entregable está bloqueado ni pendiente de una decisión.
+            {t("ui.ningun-entregable-esta-bloqu.cd13e6")}
           </p>
         </div>
       </Card>
@@ -54,9 +57,9 @@ export const DecisionQueue: React.FC<DecisionQueueProps> = ({
             <ShieldAlert className="h-4.5 w-4.5" aria-hidden strokeWidth={2} />
           </span>
           <div>
-            <CardTitle>Requieren tu decisión</CardTitle>
+            <CardTitle>{t("ui.requieren-tu-decision.4d5614")}</CardTitle>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              {items.length} entregable(s) no pueden avanzar sin una persona.
+              {items.length} {t("ui.entregable-s-no-pueden-avanz.4b8043")}
             </p>
           </div>
         </div>
@@ -87,18 +90,18 @@ export const DecisionQueue: React.FC<DecisionQueueProps> = ({
 
               <div className="flex shrink-0 items-center gap-2">
                 <Badge tone={ENGAGEMENT_STATUS_TONES[item.engagement.status]} size="xs">
-                  {ENGAGEMENT_STATUS_LABELS[item.engagement.status]}
+                  {translateConfig(ENGAGEMENT_STATUS_LABELS[item.engagement.status])}
                 </Badge>
                 {item.requiresAdmin && !canApprove && (
-                  <Badge tone="gray" size="xs" outline>Requiere admin</Badge>
+                  <Badge tone="gray" size="xs" outline>{t("ui.requiere-admin.8c4d54")}</Badge>
                 )}
                 <Button
                   variant="secondary"
                   size="xs"
                   onClick={() => onOpen(item.engagement.id)}
-                  aria-label={`Abrir ${item.engagement.title}`}
+                  aria-label={t("uiTemplate.abrir-p0.2eb827", { p0: String(item.engagement.title) })}
                 >
-                  Abrir
+                  {t("open")}
                   <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden />
                 </Button>
               </div>

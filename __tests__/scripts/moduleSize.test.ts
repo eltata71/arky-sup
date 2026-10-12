@@ -39,8 +39,10 @@ describe('a line budget is a budget on newlines', () => {
 
   it('measures bytes as well as lines', () => {
     expect(byteCount('lib/i18n/locales/es.ts')).toBeGreaterThan(8_000);
-    // Under 40 lines, so no line budget would ever have seen it.
-    expect(lineCount('lib/i18n/locales/es.ts')).toBeLessThan(40);
+    // The entry stays small in lines; the additional copy lives in bounded
+    // locale modules checked individually by the size gate.
+    // 13.2 adds bounded chunks for JSX, state messages and shared status tables.
+    expect(lineCount('lib/i18n/locales/es.ts')).toBeLessThan(100);
   });
 
   it('holds unlisted modules to 20 KB', () => {

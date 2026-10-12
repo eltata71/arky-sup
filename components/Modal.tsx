@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { ReactNode, useEffect, useId, useState } from 'react';
 import { XMarkIcon } from './Icons';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,6 +29,7 @@ interface ModalProps {
  *  - Focus returns to the element that opened the dialog.
  */
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, description }) => {
+  const t = useUiTranslation();
   const titleId = useId();
   const containerRef = useFocusTrap<HTMLDivElement>(isOpen);
   const [resilienceMode, setResilienceMode] = useState(() => observabilityService.getResilienceProfile().shouldUseResilienceMode);
@@ -99,7 +101,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
                     </div>
                     <button
                         onClick={onClose}
-                        aria-label="Cerrar"
+                        aria-label={t("sdd.close")}
                         className="p-2.5 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
                     >
                         <XMarkIcon className="h-5 w-5" />

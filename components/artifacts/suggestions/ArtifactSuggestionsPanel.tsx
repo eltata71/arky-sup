@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Drawer } from '../../ui/Drawer';
 import { Spinner } from '../../ui/Spinner';
@@ -61,7 +62,7 @@ const SuggestionCard: React.FC<{
   suggestion: ArtifactSuggestion;
   index: number;
   onRunAction?: (action: ArtifactSuggestionAction, suggestion: ArtifactSuggestion) => void;
-}> = ({ suggestion, index, onRunAction }) => (
+}> = ({ suggestion, index, onRunAction }) =>{ const t = useUiTranslation(); return  (
   <li className="rounded-xl border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-800/50 p-3.5">
     <div className="flex items-start gap-2.5">
       <span
@@ -77,14 +78,14 @@ const SuggestionCard: React.FC<{
             {GAP_TYPE_LABEL_ES[suggestion.gapType]}
           </span>
           <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${IMPACT_TONE[suggestion.impact]}`}>
-            Impacto: {IMPACT_LABEL_ES[suggestion.impact]}
+            {t("ui.impacto.af1219")} {IMPACT_LABEL_ES[suggestion.impact]}
           </span>
           <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${EFFORT_TONE[suggestion.effort]}`}>
-            Esfuerzo: {EFFORT_LABEL_ES[suggestion.effort]}
+            {t("ui.esfuerzo.7c8f90")} {EFFORT_LABEL_ES[suggestion.effort]}
           </span>
           {suggestion.expectedQualityGain !== null && suggestion.expectedQualityGain > 0 && (
             <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-              +{suggestion.expectedQualityGain} pts est.
+              +{suggestion.expectedQualityGain} {t("ui.pts-est.3cf81c")}
             </span>
           )}
         </div>
@@ -95,12 +96,12 @@ const SuggestionCard: React.FC<{
     </p>
     <div className="mt-2 rounded-lg bg-primary-50/70 px-2.5 py-2 dark:bg-primary-500/10">
       <p className="text-[11px] font-semibold text-primary-700 dark:text-primary-300">
-        Acción recomendada
+        {t("ui.accion-recomendada.ef0ecc")}
       </p>
       <p className="mt-0.5 text-xs text-gray-700 dark:text-gray-200">{suggestion.recommendedAction}</p>
     </div>
     {suggestion.actions && suggestion.actions.length > 0 && onRunAction && (
-      <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Acciones ejecutables">
+      <div className="mt-2 flex flex-wrap gap-1.5" aria-label={t("ui.acciones-ejecutables.6ffe86")}>
         {suggestion.actions.map((action, i) => (
           <button
             key={`${action.kind}-${i}`}
@@ -116,11 +117,11 @@ const SuggestionCard: React.FC<{
       </div>
     )}
     <p className="mt-2 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-      <span className="font-semibold">Evidencia: </span>
+      <span className="font-semibold">{t("ui.evidencia.a81e75")} </span>
       {suggestion.evidence}
     </p>
   </li>
-);
+); };
 
 /**
  * Side panel for the "Sugerencias" feature. Surfaces an AI quality review of
@@ -145,6 +146,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
   onGenerateWorldClass,
   onRunAction,
 }) => {
+  const t = useUiTranslation();
   const suggestions = report?.suggestions ?? [];
   const busy = isApplyingWithAI || isAutoImproving;
 
@@ -152,26 +154,25 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Sugerencias de mejora"
+      title={t("ui.sugerencias-de-mejora.c29c79")}
       description={artifactName}
       side="right"
       size="lg"
     >
       <div className="flex flex-col gap-4 p-5">
         {/* ── Sugerencias para el usuario ─────────────────────────────── */}
-        <section aria-label="Sugerencias para mejorar el artefacto">
+        <section aria-label={t("ui.sugerencias-para-mejorar-el.6ab35d")}>
           <div className="mb-2 flex items-center gap-2">
             <LightBulbIcon className="h-4 w-4 text-amber-500" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              Recomendaciones para ti
+              {t("ui.recomendaciones-para-ti.b135e5")}
             </h3>
           </div>
 
           {status === 'idle' && (
             <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-4 text-center">
               <p className="text-xs text-gray-600 dark:text-gray-300">
-                Analiza el estado actual del artefacto para obtener una lista priorizada de
-                acciones concretas que elevan su calidad antes de regenerarlo.
+                {t("ui.analiza-el-estado-actual-del.784f48")}
               </p>
               <button
                 type="button"
@@ -179,7 +180,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
                 className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               >
                 <SparklesIcon className="h-4 w-4" />
-                Analizar artefacto
+                {t("ui.analizar-artefacto.bee738")}
               </button>
             </div>
           )}
@@ -188,7 +189,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
             <div className="flex flex-col items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
               <Spinner />
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Analizando calidad y contexto del artefacto…
+                {t("ui.analizando-calidad-y-context.365bc1")}
               </p>
             </div>
           )}
@@ -199,10 +200,10 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
                 <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-rose-500" />
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">
-                    No se pudieron generar las sugerencias
+                    {t("ui.no-se-pudieron-generar-las-s.a38cb5")}
                   </p>
                   <p className="mt-0.5 text-[11px] text-rose-600 dark:text-rose-400">
-                    {error ?? 'El servicio de IA no respondió correctamente.'}
+                    {error ?? t("uiExpr.el-servicio-de-ia-no-respond.bb69ca")}
                   </p>
                 </div>
               </div>
@@ -212,7 +213,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
                 className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
               >
                 <ArrowPathIcon className="h-3.5 w-3.5" />
-                Reintentar
+                {t("lucid.retry")}
               </button>
             </div>
           )}
@@ -222,7 +223,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Estado de calidad
+                    {t("ui.estado-de-calidad.c38179")}
                   </p>
                   {report.currentScore !== null && (
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
@@ -239,7 +240,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
               {report.insufficientContext && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/60 dark:bg-amber-950/40">
                   <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                    Contexto insuficiente para sugerencias de alta confianza
+                    {t("ui.contexto-insuficiente-para-s.1fc4e2")}
                   </p>
                   {report.missingContextHints.length > 0 ? (
                     <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-[11px] text-amber-700 dark:text-amber-300">
@@ -249,7 +250,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
                     </ul>
                   ) : (
                     <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
-                      Aporta más contexto de negocio o técnico y vuelve a analizar.
+                      {t("ui.aporta-mas-contexto-de-negoc.5a7142")}
                     </p>
                   )}
                 </div>
@@ -269,7 +270,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
               ) : (
                 !report.insufficientContext && (
                   <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300">
-                    Sin recomendaciones pendientes: el artefacto está en buen estado.
+                    {t("ui.sin-recomendaciones-pendient.4cb4cc")}
                   </p>
                 )
               )}
@@ -280,7 +281,7 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
                 className="inline-flex items-center justify-center gap-1.5 self-start rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 <ArrowPathIcon className="h-3.5 w-3.5" />
-                Volver a analizar
+                {t("ui.volver-a-analizar.70e75c")}
               </button>
             </div>
           )}
@@ -288,18 +289,17 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
 
         {/* ── Acciones automáticas de IA ──────────────────────────────── */}
         <section
-          aria-label="Acciones automáticas de mejora con IA"
+          aria-label={t("ui.acciones-automaticas-de-mejo.6d2fe1")}
           className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/40 p-3.5"
         >
           <div className="mb-1 flex items-center gap-2">
             <SparklesIcon className="h-4 w-4 text-primary-500" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              Acciones automáticas de IA
+              {t("ui.acciones-automaticas-de-ia.869810")}
             </h3>
           </div>
           <p className="mb-3 text-[11px] text-gray-500 dark:text-gray-400">
-            Aplican mejoras directamente. Cada acción crea una nueva versión: tu versión actual
-            se conserva.
+            {t("ui.aplican-mejoras-directamente.19ae7b")}
           </p>
           <div className="flex flex-col gap-2">
             <button
@@ -310,10 +310,10 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
             >
               <span className="flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4" />
-                Mejorar con IA
+                {t("ui.mejorar-con-ia.e12357")}
               </span>
               <span className="text-[10px] font-normal opacity-80">
-                {isApplyingWithAI ? 'Aplicando…' : 'Aplica las sugerencias'}
+                {isApplyingWithAI ? t("uiExpr.aplicando.b82f84") : t("uiExpr.aplica-las-sugerencias.381b05")}
               </span>
             </button>
             <button
@@ -324,10 +324,10 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
             >
               <span className="flex items-center gap-2">
                 <CheckBadgeIcon className="h-4 w-4" />
-                Mejorar automáticamente
+                {t("ui.mejorar-automaticamente.d778e8")}
               </span>
               <span className="text-[10px] font-normal opacity-80">
-                {isAutoImproving ? 'Mejorando…' : 'Reparación determinística'}
+                {isAutoImproving ? t("uiExpr.mejorando.dde953") : t("uiExpr.reparacion-deterministica.ece025")}
               </span>
             </button>
             <button
@@ -338,14 +338,14 @@ export const ArtifactSuggestionsPanel: React.FC<ArtifactSuggestionsPanelProps> =
             >
               <span className="flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4" />
-                Generar versión de clase mundial
+                {t("ui.generar-version-de-clase-mun.7ad137")}
               </span>
-              <span className="text-[10px] font-normal opacity-80">Regenera con quality gate</span>
+              <span className="text-[10px] font-normal opacity-80">{t("ui.regenera-con-quality-gate.f19205")}</span>
             </button>
           </div>
           {!canApplyWithAI && (
             <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500">
-              «Mejorar con IA» se habilita después de analizar el artefacto y obtener sugerencias.
+              {t("ui.mejorar-con-ia-se-habilita-d.5091d6")}
             </p>
           )}
         </section>

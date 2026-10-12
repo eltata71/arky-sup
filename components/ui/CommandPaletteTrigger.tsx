@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { useCommandPalette } from '../../context/CommandPaletteContext';
 import { MagnifyingGlassIcon } from '../Icons';
@@ -15,6 +16,7 @@ export interface CommandPaletteTriggerProps {
  * command palette so any header, sidebar, or empty state can surface it.
  */
 export const CommandPaletteTrigger: React.FC<CommandPaletteTriggerProps> = ({ compact = false, className }) => {
+  const t = useUiTranslation();
     const { setOpen } = useCommandPalette();
 
     if (compact) {
@@ -22,7 +24,7 @@ export const CommandPaletteTrigger: React.FC<CommandPaletteTriggerProps> = ({ co
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                aria-label="Abrir paleta de comandos"
+                aria-label={t("ui.abrir-paleta-de-comandos.751768")}
                 className={cn(
                     'inline-flex items-center justify-center h-9 w-9 rounded-lg',
                     'border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900',
@@ -49,12 +51,12 @@ export const CommandPaletteTrigger: React.FC<CommandPaletteTriggerProps> = ({ co
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                 className,
             )}
-            aria-label="Abrir paleta de comandos"
+            aria-label={t("ui.abrir-paleta-de-comandos.751768")}
         >
             <MagnifyingGlassIcon className="h-4 w-4 flex-shrink-0" />
-            <span className="text-sm flex-1 text-left">Comandos, IA o navegación…</span>
+            <span className="text-sm flex-1 text-left">{t("ui.comandos-ia-o-navegacion.799fd2")}</span>
             <span className="hidden sm:flex items-center gap-0.5 ml-2">
-                <Kbd>{isMac() ? '⌘' : 'Ctrl'}</Kbd>
+                <Kbd>{isMac() ? '⌘' : t("uiExpr.ctrl.dd6a02")}</Kbd>
                 <Kbd>K</Kbd>
             </span>
         </button>

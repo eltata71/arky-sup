@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Badge, BadgeTone, Tooltip } from '../ui';
 import type { Artifact } from '../../lib/artifacts';
@@ -94,6 +95,8 @@ export const ArtifactStatusBadge: React.FC<ArtifactStatusBadgeProps> = ({
     onClick,
     className,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
     const effective = status ?? deriveArtifactStatus(artifact);
     const meta = STATUS_META[effective];
     const Icon = meta.Icon;
@@ -103,10 +106,10 @@ export const ArtifactStatusBadge: React.FC<ArtifactStatusBadgeProps> = ({
             dot={!Icon}
             size="sm"
             className={className}
-            aria-label={`Estado: ${meta.label}. ${meta.description}`}
+            aria-label={t("uiTemplate.estado-p0-p1.cce33e", { p0: t(meta.label), p1: t(meta.description) })}
         >
             {Icon && <Icon className="h-3 w-3" aria-hidden />}
-            {!compact && <span>{meta.label}</span>}
+            {!compact && <span>{translateConfig(meta.label)}</span>}
         </Badge>
     );
 
@@ -116,14 +119,14 @@ export const ArtifactStatusBadge: React.FC<ArtifactStatusBadgeProps> = ({
                 type="button"
                 onClick={onClick}
                 className="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
-                aria-label={`${meta.label}. Ver detalles.`}
+                aria-label={t("uiTemplate.p0-ver-detalles.557752", { p0: t(meta.label) })}
             >
-                <Tooltip label={meta.description}>{badge}</Tooltip>
+                <Tooltip label={translateConfig(meta.description)}>{badge}</Tooltip>
             </button>
         );
     }
 
-    return <Tooltip label={meta.description}>{badge}</Tooltip>;
+    return <Tooltip label={translateConfig(meta.description)}>{badge}</Tooltip>;
 };
 
 export default ArtifactStatusBadge;

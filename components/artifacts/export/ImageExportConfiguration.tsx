@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import type { ExportFormatOption } from '../../../services/artifacts/application/artifactAssessment';
 
@@ -123,6 +124,8 @@ export const ImageExportConfiguration: React.FC<{
   prefs: ImageExportPrefs;
   onChange: (patch: Partial<ImageExportPrefs>) => void;
 }> = ({ formatOptions, prefs, onChange }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const offersPng = formatOptions.some((opt) => opt.format === 'png' && opt.enabled);
   const offersSvg = formatOptions.some((opt) => opt.format === 'svg' && opt.enabled);
   if (!offersPng && !offersSvg) return null;
@@ -134,16 +137,16 @@ export const ImageExportConfiguration: React.FC<{
   return (
     <section
       className="mb-4 rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-white/10 dark:bg-gray-900"
-      aria-label="Configuración de imagen"
+      aria-label={t("ui.configuracion-de-imagen.779e63")}
       data-testid="image-export-configuration"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h4 className="font-bold text-slate-900 dark:text-white">Configuración de imagen</h4>
-        <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">PNG · SVG</span>
+        <h4 className="font-bold text-slate-900 dark:text-white">{t("ui.configuracion-de-imagen.779e63")}</h4>
+        <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("ui.png-svg.b937f7")}</span>
       </div>
 
       {/* Preajustes (3.4): cuatro decisiones de una vez */}
-      <div role="group" aria-label="Preajustes de imagen" className="mb-3 flex flex-wrap gap-1.5">
+      <div role="group" aria-label={t("ui.preajustes-de-imagen.789711")} className="mb-3 flex flex-wrap gap-1.5">
         {IMAGE_EXPORT_PRESETS.map((preset) => {
           const active = matchImagePreset(prefs) === preset.id;
           return (
@@ -158,24 +161,24 @@ export const ImageExportConfiguration: React.FC<{
                   : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'
               }`}
             >
-              {preset.label}
+              {translateConfig(preset.label)}
             </button>
           );
         })}
       </div>
       {(() => {
         const active = IMAGE_EXPORT_PRESETS.find((preset) => preset.id === matchImagePreset(prefs));
-        return active ? <p className="-mt-1.5 mb-3 text-[11px] text-slate-500 dark:text-slate-400">{active.description}</p> : null;
+        return active ? <p className="-mt-1.5 mb-3 text-[11px] text-slate-500 dark:text-slate-400">{translateConfig(active.description)}</p> : null;
       })()}
 
       {/* View / area selector */}
       <fieldset className="mb-3">
         <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-          Área a exportar
+          {t("ui.area-a-exportar.e0bd22")}
         </legend>
         <div
           role="radiogroup"
-          aria-label="Vista de exportación de imagen"
+          aria-label={t("ui.vista-de-exportacion-de-imag.395138")}
           className="grid gap-2 sm:grid-cols-2"
         >
           {IMAGE_VIEW_META.map((view) => {
@@ -187,7 +190,7 @@ export const ImageExportConfiguration: React.FC<{
               <label
                 key={view.value}
                 className={`flex items-start gap-2 rounded-lg border p-2 cursor-pointer transition-colors ${checked ? 'border-primary-400 bg-primary-50 dark:border-primary-500 dark:bg-primary-950/30' : 'border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'}`}
-                title={view.description}
+                title={translateConfig(view.description)}
               >
                 <input
                   type="radio"
@@ -196,19 +199,19 @@ export const ImageExportConfiguration: React.FC<{
                   checked={checked}
                   onChange={() => onChange({ view: view.value })}
                   className="mt-0.5"
-                  aria-label={view.label}
+                  aria-label={translateConfig(view.label)}
                   data-testid={`image-export-view-${view.value}`}
                 />
                 <span className="flex-1">
                   <span className="flex items-center gap-1.5">
-                    <strong>{view.label}</strong>
+                    <strong>{translateConfig(view.label)}</strong>
                     {view.badge && (
                       <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badgeTone}`}>
-                        {view.badge.label}
+                        {translateConfig(view.badge.label)}
                       </span>
                     )}
                   </span>
-                  <span className="block mt-0.5 text-slate-500 dark:text-slate-400">{view.description}</span>
+                  <span className="block mt-0.5 text-slate-500 dark:text-slate-400">{translateConfig(view.description)}</span>
                 </span>
               </label>
             );
@@ -219,20 +222,20 @@ export const ImageExportConfiguration: React.FC<{
       {/* Scale selector */}
       <fieldset className="mb-3">
         <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-          Resolución (escala)
+          {t("ui.resolucion-escala.754466")}
         </legend>
         {scaleAppliesToCurrentFormat ? (
           <div
             role="radiogroup"
-            aria-label="Escala de exportación de imagen"
+            aria-label={t("ui.escala-de-exportacion-de-ima.8cd19f")}
             className="flex flex-wrap gap-2"
           >
             {([1, 2, 3] as const).map((s) => {
               const checked = prefs.scale === s;
               const labels: Record<ImageExportScale, { label: string; hint: string }> = {
-                1: { label: '1×', hint: 'rápido / liviano' },
-                2: { label: '2×', hint: 'recomendado' },
-                3: { label: '3×', hint: 'alta resolución' },
+                1: { label: '1×', hint: t("rápido / liviano") },
+                2: { label: '2×', hint: t("recomendado") },
+                3: { label: '3×', hint: t("alta resolución") },
               };
               return (
                 <label
@@ -246,14 +249,14 @@ export const ImageExportConfiguration: React.FC<{
                     value={s}
                     checked={checked}
                     onChange={() => onChange({ scale: s })}
-                    aria-label={`Escala ${labels[s].label} ${labels[s].hint}`}
+                    aria-label={t("uiTemplate.escala-p0-p1.7b2b64", { p0: String(labels[s].label), p1: String(labels[s].hint) })}
                     data-testid={`image-export-scale-${s}`}
                   />
                   <span>
-                    <strong>{labels[s].label}</strong>
-                    <span className="ml-1 text-slate-500 dark:text-slate-400">{labels[s].hint}</span>
+                    <strong>{translateConfig(labels[s].label)}</strong>
+                    <span className="ml-1 text-slate-500 dark:text-slate-400">{translateConfig(labels[s].hint)}</span>
                     {s === 2 && (
-                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200">Recomendada</span>
+                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200">{t("ui.recomendada.92c5dd")}</span>
                     )}
                   </span>
                 </label>
@@ -265,7 +268,7 @@ export const ImageExportConfiguration: React.FC<{
             className="rounded-md bg-slate-50 dark:bg-white/5 px-2.5 py-1.5 text-slate-600 dark:text-slate-300"
             data-testid="image-export-scale-na"
           >
-            La escala no aplica a SVG porque es un formato vectorial — el archivo escala sin pérdida.
+            {t("ui.la-escala-no-aplica-a-svg-po.063873")}
           </p>
         )}
       </fieldset>
@@ -273,7 +276,7 @@ export const ImageExportConfiguration: React.FC<{
       {/* Frame configuration */}
       <fieldset>
         <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-          Frame profesional
+          {t("ui.frame-profesional.932918")}
         </legend>
         <label className="flex items-start gap-2 cursor-pointer">
           <input
@@ -281,13 +284,13 @@ export const ImageExportConfiguration: React.FC<{
             checked={prefs.frame}
             onChange={(e) => onChange({ frame: e.target.checked })}
             className="mt-0.5"
-            aria-label="Activar frame profesional con título, fecha y confidencialidad"
+            aria-label={t("ui.activar-frame-profesional-co.9b3d0a")}
             data-testid="image-export-frame-toggle"
           />
           <span>
-            <strong>Frame profesional con título, fecha y confidencialidad.</strong>
+            <strong>{t("ui.frame-profesional-con-titulo.8efcaa")}</strong>
             <span className="block mt-0.5 text-slate-500 dark:text-slate-400">
-              Activado por defecto para exportación formal. Desactívalo si quieres compartir un snapshot informal sin sello editorial.
+              {t("ui.activado-por-defecto-para-ex.6c41b1")}
             </span>
           </span>
         </label>
@@ -298,20 +301,20 @@ export const ImageExportConfiguration: React.FC<{
             disabled={!prefs.frame}
             onChange={(e) => onChange({ legend: e.target.checked })}
             className="mt-0.5"
-            aria-label="Incluir leyenda en el footer del frame"
+            aria-label={t("ui.incluir-leyenda-en-el-footer.c48496")}
             aria-describedby={!prefs.frame ? 'image-export-legend-disabled-hint' : undefined}
             data-testid="image-export-legend-toggle"
           />
           <span>
-            <strong>Incluir leyenda en el footer.</strong>
+            <strong>{t("ui.incluir-leyenda-en-el-footer.022811")}</strong>
             <span className="block mt-0.5 text-slate-500 dark:text-slate-400">
               {prefs.frame
-                ? 'Lista los tipos de nodos y relaciones presentes en el diagrama.'
-                : 'Activa primero el frame profesional para añadir la leyenda.'}
+                ? t("uiExpr.lista-los-tipos-de-nodos-y-r.9210b1")
+                : t("uiExpr.activa-primero-el-frame-prof.5254aa")}
             </span>
             {!prefs.frame && (
               <span id="image-export-legend-disabled-hint" className="sr-only">
-                Deshabilitado: requiere activar el frame profesional.
+                {t("ui.deshabilitado-requiere-activ.5e3e06")}
               </span>
             )}
           </span>
@@ -320,7 +323,7 @@ export const ImageExportConfiguration: React.FC<{
 
       {previewIsOperational && (
         <p className="mt-3 rounded-md bg-amber-50 px-2.5 py-1.5 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          <strong>Vista actual seleccionada:</strong> el archivo capturará exactamente lo que ves en pantalla y saltará el preflight formal. Úsala como snapshot operativo, no como entregable.
+          <strong>{t("ui.vista-actual-seleccionada.60e411")}</strong> {t("ui.el-archivo-capturara-exactam.1a46fe")}
         </p>
       )}
     </section>

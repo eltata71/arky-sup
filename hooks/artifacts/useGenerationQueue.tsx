@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Artifact, ArtifactContextPorts, ArtifactGenerationPhaseListener, ArtifactPersonaComposer } from '../../lib/artifacts';
@@ -36,6 +37,7 @@ const GenerationQueueContext = createContext<GenerationQueueContextValue | null>
 const INTERRUPTED_KEY = 'arky-interrupted-generations';
 
 export function GenerationQueueProvider({ children }: { children: React.ReactNode }) {
+  const t = useUiTranslation();
   const { user, isLoading: authLoading } = useAuth();
   const { createArtifact, createArtifactVersion, updateArtifact } = useAppContext();
   const { addToast } = useToast();
@@ -61,14 +63,14 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     const interrupted = Number(localStorage.getItem(INTERRUPTED_KEY) ?? 0);
     localStorage.removeItem(INTERRUPTED_KEY);
-    if (interrupted > 0) addToast(`${interrupted} ${interrupted === 1 ? 'generación interrumpida' : 'generaciones interrumpidas'} al cerrar la pestaña. Solicítalas de nuevo.`, 'warning', { durationMs: 8000 });
+    if (interrupted > 0) addToast(t("uiMessage.p0-p1-al-cerrar-la-pestana-s.ab9b4c", { p0: String(interrupted), p1: String(interrupted === 1 ? 'generación interrumpida' : 'generaciones interrumpidas') }), 'warning', { durationMs: 8000 });
     const beforeUnload = () => {
       const count = countInterrupted(jobsRef.current);
       if (count) localStorage.setItem(INTERRUPTED_KEY, String(count));
     };
     window.addEventListener('beforeunload', beforeUnload);
     return () => window.removeEventListener('beforeunload', beforeUnload);
-  }, [addToast]);
+  }, [addToast, t]);
 
   const enqueue = useCallback((request: GenerationRequest) => {
     const id = `gen-${request.project.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -158,14 +160,14 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
           if (request.existingArtifact && plan.kind !== 'create') {
             offerUndo({
               projectId: request.project.id,
-              label: `generación de «${request.template.name}»`,
+              label: t('uiDynamic.generationOf', { name: request.template.name }),
               steps: [{ before: request.existingArtifact, producedId: artifactId }],
               onUndone: ([restored]) => navigate(`/workspace/${request.project.id}?artifact=${encodeURIComponent(restored.id)}`),
-            }, `«${request.template.name}» está listo.`);
+            }, t('uiMessage.p0-esta-listo.814e50', { p0: request.template.name }));
             return;
           }
-          addToast(`«${request.template.name}» está listo.`, 'success', {
-            action: { label: 'Abrir', onClick: () => navigate(`/workspace/${request.project.id}?artifact=${encodeURIComponent(artifactId)}`) },
+          addToast(t("uiMessage.p0-esta-listo.814e50", { p0: String(request.template.name) }), 'success', {
+            action: { label: t('open'), onClick: () => navigate(`/workspace/${request.project.id}?artifact=${encodeURIComponent(artifactId)}`) },
             durationMs: 10000,
           });
         } catch (error) {
@@ -176,14 +178,14 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
             status: 'failed', finishedAt: Date.now(),
             failure: { headline: failure.headline, message: failure.userMessage, detail: failure.technicalDetail, retryable: failure.retryable },
           }));
-          addToast(`${failure.headline} al generar «${request.template.name}». ${failure.userMessage}`, failure.severity, {
+          addToast(t("uiMessage.p0-al-generar-p1-p2.e88f7e", { p0: String(failure.headline), p1: String(request.template.name), p2: String(failure.userMessage) }), failure.severity, {
             ...(failure.retryable ? { action: { label: 'Reintentar', onClick: () => retry(job.id) } } : {}),
             durationMs: 10000,
           });
         }
       })();
     }
-  }, [jobs, update, addToast, createArtifact, createArtifactVersion, updateArtifact, navigate, retry, offerUndo]);
+  }, [jobs, update, addToast, createArtifact, createArtifactVersion, updateArtifact, navigate, retry, offerUndo, t]);
 
   return <GenerationQueueContext.Provider value={{ jobs, enqueue, cancel, retry, open, panelOpen, setPanelOpen }}>{children}</GenerationQueueContext.Provider>;
 }

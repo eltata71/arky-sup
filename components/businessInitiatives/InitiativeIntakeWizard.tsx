@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Initiative intake — how a business need enters the platform.
  *
@@ -69,6 +70,8 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
   onSubmit,
   onClose,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const [step, setStep] = useState<Step>('need');
   const [title, setTitle] = useState('');
   const [need, setNeed] = useState('');
@@ -159,12 +162,12 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
       draft: draft ?? undefined,
     });
     if (!result.ok) {
-      setError(result.reason ?? 'No se pudo crear la iniciativa.');
+      setError(result.reason ?? t("uiMessage.no-se-pudo-crear-la-iniciati.ccb680"));
       setSaving(false);
       return;
     }
     close();
-  }, [onSubmit, title, need, draft, priority, horizon, startDate, targetEndDate, close]);
+  }, [onSubmit, title, need, draft, priority, horizon, startDate, targetEndDate, close, t]);
 
   if (!open) return null;
 
@@ -192,14 +195,14 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
                 {EA_LEVELS.initiative.plural}
               </p>
               <h2 id="initiative-intake-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                Nueva {EA_LEVELS.initiative.singular.toLowerCase()}
+                {t("ui.nueva.47a1dd")} {EA_LEVELS.initiative.singular.toLowerCase()}
               </h2>
               <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                Se registrará como <span className="font-mono font-semibold">{plannedCode}</span>
+                {t("ui.se-registrara-como.fb2bb7")} <span className="font-mono font-semibold">{plannedCode}</span>
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={close}>Cerrar</Button>
+          <Button variant="ghost" size="sm" onClick={close}>{t("sdd.close")}</Button>
         </div>
 
         <div className="space-y-5 px-6 py-5">
@@ -214,7 +217,7 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="initiative-title" className={fieldLabel}>
-                    Título de la iniciativa
+                    {t("ui.titulo-de-la-iniciativa.37432c")}
                   </label>
                   <CaptureAssist
                     fieldId="initiative.title"
@@ -228,14 +231,14 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
                   id="initiative-title"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Ej. Automatizar las pre-autorizaciones de baja complejidad"
+                  placeholder={t("ui.ej-automatizar-las-pre-autor.818f2d")}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="initiative-need" className={fieldLabel}>
-                    ¿Qué necesita el negocio?
+                    {t("ui.que-necesita-el-negocio.26e8ab")}
                   </label>
                   <CaptureAssist
                     fieldId="initiative.need"
@@ -258,18 +261,17 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
                   value={need}
                   onChange={(event) => setNeed(event.target.value)}
                   rows={6}
-                  placeholder="Describe la necesidad con las palabras del negocio. No hace falta que sea técnico."
+                  placeholder={t("ui.describe-la-necesidad-con-la.c8b7a7")}
                   className={cn(selectClass, 'resize-y leading-relaxed')}
                 />
                 <p className="text-2xs text-gray-500 dark:text-gray-400">
-                  Este texto se conserva tal cual. El asistente propone la estructura alrededor,
-                  nunca reescribe lo que dijo el negocio.
+                  {t("ui.este-texto-se-conserva-tal-c.2115ab")}
                 </p>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label htmlFor="initiative-priority" className={fieldLabel}>Prioridad</label>
+                  <label htmlFor="initiative-priority" className={fieldLabel}>{t("mem.priority")}</label>
                   <select
                     id="initiative-priority"
                     value={priority}
@@ -277,12 +279,12 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
                     className={selectClass}
                   >
                     {(Object.keys(PRIORITY_LABELS) as InitiativePriority[]).map((value) => (
-                      <option key={value} value={value}>{PRIORITY_LABELS[value]}</option>
+                      <option key={value} value={value}>{translateConfig(PRIORITY_LABELS[value])}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="initiative-horizon" className={fieldLabel}>Horizonte</label>
+                  <label htmlFor="initiative-horizon" className={fieldLabel}>{t("ui.horizonte.39643e")}</label>
                   <select
                     id="initiative-horizon"
                     value={horizon}
@@ -290,13 +292,13 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
                     className={selectClass}
                   >
                     {(Object.keys(HORIZON_LABELS) as InitiativeHorizon[]).map((value) => (
-                      <option key={value} value={value}>{HORIZON_LABELS[value]}</option>
+                      <option key={value} value={value}>{translateConfig(HORIZON_LABELS[value])}</option>
                     ))}
                   </select>
-                  <p className="text-2xs text-gray-500 dark:text-gray-400">{HORIZON_HINTS[horizon]}</p>
+                  <p className="text-2xs text-gray-500 dark:text-gray-400">{translateConfig(HORIZON_HINTS[horizon])}</p>
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="initiative-start" className={fieldLabel}>Inicio previsto</label>
+                  <label htmlFor="initiative-start" className={fieldLabel}>{t("ui.inicio-previsto.6a0432")}</label>
                   <Input
                     id="initiative-start"
                     type="date"
@@ -305,7 +307,7 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="initiative-end" className={fieldLabel}>Fecha objetivo</label>
+                  <label htmlFor="initiative-end" className={fieldLabel}>{t("ui.fecha-objetivo.c69014")}</label>
                   <Input
                     id="initiative-end"
                     type="date"
@@ -317,16 +319,16 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
 
               <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
                 <Button variant="secondary" onClick={skipAssistant} disabled={!title.trim() || !need.trim()}>
-                  Continuar sin asistente
+                  {t("ui.continuar-sin-asistente.77eca7")}
                 </Button>
                 <Button variant="primary" onClick={runAssistant} disabled={!canDraft}>
                   <WandSparkles className="mr-1.5 h-4 w-4" aria-hidden />
-                  Estructurar con el asistente
+                  {t("ui.estructurar-con-el-asistente.748fb2")}
                 </Button>
               </div>
               {!canDraft && need.trim().length > 0 && need.trim().length < 20 && (
                 <p className="text-right text-2xs text-gray-500 dark:text-gray-400">
-                  Describe la necesidad con algo más de detalle para usar el asistente.
+                  {t("ui.describe-la-necesidad-con-al.4f84b9")}
                 </p>
               )}
             </div>
@@ -336,7 +338,7 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
             <div className="flex flex-col items-center gap-3 py-12" role="status">
               <Spinner />
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                El asistente está estructurando la necesidad…
+                {t("ui.el-asistente-esta-estructura.18c951")}
               </p>
             </div>
           )}
@@ -347,7 +349,7 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
 
               <Card tone="muted" className="space-y-1.5">
                 <p className="text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-                  Necesidad del negocio · registrada sin cambios
+                  {t("ui.necesidad-del-negocio-regist.973774")}
                 </p>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-200">
                   {need.trim()}
@@ -357,15 +359,15 @@ export const InitiativeIntakeWizard: React.FC<InitiativeIntakeWizardProps> = ({
               <InitiativeDraftReview draft={draft} />
 
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
-                <Button variant="ghost" onClick={() => setStep('need')}>Volver</Button>
+                <Button variant="ghost" onClick={() => setStep('need')}>{t("back")}</Button>
                 <div className="flex gap-2">
                   {draft && (
                     <Button variant="secondary" onClick={() => setDraft(null)}>
-                      Descartar la propuesta
+                      {t("ui.descartar-la-propuesta.9e6815")}
                     </Button>
                   )}
                   <Button variant="primary" onClick={submit} loading={saving}>
-                    Crear iniciativa
+                    {t("ui.crear-iniciativa.b6f5be")}
                   </Button>
                 </div>
               </div>

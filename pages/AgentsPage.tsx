@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * El inventario de la Oficina: los agentes, y la ficha de cada uno.
  *
@@ -59,6 +60,8 @@ const LENSES: { id: LensId; label: string; icon: React.ReactNode; matches: (prof
 ];
 
 const AgentsPage: React.FC = () => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const { profiles, overrides, loading, notice, save, reset } = useAgentProfiles();
   const [query, setQuery] = useState('');
   const [lens, setLens] = useState<LensId>('all');
@@ -93,15 +96,13 @@ const AgentsPage: React.FC = () => {
             <div className="relative min-w-0">
               <p className={TYPE.labelAccent}>{PRODUCT_NAME}</p>
               <h1 className={cn('mt-1', TYPE.pageTitle)}>
-                El talento digital de tu Oficina
+                {t("ui.el-talento-digital-de-tu-ofi.c8d9d7")}
               </h1>
               <p className={cn('mt-1 max-w-3xl', TYPE.body)}>
-                El reparto que atiende cada solicitud. Abre la ficha de cualquiera para ver qué sabe,
-                qué recuerda entre encargos y con qué modelo trabaja; lo que le añadas viaja en todos
-                sus prompts.
+                {t("ui.el-reparto-que-atiende-cada.7007ee")}
               </p>
             </div>
-            <div className="relative grid grid-cols-3 gap-2" aria-label="Resumen del equipo">
+            <div className="relative grid grid-cols-3 gap-2" aria-label={t("ui.resumen-del-equipo.740056")}>
               {[
                 [profiles.length, 'Agentes', 'text-primary-700 dark:text-primary-300'],
                 [available, 'Disponibles', 'text-emerald-700 dark:text-emerald-300'],
@@ -109,7 +110,7 @@ const AgentsPage: React.FC = () => {
               ].map(([value, label, color]) => (
                 <div key={label} className="min-w-20 rounded-xl border border-white/70 bg-white/70 px-3 py-2 text-center shadow-sm backdrop-blur dark:border-white/10 dark:bg-gray-900/60">
                   <strong className={cn('block text-xl leading-none', color as string)}>{value}</strong>
-                  <span className="mt-1 block text-2xs text-gray-500 dark:text-gray-400">{label}</span>
+                  <span className="mt-1 block text-2xs text-gray-500 dark:text-gray-400">{t(label as string)}</span>
                 </div>
               ))}
             </div>
@@ -117,16 +118,16 @@ const AgentsPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-[16rem] flex-1">
-              <label htmlFor="agents-search" className="sr-only">Buscar un agente</label>
+              <label htmlFor="agents-search" className="sr-only">{t("ui.buscar-un-agente.1ce87f")}</label>
               <Input
                 id="agents-search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Busca por nombre, rol o dominio"
+                placeholder={t("ui.busca-por-nombre-rol-o-domin.da142f")}
                 leftIcon={<Search className="h-4 w-4" aria-hidden />}
               />
             </div>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar el reparto">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("ui.filtrar-el-reparto.ee56b4")}>
               {LENSES.map((entry) => (
                 <button
                   key={entry.id}
@@ -142,7 +143,7 @@ const AgentsPage: React.FC = () => {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
                   )}
                 >
-                  {entry.icon}<span>{entry.label}</span>
+                  {entry.icon}<span>{translateConfig(entry.label)}</span>
                   <span className={cn('rounded-full px-1.5 py-0.5 tabular-nums', lens === entry.id ? 'bg-primary-800' : 'bg-gray-200/70 dark:bg-gray-700')}>
                     {profiles.filter(entry.matches).length}
                   </span>
@@ -155,8 +156,7 @@ const AgentsPage: React.FC = () => {
         {notice && <Alert tone="warning">{notice}</Alert>}
 
         <Alert tone="info">
-          Las fichas son tuyas: se guardan en tu cuenta y no cambian el reparto de artefactos ni quién
-          revisa a quién. Un agente que produce y revisa lo mismo dejaría de ser una revisión.
+          {t("ui.las-fichas-son-tuyas-se-guar.e0dc4b")}
         </Alert>
 
         {!loading && <AgentTeamMap profiles={profiles.filter((profile) => profile.enabled)} onSelect={(profile) => setViewing(profile.agentId)} />}
@@ -170,9 +170,9 @@ const AgentsPage: React.FC = () => {
         */}
         <SectionHeader
           as="h2"
-          title="El reparto completo"
+          title={t("ui.el-reparto-completo.d3c4bd")}
           description={visible.length === profiles.length
-            ? `Los ${profiles.length} agentes de la Oficina. Abre una ficha para ver qué sabe y qué recuerda.`
+            ? t('uiDynamic.officeAgentsDescription', { count: String(profiles.length) })
             : `${visible.length} de ${profiles.length} agentes en este filtro.`}
           className="pt-1"
           compact
@@ -186,7 +186,7 @@ const AgentsPage: React.FC = () => {
             lo que va a aparecer, y hace que el salto al llegar los datos se lea
             como un cambio de pantalla en vez de como el final de una carga.
           */
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Cargando las fichas de los agentes">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" role="status" aria-label={t("ui.cargando-las-fichas-de-los-a.0bd523")}>
             {Array.from({ length: 6 }, (_, index) => (
               <Card key={index} className="flex h-56 flex-col gap-3">
                 <div className="flex items-start gap-3">
@@ -221,9 +221,9 @@ const AgentsPage: React.FC = () => {
         {!loading && visible.length === 0 && (
           <EmptyState
             icon={<Search className="h-6 w-6" />}
-            title="No encontramos agentes"
-            description={query.trim() ? `Ningún perfil coincide con «${query.trim()}». Prueba con otro nombre, rol o dominio.` : 'Ningún agente entra en este filtro.'}
-            actions={query.trim() ? <Button variant="secondary" size="sm" onClick={() => setQuery('')}>Limpiar búsqueda</Button> : undefined}
+            title={t("ui.no-encontramos-agentes.6bcba0")}
+            description={query.trim() ? t('uiDynamic.noAgentMatches', { query: query.trim() }) : t('uiDynamic.noAgentInFilter')}
+            actions={query.trim() ? <Button variant="secondary" size="sm" onClick={() => setQuery('')}>{t("ui.limpiar-busqueda.493ecd")}</Button> : undefined}
           />
         )}
       </div>

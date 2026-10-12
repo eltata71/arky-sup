@@ -13,6 +13,7 @@
  */
 
 import React, { useCallback, useRef, useState } from 'react';
+import type { Translator } from '../../lib/i18n/spanishFallback';
 import type { Project } from '../../services/architectureProjects';
 // The domain door, not the module barrel: this hook is on the boot path, and
 // the domain is pure and small (the rule of the barrel against the bundle).
@@ -69,7 +70,7 @@ export type ProjectCommandOutcome =
   | { readonly ok: true; readonly changed: boolean }
   | { readonly ok: false; readonly rejection: ProjectCommandRejection | { readonly reason: 'not-found'; readonly message: string } };
 
-export const useProjectsState = (reporter: PersistenceReporter): ProjectsState => {
+export const useProjectsState = (reporter: PersistenceReporter, t: Translator): ProjectsState => {
   const [projects, setProjects] = useState<Project[]>([]);
   const { user } = useAuth();
   const { handleWriteResult, setPersistenceStatus, setPersistenceMessage } = reporter;
@@ -102,7 +103,7 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
     // Optimistic UI update with an explicit remote-pending state.
     setProjects(prev => [...prev, newProject]);
     setPersistenceStatus('saving');
-    setPersistenceMessage('Guardando proyecto en base de datos…');
+    setPersistenceMessage(t('uiState.30'));
 
     architectureProjectRepository.create(created.project, user?.uid).then(result => {
       if (!handleWriteResult(result, 'Proyecto guardado en base de datos.')) {
@@ -126,12 +127,12 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
         metadata: { projectId: newProject.id },
       });
       setPersistenceStatus('error');
-      setPersistenceMessage('No se pudo guardar en la base de datos.');
+      setPersistenceMessage(t('uiState.29'));
       setProjects(prev => prev.filter(p => p.id !== newProject.id));
     });
 
     return created;
-  }, [user, handleWriteResult, setPersistenceStatus, setPersistenceMessage]);
+  }, [user, handleWriteResult, setPersistenceStatus, setPersistenceMessage, t]);
 
   const loadProjects = useCallback(
     (userId: string | undefined, includeAll: boolean) => architectureProjectRepository.list(userId, includeAll),
@@ -197,7 +198,7 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
   const runProjectCommand = useCallback((id: string, command: ProjectCommand): ProjectCommandOutcome => {
     const snapshot = projectsRef.current.find(p => p.id === id);
     if (!snapshot) {
-      return { ok: false, rejection: { reason: 'not-found', message: `El proyecto ${id} no está cargado.` } };
+      return { ok: false, rejection: { reason: 'not-found', message: t('uiDynamic.projectNotLoaded', { id }) } };
     }
     const decision = applyProjectCommand(snapshot, command);
     if (!decision.ok) {
@@ -239,7 +240,7 @@ export const useProjectsState = (reporter: PersistenceReporter): ProjectsState =
       rollback();
     });
     return { ok: true, changed: true };
-  }, [user, handleWriteResult, setPersistenceStatus]);
+  }, [user, handleWriteResult, setPersistenceStatus, t]);
 
   /**
    * The graph is derived, so a failed save keeps it in state: it is still the

@@ -25,7 +25,7 @@ export function translate(
   let translation = translations[language]?.[key] || key;
   if (replacements) {
     Object.entries(replacements).forEach(([placeholder, value]) => {
-      translation = translation.replace(`{${placeholder}}`, value);
+      translation = translation.replaceAll(`{${placeholder}}`, () => value);
     });
   }
   return translation;

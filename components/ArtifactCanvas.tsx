@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Artifact } from '../lib/artifacts';
 import { type Project, useAppContext } from '../context/AppContext';
@@ -91,6 +92,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
   onBack,
   onGenerateWorldClass,
 }) => {
+  const t = useUiTranslation();
   const { restoreArtifactVersion, settings, createArtifact, updateArtifact, getArtifact } = useAppContext();
   const { addToast } = useToast();
   const { offerVersionUndo } = useAiUndo();
@@ -351,15 +353,15 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     const { notice, ...saved } = planCanvasDiagramSave(artifact, { before: diagram.canvasFlow, after: reactFlowRef.current.getFlowData() });
     const newVersion = restoreArtifactVersion(project.id, { ...artifact, ...saved });
     setActiveArtifactId(newVersion.id);
-    addToast(notice ?? 'Diagrama guardado como nueva versión.', notice ? 'info' : 'success');
-  }, [artifact, diagram.canvasFlow, project.id, restoreArtifactVersion, setActiveArtifactId, addToast]);
+    addToast(notice ?? t("uiMessage.diagrama-guardado-como-nueva.7f985e"), notice ? 'info' : 'success');
+  }, [artifact, diagram.canvasFlow, project.id, restoreArtifactVersion, setActiveArtifactId, addToast, t]);
 
   // 4.1: abre el nivel siguiente; un enlace roto se dice.
   const handleNodeDoubleClick = useCallback((nodeId: string) => {
     const link = resolveNodeDetailLink(artifact, nodeId, project.artifacts);
     if (link?.status === 'resolved') setActiveArtifactId(link.target.artifactId);
-    else if (link) addToast(`El detalle de «${link.nodeLabel}» ya no existe (ver «Niveles C4»).`, 'warning');
-  }, [artifact, project.artifacts, setActiveArtifactId, addToast]);
+    else if (link) addToast(t("uiMessage.el-detalle-de-p0-ya-no-exist.57524a", { p0: String(link.nodeLabel) }), 'warning');
+  }, [artifact, project.artifacts, setActiveArtifactId, addToast, t]);
 
   /**
    * Run the deterministic quality gate over the current IR and persist the
@@ -378,18 +380,18 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         beforeScore: qualityReport?.score ?? 0,
       });
       if (plan.kind === 'no-change') {
-        addToast('Auto-mejora ejecutada: no se detectaron reparaciones determinísticas adicionales. Usa Generación de clase mundial para una nueva versión con IA.', 'warning');
+        addToast(t("uiMessage.auto-mejora-ejecutada-no-se.40e9f3"), 'warning');
         return;
       }
 
       updateArtifact(project.id, artifact.id, plan.patch);
       setShowQualityPanel(true);
       const tone = plan.reachedTarget ? 'success' : 'warning';
-      addToast(`Auto-mejora aplicada: score ${plan.beforeScore}/100 → ${plan.afterScore}/100 · ${plan.changes} cambio(s).`, tone);
+      addToast(t("uiMessage.auto-mejora-aplicada-score-p.1b6fce", { p0: String(plan.beforeScore), p1: String(plan.afterScore), p2: String(plan.changes) }), tone);
     } finally {
       setIsAutoImprovingDiagram(false);
     }
-  }, [renderable.ir, isAutoImprovingDiagram, qualityReport?.score, artifact, audience, project.id, updateArtifact, addToast]);
+  }, [renderable.ir, isAutoImprovingDiagram, qualityReport?.score, artifact, audience, project.id, updateArtifact, addToast, t]);
 
   const handleGenerateTests = useCallback(async () => {
     if (isGeneratingTests) return;
@@ -399,11 +401,11 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
       if (isMounted.current) setActiveArtifactId(newArtifact.id);
     } catch (error) {
       console.error('Error generating test cases:', error);
-      addToast('No se pudieron generar los casos de prueba. Reintenta o revisa la traza de generación.', 'error');
+      addToast(t("uiMessage.no-se-pudieron-generar-los-c.349798"), 'error');
     } finally {
       if (isMounted.current) setIsGeneratingTests(false);
     }
-  }, [isGeneratingTests, artifact, project, modelCalls, createArtifact, setActiveArtifactId, addToast]);
+  }, [isGeneratingTests, artifact, project, modelCalls, createArtifact, setActiveArtifactId, addToast, t]);
 
   const handleConvertToDoc = useCallback(async () => {
     if (isConvertingToDoc) return;
@@ -413,11 +415,11 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
       if (isMounted.current) setActiveArtifactId(newArtifact.id);
     } catch (error) {
       console.error('Error converting to document:', error);
-      addToast('No se pudo convertir el diagrama a documento. Revisa la traza de generación o reintenta.', 'error');
+      addToast(t("uiMessage.no-se-pudo-convertir-el-diag.366a4c"), 'error');
     } finally {
       if (isMounted.current) setIsConvertingToDoc(false);
     }
-  }, [isConvertingToDoc, artifact, project, modelCalls, createArtifact, setActiveArtifactId, addToast]);
+  }, [isConvertingToDoc, artifact, project, modelCalls, createArtifact, setActiveArtifactId, addToast, t]);
 
   /** Opens the Sugerencias panel and triggers the analysis on first open. */
   const handleOpenSuggestions = useCallback(() => {
@@ -437,7 +439,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
       const newContent = await modelCalls.improveWithSuggestions(artifact, list);
       if (!isMounted.current) return;
       if (newContent === null) {
-        addToast('La IA no propuso cambios aplicables. Revisa las sugerencias manualmente.', 'warning');
+        addToast(t("uiMessage.la-ia-no-propuso-cambios-apl.4566ae"), 'warning');
         return;
       }
       const newVersion = restoreArtifactVersion(project.id, { ...artifact, ...withDiagramContent(artifact, newContent) });
@@ -446,11 +448,11 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
       offerVersionUndo(artifact, newVersion, 'mejoras con IA', 'Mejoras aplicadas con IA.', setActiveArtifactId);
     } catch (error) {
       console.error('Error applying AI improvements:', error);
-      addToast('No se pudieron aplicar las mejoras con IA. Reintenta más tarde.', 'error');
+      addToast(t("uiMessage.no-se-pudieron-aplicar-las-m.c5dc44"), 'error');
     } finally {
       if (isMounted.current) setIsApplyingSuggestions(false);
     }
-  }, [suggestions.report, isApplyingSuggestions, artifact, project, modelCalls, restoreArtifactVersion, setActiveArtifactId, addToast, offerVersionUndo]);
+  }, [suggestions.report, isApplyingSuggestions, artifact, project, modelCalls, restoreArtifactVersion, setActiveArtifactId, addToast, offerVersionUndo, t]);
 
   // Gap 13 / Gap 3: the Sugerencias panel's action dispatcher lives in
   // `useSuggestionActionRunner`, which mutates the IR deterministically and
@@ -493,7 +495,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
       <Drawer
         isOpen={showInspector}
         onClose={() => setShowInspector(false)}
-        title="Inspector del artefacto"
+        title={t("ui.inspector-del-artefacto.c9f4ec")}
         description={artifact.name}
         side="right"
         size="md"
@@ -552,7 +554,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
               severity: 'warning',
               source: 'user-action',
               status: 'observed',
-              title: 'Visual Gate hard-block: presentación',
+              title: t("Visual Gate hard-block: presentación"),
               message: guard.message,
               recoverable: true,
               userVisible: true,
@@ -618,12 +620,12 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
           // fit; everything else falls back to an informational toast.
           if (actionCode === 'APPLY_FOCUS_PRIMARY_FIT' || actionCode === 'AUTO_PAN_FROM_OBSTACLE') {
             reactFlowRef.current?.toggleFocusPrimary();
-            addToast('Modo foco principal aplicado', 'success');
+            addToast(t("uiMessage.modo-foco-principal-aplicado.b4ac38"), 'success');
             return;
           }
           if (actionCode === 'EXPAND_LOGICAL_CANVAS_BOUNDS') {
             reactFlowRef.current?.fitToScreen();
-            addToast('Encuadre re-ejecutado sobre el lienzo expandido', 'success');
+            addToast(t("uiMessage.encuadre-re-ejecutado-sobre.f68023"), 'success');
             return;
           }
           // Parse retry codes: RETRY_LAYOUT_SPACIOUS, RETRY_LAYOUT_COMPACT,
@@ -642,13 +644,13 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
                 applied.density ? `densidad ${applied.density}` : null,
                 applied.direction ? `dirección ${applied.direction}` : null,
               ].filter(Boolean).join(', ');
-              addToast(`Layout re-aplicado (${parts || actionCode})`, 'success');
+              addToast(t("uiMessage.layout-re-aplicado-p0.971f05", { p0: String(parts || actionCode) }), 'success');
             } else {
-              addToast(`No se pudo aplicar ${actionCode} (sin IR)`, 'warning');
+              addToast(t("uiMessage.no-se-pudo-aplicar-p0-sin-ir.30299b", { p0: String(actionCode) }), 'warning');
             }
             return;
           }
-          addToast(`Acción del gate registrada: ${actionCode}. Aplica manualmente desde la toolbar.`, 'info');
+          addToast(t("uiMessage.accion-del-gate-registrada-p.999e4f", { p0: String(actionCode) }), 'info');
         }}
       />
 
@@ -674,8 +676,8 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
 
       {/* MAIN CONTENT AREA */}
       <div className={`flex-1 w-full h-full overflow-hidden relative flex ${viewMode === 'split' && !isFullscreen ? 'flex-col lg:flex-row' : 'flex-col'} min-h-0 pt-16 pb-20`}>
-        {isGeneratingTests && <LoadingOverlay message="Generando casos de prueba automatizados..." />}
-        {isConvertingToDoc && <LoadingOverlay message="Convirtiendo diagrama a documento..." />}
+        {isGeneratingTests && <LoadingOverlay message={t("Generando casos de prueba automatizados...")} />}
+        {isConvertingToDoc && <LoadingOverlay message={t("Convirtiendo diagrama a documento...")} />}
 
         {editing.isEditMode ? (
           <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 min-h-0 h-full">
@@ -686,7 +688,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
               onChange={(e) => editing.setEditedContent(e.target.value)}
             />
             <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end bg-gray-50 dark:bg-gray-950 flex-shrink-0">
-              <button onClick={handleSave} className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 min-w-[120px] min-h-[44px]">Guardar Cambios</button>
+              <button onClick={handleSave} className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 min-w-[120px] min-h-[44px]">{t("saveChanges")}</button>
             </div>
           </div>
         ) : (
@@ -786,7 +788,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
             )}
             {viewMode === 'notation' && <MermaidNotationView source={mermaidCode} artifactName={artifact.name} onViewText={() => setViewMode('document')} />}
             {viewMode === 'publication' && !isFullscreen && (
-              <PresentationErrorBoundary panelName="Presentación">
+              <PresentationErrorBoundary panelName={t("Presentación")}>
               <ArtifactPresentationView
                 model={presentationModel}
                 errors={presentationCompileResult.errors}
@@ -860,7 +862,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
         )}
       </div>
 
-      <ExportErrorBoundary panelName="Exportación">
+      <ExportErrorBoundary panelName={t("Exportación")}>
       <ArtifactExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
@@ -880,7 +882,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
             severity: 'warning',
             source: 'user-action',
             status: 'observed',
-            title: 'Visual Gate hard-block: exportación',
+            title: t("Visual Gate hard-block: exportación"),
             message: context.message,
             recoverable: true,
             userVisible: true,
@@ -899,10 +901,10 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
 
       <ConfirmDialog
         isOpen={presentationConfirm.open}
-        title="Visual Quality Gate"
+        title={t("ui.visual-quality-gate.43a1cf")}
         message={presentationConfirm.message}
-        confirmLabel="Presentar de todos modos"
-        cancelLabel="Revisar diagrama"
+        confirmLabel={t("Presentar de todos modos")}
+        cancelLabel={t("Revisar diagrama")}
         variant={qualityReport?.visualGate?.state === 'blocked' ? 'danger' : 'warning'}
         onConfirm={() => {
           setPresentationConfirm({ open: false, message: '' });

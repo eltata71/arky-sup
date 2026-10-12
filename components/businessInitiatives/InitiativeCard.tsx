@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * One business initiative, as a row in the portfolio list.
  *
@@ -63,6 +64,8 @@ export const InitiativeCard: React.FC<InitiativeCardProps> = ({
   actions = [],
   className,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -83,7 +86,7 @@ export const InitiativeCard: React.FC<InitiativeCardProps> = ({
   // the health badge sitting right beside it.
   const remaining = isClosedInitiative(initiative.status)
     ? null
-    : describeRemaining(daysRemaining(initiative.targetEndDate));
+    : describeRemaining(daysRemaining(initiative.targetEndDate), t);
   const milestones = summarizeMilestones(initiative.milestones);
   const completeness = assessCompleteness(initiative);
 
@@ -132,15 +135,15 @@ export const InitiativeCard: React.FC<InitiativeCardProps> = ({
             </button>
             <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs text-gray-500 dark:text-gray-400">
               {initiative.code && <span className="font-mono font-semibold">{initiative.code}</span>}
-              <span className={cn('font-medium', visual.ink)}>{INITIATIVE_HEALTH_LABELS[health]}</span>
+              <span className={cn('font-medium', visual.ink)}>{translateConfig(INITIATIVE_HEALTH_LABELS[health])}</span>
             </span>
           </span>
           <span className="flex shrink-0 flex-wrap items-center gap-1.5">
             <Badge tone={PRIORITY_TONES[initiative.priority]} size="xs">
-              {PRIORITY_LABELS[initiative.priority]}
+              {translateConfig(PRIORITY_LABELS[initiative.priority])}
             </Badge>
             <Badge tone={INITIATIVE_STATUS_TONES[initiative.status]} size="xs">
-              {INITIATIVE_STATUS_LABELS[initiative.status]}
+              {translateConfig(INITIATIVE_STATUS_LABELS[initiative.status])}
             </Badge>
           </span>
         </span>
@@ -154,13 +157,13 @@ export const InitiativeCard: React.FC<InitiativeCardProps> = ({
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-gray-500 dark:text-gray-400">
           <span className="inline-flex items-center gap-1">
             <Boxes className="h-3 w-3" aria-hidden />
-            {attentionCount} proyecto(s)
+            {attentionCount} {t("ui.proyecto-s.d8fa40")}
           </span>
           <span className="inline-flex items-center gap-1">
             <Target className="h-3 w-3" aria-hidden />
             {attainment === null
-              ? `${initiative.kpis.length} KPI sin medir`
-              : `KPI ${formatPercent(attainment)}`}
+              ? t("uiTemplate.p0-kpi-sin-medir.42c8d2", { p0: String(initiative.kpis.length) })
+              : t("uiTemplate.kpi-p0.b85d90", { p0: String(formatPercent(attainment)) })}
           </span>
           <span className="inline-flex items-center gap-1">
             <CalendarClock className="h-3 w-3" aria-hidden />
@@ -188,8 +191,8 @@ export const InitiativeCard: React.FC<InitiativeCardProps> = ({
               />
             </span>
             <span className="truncate text-2xs text-gray-400 dark:text-gray-500">
-              Ficha {formatPercent(completeness.ratio)} · falta {completeness.missing[0]}
-              {completeness.missing.length > 1 && ` y ${completeness.missing.length - 1} más`}
+              {t("ui.ficha.58dc18")} {formatPercent(completeness.ratio)} {t("ui.falta.7cef27")} {completeness.missing[0]}
+              {completeness.missing.length > 1 && t("uiDynamicGenerated.y-p0-mas.72d2e8", { p0: String(completeness.missing.length - 1) })}
             </span>
           </span>
         )}
@@ -200,7 +203,7 @@ export const InitiativeCard: React.FC<InitiativeCardProps> = ({
           <div className="relative" ref={menuRef}>
             <button
               type="button"
-              aria-label={`Más opciones de ${initiative.title}`}
+              aria-label={t("uiTemplate.mas-opciones-de-p0.a615f6", { p0: String(initiative.title) })}
               aria-expanded={menuOpen}
               aria-haspopup="menu"
               onClick={() => setMenuOpen((open) => !open)}

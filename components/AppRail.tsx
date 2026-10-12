@@ -165,7 +165,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                     >
                         <AIArchitectAvatar size="sm" />
                         <RailRevealedText show={expanded} reduced={reducedMotion} className="min-w-0 truncate text-sm font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                            ArkyPro
+                            {t("ui.arkypro.b37d06")}
                         </RailRevealedText>
                     </button>
                 ))}
@@ -254,7 +254,7 @@ export const AppRail: React.FC<AppRailProps> = ({ onOpenShortcuts, onOpenGuide }
                     })}
                 </nav>
                 <button type="button" onClick={() => setPanelOpen(true)} aria-label={t('rail.openGenerations')} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-gray-800">
-                    <span aria-hidden>✦</span>{expanded && <span>Generaciones</span>}{jobs.some(job => job.status === 'running' || job.status === 'queued') && <span className="rounded-full bg-primary-600 px-1.5 text-xs text-white">{jobs.filter(job => job.status === 'running' || job.status === 'queued').length}</span>}
+                    <span aria-hidden>✦</span>{expanded && <span>{t("ui.generaciones.e92e29")}</span>}{jobs.some(job => job.status === 'running' || job.status === 'queued') && <span className="rounded-full bg-primary-600 px-1.5 text-xs text-white">{jobs.filter(job => job.status === 'running' || job.status === 'queued').length}</span>}
                 </button>
             </div>
 

@@ -1,3 +1,5 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
+import type { Translator } from '../../lib/i18n/spanishFallback';
 /**
  * One architecture attention, as a row in the portfolio list.
  *
@@ -43,12 +45,12 @@ export interface AttentionCardProps {
  * is edited, so an attention with no deliverables would report "última
  * actividad" for work the Office never did. Say what is true instead.
  */
-const formatActivity = (iso: string | undefined, engagements: number): string => {
-  if (engagements === 0) return 'Sin entregables todavía';
-  if (!iso) return 'Sin actividad de oficina';
+const formatActivity = (iso: string | undefined, engagements: number, t: Translator): string => {
+  if (engagements === 0) return t('uiDynamic.noDeliverablesYet');
+  if (!iso) return t('uiDynamic.noOfficeActivity');
   const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return 'Sin actividad de oficina';
-  return `Última actividad ${parsed.toLocaleDateString('es', { day: '2-digit', month: 'short' })}`;
+  if (Number.isNaN(parsed.getTime())) return t('uiDynamic.noOfficeActivity');
+  return t('uiDynamic.lastActivity', { date: parsed.toLocaleDateString(document.documentElement.lang || 'es', { day: '2-digit', month: 'short' }) });
 };
 
 export const AttentionCard: React.FC<AttentionCardProps> = ({
@@ -60,6 +62,7 @@ export const AttentionCard: React.FC<AttentionCardProps> = ({
   onOpenInitiative,
   className,
 }) => {
+  const t = useUiTranslation();
   const visual = OFFICE_HEALTH_VISUALS[node.health];
   const HealthGlyph = HEALTH_ICONS[node.health];
   const progress = node.rollup.tasksTotal === 0 ? null : node.rollup.completionRatio;
@@ -89,7 +92,7 @@ export const AttentionCard: React.FC<AttentionCardProps> = ({
             <span className={cn('mt-0.5 block text-2xs font-medium', visual.ink)}>{visual.label}</span>
           </div>
           <Badge tone={visual.badgeTone} size="xs">
-            {node.rollup.engagements} entregable(s)
+            {node.rollup.engagements} {t("ui.entregable-s.3c9972")}
           </Badge>
         </div>
 
@@ -98,7 +101,7 @@ export const AttentionCard: React.FC<AttentionCardProps> = ({
           <Landmark className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-hidden />
           {initiatives.length === 0 ? (
             <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-0.5 text-2xs font-medium text-[#dc2626] dark:bg-red-950/30 dark:text-[#ef4444]">
-              Sin iniciativa de negocio
+              {t("ui.sin-iniciativa-de-negocio.f30dab")}
             </span>
           ) : (
             initiatives.map((initiative) => (
@@ -129,21 +132,21 @@ export const AttentionCard: React.FC<AttentionCardProps> = ({
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-gray-500 dark:text-gray-400">
           <span className="inline-flex items-center gap-1">
             <Layers className="h-3 w-3" aria-hidden />
-            {progress === null ? 'Sin trabajo planificado' : `Tareas ${formatPercent(progress)}`}
+            {progress === null ? t("ui.sin-trabajo-planificado.fa4237") : t("uiTemplate.tareas-p0.1df3a4", { p0: String(formatPercent(progress)) })}
           </span>
           <span className="inline-flex items-center gap-1">
             <FileStack className="h-3 w-3" aria-hidden />
-            {node.artifactCount} artefacto(s)
+            {node.artifactCount} {t("ui.artefacto-s.d919fa")}
           </span>
           <span className="inline-flex items-center gap-1">
             <CalendarClock className="h-3 w-3" aria-hidden />
-            {formatActivity(node.lastActivityAt, node.rollup.engagements)}
+            {formatActivity(node.lastActivityAt, node.rollup.engagements, t)}
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <Button size="sm" onClick={onOpen} rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
-            Abrir
+            {t("open")}
           </Button>
           <Button
             size="sm"
@@ -151,7 +154,7 @@ export const AttentionCard: React.FC<AttentionCardProps> = ({
             onClick={onNewDeliverable}
             leftIcon={<Plus className="h-3.5 w-3.5" />}
           >
-            Nuevo entregable
+            {t("ui.nuevo-entregable.64c97a")}
           </Button>
           <Button
             size="sm"
@@ -159,7 +162,7 @@ export const AttentionCard: React.FC<AttentionCardProps> = ({
             onClick={onLinkInitiative}
             leftIcon={<Link2 className="h-3.5 w-3.5" />}
           >
-            {initiatives.length === 0 ? 'Vincular iniciativa' : 'Cambiar iniciativa'}
+            {initiatives.length === 0 ? t("uiExpr.vincular-iniciativa.5c6ac5") : t("uiExpr.cambiar-iniciativa.34eb3c")}
           </Button>
         </div>
       </div>

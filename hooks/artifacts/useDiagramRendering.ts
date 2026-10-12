@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Node, Edge } from 'reactflow';
 import type { Settings } from '../../types';
@@ -98,6 +99,7 @@ export interface UseDiagramRenderingResult {
  * (cancel, auto-fix, issue-fix, retry, reset).
  */
 export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagramRenderingResult => {
+  const t = useUiTranslation();
   const {
     artifact,
     project,
@@ -236,7 +238,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     if (artifact.representation === 'document' && !embeddedMermaid) {
       setFlowData(null);
       setIsLoading(false);
-      setError('Este artefacto no contiene diagrama. Usa la vista Documento o Markdown.');
+      setError(t("uiMessage.este-artefacto-no-contiene-d.139daa"));
       if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
       return;
     }
@@ -248,7 +250,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
       }
 
       setIsLoading(true);
-      setLoadingMessage('Generando vista interactiva...');
+      setLoadingMessage(t('uiState.26'));
       setError(null);
 
       if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
@@ -257,7 +259,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
           console.warn('Diagram generation timed out');
           setIsLoading(false);
           if (viewMode === 'diagram' || viewMode === 'split') {
-            setError('El diagrama es complejo y tardó demasiado en generarse. Intenta con la vista Documento o presiona Reintentar.');
+            setError(t("uiMessage.el-diagrama-es-complejo-y-ta.16d181"));
           }
         }
       }, DIAGRAM_GENERATION_TIMEOUT_MS);
@@ -325,7 +327,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
               '[useDiagramRendering] Empty diagram after parse.',
               { artifactId: artifact.id, type: artifact.type, contentLength: artifact.content?.length ?? 0, nodeCount, edgeCount },
             );
-            setError('El diagrama llegó vacío del generador. Pulsa Reintentar para regenerar con la IA, o cambia a la vista Documento para ver el contenido bruto.');
+            setError(t("uiMessage.el-diagrama-llego-vacio-del.afa817"));
           }
         }
       } catch (e: unknown) {
@@ -354,9 +356,9 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
     if (error) return;
     const stage = renderable.diagnostics[0]?.stage ?? 'render';
     setError(
-      `No se pudo renderizar el diagrama (etapa: ${stage}). Nodos base: ${renderable.counters.baseNodes}, nodos proyectados: ${renderable.counters.projectedNodes}, nodos visibles: ${renderable.counters.renderNodes}.`,
+      t("uiMessage.no-se-pudo-renderizar-el-dia.c97024", { p0: String(stage), p1: String(renderable.counters.baseNodes), p2: String(renderable.counters.projectedNodes), p3: String(renderable.counters.renderNodes) }),
     );
-  }, [renderable, isLoading, error]);
+  }, [renderable, isLoading, error, t]);
 
   /**
    * Every visual edit is applied to the stored model, never to what the
@@ -367,13 +369,13 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
   const canvasChange = useCallback((flow: DiagramFlowData) => {
     try {
       const plan = planCanvasEdit(artifact, { before: canvasFlow, after: flow });
-      if (plan.rejected.length > 0) onEditNotice?.(`No se aplicó parte del cambio: ${plan.rejected.join(' · ')}`);
+      if (plan.rejected.length > 0) onEditNotice?.(t('uiDynamic.partialDiagramChange', { reasons: plan.rejected.join(' · ') }));
       if (plan.notice) onEditNotice?.(plan.notice);
       if (plan.patch) updateArtifact(project.id, artifact.id, plan.patch);
     } catch (err) {
       console.warn('[useDiagramRendering] round-trip IR update failed', err);
     }
-  }, [artifact, canvasFlow, onEditNotice, project.id, updateArtifact]);
+  }, [artifact, canvasFlow, onEditNotice, project.id, updateArtifact, t]);
 
   const applyIssueFix = useCallback((issueId: string) => {
     // Gap 8: when the canvas is rendered straight from the canonical IR
@@ -449,7 +451,7 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
   const autoFix = useCallback(async () => {
     if (!error) return;
     setIsLoading(true);
-    setLoadingMessage('Auto-reparando diagrama con IA...');
+    setLoadingMessage(t('uiState.27'));
     setError(null);
     try {
       const fixedContent = await diagramGenerationService.fixDiagramError(artifact, error, project, settings);
@@ -458,10 +460,10 @@ export const useDiagramRendering = (input: UseDiagramRenderingInput): UseDiagram
       onContentFixed(fixedContent);
     } catch (err) {
       console.error('Error auto-fixing diagram:', err);
-      setError('No se pudo auto-reparar el diagrama. Intenta editarlo manualmente.');
+      setError(t("uiMessage.no-se-pudo-auto-reparar-el-d.8549fd"));
       setIsLoading(false);
     }
-  }, [artifact, error, project, settings, updateArtifact, onContentFixed]);
+  }, [artifact, error, project, settings, updateArtifact, onContentFixed, t]);
 
   const resetCanvas = useCallback(() => {
     flowDataCache.current.delete(artifact.id);

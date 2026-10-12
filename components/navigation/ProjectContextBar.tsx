@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Closes the navigation loop between the workspace and the Office.
  *
@@ -12,7 +13,7 @@ import { Badge, cn } from '../ui';
 import { HierarchyBreadcrumb, type HierarchyLevel } from './HierarchyBreadcrumb';
 import { HIERARCHY_ICONS } from '../architectureOffice/officeUiIcons';
 import { ENGAGEMENT_STATUS_LABELS, ENGAGEMENT_STATUS_TONES } from '../architectureOffice/officeUiLabels';
-import { UNASSIGNED_PROGRAM_NAME } from '../../services/architectureOffice/domain/officePortfolio';
+import { UNASSIGNED_PROGRAM_NAME } from '../../services/architectureOffice/portfolio';
 import type { OfficeEngagement } from '../../services/architectureOffice';
 
 export interface ProjectContextBarProps {
@@ -34,6 +35,8 @@ export const ProjectContextBar: React.FC<ProjectContextBarProps> = ({
   onOpenEngagement,
   className,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const levels: HierarchyLevel[] = [
     {
       kind: 'program',
@@ -43,7 +46,7 @@ export const ProjectContextBar: React.FC<ProjectContextBarProps> = ({
       siblings: businessProgramIds.map((id) => ({
         id,
         label: id,
-        hint: 'Iniciativa de negocio',
+        hint: t("Iniciativa de negocio"),
         onSelect: onOpenOffice,
       })),
     },
@@ -63,7 +66,7 @@ export const ProjectContextBar: React.FC<ProjectContextBarProps> = ({
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-widest-2 text-gray-600 dark:text-gray-300">
             <HIERARCHY_ICONS.engagement className="h-3 w-3" aria-hidden />
-            Entregables
+            {t("rail.deliverables.label")}
           </span>
           {engagements.slice(0, 3).map((engagement) => (
             <button
@@ -74,7 +77,7 @@ export const ProjectContextBar: React.FC<ProjectContextBarProps> = ({
             >
               <span className="truncate">{engagement.title}</span>
               <Badge tone={ENGAGEMENT_STATUS_TONES[engagement.status]} size="xs">
-                {ENGAGEMENT_STATUS_LABELS[engagement.status]}
+                {translateConfig(ENGAGEMENT_STATUS_LABELS[engagement.status])}
               </Badge>
             </button>
           ))}
@@ -84,7 +87,7 @@ export const ProjectContextBar: React.FC<ProjectContextBarProps> = ({
               onClick={onOpenOffice}
               className="rounded-lg px-1.5 py-1 text-2xs font-medium text-primary-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-400"
             >
-              y {engagements.length - 3} más
+              y {engagements.length - 3} {t("ui.mas.917ac7")}
             </button>
           )}
         </div>

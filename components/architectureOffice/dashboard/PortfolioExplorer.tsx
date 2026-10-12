@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * The portfolio, as the three-level tree it actually is:
  *
@@ -60,6 +61,8 @@ const EngagementRow: React.FC<{
   running: boolean;
   onOpen: () => void;
 }> = ({ engagement, running, onOpen }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const progress = summarizeEngagementProgress(engagement.tasks);
   const percent = Math.round(progress.ratio * 100);
 
@@ -91,23 +94,23 @@ const EngagementRow: React.FC<{
               />
             </span>
             <span className="text-2xs tabular-nums text-gray-500 dark:text-gray-400">
-              {progress.completed}/{progress.total} tareas · {formatPercent(progress.ratio)}
+              {progress.completed}/{progress.total} {t("ui.tareas.489d6e")} {formatPercent(progress.ratio)}
             </span>
           </span>
         </span>
 
         <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <Badge tone="gray" size="xs" outline>
-            {ENGAGEMENT_KIND_LABELS[engagement.charter.kind]}
+            {translateConfig(ENGAGEMENT_KIND_LABELS[engagement.charter.kind])}
           </Badge>
           {engagement.gateAssessment && (
             <Badge tone={GATE_STATUS_TONES[engagement.gateAssessment.overallStatus]} size="xs">
-              Gates: {GATE_STATUS_LABELS[engagement.gateAssessment.overallStatus]}
+              {t("ui.gates.c632ff")} {translateConfig(GATE_STATUS_LABELS[engagement.gateAssessment.overallStatus])}
             </Badge>
           )}
-          {running && <Badge tone="primary" size="xs" dot>En ejecución</Badge>}
+          {running && <Badge tone="primary" size="xs" dot>{t("ui.en-ejecucion.d668ba")}</Badge>}
           <Badge tone={ENGAGEMENT_STATUS_TONES[engagement.status]} size="xs">
-            {ENGAGEMENT_STATUS_LABELS[engagement.status]}
+            {translateConfig(ENGAGEMENT_STATUS_LABELS[engagement.status])}
           </Badge>
         </span>
       </button>
@@ -121,6 +124,7 @@ const ProjectBlock: React.FC<{
   onOpenEngagement: (id: string) => void;
   onOpenProject: (id: string) => void;
 }> = ({ node, runningEngagementIds, onOpenEngagement, onOpenProject }) => {
+  const t = useUiTranslation();
   const [open, setOpen] = useState(node.health === 'blocked' || node.health === 'awaiting-decision');
 
   return (
@@ -149,15 +153,15 @@ const ProjectBlock: React.FC<{
             <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-2xs text-gray-500 dark:text-gray-400">
               <span className="inline-flex items-center gap-1">
                 <HIERARCHY_ICONS.engagement className="h-3 w-3" aria-hidden />
-                {node.engagements.length} entregable(s)
+                {node.engagements.length} {t("ui.entregable-s.3c9972")}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Layers className="h-3 w-3" aria-hidden />
-                {node.artifactCount} artefacto(s)
+                {node.artifactCount} {t("ui.artefacto-s.d919fa")}
               </span>
               {node.rollup.tasksTotal > 0 && (
                 <span className="tabular-nums">
-                  {formatPercent(node.rollup.completionRatio)} completado
+                  {formatPercent(node.rollup.completionRatio)} {t("ui.completado.0ac958")}
                 </span>
               )}
             </span>
@@ -170,10 +174,10 @@ const ProjectBlock: React.FC<{
           variant="ghost"
           size="xs"
           onClick={() => onOpenProject(node.projectId)}
-          aria-label={`Abrir el espacio de trabajo de ${node.name}`}
+          aria-label={t("uiTemplate.abrir-el-espacio-de-trabajo.a3972b", { p0: String(node.name) })}
         >
           <FolderOpen className="mr-1 h-3.5 w-3.5" aria-hidden />
-          Workspace
+          {t("ui.workspace.4ca0a7")}
         </Button>
       </div>
 
@@ -181,7 +185,7 @@ const ProjectBlock: React.FC<{
         <div className="border-t border-gray-100 px-2 pb-2 pt-1 dark:border-gray-800">
           {node.engagements.length === 0 ? (
             <p className="px-2 py-3 text-xs text-gray-500 dark:text-gray-400">
-              Este proyecto de arquitectura todavía no tiene entregables.
+              {t("ui.este-proyecto-de-arquitectur.30c3a5")}
             </p>
           ) : (
             <ul className="space-y-0.5">
@@ -208,6 +212,7 @@ const ProgramBlock: React.FC<{
   onOpenEngagement: (id: string) => void;
   onOpenProject: (id: string) => void;
 }> = ({ program, defaultOpen, runningEngagementIds, onOpenEngagement, onOpenProject }) => {
+  const t = useUiTranslation();
   const [open, setOpen] = useState(defaultOpen);
   const segments = healthSegments(program.rollup.statusMix);
 
@@ -242,11 +247,11 @@ const ProgramBlock: React.FC<{
               {program.name}
             </span>
             <span className="mt-0.5 block text-2xs uppercase tracking-widest-2 text-gray-500 dark:text-gray-400">
-              {program.isUnassigned ? 'Sin código de negocio' : 'Iniciativa de negocio'}
+              {program.isUnassigned ? t("uiExpr.sin-codigo-de-negocio.7932fb") : t("uiExpr.iniciativa-de-negocio.db4fab")}
               {' · '}
-              {program.projects.length} proyecto(s) de arquitectura
+              {program.projects.length} {t("ui.proyecto-s-de-arquitectura.220e72")}
               {' · '}
-              {program.rollup.engagements} entregable(s)
+              {program.rollup.engagements} {t("ui.entregable-s.3c9972")}
             </span>
           </span>
         </button>
@@ -254,7 +259,7 @@ const ProgramBlock: React.FC<{
         <div className="hidden w-40 shrink-0 sm:block">
           <StackedBar
             segments={segments}
-            title={`Estado de ${program.name}`}
+            title={t("uiTemplate.estado-de-p0.a539b2", { p0: String(program.name) })}
             showLegend={false}
             height={6}
           />
@@ -288,14 +293,15 @@ export const PortfolioExplorer: React.FC<PortfolioExplorerProps> = ({
   runningEngagementIds,
   className,
 }) => {
+  const t = useUiTranslation();
   const handleNew = useCallback(() => onNewEngagement(), [onNewEngagement]);
 
   if (programs.length === 0) {
     return (
       <EmptyState
-        title="La Oficina todavía no tiene portafolio"
-        description="Abre un entregable y la Oficina propondrá un plan de entregables, asignará especialistas y ejecutará el trabajo con revisión cruzada."
-        actions={<Button variant="primary" onClick={handleNew}>Nuevo entregable</Button>}
+        title={t("ui.la-oficina-todavia-no-tiene.f6c1f7")}
+        description={t("Abre un entregable y la Oficina propondrá un plan de entregables, asignará especialistas y ejecutará el trabajo con revisión cruzada.")}
+        actions={<Button variant="primary" onClick={handleNew}>{t("ui.nuevo-entregable.64c97a")}</Button>}
         flavor="ai"
       />
     );
@@ -305,12 +311,11 @@ export const PortfolioExplorer: React.FC<PortfolioExplorerProps> = ({
     <div className={cn('space-y-3', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          Iniciativa de negocio › proyecto de arquitectura › entregable. Despliega cualquier nivel
-          para ver lo que contiene.
+          {t("ui.iniciativa-de-negocio-proyec.8ae911")}
         </p>
         <Button variant="ghost" size="xs" onClick={handleNew}>
           <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
-          Nuevo entregable
+          {t("ui.nuevo-entregable.64c97a")}
         </Button>
       </div>
 

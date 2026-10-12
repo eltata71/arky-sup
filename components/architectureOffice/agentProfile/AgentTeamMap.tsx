@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * Cómo trabaja el equipo: coordinación, especialistas y consolidación, en el
  * orden en que interviene cada uno.
@@ -83,7 +84,7 @@ const TeamStage: React.FC<{
   dimmed: boolean;
   onSelect: (profile: OfficeAgentProfile) => void;
   onHoverAgent?: (agentId: string | null) => void;
-}> = ({ eyebrow, title, purpose, icon, profiles, dimmed, onSelect, onHoverAgent }) => (
+}> = ({ eyebrow, title, purpose, icon, profiles, dimmed, onSelect, onHoverAgent }) => { const t = useUiTranslation(); return (
   <section
     className={cn(
       'min-w-0 flex-1 rounded-2xl border border-white/60 bg-white/80 p-3 shadow-soft backdrop-blur transition-opacity',
@@ -111,7 +112,7 @@ const TeamStage: React.FC<{
           onMouseLeave={() => onHoverAgent?.(null)}
           onFocus={() => onHoverAgent?.(profile.agentId)}
           onBlur={() => onHoverAgent?.(null)}
-          aria-label={`Abrir la ficha de ${profile.alias}, ${profile.role}`}
+          aria-label={t("uiTemplate.abrir-la-ficha-de-p0-p1.c204ab", { p0: String(profile.alias), p1: String(profile.role) })}
           className="group w-16 rounded-2xl p-1 transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         >
           <span className="flex justify-center"><AgentProfileAvatar profile={profile} /></span>
@@ -130,7 +131,7 @@ const TeamStage: React.FC<{
       )}
     </div>
   </section>
-);
+); };
 
 /** Un dato de capacidad, con su cifra y lo que la cifra cuenta. */
 const CapacityFact: React.FC<{ icon: React.ReactNode; value: React.ReactNode; label: string }> = ({ icon, value, label }) => (
@@ -144,6 +145,7 @@ const CapacityFact: React.FC<{ icon: React.ReactNode; value: React.ReactNode; la
 );
 
 export const AgentTeamMap: React.FC<AgentTeamMapProps> = ({ profiles, onSelect }) => {
+  const t = useUiTranslation();
   const reducedMotion = useReducedMotion();
   /** Qué etapa está señalada. `null` es el estado normal: todo encendido. */
   const [focusedStage, setFocusedStage] = useState<StageId | null>(null);
@@ -173,18 +175,17 @@ export const AgentTeamMap: React.FC<AgentTeamMapProps> = ({ profiles, onSelect }
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-primary-700 dark:text-primary-300">
             <Network className="h-4 w-4" aria-hidden />
-            <p className="text-2xs font-bold uppercase tracking-widest-2">Orquestación gobernada</p>
+            <p className="text-2xs font-bold uppercase tracking-widest-2">{t("ui.orquestacion-gobernada.281bef")}</p>
           </div>
           <h2 id="team-map-title" className="mt-1 text-lg font-bold text-gray-950 dark:text-white">
-            El camino de una solicitud
+            {t("ui.el-camino-de-una-solicitud.c00257")}
           </h2>
           <p className="mt-0.5 max-w-2xl text-xs text-gray-600 dark:text-gray-300">
-            Toda solicitud pasa por las tres etapas. Señala a una persona para ver su lugar en el
-            recorrido, o ábrela para conocer su responsabilidad y su experiencia.
+            {t("ui.toda-solicitud-pasa-por-las.4c75f4")}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-2xs font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200">
-          <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Productor y revisor separados
+          <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> {t("ui.productor-y-revisor-separado.16b10a")}
         </span>
       </div>
 
@@ -193,9 +194,9 @@ export const AgentTeamMap: React.FC<AgentTeamMapProps> = ({ profiles, onSelect }
         onMouseLeave={() => setFocusedStage(null)}
       >
         <TeamStage
-          eyebrow="01 · Entiende"
-          title="Coordinación"
-          purpose="Interpreta la petición y reparte el trabajo por dominio."
+          eyebrow={t("01 · Entiende")}
+          title={t("ui.coordinacion.52406a")}
+          purpose={t("Interpreta la petición y reparte el trabajo por dominio.")}
           icon={<Network className="h-4 w-4" />}
           profiles={coordinators}
           dimmed={dim('coordination')}
@@ -204,8 +205,8 @@ export const AgentTeamMap: React.FC<AgentTeamMapProps> = ({ profiles, onSelect }
         />
         <StageConnector dimmed={focusedStage === 'consolidation'} reduced={reducedMotion} tone="bg-primary-400 dark:bg-primary-500" />
         <TeamStage
-          eyebrow="02 · Resuelven"
-          title="Especialistas"
+          eyebrow={t("02 · Resuelven")}
+          title={t("ui.especialistas.fb9e65")}
           purpose={`Trabajan en paralelo. Como mucho ${DEFAULT_MAX_SPECIALISTS} por solicitud.`}
           icon={<Users className="h-4 w-4" />}
           profiles={specialists}
@@ -215,9 +216,9 @@ export const AgentTeamMap: React.FC<AgentTeamMapProps> = ({ profiles, onSelect }
         />
         <StageConnector dimmed={focusedStage === 'coordination'} reduced={reducedMotion} tone="bg-ai-400 dark:bg-ai-500" />
         <TeamStage
-          eyebrow="03 · Verifica"
-          title="Consolidación"
-          purpose="Comprueba la respuesta, la corrige una vez si hace falta, y la firma."
+          eyebrow={t("03 · Verifica")}
+          title={t("ui.consolidacion.f75588")}
+          purpose={t("Comprueba la respuesta, la corrige una vez si hace falta, y la firma.")}
           icon={<CheckCircle2 className="h-4 w-4" />}
           profiles={consolidators}
           dimmed={dim('consolidation')}
@@ -230,9 +231,9 @@ export const AgentTeamMap: React.FC<AgentTeamMapProps> = ({ profiles, onSelect }
           una medición de lo que está pasando ahora: esta pantalla configura el
           equipo, y observar su carga es trabajo del tablero de la Oficina. */}
       <div className="relative mt-3 grid gap-2 sm:grid-cols-3">
-        <CapacityFact icon={<Users className="h-4 w-4" />} value={profiles.length} label="Agentes disponibles" />
-        <CapacityFact icon={<Layers3 className="h-4 w-4" />} value={domains} label="Dominios cubiertos" />
-        <CapacityFact icon={<Cpu className="h-4 w-4" />} value={concurrentCapacity} label="Tareas simultáneas admitidas" />
+        <CapacityFact icon={<Users className="h-4 w-4" />} value={profiles.length} label={t("ui.agentes-disponibles.8a6c90")} />
+        <CapacityFact icon={<Layers3 className="h-4 w-4" />} value={domains} label={t("ui.dominios-cubiertos.6aaece")} />
+        <CapacityFact icon={<Cpu className="h-4 w-4" />} value={concurrentCapacity} label={t("ui.tareas-simultaneas-admitidas.4d5825")} />
       </div>
     </motion.section>
   );

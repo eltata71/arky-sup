@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 /**
  * InitiativeRoom — the record of one business initiative.
  *
@@ -81,6 +82,8 @@ const SECTIONS = [
 const selectClass = 'rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100';
 
 const InitiativeRoom: React.FC = () => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const { initiativeId } = useParams<{ initiativeId: string }>();
   const navigate = useNavigate();
   const { projects, settings } = useAppContext();
@@ -105,8 +108,8 @@ const InitiativeRoom: React.FC = () => {
     setBusy(true);
     const result = await runInitiativeCommand(initiativeId, command);
     setBusy(false);
-    if (!result.ok) addToast(result.reason ?? 'No se pudieron guardar los cambios.', 'error');
-  }, [initiativeId, runInitiativeCommand, addToast]);
+    if (!result.ok) addToast(result.reason ?? t("uiMessage.no-se-pudieron-guardar-los-c.6b517c"), 'error');
+  }, [initiativeId, runInitiativeCommand, addToast, t]);
 
   /**
    * What the office is told about this initiative. Only fields that are
@@ -153,22 +156,22 @@ const InitiativeRoom: React.FC = () => {
     const result = await deleteInitiative(initiativeId);
     setBusy(false);
     if (!result.ok) {
-      addToast(result.reason ?? 'No se pudo eliminar la iniciativa.', 'error');
+      addToast(result.reason ?? t("uiMessage.no-se-pudo-eliminar-la-inici.f88316"), 'error');
       return;
     }
-    addToast('Iniciativa eliminada.', 'info');
+    addToast(t("uiMessage.iniciativa-eliminada.2b088b"), 'info');
     navigate('/initiatives');
-  }, [initiativeId, deleteInitiative, addToast, navigate]);
+  }, [initiativeId, deleteInitiative, addToast, navigate, t]);
 
   if (!initiative) {
     return (
       <div className="min-h-[100dvh] px-4 py-6 md:pl-20 md:pr-8">
         <div className="mx-auto max-w-3xl">
-          <Alert tone="warning" title="Iniciativa no encontrada">
-            La iniciativa que buscas no existe o todavía no se ha cargado.
+          <Alert tone="warning" title={t("ui.iniciativa-no-encontrada.3e6a04")}>
+            {t("ui.la-iniciativa-que-buscas-no.f44f21")}
           </Alert>
           <Button className="mt-4" variant="secondary" onClick={() => navigate('/initiatives')}>
-            Volver a {EA_LEVELS.initiative.plural.toLowerCase()}
+            {t("ui.volver-a.6258fc")} {EA_LEVELS.initiative.plural.toLowerCase()}
           </Button>
         </div>
       </div>
@@ -182,7 +185,7 @@ const InitiativeRoom: React.FC = () => {
   const completeness = assessCompleteness(initiative);
   const remaining = isClosedInitiative(initiative.status)
     ? null
-    : describeRemaining(daysRemaining(initiative.targetEndDate));
+    : describeRemaining(daysRemaining(initiative.targetEndDate), t);
 
   const measurable = initiative.kpis
     .map(kpiProgress)
@@ -214,17 +217,17 @@ const InitiativeRoom: React.FC = () => {
                 </h1>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   <Badge tone={INITIATIVE_STATUS_TONES[initiative.status]} size="xs">
-                    {INITIATIVE_STATUS_LABELS[initiative.status]}
+                    {translateConfig(INITIATIVE_STATUS_LABELS[initiative.status])}
                   </Badge>
                   <Badge tone={PRIORITY_TONES[initiative.priority]} size="xs">
-                    {PRIORITY_LABELS[initiative.priority]}
+                    {translateConfig(PRIORITY_LABELS[initiative.priority])}
                   </Badge>
-                  <Badge tone="gray" size="xs" outline>{HORIZON_LABELS[initiative.horizon]}</Badge>
+                  <Badge tone="gray" size="xs" outline>{translateConfig(HORIZON_LABELS[initiative.horizon])}</Badge>
                   <span className={cn('text-2xs font-medium', visual.ink)}>
-                    {INITIATIVE_HEALTH_LABELS[health]}
+                    {translateConfig(INITIATIVE_HEALTH_LABELS[health])}
                   </span>
                   {initiative.provenance === 'ai-assisted' && (
-                    <Badge tone="ai" size="xs" outline>Estructurada con IA</Badge>
+                    <Badge tone="ai" size="xs" outline>{t("ui.estructurada-con-ia.9401ff")}</Badge>
                   )}
                 </div>
               </div>
@@ -239,55 +242,55 @@ const InitiativeRoom: React.FC = () => {
                 onClick={() => navigate(`/projects?iniciativa=${initiative.id}&crear=guiado`)}
               >
                 <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-                Nuevo proyecto
+                {t("ui.nuevo-proyecto.11536d")}
               </Button>
               <Button variant="ai" size="sm" onClick={() => setAssistantOpen(true)}>
                 <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
-                Equipo de arquitectura
+                {t("projectHub.architectureTeam")}
               </Button>
               <select
-                aria-label="Estado de la iniciativa"
+                aria-label={t("ui.estado-de-la-iniciativa.14fd68")}
                 value={initiative.status}
                 onChange={(event) => run({ kind: 'reclassify', status: event.target.value as InitiativeStatus })}
                 className={selectClass}
                 disabled={busy}
               >
                 {(Object.keys(INITIATIVE_STATUS_LABELS) as InitiativeStatus[]).map((value) => (
-                  <option key={value} value={value}>{INITIATIVE_STATUS_LABELS[value]}</option>
+                  <option key={value} value={value}>{translateConfig(INITIATIVE_STATUS_LABELS[value])}</option>
                 ))}
               </select>
               <select
-                aria-label="Prioridad"
+                aria-label={t("mem.priority")}
                 value={initiative.priority}
                 onChange={(event) => run({ kind: 'reclassify', priority: event.target.value as InitiativePriority })}
                 className={selectClass}
                 disabled={busy}
               >
                 {(Object.keys(PRIORITY_LABELS) as InitiativePriority[]).map((value) => (
-                  <option key={value} value={value}>{PRIORITY_LABELS[value]}</option>
+                  <option key={value} value={value}>{translateConfig(PRIORITY_LABELS[value])}</option>
                 ))}
               </select>
               <select
-                aria-label="Horizonte"
+                aria-label={t("ui.horizonte.39643e")}
                 value={initiative.horizon}
                 onChange={(event) => run({ kind: 'reclassify', horizon: event.target.value as InitiativeHorizon })}
                 className={selectClass}
                 disabled={busy}
               >
                 {(Object.keys(HORIZON_LABELS) as InitiativeHorizon[]).map((value) => (
-                  <option key={value} value={value}>{HORIZON_LABELS[value]}</option>
+                  <option key={value} value={value}>{translateConfig(HORIZON_LABELS[value])}</option>
                 ))}
               </select>
             </div>
           </div>
 
           <p className="text-xs text-gray-600 dark:text-gray-300">
-            {INITIATIVE_STATUS_HINTS[initiative.status]}
+            {translateConfig(INITIATIVE_STATUS_HINTS[initiative.status])}
           </p>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile
-              label="Ficha completa"
+              label={t("ui.ficha-completa.ee7fdf")}
               value={formatPercent(completeness.ratio)}
               icon={Target}
               tone={completeness.ratio >= 1 ? 'success' : 'warning'}
@@ -297,24 +300,24 @@ const InitiativeRoom: React.FC = () => {
                 : `Falta: ${completeness.missing.slice(0, 2).join(', ')}`}
             />
             <StatTile
-              label="Indicadores"
+              label={t("ui.indicadores.6160df")}
               value={attainment === null ? 'Sin medir' : formatPercent(attainment)}
               icon={TrendingUp}
               tone="primary"
               meter={attainment ?? undefined}
-              hint={`${measurable.length}/${initiative.kpis.length} KPI con línea base y meta`}
+              hint={t("uiDynamicGenerated.p0-p1-kpi-con-linea-base-y-m.905b41", { p0: String(measurable.length), p1: String(initiative.kpis.length) })}
             />
             <StatTile
-              label="Hitos"
+              label={t("iniPanel.milestonesTitle")}
               value={milestones.total === 0 ? 'Sin hitos' : `${milestones.met}/${milestones.total}`}
               icon={CalendarClock}
               tone={milestones.missed > 0 ? 'danger' : 'neutral'}
               hint={milestones.next
-                ? `Próximo: ${milestones.next.name} · ${formatDate(milestones.next.dueAt)}`
+                ? t("uiDynamicGenerated.proximo-p0-p1.2da506", { p0: String(milestones.next.name), p1: String(formatDate(milestones.next.dueAt)) })
                 : remaining?.text ?? `Objetivo: ${formatDate(initiative.targetEndDate)}`}
             />
             <StatTile
-              label="Proyectos de arquitectura"
+              label={t("ui.proyectos-de-arquitectura.98ab45")}
               value={attentions.length}
               icon={Boxes}
               tone="neutral"
@@ -326,14 +329,13 @@ const InitiativeRoom: React.FC = () => {
 
           {remaining?.overdue && (
             <Alert tone="warning" role="status">
-              {remaining.text}. La iniciativa se marca en riesgo automáticamente hasta que se
-              actualice la fecha objetivo o se cierre.
+              {remaining.text}{t("ui.la-iniciativa-se-marca-en-ri.1aecbb")}
             </Alert>
           )}
         </Card>
 
         <nav
-          aria-label="Secciones de la iniciativa"
+          aria-label={t("ui.secciones-de-la-iniciativa.ce143a")}
           className="sticky top-0 z-20 -mx-1 flex gap-1 overflow-x-auto rounded-xl bg-white/85 px-1 py-1.5 backdrop-blur-md dark:bg-gray-950/85"
         >
           {SECTIONS.map((section) => (
@@ -342,7 +344,7 @@ const InitiativeRoom: React.FC = () => {
               href={`#${section.id}`}
               className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
             >
-              {section.label}
+              {translateConfig(section.label)}
             </a>
           ))}
         </nav>
@@ -353,7 +355,7 @@ const InitiativeRoom: React.FC = () => {
           loading={capture.formLoading}
           notice={capture.assistant.notice}
           openQuestions={capture.assistant.openQuestions}
-          subject="la ficha de esta iniciativa"
+          subject={t("la ficha de esta iniciativa")}
         />
 
         <div className="grid gap-5 lg:grid-cols-2">
@@ -384,13 +386,13 @@ const InitiativeRoom: React.FC = () => {
 
             <Card className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <CardTitle>Eliminar iniciativa</CardTitle>
+                <CardTitle>{t("ui.eliminar-iniciativa.ef554d")}</CardTitle>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  Las proyectos de arquitectura enlazadas no se eliminan; quedan sin iniciativa.
+                  {t("ui.las-proyectos-de-arquitectur.be287d")}
                 </p>
               </div>
               <Button variant="danger" size="sm" onClick={handleDelete} loading={busy}>
-                Eliminar
+                {t("delete")}
               </Button>
             </Card>
           </div>
@@ -400,7 +402,7 @@ const InitiativeRoom: React.FC = () => {
       {assistantScope && (
         <AssistantLauncher
           onOpen={() => setAssistantOpen(true)}
-          label={`Abrir el equipo de arquitectura para ${initiative.title}`}
+          label={t("uiTemplate.abrir-el-equipo-de-arquitect.acac15", { p0: String(initiative.title) })}
         />
       )}
 

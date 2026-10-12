@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * The whole portfolio on one board.
  *
@@ -35,7 +36,7 @@ import { initiativeHealth, type BusinessInitiative } from '../../services/busine
 import {
   healthBucketOf,
   type ArchitectureProjectNode,
-} from '../../services/architectureOffice/domain/officePortfolio';
+} from '../../services/architectureOffice/portfolio';
 import { summarizeEngagementProgress } from '../../services/architectureOffice/domain/OfficeTypes';
 
 export interface PortfolioCanvasProps {
@@ -61,6 +62,8 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
   onOpenDeliverable,
   className,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   /** The initiative key currently highlighted, or `null` when nothing is hovered. */
   const [focused, setFocused] = useState<string | null>(null);
 
@@ -116,8 +119,8 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
   if (initiatives.length === 0 && attentions.length === 0) {
     return (
       <EmptyState
-        title="El portafolio todavía está vacío"
-        description="Registra una iniciativa de negocio y abre el proyecto de arquitectura que la sirva. El canvas mostrará la cadena completa."
+        title={t("ui.el-portafolio-todavia-esta-v.08aac6")}
+        description={t("Registra una iniciativa de negocio y abre el proyecto de arquitectura que la sirva. El canvas mostrará la cadena completa.")}
         flavor="ai"
         className={className}
       />
@@ -127,8 +130,7 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
   return (
     <div className={cn('space-y-2', className)}>
       <p className="text-xs text-gray-500 dark:text-gray-400">
-        {EA_LEVELS.initiative.short} → {EA_LEVELS.engagementProject.short} → {EA_LEVELS.deliverable.short}.
-        Pasa el cursor por cualquier tarjeta para resaltar su cadena completa.
+        {EA_LEVELS.initiative.short} → {EA_LEVELS.engagementProject.short} → {EA_LEVELS.deliverable.short}{t("ui.pasa-el-cursor-por-cualquier.8d9c14")}
       </p>
 
       <div
@@ -176,10 +178,10 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
                     </span>
                     <span className="mt-1 flex flex-wrap items-center gap-1.5">
                       <span className={cn('text-2xs font-medium', visual.ink)}>
-                        {INITIATIVE_HEALTH_LABELS[health]}
+                        {translateConfig(INITIATIVE_HEALTH_LABELS[health])}
                       </span>
                       <span className="text-2xs text-gray-400 dark:text-gray-500">
-                        · {INITIATIVE_STATUS_LABELS[initiative.status]}
+                        · {translateConfig(INITIATIVE_STATUS_LABELS[initiative.status])}
                       </span>
                       <span className="ml-auto text-2xs tabular-nums text-gray-500 dark:text-gray-400">
                         {(attentionsByInitiative.get(initiative.id) ?? []).length} at.
@@ -190,7 +192,7 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
               })}
               {initiatives.length === 0 && (
                 <p className="rounded-lg bg-white px-2.5 py-2 text-2xs text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-                  Sin iniciativas registradas.
+                  {t("ui.sin-iniciativas-registradas.ebb5d1")}
                 </p>
               )}
             </div>
@@ -234,7 +236,7 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
                         <span className="block truncate text-2xs text-gray-500 dark:text-gray-400">
                           {attention.businessProgramIds.length > 0
                             ? attention.businessProgramIds.map(labelForKey).join(' · ')
-                            : 'Sin iniciativa'}
+                            : t("attKpi.unlinked")}
                         </span>
                       </span>
                     </span>
@@ -243,7 +245,7 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
                         looking exactly like everything done. */}
                     {attention.rollup.tasksTotal === 0 ? (
                       <span className="mt-1.5 block text-2xs text-gray-400 dark:text-gray-500">
-                        Sin trabajo planificado
+                        {t("ui.sin-trabajo-planificado.fa4237")}
                       </span>
                     ) : (
                       <span className="mt-1.5 flex items-center gap-1.5">
@@ -263,8 +265,7 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
               })}
               {unlinked.length > 0 && (
                 <p className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-2xs text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
-                  {unlinked.length} proyecto(s) sin iniciativa de negocio. Enlázalos
-                  para que aparezcan en la cadena.
+                  {unlinked.length} {t("ui.proyecto-s-sin-iniciativa-de.5da7e1")}
                 </p>
               )}
             </div>
@@ -307,7 +308,7 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
                     </span>
                     <span className="mt-1 flex items-center justify-between gap-2">
                       <Badge tone={ENGAGEMENT_STATUS_TONES[engagement.status]} size="xs">
-                        {ENGAGEMENT_STATUS_LABELS[engagement.status]}
+                        {translateConfig(ENGAGEMENT_STATUS_LABELS[engagement.status])}
                       </Badge>
                       <span className="text-2xs tabular-nums text-gray-500 dark:text-gray-400">
                         {progress.completed}/{progress.total}
@@ -318,7 +319,7 @@ export const PortfolioCanvas: React.FC<PortfolioCanvasProps> = ({
               })}
               {deliverables.length === 0 && (
                 <p className="rounded-lg bg-white px-2.5 py-2 text-2xs text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-                  Sin entregables abiertos.
+                  {t("ui.sin-entregables-abiertos.2714bf")}
                 </p>
               )}
             </div>

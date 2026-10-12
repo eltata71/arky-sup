@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * La ficha de un agente, abierta.
  *
@@ -92,6 +93,7 @@ const ProvenanceList: React.FC<{
   inheritedCount: number;
   empty: string;
 }> = ({ values, inheritedCount, empty }) => {
+  const t = useUiTranslation();
   if (values.length === 0) {
     return (
       <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
@@ -114,7 +116,7 @@ const ProvenanceList: React.FC<{
             )}
           >
             <span className="min-w-0 flex-1">{value}</span>
-            {added && <Badge tone="ai" size="xs">De tu organización</Badge>}
+            {added && <Badge tone="ai" size="xs">{t("ui.de-tu-organizacion.695e62")}</Badge>}
           </li>
         );
       })}
@@ -134,6 +136,8 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
   onClose,
   onEdit,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const inherited = inheritedProfileEntries(profile.agentId);
   const standards = getOfficeArchitectureContext().standards
     .filter((standard) => profile.standardIds.includes(standard.id));
@@ -149,10 +153,10 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
       footer={(
         <div className="flex items-center justify-between gap-2">
           <p className="text-2xs text-gray-500 dark:text-gray-400">
-            El reparto de artefactos y el papel en la orquestación no se configuran: son gobierno.
+            {t("ui.el-reparto-de-artefactos-y-e.02f067")}
           </p>
           <Button variant="primary" size="sm" onClick={onEdit}>
-            Configurar ficha
+            {t("ui.configurar-ficha.66b82f")}
           </Button>
         </div>
       )}
@@ -166,9 +170,9 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
               <h2 className="text-lg font-bold leading-tight text-gray-900 dark:text-gray-50">
                 {profile.alias}
               </h2>
-              {profile.customized && <Badge tone="ai" size="xs">Personalizado</Badge>}
+              {profile.customized && <Badge tone="ai" size="xs">{t("ui.personalizado.738665")}</Badge>}
               <Badge tone={profile.enabled ? 'success' : 'gray'} size="xs">
-                {profile.enabled ? 'Disponible' : 'Inactivo'}
+                {profile.enabled ? t("uiExpr.disponible.264396") : t("uiExpr.inactivo.2ed817")}
               </Badge>
             </div>
             <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">{profile.role}</p>
@@ -178,31 +182,31 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
               ))}
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar ficha" className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-white/70 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-gray-800 dark:hover:text-white">
+          <button type="button" onClick={onClose} aria-label={t("ui.cerrar-ficha.623185")} className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-white/70 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-gray-800 dark:hover:text-white">
             <X className="h-5 w-5" aria-hidden />
           </button>
         </header>
 
-        <Section title="Cómo trabaja" icon={<Sparkles className="h-3.5 w-3.5 text-ai-500" />}>
+        <Section title={t("ui.como-trabaja.e759d2")} icon={<Sparkles className="h-3.5 w-3.5 text-ai-500" />}>
           <p className="whitespace-pre-wrap rounded-xl bg-gray-50 px-3 py-2.5 text-sm leading-relaxed text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">
             {profile.instruction}
           </p>
         </Section>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Section title="Papel en el equipo" icon={<Network className="h-3.5 w-3.5 text-primary-500" />} hint={ORCHESTRATION_HINTS[profile.orchestrationRole]}>
+          <Section title={t("ui.papel-en-el-equipo.33b263")} icon={<Network className="h-3.5 w-3.5 text-primary-500" />} hint={translateConfig(ORCHESTRATION_HINTS[profile.orchestrationRole])}>
             <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
-              {ORCHESTRATION_LABELS[profile.orchestrationRole]}
+              {translateConfig(ORCHESTRATION_LABELS[profile.orchestrationRole])}
             </p>
           </Section>
-          <Section title="Modelo" icon={<Cpu className="h-3.5 w-3.5 text-sky-500" />} hint={TIER_HINTS[profile.modelTier]}>
+          <Section title={t("ui.modelo.b3a01b")} icon={<Cpu className="h-3.5 w-3.5 text-sky-500" />} hint={translateConfig(TIER_HINTS[profile.modelTier])}>
             <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
-              {TIER_LABELS[profile.modelTier]} · hasta {profile.maxConcurrentTasks} tarea(s) a la vez
+              {translateConfig(TIER_LABELS[profile.modelTier])} {t("ui.hasta.b6296e")} {profile.maxConcurrentTasks} {t("ui.tarea-s-a-la-vez.92f208")}
             </p>
           </Section>
         </div>
 
-        <Section title="Capacidades" icon={<Settings2 className="h-3.5 w-3.5 text-primary-500" />}>
+        <Section title={t("rail.capabilities.label")} icon={<Settings2 className="h-3.5 w-3.5 text-primary-500" />}>
           <div className="flex flex-wrap gap-1.5">
             {profile.capabilities.map((capability) => (
               <Badge key={capability} tone="info" size="xs" outline>
@@ -213,48 +217,48 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
         </Section>
 
         <Section
-          title="Habilidades"
+          title={t("ui.habilidades.bff903")}
           icon={<BrainCircuit className="h-3.5 w-3.5 text-primary-500" />}
-          hint="Lo que el agente sabe hacer. Lo marcado se ha añadido en esta organización."
+          hint={t("Lo que el agente sabe hacer. Lo marcado se ha añadido en esta organización.")}
         >
           <ProvenanceList
             values={profile.skills}
             inheritedCount={inherited.skills}
-            empty="Sin habilidades declaradas."
+            empty={t("Sin habilidades declaradas.")}
           />
         </Section>
 
         <Section
-          title="Conocimiento de la organización"
+          title={t("ui.conocimiento-de-la-organizac.49dd08")}
           icon={<Sparkles className="h-3.5 w-3.5 text-ai-500" />}
-          hint="Hechos de esta compañía que el agente aplica en cada respuesta."
+          hint={t("Hechos de esta compañía que el agente aplica en cada respuesta.")}
         >
           <ProvenanceList
             values={profile.knowledge}
             inheritedCount={inherited.knowledge}
-            empty="Sin conocimiento propio: parte de los estándares de la Oficina y del contexto de cada solicitud."
+            empty={t("Sin conocimiento propio: parte de los estándares de la Oficina y del contexto de cada solicitud.")}
           />
         </Section>
 
         <Section
-          title="Memoria"
-          hint="Lo que arrastra de un encargo al siguiente: decisiones, convenciones, vetos."
+          title={t("ui.memoria.8b1a8b")}
+          hint={t("Lo que arrastra de un encargo al siguiente: decisiones, convenciones, vetos.")}
         >
           <ProvenanceList
             values={profile.memory}
             inheritedCount={inherited.memory}
-            empty="Sin memoria propia. Cada solicitud parte de su contexto."
+            empty={t("Sin memoria propia. Cada solicitud parte de su contexto.")}
           />
         </Section>
 
         <Section
-          title="Estándares que sostiene"
+          title={t("ui.estandares-que-sostiene.856977")}
           icon={<ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />}
-          hint="Vienen del cuerpo de estándares de la Oficina y no se configuran desde una pantalla."
+          hint={t("Vienen del cuerpo de estándares de la Oficina y no se configuran desde una pantalla.")}
         >
           {standards.length === 0 ? (
             <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-              Ninguno asignado.
+              {t("ui.ninguno-asignado.0cb26a")}
             </p>
           ) : (
             <ul className="space-y-1">
@@ -274,11 +278,11 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Section
-            title="Puede producir"
-            hint="Asignado por la Oficina. Un agente que produjera y revisara lo mismo apagaría la revisión."
+            title={t("ui.puede-producir.d938f6")}
+            hint={t("Asignado por la Oficina. Un agente que produjera y revisara lo mismo apagaría la revisión.")}
           >
             {profile.producesArtifactTypes.length === 0 ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400">Ningún artefacto: no es un rol autor.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("ui.ningun-artefacto-no-es-un-ro.cfb994")}</p>
             ) : (
               <div className="flex flex-wrap gap-1">
                 {profile.producesArtifactTypes.map((type) => (
@@ -287,9 +291,9 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
               </div>
             )}
           </Section>
-          <Section title="Puede revisar">
+          <Section title={t("ui.puede-revisar.95be10")}>
             {profile.reviewsArtifactTypes.length === 0 ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400">Ningún artefacto: no es un rol revisor.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("ui.ningun-artefacto-no-es-un-ro.fd70e7")}</p>
             ) : (
               <div className="flex flex-wrap gap-1">
                 {profile.reviewsArtifactTypes.map((type) => (

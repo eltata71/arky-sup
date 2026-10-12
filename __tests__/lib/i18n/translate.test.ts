@@ -15,6 +15,7 @@ describe('translate', () => {
       projects: 'Projects',
       greeting: 'Hello {name}!',
       multi: '{a} and {b}',
+      repeated: '{name}, meet {name}',
     },
     es: {
       projects: 'Proyectos',
@@ -37,6 +38,14 @@ describe('translate', () => {
 
   it('performs placeholder substitution', () => {
     expect(translate(translations, 'en', 'greeting', { name: 'Alice' })).toBe('Hello Alice!');
+  });
+
+  it('inserts user content literally, including dollar replacement tokens', () => {
+    expect(translate(translations, 'en', 'greeting', { name: '$& $1 $$' })).toBe('Hello $& $1 $$!');
+  });
+
+  it('replaces every occurrence of a placeholder', () => {
+    expect(translate(translations, 'en', 'repeated', { name: 'Alice' })).toBe('Alice, meet Alice');
   });
 
   it('performs multiple placeholder substitutions', () => {

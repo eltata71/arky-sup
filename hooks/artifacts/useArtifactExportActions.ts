@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { useCallback, useMemo, useState, type RefObject } from 'react';
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
@@ -61,6 +62,7 @@ export interface UseArtifactExportActionsResult {
 export const useArtifactExportActions = (
   input: UseArtifactExportActionsInput,
 ): UseArtifactExportActionsResult => {
+  const t = useUiTranslation();
   const { artifact, activeView, settings, preflightReport, reactFlowRef, addToast, presentationModel, exportAsPublication, publicationMode, publicationPackages } = input;
   const [markdownCopied, setMarkdownCopied] = useState(false);
 
@@ -83,14 +85,14 @@ export const useArtifactExportActions = (
       console.warn('[useArtifactExportActions] Export blocked by preflight checks.', preflightReport.checks);
       addToast(
         failed
-          ? `Exportación bloqueada: ${failed.label.toLowerCase()} — ${failed.detail}`
-          : 'Exportación bloqueada: el diagrama no está listo para presentación.',
+          ? t("uiMessage.exportacion-bloqueada-p0-p1.373cb8", { p0: String(failed.label.toLowerCase()), p1: String(failed.detail) })
+          : t("uiMessage.exportacion-bloqueada-el-dia.8e6119"),
         'error',
       );
       return;
     }
     if (!reactFlowRef.current) {
-      addToast('No hay un canvas activo para exportar. Cambia a la vista de diagrama y reintenta.', 'warning');
+      addToast(t("uiMessage.no-hay-un-canvas-activo-para.398e5f"), 'warning');
       return;
     }
     const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
@@ -106,22 +108,22 @@ export const useArtifactExportActions = (
         } : {}),
       });
       if (!dataUrl) {
-        addToast('No se pudo capturar la imagen. Verifica que el diagrama esté visible y reintenta.', 'error');
+        addToast(t("uiMessage.no-se-pudo-capturar-la-image.2bb2e5"), 'error');
         return;
       }
       const a = document.createElement('a');
       a.href = dataUrl;
       a.download = `${artifact.name}.${format}`;
       a.click();
-      addToast(`Imagen ${format.toUpperCase()} descargada: ${artifact.name}.${format}`, 'success');
+      addToast(t("uiMessage.imagen-p0-descargada-p1-p2.64ab4b", { p0: String(format.toUpperCase()), p1: String(artifact.name), p2: String(format) }), 'success');
       // El aviso sólo tiene sentido si se pintó el marco (apagado por defecto en la vista `current`).
       const framed = imageOptions?.frame ?? imageOptions?.view !== 'current';
       if (branding?.issue && framed) addToast(branding.issue, 'warning');
     } catch (err) {
       console.error('[useArtifactExportActions] Image export failed', err);
-      addToast('La exportación falló inesperadamente. Revisa la consola para más detalles.', 'error');
+      addToast(t("uiMessage.la-exportacion-fallo-inesper.2d1478"), 'error');
     }
-  }, [artifact, preflightReport, reactFlowRef, addToast, publicationPackages]);
+  }, [artifact, preflightReport, reactFlowRef, addToast, publicationPackages, t]);
 
   /**
    * El PDF de un diagrama se dibuja en vectores a partir del lienzo (plan de
@@ -176,20 +178,20 @@ export const useArtifactExportActions = (
       return result.file;
     } catch (err) {
       console.error('[useArtifactExportActions] export failed', err);
-      addToast(err instanceof Error ? err.message : 'La exportación falló inesperadamente.', 'error');
+      addToast(err instanceof Error ? err.message : t("uiMessage.la-exportacion-fallo-inesper.f42732"), 'error');
       return null;
     }
-  }, [artifact, activeView, settings, preflightReport, addToast, presentationModel, exportAsPublication, publicationMode, diagramSnapshotFor]);
+  }, [artifact, activeView, settings, preflightReport, addToast, presentationModel, exportAsPublication, publicationMode, diagramSnapshotFor, t]);
 
   const downloadExport = useCallback(async (file: ExportedFile) => {
     try {
       const download = await downloadFile(file);
-      addToast(`Archivo descargado: ${download.filename} (${Math.round(download.size / 1024)} KB)`, 'success');
+      addToast(t("uiMessage.archivo-descargado-p0-p1-kb.ebabf1", { p0: String(download.filename), p1: String(Math.round(download.size / 1024)) }), 'success');
     } catch (err) {
       console.error('[useArtifactExportActions] download failed', err);
-      addToast(err instanceof Error ? err.message : 'La descarga falló inesperadamente.', 'error');
+      addToast(err instanceof Error ? err.message : t("uiMessage.la-descarga-fallo-inesperada.39ac13"), 'error');
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   const exportFormat = useCallback(async (format: ExportFormat, options?: ArtifactExportOptions) => {
     if (format === 'png' || format === 'svg') {
@@ -221,9 +223,9 @@ export const useArtifactExportActions = (
       window.setTimeout(() => setMarkdownCopied(false), 2000);
     } catch (e) {
       console.error('No se pudo copiar al portapapeles', e);
-      addToast('No se pudo copiar al portapapeles. Selecciona el texto manualmente.', 'error');
+      addToast(t("uiMessage.no-se-pudo-copiar-al-portapa.20c470"), 'error');
     }
-  }, [artifact.content, addToast]);
+  }, [artifact.content, addToast, t]);
 
   const modalHandlers = useMemo(
     () => ({ onExportFormat: exportFormat, onPrepareExport: prepareExport, onDownloadExport: downloadExport }),

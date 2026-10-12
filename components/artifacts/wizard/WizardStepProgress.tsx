@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { CheckCircleIcon } from '../../Icons';
 import { cn } from '../../ui/cn';
@@ -38,11 +39,12 @@ export const WizardStepProgress: React.FC<WizardStepProgressProps> = ({
   onNavigate,
   className,
 }) => {
+  const t = useUiTranslation();
   const completedSet = new Set(completedSteps);
   const reachableSet = new Set(navigableSteps ?? [...completedSet, currentStep]);
 
   return (
-    <nav aria-label="Progreso del asistente" className={cn('w-full', className)}>
+    <nav aria-label={t("ui.progreso-del-asistente.369f2a")} className={cn('w-full', className)}>
       <ol className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         {steps.map((step, index) => {
           const isCurrent = step.number === currentStep;

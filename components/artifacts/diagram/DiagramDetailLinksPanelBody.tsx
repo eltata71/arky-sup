@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useId } from 'react';
 import type { Artifact } from '../../../lib/artifacts';
 import { useAppContext } from '../../../context/AppContext';
@@ -40,6 +41,7 @@ const DiagramDetailLinksPanelBody: React.FC<DiagramDetailLinksPanelBodyProps> = 
   onVersionCreated,
   onOpenArtifact,
 }) => {
+  const t = useUiTranslation();
   const { restoreArtifactVersion } = useAppContext();
   const { addToast } = useToast();
   const { hasDiagram, rows, candidates, expectedLabel, setLink } = useDiagramDetailLinks({
@@ -56,7 +58,7 @@ const DiagramDetailLinksPanelBody: React.FC<DiagramDetailLinksPanelBodyProps> = 
       if (!result.unchanged) addToast(result.reason, 'warning');
       return;
     }
-    addToast(`${result.summary} La versión anterior queda en el historial.`, 'success');
+    addToast(t("uiMessage.p0-la-version-anterior-queda.033c91", { p0: String(result.summary) }), 'success');
     onVersionCreated(result.versionId);
   };
 
@@ -65,21 +67,21 @@ const DiagramDetailLinksPanelBody: React.FC<DiagramDetailLinksPanelBodyProps> = 
     : 'Enlaza cada nodo con el diagrama que lo detalla. Doble clic en un nodo enlazado lo abre.';
 
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} title="Niveles C4" description={description} size="md">
+    <Drawer isOpen={isOpen} onClose={onClose} title={t("ui.niveles-c4.799b3c")} description={description} size="md">
       {!hasDiagram ? (
-        <Alert tone="neutral" title="No hay diagrama que enlazar">
-          Este artefacto no tiene un diagrama estructurado. Genera o corrige el diagrama y vuelve a intentarlo.
+        <Alert tone="neutral" title={t("ui.no-hay-diagrama-que-enlazar.acbfd1")}>
+          {t("ui.este-artefacto-no-tiene-un-d.1d776c")}
         </Alert>
       ) : (
         <div className="space-y-4">
           {candidates.length === 0 && (
-            <Alert tone="info" title="Todavía no hay otro diagrama en el proyecto">
-              Crea el diagrama del nivel siguiente{expectedLabel ? ` (${expectedLabel})` : ''} y vuelve aquí para enlazarlo.
+            <Alert tone="info" title={t("ui.todavia-no-hay-otro-diagrama.783eed")}>
+              {t("ui.crea-el-diagrama-del-nivel-s.565713")}{expectedLabel ? ` (${expectedLabel})` : ''} {t("ui.y-vuelve-aqui-para-enlazarlo.da0ed3")}
             </Alert>
           )}
           {broken > 0 && (
-            <Alert tone="warning" title={`${broken} enlace${broken === 1 ? '' : 's'} roto${broken === 1 ? '' : 's'}`}>
-              El diagrama enlazado ya no está en el proyecto. El enlace se conserva hasta que lo cambies o lo quites.
+            <Alert tone="warning" title={t(broken === 1 ? 'diagramLinks.brokenOne' : 'diagramLinks.brokenMany', { count: String(broken) })}>
+              {t("ui.el-diagrama-enlazado-ya-no-e.a543b6")}
             </Alert>
           )}
           <ul className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -105,6 +107,7 @@ const DetailLinkRowItem: React.FC<{
   onChange: (value: string) => void;
   onOpen: (artifactId: string) => void;
 }> = ({ row, candidates, onChange, onOpen }) => {
+  const t = useUiTranslation();
   const selectId = useId();
   const link = row.link;
   return (
@@ -117,11 +120,11 @@ const DetailLinkRowItem: React.FC<{
           onChange={(event) => onChange(event.target.value)}
           className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
         >
-          <option value={NONE}>Sin diagrama de detalle</option>
-          {link?.status === 'broken' && <option value={link.groupId}>Enlace roto (el diagrama ya no existe)</option>}
+          <option value={NONE}>{t("ui.sin-diagrama-de-detalle.a0556a")}</option>
+          {link?.status === 'broken' && <option value={link.groupId}>{t("ui.enlace-roto-el-diagrama-ya-n.a8a2f2")}</option>}
           {candidates.map((candidate) => (
             <option key={candidate.groupId} value={candidate.groupId}>
-              {candidate.name}{candidate.levelLabel ? ` — ${candidate.levelLabel}` : ''}{candidate.recommended ? ' (nivel siguiente)' : ''}
+              {candidate.name}{candidate.levelLabel ? ` — ${candidate.levelLabel}` : ''}{candidate.recommended ? ` ${t("uiExpr.nivel-siguiente.65f82d")}` : ''}
             </option>
           ))}
         </select>
@@ -129,17 +132,17 @@ const DetailLinkRowItem: React.FC<{
           <button
             type="button"
             onClick={() => onOpen(link.target.artifactId)}
-            aria-label={`Abrir «${link.target.name}», el detalle de ${row.label}`}
+            aria-label={t("uiTemplate.abrir-p0-el-detalle-de-p1.aebd37", { p0: String(link.target.name), p1: String(row.label) })}
             className="inline-flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-300 dark:hover:bg-primary-900/30"
           >
-            Abrir <ArrowRightIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            {t("open")} <ArrowRightIcon className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         )}
       </div>
       {link?.status === 'broken' && (
         <p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300">
           <ExclamationTriangleIcon className="h-3.5 w-3.5" aria-hidden="true" />
-          Enlace roto: el diagrama de detalle ya no está en el proyecto.
+          {t("ui.enlace-roto-el-diagrama-de-d.96cc89")}
         </p>
       )}
     </li>

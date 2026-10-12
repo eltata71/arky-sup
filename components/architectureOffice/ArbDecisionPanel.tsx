@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Architecture Review Board panel — the human checkpoint.
  *
@@ -45,6 +46,8 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
   onDecide,
   onReevaluateGates,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const [rationale, setRationale] = useState('');
   const assessment = engagement.gateAssessment;
   const decidable = engagement.status === 'awaiting-arb' || engagement.status === 'blocked';
@@ -53,35 +56,35 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>Comité de Arquitectura</CardTitle>
+        <CardTitle>{t("ui.comite-de-arquitectura.36c4d6")}</CardTitle>
         <div className="flex items-center gap-2">
           {assessment && (
             <Badge tone={GATE_STATUS_TONES[assessment.overallStatus]}>
-              Gates: {GATE_STATUS_LABELS[assessment.overallStatus]}
+              {t("ui.gates.c632ff")} {translateConfig(GATE_STATUS_LABELS[assessment.overallStatus])}
             </Badge>
           )}
           <Button variant="ghost" size="xs" onClick={onReevaluateGates} disabled={busy}>
-            Reevaluar gates
+            {t("ui.reevaluar-gates.59ba41")}
           </Button>
         </div>
       </div>
 
       {!assessment && (
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Todavía no se han evaluado los quality gates de este entregable.
+          {t("ui.todavia-no-se-han-evaluado-l.7569a4")}
         </p>
       )}
 
       {assessment && (
-        <ul className="space-y-2" aria-label="Quality gates">
+        <ul className="space-y-2" aria-label={t("ui.quality-gates.aaca96")}>
           {assessment.gates.map((gate) => (
             <li key={gate.id} className="rounded-lg border border-gray-200 dark:border-gray-800 p-3 space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {OFFICE_GATE_LABELS[gate.id]}
+                  {translateConfig(OFFICE_GATE_LABELS[gate.id])}
                 </span>
                 <Badge tone={GATE_STATUS_TONES[gate.status]} size="xs">
-                  {GATE_STATUS_LABELS[gate.status]}
+                  {translateConfig(GATE_STATUS_LABELS[gate.status])}
                 </Badge>
               </div>
               {gate.blockers.map((blocker) => (
@@ -92,7 +95,7 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
               ))}
               {gate.evidenceArtifactIds.length > 0 && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Evidencia: {gate.evidenceArtifactIds.length} artefacto(s)
+                  {t("ui.evidencia.a81e75")} {gate.evidenceArtifactIds.length} {t("ui.artefacto-s.d919fa")}
                 </p>
               )}
             </li>
@@ -103,13 +106,13 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
       {engagement.arbDecisions.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Decisiones registradas
+            {t("ui.decisiones-registradas.f7a3b1")}
           </h4>
           <ul className="space-y-1.5">
             {engagement.arbDecisions.map((decision) => (
               <li key={decision.id} className="flex flex-wrap items-start gap-2 text-sm">
                 <Badge tone={REVIEW_VERDICT_TONES[decision.verdict]} size="xs">
-                  {REVIEW_VERDICT_LABELS[decision.verdict]}
+                  {translateConfig(REVIEW_VERDICT_LABELS[decision.verdict])}
                 </Badge>
                 <span className="text-gray-700 dark:text-gray-300">{decision.actor.name}</span>
                 {decision.rationale && (
@@ -123,22 +126,22 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
 
       {!decidable && (
         <Alert tone="info">
-          El comité decide cuando el entregable termina su ejecución. Estado actual: {engagement.status}.
+          {t("ui.el-comite-decide-cuando-el-e.e07f07")} {engagement.status}.
         </Alert>
       )}
 
       {decidable && !eligibility.allowed && (
         <Alert tone="warning">
           {eligibility.reason === 'own-engagement'
-            ? 'Este entregable lo creaste tú, así que su decisión la firma otro miembro del comité. Es la separación de funciones: quien produce el trabajo no lo aprueba.'
-            : 'Solo un miembro del comité puede emitir esta decisión. Es la separación de funciones: quien produce el trabajo no lo aprueba.'}
+            ? t("uiExpr.este-entregable-lo-creaste-t.662837")
+            : t("uiExpr.solo-un-miembro-del-comite-p.97e936")}
         </Alert>
       )}
 
       {decidable && eligibility.allowed && (
         <div className="space-y-2">
           <label htmlFor="arb-rationale" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Motivo de la decisión
+            {t("ui.motivo-de-la-decision.f285d0")}
           </label>
           <textarea
             id="arb-rationale"
@@ -146,11 +149,11 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
             onChange={(event) => setRationale(event.target.value)}
             rows={3}
             className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-            placeholder="Obligatorio para pedir cambios o rechazar."
+            placeholder={t("ui.obligatorio-para-pedir-cambi.a5b12a")}
           />
           {gateBlocked && (
             <Alert tone="danger">
-              Hay quality gates bloqueados. No se puede aprobar el entregable hasta resolverlos.
+              {t("ui.hay-quality-gates-bloqueados.862de4")}
             </Alert>
           )}
           <div className="flex flex-wrap gap-2">
@@ -160,7 +163,7 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
               disabled={busy || gateBlocked}
               onClick={() => onDecide('approved', rationale)}
             >
-              Aprobar entrega
+              {t("ui.aprobar-entrega.253023")}
             </Button>
             <Button
               variant="secondary"
@@ -168,7 +171,7 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
               disabled={busy || rationale.trim().length === 0}
               onClick={() => onDecide('changes-requested', rationale)}
             >
-              Pedir cambios
+              {t("ui.pedir-cambios.eaab76")}
             </Button>
             <Button
               variant="danger"
@@ -176,7 +179,7 @@ export const ArbDecisionPanel: React.FC<ArbDecisionPanelProps> = ({
               disabled={busy || rationale.trim().length === 0}
               onClick={() => onDecide('rejected', rationale)}
             >
-              Rechazar
+              {t("ui.rechazar.2b004c")}
             </Button>
           </div>
         </div>

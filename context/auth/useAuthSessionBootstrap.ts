@@ -34,7 +34,7 @@ export function useAuthSessionBootstrap({
     let cancelled = false;
 
     if (!isAuthAvailable()) {
-      setError('La configuración de Supabase está incompleta. La autenticación y la persistencia remota están deshabilitadas.');
+      setError('uiMessage.la-configuracion-de-supabase.3e3569');
       setUser(null);
       setProfile(null);
       setIsLoading(false);

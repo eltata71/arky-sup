@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Certificate } from '../../types/lms';
 import { AwardIcon, PrinterIcon, CheckCircleIcon } from 'lucide-react';
@@ -11,7 +12,8 @@ interface Props {
  * PDF. The verification code makes the certificate auditable.
  */
 export const CertificateCard: React.FC<Props> = ({ certificate }) => {
-    const issued = new Date(certificate.issuedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const t = useUiTranslation();
+    const issued = new Date(certificate.issuedAt).toLocaleDateString(document.documentElement.lang === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const handlePrint = () => {
         const iframe = document.createElement('iframe');
@@ -20,7 +22,7 @@ export const CertificateCard: React.FC<Props> = ({ certificate }) => {
         const doc = iframe.contentWindow?.document;
         if (doc) {
             doc.write(`
-                <html><head><title>Certificado - ${certificate.courseTitle}</title>
+                <html><head><title>${t('certificate.printTitle', { title: certificate.courseTitle })}</title>
                 <style>
                   body{font-family:Georgia,serif;margin:0;padding:60px;color:#1e1b4b;}
                   .frame{border:6px double #4f46e5;border-radius:16px;padding:60px 50px;text-align:center;}
@@ -32,15 +34,15 @@ export const CertificateCard: React.FC<Props> = ({ certificate }) => {
                 </style></head><body>
                 <div class="frame">
                   <div class="eyebrow">Arky Academy</div>
-                  <h1>Certificado de Finalización</h1>
-                  <p>Se otorga el presente certificado a</p>
+                  <h1>${t('certificate.heading')}</h1>
+                  <p>${t('certificate.awardedTo')}</p>
                   <div class="name">${certificate.userName}</div>
-                  <p>por completar exitosamente el curso</p>
+                  <p>${t('certificate.completedCourse')}</p>
                   <div class="course">${certificate.courseTitle}</div>
-                  ${certificate.scorePercent !== undefined ? `<p>Calificación promedio: <strong>${certificate.scorePercent}%</strong></p>` : ''}
+                  ${certificate.scorePercent !== undefined ? `<p>${t('certificate.averageScore')} <strong>${certificate.scorePercent}%</strong></p>` : ''}
                   <div class="meta">
-                    <span>Emitido: ${issued}</span>
-                    <span>Verificación: ${certificate.verificationCode}</span>
+                    <span>${t('certificate.issued')} ${issued}</span>
+                    <span>${t('certificate.verification')} ${certificate.verificationCode}</span>
                   </div>
                 </div>
                 <script>window.onload=function(){setTimeout(function(){window.print();},400);}</script>
@@ -59,22 +61,22 @@ export const CertificateCard: React.FC<Props> = ({ certificate }) => {
             <div className="relative z-10">
                 <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-3">
                     <CheckCircleIcon className="h-5 w-5" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Certificado obtenido</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">{t("ui.certificado-obtenido.4e6586")}</span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{certificate.courseTitle}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Otorgado a <span className="font-semibold text-gray-800 dark:text-gray-200">{certificate.userName}</span>
-                    {certificate.scorePercent !== undefined && <> · Promedio <span className="font-semibold">{certificate.scorePercent}%</span></>}
+                    {t("ui.otorgado-a.88ec9b")} <span className="font-semibold text-gray-800 dark:text-gray-200">{certificate.userName}</span>
+                    {certificate.scorePercent !== undefined && <> {t("ui.promedio.1b386a")} <span className="font-semibold">{certificate.scorePercent}%</span></>}
                 </p>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-gray-500 dark:text-gray-400 mb-5">
-                    <span>Emitido: {issued}</span>
+                    <span>{t("ui.emitido.2ba357")} {issued}</span>
                     <span className="font-mono bg-white dark:bg-gray-900 px-2 py-1 rounded border border-gray-200 dark:border-gray-700">{certificate.verificationCode}</span>
                 </div>
                 <button
                     onClick={handlePrint}
                     className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm"
                 >
-                    <PrinterIcon className="h-4 w-4 mr-2" /> Descargar / Imprimir
+                    <PrinterIcon className="h-4 w-4 mr-2" /> {t("ui.descargar-imprimir.6781fa")}
                 </button>
             </div>
         </div>

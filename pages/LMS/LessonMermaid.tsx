@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useState, useEffect, useMemo } from 'react';
 
 import { extractMermaid } from '../../utils/diagram/extractMermaid';
@@ -11,6 +12,7 @@ import { SafeRichText } from '../../components/ui/SafeRichText';
  * "Visualización" tab and the practical Lab.
  */
 export const LessonMermaid: React.FC<{ content: string }> = ({ content }) => {
+  const t = useUiTranslation();
     const [svg, setSvg] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const id = useMemo(() => `lesson-mermaid-${Math.random().toString(36).slice(2)}`, []);
@@ -31,9 +33,9 @@ export const LessonMermaid: React.FC<{ content: string }> = ({ content }) => {
                 return mermaid.render(id, code);
             })
             .then(result => { if (!cancelled) setSvg(result.svg); })
-            .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : 'No se pudo renderizar el diagrama.'); });
+            .catch((err: unknown) => { if (!cancelled) setError(err instanceof Error ? err.message : t("uiMessage.no-se-pudo-renderizar-el-dia.f92bf7")); });
         return () => { cancelled = true; };
-    }, [code, id]);
+    }, [code, id, t]);
 
     if (!code.trim()) {
         return (
@@ -56,7 +58,7 @@ export const LessonMermaid: React.FC<{ content: string }> = ({ content }) => {
     }
     return (
         <div className="space-y-2">
-            {error && <p className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-2 text-xs text-amber-800 dark:text-amber-200">Render visual no disponible: {error}. Se muestra el código Mermaid como respaldo.</p>}
+            {error && <p className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-2 text-xs text-amber-800 dark:text-amber-200">{t("ui.render-visual-no-disponible.1da23e")} {error}{t("ui.se-muestra-el-codigo-mermaid.e62d8a")}</p>}
             <pre className="max-h-[420px] overflow-auto rounded-xl bg-gray-950 p-4 text-xs leading-6 text-gray-100"><code>{code}</code></pre>
         </div>
     );

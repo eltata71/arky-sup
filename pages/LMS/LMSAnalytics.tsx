@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Course } from '../../types/lms';
 import { BarChart2Icon, BookOpenIcon, LayersIcon, SparklesIcon, UsersIcon } from 'lucide-react';
@@ -13,6 +14,7 @@ interface Props {
  * admins a live picture of the program's breadth.
  */
 export const LMSAnalytics: React.FC<Props> = ({ courses }) => {
+  const t = useUiTranslation();
     const total = courses.length;
     const aiGenerated = courses.filter(c => c.isAIGenerated).length;
     const totalModules = courses.reduce((acc, c) => acc + c.modules.length, 0);
@@ -52,7 +54,7 @@ export const LMSAnalytics: React.FC<Props> = ({ courses }) => {
                             </div>
                         </div>
                     ))}
-                    {rows.length === 0 && <p className="text-sm text-gray-400">Sin datos.</p>}
+                    {rows.length === 0 && <p className="text-sm text-gray-400">{t("ui.sin-datos.c73a94")}</p>}
                 </div>
             </div>
         );
@@ -65,8 +67,8 @@ export const LMSAnalytics: React.FC<Props> = ({ courses }) => {
                     <BarChart2Icon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div>
-                    <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Analítica del Programa</h2>
-                    <p className="text-gray-500 dark:text-gray-400">Vista para instructores y administradores del catálogo de formación.</p>
+                    <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t("ui.analitica-del-programa.e6622f")}</h2>
+                    <p className="text-gray-500 dark:text-gray-400">{t("ui.vista-para-instructores-y-ad.534902")}</p>
                 </div>
             </div>
 

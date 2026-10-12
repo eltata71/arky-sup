@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 /**
  * El formulario donde se configura un agente.
  *
@@ -56,6 +57,7 @@ const EntryList: React.FC<{
   onChange: (values: string[]) => void;
   placeholder: string;
 }> = ({ id, label, hint, inherited = [], values, onChange, placeholder }) => {
+  const t = useUiTranslation();
   const [draft, setDraft] = useState('');
   const add = (): void => {
     const trimmed = draft.trim();
@@ -81,7 +83,7 @@ const EntryList: React.FC<{
               <span className="min-w-0 flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-200">{entry}</span>
               <button
                 type="button"
-                aria-label={`Quitar: ${entry}`}
+                aria-label={t("uiTemplate.quitar-p0.ddd8ce", { p0: String(entry) })}
                 onClick={() => onChange(values.filter((item) => item !== entry))}
                 className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-red-950/40"
               >
@@ -115,6 +117,8 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
   onReset,
   onClose,
 }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const dialogRef = useFocusTrap<HTMLDivElement>(true);
   const [alias, setAlias] = useState(override?.alias ?? '');
   const [role, setRole] = useState(override?.role ?? '');
@@ -150,11 +154,11 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
     });
     setSaving(false);
     if (result.outcome === 'rejected') {
-      setError(result.message ?? 'No se pudo guardar la ficha.');
+      setError(result.message ?? t("uiMessage.no-se-pudo-guardar-la-ficha.08fed8"));
       return;
     }
     onClose();
-  }, [onSave, onClose, profile.agentId, alias, role, avatar, instruction, skills, knowledge, memory, modelTier, maxConcurrentTasks, enabled]);
+  }, [onSave, onClose, profile.agentId, alias, role, avatar, instruction, skills, knowledge, memory, modelTier, maxConcurrentTasks, enabled, t]);
 
   return (
     <div
@@ -172,7 +176,7 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
             <PersonaAvatar personaId={profile.agentId} size="md" decorative />
             <div className="min-w-0">
               <p className="text-2xs font-semibold uppercase tracking-widest-2 text-primary-600 dark:text-primary-400">
-                Ficha del agente
+                {t("ui.ficha-del-agente.e24e18")}
               </p>
               <h2 id="agent-profile-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 {profile.alias}
@@ -180,7 +184,7 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
               <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{profile.role}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>Cerrar</Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>{t("sdd.close")}</Button>
         </div>
 
         <div className="space-y-5 px-6 py-5">
@@ -188,7 +192,7 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label htmlFor="agent-alias" className={labelClass}>Nombre</label>
+              <label htmlFor="agent-alias" className={labelClass}>{t("users.name")}</label>
               <Input
                 id="agent-alias"
                 value={alias}
@@ -196,25 +200,25 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
                 placeholder={profile.alias}
               />
               <p className="text-2xs text-gray-500 dark:text-gray-400">
-                Vacío usa el nombre de fábrica. Las menciones con @ siguen resolviendo por el alias original.
+                {t("ui.vacio-usa-el-nombre-de-fabri.875e5f")}
               </p>
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="agent-avatar" className={labelClass}>Avatar</label>
+              <label htmlFor="agent-avatar" className={labelClass}>{t("ui.avatar.7631b2")}</label>
               <Input
                 id="agent-avatar"
                 value={avatar}
                 onChange={(event) => setAvatar(event.target.value)}
-                placeholder="Uno o dos emoji"
+                placeholder={t("ui.uno-o-dos-emoji.4a74c9")}
               />
               <p className="text-2xs text-gray-500 dark:text-gray-400">
-                Sólo emoji. Vacío deja el glifo de su dominio, que es estable y se reconoce en los tableros.
+                {t("ui.solo-emoji-vacio-deja-el-gli.799423")}
               </p>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="agent-role" className={labelClass}>Rol</label>
+            <label htmlFor="agent-role" className={labelClass}>{t("users.role")}</label>
             <Input
               id="agent-role"
               value={role}
@@ -224,7 +228,7 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="agent-instruction" className={labelClass}>Instrucción</label>
+            <label htmlFor="agent-instruction" className={labelClass}>{t("ui.instruccion.e84bec")}</label>
             <textarea
               id="agent-instruction"
               rows={4}
@@ -234,42 +238,41 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
               className={cn(fieldClass, 'resize-y leading-relaxed')}
             />
             <p className="text-2xs text-gray-500 dark:text-gray-400">
-              Sustituye a la instrucción de fábrica cuando la escribes. Es lo primero que lee el agente
-              en cada tarea, así que dile cómo trabajar, no qué contestar.
+              {t("ui.sustituye-a-la-instruccion-d.2c2fc6")}
             </p>
           </div>
 
           <EntryList
             id="agent-skills"
-            label="Habilidades"
-            hint="Se suman a sus dominios y capacidades de fábrica, que se muestran arriba."
+            label={t("ui.habilidades.bff903")}
+            hint={t("Se suman a sus dominios y capacidades de fábrica, que se muestran arriba.")}
             inherited={profile.skills.slice(0, profile.skills.length - skills.length)}
             values={skills}
             onChange={setSkills}
-            placeholder="Ej. Migración de pólizas desde Guidewire"
+            placeholder={t("ui.ej-migracion-de-polizas-desd.349ab4")}
           />
 
           <EntryList
             id="agent-knowledge"
-            label="Conocimiento de la organización"
-            hint="Hechos de esta compañía que el agente debe aplicar en cada respuesta."
+            label={t("ui.conocimiento-de-la-organizac.49dd08")}
+            hint={t("Hechos de esta compañía que el agente debe aplicar en cada respuesta.")}
             values={knowledge}
             onChange={setKnowledge}
-            placeholder="Ej. El canal de corredores factura sobre AS/400 y no se sustituye"
+            placeholder={t("ui.ej-el-canal-de-corredores-fa.13ee8d")}
           />
 
           <EntryList
             id="agent-memory"
-            label="Memoria"
-            hint="Lo que arrastra entre encargos: decisiones tomadas, convenciones y vetos."
+            label={t("ui.memoria.8b1a8b")}
+            hint={t("Lo que arrastra entre encargos: decisiones tomadas, convenciones y vetos.")}
             values={memory}
             onChange={setMemory}
-            placeholder="Ej. El comité ya rechazó exponer PHI fuera del dominio clínico"
+            placeholder={t("ui.ej-el-comite-ya-rechazo-expo.e481a9")}
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label htmlFor="agent-tier" className={labelClass}>Modelo</label>
+              <label htmlFor="agent-tier" className={labelClass}>{t("ui.modelo.b3a01b")}</label>
               <select
                 id="agent-tier"
                 value={modelTier}
@@ -277,15 +280,15 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
                 className={fieldClass}
               >
                 {TIER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                  <option key={option.value} value={option.value}>{translateConfig(option.label)}</option>
                 ))}
               </select>
               <p className="text-2xs text-gray-500 dark:text-gray-400">
-                {TIER_OPTIONS.find((option) => option.value === modelTier)?.hint}
+                {translateConfig(TIER_OPTIONS.find((option) => option.value === modelTier)?.hint ?? '')}
               </p>
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="agent-concurrency" className={labelClass}>Tareas simultáneas</label>
+              <label htmlFor="agent-concurrency" className={labelClass}>{t("ui.tareas-simultaneas.9431da")}</label>
               <Input
                 id="agent-concurrency"
                 type="number"
@@ -295,7 +298,7 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
                 onChange={(event) => setMaxConcurrentTasks(Number(event.target.value))}
               />
               <p className="text-2xs text-gray-500 dark:text-gray-400">
-                De 1 a 5. El límite protege la cuota del proveedor: subirlo no acelera un encargo.
+                {t("ui.de-1-a-5-el-limite-protege-l.4b4df9")}
               </p>
             </div>
           </div>
@@ -308,29 +311,26 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
               className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
             />
             <span className="text-sm text-gray-700 dark:text-gray-200">
-              Disponible para la Oficina
+              {t("ui.disponible-para-la-oficina.2214bc")}
               <span className="block text-2xs text-gray-500 dark:text-gray-400">
-                Un agente inactivo no entra en los equipos ni recibe tareas. No se borra: los encargos
-                que ya lo nombran seguirían siendo ilegibles sin él.
+                {t("ui.un-agente-inactivo-no-entra.5c6654")}
               </span>
             </span>
           </label>
 
           {/* La mitad que no se configura, dicha explícitamente. */}
           <Card tone="muted" className="space-y-2">
-            <p className={labelClass}>Gobierno · no configurable</p>
+            <p className={labelClass}>{t("ui.gobierno-no-configurable.ea8d66")}</p>
             <div className="flex flex-wrap gap-1.5">
-              <Badge tone="gray" size="xs" outline>Papel: {profile.orchestrationRole}</Badge>
-              <Badge tone="gray" size="xs" outline>Produce {profile.producesArtifactTypes.length} tipo(s)</Badge>
-              <Badge tone="gray" size="xs" outline>Revisa {profile.reviewsArtifactTypes.length} tipo(s)</Badge>
+              <Badge tone="gray" size="xs" outline>{t("ui.papel.303c68")} {profile.orchestrationRole}</Badge>
+              <Badge tone="gray" size="xs" outline>{t("ui.produce.a05840")} {profile.producesArtifactTypes.length} {t("ui.tipo-s.058563")}</Badge>
+              <Badge tone="gray" size="xs" outline>{t("ui.revisa.37e765")} {profile.reviewsArtifactTypes.length} {t("ui.tipo-s.058563")}</Badge>
               {profile.standardIds.map((standard) => (
                 <Badge key={standard} tone="info" size="xs" outline>{standard}</Badge>
               ))}
             </div>
             <p className="text-2xs leading-relaxed text-gray-600 dark:text-gray-400">
-              Quién produce y quién revisa cada artefacto no es una preferencia: es la separación de
-              funciones que hace que una revisión signifique algo. La decide el enrutador de la
-              Oficina a partir de esta ficha de producto.
+              {t("ui.quien-produce-y-quien-revisa.4df37e")}
             </p>
           </Card>
 
@@ -340,11 +340,11 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
               onClick={() => { void onReset().then(onClose); }}
               disabled={!profile.customized || saving}
             >
-              Restaurar valores de fábrica
+              {t("ui.restaurar-valores-de-fabrica.f20434")}
             </Button>
             <div className="flex gap-2">
-              <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
-              <Button variant="primary" onClick={submit} loading={saving}>Guardar ficha</Button>
+              <Button variant="secondary" onClick={onClose} disabled={saving}>{t("ui.cancelar.c111e0")}</Button>
+              <Button variant="primary" onClick={submit} loading={saving}>{t("ui.guardar-ficha.8115fb")}</Button>
             </div>
           </div>
         </div>

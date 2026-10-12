@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { activatable } from '../../lib/a11y';
 import React, { useState } from 'react';
 import { Course, ArchitectRole, DiagnosticQuestion, DiagnosticResult, CompetencyScore } from '../../types/lms';
@@ -30,6 +31,7 @@ type Phase = 'intro' | 'loading' | 'taking' | 'result';
 const levelColor = (score: number) => score >= 85 ? 'bg-green-500' : score >= 65 ? 'bg-blue-500' : score >= 40 ? 'bg-amber-500' : 'bg-red-500';
 
 export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagnostic, onOpenCourse, onNavigate }) => {
+  const t = useUiTranslation();
     const { settings } = useAppContext();
     const { addToast } = useToast();
     const [role, setRole] = useState<ArchitectRole>('Arquitecto de Soluciones');
@@ -50,7 +52,7 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
             setQuestions(qs);
             setPhase('taking');
         } catch (error) {
-            addToast(errorMessageOf(error, 'No se pudo generar el diagnóstico.'), 'error');
+            addToast(errorMessageOf(error, t("uiMessage.no-se-pudo-generar-el-diagno.012083")), 'error');
             setPhase('intro');
         }
     };
@@ -90,11 +92,11 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <p className="text-xs font-bold uppercase tracking-wider text-indigo-500">{r.role}</p>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Mapa de Competencias</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t("ui.mapa-de-competencias.71f5a3")}</h3>
                         </div>
                         <div className="text-right">
                             <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{r.overall}%</span>
-                            <p className="text-xs text-gray-400">dominio general</p>
+                            <p className="text-xs text-gray-400">{t("ui.dominio-general.212283")}</p>
                         </div>
                     </div>
                     <div className="space-y-4">
@@ -115,7 +117,7 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
                 {/* Adaptive learning path */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
                     <div className="flex items-center mb-4 text-indigo-700 dark:text-indigo-300 font-bold">
-                        <CompassIcon className="h-5 w-5 mr-2" /> Tu Ruta de Aprendizaje Recomendada
+                        <CompassIcon className="h-5 w-5 mr-2" /> {t("ui.tu-ruta-de-aprendizaje-recom.d650af")}
                     </div>
                     {recommended.length > 0 ? (
                         <div className="space-y-3">
@@ -136,16 +138,16 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
                         </div>
                     ) : (
                         <div className="text-center py-6">
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Aún no hay cursos para este rol en tu catálogo.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("ui.aun-no-hay-cursos-para-este.2d254d")}</p>
                             <button onClick={() => onNavigate('ai-lab')} className="inline-flex items-center bg-indigo-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors">
-                                <SparklesIcon className="h-4 w-4 mr-2" /> Generar cursos con IA
+                                <SparklesIcon className="h-4 w-4 mr-2" /> {t("ui.generar-cursos-con-ia.b5e6bd")}
                             </button>
                         </div>
                     )}
                 </div>
 
                 <button onClick={() => setPhase('intro')} className="flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
-                    <RotateCcwIcon className="h-4 w-4 mr-2" /> Repetir diagnóstico
+                    <RotateCcwIcon className="h-4 w-4 mr-2" /> {t("ui.repetir-diagnostico.d42c34")}
                 </button>
             </div>
         );
@@ -159,8 +161,8 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
                         <TargetIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Diagnóstico de Competencias</h2>
-                        <p className="text-gray-500 dark:text-gray-400">Descubre tus brechas y recibe una ruta de aprendizaje personalizada.</p>
+                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t("ui.diagnostico-de-competencias.162c77")}</h2>
+                        <p className="text-gray-500 dark:text-gray-400">{t("ui.descubre-tus-brechas-y-recib.c0be4a")}</p>
                     </div>
                 </div>
             </div>
@@ -168,7 +170,7 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
             {phase === 'intro' && (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm space-y-6">
                     <div>
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Selecciona tu rol</div>
+                        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("ui.selecciona-tu-rol.ad7386")}</div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {ROLES.map(r => (
                                 <button
@@ -183,12 +185,12 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
                     </div>
                     {savedResult && (
                         <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 p-4 text-sm text-indigo-800 dark:text-indigo-200">
-                            Ya tienes un diagnóstico previo para este rol ({savedResult.overall}% general).{' '}
-                            <button onClick={() => { setResult(savedResult); setPhase('result'); }} className="font-bold underline">Ver resultado</button>
+                            {t("ui.ya-tienes-un-diagnostico-pre.cd4cdf")}{savedResult.overall}{t("ui.general.fcf995")}{' '}
+                            <button onClick={() => { setResult(savedResult); setPhase('result'); }} className="font-bold underline">{t("ui.ver-resultado.037840")}</button>
                         </div>
                     )}
                     <button onClick={startDiagnostic} className="bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors shadow-md flex items-center">
-                        <SparklesIcon className="h-5 w-5 mr-2" /> Iniciar diagnóstico
+                        <SparklesIcon className="h-5 w-5 mr-2" /> {t("ui.iniciar-diagnostico.71c082")}
                     </button>
                 </div>
             )}
@@ -196,7 +198,7 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
             {phase === 'loading' && (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 border border-gray-200 dark:border-gray-800 shadow-sm text-center flex flex-col items-center">
                     <Loader2Icon className="h-10 w-10 text-indigo-600 animate-spin mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">Generando tu diagnóstico para {role}…</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t("ui.generando-tu-diagnostico-par.f151b4")} {role}…</p>
                 </div>
             )}
 
@@ -227,7 +229,7 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
                         disabled={Object.keys(answers).length < questions.length}
                         className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
                     >
-                        {Object.keys(answers).length < questions.length ? `Responde todas (${Object.keys(answers).length}/${questions.length})` : 'Ver mi diagnóstico'}
+                        {Object.keys(answers).length < questions.length ? t("uiTemplate.responde-todas-p0-p1.7f7c17", { p0: String(Object.keys(answers).length), p1: String(questions.length) }) : t("uiExpr.ver-mi-diagnostico.23ad74")}
                     </button>
                 </div>
             )}

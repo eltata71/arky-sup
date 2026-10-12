@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 /**
  * Engagement intake — how work enters the Architecture Office.
  *
@@ -76,6 +77,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
   onPropose,
   onClose,
 }) => {
+  const t = useUiTranslation();
   const [step, setStep] = useState<Step>('brief');
   const [projectChoice, setProjectChoice] = useState<string>(initialProjectId ?? '');
   const [title, setTitle] = useState('');
@@ -132,15 +134,15 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
     // The hierarchy is checked before the text, and each gap is named on its
     // own: "faltan campos" would leave the user hunting for which one.
     if (initiativeIds.length === 0) {
-      setError('Elige la iniciativa de negocio que este entregable atiende. Es el primer nivel de la jerarquía y es obligatorio.');
+      setError(t("uiMessage.elige-la-iniciativa-de-negoc.1c6bce"));
       return;
     }
     if (projectChoice.length === 0) {
-      setError('Elige el proyecto de arquitectura donde vivirá el entregable. Es el segundo nivel de la jerarquía y es obligatorio.');
+      setError(t("uiMessage.elige-el-proyecto-de-arquite.7bafd8"));
       return;
     }
     if (trimmedTitle.length === 0 || trimmedBrief.length < 20) {
-      setError('Describe el entregable con al menos una frase completa para que la Oficina pueda planificarlo.');
+      setError(t("uiMessage.describe-el-entregable-con-a.675f88"));
       return;
     }
     setError(null);
@@ -148,7 +150,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
     try {
       const destination = projects.find((project) => project.id === projectChoice);
       if (!destination) {
-        setError('El proyecto de destino ya no está disponible. Elige otro.');
+        setError(t("uiMessage.el-proyecto-de-destino-ya-no.3f9885"));
         setStep('brief');
         return;
       }
@@ -161,7 +163,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
         businessProjectIds: codesForInitiativeIds(initiativeIds, initiatives),
       });
       if (!created) {
-        setError('La Oficina no pudo proponer un charter para este entregable.');
+        setError(t("uiMessage.la-oficina-no-pudo-proponer.0a60ed"));
         setStep('brief');
         return;
       }
@@ -171,7 +173,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
       setError(caught instanceof Error ? caught.message : String(caught));
       setStep('brief');
     }
-  }, [title, brief, initiativeIds, initiatives, projectChoice, projects, onPropose]);
+  }, [title, brief, initiativeIds, initiatives, projectChoice, projects, onPropose, t]);
 
   if (!open) return null;
 
@@ -189,16 +191,16 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600 dark:text-primary-400">
-              Oficina de Arquitectura
+              {t("ui.oficina-de-arquitectura.2534eb")}
             </p>
             <h2 id="engagement-intake-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Nuevo entregable
+              {t("ui.nuevo-entregable.64c97a")}
             </h2>
             <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-              {destinationName ? `Proyecto: ${destinationName}` : 'La Oficina recibe el entregable y arma el equipo'}
+              {destinationName ? t("uiTemplate.proyecto-p0.4bfd0a", { p0: String(destinationName) }) : t("uiExpr.la-oficina-recibe-el-entrega.ba2021")}
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={close}>Cerrar</Button>
+          <Button variant="ghost" size="sm" onClick={close}>{t("sdd.close")}</Button>
         </div>
 
         <div className="px-6 py-5 space-y-5">
@@ -222,14 +224,13 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
 
               {initiatives.length === 0 ? (
                 <Alert tone="warning">
-                  <p className="font-medium">Todavía no hay iniciativas de negocio registradas.</p>
+                  <p className="font-medium">{t("ui.todavia-no-hay-iniciativas-d.af4c09")}</p>
                   <p className="mt-1 text-xs leading-relaxed">
-                    Un entregable existe para atender una necesidad del negocio. Registra primero la
-                    iniciativa y vuelve a abrir este entregable.
+                    {t("ui.un-entregable-existe-para-at.997b39")}
                   </p>
                   {onCreateInitiative && (
                     <Button className="mt-2" size="sm" variant="primary" onClick={onCreateInitiative}>
-                      Registrar iniciativa de negocio
+                      {t("ui.registrar-iniciativa-de-nego.b9d36e")}
                     </Button>
                   )}
                 </Alert>
@@ -238,28 +239,27 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
                   initiatives={initiatives}
                   value={initiativeIds}
                   onChange={setInitiativeIds}
-                  label="Iniciativa de negocio que atiende (obligatorio)"
-                  hint="Primer nivel de la jerarquía. Se guarda por llave, nunca por el código escrito a mano."
+                  label={t("ui.iniciativa-de-negocio-que-at.95fcc9")}
+                  hint={t("Primer nivel de la jerarquía. Se guarda por llave, nunca por el código escrito a mano.")}
                 />
               )}
 
               {projects.length === 0 ? (
                 <Alert tone="warning">
-                  <p className="font-medium">Todavía no hay proyectos de arquitectura.</p>
+                  <p className="font-medium">{t("ui.todavia-no-hay-proyectos-de.22f315")}</p>
                   <p className="mt-1 text-xs leading-relaxed">
-                    El entregable vive dentro de un proyecto. Crea primero el proyecto desde su propia
-                    pantalla y vuelve aquí.
+                    {t("ui.el-entregable-vive-dentro-de.ba8831")}
                   </p>
                   {onCreateAttention && (
                     <Button className="mt-2" size="sm" variant="primary" onClick={onCreateAttention}>
-                      Crear proyecto de arquitectura
+                      {t("ui.crear-proyecto-de-arquitectu.12d580")}
                     </Button>
                   )}
                 </Alert>
               ) : (
                 <div className="space-y-1.5">
                   <label htmlFor="engagement-project" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Proyecto de arquitectura de destino (obligatorio)
+                    {t("ui.proyecto-de-arquitectura-de.e6f31d")}
                   </label>
                   <select
                     id="engagement-project"
@@ -274,15 +274,15 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
                     }}
                     className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                   >
-                    <option value="">Selecciona el proyecto…</option>
+                    <option value="">{t("ui.selecciona-el-proyecto.01c25e")}</option>
                     {projects.map((project) => (
                       <option key={project.id} value={project.id}>{project.name}</option>
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {projectChoice.length === 0
-                      ? 'Segundo nivel de la jerarquía. Si el proyecto que necesitas no existe, créalo primero.'
-                      : 'El entregable se sumará a los artefactos que ya tiene ese proyecto.'}
+                      ? t("uiExpr.segundo-nivel-de-la-jerarqui.5996a7")
+                      : t("uiExpr.el-entregable-se-sumara-a-lo.218e6e")}
                   </p>
                   {onCreateAttention && (
                     <button
@@ -290,7 +290,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
                       onClick={onCreateAttention}
                       className="text-xs font-medium text-primary-600 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-400"
                     >
-                      Crear un proyecto nuevo
+                      {t("ui.crear-un-proyecto-nuevo.f2dec7")}
                     </button>
                   )}
                 </div>
@@ -302,13 +302,13 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
                 loading={capture.formLoading}
                 notice={capture.assistant.notice}
                 openQuestions={capture.assistant.openQuestions}
-                subject="la solicitud de entregable"
+                subject={t("la solicitud de entregable")}
               />
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="engagement-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Título del entregable
+                    {t("ui.titulo-del-entregable.45261e")}
                   </label>
                   <CaptureAssist
                     fieldId="deliverable.title"
@@ -322,14 +322,14 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
                   id="engagement-title"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Modernización del motor de siniestros"
+                  placeholder={t("ui.modernizacion-del-motor-de-s.3d1ba9")}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="engagement-brief" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    ¿Qué necesita el negocio?
+                    {t("ui.que-necesita-el-negocio.26e8ab")}
                   </label>
                   <CaptureAssist
                     fieldId="deliverable.brief"
@@ -345,21 +345,21 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
                   onChange={(event) => setBrief(event.target.value)}
                   rows={6}
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                  placeholder="Modernizar el motor de siniestros AS/400 exponiendo APIs a Salesforce Health Cloud, cumpliendo HIPAA y con trazabilidad regulatoria."
+                  placeholder={t("ui.modernizar-el-motor-de-sinie.594cf3")}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Cuanto más concreto sea el entregable, mejor reparte la Oficina el trabajo entre sus especialistas.
+                  {t("ui.cuanto-mas-concreto-sea-el-e.60ec30")}
                 </p>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="ghost" onClick={close}>Cancelar</Button>
+                <Button variant="ghost" onClick={close}>{t("ui.cancelar.c111e0")}</Button>
                 <Button
                   variant="primary"
                   onClick={propose}
                   disabled={initiatives.length === 0 || projects.length === 0}
                 >
-                  Proponer plan de trabajo
+                  {t("ui.proponer-plan-de-trabajo.939792")}
                 </Button>
               </div>
             </div>
@@ -369,7 +369,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
             <div className="flex flex-col items-center gap-3 py-10" role="status">
               <Spinner />
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Lucía está descomponiendo el entregable y asignando especialistas…
+                {t("ui.lucia-esta-descomponiendo-el.b805a9")}
               </p>
             </div>
           )}
@@ -379,11 +379,11 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
               <EngagementCharterReview engagement={engagement} />
 
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                El charter queda pendiente: lo aprueba otra persona con permiso de aprobación, no su autor.
+                {t('uiDynamic.charterPendingApproval')}
               </p>
               <div className="flex justify-end gap-2">
                 <Button variant="primary" onClick={close}>
-                  Enviar a aprobación
+                  {t('uiDynamic.submitForApproval')}
                 </Button>
               </div>
             </div>

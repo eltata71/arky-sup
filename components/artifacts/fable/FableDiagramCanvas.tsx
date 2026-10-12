@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import type { DiagramAudience, DiagramIR, DiagramIREdge, DiagramNarrative } from '../../../lib/diagram';
@@ -105,6 +106,8 @@ const isFlowingEdge = (edge: DiagramIREdge): boolean =>
  * panel and free pan/zoom — all self-contained in this component.
  */
 export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, artifactName, audience }) => {
+  const translateConfig = useUiTranslation();
+  const t = useUiTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [theme, setTheme] = useState<FableThemeName>('aurora');
@@ -315,7 +318,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
   if (!layout || positioned.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-        No fue posible calcular el layout del diagrama.
+        {t("ui.no-fue-posible-calcular-el-l.9248b8")}
       </div>
     );
   }
@@ -332,7 +335,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
       <svg
         className="absolute inset-0 h-full w-full cursor-grab active:cursor-grabbing"
         role="img"
-        aria-label={`Diagrama ${title} en vista Fable`}
+        aria-label={t("uiTemplate.diagrama-p0-en-vista-fable.9b1290", { p0: String(title) })}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -389,7 +392,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
               </linearGradient>
             );
           })}
-          <style>{'@keyframes fableFlow { to { stroke-dashoffset: -26; } } .fable-flow { animation: fableFlow 1.1s linear infinite; }'}</style>
+          <style>{t("uiExpr.keyframes-fableflow-to-strok.cca02a")}</style>
         </defs>
 
         {/* Atmosphere */}
@@ -524,7 +527,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
                       data-testid={`fable-node-${node.id}`}
                       role="button"
                       tabIndex={0}
-                      aria-label={`Componente ${node.label}`}
+                      aria-label={t("uiTemplate.componente-p0.cbb76d", { p0: String(node.label) })}
                       className="flex h-full w-full cursor-pointer flex-col justify-center rounded-2xl px-4 py-3 outline-none transition-transform duration-200 hover:-translate-y-0.5"
                       style={{
                         background: `linear-gradient(135deg, ${style.from}, ${style.to})`,
@@ -612,17 +615,17 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
             className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest"
             style={{ background: 'linear-gradient(90deg, #6366f1, #d946ef)', color: '#fff' }}
           >
-            Fable
+            {t("ui.fable.625441")}
           </span>
           <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: canvas.panelSubtext }}>
-            Diseño · IA de Anthropic
+            {t("ui.diseno-ia-de-anthropic.1783bf")}
           </span>
         </div>
         <h2 className="mt-1.5 text-base font-bold leading-tight" style={{ color: canvas.panelText }}>
           {title}
         </h2>
         <p className="mt-0.5 text-xs" style={{ color: canvas.panelSubtext }}>
-          {ir.nodes.length} componentes · {ir.edges.length} conexiones · {AUDIENCE_LABELS[audience]}
+          {ir.nodes.length} {t("ui.componentes.7756f6")} {ir.edges.length} {t("ui.conexiones.1f274a")} {translateConfig(AUDIENCE_LABELS[audience])}
         </p>
         {narrative?.summary && (
           <p className="mt-2 line-clamp-3 text-xs leading-relaxed" style={{ color: canvas.panelSubtext }}>
@@ -637,9 +640,9 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
         onClick={() => setTheme((prev) => (prev === 'aurora' ? 'gallery' : 'aurora'))}
         className="absolute right-4 top-4 rounded-xl border px-3 py-2 text-xs font-semibold backdrop-blur-xl transition-opacity hover:opacity-80"
         style={{ background: canvas.panelBg, borderColor: canvas.panelBorder, color: canvas.panelText }}
-        aria-label="Cambiar tema visual de la vista Fable"
+        aria-label={t("ui.cambiar-tema-visual-de-la-vi.88ecec")}
       >
-        {theme === 'aurora' ? '☀ Tema galería' : '✦ Tema aurora'}
+        {theme === 'aurora' ? t("uiExpr.tema-galeria.b69e3b") : t("uiExpr.tema-aurora.74012d")}
       </button>
 
       {/* Legend */}
@@ -666,7 +669,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
       >
         <button
           type="button"
-          aria-label="Alejar"
+          aria-label={t("ui.alejar.b2ff57")}
           onClick={() => zoomBy(1 / 1.25)}
           className="h-8 w-8 rounded-lg text-base font-bold transition-opacity hover:opacity-70"
           style={{ color: canvas.panelText }}
@@ -678,7 +681,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
         </span>
         <button
           type="button"
-          aria-label="Acercar"
+          aria-label={t("ui.acercar.f60922")}
           onClick={() => zoomBy(1.25)}
           className="h-8 w-8 rounded-lg text-base font-bold transition-opacity hover:opacity-70"
           style={{ color: canvas.panelText }}
@@ -687,12 +690,12 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
         </button>
         <button
           type="button"
-          aria-label="Ajustar a pantalla"
+          aria-label={t("ui.ajustar-a-pantalla.d6abb2")}
           onClick={fitView}
           className="h-8 rounded-lg px-2.5 text-[11px] font-semibold transition-opacity hover:opacity-70"
           style={{ color: canvas.panelText }}
         >
-          Ajustar
+          {t("ui.ajustar.8a91ae")}
         </button>
       </div>
 
@@ -704,7 +707,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
           transition={{ type: 'spring', stiffness: 280, damping: 28 }}
           className="absolute bottom-20 right-4 top-16 w-72 overflow-y-auto rounded-2xl border p-4 backdrop-blur-xl"
           style={{ background: canvas.panelBg, borderColor: canvas.panelBorder }}
-          aria-label={`Detalle de ${selectedNode.label}`}
+          aria-label={t("uiTemplate.detalle-de-p0.fd5649", { p0: String(selectedNode.label) })}
         >
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -720,7 +723,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
             </div>
             <button
               type="button"
-              aria-label="Cerrar detalle"
+              aria-label={t("ui.cerrar-detalle.5c7643")}
               onClick={() => setSelectedId(null)}
               className="rounded-lg px-1.5 text-sm transition-opacity hover:opacity-60"
               style={{ color: canvas.panelSubtext }}
@@ -750,7 +753,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
           {(calloutsByNode.get(selectedNode.id) ?? []).length > 0 && (
             <div className="mt-3">
               <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: canvas.panelSubtext }}>
-                Notas del diagrama
+                {t("ui.notas-del-diagrama.ab06b4")}
               </p>
               <ul className="mt-1 space-y-1">
                 {(calloutsByNode.get(selectedNode.id) ?? []).map((callout, i) => (
@@ -764,7 +767,7 @@ export const FableDiagramCanvas: React.FC<FableDiagramCanvasProps> = ({ ir, arti
           {selectedConnections.length > 0 && (
             <div className="mt-3">
               <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: canvas.panelSubtext }}>
-                Conexiones ({selectedConnections.length})
+                {t("ui.conexiones.bdefc0")}{selectedConnections.length})
               </p>
               <ul className="mt-1 space-y-1.5">
                 {selectedConnections.map((conn) => (

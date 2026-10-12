@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +20,7 @@ import { GraduationCap, BookOpenIcon, SparklesIcon, LightbulbIcon, BrainCircuitI
 type ViewState = 'dashboard' | 'catalog' | 'ai-lab' | 'consulting' | 'smart-notes' | 'diagnostic' | 'analytics';
 
 export const TrainingCenterPage: React.FC = () => {
+  const t = useUiTranslation();
     const { profile } = useAuth();
     const lms = useLMS();
     const navigate = useNavigate();
@@ -57,13 +59,13 @@ export const TrainingCenterPage: React.FC = () => {
     };
 
     const navItems = [
-        { id: 'dashboard', label: 'Mis Cursos', icon: BookOpenIcon },
-        { id: 'catalog', label: 'Catálogo de Rutas', icon: GraduationCap },
-        { id: 'diagnostic', label: 'Diagnóstico', icon: TargetIcon },
-        { id: 'ai-lab', label: 'Laboratorio IA', icon: SparklesIcon },
-        { id: 'consulting', label: 'Consultoría IA', icon: LightbulbIcon },
-        { id: 'smart-notes', label: 'Notas Inteligentes', icon: BrainCircuitIcon },
-        ...(canSeeAnalytics ? [{ id: 'analytics', label: 'Analítica', icon: BarChart2Icon }] : []),
+        { id: 'dashboard', label: t("Mis Cursos"), icon: BookOpenIcon },
+        { id: 'catalog', label: t("Catálogo de Rutas"), icon: GraduationCap },
+        { id: 'diagnostic', label: t("Diagnóstico"), icon: TargetIcon },
+        { id: 'ai-lab', label: t("Laboratorio IA"), icon: SparklesIcon },
+        { id: 'consulting', label: t("Consultoría IA"), icon: LightbulbIcon },
+        { id: 'smart-notes', label: t("Notas Inteligentes"), icon: BrainCircuitIcon },
+        ...(canSeeAnalytics ? [{ id: 'analytics', label: t("Analítica"), icon: BarChart2Icon }] : []),
     ];
 
     return (
@@ -74,14 +76,14 @@ export const TrainingCenterPage: React.FC = () => {
                     <button 
                         onClick={() => navigate('/')}
                         className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
-                        title="Volver al Dashboard"
+                        title={t("ui.volver-al-dashboard.4a3744")}
                     >
                         <ArrowLeftIcon className="h-5 w-5" />
                     </button>
                     <div className="p-2 bg-indigo-600 rounded-lg text-white">
                         <GraduationCap className="h-6 w-6" />
                     </div>
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">Arky Academy</h1>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t("ui.arky-academy.514215")}</h1>
                 </div>
                 
                 <div className="hidden md:flex items-center space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
@@ -104,10 +106,10 @@ export const TrainingCenterPage: React.FC = () => {
                 <button
                     onClick={() => setShowProfile(true)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    title="Editar mi perfil de aprendizaje"
+                    title={t("ui.editar-mi-perfil-de-aprendiz.e8fd6d")}
                 >
                     <UserCogIcon className="h-4 w-4" />
-                    <span className="hidden lg:inline">Mi Perfil</span>
+                    <span className="hidden lg:inline">{t("ui.mi-perfil.d61b35")}</span>
                 </button>
             </div>
 
@@ -130,7 +132,7 @@ export const TrainingCenterPage: React.FC = () => {
                     <div className="flex items-start gap-3">
                         <CloudOff className="mt-0.5 h-5 w-5 flex-none" aria-hidden="true" />
                         <div>
-                            <p className="text-sm font-semibold">Pendiente de sincronizar</p>
+                            <p className="text-sm font-semibold">{t("ui.pendiente-de-sincronizar.3dfa6f")}</p>
                             <p className="mt-0.5 text-sm opacity-90">{lms.syncError}</p>
                         </div>
                     </div>

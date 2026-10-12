@@ -111,7 +111,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
 
     const createDocAndEmbed = useCallback(async () => {
         if (!mermaidCode) {
-            setLucidError('No hay diagrama Mermaid para enviar a Lucidchart.');
+            setLucidError(t('uiState.8'));
             return;
         }
         setLucidLoading(true);
@@ -134,7 +134,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
         } finally {
             setLucidLoading(false);
         }
-    }, [mermaidCode, documentSummary, artifactTitle, onLucidDocumentReady]);
+    }, [mermaidCode, documentSummary, artifactTitle, onLucidDocumentReady, t]);
 
     const handleShare = useCallback(async () => {
         if (!documentSummary) return;
@@ -207,7 +207,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                         <rect width="24" height="24" rx="5" fill="#E8440A"/>
                         <path d="M7 5v14h10v-3H10V5H7z" fill="white"/>
                     </svg>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">Lucidchart</span>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{t("ui.lucidchart.38341d")}</span>
                     <span className="text-xs text-gray-400 dark:text-gray-500 hidden lg:inline flex-shrink-0">
                         — {integrationReady ? t('lucid.authenticated') : t('lucid.localPreview')}
                     </span>
@@ -223,7 +223,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                                 whileTap={{ scale: 0.96 }}
                             >
                                 {exportBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                                <span className="hidden sm:inline">PNG</span>
+                                <span className="hidden sm:inline">{t("ui.png.70fe60")}</span>
                             </motion.button>
                             <motion.button
                                 onClick={handleShare}
@@ -294,12 +294,12 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                 <div className="flex-shrink-0 flex items-start gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900/40">
                     <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-px" />
                     <p className="text-xs text-emerald-800 dark:text-emerald-200 truncate">
-                        {t('lucid.docInLucid')}&nbsp;
+                        {t('lucid.docInLucid')}{'\u00a0'}
                         <a href={documentSummary.editUrl} target="_blank" rel="noopener noreferrer" className="underline font-medium">
                             {documentSummary.documentId}
                         </a>
                         {shareUrl && (
-                            <>&nbsp;·&nbsp;{t('lucid.linkCopied')}&nbsp;<span className="font-mono truncate">{shareUrl}</span></>
+                            <>{'\u00a0·\u00a0'}{t('lucid.linkCopied')}{'\u00a0'}<span className="font-mono truncate">{shareUrl}</span></>
                         )}
                     </p>
                 </div>
@@ -316,14 +316,14 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
             {showTokenPanel && (
                 <div className="flex-shrink-0 flex flex-col gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                     <p className="text-xs text-gray-600 dark:text-gray-300">
-                        {t('lucid.pasteA')} <strong>{t('lucid.apiToken')}</strong> {t('lucid.pasteB')} (<code>localStorage</code>).
+                        {t('lucid.pasteA')} <strong>{t('lucid.apiToken')}</strong> {t('lucid.pasteB')} (<code>{t("ui.localstorage.81c61b")}</code>).
                     </p>
                     <div className="flex items-center gap-2">
                         <input
                             type="password"
                             value={tokenInput}
                             onChange={e => setTokenInput(e.target.value)}
-                            placeholder="eyJhbGciOi..."
+                            placeholder={t("ui.eyjhbgcioi.62ee43")}
                             className="flex-1 px-3 py-1.5 text-xs font-mono bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
                         />
                         <button
@@ -408,7 +408,7 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: MOTION.duration.slow }}
                         >
                             <iframe
-                                title={`Lucidchart · ${artifactTitle}`}
+                                title={t("uiTemplate.lucidchart-p0.5d474f", { p0: String(artifactTitle) })}
                                 src={embedSession.embedUrl}
                                 allow="fullscreen"
                                 className="w-full h-full border-0"

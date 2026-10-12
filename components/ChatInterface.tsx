@@ -350,12 +350,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         <button
                             onClick={() => handleCopyMessage(msg.content, index)}
                             className="absolute -bottom-6 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1"
-                            aria-label="Copiar mensaje"
+                            aria-label={t("ui.copiar-mensaje.65b61b")}
                         >
                             {copiedIndex === index ? (
-                                <><Check className="h-3 w-3" /> Copiado</>
+                                <><Check className="h-3 w-3" /> {t("ui.copiado.9e4170")}</>
                             ) : (
-                                <><Copy className="h-3 w-3" /> Copiar</>
+                                <><Copy className="h-3 w-3" /> {t("copy")}</>
                             )}
                         </button>
                     )}
@@ -366,14 +366,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 className="px-4 py-2 flex items-center bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold text-sm active:scale-[0.98] transition-all"
                             >
                                 <XCircleIcon className="h-5 w-5 mr-2" />
-                                Cancelar
+                                {t("ui.cancelar.c111e0")}
                             </button>
                             <button
                                 onClick={handleConfirmCreation}
                                 className="px-4 py-2 flex items-center bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-sm active:scale-[0.98] transition-all"
                             >
                                 <CheckCircleIcon className="h-5 w-5 mr-2" />
-                                Confirmar y Crear
+                                {t("ui.confirmar-y-crear.38c641")}
                             </button>
                         </div>
                     )}
@@ -388,7 +388,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <div className="h-2 w-2 bg-primary-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                     <div className="h-2 w-2 bg-primary-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                     <div className="h-2 w-2 bg-primary-500 rounded-full animate-bounce"></div>
-                    <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">Pensando...</span>
+                    <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{t("thinking")}</span>
                   </div>
                 </div>
             </div>
@@ -412,17 +412,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         {cooldownRemainingMs > 0 && cooldownNotice && (
             <p className="mt-3 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200" role="status" aria-live="polite">
-                {cooldownNotice.replace(/\.$/, '')}. Reintento disponible en {Math.ceil(cooldownRemainingMs / 1000)} segundos.
+                {cooldownNotice.replace(/\.$/, '')}{t("ui.reintento-disponible-en.aab045")} {Math.ceil(cooldownRemainingMs / 1000)} {t("ui.segundos.2f200e")}
             </p>
         )}
 
         <div className="mt-4 flex items-center border border-gray-300 dark:border-gray-600 rounded-xl focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-400 bg-white dark:bg-gray-800 transition-all">
-          <button onClick={() => fileInputRef.current?.click()} title="Adjuntar archivo" className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400" disabled={!!pendingProjectData}>
+          <button onClick={() => fileInputRef.current?.click()} title={t("ui.adjuntar-archivo.85bdff")} className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 hover:text-primary-600 dark:hover:text-primary-400" disabled={!!pendingProjectData}>
             <PaperClipIcon className="h-5 w-5"/>
           </button>
           <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
 
-          <button onClick={handleMicClick} title="Usar micrófono" className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-500 hover:text-primary-600 dark:hover:text-primary-400'}`} disabled={!!pendingProjectData}>
+          <button onClick={handleMicClick} title={t("ui.usar-microfono.d13531")} className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-500 hover:text-primary-600 dark:hover:text-primary-400'}`} disabled={!!pendingProjectData}>
             <MicrophoneIcon className="h-5 w-5"/>
           </button>
 
@@ -436,7 +436,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     void handleSendMessage();
                 }
             }}
-            placeholder={purpose === 'project-chat' ? "Consulta al arquitecto o pide cambios..." : t('respondHere')}
+            placeholder={purpose === 'project-chat' ? t("uiExpr.consulta-al-arquitecto-o-pid.f592d8") : t('respondHere')}
             className="flex-grow px-4 py-3 bg-transparent focus:outline-none text-sm min-h-[44px]"
             disabled={isLoading || !!pendingProjectData || cooldownRemainingMs > 0}
           />

@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { HomeIcon, ChevronRightIcon } from './Icons';
 import { Tooltip } from './ui/Tooltip';
@@ -22,8 +23,9 @@ interface BreadcrumbsProps {
  * and not interactive.
  */
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs, className = '' }) => {
+  const t = useUiTranslation();
   return (
-    <nav className={`flex items-center text-sm ${className}`} aria-label="Breadcrumb">
+    <nav className={`flex items-center text-sm ${className}`} aria-label={t("ui.breadcrumb.c766e6")}>
       <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1;

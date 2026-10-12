@@ -1,3 +1,4 @@
+import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 import React, { useEffect, useId, useState } from 'react';
 import type { Artifact } from '../../../lib/artifacts';
 import { useAppContext } from '../../../context/AppContext';
@@ -42,6 +43,7 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
   artifact,
   onVersionCreated,
 }) => {
+  const t = useUiTranslation();
   const { settings, restoreArtifactVersion, getProject } = useAppContext();
   const { addToast } = useToast();
   const { offerUndo } = useAiUndo();
@@ -77,10 +79,10 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
     const count = result.summary.length;
     offerUndo({
       projectId,
-      label: 'modificación del diagrama',
+      label: t("modificación del diagrama"),
       steps: [{ before: artifact, producedId: result.versionId }],
       onUndone: ([restored]) => onVersionCreated(restored.id),
-    }, `Diagrama modificado: ${count} cambio${count === 1 ? '' : 's'}. La versión anterior queda en el historial.`);
+    }, t("uiDynamicGenerated.diagrama-modificado-p0-cambi.98a9e4", { p0: String(count), p1: String(count === 1 ? '' : 's') }));
     aiChangeStore.set(result.change);
     setInstruction('');
     onVersionCreated(result.versionId);
@@ -89,8 +91,8 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
 
   const footer = state.status === 'ready' ? (
     <div className="flex justify-end gap-2">
-      <Button variant="ghost" onClick={discard}>Descartar</Button>
-      <Button variant="primary" onClick={handleApply}>Aplicar como versión nueva</Button>
+      <Button variant="ghost" onClick={discard}>{t("ui.descartar.63a77c")}</Button>
+      <Button variant="primary" onClick={handleApply}>{t("ui.aplicar-como-version-nueva.350621")}</Button>
     </div>
   ) : undefined;
 
@@ -98,14 +100,14 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Modificar diagrama"
-      description="Describe el cambio. El asistente propone operaciones sobre el diagrama actual y no se guarda nada hasta que lo apliques."
+      title={t("ui.modificar-diagrama.f2c715")}
+      description={t("Describe el cambio. El asistente propone operaciones sobre el diagrama actual y no se guarda nada hasta que lo apliques.")}
       size="md"
       footer={footer}
     >
       {!canModify ? (
-        <Alert tone="neutral" title="No hay diagrama que modificar">
-          Este artefacto no tiene un diagrama estructurado. Genera o corrige el diagrama y vuelve a intentarlo.
+        <Alert tone="neutral" title={t("ui.no-hay-diagrama-que-modifica.cb2ed5")}>
+          {t("ui.este-artefacto-no-tiene-un-d.1d776c")}
         </Alert>
       ) : (
         <div className="space-y-5">
@@ -114,7 +116,7 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
             onSubmit={(event) => { event.preventDefault(); submit(); }}
           >
             <label htmlFor={fieldId} className="block text-sm font-medium text-gray-800 dark:text-gray-100">
-              ¿Qué quieres cambiar?
+              {t("ui.que-quieres-cambiar.33251b")}
             </label>
             <textarea
               id={fieldId}
@@ -126,10 +128,10 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); submit(); }
               }}
-              placeholder="Ej.: Renombra «API» a «API Gateway» y conéctala al servicio de auditoría"
+              placeholder={t("ui.ej-renombra-api-a-api-gatewa.514eec")}
               className="w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
             />
-            <div className="flex flex-wrap gap-1.5" aria-label="Ejemplos">
+            <div className="flex flex-wrap gap-1.5" aria-label={t("ui.ejemplos.7b1787")}>
               {EXAMPLES.map((example) => (
                 <button
                   key={example}
@@ -144,24 +146,24 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <Button type="submit" variant="ai" loading={busy} disabled={!trimmed} leftIcon={<SparklesIcon className="h-4 w-4" />}>
-                Proponer cambio
+                {t("ui.proponer-cambio.e6a388")}
               </Button>
-              {busy && <Button type="button" variant="ghost" onClick={discard}>Cancelar</Button>}
+              {busy && <Button type="button" variant="ghost" onClick={discard}>{t("ui.cancelar.c111e0")}</Button>}
             </div>
           </form>
 
           <div role="status" aria-live="polite">
-            {busy && <p className="text-sm text-gray-600 dark:text-gray-300">Preparando la propuesta…</p>}
+            {busy && <p className="text-sm text-gray-600 dark:text-gray-300">{t("ui.preparando-la-propuesta.856258")}</p>}
 
             {state.status === 'refused' && (
-              <Alert tone="warning" title="No se propuso ningún cambio">
+              <Alert tone="warning" title={t("ui.no-se-propuso-ningun-cambio.9b2b77")}>
                 <p>{state.reason}</p>
                 <RejectionList rejected={state.rejected} />
               </Alert>
             )}
 
             {state.status === 'ready' && (
-              <section aria-label="Vista previa del cambio" className="space-y-4">
+              <section aria-label={t("ui.vista-previa-del-cambio.486c8f")} className="space-y-4">
                 {state.proposal.patch.rationale && (
                   <p className="border-l-2 border-primary-400 pl-3 text-sm italic text-gray-700 dark:text-gray-200">
                     {state.proposal.patch.rationale}
@@ -169,7 +171,7 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
                 )}
                 <div>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Lo que hará ({state.proposal.applied.length})
+                    {t("ui.lo-que-hara.e1bb6d")}{state.proposal.applied.length})
                   </h3>
                   <ul className="space-y-2">
                     {state.proposal.applied.map((entry) => (
@@ -177,7 +179,7 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
                         {entry.description}
                         {entry.cascaded && entry.cascaded.length > 0 && (
                           <ul className="mt-1 list-disc pl-5 text-xs text-amber-700 dark:text-amber-300">
-                            {entry.cascaded.map((line) => <li key={line}>También: {line}</li>)}
+                            {entry.cascaded.map((line) => <li key={line}>{t("ui.tambien.fad565")} {line}</li>)}
                           </ul>
                         )}
                       </li>
@@ -186,7 +188,7 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
                 </div>
                 <RejectionList rejected={state.proposal.rejected} />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Si ajustaste posiciones a mano, se conservan; los elementos nuevos aparecen bajo el diagrama para que los coloques.
+                  {t("ui.si-ajustaste-posiciones-a-ma.7658b0")}
                 </p>
               </section>
             )}
@@ -198,11 +200,12 @@ const DiagramModifyPanelBody: React.FC<DiagramModifyPanelBodyProps> = ({
 };
 
 const RejectionList: React.FC<{ rejected: ReadonlyArray<{ index: number; message: string }> }> = ({ rejected }) => {
+  const t = useUiTranslation();
   if (rejected.length === 0) return null;
   return (
     <div>
       <h3 className="mb-1 mt-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        No aplicable ({rejected.length})
+        {t("ui.no-aplicable.07a085")}{rejected.length})
       </h3>
       <ul className="list-disc space-y-1 pl-5 text-xs text-gray-600 dark:text-gray-300">
         {rejected.map((entry) => <li key={entry.index}>{entry.message}</li>)}
