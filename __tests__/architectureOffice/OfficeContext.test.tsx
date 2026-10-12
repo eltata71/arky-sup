@@ -35,6 +35,7 @@ vi.mock('../../services/architectureOffice/infrastructure/OfficeEngagementReposi
       listForArb: vi.fn(async () => []),
       listForCharterApproval: vi.fn(async () => []),
       approveCharter: vi.fn(async () => nextOutcome.approve ?? ok()),
+      requestCharterChanges: vi.fn(async () => ok()),
       save: vi.fn(async (engagement: unknown) => {
         savedEngagements.push(engagement);
         return nextOutcome.save ?? ok(engagement);

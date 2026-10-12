@@ -6,6 +6,7 @@ import {
   decideEngagement,
   describeArbDecisionEligibility,
   describeCharterApprovalEligibility,
+  requestCharterChanges,
 } from '../../services/architectureOffice/domain/OfficeArbService';
 import {
   DEFAULT_OFFICE_BUDGET,
@@ -296,5 +297,35 @@ describe('OfficeArbService — gate assessment', () => {
     const result = attachGateAssessment(engagement('awaiting-arb'), assessment('conditional'));
     expect(result.gateAssessment?.overallStatus).toBe('conditional');
     expect(result.auditTrail.map((entry) => entry.action)).toContain('gates-evaluated');
+  });
+});
+
+describe('OfficeArbService — pedir cambios al charter (14.7)', () => {
+  it('registra la petición con su motivo y no cambia el estado', () => {
+    const result = requestCharterChanges(engagement('awaiting-charter'), ADMIN, '  Falta el alcance  ');
+    expect(result.ok).toBe(true);
+    expect(result.engagement.status).toBe('awaiting-charter');
+    expect(result.engagement.charter.approvedAt).toBeUndefined();
+    const last = result.engagement.auditTrail[result.engagement.auditTrail.length - 1];
+    expect(last.action).toBe('charter-changes-requested');
+    expect(last.details).toBe('Falta el alcance');
+  });
+
+  it('exige un motivo', () => {
+    expect(requestCharterChanges(engagement('awaiting-charter'), ADMIN, '   ').ok).toBe(false);
+  });
+
+  it('el autor no pide cambios a su propio charter', () => {
+    const own = engagement('awaiting-charter', { createdBy: ADMIN });
+    expect(requestCharterChanges(own, ADMIN, 'x').ok).toBe(false);
+  });
+
+  it('un rol sin charter:approve no puede', () => {
+    const viewer: OfficeActor = { id: 'v', name: 'Vera', role: 'viewer' };
+    expect(requestCharterChanges(engagement('awaiting-charter'), viewer, 'x').ok).toBe(false);
+  });
+
+  it('no aplica fuera de los estados aprobables', () => {
+    expect(requestCharterChanges(engagement('delivered'), ADMIN, 'x').ok).toBe(false);
   });
 });

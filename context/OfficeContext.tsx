@@ -30,6 +30,7 @@ import {
 import { can } from '../lib/authz';
 import {
   approveCharterOperation,
+  requestCharterChangesOperation,
   createEngagementOperation,
   decideEngagementOperation,
   deleteEngagementOperation,
@@ -96,6 +97,7 @@ interface OfficeContextType {
   /** Intake → charter proposal. Does not start execution. */
   createEngagement: (input: CreateEngagementInput) => Promise<OfficeOperationResult>;
   approveCharter: (engagementId: string) => Promise<OfficeOperationResult>;
+  requestCharterChanges: (engagementId: string, reason: string) => Promise<OfficeOperationResult>;
   /** Runs (or resumes) the task DAG. Safe to call on a partially run engagement. */
   runEngagementNow: (engagementId: string) => Promise<OfficeOperationResult>;
   cancelRun: (engagementId: string) => void;
@@ -303,6 +305,12 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return approveCharterOperation(operationDeps, engagement, actor);
   }, [readEngagement, actor, operationDeps]);
 
+  const requestCharterChanges = useCallback(async (engagementId: string, reason: string): Promise<OfficeOperationResult> => {
+    const engagement = readEngagement(engagementId);
+    if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
+    return requestCharterChangesOperation(operationDeps, engagement, actor, reason);
+  }, [readEngagement, actor, operationDeps]);
+
   const runEngagementNow = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
@@ -423,6 +431,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     listEngagementsForProject,
     createEngagement,
     approveCharter,
+    requestCharterChanges,
     runEngagementNow,
     cancelRun,
     evaluateGates,
@@ -431,7 +440,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }), [
     engagements, runningEngagementIds, isLoading, isResolving, loadError, retryLoad, canApprove, arbEligibility, canApproveCharters, charterEligibility,
     loadEngagements, getEngagement, listEngagementsForProject,
-    createEngagement, approveCharter, runEngagementNow, cancelRun,
+    createEngagement, approveCharter, requestCharterChanges, runEngagementNow, cancelRun,
     evaluateGates, decideEngagement, deleteEngagement,
   ]);
 

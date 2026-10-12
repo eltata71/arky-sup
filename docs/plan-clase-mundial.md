@@ -810,6 +810,8 @@ presupuesto que consumirán las olas 11 y 12.
 | 14.2 Trazabilidad | Hecha · #209 | Pestaña «Cadena» del panel del grafo: `analyzeTraceabilityChains` (requisito sin decisión, decisión sin artefacto, relación rota, artefacto inexistente) y `explainEntity` («¿por qué existe?» / «¿qué rompe?»). La unión con KPI y resultados de la iniciativa queda fuera: exige un puerto con `portfolioGraph` y subir el fan-out del panel |
 | 14.3 Chat sin pérdida | Hecha · #211 | |
 | 14.4 Índice con etapa de revisión | Hecha · #213 | `refresh_project_artifact_index` proyecta `reviewStatus`; el tablero deja de contar «sin medir» los artefactos de proyectos sin abrir |
+| 14.7 Pedir cambios al charter | Hecha | `api.request_charter_changes` (migración `20261013090000_charter_changes_requested`, pendiente de aplicar en ArkyDB-US): quien puede aprobar y no es el autor deja constancia con motivo en el rastro, sin cambiar el estado; botón «Pedir cambios» en la sala. La tarea enlazada queda fuera |
+| 14.8 Trazabilidad con KPI | Pendiente | Resto de 14.2: unión con KPI y resultados de la iniciativa |
 | 14.6 Diccionario español por ruta | Hecha | El español pasa de 3 485 claves eager a un núcleo de 394 y secciones por ruta generadas (`buildDictionarySections`); el techo eager baja 403 → 345 KB gz (medido 338,7) en vez de subir; los techos de ProjectsPage, SDDProcessView y Workspace suben lo que cada ruta paga por su sección |
 
 ---

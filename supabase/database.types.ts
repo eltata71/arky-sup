@@ -1009,6 +1009,29 @@ export type Database = {
         Args: { p_messages: Json; p_project_id: string }
         Returns: number
       }
+      request_charter_changes: {
+        Args: {
+          p_engagement_id: string
+          p_expected_revision: number
+          p_project_id: string
+          p_reason: string
+        }
+        Returns: {
+          created_at: string
+          data: Json
+          id: string
+          owner_id: string
+          project_id: string
+          revision: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "office_engagements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       revise_artifacts: {
         Args: { p_changes: Json; p_project_id: string }
         Returns: Json

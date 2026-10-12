@@ -5,6 +5,14 @@ import type { Dictionary } from '../../translations';
 
 export const section: Dictionary = {
   "micro.charterApproved": "Charter aprobado",
+  "charterChanges.sent": "Cambios solicitados. El autor verá tu razón en el rastro.",
+  "charterChanges.failed": "No se pudieron solicitar los cambios.",
+  "charterChanges.open": "Pedir cambios",
+  "charterChanges.title": "Pedir cambios al charter",
+  "charterChanges.help": "El charter seguirá sin aprobar. Explica qué hay que cambiar; quedará en el rastro con tu firma.",
+  "charterChanges.reasonLabel": "Qué hay que cambiar",
+  "charterChanges.cancel": "Cancelar",
+  "charterChanges.send": "Enviar petición",
   "projectHub.approveFailed": "No se pudo aprobar el charter.",
   "projectHub.runFinished": "Ejecución finalizada.",
   "ui.comite-de-arquitectura.36c4d6": "Comité de Arquitectura",

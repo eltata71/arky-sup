@@ -139,7 +139,7 @@ export const BYTE_CEILINGS = {
   // vive en `describeArbDecisionEligibility`; lo que creció es la llamada, no
   // la lógica. Baja cuando se extraiga el bloque de callbacks del comité.
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'pages/EngagementRoom.tsx': 24329, // 13.2 + 14.1: textos de aprobación separados por permiso y autor; 24 329 B medidos. // 13.2: mensajes de aprobación traducidos; +75 B medidos
+  'pages/EngagementRoom.tsx': 24508, // 14.7: botón 'Pedir cambios' (componente propio), +179 B; 13.2 + 14.1: textos de aprobación separados por permiso y autor; 24 329 B medidos. // 13.2: mensajes de aprobación traducidos; +75 B medidos
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/LMS/LMSCatalog.tsx': 23293, // 13.2: estado de catálogo traducido; +34 B medidos
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
@@ -255,7 +255,7 @@ export const CEILINGS = {
   'services/architectureKnowledgeGraph/ArchitectureKnowledgeGraphTypes.ts': 565,
   'context/LMSContext.tsx': 530,
   'services/diagram/irToReactFlow.ts': 545,
-  'pages/EngagementRoom.tsx': 543, // 14.1: +3 líneas, ídem
+  'pages/EngagementRoom.tsx': 545, // 14.7: +2 líneas, 14.1: +3 líneas, ídem
   'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 540,
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/artifacts/ArtifactInspectorPanel.tsx': 509,
