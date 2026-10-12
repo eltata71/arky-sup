@@ -28,10 +28,8 @@ import {
   assistantService,
   classifyAIError,
   recommendationService,
-  type AgentTurnResult,
-  type ArtifactTemplateSuggestion,
-  type ProjectChatTurn,
-} from '../services/ai';
+} from '../services/ai/lazy';
+import type { AgentTurnResult, ArtifactTemplateSuggestion, ProjectChatTurn } from '../services/ai';
 import {
   interpretArtifactModification,
   processAssistantChat,

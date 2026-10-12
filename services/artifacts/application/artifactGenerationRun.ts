@@ -22,7 +22,7 @@ import type { Artifact, ArtifactContextPorts, ArtifactGenerationPhaseListener, A
 import { createContextManifestRecorder } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { DiagramAudience, DiagramErrorRecord, DiagramIR } from '../../../lib/diagram';
-import { artifactGenerationService } from '../../ai';
+import { artifactGenerationService } from '../../ai/lazy';
 import { resolveEffectiveModel } from '../../../lib/ai/modelCatalog';
 import { extractIRFromArtifact, type FidelityReport } from '../../diagram';
 import { rewriteDiagramContent } from './diagramContentRewrite';

@@ -7,7 +7,7 @@ import type { Project } from '../../services/architectureProjects';
 import type { DiagramAudience } from '../../lib/diagram';
 import type { ArtifactViewMode } from '../../lib/artifacts/contracts';
 import type { RenderableDiagramResolution } from '../../services/diagram';
-import { diagramGenerationService } from '../../services/ai';
+import { diagramGenerationService } from '../../services/ai/lazy';
 import { hasManualLayout, isDiagramAIFallbackEnabled, mermaidToReactFlow as mermaidToReactFlowDeterministic, resolveRenderableDiagram } from '../../services/diagram';
 import { planCanvasEdit } from '../../services/artifacts/application/diagramCanvasEdit';
 import { isDiagramFlowData, type DiagramFlowData } from '../../components/artifacts/diagram/diagramFlow';

@@ -3,7 +3,7 @@ import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Course } from '../../types/lms';
 import { SparklesIcon, BeakerIcon, CpuIcon, AlertTriangleIcon, CheckCircle2Icon, Loader2Icon } from 'lucide-react';
-import { asCourseCategory, asCourseLevel, learningService } from '../../services/ai';
+import { asCourseCategory, asCourseLevel, learningService } from '../../services/ai/lazy';
 import { useAppContext } from '../../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
 

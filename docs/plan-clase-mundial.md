@@ -794,6 +794,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 11.4 Brechas y hoja de ruta | Hecha | #190 |
 | 11.5 TIME, radar y contrato | Hecha | #192 |
 | 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |
+| 12.7 IA bajo demanda (cierra 12.0 / R-09) | Hecha | Las siete rutas que cargaban IA bajan de 510–717 a 49–90 KB gz (Workspace 150,6): `services/ai/lazy.ts` y ELK diferido; techos de `ROUTE_BUDGETS_GZIP_KB` rebajados |
 | 12.1 Partir los cinco ficheros grandes | Hecha · #178 | Los cinco tienen subcomponentes o hooks y un techo rebajado: ReactFlowCanvas 1 468, ProjectHub 976, MemoryCenterModal 584, CustomArtifactRequestModal 685 y CustomArtifactBriefWizard 455 líneas (`check:module-size`). Suite existente: 5 680 pruebas; build y presupuestos de bundle en verde. |
 | 12.2 Documento editorial | Hecha · #194 | |
 | 12.6 Vista previa de la fuente en chips `[ctx:*]` (seguimiento de 12.2) | En curso · rama `clase-mundial/12.6-citas-ctx-chips` | Popover por hover/foco con etiqueta, tipo y fuente; `Esc` cierra; sin `title` duplicado |

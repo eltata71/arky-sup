@@ -20,11 +20,11 @@ import type { Project } from '../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../review';
 import type { ChatMessage } from '../chat';
 import { appendMemoryNotes } from '../memory/memoryEntries';
-import { artifactGenerationService, classifyAIError, AIServiceError } from '../ai';
+import { artifactGenerationService, classifyAIError, AIServiceError } from '../ai/lazy';
 import { validateArtifactReadiness } from '../../lib/artifacts/artifactGovernance';
 import { instructionPermitsRemoval } from '../../lib/artifacts';
 import { validateArtifactContent } from './agentContentValidation';
-import { extractIRFromArtifact } from '../diagram';
+import { extractIRFromArtifact } from '../diagram/irExtraction';
 import { repairDiagramIRSemantics } from '../../lib/semanticRoleResolver';
 import { ARTIFACT_TEMPLATES } from '../../constants';
 import type {

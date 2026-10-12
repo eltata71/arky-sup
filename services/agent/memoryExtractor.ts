@@ -17,7 +17,7 @@
 
 import type { Settings } from '../../types';
 import type { ChatMessage } from '../chat';
-import { aiGateway } from '../ai';
+import { aiGateway } from '../ai/lazy';
 import { resolveEffectiveModel } from '../../lib/ai/modelCatalog';
 import type { MemoryScope } from './agentTypes';
 

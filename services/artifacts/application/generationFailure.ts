@@ -8,7 +8,7 @@
  * pintar, y viven aquí para poderse probar sin montar el Workspace.
  */
 
-import { AIServiceError, classifyAIError } from '../../ai';
+import { AIServiceError, classifyAIError } from '../../ai/lazy';
 
 export interface GenerationFailureReport {
   readonly category: string;

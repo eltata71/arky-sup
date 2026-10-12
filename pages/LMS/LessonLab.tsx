@@ -1,6 +1,6 @@
 import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useState, useEffect } from 'react';
-import { learningService } from '../../services/ai';
+import { learningService } from '../../services/ai/lazy';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { DiagramChallengeEvaluation } from '../../types/lms';

@@ -2,7 +2,7 @@ import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import { activatable } from '../../lib/a11y';
 import React, { useState } from 'react';
 import { Course, ArchitectRole, DiagnosticQuestion, DiagnosticResult, CompetencyScore } from '../../types/lms';
-import { learningService } from '../../services/ai';
+import { learningService } from '../../services/ai/lazy';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { competencyLevel } from '../../lib/lmsProgress';
