@@ -15,7 +15,7 @@ import {
     isQuizQuestion,
     isRelatedConcept,
     learningService,
-} from '../../services/ai';
+} from '../../services/ai/lazy';
 import type { ChallengeEvaluation, QuizQuestion, RelatedConcept } from '../../services/ai';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';

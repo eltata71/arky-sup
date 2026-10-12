@@ -9,7 +9,7 @@ import type { DiagramIR, DiagramPatch } from '../../lib/diagram';
 import { applySemanticPatch } from '../../services/diagram';
 
 const ai = vi.hoisted(() => ({ proposeEdit: vi.fn() }));
-vi.mock('../../services/ai', async (importOriginal) => ({
+vi.mock('../../services/ai/lazy', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   diagramEditService: { proposeEdit: ai.proposeEdit },
 }));

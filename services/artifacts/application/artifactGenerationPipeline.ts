@@ -24,7 +24,7 @@ export type {
   ArtifactViewMode,
 };
 import type { DiagramAudience } from '../../../lib/diagram';
-import { extractIRDiagnostic } from '../../diagram';
+import { extractIRDiagnostic } from '../../diagram/irExtraction';
 import { extractMermaid } from '../../../utils/diagram/extractMermaid';
 import { isPublicationViewEnabled } from '../domain/artifactPresentationFlags';
 

@@ -15,7 +15,8 @@
 import type { Settings } from '../../../types';
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import type { Project } from '../../architectureProjects';
-import { assistantService, type ProjectChatTurn } from '../../ai';
+import { assistantService, buildProjectChatInstruction } from '../../ai/lazy';
+import type { ProjectChatTurn } from '../../ai';
 import {
   buildOfficePersonaInstruction,
   OFFICE_AGENT_PERSONAS,
@@ -25,20 +26,20 @@ import {
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 
 /** The project instruction, framed by the persona and the Office's standards. */
-export function composeProjectChatInstruction(
+export async function composeProjectChatInstruction(
   project: Project,
   message: string,
   settings: Settings,
   personaOverride?: OfficeAgentId,
-): string {
+): Promise<string> {
   const standards = getOfficeArchitectureContext().promptContext.map((item) => `- ${item}`).join('\n');
   return buildOfficePersonaInstruction(
-    `${assistantService.buildProjectChatInstruction(project, settings)}\n\nARCHITECTURE OFFICE STANDARDS:\n${standards}`,
+    `${await buildProjectChatInstruction(project, settings)}\n\nARCHITECTURE OFFICE STANDARDS:\n${standards}`,
     personaOverride ? OFFICE_AGENT_PERSONAS[personaOverride] : resolveOfficeAgentMention(message),
   );
 }
 
-export function chatWithProject(
+export async function chatWithProject(
   project: Project,
   message: string,
   history: readonly ProjectChatTurn[],
@@ -48,7 +49,7 @@ export function chatWithProject(
   modelTier: ModelTier = 'default',
 ): Promise<string> {
   return assistantService.generateProjectChatReply({
-    systemInstruction: composeProjectChatInstruction(project, message, settings, personaOverride),
+    systemInstruction: await composeProjectChatInstruction(project, message, settings, personaOverride),
     message,
     history,
     settings,

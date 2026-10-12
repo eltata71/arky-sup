@@ -20,7 +20,7 @@ import type { Artifact, ArtifactContextPorts } from '../../../lib/artifacts';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
 import type { Project } from '../../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../../review';
-import { artifactGenerationService, documentGenerationService } from '../../ai';
+import { artifactGenerationService, documentGenerationService } from '../../ai/lazy';
 import type { ArtifactSuggestionGapType } from '../../ai';
 import { rewriteDiagramContent } from './diagramContentRewrite';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';

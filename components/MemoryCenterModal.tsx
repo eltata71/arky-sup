@@ -4,7 +4,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { useAppContext, type Project } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { documentGenerationService } from '../services/ai';
+import { documentGenerationService } from '../services/ai/lazy';
 import { MemoryScope, MemoryEntry, MemoryPriority } from '../types';
 import type { Artifact } from '../lib/artifacts';
 import {

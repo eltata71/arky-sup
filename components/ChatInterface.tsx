@@ -11,7 +11,7 @@ import {
   classifyAIError,
   getAiBlockingCooldownRemainingMs,
   sendGuidedProjectCreationMessage,
-} from '../services/ai';
+} from '../services/ai/lazy';
 import { MicrophoneIcon, PaperClipIcon, XCircleIcon, CheckCircleIcon, ArrowRightIcon } from './Icons';
 import { Copy, Check } from 'lucide-react';
 

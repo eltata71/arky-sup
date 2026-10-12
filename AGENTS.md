@@ -429,6 +429,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
     `…/agents.ts`, `services/ai/generation/providerModelDirectory.ts`) lo
     bajaron a 48,9. `ROUTE_BUDGETS_GZIP_KB` en `check:bundle-budget` fija un
     techo por ruta, y `e2e/chunks.spec.ts` evalúa cada chunk en el navegador.
+22g. **Una ruta no descarga la IA hasta usarla** (12.7, cierra R-09).
+    `services/ai/lazy.ts` carga la capa con `import()` en la primera llamada
+    y ELK va en diferido; las rutas con IA bajaron de 510–717 a 49–90 KB gz.
+    El código de ruta entra por `services/ai/lazy`; los tipos, por `services/ai`.
 22e. **Un fichero no importa el barril que lo reexporta** (F6-04).
     `artifactReviewService` importaba su fábrica desde `./index` mientras
     `./index` lo reexportaba. En producción el bundle eleva `import.meta.env` a

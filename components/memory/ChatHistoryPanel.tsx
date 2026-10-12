@@ -12,7 +12,7 @@ import {
     EyeIcon,
     XMarkIcon,
 } from '../Icons';
-import { compactChatMessages } from '../../services/ai';
+import { compactChatMessages } from '../../services/ai/lazy';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { Skeleton } from '../ui';
 

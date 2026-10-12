@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { ArtifactTemplate, CustomArtifactRecommendation } from '../types';
 import type { ArtifactGenerationPhaseEvent, ArtifactGenerationPhaseListener } from '../lib/artifacts';
 import { GENERATION_PHASE_COPY } from '../lib/artifacts/generationPhaseCopy';
-import { recommendationService, classifyAIError, AIServiceError } from '../services/ai';
+import { recommendationService, classifyAIError, AIServiceError } from '../services/ai/lazy';
 import { buildDeterministicArtifactBrief } from '../services/artifacts/domain/artifactBriefService';
 import { extractArtifactBriefWithAI } from '../services/artifacts/application/artifactBriefExtractionService';
 import { getArtifactGenerationFeatureFlags } from '../services/artifacts/domain/artifactGenerationFlags';

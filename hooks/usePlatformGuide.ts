@@ -27,7 +27,7 @@ import {
   buildPlatformGuideRequest,
   platformGuideAgentBriefing,
 } from '../services/architectureOffice';
-import { platformGuideService } from '../services/ai';
+import { platformGuideService } from '../services/ai/lazy';
 import { useAgentProfileOverrides } from './useAgentProfiles';
 import type { Settings } from '../types';
 

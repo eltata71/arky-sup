@@ -5,7 +5,8 @@ import type { Settings } from '../../types';
 
 const sendGuidedMock = vi.hoisted(() => vi.fn());
 
-vi.mock('../../services/ai/generation/guidedProjectCreationService', () => ({
+vi.mock('../../services/ai/lazy', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../services/ai/lazy')>()),
   sendGuidedProjectCreationMessage: sendGuidedMock,
 }));
 
@@ -89,7 +90,7 @@ describe('ChatInterface guided creation resilience', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    expect(sendGuidedMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(sendGuidedMock).toHaveBeenCalledTimes(1));
 
     resolveRequest({ requestId: 'ai-guided-2', promptSize: 480, text: 'Describe el alcance.' });
     await waitFor(() => expect(screen.getByText('Describe el alcance.')).toBeInTheDocument());

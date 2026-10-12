@@ -19,7 +19,6 @@
  * can swap dagre for ELK transparently.
  */
 
-import ELK from 'elkjs/lib/elk.bundled.js';
 import { LAYOUT_PRESETS, estimateLabelDims } from './diagramTokens';
 import type { DiagramIR } from './diagram';
 import type {
@@ -72,7 +71,15 @@ export interface ElkLayoutOptions {
 /** Prefix of the ELK compound node that stands for a zone; never a node id. */
 const GROUP_PREFIX = '__elk_group__:';
 
-const elk = new ELK();
+type ElkInstance = { layout: (graph: never) => Promise<unknown> };
+let elkPromise: Promise<ElkInstance> | null = null;
+// elkjs is ~400 KB gz and only a layout run needs it (12.7): load it on first use.
+const getElk = (): Promise<ElkInstance> => {
+    elkPromise ??= import('elkjs/lib/elk.bundled.js')
+        .then((m) => new m.default() as ElkInstance)
+        .catch((error) => { elkPromise = null; throw error; });
+    return elkPromise;
+};
 
 const DEFAULT_OPTIONS: Record<ElkAlgorithm, Record<string, string>> = {
     layered: {
@@ -217,7 +224,7 @@ export async function layoutIRWithELK(ir: DiagramIR, opts: ElkLayoutOptions): Pr
         edges?: ElkEdge[];
     };
 
-    const laidOut = (await elk.layout(elkGraph as never)) as ElkNode;
+    const laidOut = (await (await getElk()).layout(elkGraph as never)) as ElkNode;
 
     const positions = new Map<string, PositionedNode>();
     const groupBoxes = new Map<string, PositionedNode>();

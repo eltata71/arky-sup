@@ -11,7 +11,7 @@
 import type { Settings } from '../../../types';
 import type { Artifact, ArtifactContextPorts, DocumentPatchRejection } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
-import { assembleArtifactContext, captureArtifactContext, documentEditService, renderArtifactContextBundle } from '../../ai';
+import { assembleArtifactContext, captureArtifactContext, documentEditService, renderArtifactContextBundle } from '../../ai/lazy';
 import { summarizeDocumentChange, type AiChangeSummary } from './aiChangeSummary';
 import { applyDocumentPatch, outlineOfDocument } from '../domain/documentPatchEngine';
 

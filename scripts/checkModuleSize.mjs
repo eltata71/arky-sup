@@ -73,7 +73,7 @@ export const BYTE_CEILINGS = {
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/ProjectsPage.tsx': 44806, // 12.0: modales diferidos con React.lazy + Suspense // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el portafolio sale a `useAttentionPortfolio`
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'pages/LMS/LessonModal.tsx': 43923, // 13.2: mensajes de estado y errores traducidos; +144 B medidos
+  'pages/LMS/LessonModal.tsx': 43928, // 12.7: +5 B, la capa de IA entra por su puerta diferida (`services/ai/lazy`) · 13.2: mensajes de estado y errores traducidos; +144 B medidos
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/artifacts/export/ArtifactExportModal.tsx': 28560, // plan de clase mundial 9.4: −2 383, el resumen de calidad y los formatos bloqueados salen a componentes propios para hacer sitio al recibo · plan diagramas 8.4c: +45, «Sin medir» en vez de una cifra neutra · plan diagramas 3.4: la configuración de imagen salió a `ImageExportConfiguration` // F4-05: la coordinación salió a `services/artifacts/application`
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
@@ -94,7 +94,7 @@ export const BYTE_CEILINGS = {
   'components/AssistantPanel.tsx': 38069, // 10.4b: +974, «Deshacer» en las tres escrituras de IA del asistente (modificar, versión nueva, agente) · plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/Workspace.tsx': 20625, // 13.2: mensajes de la cola y de generación traducidos; +70 B medidos // 12.0: el lienzo del artefacto se carga con React.lazy + Suspense // 10.2: la ejecución y el diagnóstico pasan a la cola persistente; 33 921 → 20 097 bytes. El pequeño margen sobre 20 KB evita un techo de líneas innecesario.
-  'services/artifacts/application/artifactRefinementOrchestrator.ts': 35725, // plan diagramas 8.4c: +274, sin medida no hay pasadas de refinamiento · plan diagramas 8.2d: +148, compara la fidelidad con el IR que persistirá, incluidos sus metadatos · plan artefactos 7.5a: +38, la crítica y el refinamiento reciben onContextCaptured · plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
+  'services/artifacts/application/artifactRefinementOrchestrator.ts': 35730, // 12.7: +5 B, la capa de IA entra por su puerta diferida (`services/ai/lazy`) · plan diagramas 8.4c: +274, sin medida no hay pasadas de refinamiento · plan diagramas 8.2d: +148, compara la fidelidad con el IR que persistirá, incluidos sus metadatos · plan artefactos 7.5a: +38, la crítica y el refinamiento reciben onContextCaptured · plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
   'components/Icons.tsx': 35946,
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/CustomNode.tsx': 36197, // plan diagramas 4.1: +186, marca «Detalle» y su texto accesible
@@ -110,7 +110,7 @@ export const BYTE_CEILINGS = {
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/CustomEdge.tsx': 32695, // plan diagramas 8.3d: +322, dibuja la ruta ortogonal de ELK (la decisión vive en `hooks/useEngineRoute`)
   'components/businessInitiatives/InitiativeDetailPanels.tsx': 25929, // F3-05; 13.2 (5): t() en los cinco paneles
-  'services/agent/agentContextComposer.ts': 23023, // plan artefactos 7.3d: +775, entregables en curso, razón de negocio y extractos de hermanos en el copiloto · plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
+  'services/agent/agentContextComposer.ts': 23028, // 12.7: +5 B, la capa de IA entra por su puerta diferida (`services/ai/lazy`) · plan artefactos 7.3d: +775, entregables en curso, razón de negocio y extractos de hermanos en el copiloto · plan artefactos 7.3b: +632, la sección de decisiones de la conversación · F3-07: el import de `Artifact`/`Project` nombra su módulo · 7.2a: −9 828, la relevancia de la memoria bajó a `services/memory/memoryRelevance` y la selección la hace el bundle
   // F6-05: +18 bytes, the import path to the model-directory door instead of
   // the AI barrel — which took this route's download from 569,3 to 20,5 KB gz.
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
@@ -141,9 +141,9 @@ export const BYTE_CEILINGS = {
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/EngagementRoom.tsx': 24508, // 14.7: botón 'Pedir cambios' (componente propio), +179 B; 13.2 + 14.1: textos de aprobación separados por permiso y autor; 24 329 B medidos. // 13.2: mensajes de aprobación traducidos; +75 B medidos
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'pages/LMS/LMSCatalog.tsx': 23293, // 13.2: estado de catálogo traducido; +34 B medidos
+  'pages/LMS/LMSCatalog.tsx': 23298, // 12.7: +5 B, la capa de IA entra por su puerta diferida (`services/ai/lazy`) · 13.2: estado de catálogo traducido; +34 B medidos
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'components/ChatInterface.tsx': 22632, // plan artefactos 7.3d: +27, el chat pasa su proyecto a los turnos del agente
+  'components/ChatInterface.tsx': 22637, // 12.7: +5 B, la capa de IA entra por su puerta diferida (`services/ai/lazy`) · plan artefactos 7.3d: +27, el chat pasa su proyecto a los turnos del agente
   'services/diagram/diagramTypeQualityGates.ts': 22356,
   'services/diagram/bpmnValidation.ts': 21918,
   'services/publicationPipeline/PublicationTemplateRegistry.ts': 21661,

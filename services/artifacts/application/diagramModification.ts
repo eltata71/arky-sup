@@ -27,7 +27,7 @@ import type { Settings } from '../../../types';
 import type { Project } from '../../architectureProjects';
 import type { Artifact, ArtifactChangeNote } from '../../../lib/artifacts';
 import type { DiagramIR, DiagramPatch, PatchApplication, PatchRejection } from '../../../lib/diagram';
-import { assembleArtifactContext, diagramEditService, renderArtifactContextBundle } from '../../ai';
+import { assembleArtifactContext, diagramEditService, renderArtifactContextBundle } from '../../ai/lazy';
 import { applySemanticPatch, reconcileIRWithContent, resolveEditableDiagramIR } from '../../diagram';
 import { rewriteDiagramContent } from './diagramContentRewrite';
 import { planCanvasEdit, type CanvasEdit } from './diagramCanvasEdit';

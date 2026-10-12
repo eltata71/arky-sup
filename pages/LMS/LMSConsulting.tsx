@@ -1,7 +1,7 @@
 import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 
 import React, { useState } from 'react';
-import { assistantService } from '../../services/ai';
+import { assistantService } from '../../services/ai/lazy';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { LightbulbIcon, MessageSquareIcon, SparklesIcon } from 'lucide-react';

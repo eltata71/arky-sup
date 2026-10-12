@@ -32,7 +32,7 @@ import type { Settings } from '../../types';
 import type { Artifact, ArtifactContextPorts } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { ChatMessage } from '../chat';
-import { assembleArtifactContext, bundleItems, buildBasePrompt, buildBusinessMotivationBlock } from '../ai';
+import { assembleArtifactContext, bundleItems, buildBasePrompt, buildBusinessMotivationBlock } from '../ai/lazy';
 import { compactBullet } from '../memory';
 
 export type { AgentPersonaBriefing } from './agentPersonaBriefing';
