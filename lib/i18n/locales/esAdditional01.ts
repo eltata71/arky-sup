@@ -250,4 +250,10 @@ export const esAdditional01: Dictionary = {
   "ui.contexto-activo.c8f5f3": "Contexto activo",
   "ui.trabajando-con-el-proyecto-c.684873": "Trabajando con el proyecto completo",
   "ui.brief-estructurado-editable.461172": "Brief estructurado editable",
+  "kg.chainInitiative": "Iniciativa: {title}",
+  "kg.chainNoTargets": "La iniciativa no declara resultados ni indicadores.",
+  "kg.chainOutcome": "Resultado",
+  "kg.chainKpi": "Indicador",
+  "kg.chainUnclaimed": "ninguna contribución del proyecto lo sirve",
+  "kg.chainDangling": "Una contribución cita «{reference}», que ya no existe en la iniciativa.",
 };

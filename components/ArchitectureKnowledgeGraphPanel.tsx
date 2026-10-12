@@ -315,6 +315,7 @@ export const ArchitectureKnowledgeGraphPanel: React.FC<ArchitectureKnowledgeGrap
             <TraceabilityChainView
               graph={graph}
               artifacts={project.artifacts.map((a) => ({ id: a.id, name: a.name }))}
+              project={project}
             />
           </TabPanel>
 

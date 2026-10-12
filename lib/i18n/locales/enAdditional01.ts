@@ -261,4 +261,10 @@ export const enAdditional01: Dictionary = {
   "ui.nivel-de-detalle.b7fed9": "Detail level",
   "ui.criterios-de-aceptacion.9dea2d": "Acceptance criteria",
   "ui.formatos-objetivo.707e23": "Target formats",
+  "kg.chainInitiative": "Initiative: {title}",
+  "kg.chainNoTargets": "The initiative declares no outcomes or KPIs.",
+  "kg.chainOutcome": "Outcome",
+  "kg.chainKpi": "KPI",
+  "kg.chainUnclaimed": "no contribution from this project serves it",
+  "kg.chainDangling": "A contribution cites \"{reference}\", which no longer exists in the initiative.",
 };
