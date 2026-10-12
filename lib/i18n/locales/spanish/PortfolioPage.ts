@@ -1,0 +1,40 @@
+// GENERADO por scripts/buildDictionarySections.mjs — no editar a mano (14.6).
+// Sección «PortfolioPage» del diccionario español.
+// Regenerar: npm run i18n:sections
+import type { Dictionary } from '../../translations';
+
+export const section: Dictionary = {
+  "pf.title": "Portafolio de aplicaciones y radar tecnológico",
+  "pf.subtitle": "Cada aplicación se clasifica por TIME a partir de dos notas medidas; cada tecnología se sitúa en un anillo del radar. Lo que no se ha evaluado se dice «sin evaluar»; el cuadrante nunca se elige a mano.",
+  "pf.loading": "Cargando el portafolio",
+  "pf.error.title": "No se pudo cargar el portafolio",
+  "pf.error.desc": "El inventario no respondió. Vuelve a intentarlo en unos instantes.",
+  "pf.empty.title": "Aún no hay aplicaciones ni tecnologías",
+  "pf.empty.desc": "El portafolio se construye con las aplicaciones y tecnologías del inventario. Cuando existan, aparecerán aquí.",
+  "pf.view.label": "Vista del portafolio",
+  "pf.view.time": "TIME",
+  "pf.view.radar": "Radar",
+  "pf.time.summary": "{n} de {total} aplicaciones evaluadas.",
+  "pf.quadrant.invest": "Invertir",
+  "pf.quadrant.migrate": "Migrar",
+  "pf.quadrant.tolerate": "Tolerar",
+  "pf.quadrant.eliminate": "Eliminar",
+  "pf.quadrant.invest.hint": "Ajuste funcional y técnico altos: merece inversión.",
+  "pf.quadrant.migrate.hint": "Ajuste funcional alto, técnico bajo: conservar la función en otra plataforma.",
+  "pf.quadrant.tolerate.hint": "Ajuste funcional bajo, técnico alto: mantener sin invertir más.",
+  "pf.quadrant.eliminate.hint": "Ajuste funcional y técnico bajos: retirar.",
+  "pf.fit.functional": "Ajuste funcional",
+  "pf.fit.technical": "Ajuste técnico",
+  "pf.unassessed": "sin evaluar",
+  "pf.score.title": "Evaluar aplicaciones",
+  "pf.score.hint": "Elige una nota de 1 a 5 en cada eje; el cuadrante se calcula con las dos.",
+  "pf.radar.summary": "{n} estándares de la Oficina se cruzan con las tecnologías por nombre.",
+  "pf.ring.adopt": "Adoptar",
+  "pf.ring.trial": "Probar",
+  "pf.ring.assess": "Evaluar",
+  "pf.ring.hold": "Retener",
+  "pf.radar.classify": "Situar tecnologías",
+  "pf.radar.ring": "Anillo",
+  "pf.radar.standard": "Estándar: {statement}",
+  "pf.saveFailed": "No se pudo guardar el cambio.",
+};

@@ -26,6 +26,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'sqlMatrixParity', rule: 'la matriz de permisos es la misma en cliente y en PostgreSQL' },
   { anchor: 'createArchitectureProject', rule: 'un proyecto sólo nace de su fábrica' },
   { anchor: 'classifyTime', rule: 'el cuadrante TIME se calcula, nunca se elige' },
+  { anchor: 'buildDictionarySections', rule: 'el diccionario español se parte por ruta y es generado (14.6)' },
   { anchor: 'modules.json', rule: 'los módulos declarados y su gate' },
   { anchor: 'allowedDependencies', rule: 'las dependencias entre módulos están declaradas (F3-03)' },
   { anchor: 'budgetTargets', rule: 'los presupuestos tienen objetivo y fecha (F3-04)' },

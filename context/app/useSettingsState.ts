@@ -10,10 +10,10 @@
  * one that visibly did not save.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Settings } from '../../types';
 import { confirmedSettingsRevision, settingsRepository } from '../../services/settings';
-import { DEFAULT_LANGUAGE, INITIAL_TRANSLATIONS, loadDictionary, translate, type Translations, type UiLanguage } from '../../lib/i18n';
+import { DEFAULT_LANGUAGE, INITIAL_TRANSLATIONS, getSpanishVersion, loadDictionary, scheduleFullSpanishLoad, subscribeSpanish, translate, type Translations, type UiLanguage } from '../../lib/i18n';
 import { useAuth } from '../AuthContext';
 import { mirrorThemeForBoot } from '../../hooks/useTheme';
 import { initialSettings } from './initialSettings';
@@ -58,6 +58,10 @@ export const useSettingsState = (reporter: PersistenceReporter): SettingsState =
    * vista ni una interfaz a medias.
    */
   const [dictionaries, setDictionaries] = useState<Translations>(INITIAL_TRANSLATIONS);
+  // El español crece en sitio (núcleo + secciones por ruta, 14.6): la versión
+  // hace que `t` cambie de identidad cuando llega una sección.
+  const spanishVersion = useSyncExternalStore(subscribeSpanish, getSpanishVersion, getSpanishVersion);
+  useEffect(() => { scheduleFullSpanishLoad(); }, []);
   useEffect(() => {
     const language = settings.language as UiLanguage;
     if (dictionaries[language]) return;
@@ -75,7 +79,8 @@ export const useSettingsState = (reporter: PersistenceReporter): SettingsState =
   const t = useCallback((key: string, replacements?: Record<string, string>) => {
     const language = dictionaries[settings.language] ? settings.language : DEFAULT_LANGUAGE;
     return translate(dictionaries, language, key, replacements);
-  }, [settings.language, dictionaries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- spanishVersion cambia la identidad de `t` cuando llega una sección
+  }, [settings.language, dictionaries, spanishVersion]);
 
   const updateSettings = useCallback(async (updates: Partial<Settings>) => {
     const previous = settings;

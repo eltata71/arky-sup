@@ -274,6 +274,8 @@ export function sourceFiles() {
     .filter(Boolean)
     .filter((file) => /\.tsx?$/.test(file))
     .filter((file) => !/\.d\.ts$/.test(file))
+    // 14.6: secciones generadas del diccionario; su deriva la vigila check:i18n-sections.
+    .filter((file) => !file.startsWith('lib/i18n/locales/spanish/'))
     .filter((file) => !/\.(test|spec)\.tsx?$/.test(file) && !file.includes('__tests__/'));
 }
 

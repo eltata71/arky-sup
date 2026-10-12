@@ -28,7 +28,8 @@ describe('loading', () => {
   });
 
   it.each(LANGUAGES)('loads %s on demand', async (language) => {
-    expect(await loadDictionary(language)).toBe(translations[language]);
+    // 14.6: el español se ensambla desde sus secciones; el inglés es el módulo mismo.
+    expect(await loadDictionary(language)).toStrictEqual(translations[language]);
   });
 });
 

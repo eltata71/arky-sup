@@ -37,6 +37,7 @@
 
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 import { observabilityService } from '../../services/observability';
+import { ensureSpanishSections } from '../../lib/i18n';
 
 type ModuleFactory<T> = () => Promise<{ default: T }>;
 
@@ -186,5 +187,13 @@ export function lazyWithRetry<T extends ComponentType<any>>(
   factory: ModuleFactory<T>,
   options: LazyRetryOptions = {},
 ): LazyExoticComponent<T> {
-  return lazy(() => importWithRetry(factory, options));
+  // La sección del español de la ruta viaja con su chunk (14.6): se pide en
+  // paralelo y nunca rechaza, para que la ruta abra con sus textos.
+  return lazy(async () => {
+    const [loaded] = await Promise.all([
+      importWithRetry(factory, options),
+      ensureSpanishSections(options.chunkName),
+    ]);
+    return loaded;
+  });
 }

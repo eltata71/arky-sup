@@ -1,14 +1,14 @@
 import type { Dictionary, Translations, UiLanguage } from './translations';
-import { es } from './locales/es';
+import { ensureFullSpanish, spanishDictionary } from './spanishStore';
 
-/** What is available before anything has loaded: the default language. */
-export const INITIAL_TRANSLATIONS: Translations = { es };
+/** What is available before anything has loaded: the default language's core. */
+export const INITIAL_TRANSLATIONS: Translations = { es: spanishDictionary };
 
 /**
- * Fetches a language's dictionary. Spanish is already in the entry chunk, so
- * only the others cost a request. Each dictionary is its own chunk.
+ * Fetches a language's dictionary. Spanish ships as a core plus per-route
+ * sections (14.6): this completes it. Each other dictionary is its own chunk.
  */
 export async function loadDictionary(language: UiLanguage): Promise<Dictionary> {
-  if (language === 'es') return es;
+  if (language === 'es') return ensureFullSpanish();
   return (await import('./locales/en')).en;
 }
