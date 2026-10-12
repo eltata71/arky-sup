@@ -159,6 +159,9 @@ select is((select x ->> 'name' from api.architecture_projects p, jsonb_array_ele
   'El índice refleja la edición');
 select is((select revision from api.architecture_projects where id = 'proj_cmd'), 1::bigint,
   'Editar artefactos sigue sin mover la revisión del proyecto');
+select is((select x ->> 'reviewStatus' from api.architecture_projects p, jsonb_array_elements(p.artifact_index) x
+  where p.id = 'proj_cmd' and x ->> 'id' = 'art_a1'), 'draft',
+  '14.4: el índice lleva la etapa de revisión; sin ella propia, borrador');
 
 -- ───────────────────────────────────────────── varios a la vez
 set local role authenticated;

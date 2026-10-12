@@ -918,7 +918,7 @@ manipulado no gane nada: no hay superficie que atacar.
 |---|---|---|
 | `api.architecture_projects` | `list_project_aggregates`, `load_project_aggregate`, `save_project` (crea con revisión 0, actualiza con la vigente — la **única** escritura de la raíz desde F4-06), `delete_project_aggregate` | La raíz del Proyecto/Atención. Su contador e índice de artefactos son una **proyección** que recalcula el servidor; las lecturas devuelven `revision` |
 | `api.project_artifacts` | `create_artifact`, `create_artifact_version`, `update_artifact`, `delete_artifact`, `revise_artifacts` | El Artefacto es raíz de su propio agregado (ADR-106): un comando por intención, revisión **del artefacto**, índice único por versión de grupo (A-02). Ningún comando recibe la lista del proyecto |
-| `api.project_chat_history` | `load_chat_history`, `save_chat_history` | Una fila por proyecto, reescrita entera |
+| `api.project_chat_messages` | `load_chat_history`, `append_chat_messages` (idempotente por id, no borra), `replace_chat_history` (sólo el Centro de Memoria) | Una fila por mensaje (14.3) |
 | `api.agent_actions` | `list_agent_actions`, `append_agent_action` | Registro append-only de lo que hizo el agente |
 | `api.artifact_comments` | `list_artifact_comments`, `save_artifact_comment`, `delete_artifact_comment` | Hilos de revisión |
 | `api.artifact_review_decisions` | `list_artifact_review_decisions`, `record_artifact_review_decision` | Rastro **inmutable**: `on conflict do nothing`, nunca se reescribe |

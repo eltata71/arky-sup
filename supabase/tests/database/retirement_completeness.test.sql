@@ -11,13 +11,13 @@ grant execute on all functions in schema extensions to anon, authenticated;
 select no_plan();
 
 -- ─────────────────────────────────────────────────── estructura y grants
-select has_table('api', 'project_chat_history', 'El historial de chat tiene tabla propia');
+select has_table('api', 'project_chat_messages', 'El historial de chat guarda un registro por mensaje');
 select has_table('api', 'agent_actions', 'El registro del agente tiene tabla propia');
 select has_table('api', 'agent_profiles', 'La ficha de agente tiene tabla propia');
 select has_table('api', 'artifact_comments', 'Los hilos de revisión tienen tabla propia');
 select has_table('api', 'artifact_review_decisions', 'El rastro de decisiones tiene tabla propia');
 
-select ok((select relrowsecurity from pg_class where oid = 'api.project_chat_history'::regclass),
+select ok((select relrowsecurity from pg_class where oid = 'api.project_chat_messages'::regclass),
   'El historial de chat tiene RLS activa');
 select ok((select relrowsecurity from pg_class where oid = 'api.agent_actions'::regclass),
   'El registro del agente tiene RLS activa');
@@ -28,7 +28,7 @@ select ok((select relrowsecurity from pg_class where oid = 'api.artifact_comment
 select ok((select relrowsecurity from pg_class where oid = 'api.artifact_review_decisions'::regclass),
   'Las decisiones tienen RLS activa');
 
-select ok(not has_table_privilege('anon', 'api.project_chat_history', 'SELECT'),
+select ok(not has_table_privilege('anon', 'api.project_chat_messages', 'SELECT'),
   'Anónimo no lee historial de chat');
 select ok(not has_table_privilege('authenticated', 'api.agent_actions', 'INSERT'),
   'El cliente no inserta acciones del agente directamente');
@@ -78,13 +78,33 @@ select is(jsonb_array_length(api.list_project_aggregates()), 1,
 select is(api.list_project_aggregates() -> 0 -> 'artifacts', '[]'::jsonb,
   'El portafolio no arrastra los cuerpos de los artefactos');
 
-select lives_ok($$select api.save_chat_history('proj-f9', '[{"role":"user","text":"hola"}]'::jsonb)$$,
-  'El propietario guarda su historial');
+select lives_ok($$select api.append_chat_messages('proj-f9', '[{"id":"m1","role":"user","content":"hola"}]'::jsonb)$$,
+  'El propietario añade un mensaje a su historial');
 select is(jsonb_array_length(api.load_chat_history('proj-f9')), 1,
   'El historial guardado se lee de vuelta');
-select throws_ok($$select api.save_chat_history('proj-f9', '[{"aiConfig":{"apiKey":"secreto"}}]'::jsonb)$$,
+select is(api.load_chat_history('proj-f9') -> 0 ->> 'id', 'm1',
+  'Cada mensaje vuelve con su id');
+-- Dos pestañas: la segunda no conoce m1 y escribe m2; ninguna pierde nada.
+select lives_ok($$select api.append_chat_messages('proj-f9', '[{"id":"m2","role":"model","content":"qué tal"}]'::jsonb)$$,
+  'Una segunda escritura añade sin borrar');
+select is(jsonb_array_length(api.load_chat_history('proj-f9')), 2,
+  'Dos escritores concurrentes conservan los dos mensajes');
+select is(api.append_chat_messages('proj-f9', '[{"id":"m1","role":"user","content":"hola"},{"id":"m3","role":"user","content":"otra"}]'::jsonb), 1,
+  'Reenviar un mensaje ya guardado no lo duplica (idempotente por id)');
+select is(api.load_chat_history('proj-f9') -> 2 ->> 'id', 'm3',
+  'El historial conserva el orden de llegada');
+select throws_ok($$select api.append_chat_messages('proj-f9', '[{"role":"user","content":"sin id"}]'::jsonb)$$,
+  '22023', 'Cada mensaje requiere un id',
+  'Un mensaje sin id no entra');
+select throws_ok($$select api.append_chat_messages('proj-f9', '[{"id":"mk","aiConfig":{"apiKey":"secreto"}}]'::jsonb)$$,
   '22023', 'El historial no puede contener apiKey',
   'Una clave pegada en el chat no se almacena');
+select is(api.replace_chat_history('proj-f9', '[{"id":"m9","role":"user","content":"compactado"}]'::jsonb), 1,
+  'Sustituir el historial es la operación explícita');
+select is(jsonb_array_length(api.load_chat_history('proj-f9')), 1,
+  'Tras sustituir sólo queda la lista nueva');
+select is(api.replace_chat_history('proj-f9', '[]'::jsonb), 0,
+  'Vaciar el historial es explícito y funciona');
 
 select lives_ok($$select api.append_agent_action('proj-f9', '{"traceId":"trace-1","kind":"generate"}'::jsonb)$$,
   'El propietario registra una acción del agente');
@@ -138,9 +158,12 @@ select is(jsonb_array_length(api.list_project_aggregates()), 0,
   'Otro usuario no ve el proyecto ajeno en su portafolio');
 select is(api.load_chat_history('proj-f9'), '[]'::jsonb,
   'Otro usuario no lee el historial ajeno');
-select throws_ok($$select api.save_chat_history('proj-f9', '[]'::jsonb)$$,
+select throws_ok($$select api.append_chat_messages('proj-f9', '[{"id":"x1","role":"user","content":"x"}]'::jsonb)$$,
   '42501', 'El proyecto no existe o no pertenece a la sesión actual',
   'Otro usuario no escribe historial ajeno');
+select throws_ok($$select api.replace_chat_history('proj-f9', '[]'::jsonb)$$,
+  '42501', 'El proyecto no existe o no pertenece a la sesión actual',
+  'Otro usuario no sustituye historial ajeno');
 select throws_ok($$select api.append_agent_action('proj-f9', '{"traceId":"trace-2"}'::jsonb)$$,
   '42501', 'El proyecto no existe o no pertenece a la sesión actual',
   'Otro usuario no registra acciones en un proyecto ajeno');
@@ -155,7 +178,7 @@ reset role;
 delete from auth.sessions where id = '91000000-0000-4000-8000-000000000001';
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"90000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"91000000-0000-4000-8000-000000000001"}';
-select throws_ok($$select api.save_chat_history('proj-f9', '[]'::jsonb)$$,
+select throws_ok($$select api.append_chat_messages('proj-f9', '[]'::jsonb)$$,
   '42501', 'La sesión no está activa: vuelva a iniciar sesión',
   'Una sesión revocada no escribe historial');
 select throws_ok($$select api.list_project_aggregates()$$,

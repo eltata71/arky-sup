@@ -32,6 +32,7 @@ const MIGRATIONS = join(ROOT, 'supabase', 'migrations');
 const RETIRED = [
   { name: 'save_project_aggregate', task: 'F4-06', replacement: 'api.save_project + comandos de artefacto (ADR-106)' },
   { name: 'record_arb_decision', task: 'R-13', replacement: 'api.decide_engagement (decisión y transición en una transacción)' },
+  { name: 'save_chat_history', task: '14.3', replacement: 'api.append_chat_messages / api.replace_chat_history (una fila por mensaje)' },
 ] as const;
 
 const sourceFiles = (directory: string): string[] => readdirSync(directory).flatMap((entry) => {

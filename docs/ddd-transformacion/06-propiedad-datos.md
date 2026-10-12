@@ -46,7 +46,8 @@ cita la iniciativa antes de borrarla (H08, contrato
 |---|---|---|---|---|
 | `architecture_projects` | `list_project_aggregates`, `load_project_aggregate`, `save_project` (la **única** escritura de la raíz), `delete_project_aggregate` | autoritativo | `services/architectureProjects`, `AppContext`, `services/portfolioGraph` | F4-06 |
 | `architecture_projects.artifact_count` / `.artifact_index` | recalculados por cada comando de artefacto | **proyección** — desde las filas, en la misma transacción | `ProjectHub`, dashboards | F4-03 |
-| `project_chat_history` | `load_chat_history`, `save_chat_history` | autoritativo — **sin revisión**: reescribe la lista entera (invariante T-06, ❌) | `services/chat` | — |
+| `project_chat_messages` | `load_chat_history`, `append_chat_messages` (idempotente por id, nunca quita), `replace_chat_history` (la única que quita: Centro de Memoria) | autoritativo — **una fila por mensaje**; dos pestañas no se pisan (invariante T-06, ✅) | `services/chat` | 14.3 |
+| `project_chat_history` | — (sin RPC; conservada sin uso tras copiar sus mensajes) | **retirada** | — | 14.3 |
 | `agent_actions` | `list_agent_actions`, `append_agent_action` | autoritativo, append-only | `services/agent`, `officeRunTrace` | — |
 | `architecture_knowledge_graphs` | `load_knowledge_graph`, `save_knowledge_graph`, `save_graph_projection` | **proyección** — derivada de los artefactos | `services/architectureKnowledgeGraph`, `services/publicationPipeline` | F5-05 |
 | `projection_outbox` | `list_pending_projections`, `save_graph_projection`, `fail_projection` — la escribe **un disparador** de `project_artifacts`, nunca el cliente | autoritativo — **el trabajo de proyección pendiente** (ADR-107) | `services/architectureProjects/graphProjection`, `useArchitectureGraphSync` | F5-04 |

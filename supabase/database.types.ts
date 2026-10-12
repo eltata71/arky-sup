@@ -625,6 +625,41 @@ export type Database = {
           },
         ]
       }
+      project_chat_messages: {
+        Row: {
+          created_at: string
+          data: Json
+          message_id: string
+          owner_id: string
+          project_id: string
+          seq: number
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          message_id: string
+          owner_id: string
+          project_id: string
+          seq?: never
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          message_id?: string
+          owner_id?: string
+          project_id?: string
+          seq?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_chat_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "architecture_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projection_outbox: {
         Row: {
           attempts: number
@@ -720,6 +755,10 @@ export type Database = {
       append_agent_action: {
         Args: { p_action: Json; p_project_id: string }
         Returns: undefined
+      }
+      append_chat_messages: {
+        Args: { p_messages: Json; p_project_id: string }
+        Returns: number
       }
       approve_charter: {
         Args: {
@@ -966,6 +1005,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      replace_chat_history: {
+        Args: { p_messages: Json; p_project_id: string }
+        Returns: number
+      }
       revise_artifacts: {
         Args: { p_changes: Json; p_project_id: string }
         Returns: Json
@@ -995,10 +1038,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      save_chat_history: {
-        Args: { p_messages: Json; p_project_id: string }
-        Returns: undefined
       }
       save_context: { Args: { p_context: Json }; Returns: undefined }
       save_course: {

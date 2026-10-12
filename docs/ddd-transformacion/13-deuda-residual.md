@@ -25,7 +25,7 @@ Las decisiones que desbloquearon esta tarea son del propietario, del
 
 | # | Qué | Por qué se acepta hoy | Revisar cuando |
 |---|---|---|---|
-| **R-03** | **El historial de chat puede perder mensajes (T-06).** `save_chat_history` reescribe la lista entera sin revisión: con dos pestañas en el mismo proyecto, la última que guarda borra los mensajes de la otra, sin aviso | Un solo usuario, y rara vez con dos pestañas en el mismo proyecto. **El propietario no ha elegido todavía** entre revisión optimista y un registro por mensaje (ver F6-05 §3) | El primer caso observado, o antes de tener varios usuarios. Arreglarlo exige una migración |
+| **R-03** | ~~**El historial de chat puede perder mensajes (T-06).**~~ **Cerrada en 14.3 (#211).** El historial es un registro por mensaje (`api.project_chat_messages`, PK `(proyecto, id)`): `append_chat_messages` es idempotente y no borra, y sólo `replace_chat_history` —el Centro de Memoria— sustituye la lista | Decisión del propietario: registro por mensaje | — |
 | **R-05** | **E-04: el rastro de auditoría de un cambio de estado lo garantiza TypeScript**, no el servidor | `transitionEngagement` y su prueba de forma lo sostienen. El registro inmutable del comité, que es lo auditado de verdad, sí es del servidor | Si la auditoría del encargo pasa a tener valor legal |
 | **R-06** | **E-05: productor y revisor distintos, sólo en el planificador** | La separación que importa, autor contra aprobador del comité, ya es del servidor (E-08) | Si las tareas se asignan a personas y no a agentes |
 | **R-07** | **E-14: el servidor valida la forma del presupuesto de IA, no su consumo** | El consumo lo cuenta el runner; el coste lo limita además el proxy (límite por cliente) | Si hay coste por usuario que facturar |

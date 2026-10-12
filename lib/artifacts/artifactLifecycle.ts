@@ -85,7 +85,7 @@ export interface ArtifactLifecycleCounts {
   byStage: Record<ArtifactLifecycleStage, number>;
   /**
    * Artifacts whose review stage is not known here: their project's artifacts
-   * are not loaded, and the index the portfolio carries has no review status.
+   * are not loaded, and their index entry predates the review status (14.4).
    * Counted apart, never folded into «borrador» — unmeasured is not zero.
    */
   unmeasured: number;
@@ -94,7 +94,7 @@ export interface ArtifactLifecycleCounts {
 interface LifecycleProject {
   artifacts?: readonly LifecycleArtifact[];
   artifactsLoaded?: boolean;
-  artifactIndex?: readonly Pick<Artifact, 'versionGroupId' | 'version'>[];
+  artifactIndex?: readonly Pick<Artifact, 'versionGroupId' | 'version' | 'reviewStatus'>[];
   publicationPackages?: readonly LifecyclePublication[];
 }
 
@@ -119,8 +119,10 @@ export function countArtifactLifecycle(projects: readonly LifecycleProject[]): A
       continue;
     }
     for (const entry of latestPerGroup(project.artifactIndex ?? [])) {
-      // Published is known from the index (version + packages); a review stage is not.
-      if (deriveArtifactLifecycle(entry, packages).stage === 'published') byStage.published += 1;
+      // Published is known from version + packages; the review stage, from the
+      // index's `reviewStatus` — absent only in entries written before 14.4.
+      const stage = deriveArtifactLifecycle(entry, packages).stage;
+      if (stage === 'published' || entry.reviewStatus) byStage[stage] += 1;
       else unmeasured += 1;
     }
   }

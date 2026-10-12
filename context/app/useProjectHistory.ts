@@ -42,7 +42,7 @@ export const useProjectHistory = (reporter: PersistenceReporter) => {
 
   const replaceChatHistory = useCallback(async (projectId: string, messages: ChatMessage[]): Promise<boolean> => {
       try {
-          const result = await chatHistoryRepository.save(projectId, messages);
+          const result = await chatHistoryRepository.replace(projectId, messages);
           handleWriteResult(result, 'Historial de chat actualizado en base de datos.');
           // `success` is the broad flag set by `executeRemoteWrite` for both
           // `confirmed` and `optimistic` outcomes — both states are fine for
