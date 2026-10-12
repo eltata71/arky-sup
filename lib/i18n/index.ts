@@ -9,3 +9,4 @@ export { translate } from './translate';
 export { INITIAL_TRANSLATIONS, loadDictionary } from './dictionaries';
 export { DEFAULT_LANGUAGE, UI_LANGUAGES } from './translations';
 export type { Dictionary, Translations, UiLanguage } from './translations';
+export { ensureSpanishSections, ensureFullSpanish, scheduleFullSpanishLoad, subscribeSpanish, getSpanishVersion } from './spanishStore';

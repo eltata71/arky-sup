@@ -313,7 +313,7 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    cada concern vive en un hook bajo `context/app/`, y `projects` tiene un solo
    dueño (`useProjectsState`). El diccionario `en`/`es` está en `lib/i18n/locales/` (inglés
    cargado con `import()`), ambos idiomas llevan las mismas claves y
-   `literalBudget.test.ts` impide que suban los literales de JSX (R-16). Detalle en CLAUDE.md →
+   `literalBudget.test.ts` impide que suban los literales de JSX (R-16). El español se parte por ruta (14.6): `lib/i18n/locales/spanish/` es generado por `buildDictionarySections.mjs` (`npm run i18n:sections`, vigilado por `check:i18n-sections`), con núcleo eager y secciones que `lazyWithRetry` carga con su chunk. Detalle en CLAUDE.md →
    *`AppContext` is one context composed of seven hooks*.
 17. **Producción la publica un solo camino, y es `ci.yml`.** El contrato
     versionado `docs/operacion/despliegue.json` fija el repositorio
