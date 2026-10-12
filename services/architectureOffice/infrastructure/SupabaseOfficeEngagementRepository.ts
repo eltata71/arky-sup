@@ -8,6 +8,7 @@ export interface SupabaseOfficeClientLike {
   rpc(name: 'load_arb_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'load_charter_engagements', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'approve_charter', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
+  rpc(name: 'request_charter_changes', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'save_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   rpc(name: 'delete_engagement', args: Record<string, unknown>): Promise<{ data: unknown; error: unknown }>;
   // `record_arb_decision` ya no se llama desde aquí: la escribía la mitad de
@@ -34,6 +35,8 @@ export interface SupabaseOfficeEngagementRepository {
    * servidor; devuelve el encargo tal y como quedó.
    */
   approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
+  /** Registra en el servidor que se pidieron cambios al charter (14.7). */
+  requestCharterChanges(engagement: OfficeEngagement, reason: string): Promise<PersistenceResult<OfficeEngagement>>;
   /**
    * Devuelve el encargo **tal y como quedó guardado**, con su revisión nueva.
    *
@@ -178,6 +181,30 @@ export function createSupabaseOfficeEngagementRepository(
         return {
           status: 'failed', success: false, operationId, target: 'supabase',
           message: 'Supabase confirmó una respuesta de aprobación inválida.',
+        };
+      }
+      return {
+        status: 'success', success: true, operationId, target: 'supabase',
+        data: { ...record.engagement, revision: record.revision },
+      };
+    },
+
+    async requestCharterChanges(engagement, reason) {
+      const operationId = createOperationId('requestCharterChanges');
+      const { data, error } = await client.rpc('request_charter_changes', {
+        p_project_id: engagement.projectId,
+        p_engagement_id: engagement.id,
+        p_expected_revision: engagement.revision ?? 0,
+        p_reason: reason,
+      });
+      if (error) {
+        return failed<OfficeEngagement>(operationId, error, 'No se pudo registrar la petición de cambios en Supabase.');
+      }
+      const record = asRemoteRecord(data, engagement.projectId);
+      if (!record) {
+        return {
+          status: 'failed', success: false, operationId, target: 'supabase',
+          message: 'Supabase confirmó una respuesta de petición de cambios inválida.',
         };
       }
       return {

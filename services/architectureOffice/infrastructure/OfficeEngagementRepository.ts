@@ -32,6 +32,7 @@ export interface OfficeEngagementRepository {
   listForCharterApproval(): Promise<OfficeEngagement[]>;
   /** Firma el charter en el servidor (14.1): devuelve el encargo tal y como quedó. */
   approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
+  requestCharterChanges(engagement: OfficeEngagement, reason: string): Promise<PersistenceResult<OfficeEngagement>>;
   /**
    * Guarda y devuelve el encargo **tal y como quedó**, con su revisión nueva.
    *
@@ -109,6 +110,17 @@ class SupabaseBackedOfficeEngagementRepository implements OfficeEngagementReposi
       // Igual que el ARB: nunca se sirve el espejo propio como bandeja ajena.
       return [];
     }
+  }
+
+  async requestCharterChanges(engagement: OfficeEngagement, reason: string): Promise<PersistenceResult<OfficeEngagement>> {
+    let result: PersistenceResult<OfficeEngagement>;
+    try {
+      result = await (await getRemote()).requestCharterChanges(engagement, reason);
+    } catch (error) {
+      result = createFailureResult('requestCharterChanges', error);
+    }
+    if (result.success && result.data) mirror.upsert(result.data.projectId, result.data, result);
+    return result;
   }
 
   async approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>> {

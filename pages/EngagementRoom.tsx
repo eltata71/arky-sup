@@ -24,6 +24,7 @@ import { CompletionMark } from '../components/ui/micro';
 import { EngagementRoomFallback } from '../components/architectureOffice/EngagementRoomFallback';
 import { FilePlus2, Layers, ListChecks, Play, ScrollText, Sparkles, Square } from 'lucide-react';
 import { EngagementTaskBoard } from '../components/architectureOffice/EngagementTaskBoard';
+import { CharterChangesRequest } from '../components/architectureOffice/CharterChangesRequest';
 import { OfficeTimeline } from '../components/architectureOffice/OfficeTimeline';
 import { ArbDecisionPanel } from '../components/architectureOffice/ArbDecisionPanel';
 import { PersonaChip } from '../components/architectureOffice/PersonaAvatar';
@@ -323,6 +324,7 @@ const EngagementRoom: React.FC = () => {
                   {t("ui.aprobar-charter.62bfd1")}
                 </Button>
               )}
+              {!charterApproved && charterAccess.allowed && <CharterChangesRequest engagementId={engagement.id} />}
               {!charterApproved && !charterAccess.allowed && (
                 <span className="text-xs text-gray-600 dark:text-gray-300">
                   {charterAccess.reason === 'own-engagement'

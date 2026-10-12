@@ -32,6 +32,7 @@ import {
 } from '../domain/OfficeEngagementPlanner';
 import {
   approveCharter as approveCharterRule,
+  requestCharterChanges as requestCharterChangesRule,
   attachGateAssessment,
   decideEngagement as decideEngagementRule,
 } from '../domain/OfficeArbService';
@@ -73,6 +74,11 @@ export interface EngagementWritePort {
   ): Promise<PersistenceResult<OfficeEngagement>>;
   /** Aprueba el charter en el servidor (14.1): firma, fecha y auditoría son suyas. */
   approveCharter(engagement: OfficeEngagement): Promise<PersistenceResult<OfficeEngagement>>;
+  /** Devuelve el charter con una razón (14.7): el servidor pone firma y fecha. */
+  requestCharterChanges(
+    engagement: OfficeEngagement,
+    reason: string,
+  ): Promise<PersistenceResult<OfficeEngagement>>;
 }
 
 /** Pedirle al modelo un charter mejor. Devuelve el texto crudo; puede fallar. */
@@ -234,6 +240,29 @@ export const approveCharterOperation = async (
   const confirmedEngagement = approved.data ?? result.engagement;
   deps.onDraft?.(confirmedEngagement);
   return { ok: true, engagement: confirmedEngagement, persistence: approved.status };
+};
+
+export const requestCharterChangesOperation = async (
+  deps: EngagementOperationDeps,
+  engagement: OfficeEngagement,
+  actor: OfficeActor,
+  reason: string,
+): Promise<OfficeOperationResult> => {
+  const result = requestCharterChangesRule(engagement, actor, reason);
+  if (!result.ok) return { ok: false, reason: result.reason };
+  const written = await deps.writes.requestCharterChanges(engagement, reason.trim());
+  if (!written.success) {
+    const failure = describePersistenceFailure(written, engagement);
+    return {
+      ...failure,
+      reason: written.status === 'permission-denied'
+        ? 'No puedes pedir cambios a este charter: exige el permiso de aprobación y no ser el autor del encargo.'
+        : failure.reason,
+    };
+  }
+  const confirmedEngagement = written.data ?? result.engagement;
+  deps.onDraft?.(confirmedEngagement);
+  return { ok: true, engagement: confirmedEngagement, persistence: written.status };
 };
 
 export const evaluateGatesOperation = async (

@@ -12,6 +12,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PersistenceResult, PersistenceStatus } from '../../../../services/persistence';
 import {
   approveCharterOperation,
+  requestCharterChangesOperation,
   createEngagementOperation,
   decideEngagementOperation,
   deleteEngagementOperation,
@@ -38,6 +39,7 @@ const writes = (over: Partial<EngagementWritePort> = {}): EngagementWritePort =>
   remove: vi.fn(async () => ok<void>(undefined)),
   decide: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
   approveCharter: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
+  requestCharterChanges: vi.fn(async (engagement: OfficeEngagement) => ok(engagement)),
   ...over,
 });
 
@@ -143,6 +145,30 @@ describe('una escritura no confirmada nunca es un éxito', () => {
     expect(result.ok).toBe(true);
     expect(port.approveCharter).toHaveBeenCalledTimes(1);
     expect(port.save).not.toHaveBeenCalled();
+  });
+});
+
+describe('pedir cambios al charter (14.7)', () => {
+  it('escribe por la RPC con el motivo recortado', async () => {
+    const port = writes();
+    const result = await requestCharterChangesOperation({ writes: port }, approvable(), admin, '  Más alcance ');
+    expect(result.ok).toBe(true);
+    expect(port.requestCharterChanges).toHaveBeenCalledWith(expect.anything(), 'Más alcance');
+    expect(port.save).not.toHaveBeenCalled();
+  });
+
+  it('no llega al servidor si las reglas lo rechazan', async () => {
+    const port = writes();
+    const refused = await requestCharterChangesOperation({ writes: port }, approvable(), architect, 'x');
+    expect(refused.ok).toBe(false);
+    expect(port.requestCharterChanges).not.toHaveBeenCalled();
+  });
+
+  it('no dice que pidió cambios cuando la escritura falló', async () => {
+    const port = writes({ requestCharterChanges: vi.fn(async () => fail<OfficeEngagement>('conflict')) });
+    const result = await requestCharterChangesOperation({ writes: port }, approvable(), admin, 'x');
+    expect(result.ok).toBe(false);
+    expect(result.persistence).toBe('conflict');
   });
 });
 

@@ -159,5 +159,36 @@ select is((api.save_engagement('proj_charter',
     pg_temp.engagement('eng_legacy', 'in-progress', '2026-09-01T00:00:00.000Z', null), 1)).revision,
   2::bigint, 'Un encargo guardado con una aprobación antigua sin firmante se sigue guardando');
 
+-- ───────────────────────────────────────────── 14.7 · pedir cambios al charter
+reset role;
+insert into api.office_engagements (id, project_id, owner_id, data, revision)
+values ('eng_c7', 'proj_charter', '68000000-0000-4000-8000-000000000001',
+  pg_temp.engagement('eng_c7', 'awaiting-charter', null, null), 1);
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"68000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"78000000-0000-4000-8000-000000000001"}';
+select throws_ok($$select api.request_charter_changes('proj_charter', 'eng_c7', 1, 'Falta alcance')$$,
+  '42501', 'Permiso insuficiente: charter:approve',
+  'Un arquitecto no pide cambios a charters');
+set local request.jwt.claims = '{"sub":"68000000-0000-4000-8000-000000000003","role":"authenticated","session_id":"78000000-0000-4000-8000-000000000003"}';
+select throws_ok($$select api.request_charter_changes('proj_charter', 'eng_c3', 1, 'Falta alcance')$$,
+  '42501', 'El autor no puede pedir cambios a su propio charter',
+  'El autor no se pide cambios a sí mismo');
+set local request.jwt.claims = '{"sub":"68000000-0000-4000-8000-000000000002","role":"authenticated","session_id":"78000000-0000-4000-8000-000000000002"}';
+select throws_ok($$select api.request_charter_changes('proj_charter', 'eng_c7', 1, '   ')$$,
+  '22023', 'Pedir cambios exige explicar qué hay que cambiar',
+  'Sin razón no se piden cambios');
+select throws_ok($$select api.request_charter_changes('proj_charter', 'eng_c7', 9, 'Falta alcance')$$,
+  'P0001', 'Conflicto de encargo: recarga antes de guardar',
+  'Una revisión vieja no pide cambios');
+select is((api.request_charter_changes('proj_charter', 'eng_c7', 1, 'Falta alcance')).revision,
+  2::bigint, 'Otra persona con charter:approve devuelve el charter con su razón');
+reset role;
+select is((select data ->> 'status' from api.office_engagements where id = 'eng_c7'),
+  'awaiting-charter', 'El estado no cambia');
+select is((select data -> 'auditTrail' -> 0 ->> 'action' from api.office_engagements where id = 'eng_c7'),
+  'charter-changes-requested', 'El rastro lo registra');
+select is((select data -> 'auditTrail' -> 0 -> 'actor' ->> 'id' from api.office_engagements where id = 'eng_c7'),
+  '68000000-0000-4000-8000-000000000002', 'Firmado por la sesión, no por el cliente');
+
 select * from finish();
 rollback;

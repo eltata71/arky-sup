@@ -66,6 +66,7 @@ vi.mock('../../context/OfficeContext', () => ({
     loadEngagements: vi.fn(),
     createEngagement: vi.fn(),
     approveCharter: vi.fn(),
+    requestCharterChanges: vi.fn(),
     runEngagementNow: vi.fn(),
     listEngagementsForProject: () => [],
   }),

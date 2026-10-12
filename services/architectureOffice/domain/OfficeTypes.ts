@@ -247,6 +247,7 @@ export type OfficeAuditAction =
   | 'engagement-created'
   | 'charter-proposed'
   | 'charter-approved'
+  | 'charter-changes-requested'
   | 'run-started'
   | 'run-paused'
   | 'run-resumed'

@@ -23,6 +23,7 @@ vi.mock('../../context/OfficeContext', () => ({
     arbEligibility: () => ({ eligible: false }),
     loadEngagements: vi.fn(),
     approveCharter: vi.fn(),
+    requestCharterChanges: vi.fn(),
     runEngagementNow: vi.fn(),
     cancelRun: vi.fn(),
     evaluateGates: vi.fn(),

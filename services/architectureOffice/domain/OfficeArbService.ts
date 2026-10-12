@@ -166,6 +166,40 @@ export const approveCharter = (
   };
 };
 
+/**
+ * Pide cambios al charter sin aprobarlo ni rechazarlo (14.7).
+ *
+ * Quien puede aprobar —y no es el autor— puede devolver el charter con una
+ * razón escrita. El estado no cambia: el encargo sigue esperando un charter,
+ * y lo que queda es el rastro de que alguien lo revisó y qué pidió. Quien hace
+ * cumplir la regla es `api.request_charter_changes`.
+ */
+export const requestCharterChanges = (
+  engagement: OfficeEngagement,
+  actor: OfficeActor,
+  reason: string,
+): OfficeTransitionResult => {
+  const eligibility = describeCharterApprovalEligibility(engagement, actor);
+  if (!eligibility.allowed) {
+    return fail(engagement, eligibility.reason === 'own-engagement'
+      ? 'El autor del encargo no puede pedir cambios a su propio charter.'
+      : 'Tu rol no permite revisar charters.');
+  }
+  if (!CHARTER_APPROVABLE_FROM.includes(engagement.status)) {
+    return fail(engagement, `No se pueden pedir cambios al charter desde el estado "${engagement.status}".`);
+  }
+  const trimmed = reason.trim();
+  if (!trimmed) return fail(engagement, 'Pedir cambios exige explicar qué hay que cambiar.');
+  return {
+    ok: true,
+    engagement: withAuditEntry(engagement, 'charter-changes-requested', trimmed, {
+      actor,
+      before: engagement.status,
+      after: engagement.status,
+    }),
+  };
+};
+
 // ---------------------------------------------------------------------------
 // Board decision
 // ---------------------------------------------------------------------------
