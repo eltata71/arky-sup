@@ -358,6 +358,8 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    *Dependencias que no pueden subir*. Y **no fusiones una rama de Dependabot
    tal cual**: las de la cola nacieron de un `main` anterior y reintroducen
    `mirror-source.yml`; aplica la subida sobre `main` actual.
+   También vetadas (2026-10-12): `tailwindcss` 4, `marked` 18 y `@types/node` 26;
+   ver CLAUDE.md → *Dependabot #220–#224*.
 19. **Iniciativas es el contexto piloto: copia su forma** (F3-05,
     `docs/ddd-transformacion/09-cierre-fase-3.md`). `domain/` guarda las reglas
     sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);

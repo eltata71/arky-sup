@@ -760,6 +760,16 @@ Tailwind; ninguna de estas subidas agrega uno nuevo.
 | #39 `jsdom` 30.1.2 | Aplicar | Suite completa con Motion 14 sobre `9ea366a`: **616 archivos, 5.766 pruebas** en verde; sin advisories nuevos. Es dependencia de desarrollo y el bundle mantiene la misma cifra de base. |
 | #40 `@vitejs/plugin-react` 6.1.2 | No aplicar | `npm install` falla con `ERESOLVE`: declara `peer vite@^8.0.0`, incompatible con Vite 6. Vite 8 sigue vetado por la medición anterior. |
 
+### Dependabot #220–#224, evaluados el 2026-10-12
+
+Aplicadas sobre `main` en una rama propia: #220 (Playwright 1.64, Vite 6.4.4) y
+#223 (`@testing-library/jest-dom` 7). Typecheck, lint y **618 archivos / 5 774
+pruebas** en verde. Rechazadas, con exclusión mayor en `dependabot.yml`:
+#224 `tailwindcss` 4 (migración de configuración y plugin de PostCSS; CI en
+rojo), #222 `marked` 18 (los renderers reciben tokens: el typecheck falla en
+`useDocumentRendering`; necesita tarea propia) y #221 `@types/node` 26 (el
+runtime es Node 24; typecheck pasa, pero tipar APIs que no existen es deuda).
+
 Las exclusiones nuevas en `.github/dependabot.yml` detienen sólo las propuestas
 mayores de los dos paquetes rechazados. Para reabrir una subida, retirar su
 exclusión y volver a medir los presupuestos sobre `main` vigente.
