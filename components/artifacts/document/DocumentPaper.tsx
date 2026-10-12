@@ -1,5 +1,5 @@
 import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { decodeMermaidSource } from '../../../hooks/artifacts/useDocumentRendering';
 import type { DocumentTheme } from './documentPresentation';
 import { SafeRichText } from '../../ui/SafeRichText';
@@ -37,6 +37,8 @@ export interface DocumentCoverMeta {
   phase?: string;
   updatedAt?: string;
 }
+
+interface CitationPreview { label: string; kind: string; source: string; top: number; left: number }
 
 export interface DocumentPaperProps {
   /** Sanitized HTML to render inside the paper. */
@@ -173,12 +175,35 @@ export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoo
     });
     root.querySelectorAll<HTMLElement>('.ctx-chip').forEach((chip) => {
       chip.tabIndex = 0;
+      chip.setAttribute('role', 'button');
+      chip.setAttribute('aria-haspopup', 'true');
       const source = chip.getAttribute('title');
-      if (source) chip.setAttribute('aria-label', `Fuente: ${source}`);
+      if (source) {
+        chip.setAttribute('data-ctx-source', source.replace(/^Fuente:\s*/, ''));
+        chip.removeAttribute('title');
+      }
     });
   }, [html]);
 
+  const [preview, setPreview] = useState<CitationPreview | null>(null);
+  const showPreview = useCallback((target: EventTarget | null) => {
+    const chip = target instanceof Element ? target.closest<HTMLElement>('.ctx-chip') : null;
+    if (!chip) return;
+    const kind = chip.getAttribute('data-ctx-kind');
+    if (!kind) return; // unresolved chips already say everything in their text
+    const rect = chip.getBoundingClientRect();
+    setPreview({
+      label: chip.textContent ?? '',
+      kind,
+      source: chip.getAttribute('data-ctx-source') ?? t('documentCitation.noSource'),
+      top: rect.bottom + 6,
+      left: rect.left,
+    });
+  }, [t]);
+  const hidePreview = useCallback(() => setPreview(null), []);
+
   return (
+    <>
     <div
       className={`${PAPER_BASE_CLASS} ${isDark ? PAPER_DARK_CLASS : PAPER_LIGHT_CLASS}`}
       style={{ width: `${widthPx}px`, maxWidth: '100%', zoom: zoom / 100 }}
@@ -187,7 +212,14 @@ export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoo
       {html.trim().length > 0 ? (
         <SafeRichText
           ref={proseRef}
-          containerProps={{ 'data-document-prose': true } as Record<string, unknown>}
+          containerProps={{
+            'data-document-prose': true,
+            onMouseOver: (e: React.MouseEvent) => showPreview(e.target),
+            onMouseOut: hidePreview,
+            onFocus: (e: React.FocusEvent) => showPreview(e.target),
+            onBlur: hidePreview,
+            onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Escape') hidePreview(); },
+          } as Record<string, unknown>}
           className={`${PROSE_BASE_CLASS} ${isDark ? PROSE_DARK_CLASS : PROSE_LIGHT_CLASS} ${cover ? '!pt-[40px]' : ''}`}
           html={html}
         />
@@ -203,6 +235,19 @@ export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoo
         </pre>
       )}
     </div>
+      {preview && (
+        <div
+          role="status"
+          className="fixed z-50 max-w-xs rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-800 shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          style={{ top: preview.top, left: preview.left }}
+          data-ctx-preview
+        >
+          <p className="font-semibold">{preview.label}</p>
+          <p className="mt-0.5 text-gray-600 dark:text-gray-300">{t('documentCitation.kind')}: {preview.kind}</p>
+          <p className="text-gray-600 dark:text-gray-300">{t('documentCitation.source')}: {preview.source}</p>
+        </div>
+      )}
+    </>
   );
 };
 

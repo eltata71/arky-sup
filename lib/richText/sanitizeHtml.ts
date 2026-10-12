@@ -57,6 +57,7 @@ const MARKDOWN_ALLOWED_ATTR = [
   'href', 'src', 'alt', 'title', 'class', 'id', 'colspan', 'rowspan', 'align',
   'width', 'height', 'open', 'start', 'reversed', 'type', 'loading', 'target',
   'data-mermaid-source', 'data-chart', 'data-language', 'data-callout',
+  'data-ctx-kind',
 ];
 
 const SVG_ALLOWED_TAGS = [

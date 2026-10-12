@@ -110,6 +110,9 @@ export const esTemplates01: Dictionary = {
   "lms.noActivity": "Sin actividad",
   "documentCover.project": "Proyecto",
   "documentCover.phase": "Fase",
+  "documentCitation.kind": "Tipo",
+  "documentCitation.source": "Fuente",
+  "documentCitation.noSource": "Sin fuente registrada",
   "documentCover.version": "Versión",
   "documentCover.updated": "Actualizado",
 };
