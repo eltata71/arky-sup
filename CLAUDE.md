@@ -708,8 +708,8 @@ La versión de Node sale de `.nvmrc` (24) en los cuatro.
 ### Dependencias que no pueden subir, y por qué
 
 Medido el 2026-09-19 resolviendo la cola de Dependabot paquete a paquete. Esto
-existe para que nadie vuelva a intentarlo a ciegas: **las seis pasan la suite
-entera**, y ninguna se detecta leyendo el changelog.
+existe para que nadie vuelva a intentarlo a ciegas: cada caso tiene un gate
+concreto y no se resuelve leyendo sólo el changelog.
 
 | Paquete | Qué pasa | Quién lo detecta |
 |---|---|---|
@@ -719,8 +719,8 @@ entera**, y ninguna se detecta leyendo el changelog.
 | `mermaid` 12 | Depende de `chevrotain` 11 → `lodash-es` vulnerable. **5 advisories de severidad alta**, entre ellos inyección de código vía `_.template` | `npm audit --audit-level=high` |
 | `react-dom` 19 | La PR sube `react-dom` dejando `react` en 18. Rota de partida | typecheck |
 
-**Lo que estos seis casos enseñan sobre los gates.** Los cinco primeros pasan
-las 4 359 pruebas sin una sola en rojo. Un presupuesto de bundle y un `npm
+**Lo que estos cinco casos enseñan sobre los gates.** Varios pasaron
+las pruebas unitarias sin una sola en rojo. Un presupuesto de bundle y un `npm
 audit` no son burocracia alrededor de la suite: miden cosas que **ninguna
 prueba unitaria puede ver** —cuánto se descarga antes de pintar, y qué cadena
 de dependencias arrastra un CVE—. Por eso son trabajos obligatorios aparte, y
@@ -733,6 +733,27 @@ sobre el árbol y hacía `push` directo a `main`—, además de revertir `engine
 `storage:inventory` y `@supabase/supabase-js`. `ciPipeline.test.ts` las pararía
 en CI, que es su trabajo; el camino limpio es **aplicar las subidas sobre `main`
 actual** y dejar que Dependabot cierre sus PR solo.
+
+### Dependabot mayores evaluados el 2026-10-12 (#37–#40)
+
+Con Node 24.21.0 y npm 11.19.0, se aplicó cada subida en un worktree aislado.
+La primera medición sobre `main` (`2ea5fbe`) daba **402,8/403,0 KB gz** de
+arranque y rechazaba Motion. Durante la revisión, `main` avanzó a `9ea366a`:
+la partición del diccionario español bajó la línea de base a **339,0/345,0 KB
+gz**. Se repitieron las mediciones de bundle sobre ese commit antes de decidir.
+`npm audit` reporta cinco hallazgos altos preexistentes en la cadena de
+Tailwind; ninguna de estas subidas agrega uno nuevo.
+
+| PR | Resultado | Evidencia |
+|---|---|---|
+| #37 `motion` 14.0.0 | Aplicar | 13 pruebas dirigidas pasan; carga inicial **340,2/345,0 KB gz** y todas las rutas bajo su techo sobre `9ea366a`. |
+| #38 `@google/genai` 2.27.0 y 2.28.0 | No aplicar | Typecheck con 2.27.0 y 51 pruebas dirigidas con ambas versiones pasan; las dos exceden los mismos cinco techos. La 2.28.0 vigente, sobre `9ea366a` con Motion 14, mide Projects **731,4/717**, Office **652,0/650**, Training Center **643,8/630**, SDD **696,4/682** y Workspace **711,9/698** KB gz. |
+| #39 `jsdom` 30.1.2 | Aplicar | Suite completa con Motion 14 sobre `9ea366a`: **616 archivos, 5.766 pruebas** en verde; sin advisories nuevos. Es dependencia de desarrollo y el bundle mantiene la misma cifra de base. |
+| #40 `@vitejs/plugin-react` 6.1.2 | No aplicar | `npm install` falla con `ERESOLVE`: declara `peer vite@^8.0.0`, incompatible con Vite 6. Vite 8 sigue vetado por la medición anterior. |
+
+Las exclusiones nuevas en `.github/dependabot.yml` detienen sólo las propuestas
+mayores de los dos paquetes rechazados. Para reabrir una subida, retirar su
+exclusión y volver a medir los presupuestos sobre `main` vigente.
 
 ---
 

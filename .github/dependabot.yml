@@ -43,9 +43,8 @@ updates:
     # Cerrar una PR de Dependabot sólo descarta **esa versión**: la siguiente
     # vuelve a abrir la misma, y la cola se convierte en ruido que alguien
     # acaba fusionando por costumbre. Cada entrada de abajo cierra un caso
-    # medido, no una sospecha, y las cinco pasan la suite entera en verde —
-    # lo que las para es un presupuesto de bundle o un `npm audit`, que miden
-    # lo que ninguna prueba unitaria ve.
+    # medido, no una sospecha. Las cinco exclusiones originales se explican
+    # abajo; las dos nuevas de 2026-10-12 tienen evidencia en CLAUDE.md.
     #
     # El detalle de cada una está en CLAUDE.md → *Dependencias que no pueden
     # subir*. **Quitar una entrada de aquí es cómo se revisa la decisión**: el
@@ -53,6 +52,13 @@ updates:
     # `typescript-eslint` para TS 7, se borra la línea y Dependabot vuelve a
     # proponerlo. Esto silencia una propuesta; no congela la dependencia.
     ignore:
+      # @google/genai 2.27.0 y 2.28.0 añaden ~15 KB gz a rutas de IA y
+      # superan cinco presupuestos. Reabrir tras separar su carga diferida.
+      - dependency-name: "@google/genai"
+        update-types: [version-update:semver-major]
+      # plugin-react 6.1.2 exige Vite 8, vetado por el presupuesto de bundle.
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: [version-update:semver-major]
       # Pierde la carga diferida: 439,1 → 1 937,8 KB gz de carga inicial.
       # En un paquete 0.x el salto de minor ya es el que rompe.
       - dependency-name: "@excalidraw/excalidraw"
