@@ -73,6 +73,17 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "react-dom"
         update-types: [version-update:semver-major]
+      # Tailwind 4 pasa a configuración CSS y a otro plugin de PostCSS; es una
+      # migración propia, no una subida (2026-10-12).
+      - dependency-name: "tailwindcss"
+        update-types: [version-update:semver-major]
+      # marked 18 cambia la API de renderers (token en vez de argumentos) y
+      # rompe el typecheck en useDocumentRendering; necesita su propia tarea.
+      - dependency-name: "marked"
+        update-types: [version-update:semver-major]
+      # El runtime es Node 24: los tipos siguen su major.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
       - dependency-name: "@types/react"
         update-types: [version-update:semver-major]
       - dependency-name: "@types/react-dom"
