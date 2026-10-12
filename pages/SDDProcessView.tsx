@@ -6,7 +6,7 @@ import { useAppContext } from '@/context/AppContext';
 import { ARTIFACT_TEMPLATES } from '@/constants';
 import { ArtifactTemplate, ArtifactType } from '@/types';
 import type { Artifact } from '@/lib/artifacts';
-import { artifactGenerationService, documentGenerationService, classifyAIError, AIServiceError } from '../services/ai';
+import { artifactGenerationService, documentGenerationService, classifyAIError, AIServiceError } from '../services/ai/lazy';
 import { motion, AnimatePresence } from 'motion/react';
 import { SafeRichText } from '../components/ui/SafeRichText';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';

@@ -16,7 +16,8 @@ import type { Settings } from '../../types';
 import type { Artifact, ArtifactContextPorts } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import { extractConversationDecisions, type ChatMessage } from '../chat';
-import { assistantService, type AgentTurnResult } from '../ai';
+import { assistantService } from '../ai/lazy';
+import type { AgentTurnResult } from '../ai';
 import { artifactFitsWholeRewrite, describeRewriteRefusal } from './activeArtifactExposure';
 import {
   buildAgentSystemInstruction,

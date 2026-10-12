@@ -383,6 +383,15 @@ holds every route to a ceiling, and `e2e/chunks.spec.ts` imports every built
 chunk in a browser, so a chunk that downloads and then throws while
 evaluating —the F6-04 outage— fails a PR instead of production.
 
+**Y una ruta no descarga la IA hasta que alguien la usa** (12.7, cierra R-09).
+`services/ai/lazy.ts` es la puerta: sus servicios son proxies que hacen
+`import('./index')` en la primera llamada, y los valores síncronos (errores,
+guardas) se reexportan sin arrastrar la capa. ELK se importa en diferido en
+`lib/elkLayoutEngine.ts`. Siete rutas pasaron de 510–717 a 49–90 KB gz; un
+constructor de prompts reexportado de forma síncrona costó 10 KB y se volvió
+asíncrono. Los consumidores de código de ruta entran por `services/ai/lazy`;
+los tipos siguen por `services/ai`.
+
 **The rule: a barrel from lazy code, a file path from boot-path code**, with a
 comment saying which case it is. **F6-02 applied it the other way round** —
 sixteen deep imports moved to their module's door, taking the census from 44
@@ -657,7 +666,7 @@ estado.
 | `npm run check:any-budget` | **7** `any`, todos con nombre: 6 en la frontera sin tipos de Excalidraw y el `ComponentType<any>` de `lazyWithRetry` |
 | `npm run test:ci` | **488 ficheros, 4 733 pruebas**, todas pasando |
 | `npm run test:coverage` | **67,66 % statements / 58,51 branches / 60,56 functions / 69,63 lines**, por encima de todos los suelos de `vite.config.ts` |
-| `npm run check:bundle-budget` | **carga inicial 310,1 KB gz de 340**, y desde F6-05 **cada ruta con su techo** (`ROUTE_BUDGETS_GZIP_KB`): Dashboard 48,8 de 60, Configuración 20,4 de 30, Agentes 42,0 de 50; las ocho rutas que cargan IA al abrirse, en su cifra de hoy (~600) |
+| `npm run check:bundle-budget` | **carga inicial 310,1 KB gz de 340**, y desde F6-05 **cada ruta con su techo** (`ROUTE_BUDGETS_GZIP_KB`): Dashboard 48,8 de 60, Configuración 20,4 de 30, Agentes 42,0 de 50; desde 12.7 las rutas que cargaban IA al abrirse bajan de 100 (Proyectos 87,0, Oficina 90,2, Formación 58,3) |
 | `npm run check:bundle-secrets` | limpio, con la forma `sk-ant-` incluida |
 | `e2e/` (sólo CI) | **38 casos, 20 se ejecutan**: los recorridos autenticados y `chunks.spec.ts` —que evalúa los 151 chunks del build— corren sólo en Chromium de escritorio, a propósito; contra `dist/` y Supabase local. `generation-experience.spec.ts` (10.0) mide el recorrido de generación con un proveedor que tarda lo que un modelo y publica el informe como artefacto de CI |
 | `supabase.yml` (sólo CI) | **18 contratos pgTAP** sobre 45 migraciones, contra una base real |

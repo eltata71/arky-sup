@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Settings } from '../../types';
 import type { Artifact } from '../../lib/artifacts';
 import type { ArtifactViewMode } from '../../lib/artifacts/contracts';
-import { diagramGenerationService } from '../../services/ai';
+import { diagramGenerationService } from '../../services/ai/lazy';
 import {
   isDiagramAIFallbackEnabled,
   mermaidToExcalidraw as mermaidToExcalidrawDeterministic,

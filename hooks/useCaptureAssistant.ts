@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOptionalAppContext } from '../context/AppContext';
-import { captureAssistantService } from '../services/ai';
+import { captureAssistantService } from '../services/ai/lazy';
 import {
   buildCaptureRequest,
   CAPTURE_AGENT_ID,

@@ -9,7 +9,7 @@
 import type { Artifact } from '../../lib/artifacts';
 import { checkContentPreservation } from '../../lib/artifacts';
 import { assessDocumentArtifact } from '../quality';
-import { runDiagramQualityGate } from '../diagram';
+import { runDiagramQualityGate } from '../diagram/qualityGate';
 import type { AgentActionResult } from './agentTypes';
 
 /**

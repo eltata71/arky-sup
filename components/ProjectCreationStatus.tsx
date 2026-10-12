@@ -2,7 +2,7 @@ import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { type Project, useAppContext } from '../context/AppContext';
 import type { DiagramErrorRecord } from '../lib/diagram';
-import { artifactGenerationService, C4SelfHealingError } from '../services/ai';
+import { artifactGenerationService, C4SelfHealingError } from '../services/ai/lazy';
 import { ARTIFACT_TEMPLATES } from '../constants';
 import { CheckCircleIcon, XCircleIcon } from './Icons';
 import { useArtifactGenerationPorts } from '../hooks/useArtifactPersona';

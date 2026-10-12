@@ -232,18 +232,18 @@ describe('the turns that speak as an agent', () => {
 });
 
 describe('the Office decides who answers', () => {
-  it('frames the project chat with the named persona and the Office standards', () => {
+  it('frames the project chat with the named persona and the Office standards', async () => {
     const sofia = Object.values(OFFICE_AGENT_PERSONAS).find((persona) => persona.id !== 'arky');
     expect(sofia).toBeDefined();
-    const instruction = composeProjectChatInstruction(project, `@${sofia!.alias} revisa esto`, settings);
+    const instruction = await composeProjectChatInstruction(project, `@${sofia!.alias} revisa esto`, settings);
     expect(instruction).toContain('Chief Software Architect');
     expect(instruction).toContain('ARCHITECTURE OFFICE STANDARDS:');
     expect(instruction).toContain(sofia!.alias);
   });
 
-  it('binds the persona explicitly over any mention in the message', () => {
+  it('binds the persona explicitly over any mention in the message', async () => {
     const [first, second] = Object.values(OFFICE_AGENT_PERSONAS).filter((persona) => persona.id !== 'arky');
-    const instruction = composeProjectChatInstruction(project, `@${first.alias} dice algo`, settings, second.id);
+    const instruction = await composeProjectChatInstruction(project, `@${first.alias} dice algo`, settings, second.id);
     expect(instruction).toContain(second.alias);
   });
 

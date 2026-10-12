@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { activatable } from '../../lib/a11y';
 import { Course, CourseCategory, CourseLevel, ArchitectRole, UserProgress } from '../../types/lms';
 import { BookOpenIcon, SparklesIcon, ChevronRightIcon, Loader2Icon, TableIcon, LayoutGridIcon } from 'lucide-react';
-import { asCourseCategory, asCourseLevel, learningService } from '../../services/ai';
+import { asCourseCategory, asCourseLevel, learningService } from '../../services/ai/lazy';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { v4 as uuidv4 } from 'uuid';

@@ -10,7 +10,8 @@
 import { useCallback } from 'react';
 import type { Settings } from '../types';
 import type { BusinessInitiative } from '../services/businessInitiatives';
-import { initiativeAssistantService, type InitiativeDraft } from '../services/ai';
+import { initiativeAssistantService } from '../services/ai/lazy';
+import type { InitiativeDraft } from '../services/ai';
 import { briefInitiative, buildInitiativeScope, type CoordinationScope } from '../services/architectureOffice';
 
 export interface InitiativeAssistant {

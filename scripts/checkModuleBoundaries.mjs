@@ -264,7 +264,7 @@ export const LAYER_VIOLATION_BUDGET = {
 export const DEEP_IMPORT_BUDGET = {
   'api -> services/ai': 1,
   'components -> services/ai': 1,
-  'components -> services/architectureOffice': 19, // F5-02: capacidades y copiloto, por la puerta
+  'components -> services/architectureOffice': 15, // 12.7: 19 → 15, la capa de IA por su puerta diferida · F5-02: capacidades y copiloto, por la puerta
   'components -> services/artifacts': 7,
   'components -> services/diagram': 14,
   'components -> services/quality': 2,
@@ -300,7 +300,7 @@ export const DEEP_IMPORT_BUDGET = {
   // F4-05: la auto-mejora determinista del diagrama y los tipos de medida del
   // lienzo salieron de cuatro pantallas; `components -> services/diagram`
   // bajó de 20 a 16 en el mismo cambio.
-  'services/artifacts -> services/diagram': 13, // plan diagramas 6.1: 15 → 13
+  'services/artifacts -> services/diagram': 10, // 12.7: 13 → 10, extracción de IR y puerta de calidad por ficheros pequeños · plan diagramas 6.1: 15 → 13
   'services/artifacts -> services/export': 3,
   'services/artifacts -> services/quality': 2,
   'services/export -> services/quality': 11,

@@ -15,7 +15,7 @@ import { describeFidelityLoss } from './diagramFidelityReview';
 import { rewriteDiagramContent } from './diagramContentRewrite';
 import { runDiagramQualityGate } from '../../diagram/qualityGate';
 import { irToReactFlow } from '../../diagram/irToReactFlow';
-import { artifactGenerationService } from '../../ai';
+import { artifactGenerationService } from '../../ai/lazy';
 import { markMermaidAsSkeletonFallback } from '../domain/deterministicArtifactFallbacks';
 import {
   detectArtifactFallbackContent,

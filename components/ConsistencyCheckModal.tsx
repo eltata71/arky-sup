@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { useAppContext, type Project } from '../context/AppContext';
 import { ConsistencySuggestion } from '../types';
-import { assistantService } from '../services/ai';
+import { assistantService } from '../services/ai/lazy';
 import { useAiUndo } from '../hooks/artifacts/useAiUndo';
 import { CheckCircleIcon } from './Icons';
 

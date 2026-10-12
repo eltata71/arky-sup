@@ -15,7 +15,7 @@
  *    classifier; we can't block the UI.
  */
 
-import { aiGateway } from '../ai';
+import { aiGateway } from '../ai/lazy';
 import { resolveEffectiveModel } from '../../lib/ai/modelCatalog';
 import type { Settings } from '../../types';
 import type { AgentContext, AgentIntent, AgentIntentType, AgentImpactLevel, AgentExecutionTarget } from './agentTypes';
