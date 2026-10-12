@@ -195,11 +195,11 @@ export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoo
     setPreview({
       label: chip.textContent ?? '',
       kind,
-      source: chip.getAttribute('data-ctx-source') ?? 'Sin fuente registrada',
+      source: chip.getAttribute('data-ctx-source') ?? t('documentCitation.noSource'),
       top: rect.bottom + 6,
       left: rect.left,
     });
-  }, []);
+  }, [t]);
   const hidePreview = useCallback(() => setPreview(null), []);
 
   return (
@@ -243,8 +243,8 @@ export const DocumentPaper: React.FC<DocumentPaperProps> = ({ html, widthPx, zoo
           data-ctx-preview
         >
           <p className="font-semibold">{preview.label}</p>
-          <p className="mt-0.5 text-gray-600 dark:text-gray-300">Tipo: {preview.kind}</p>
-          <p className="text-gray-600 dark:text-gray-300">Fuente: {preview.source}</p>
+          <p className="mt-0.5 text-gray-600 dark:text-gray-300">{t('documentCitation.kind')}: {preview.kind}</p>
+          <p className="text-gray-600 dark:text-gray-300">{t('documentCitation.source')}: {preview.source}</p>
         </div>
       )}
     </>
