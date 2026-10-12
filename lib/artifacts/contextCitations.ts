@@ -158,7 +158,8 @@ function chipHtml(key: string, index: CitationIndex | null): string {
   const { status, citation } = statusOf(key, index);
   if (status === 'resolved' && citation) {
     const origin = citation.sources.length ? ` title="Fuente: ${escapeHtml(citation.sources.join(', '))}"` : '';
-    return `<span class="${CHIP} bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200"${origin}>${escapeHtml(citation.label)}</span>`;
+    const kind = ` data-ctx-kind="${escapeHtml(citation.entityType)}"`;
+    return `<span class="${CHIP} bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200"${kind}${origin}>${escapeHtml(citation.label)}</span>`;
   }
   const text = status === 'unverifiable' ? `ctx:${key} · sin registro` : `ctx:${key} · cita sin resolver`;
   return `<span class="${CHIP} bg-amber-50 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">${escapeHtml(text)}</span>`;
