@@ -197,3 +197,57 @@ export const rollUpInitiativeDelivery = (
     blocked,
   };
 };
+
+/** Un resultado esperado o un indicador de la iniciativa, con lo que un proyecto declara mover en él. */
+export interface InitiativeTargetTrace {
+  kind: 'outcome' | 'kpi';
+  id: string;
+  label: string;
+  /** Contribuciones del proyecto que citan este elemento, por id. */
+  claimedBy: DeliveryContribution[];
+}
+
+export interface InitiativeTraceability {
+  initiativeId: string;
+  initiativeTitle: string;
+  targets: InitiativeTargetTrace[];
+  /** Elementos que el proyecto no declara servir: trabajo que el negocio espera. */
+  unclaimed: InitiativeTargetTrace[];
+  /** Contribuciones que citan algo que ya no existe en la iniciativa. */
+  dangling: DanglingContributionRef[];
+}
+
+/**
+ * Une los resultados e indicadores de una iniciativa con las contribuciones de
+ * UN proyecto, sólo por id. Lo que ninguna contribución cita se informa como
+ * `unclaimed` —nunca se oculta— y lo que cita algo inexistente, como `dangling`.
+ */
+export const traceInitiativeTargets = (
+  initiative: Pick<BusinessInitiative, 'id' | 'title' | 'expectedOutcomes' | 'kpis'>,
+  contributor: Pick<DeliveryContributor, 'projectId' | 'contributions'>,
+): InitiativeTraceability => {
+  const targets: InitiativeTargetTrace[] = [
+    ...initiative.expectedOutcomes.map((outcome): InitiativeTargetTrace => ({
+      kind: 'outcome',
+      id: outcome.id,
+      label: outcome.statement,
+      claimedBy: contributor.contributions.filter((entry) => entry.outcomeId === outcome.id),
+    })),
+    ...initiative.kpis.map((kpi): InitiativeTargetTrace => ({
+      kind: 'kpi',
+      id: kpi.id,
+      label: kpi.name,
+      claimedBy: contributor.contributions.filter((entry) => entry.kpiId === kpi.id),
+    })),
+  ];
+  const rollup = rollUpInitiativeDelivery(initiative, [
+    { projectId: contributor.projectId, name: '', progress: null, health: 'unknown', contributions: contributor.contributions, risks: { total: 0, severe: 0 } },
+  ]);
+  return {
+    initiativeId: initiative.id,
+    initiativeTitle: initiative.title,
+    targets,
+    unclaimed: targets.filter((target) => target.claimedBy.length === 0),
+    dangling: rollup.danglingReferences,
+  };
+};

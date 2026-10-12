@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, Badge, Button } from '../ui';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext, type Project } from '../../context/AppContext';
+import { useInitiatives } from '../../context/InitiativeContext';
+import { useProjectInitiativeTraceability } from '../../hooks/useProjectInitiativeTraceability';
 import {
   analyzeTraceabilityChains,
   explainEntity,
@@ -11,6 +13,7 @@ import {
 interface TraceabilityChainViewProps {
   graph: ArchitectureGraph;
   artifacts: ReadonlyArray<{ id: string; name: string }>;
+  project?: Project;
 }
 
 const TONE: Record<ArchitectureIssueSeverity, 'danger' | 'warning' | 'gray'> = {
@@ -21,8 +24,10 @@ const TONE: Record<ArchitectureIssueSeverity, 'danger' | 'warning' | 'gray'> = {
   info: 'gray',
 };
 
-const TraceabilityChainView: React.FC<TraceabilityChainViewProps> = ({ graph, artifacts }) => {
+const TraceabilityChainView: React.FC<TraceabilityChainViewProps> = ({ graph, artifacts, project }) => {
   const { t } = useAppContext();
+  const { initiatives } = useInitiatives();
+  const traces = useProjectInitiativeTraceability(project, initiatives);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const report = useMemo(
     () => analyzeTraceabilityChains(graph, { knownArtifactIds: artifacts.map((a) => a.id) }),
@@ -56,6 +61,39 @@ const TraceabilityChainView: React.FC<TraceabilityChainViewProps> = ({ graph, ar
           ))}
         </ul>
       )}
+
+      {traces.map((trace) => (
+        <section key={trace.initiativeId} className="rounded-md border border-gray-200 dark:border-gray-800 p-2 text-xs" aria-label={t('kg.chainInitiative', { title: trace.initiativeTitle })}>
+          <p className="font-medium text-gray-900 dark:text-white">{trace.initiativeTitle}</p>
+          {trace.targets.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">{t('kg.chainNoTargets')}</p>
+          ) : (
+            <ul className="mt-1 space-y-1">
+              {trace.targets.map((target) => (
+                <li key={`${target.kind}:${target.id}`} className="flex items-start gap-2">
+                  <Badge tone={target.claimedBy.length === 0 ? 'warning' : 'success'} size="xs">
+                    {t(target.kind === 'outcome' ? 'kg.chainOutcome' : 'kg.chainKpi')}
+                  </Badge>
+                  <span className="text-gray-800 dark:text-gray-100">
+                    {target.label}
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {' — '}
+                      {target.claimedBy.length === 0
+                        ? t('kg.chainUnclaimed')
+                        : target.claimedBy.map((c) => c.statement).join(' · ')}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {trace.dangling.map((ref) => (
+            <Alert key={`${ref.contributionId}:${ref.reason}`} tone="warning" variant="soft">
+              {t('kg.chainDangling', { reference: ref.reference })}
+            </Alert>
+          ))}
+        </section>
+      ))}
 
       <ul className="space-y-1">
         {report.chains.map(({ requirement, decisions, artifactIds }) => (
