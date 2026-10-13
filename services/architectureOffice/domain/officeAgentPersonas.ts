@@ -6,10 +6,6 @@ import type {
   OfficeAgentScope,
 } from './agentDefinition';
 import { foldOfficeText, hasExactOfficeMention } from './officeShared';
-import { getOfficeArchitectureContext } from './officeArchitectureKnowledge';
-// The port's own leaf, not the agent barrel: naming a type through a barrel
-// drags the whole agent — and the AI layer behind it — into type checking.
-import type { AgentPersonaBriefing } from '../../agent/agentPersonaBriefing';
 
 /**
  * The shape lives in `agentDefinition`; this file holds the thirteen values.
@@ -345,62 +341,7 @@ export const resolveOfficeAgentMention = (message: string): OfficeAgentPersona =
   return best ? best.persona : OFFICE_AGENT_PERSONAS.arky;
 };
 
-export const buildOfficePersonaInstruction = (
-  baseInstruction: string,
-  selected: OfficeAgentPersona,
-): string => [
-  baseInstruction,
-  '',
-  `Persona especializada activa: ${selected.alias} — ${selected.role}.`,
-  `Dominios: ${selected.domains.join(', ')}.`,
-  `Capacidades: ${selected.capabilities.join(', ')}.`,
-  `Te ocupas de: ${selected.scope.goals.join(' ')}`,
-  // The edge, stated. A specialist told only what it does will answer anything
-  // it is asked, and a confident answer from outside a domain is the failure
-  // mode of an office with thirteen of them.
-  ...(selected.scope.nonGoals.length > 0
-    ? [`No te ocupas de: ${selected.scope.nonGoals.join(' ')} Si la solicitud lo pide, dilo y nombra a quién corresponde.`]
-    : []),
-  selected.instruction,
-  'No inventes evidencia; conserva las reglas de confirmación, seguridad, memoria y versionado de ArkyPro.',
-].join('\n');
-
-/**
- * The persona composer artifact generation asks for (F5-01, corte 13): the
- * persona the request names — Arky when it names none — composed over the
- * base instruction. The AI layer declares the port
- * (`ArtifactPersonaComposer`, `lib/artifacts`) because it cannot import the
- * Office that imports it; this is the Office's side of it.
- */
-export const composeArtifactPersonaInstruction = (baseInstruction: string, request: string): string =>
-  buildOfficePersonaInstruction(baseInstruction, resolveOfficeAgentMention(request));
-
-/**
- * Adapt an Office persona into the briefing the agent asks for.
- *
- * This is the adapter half of the port declared in
- * `services/agent/agentContextComposer.ts`. It lives here because the office is
- * the side that knows both vocabularies — the agent must not learn that an
- * Architecture Office exists, or the two modules import each other again.
- */
-export const buildOfficePersonaBriefing = (personaId: OfficeAgentId): AgentPersonaBriefing => {
-  const selected = OFFICE_AGENT_PERSONAS[personaId];
-  const architecture = getOfficeArchitectureContext();
-  return {
-    composeInstruction: (baseInstruction: string) => buildOfficePersonaInstruction(baseInstruction, selected),
-    sections: [
-      [
-        `Estándares de la Oficina de Arquitectura (v${architecture.version}):`,
-        ...architecture.promptContext.map((item) => `- ${item}`),
-      ].join('\n'),
-    ],
-  };
-};
-
-/**
- * The briefing for whoever a message names — `@Alias` — or Arky when it names
- * nobody. What the engine did inside every agent turn before F5-01 (corte 8);
- * now the side that knows the Office hands it to the agent.
- */
-export const officePersonaForMessage = (message: string): AgentPersonaBriefing =>
-  buildOfficePersonaBriefing(resolveOfficeAgentMention(message).id);
+// La voz de una persona en un prompt —`buildOfficePersonaInstruction`,
+// `buildOfficePersonaBriefing`, `officePersonaForMessage`— vive en
+// `officePersonaBriefing.ts`: lee la ficha resuelta (`officeAgentProfile`), que
+// a su vez lee este fichero, y tenerla aquí cerraría un ciclo de importación.

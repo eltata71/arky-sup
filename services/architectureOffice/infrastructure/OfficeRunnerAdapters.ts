@@ -30,7 +30,8 @@ import { parseStructured } from '../../ai/structuredOutput';
 import { validateOfficeArtifact } from '../domain/officeArtifactValidators';
 import { newPrefixedId } from '../../../lib/ids';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
-import { OFFICE_AGENT_PERSONAS, buildOfficePersonaBriefing, type OfficeAgentId } from '../domain/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../domain/officeAgentPersonas';
+import { buildOfficePersonaBriefing } from '../domain/officePersonaBriefing';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 import type {
   OfficeConsolidateOutcome,
@@ -112,9 +113,9 @@ export const buildProductionInstruction = (task: OfficeTask, engagement: OfficeE
     `Entregable: ${engagement.title}`,
     `Solicitud original: ${engagement.brief}`,
     '',
-    `Actúas como ${persona.alias} — ${persona.role}.`,
-    persona.instruction,
-    '',
+    // Quién eres no va aquí: va en el prompt de sistema, compuesto desde la
+    // ficha del asignado (`buildOfficePersonaBriefing`). Repetirlo en el turno
+    // era darle al agente dos identidades (plan de agentes, 16.0).
     `Entregable: ${task.artifactTemplateName ?? task.title}.`,
     task.objective,
   ];
@@ -288,10 +289,10 @@ export const buildReviewPrompt = (
   artifact: Artifact,
   evidence: DeterministicReviewEvidence,
 ): string => {
-  const persona = OFFICE_AGENT_PERSONAS[task.assigneeId];
+  // La persona del revisor va en el prompt de sistema (`chatWithProject` con
+  // `personaOverride`); aquí sólo el encargo (plan de agentes, 16.0).
   return [
-    `Actúas como ${persona.alias} — ${persona.role}. Revisas el trabajo de otro arquitecto de la Oficina.`,
-    persona.instruction,
+    'Revisas el trabajo de otro arquitecto de la Oficina.',
     '',
     `ARTEFACTO: ${artifact.name} (${artifact.type})`,
     `OBJETIVO DECLARADO: ${artifact.objective}`,
@@ -402,7 +403,6 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
 // ---------------------------------------------------------------------------
 
 export const buildConsolidationPrompt = (engagement: OfficeEngagement): string => {
-  const persona = OFFICE_AGENT_PERSONAS[engagement.charter.consolidatorId];
   const deliverables = engagement.tasks
     .filter((task) => task.kind === 'produce-artifact')
     .map((task) => {
@@ -414,10 +414,8 @@ export const buildConsolidationPrompt = (engagement: OfficeEngagement): string =
       ].filter(Boolean).join('\n');
     });
 
+  // La persona del consolidador va en el prompt de sistema (plan de agentes, 16.0).
   return [
-    `Actúas como ${persona.alias} — ${persona.role}.`,
-    persona.instruction,
-    '',
     `Consolida el entregable "${engagement.title}".`,
     `Solicitud original: ${engagement.brief}`,
     '',

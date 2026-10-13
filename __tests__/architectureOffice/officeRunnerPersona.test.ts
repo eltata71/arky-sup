@@ -123,18 +123,18 @@ describe('el puerto de producción firma con la persona de la tarea', () => {
 
   it('un brief que menciona a otro agente no le cambia el autor', async () => {
     const instruction = await produceWith('felipe', 'Diseño en AWS; @Carmen revisará el cumplimiento.');
-    expect(instruction).toContain('Persona especializada activa: Felipe');
-    expect(instruction).not.toContain('Persona especializada activa: Carmen');
+    expect(instruction).toContain('Eres Felipe,');
+    expect(instruction).not.toContain('Eres Carmen,');
   });
 
   it('sin ninguna mención firma el asignado, no Arky', async () => {
     const instruction = await produceWith('sofia', 'Modelo de pólizas y endosos del ramo de vida.');
-    expect(instruction).toContain('Persona especializada activa: Sofía');
+    expect(instruction).toContain('Eres Sofía,');
   });
 
   it('un brief que empieza por el alias de otro tampoco lo secuestra', async () => {
     const instruction = await produceWith('gabriel', 'Elena: prepara los NFR del cotizador.');
-    expect(instruction).toContain('Persona especializada activa: Gabriel');
+    expect(instruction).toContain('Eres Gabriel,');
   });
 
   it('la persona lleva el alcance del asignado, incluida su frontera', async () => {

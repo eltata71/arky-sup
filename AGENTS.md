@@ -277,6 +277,13 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    el puerto de producción entrega `buildOfficePersonaBriefing(task.assigneeId)`;
    resolver un `@Alias` del brief dejaba que el usuario cambiara el autor, y sin
    mención firmaba Arky. Resolver menciones es cosa del chat.
+   **La voz de un agente se compone en un solo sitio, por capas** (16.0):
+   `composeAgentInstruction` (`domain/agentPromptComposer.ts`): contexto de
+   quien llama, contrato (con alcance y no-objetivos, no configurable), capa de
+   la organización y reglas de la Oficina al final. La ficha llega al prompt de
+   sistema, nunca antepuesta al mensaje; su instrucción **se añade**, no
+   sustituye (D-A2); conocimiento y memoria van vallados. Nada fuera del
+   compositor escribe «Actúas como» ni «Eres … agente de la Oficina».
    **Un prompt de agente tiene nombre y versión** (15.1):
    `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
    huella de su texto sobre un caso canónico; cambiar el texto sin subir la

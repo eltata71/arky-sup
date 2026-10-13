@@ -105,7 +105,7 @@ describe('buildCaptureRequest', () => {
 
   it('speaks in the voice of the shipped agent when nothing is configured', () => {
     const request = buildCaptureRequest({ fieldIds: ['initiative.driver'], context });
-    expect(request.agentBriefing[0]).toContain('Arky');
+    expect(request.agentBriefing.join('\n')).toContain('Eres Arky,');
     expect(request.agentBriefing.join('\n')).toContain('GLOBAL-ZERO-TRUST');
     expect(request.modelTier).toBe('default');
   });

@@ -18,11 +18,12 @@ import type { Project } from '../../architectureProjects';
 import { assistantService, buildProjectChatInstruction } from '../../ai/lazy';
 import type { ProjectChatTurn } from '../../ai';
 import {
-  buildOfficePersonaInstruction,
   OFFICE_AGENT_PERSONAS,
   resolveOfficeAgentMention,
   type OfficeAgentId,
 } from '../domain/officeAgentPersonas';
+import { buildOfficePersonaInstruction } from '../domain/officePersonaBriefing';
+import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 
 /** The project instruction, framed by the persona and the Office's standards. */
@@ -31,11 +32,14 @@ export async function composeProjectChatInstruction(
   message: string,
   settings: Settings,
   personaOverride?: OfficeAgentId,
+  /** La ficha resuelta del agente que habla, cuando quien llama la tiene. */
+  profile?: OfficeAgentProfile,
 ): Promise<string> {
   const standards = getOfficeArchitectureContext().promptContext.map((item) => `- ${item}`).join('\n');
   return buildOfficePersonaInstruction(
     `${await buildProjectChatInstruction(project, settings)}\n\nARCHITECTURE OFFICE STANDARDS:\n${standards}`,
     personaOverride ? OFFICE_AGENT_PERSONAS[personaOverride] : resolveOfficeAgentMention(message),
+    profile,
   );
 }
 
@@ -47,9 +51,15 @@ export async function chatWithProject(
   personaOverride?: OfficeAgentId,
   /** Tier for this turn — the runner resolves it from the agent's card. */
   modelTier: ModelTier = 'default',
+  /**
+   * La ficha resuelta del agente que habla. Sin ella habla la persona de
+   * fábrica; con ella, la persona más lo que la organización añadió — en el
+   * prompt de sistema, no antepuesta al mensaje (plan de agentes, 16.0).
+   */
+  profile?: OfficeAgentProfile,
 ): Promise<string> {
   return assistantService.generateProjectChatReply({
-    systemInstruction: await composeProjectChatInstruction(project, message, settings, personaOverride),
+    systemInstruction: await composeProjectChatInstruction(project, message, settings, personaOverride, profile),
     message,
     history,
     settings,

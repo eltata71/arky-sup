@@ -11,7 +11,7 @@
     "recallRevisor": 100,
     "aprobacionesSinCritica": 3,
     "consolidacionesCorrectas": 80,
-    "promptsConVallado": 0,
+    "promptsConVallado": 28.6,
     "invocacionesConSello": 100,
     "llamadasPorOperacion": 4.8
   },
@@ -42,7 +42,7 @@
       "hallazgo": "A8",
       "tarea": "17.0",
       "metrica": "promptsConVallado",
-      "descripcion": "Ninguno de los ocho sitios medidos valla el texto que escribió una persona: brief del encargo (producir y consolidar), contenido revisado, solicitud y objetivo en la coordinación, y conocimiento, memoria e instrucción de la ficha (estos tres los cierra 16.0)."
+      "descripcion": "Cinco de los siete sitios medidos no vallan el texto que escribió una persona: brief del encargo (producir y consolidar), contenido revisado, y solicitud y objetivo en la coordinación. El conocimiento y la memoria de la ficha van vallados desde 16.0."
     }
   ]
 }

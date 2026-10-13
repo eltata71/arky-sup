@@ -21,7 +21,8 @@ import {
 import { runAgentTurn, streamAgentTurn } from '../../../services/ai/generation/assistant/agentTurn';
 import { generateProjectChatReply } from '../../../services/ai/generation/assistant/projectChat';
 import { chatWithProject, composeProjectChatInstruction } from '../../../services/architectureOffice/application/projectConversation';
-import { officePersonaForMessage, OFFICE_AGENT_PERSONAS } from '../../../services/architectureOffice/domain/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../../../services/architectureOffice/domain/officeAgentPersonas';
+import { officePersonaForMessage } from '../../../services/architectureOffice/domain/officePersonaBriefing';
 import type { Project } from '../../../services/architectureProjects';
 import type { Course } from '../../../types/lms';
 import type { Settings } from '../../../types';

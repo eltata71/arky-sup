@@ -7,6 +7,11 @@ import {
   type CoordinationScope,
 } from '../../services/architectureOffice/application/officeCoordination';
 import { planOfficeWorkstreams } from '../../services/architectureOffice/application/officeOrchestration';
+import { buildCoordinationInvoker } from '../../services/architectureOffice/application/officeCoordinationInvoker';
+import {
+  createAgentProfileOverride,
+  resolveAgentProfile,
+} from '../../services/architectureOffice/domain/officeAgentProfile';
 
 const scope: CoordinationScope = {
   level: 'project',
@@ -171,40 +176,55 @@ describe('coordinateRequest', () => {
 });
 
 describe('coordinateRequest · las fichas configuradas', () => {
-  it('pone la voz configurada de un agente delante de su instrucción', async () => {
-    const invoke = vi.fn(async (_personaId: string, _instruction: string) => 'respuesta');
+  /*
+   * La ficha ya no se antepone al mensaje (plan de agentes, 16.0): llega al
+   * prompt de sistema de cada agente a través del invocador. Anteponerla le daba
+   * a un agente personalizado dos identidades.
+   */
+  const mauProfile = (() => {
+    const created = createAgentProfileOverride({
+      agentId: 'mauricio',
+      userId: 'u1',
+      alias: 'Mau',
+      knowledge: ['Esta compañía integra por Anypoint desde 2023.'],
+    });
+    if (created.outcome !== 'created') throw new Error(created.message);
+    return resolveAgentProfile('mauricio', created.override);
+  })();
+
+  const chatSpy = () => vi.fn(async (..._args: unknown[]) => 'respuesta');
+
+  it('la ficha de un agente llega a su llamada, no al mensaje', async () => {
+    const chat = chatSpy();
     await coordinateRequest({
       request: 'Evalúa la integración con MuleSoft',
       scope,
-      invoke,
+      invoke: buildCoordinationInvoker({ chat, settings: {} as never, scope, profiles: [mauProfile] }),
       now: steppingClock(),
-      agentBriefings: {
-        mauricio: ['Eres Mau, y esta compañía integra por Anypoint desde 2023.'],
-      },
     });
 
-    const mauricioCalls = invoke.mock.calls.filter(([personaId]) => personaId === 'mauricio');
+    const mauricioCalls = chat.mock.calls.filter((args) => args[4] === 'mauricio');
     expect(mauricioCalls.length).toBeGreaterThan(0);
-    for (const [, instruction] of mauricioCalls) {
+    for (const args of mauricioCalls) {
       // Configurar una ficha y que el agente siguiera hablando igual sería una
       // configuración decorativa.
-      expect(instruction as string).toContain('Anypoint desde 2023');
+      expect(args[6]).toBe(mauProfile);
+      expect(args[1] as string).not.toContain('Anypoint desde 2023');
     }
   });
 
-  it('no le cuenta a un agente la ficha de otro', async () => {
-    const invoke = vi.fn(async (_personaId: string, _instruction: string) => 'respuesta');
+  it('no le pasa a un agente la ficha de otro', async () => {
+    const chat = chatSpy();
     await coordinateRequest({
       request: 'Evalúa la integración con MuleSoft y el cumplimiento regulatorio',
       scope,
-      invoke,
+      invoke: buildCoordinationInvoker({ chat, settings: {} as never, scope, profiles: [mauProfile] }),
       now: steppingClock(),
-      agentBriefings: { mauricio: ['Eres Mau, integrador.'] },
     });
 
-    for (const [personaId, instruction] of invoke.mock.calls) {
-      if (personaId === 'mauricio') continue;
-      expect(instruction as string).not.toContain('Eres Mau');
+    for (const args of chat.mock.calls) {
+      if (args[4] === 'mauricio') continue;
+      expect(args[6]).toBeUndefined();
     }
   });
 

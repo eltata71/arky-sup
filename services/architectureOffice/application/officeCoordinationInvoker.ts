@@ -28,6 +28,7 @@ import type { Settings } from '../../../types';
 import type { Project } from '../../architectureProjects';
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
+import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
 
 /** Marks a carrier so nothing downstream mistakes it for a stored project. */
 export const COORDINATION_CARRIER_PREFIX = 'coordination-carrier:';
@@ -74,6 +75,7 @@ export interface CoordinationInvokerDeps {
     settings: Settings,
     personaOverride?: string,
     modelTier?: ModelTier,
+    profile?: OfficeAgentProfile,
   ) => Promise<string>;
   settings: Settings;
   scope: CoordinationScope;
@@ -88,6 +90,11 @@ export interface CoordinationInvokerDeps {
    * agent *looks* and not which model answers is decoration.
    */
   modelTiers?: Partial<Record<OfficeAgentId, ModelTier>>;
+  /**
+   * Las fichas resueltas del usuario. La de cada agente llega a su prompt de
+   * sistema; sin ella habla la persona de fábrica (plan de agentes, 16.0).
+   */
+  profiles?: readonly OfficeAgentProfile[];
 }
 
 /**
@@ -100,6 +107,7 @@ export interface CoordinationInvokerDeps {
  */
 export const buildCoordinationInvoker = (deps: CoordinationInvokerDeps): OfficeAgentInvoker => {
   const carrier = carrierForScope(deps.scope, deps.project);
+  const profiles = new Map((deps.profiles ?? []).map((profile) => [profile.agentId, profile]));
   return (personaId, instruction) => deps.chat(
     carrier,
     instruction,
@@ -107,5 +115,6 @@ export const buildCoordinationInvoker = (deps: CoordinationInvokerDeps): OfficeA
     deps.settings,
     personaId,
     deps.modelTiers?.[personaId],
+    profiles.get(personaId),
   );
 };

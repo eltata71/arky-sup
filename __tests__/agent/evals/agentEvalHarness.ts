@@ -392,7 +392,7 @@ export const runPinnedPersona = async (
   const composed = captured?.resolvePersona
     ? captured.resolvePersona(captured.instruction).composeInstruction('BASE')
     : '';
-  const match = /Persona especializada activa: ([^\s—]+)/.exec(composed);
+  const match = /Eres ([^\s,]+), /.exec(composed);
   const firmaria = match?.[1] ?? '(ninguna)';
   return {
     id: testCase.id,
@@ -596,11 +596,11 @@ export interface FenceResult {
 
 const MARKER = 'MARCADOR-DE-USUARIO-7Q2';
 
-const profileWith = (field: 'knowledge' | 'memory' | 'instruction') => {
+const profileWith = (field: 'knowledge' | 'memory') => {
   const created = createAgentProfileOverride({
     agentId: 'elena',
     userId: 'u-1',
-    ...(field === 'instruction' ? { instruction: `Sigue esto: ${MARKER}` } : { [field]: [`Regla: ${MARKER}`] }),
+    [field]: [`Regla: ${MARKER}`],
   });
   if (created.outcome !== 'created') throw new Error(created.message);
   return resolveAgentProfile('elena', created.override);
@@ -637,7 +637,10 @@ export const runFencing = async (): Promise<FenceResult[]> => {
 
   sites.push({ sitio: 'ficha · conocimiento', prompt: buildAgentProfileBriefing(profileWith('knowledge')).join('\n') });
   sites.push({ sitio: 'ficha · memoria', prompt: buildAgentProfileBriefing(profileWith('memory')).join('\n') });
-  sites.push({ sitio: 'ficha · instrucción', prompt: buildAgentProfileBriefing(profileWith('instruction')).join('\n') });
+  // La instrucción adicional de la ficha no se valla a propósito (16.0): es
+  // configuración que el agente debe seguir, y la valla la presentaría como
+  // datos a analizar. Va en su capa, subordinada al contrato y a las reglas;
+  // lo prueba `agentPromptComposer.test.ts`.
 
   return sites.map(({ sitio, prompt }) => ({
     sitio,

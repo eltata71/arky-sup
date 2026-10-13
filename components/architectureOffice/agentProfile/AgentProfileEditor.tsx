@@ -234,11 +234,11 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
               rows={4}
               value={instruction}
               onChange={(event) => setInstruction(event.target.value)}
-              placeholder={profile.instruction}
+              placeholder={t("ui.instruccion-adicional-de-tu-o.3a9c42")}
               className={cn(fieldClass, 'resize-y leading-relaxed')}
             />
             <p className="text-2xs text-gray-500 dark:text-gray-400">
-              {t("ui.sustituye-a-la-instruccion-d.2c2fc6")}
+              {t("ui.se-anade-a-la-instruccion-del.5d1e07")}
             </p>
           </div>
 
