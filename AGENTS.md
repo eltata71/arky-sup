@@ -273,6 +273,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    empeora respecto a su línea base, y toda cifra bajo su objetivo es un
    `defectoConocido` con su hallazgo y su tarea: quien lo cierra quita la
    entrada en el mismo commit. Ver *Agent evaluation bench* en `CLAUDE.md`.
+   **Y en un encargo, quien firma lo decide la tarea, nunca el texto** (16.2):
+   el puerto de producción entrega `buildOfficePersonaBriefing(task.assigneeId)`;
+   resolver un `@Alias` del brief dejaba que el usuario cambiara el autor, y sin
+   mención firmaba Arky. Resolver menciones es cosa del chat.
 13. **Un agente conoce capacidades, no proveedores.** Toda llamada a un modelo
    atraviesa el kernel canónico: `Domain → services/ai → adaptador → API`. Cuatro
    reglas concretas, todas con prueba que las escanea

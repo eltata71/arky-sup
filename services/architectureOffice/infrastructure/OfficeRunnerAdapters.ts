@@ -29,7 +29,7 @@ import { compileArtifact } from '../../artifactCompiler';
 import { parseStructured } from '../../ai/structuredOutput';
 import { validateOfficeArtifact } from '../domain/officeArtifactValidators';
 import { newPrefixedId } from '../../../lib/ids';
-import { OFFICE_AGENT_PERSONAS, officePersonaForMessage, type OfficeAgentId } from '../domain/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS, buildOfficePersonaBriefing, type OfficeAgentId } from '../domain/officeAgentPersonas';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 import type {
   OfficeConsolidateOutcome,
@@ -183,7 +183,10 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       settings: deps.getSettings(),
       history: [],
       store: deps.store,
-      resolvePersona: officePersonaForMessage,
+      // Quien firma la tarea lo decide la tarea. Resolverlo del texto —que
+      // empieza por el brief del usuario— dejaba que un «@Carmen» en el brief
+      // cambiara el autor, y sin mención firmaba Arky (plan de agentes, A7).
+      resolvePersona: () => buildOfficePersonaBriefing(task.assigneeId),
       businessMotivation: deps.getBusinessMotivation?.(project),
       actor: {
         id: task.assigneeId,
