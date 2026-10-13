@@ -793,6 +793,7 @@ presupuesto que consumirán las olas 11 y 12.
 | 11.3 Mapa de calor de capacidades | Hecha | #189 |
 | 11.4 Brechas y hoja de ruta | Hecha | #190 |
 | 11.5 TIME, radar y contrato | Hecha | #192 |
+| 11.6 E2E de la ola 11 | Hecha | #231 · recorrido de la hoja de ruta (línea base, objetivo, brechas, mesetas, reordenado con teclado y enlace a hito, persistido) y axe con datos en capacidades, portafolio/radar y transición; línea base de axe sin hallazgos. Migración `20261009090000_enterprise_inventory` verificada aplicada en ArkyDB-US; no requirió aprobación |
 | 12.0 Workspace ≤ 700 KB gz | Hecha | Workspace 1 119 → 657,1 KB gz, Projects 753,8 → 708,6: lienzo, asistente y modales diferidos |
 | 12.7 IA bajo demanda (cierra 12.0 / R-09) | Hecha | Las siete rutas que cargaban IA bajan de 510–717 a 49–90 KB gz (Workspace 150,6): `services/ai/lazy.ts` y ELK diferido; techos de `ROUTE_BUDGETS_GZIP_KB` rebajados |
 | 12.1 Partir los cinco ficheros grandes | Hecha · #178 | Los cinco tienen subcomponentes o hooks y un techo rebajado: ReactFlowCanvas 1 468, ProjectHub 976, MemoryCenterModal 584, CustomArtifactRequestModal 685 y CustomArtifactBriefWizard 455 líneas (`check:module-size`). Suite existente: 5 680 pruebas; build y presupuestos de bundle en verde. |
