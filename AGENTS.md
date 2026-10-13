@@ -360,6 +360,8 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    `mirror-source.yml`; aplica la subida sobre `main` actual.
    También vetadas (2026-10-12): `tailwindcss` 4, `marked` 18 y `@types/node` 26;
    ver CLAUDE.md → *Dependabot #220–#224*.
+   **El plan de clase mundial (olas 9–14) está cerrado desde 2026-10-13**: no
+   hay tarea abierta en `docs/plan-clase-mundial.md`; lo nuevo es un plan nuevo.
 19. **Iniciativas es el contexto piloto: copia su forma** (F3-05,
     `docs/ddd-transformacion/09-cierre-fase-3.md`). `domain/` guarda las reglas
     sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);
