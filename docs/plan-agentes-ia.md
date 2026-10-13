@@ -879,7 +879,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 15.0 Banco `agent-evals` | P0 · L | Hecha | #237 · enrutado 81,5 %, intención 60 %, persona fijada 0 %, revisor 100 %, aprobaciones sin crítica 3, consolidación 80 %, vallado 0 %; seis defectos nombrados |
 | 15.1 Prompts con identidad | P1 · M | Hecha | #240 · catálogo de 10 plantillas de la Oficina con huella; sello `id@vN#hash` en eventos de coordinación y en `OfficeTask.promptStamps`; `invocacionesConSello` 100 %. Los prompts de `services/agent` (intención LLM, memoria) entran con 18.3 y 17.2 |
 | 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
-| 16.0 Compositor único en capas | P0 · L | Hecha | `composeAgentInstruction` en `domain/agentPromptComposer.ts`; ficha al prompt de sistema por `buildCoordinationInvoker`; instrucción de la ficha añadida (D-A2); conocimiento y memoria vallados (vallado 0 → 28,6 %); la instrucción añadida no se valla a propósito (es configuración a seguir), va subordinada en su capa; 5 plantillas a v2 |
+| 16.0 Compositor único en capas | P0 · L | Hecha | #241 · `composeAgentInstruction` en `domain/agentPromptComposer.ts`; ficha al prompt de sistema por `buildCoordinationInvoker`; instrucción de la ficha añadida (D-A2); conocimiento y memoria vallados (vallado 0 → 28,6 %); la instrucción añadida no se valla a propósito (es configuración a seguir), va subordinada en su capa; 5 plantillas a v2 |
 | 16.1 Ficha en los diez caminos | P0 · L | Pendiente | |
 | 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
 | 16.8 Las raíces del router coinciden | P1 · S | Hecha | #239 · `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
