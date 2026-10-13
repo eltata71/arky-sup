@@ -82,6 +82,8 @@ export interface OfficeTaskReview {
   reviewerId: OfficeAgentId;
   /** Correlation id of the invocation that produced this verdict. */
   traceId?: string;
+  /** Sello del prompt de revisión (`office.review@v1#…`, plan de agentes 15.1). */
+  promptStamp?: string;
   verdict: OfficeReviewVerdict;
   findings: OfficeReviewFinding[];
   /** Deterministic score from the artifact compiler, when one was available. */
@@ -142,6 +144,12 @@ export interface OfficeTask {
    * would be worse than none.
    */
   traceIds?: string[];
+  /**
+   * Sellos de los prompts con los que se invocó a un agente para esta tarea,
+   * en orden (`office.production@v1#…`, `lib/agents/promptCatalog`): qué
+   * plantilla y qué texto exacto. Uno por intento, igual que `traceIds`.
+   */
+  promptStamps?: string[];
   kind: OfficeTaskKind;
   title: string;
   objective: string;

@@ -2,8 +2,10 @@ import type { OfficeEngagement, OfficeReviewFinding, OfficeTask } from '../domai
 
 export const runnerNowIso = (): string => new Date().toISOString();
 
-export const withTaskTrace = (task: OfficeTask, traceId?: string): OfficeTask =>
-  traceId ? { ...task, traceIds: [...(task.traceIds ?? []), traceId] } : task;
+export const withTaskTrace = (task: OfficeTask, traceId?: string, promptStamp?: string): OfficeTask => {
+  const traced = traceId ? { ...task, traceIds: [...(task.traceIds ?? []), traceId] } : task;
+  return promptStamp ? { ...traced, promptStamps: [...(traced.promptStamps ?? []), promptStamp] } : traced;
+};
 
 export const replaceRunnerTask = (engagement: OfficeEngagement, task: OfficeTask): OfficeEngagement => ({
   ...engagement,

@@ -227,7 +227,7 @@ vigente del documento antes de implementar.**
 | Precisión del clasificador de intención | **60 %** (15.0) | ≥ 90 % | `eval:agents` |
 | Recall del revisor sobre defectos sembrados | **100 %** (15.0; lo detecta la evidencia determinista) | ≥ 85 % (determinista + modelo simulado) | `eval:agents` |
 | Tareas de encargo producidas con la persona de su asignado | 0 % (15.0) → **100 %** (16.2) | 100 % | `eval:agents` (`personaFijada`) |
-| Prompts de agente con id y versión en la traza | 0 | 100 % | 15.1 |
+| Prompts de agente con id y versión en la traza | 0 → **100 %** de las invocaciones del banco (15.1) | 100 % | `eval:agents` (`invocacionesConSello`) |
 | `diagram-evals` / `artifact-evals` / `export-evals` | línea base vigente | sin regresión | sus comandos |
 
 ---
@@ -877,7 +877,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 |---|---|---|---|
 | 15.P Reservar tareas de este plan | P0 · S | Hecha | #236 · `localizar-tarea.sh` y `PLANES` en `comun.sh`; ramas `agentes/<id>-<tema>` |
 | 15.0 Banco `agent-evals` | P0 · L | Hecha | #237 · enrutado 81,5 %, intención 60 %, persona fijada 0 %, revisor 100 %, aprobaciones sin crítica 3, consolidación 80 %, vallado 0 %; seis defectos nombrados |
-| 15.1 Prompts con identidad | P1 · M | Pendiente | |
+| 15.1 Prompts con identidad | P1 · M | Hecha | catálogo de 10 plantillas de la Oficina con huella; sello `id@vN#hash` en eventos de coordinación y en `OfficeTask.promptStamps`; `invocacionesConSello` 100 %. Los prompts de `services/agent` (intención LLM, memoria) entran con 18.3 y 17.2 |
 | 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
 | 16.0 Compositor único en capas | P0 · L | Pendiente | |
 | 16.1 Ficha en los diez caminos | P0 · L | Pendiente | |

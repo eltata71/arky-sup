@@ -29,6 +29,7 @@ import { compileArtifact } from '../../artifactCompiler';
 import { parseStructured } from '../../ai/structuredOutput';
 import { validateOfficeArtifact } from '../domain/officeArtifactValidators';
 import { newPrefixedId } from '../../../lib/ids';
+import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
 import { OFFICE_AGENT_PERSONAS, buildOfficePersonaBriefing, type OfficeAgentId } from '../domain/officeAgentPersonas';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 import type {
@@ -170,8 +171,10 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     }
 
     const anchor = createOfficeAnchorArtifact(task);
+    const intent = buildCreateIntent(task, engagement);
+    const promptStamp = stampPrompt(agentPromptRef('office.production'), intent.userInstruction);
     const plan = planAgentAction({
-      intent: buildCreateIntent(task, engagement),
+      intent,
       artifact: anchor,
       project,
     });
@@ -201,6 +204,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         // Reported on failure too: a run that produced nothing is exactly when
         // the trace is worth having.
         traceId: result.traceId,
+        promptStamp,
         message: result.messages[0] ?? result.errors[0] ?? 'La generación no produjo un artefacto utilizable.',
       };
     }
@@ -214,6 +218,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       // the phases, the versions and the rollback of the generation that made
       // this deliverable. It was being discarded here.
       traceId: result.traceId,
+      promptStamp,
     };
   };
 
@@ -333,12 +338,14 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     }
 
     const evidence = gatherDeterministicEvidence(artifact);
+    const reviewPrompt = buildReviewPrompt(task, artifact, evidence);
+    const promptStamp = stampPrompt(agentPromptRef('office.review'), reviewPrompt);
 
     let critique: ModelCritique | undefined;
     try {
       const raw = await deps.invokePersona(
         task.assigneeId,
-        buildReviewPrompt(task, artifact, evidence),
+        reviewPrompt,
         project!,
       );
       const parsed = parseStructured<ModelCritique>(raw);
@@ -376,6 +383,7 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     return {
       reviewerId: task.assigneeId,
       traceId,
+      promptStamp,
       verdict,
       findings,
       deterministicScore: evidence.score,
@@ -432,10 +440,12 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
     // the invocation inside its run — it does not join to an agent action, and
     // `OfficeTask.traceIds` says so.
     const traceId = newPrefixedId('office-consolidate');
+    const consolidationPrompt = buildConsolidationPrompt(engagement);
+    const promptStamp = stampPrompt(agentPromptRef('office.engagement-consolidation'), consolidationPrompt);
     try {
       const summary = await deps.invokePersona(
         task.assigneeId,
-        buildConsolidationPrompt(engagement),
+        consolidationPrompt,
         project,
       );
       return {
@@ -443,6 +453,7 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
         summary: summary.trim() || 'Consolidación sin contenido.',
         aiCalls: 1,
         traceId,
+        promptStamp,
       };
     } catch (error) {
       return {
@@ -450,6 +461,7 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
         summary: error instanceof Error ? error.message : String(error),
         aiCalls: 1,
         traceId,
+        promptStamp,
       };
     }
   };

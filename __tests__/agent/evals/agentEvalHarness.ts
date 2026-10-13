@@ -14,6 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { UNTRUSTED_FENCE_CLOSE, UNTRUSTED_FENCE_OPEN } from '../../../lib/untrustedContent';
+import { AGENT_PROMPTS, parsePromptStamp } from '../../../lib/agents/promptCatalog';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../../services/architectureProjects';
 import { classifyAgentIntent } from '../../../services/agent';
@@ -344,8 +345,22 @@ export interface PinnedPersonaResult {
   id: string;
   asignado: OfficeAgentId;
   firmaria: string;
+  /** ¿La invocación dice qué plantilla la compuso? (15.1) */
+  sellada: boolean;
   ok: boolean;
 }
+
+/**
+ * ¿Es un sello válido de una plantilla del catálogo, en su versión vigente?
+ * Un sello de una versión que el catálogo ya no tiene es una traza que no se
+ * puede comparar con nada.
+ */
+export const isCurrentStamp = (stamp: string | undefined): boolean => {
+  const parsed = stamp ? parsePromptStamp(stamp) : null;
+  if (!parsed) return false;
+  const entry = AGENT_PROMPTS[parsed.id as keyof typeof AGENT_PROMPTS];
+  return entry !== undefined && entry.version === parsed.version;
+};
 
 /** Lo que el doble de `executeAgentAction` recuerda de la última llamada. */
 export interface CapturedExecution {
@@ -372,7 +387,7 @@ export const runPinnedPersona = async (
   });
   const engagement = engagementWith([task], testCase.brief);
   const produce = createProduceArtifactPort(runnerDeps(projectWith([]), async () => ''));
-  await produce(task, engagement);
+  const outcome = await produce(task, engagement);
   const captured = lastExecution();
   const composed = captured?.resolvePersona
     ? captured.resolvePersona(captured.instruction).composeInstruction('BASE')
@@ -383,6 +398,7 @@ export const runPinnedPersona = async (
     id: testCase.id,
     asignado: testCase.asignado,
     firmaria,
+    sellada: isCurrentStamp(outcome.promptStamp),
     ok: firmaria === OFFICE_AGENT_PERSONAS[testCase.asignado].alias,
   };
 };
@@ -400,6 +416,7 @@ export interface ReviewResult {
   /** El defecto lo ve la evidencia determinista, diga lo que diga el modelo. */
   defectoDeterminista: boolean;
   criticaDisponible: boolean;
+  sellada: boolean;
   ok: boolean;
 }
 
@@ -450,6 +467,7 @@ export const runReview = async (testCase: ReviewCase): Promise<ReviewResult> => 
     aprueba: testCase.aprueba,
     defectoDeterminista: gatherDeterministicEvidence(artifact).blocking,
     criticaDisponible: typeof testCase.critica === 'object',
+    sellada: isCurrentStamp(review.promptStamp),
     ok: aprobacionLimpia === testCase.aprueba,
   };
 };
@@ -466,6 +484,8 @@ export interface ConsolidationResult {
   finalValida: boolean;
   finalEsperada: boolean;
   llamadas: number;
+  /** Llamadas que llevaban un sello vigente. */
+  selladas: number;
   ok: boolean;
 }
 
@@ -491,9 +511,11 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
     }));
     const consolidator = scriptedConsolidator(testCase.consolidaciones);
     let calls = 0;
+    let stamped = 0;
     let consolidatorCalls = 0;
-    const invoke: OfficeAgentInvoker = async (personaId) => {
+    const invoke: OfficeAgentInvoker = async (personaId, _instruction, promptStamp) => {
       calls += 1;
+      if (isCurrentStamp(promptStamp)) stamped += 1;
       if (personaId === plan.coordinatorId) return 'Brief: cada especialista analiza su dominio.';
       if (personaId === plan.consolidatorId) {
         consolidatorCalls += 1;
@@ -514,6 +536,7 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
       finalValida,
       finalEsperada: testCase.finalValida,
       llamadas: calls,
+      selladas: stamped,
       ok: corrigio === testCase.debeCorregir && finalValida === testCase.finalValida,
     };
   }
@@ -539,6 +562,9 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
     finalValida,
     finalEsperada: testCase.finalValida,
     llamadas: calls,
+    // El puerto devuelve un sello por invocación; las correcciones (18.2) lo
+    // añadirán por cada pasada.
+    selladas: isCurrentStamp(outcome.promptStamp) ? Math.min(1, calls) : 0,
     ok: corrigio === testCase.debeCorregir && finalValida === testCase.finalValida,
   };
 };
@@ -646,6 +672,7 @@ export interface AgentEvalSummary {
   aprobacionesSinCritica: number;
   consolidacionesCorrectas: number;
   promptsConVallado: number;
+  invocacionesConSello: number;
   llamadasPorOperacion: number;
 }
 
@@ -673,6 +700,14 @@ export const summarize = (results: AgentEvalResults): AgentEvalSummary => {
     aprobacionesSinCritica: withoutCritique.filter((r) => r.aprobacionLimpia).length,
     consolidacionesCorrectas: pct(results.consolidacion.filter((r) => r.ok).length, results.consolidacion.length),
     promptsConVallado: pct(results.vallado.filter((r) => r.presente && r.vallado).length, results.vallado.length),
+    invocacionesConSello: pct(
+      results.consolidacion.reduce((n, r) => n + r.selladas, 0)
+        + results.revision.filter((r) => r.sellada).length
+        + results.personaFijada.filter((r) => r.sellada).length,
+      results.consolidacion.reduce((n, r) => n + r.llamadas, 0)
+        + results.revision.length
+        + results.personaFijada.length,
+    ),
     llamadasPorOperacion: coordination.length === 0
       ? 0
       : Math.round((coordination.reduce((n, r) => n + r.llamadas, 0) / coordination.length) * 10) / 10,
@@ -695,6 +730,7 @@ export const TARGETS: Readonly<Record<Exclude<AgentEvalMetric, 'llamadasPorOpera
   aprobacionesSinCritica: { max: 0 },
   consolidacionesCorrectas: { min: 100 },
   promptsConVallado: { min: 100 },
+  invocacionesConSello: { min: 100 },
 };
 
 /** Para la línea base: qué dirección es «mejor» en cada métrica. */

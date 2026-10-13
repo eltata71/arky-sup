@@ -96,6 +96,7 @@ const normalizeTask = (value: unknown, engagementId: string): OfficeTask | null 
     runId: typeof raw.runId === 'string' ? raw.runId : undefined,
     executionId: typeof raw.executionId === 'string' ? raw.executionId : undefined,
     traceIds: Array.isArray(raw.traceIds) ? asStringArray(raw.traceIds) : undefined,
+    promptStamps: Array.isArray(raw.promptStamps) ? asStringArray(raw.promptStamps) : undefined,
     kind: raw.kind === 'review-artifact' || raw.kind === 'consolidate' || raw.kind === 'report'
       ? raw.kind
       : 'produce-artifact',

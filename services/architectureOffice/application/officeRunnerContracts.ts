@@ -7,6 +7,8 @@ export interface OfficeProduceOutcome {
   versionGroupId?: string;
   aiCalls?: number;
   traceId?: string;
+  /** Sello del prompt de producción (`lib/agents/promptCatalog`). */
+  promptStamp?: string;
   message?: string;
 }
 
@@ -15,6 +17,8 @@ export interface OfficeConsolidateOutcome {
   summary: string;
   aiCalls?: number;
   traceId?: string;
+  /** Sello del prompt de consolidación (`lib/agents/promptCatalog`). */
+  promptStamp?: string;
 }
 
 /** External dependencies for the pure Office task scheduler. */
