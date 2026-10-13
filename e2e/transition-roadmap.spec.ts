@@ -61,6 +61,12 @@ test.describe('Plan de transición — recorrido de la hoja de ruta', () => {
     await page.keyboard.press('Enter');
     await expect(plateaus.first()).toContainText('Meseta B');
 
+    // Cada orden se escribe con la revisión confirmada de la anterior: se espera a la base antes de la siguiente.
+    await expect.poll(async () => {
+      const stored = await loadProject<StoredTransition>(request, token, projectId);
+      return stored.attention?.transition?.plateaus?.map((p) => p.name).join(',');
+    }, { timeout: 20_000 }).toBe('Meseta B,Meseta A');
+
     await plateaus.first().getByLabel(/^Hito de/).selectOption({ label: `Hito corte ${suffix}` });
     await expect(plateaus.first()).toContainText('2027-03-31');
 
