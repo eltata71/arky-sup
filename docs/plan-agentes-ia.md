@@ -882,7 +882,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 16.0 Compositor único en capas | P0 · L | Pendiente | |
 | 16.1 Ficha en los diez caminos | P0 · L | Pendiente | |
 | 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
-| 16.8 Las raíces del router coinciden | P1 · S | Hecha | `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
+| 16.8 Las raíces del router coinciden | P1 · S | Hecha | #239 · `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
 | 16.3 Una sola orquestación | P1 · M | Pendiente | |
 | 16.4 Ficha en el servidor (migración) | P1 · M | Pendiente | |
 | 16.5 Deriva del contrato | P2 · M | Pendiente | |
