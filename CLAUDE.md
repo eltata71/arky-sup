@@ -2,7 +2,7 @@
 
 This document is the definitive reference for AI assistants working on this codebase. Read it fully before making any changes.
 
-Last audited against the repository: **2026-10-13**: el plan de clase mundial (`docs/plan-clase-mundial.md`, olas 9–14) está **cerrado** y no queda tarea abierta; las nuevas ideas nacen como plan nuevo. Auditoría estructural previa, **2026-09-19**, tras F9: Firebase retirado y toda la aplicación —identidad, datos y archivos— sobre Supabase. Las olas anteriores siguen vigentes en lo estructural y se describen abajo (la de entrega continua y dependencias: el repositorio abierto para desbloquear Actions, un solo camino publicando producción, y la cola de Dependabot resuelta paquete a paquete — ver *Vercel Deployment* y *Dependencias que no pueden subir*). La ola anterior sigue vigente: captura asistida —un agente al lado de cada campo de los seis formularios—, las fichas configurables de los agentes, y los límites declarados de la orquestación con su evaluador-optimizador acotado. Las cuatro olas de monolito modular anteriores siguen siendo la base estructural: módulos declarados con su gate de fronteras, el agregado `architectureProjects` y su invariante, `types.ts` partido por contexto, y `AppContext` reducido a composición sobre `context/app/`.
+Last audited against the repository: **2026-10-13**: el plan de clase mundial (`docs/plan-clase-mundial.md`, olas 9–14) está **cerrado** y no queda tarea abierta; las nuevas ideas nacen como plan nuevo, y el que está en curso es el **plan de agentes de IA** (`docs/plan-agentes-ia.md`, olas 15–20, aprobado el 2026-10-13). Auditoría estructural previa, **2026-09-19**, tras F9: Firebase retirado y toda la aplicación —identidad, datos y archivos— sobre Supabase. Las olas anteriores siguen vigentes en lo estructural y se describen abajo (la de entrega continua y dependencias: el repositorio abierto para desbloquear Actions, un solo camino publicando producción, y la cola de Dependabot resuelta paquete a paquete — ver *Vercel Deployment* y *Dependencias que no pueden subir*). La ola anterior sigue vigente: captura asistida —un agente al lado de cada campo de los seis formularios—, las fichas configurables de los agentes, y los límites declarados de la orquestación con su evaluador-optimizador acotado. Las cuatro olas de monolito modular anteriores siguen siendo la base estructural: módulos declarados con su gate de fronteras, el agregado `architectureProjects` y su invariante, `types.ts` partido por contexto, y `AppContext` reducido a composición sobre `context/app/`.
 
 ---
 
@@ -2955,11 +2955,17 @@ sin commit **en el checkout principal**, y el repositorio pasó a contar dos
 historias sobre en qué ola íbamos. `docs/operacion/multiagente.md` es el
 contrato y `scripts/agentes/` lo comprueba: el checkout principal sólo sigue a
 `main`; una tarea se reserva con `nueva-tarea.sh` (worktree propio y PR en
-borrador, la única reserva que ven todos); una tarea `Hecha` no se reabre;
+borrador, la única reserva que ven todos); una tarea `Hecha` o `Descartada`
+no se reabre;
 `estado.sh` sale con 1 si algo está fuera de su sitio, y `limpieza.sh` borra
-sólo lo fusionado y limpio, en seco por defecto. **En una sesión de Claude Code,
-la tarea sigue yendo en su rama `clase-mundial/<id>-<tema>` dentro del worktree
-de la sesión**, y antes de empezar se comprueba que nadie la tenga reservada.
+sólo lo fusionado y limpio, en seco por defecto. **Cada plan con tabla de seguimiento está en `PLANES`
+(`scripts/agentes/comun.sh`) con su prefijo de rama**, y `localizar-tarea.sh`
+dice en cuál vive una tarea: `clase-mundial/<id>-<tema>` para
+`docs/plan-clase-mundial.md`, `agentes/<id>-<tema>` para
+`docs/plan-agentes-ia.md`. Un plan nuevo se añade a esa lista en el mismo
+commit que lo aprueba, o sus tareas no se pueden reservar. En una sesión de
+Claude Code, la tarea va en esa rama dentro del worktree de la sesión, y antes
+de empezar se comprueba que nadie la tenga reservada.
 
 ### Sub-agents (`.claude/settings.json`)
 

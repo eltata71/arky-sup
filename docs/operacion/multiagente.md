@@ -29,8 +29,9 @@ sólo existía en un disco. Las reglas de abajo hacen visible cada una.
    agentes —un worktree en `/tmp` o en `~/.codex` no lo ve nadie más—, así que
    ahí vive la reserva. Mientras esté abierta, nadie más toma esa tarea.
 3. **Una tarea `Hecha` no se reabre.** Si hace falta más trabajo, se propone al
-   propietario como tarea nueva en `docs/plan-clase-mundial.md`; `nueva-tarea.sh`
-   se niega a reservar una tarea fuera de la tabla o ya hecha.
+   propietario como tarea nueva en el plan en curso; `nueva-tarea.sh` se niega a
+   reservar una tarea que no esté en la tabla de ningún plan, o que esté
+   `Hecha` o `Descartada`.
 4. **El trabajo se publica el mismo día.** Una rama que sólo existe en un disco
    es trabajo que nadie puede revisar, continuar ni recuperar.
 5. **Antes de empezar, `estado.sh` sin avisos.** Sale con código 1 si el
@@ -42,7 +43,8 @@ sólo existía en un disco. Las reglas de abajo hacen visible cada una.
 | Script | Qué hace | ¿Cambia algo? |
 |---|---|---|
 | `bash scripts/agentes/estado.sh` | Inventario: `main`, el checkout principal, cada worktree (`activa`, `nueva`, `antigua`, `fusionada`, con cambios y bloqueo), ramas sin publicar, PR abiertas y ramas remotas ya fusionadas | No |
-| `bash scripts/agentes/nueva-tarea.sh <agente> <id> <tema>` | Comprueba las reglas 2 y 3, crea `clase-mundial/<id>-<tema>` desde `origin/main` en `$ARKY_WORKTREES/<agente>-<id>` (por defecto `~/workspace/arky-sup-worktrees/`), la publica y abre la PR en borrador | Sí |
+| `bash scripts/agentes/localizar-tarea.sh <id>` | Dice en qué plan de `PLANES` está la tarea y si está abierta (`plan\|prefijo\|fila`; sale con 1 si está cerrada, 3 si no está en ningún plan, 4 si está en dos: fija `ARKY_PLAN`) | No |
+| `bash scripts/agentes/nueva-tarea.sh <agente> <id> <tema>` | Comprueba las reglas 2 y 3, crea `<prefijo>/<id>-<tema>` (el prefijo de su plan) desde `origin/main` en `$ARKY_WORKTREES/<agente>-<id>` (por defecto `~/workspace/arky-sup-worktrees/`), la publica y abre la PR en borrador | Sí |
 | `bash scripts/agentes/limpieza.sh [--aplicar]` | Borra worktrees limpios y fusionados, ramas locales fusionadas y ramas remotas cuya PR está fusionada. **En seco por defecto.** Nunca toca un worktree con cambios, uno bloqueado por una sesión viva, `main` ni Dependabot | Sólo con `--aplicar` |
 | `bash scripts/agentes/instalar-guarda.sh` | Activa `scripts/agentes/hooks/`: el checkout principal rechaza commits y avisa si deja `main`. Escape: `ARKY_PERMITIR_PRINCIPAL=1` | Configuración local |
 
@@ -53,7 +55,21 @@ fusionan con *squash* y la rama nunca llega a ser ancestro de `main`.
 
 - **Claude Code** abre sus sesiones en `.claude/worktrees/bridge-*` y las
   bloquea mientras viven; `limpieza.sh` no las toca. Dentro de la sesión, la
-  tarea sigue la regla de una rama por tarea (`clase-mundial/<id>-<tema>`).
+  tarea sigue la regla de una rama por tarea (`<prefijo>/<id>-<tema>`).
+
+## Los planes
+
+Cada plan con tabla de seguimiento está en `PLANES`, en
+`scripts/agentes/comun.sh`, con el prefijo de rama de sus tareas:
+
+| Plan | Prefijo | Estado |
+|---|---|---|
+| `docs/plan-clase-mundial.md` (olas 9–14) | `clase-mundial/` | Cerrado el 2026-10-13 |
+| `docs/plan-agentes-ia.md` (olas 15–20) | `agentes/` | En curso desde el 2026-10-13 |
+
+Un plan nuevo se añade a esa lista en el mismo commit que lo aprueba; si no,
+`nueva-tarea.sh` no encuentra sus tareas. La tabla se lee tal como está en
+`origin/main`: una fila cambiada en una rama sin fusionar no cuenta.
 - **Codex** crea sus worktrees en `~/.codex/worktrees/`. Igual que los demás:
   reserva con `nueva-tarea.sh`, o al menos con una PR en borrador.
 - **Hermes** no trabaja en el checkout principal ni en ramas que no publique.

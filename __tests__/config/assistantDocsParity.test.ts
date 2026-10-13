@@ -55,6 +55,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'routeCopilotTurn', rule: 'ninguna pantalla supera el fan-out: la regla va a su contexto dueño (F5-02)' },
   { anchor: 'agentRegistry', rule: 'el registro es la única puerta a los agentes' },
   { anchor: 'multiagente.md', rule: 'varios agentes, un solo estado: checkout principal en main y tareas reservadas (2026-10-07)' },
+  { anchor: 'localizar-tarea.sh', rule: 'una tarea se localiza en su plan y su rama lleva el prefijo del plan (agentes 15.P)' },
   { anchor: 'serializeIRPreservingDialect', rule: 'un diagrama conserva su dialecto al guardarse (plan de diagramas 6.1)' },
   { anchor: 'diagram-evals', rule: 'el banco de evaluación de diagramas y su línea base monótona (6.1)' },
   { anchor: 'export-evals', rule: 'el banco de exportación abre el fichero y nombra cada defecto (clase mundial 9.0)' },

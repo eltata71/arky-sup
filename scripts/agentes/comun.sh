@@ -11,6 +11,24 @@ PRINCIPAL="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
 # ningún agente los vea como ficheros sin seguimiento del repositorio.
 WORKTREES="${ARKY_WORKTREES:-$(dirname "$PRINCIPAL")/arky-sup-worktrees}"
 
+# Planes con tabla de seguimiento, «fichero|prefijo de rama». Cada tarea vive en
+# un plan y su rama lleva el prefijo de ese plan: `clase-mundial/11.0-…`,
+# `agentes/15.0-…`. Un plan nuevo con tareas reservables se añade aquí.
+PLANES=(
+  "docs/plan-clase-mundial.md|clase-mundial"
+  "docs/plan-agentes-ia.md|agentes"
+)
+
+# Contenido de un plan tal como está en origin/main, o en ARKY_PLANES_DIR si se
+# fija (las pruebas lo usan para no depender del estado real de los planes).
+leer_plan() {
+  if [ -n "${ARKY_PLANES_DIR:-}" ]; then
+    cat "$ARKY_PLANES_DIR/$1" 2>/dev/null || true
+  else
+    git show "origin/main:$1" 2>/dev/null || true
+  fi
+}
+
 actualizar_remoto() {
   git fetch origin --prune --quiet
 }

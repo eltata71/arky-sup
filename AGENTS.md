@@ -362,6 +362,8 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    ver CLAUDE.md → *Dependabot #220–#224*.
    **El plan de clase mundial (olas 9–14) está cerrado desde 2026-10-13**: no
    hay tarea abierta en `docs/plan-clase-mundial.md`; lo nuevo es un plan nuevo.
+   **El plan en curso es `docs/plan-agentes-ia.md`** (olas 15–20, aprobado el
+   2026-10-13; ramas `agentes/<id>-<tema>`).
 19. **Iniciativas es el contexto piloto: copia su forma** (F3-05,
     `docs/ddd-transformacion/09-cierre-fase-3.md`). `domain/` guarda las reglas
     sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);
@@ -686,8 +688,10 @@ Esta sección es un contrato adicional y **no reemplaza** las reglas de arriba.
 8. **Varios agentes, un solo estado** (`docs/operacion/multiagente.md`). El
    checkout principal sólo sigue a `main` y no se edita; cada tarea se reserva
    con `bash scripts/agentes/nueva-tarea.sh <agente> <id> <tema>` (worktree
-   propio + PR en borrador, que es la reserva que ven todos); una tarea `Hecha`
-   del plan no se reabre —lo nuevo se propone al propietario—; el trabajo se
+   propio + PR en borrador, que es la reserva que ven todos); el script busca la
+   tarea en cada plan de `PLANES` (`scripts/agentes/comun.sh`, con
+   `localizar-tarea.sh`) y la rama lleva el prefijo de ese plan; una tarea
+   `Hecha` o `Descartada` no se reabre —lo nuevo se propone al propietario—; el trabajo se
    publica el mismo día; y no se empieza si `bash scripts/agentes/estado.sh`
    sale con avisos. Las tareas programadas de Hermes llaman a `estado.sh` y
    paran si sale con 1.
