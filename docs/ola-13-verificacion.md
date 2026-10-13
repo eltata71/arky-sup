@@ -54,6 +54,9 @@ En el checkout aislado, sobre `origin/main` actualizado, pasaron `quality:static
 (340,5 KB gzip iniciales frente al límite de 345 KB; todas las rutas dentro
 de su presupuesto).
 
-Queda por confirmar en la PR de seguimiento el E2E de axe y regresión visual
-contra su propio commit. Solo con ese control verde se puede certificar el
-cierre completo de la ola.
+La [ejecución E2E de la PR #233](https://github.com/eltata71/arky-sup/actions/runs/38342877675)
+pasó contra el commit de cierre: 51 pruebas efectivas, incluidos los casos de
+axe de las rutas protegidas y las nueve capturas canónicas en Chromium. Los
+cuatro shards de Vitest, cobertura, CodeQL, auditoría de dependencias, gates
+estáticos y preview también pasaron. Con esta evidencia quedan cumplidos los
+criterios técnicos de cierre de la ola 13.
