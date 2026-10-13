@@ -1,7 +1,7 @@
 # Plan de clase mundial: fiabilidad, consistencia y experiencia de los artefactos
 
 **Fecha:** 2026-10-03
-**Estado:** aprobado por el propietario el 2026-10-03, con R-16 = B y R-17 = A (ver sección 7)
+**Estado:** **cerrado el 2026-10-13** (olas 9–14 completas; ver «Cierre del plan» al final de la sección 8). Aprobado por el propietario el 2026-10-03, con R-16 = B y R-17 = A (ver sección 7)
 **Continúa:** `docs/plan-diagramas-fase-8.md` (cerrada con #138–#152) y
 `docs/plan-calidad-artefactos.md` (cerrada con #121–#137). La transformación DDD
 está cerrada desde el 2026-09-27 (`docs/ddd-transformacion/14-informe-cierre.md`).
@@ -703,6 +703,9 @@ críticas en las diez rutas; regresión visual en CI.
 publicación y trazabilidad hasta la decisión.
 **Criterio de cierre:** el ciclo borrador → revisión → aprobado → publicado es
 visible en cada artefacto y en el tablero.
+**Estado: cerrada el 2026-10-13** (14.0–14.4, 14.6–14.8; PR #206–#217). El
+criterio se cumple: la etapa derivada se muestra con la misma etiqueta en el
+lienzo, ProjectHub y el tablero, y el índice del proyecto proyecta `reviewStatus`.
 
 > **Decisiones del propietario:** R-02 (`charter:approve`) y R-03 (historial de
 > chat) se resolvieron y se ejecutaron en la 14.1 (#210) y la 14.3 (#211); sus
@@ -815,7 +818,23 @@ presupuesto que consumirán las olas 11 y 12.
 | 14.4 Índice con etapa de revisión | Hecha · #213 | `refresh_project_artifact_index` proyecta `reviewStatus`; el tablero deja de contar «sin medir» los artefactos de proyectos sin abrir |
 | 14.7 Pedir cambios al charter | Hecha · #216 | `api.request_charter_changes` (migración `20261013090000_charter_changes_requested`, aplicada en ArkyDB-US): quien puede aprobar y no es el autor deja constancia con motivo en el rastro, sin cambiar el estado; botón «Pedir cambios» en la sala. La tarea enlazada queda fuera |
 | 14.8 Trazabilidad con KPI | Hecha · #217 | `traceInitiativeTargets` une, por id, los resultados y KPI de cada iniciativa con las contribuciones del proyecto; la vista de cadena marca los no reclamados y las referencias rotas. Sin migración |
-| 14.6 Diccionario español por ruta | Hecha | El español pasa de 3 485 claves eager a un núcleo de 394 y secciones por ruta generadas (`buildDictionarySections`); el techo eager baja 403 → 345 KB gz (medido 338,7) en vez de subir; los techos de ProjectsPage, SDDProcessView y Workspace suben lo que cada ruta paga por su sección |
+| 14.6 Diccionario español por ruta | Hecha · #215 | El español pasa de 3 485 claves eager a un núcleo de 394 y secciones por ruta generadas (`buildDictionarySections`); el techo eager baja 403 → 345 KB gz (medido 338,7) en vez de subir; los techos de ProjectsPage, SDDProcessView y Workspace suben lo que cada ruta paga por su sección |
+
+### Cierre del plan (2026-10-13)
+
+Las olas 9 a 14 están completas y fusionadas en `main`; ninguna tarea queda
+abierta. Decisiones del propietario resueltas: R-16 = B, R-17 = A, R-02 y R-03
+(ejecutadas en 14.1 y 14.3). Sin migraciones pendientes: la última aplicada en
+ArkyDB-US es `20261013090000_charter_changes_requested`.
+
+**Salvedades deliberadas, fuera de alcance** (si se quieren, nacen como tarea
+nueva en un plan nuevo, no reabren este):
+- 14.1 y 14.7: «pedir cambios» deja constancia con motivo en el rastro, pero no
+  crea la tarea enlazada.
+- 14.2 y 14.8: la cadena de trazabilidad no se amplía a más relaciones que las
+  cubiertas por `traceInitiativeTargets`.
+- 14.0: el tablero cuenta «sin medir» sólo lo que el índice no permitía; tras
+  14.4 el residuo son proyectos aún sin abrir.
 
 ---
 
