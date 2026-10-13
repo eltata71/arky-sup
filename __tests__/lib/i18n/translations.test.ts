@@ -34,6 +34,16 @@ describe('loading', () => {
 });
 
 describe('the dictionary', () => {
+  it('translates every agent-profile rejection exposed by the editor', () => {
+    const codes = ['unknown-agent', 'empty-alias', 'invalid-avatar', 'invalid-model-tier', 'invalid-concurrency'];
+    for (const code of codes) {
+      const key = `agentProfile.rejection.${code}`;
+      expect(translations.es[key]).toBeTruthy();
+      expect(translations.en[key]).toBeTruthy();
+      expect(translations.en[key]).not.toBe(translations.es[key]);
+    }
+  });
+
   it('carries the two languages `Settings.language` can select', () => {
     expect(Object.keys(translations).sort()).toEqual([...LANGUAGES]);
   });

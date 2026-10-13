@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOptionalAuth } from '../context/AuthContext';
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import {
   createAgentProfileOverride,
   officeAgentProfileRepository,
@@ -32,7 +33,7 @@ export interface AgentProfilesApi {
   /** Lo guardado, por si una pantalla necesita saber qué se ha tocado. */
   overrides: OfficeAgentProfileOverride[];
   loading: boolean;
-  /** Mensaje en español cuando la última escritura no llegó a la base. */
+  /** Localized message when the last write did not reach the database. */
   notice: string | null;
   /**
    * Guarda la ficha. Devuelve el veredicto de la fábrica: un avatar inválido o
@@ -45,6 +46,7 @@ export interface AgentProfilesApi {
 }
 
 export const useAgentProfiles = (): AgentProfilesApi => {
+  const t = useUiTranslation();
   const user = useOptionalAuth()?.user ?? null;
   const userId = user?.uid ?? '';
   const [overrides, setOverrides] = useState<OfficeAgentProfileOverride[]>([]);
@@ -76,11 +78,13 @@ export const useAgentProfiles = (): AgentProfilesApi => {
       return {
         outcome: 'rejected',
         code: 'unknown-agent',
-        message: 'Hace falta una sesión iniciada para configurar un agente.',
+        message: t('agentProfile.signInRequired'),
       };
     }
     const created = createAgentProfileOverride({ ...input, userId });
-    if (created.outcome === 'rejected') return created;
+    if (created.outcome === 'rejected') {
+      return { ...created, message: t(`agentProfile.rejection.${created.code}`) };
+    }
 
     // El estado local se actualiza con lo que la fábrica aceptó, no con lo que
     // el formulario envió: lo que se ve en pantalla es lo que se guardó.
@@ -89,16 +93,16 @@ export const useAgentProfiles = (): AgentProfilesApi => {
       ...previous.filter((entry) => entry.agentId !== created.override.agentId),
     ]);
     const result = await officeAgentProfileRepository.save(created.override);
-    setNotice(result.success ? null : (result.message ?? "No se pudo guardar la ficha del agente."));
+    setNotice(result.success ? null : t('uiMessage.no-se-pudo-guardar-la-ficha.08fed8'));
     return created;
-  }, [userId]);
+  }, [userId, t]);
 
   const reset = useCallback(async (agentId: OfficeAgentId) => {
     if (!userId) return;
     setOverrides((previous) => previous.filter((entry) => entry.agentId !== agentId));
     const result = await officeAgentProfileRepository.reset(userId, agentId);
-    setNotice(result.success ? null : (result.message ?? "No se pudo guardar la ficha del agente."));
-  }, [userId]);
+    setNotice(result.success ? null : t('uiMessage.no-se-pudo-guardar-la-ficha.08fed8'));
+  }, [userId, t]);
 
   return { profiles, overrides, loading, notice, save, reset };
 };

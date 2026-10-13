@@ -6,8 +6,9 @@ import { learningService } from '../../services/ai/lazy';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { competencyLevel } from '../../lib/lmsProgress';
-import { TargetIcon, Loader2Icon, SparklesIcon, ChevronRightIcon, RotateCcwIcon, CompassIcon } from 'lucide-react';
+import { TargetIcon, SparklesIcon, ChevronRightIcon, RotateCcwIcon, CompassIcon } from 'lucide-react';
 import { errorMessageOf } from '../../lib/errorMessage';
+import { Skeleton, SkeletonGroup } from '../../components/ui/Skeleton';
 
 interface Props {
     courses: Course[];
@@ -196,10 +197,11 @@ export const LMSDiagnostic: React.FC<Props> = ({ courses, progress, onSaveDiagno
             )}
 
             {phase === 'loading' && (
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 border border-gray-200 dark:border-gray-800 shadow-sm text-center flex flex-col items-center">
-                    <Loader2Icon className="h-10 w-10 text-indigo-600 animate-spin mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">{t("ui.generando-tu-diagnostico-par.f151b4")} {role}…</p>
-                </div>
+                <SkeletonGroup label={`${t("ui.generando-tu-diagnostico-par.f151b4")} ${role}…`} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    <Skeleton className="h-7 w-2/3" />
+                    <Skeleton shape="text" lines={3} />
+                    {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-12 w-full rounded-xl" />)}
+                </SkeletonGroup>
             )}
 
             {phase === 'taking' && (

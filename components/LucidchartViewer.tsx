@@ -30,6 +30,7 @@ import {
     type LucidEmbedSession,
 } from '../services/lucid';
 import { MOTION } from '../lib/designTokens';
+import { Skeleton, SkeletonGroup } from './ui/Skeleton';
 import { useAppContext } from '../context/AppContext';
 
 interface LucidchartViewerProps {
@@ -395,9 +396,10 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                             className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-white dark:bg-gray-950"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         >
-                            <div className="relative w-16 h-16 rounded-2xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-[#E8440A] animate-spin" />
-                            </div>
+                            <SkeletonGroup label={t('lucid.sending')} className="w-full max-w-3xl space-y-4 p-6">
+                                <Skeleton className="h-8 w-1/2" />
+                                <Skeleton className="h-64 w-full rounded-2xl" />
+                            </SkeletonGroup>
                             <div className="text-center">
                                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('lucid.sending')}</p>
                                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('lucid.creating')}</p>
@@ -419,12 +421,10 @@ const LucidchartViewer: React.FC<LucidchartViewerProps> = ({
                             className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-white dark:bg-gray-950"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         >
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-[#E8440A]/10 rounded-full blur-2xl animate-pulse" />
-                                <div className="relative w-16 h-16 rounded-2xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
-                                    <Loader2 className="w-8 h-8 text-[#E8440A] animate-spin" />
-                                </div>
-                            </div>
+                            <SkeletonGroup label={t('lucid.generatingPreview')} className="w-full max-w-3xl space-y-4 p-6">
+                                <Skeleton className="h-8 w-1/2" />
+                                <Skeleton className="h-64 w-full rounded-2xl" />
+                            </SkeletonGroup>
                             <div className="text-center">
                                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('lucid.generatingPreview')}</p>
                                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('lucid.converting')}</p>

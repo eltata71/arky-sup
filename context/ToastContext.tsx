@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, LightBulbIcon, XMarkIcon } from '../components/Icons';
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -30,6 +31,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 const DEFAULT_DURATION_MS = 4500;
 
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const t = useUiTranslation();
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     const removeToast = useCallback((id: string) => {
@@ -59,7 +61,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return (
         <ToastContext.Provider value={value}>
             {children}
-            <ToastContainer toasts={toasts} onRemove={removeToast} />
+            <ToastContainer toasts={toasts} onRemove={removeToast} closeLabel={t('toast.close')} />
         </ToastContext.Provider>
     );
 };
@@ -119,7 +121,7 @@ const TONE_STYLES: Record<ToastType, {
     },
 };
 
-const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: string) => void }> = ({ toasts, onRemove }) => {
+const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: string) => void; closeLabel: string }> = ({ toasts, onRemove, closeLabel }) => {
     return (
         <div
             className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 max-w-sm w-[calc(100vw-3rem)] sm:w-96 pointer-events-none"
@@ -160,7 +162,7 @@ const ToastContainer: React.FC<{ toasts: Toast[]; onRemove: (id: string) => void
                             <button
                                 type="button"
                                 onClick={() => onRemove(toast.id)}
-                                aria-label="Cerrar notificación"
+                                aria-label={closeLabel}
                                 className="flex-shrink-0 p-1 rounded-md text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                             >
                                 <XMarkIcon className="h-3.5 w-3.5" />

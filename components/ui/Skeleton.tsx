@@ -76,7 +76,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 export interface SkeletonGroupProps extends React.HTMLAttributes<HTMLDivElement> {
     /** Localised loading label announced to assistive tech. */
-    label?: string;
+    label: string;
     children: React.ReactNode;
 }
 
@@ -85,7 +85,7 @@ export interface SkeletonGroupProps extends React.HTMLAttributes<HTMLDivElement>
  * readers announce a single "loading" status instead of nothing.
  */
 export const SkeletonGroup: React.FC<SkeletonGroupProps> = ({
-    label = 'Cargando…',
+    label,
     className,
     children,
     ...rest

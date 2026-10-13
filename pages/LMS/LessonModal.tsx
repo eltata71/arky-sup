@@ -24,6 +24,7 @@ import { LessonMermaid } from './LessonMermaid';
 import { LessonLab } from './LessonLab';
 import { EvaluationResultCard } from './EvaluationResultCard';
 import { SafeRichText } from '../../components/ui/SafeRichText';
+import { LessonContentSkeleton } from './LessonContentSkeleton';
 import { Modal } from '../../components/ui/Modal';
 import { activatable } from '../../lib/a11y';
 import { renderMarkdownToSafeHtml } from '../../lib/richText';
@@ -605,10 +606,7 @@ export const LessonModal: React.FC<Props> = ({
 
                         {/* Content */}
                         {isLoading ? (
-                            <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                                <p className="text-gray-500 dark:text-gray-400 font-medium animate-pulse">{t("ui.generando-contenido-con-ia-b.5f4852")}</p>
-                            </div>
+                            <LessonContentSkeleton label={t("ui.generando-contenido-con-ia-b.5f4852")} />
                         ) : (
                             <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                                 {activeTab === 'Reto Práctico' ? (

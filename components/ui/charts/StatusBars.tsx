@@ -18,6 +18,7 @@ import React from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 import { ChartEmptyState } from './ChartEmptyState';
+import useReducedMotion from '../../../hooks/useReducedMotion';
 
 export interface StatusBarRow {
   id: string;
@@ -60,6 +61,7 @@ export const StatusBars: React.FC<StatusBarsProps> = ({
   animateReorder = false,
   className,
 }) => {
+  const reducedMotion = useReducedMotion();
   const max = rows.reduce((highest, row) => Math.max(highest, row.value), 0);
 
   if (max === 0 && emptyMessage) {
@@ -73,7 +75,7 @@ export const StatusBars: React.FC<StatusBarsProps> = ({
         const width = max === 0 ? 0 : Math.max(row.value > 0 ? 4 : 0, (row.value / max) * 100);
         const Row = row.onSelect ? 'button' : 'div';
         return (
-          <motion.li key={row.id} layout={animateReorder ? 'position' : false} transition={MICRO.reorder}>
+          <motion.li key={row.id} layout={animateReorder && !reducedMotion ? 'position' : false} transition={MICRO.reorder}>
             <Row
               {...(row.onSelect
                 ? {

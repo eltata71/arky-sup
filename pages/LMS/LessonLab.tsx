@@ -9,6 +9,7 @@ import { LessonMermaid } from './LessonMermaid';
 import { FlaskConicalIcon, Loader2Icon, SparklesIcon, RefreshCwIcon } from 'lucide-react';
 import { SafeRichText } from '../../components/ui/SafeRichText';
 import { errorMessageOf } from '../../lib/errorMessage';
+import { Skeleton, SkeletonGroup } from '../../components/ui/Skeleton';
 
 interface Props {
     courseTitle: string;
@@ -91,9 +92,10 @@ export const LessonLab: React.FC<Props> = ({ courseTitle, lessonTitle, role, lev
                     </button>
                 </div>
                 {isLoadingChallenge ? (
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <Loader2Icon className="h-4 w-4 mr-2 animate-spin" /> {t("ui.generando-reto.4d5901")}
-                    </div>
+                    <SkeletonGroup label={t("ui.generando-reto.4d5901")} className="space-y-2">
+                        <Skeleton className="h-5 w-2/3" />
+                        <Skeleton shape="text" lines={3} />
+                    </SkeletonGroup>
                 ) : (
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                         <SafeRichText markdown={challenge || ''} />

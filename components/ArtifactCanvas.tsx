@@ -273,7 +273,7 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     renderable,
   });
 
-  const generationObservabilityAlert = useMemo(() => buildGenerationObservabilityAlert({
+  const generationObservabilityAlert = buildGenerationObservabilityAlert({
     traceStatus: artifact.generationTrace?.status,
     traceErrorCount: artifact.generationTrace?.errors.length ?? 0,
     renderStatus: renderable.status,
@@ -282,8 +282,8 @@ export const ArtifactCanvas: React.FC<ArtifactCanvasProps> = ({
     activeViewMode: viewMode,
     renderDiagnosticsSummary: diagnostic.renderDiagnosticsSummary,
     lastDiagramErrorReason: artifact.lastDiagramError?.reason,
-  }), [artifact.generationTrace?.status, artifact.generationTrace?.errors.length, artifact.lastDiagramError?.reason, renderable.status, hasDisplayFlowNodes, artifact.content, markdownHtml, viewMode, diagnostic.renderDiagnosticsSummary]);
-
+    t,
+  });
   // Observability/traceability surfaces stay closed by default — the
   // generation alert only tints the Observabilidad menu so the user can
   // open the trace panel on demand instead of having it pop over the canvas.

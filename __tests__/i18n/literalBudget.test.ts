@@ -1,7 +1,7 @@
 /**
  * R-16: the interface is bilingual, so a literal in JSX is a string that one
  * language cannot translate. This counts them — JSX text nodes and the
- * accessible/visible string attributes — under `components/` and `pages/`.
+ * accessible/visible string attributes — under every React UI root.
  *
  * The budget is monotonic: it records today's count and may only fall. New
  * copy goes through `t()`; extracting a screen lowers the number in the same
@@ -24,7 +24,8 @@ const JSX_AST_LITERAL_BUDGET = 0;
 const JSX_EXPRESSION_LITERAL_BUDGET = 0;
 const CUSTOM_VISIBLE_PROP_BUDGET = 0;
 
-const ROOTS = ['components', 'pages'];
+const LEGACY_ROOTS = ['components', 'pages'];
+const ROOTS = [...LEGACY_ROOTS, 'context', 'hooks'];
 const TEXT_NODE = />\s*([^<>{}\n=]*[A-Za-zÁ-ÿ]{3,}[^<>{}\n=]*)</g;
 const STRING_ATTR = /\b(?:aria-label|placeholder|title|alt|label)="([^"{}]*[A-Za-zÁ-ÿ]{3,}[^"{}]*)"/g;
 
@@ -38,7 +39,7 @@ function sources(dir: string): string[] {
 
 function countLiterals(): number {
   let total = 0;
-  for (const root of ROOTS) {
+  for (const root of LEGACY_ROOTS) {
     for (const file of sources(root)) {
       const text = readFileSync(file, 'utf8');
       total += (text.match(TEXT_NODE)?.length ?? 0) + (text.match(STRING_ATTR)?.length ?? 0);

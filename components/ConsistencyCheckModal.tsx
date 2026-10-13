@@ -6,6 +6,7 @@ import { ConsistencySuggestion } from '../types';
 import { assistantService } from '../services/ai/lazy';
 import { useAiUndo } from '../hooks/artifacts/useAiUndo';
 import { CheckCircleIcon } from './Icons';
+import { Skeleton, SkeletonGroup } from './ui/Skeleton';
 
 interface ConsistencyCheckModalProps {
   isOpen: boolean;
@@ -79,13 +80,14 @@ export const ConsistencyCheckModal: React.FC<ConsistencyCheckModalProps> = ({ is
             {/* Changed h-[70vh] to h-full */}
             <div className="flex flex-col h-full">
                 {isLoading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center">
-                        <svg className="animate-spin h-10 w-10 text-primary-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p className="text-lg">{t("analyzing")}</p>
-                    </div>
+                    <SkeletonGroup label={t("analyzing")} className="flex-1 space-y-4">
+                        {Array.from({ length: 3 }, (_, index) => (
+                            <div key={index} className="space-y-2 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                                <Skeleton className="h-5 w-1/3" />
+                                <Skeleton shape="text" lines={2} />
+                            </div>
+                        ))}
+                    </SkeletonGroup>
                 ) : suggestions.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center">
                         <CheckCircleIcon className="h-16 w-16 text-green-500 mb-4" />
