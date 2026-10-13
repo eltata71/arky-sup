@@ -15,14 +15,19 @@ const files = (dir: string): string[] =>
   });
 
 describe('clickable divs', () => {
-  it('every <div onClick> is aria-hidden, has a role, or spreads activatable()', () => {
+  it('every actionable <div onClick> has a keyboard path', () => {
     const offenders: string[] = [];
     for (const file of ['components', 'pages'].flatMap(files)) {
       const src = readFileSync(file, 'utf8');
       for (const m of src.matchAll(/<div\b(?:=>|[^>])*?>/gs)) {
         const tag = m[0];
         if (!/\bonClick\s*=/.test(tag)) continue;
-        if (/aria-hidden|\brole\s*=|stopPropagation\(\)/.test(tag)) continue;
+        if (/aria-hidden|stopPropagation\(\)/.test(tag)) continue;
+        // Pointer dismissal on a dialog backdrop is supplementary to its
+        // keyboard-accessible close control, not the dialog's only action.
+        if (/\brole="dialog"/.test(tag) && /\baria-modal="true"/.test(tag)) continue;
+        if (/\.\.\.activatable\(/.test(tag)) continue;
+        if (/\brole\s*=/.test(tag) && /\btabIndex\s*=/.test(tag) && /\bonKeyDown\s*=/.test(tag)) continue;
         const line = src.slice(0, m.index).split('\n').length;
         offenders.push(`${file}:${line}`);
       }

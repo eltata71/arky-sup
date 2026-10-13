@@ -3,12 +3,13 @@ import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React, { useState } from 'react';
 import { activatable } from '../../lib/a11y';
 import { Course, CourseCategory, CourseLevel, ArchitectRole, UserProgress } from '../../types/lms';
-import { BookOpenIcon, SparklesIcon, ChevronRightIcon, Loader2Icon, TableIcon, LayoutGridIcon } from 'lucide-react';
+import { BookOpenIcon, SparklesIcon, ChevronRightIcon, TableIcon, LayoutGridIcon } from 'lucide-react';
 import { asCourseCategory, asCourseLevel, learningService } from '../../services/ai/lazy';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
 import { v4 as uuidv4 } from 'uuid';
 import { errorMessageOf } from '../../lib/errorMessage';
+import { Skeleton, SkeletonGroup } from '../../components/ui/Skeleton';
 
 interface Props {
     courses: Course[];
@@ -212,13 +213,13 @@ export const LMSCatalog: React.FC<Props> = ({ courses, progress, onOpenCourse, o
 
                     {/* Loading State */}
                     {isGenerating && (
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 border border-gray-200 dark:border-gray-800 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px]">
-                            <Loader2Icon className="h-12 w-12 text-indigo-600 animate-spin mb-6" />
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t("ui.disenando-el-catalogo.c3b365")}</h3>
-                            <p className="text-gray-500 dark:text-gray-400 max-w-md">
-                                {t("ui.nuestra-ia-esta-estructurand.1afbad")} {selectedRole}{t("ui.esto-tomara-unos-segundos.801850")}
-                            </p>
-                        </div>
+                        <SkeletonGroup label={t("ui.disenando-el-catalogo.c3b365")} className="min-h-[400px] space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                            <Skeleton className="h-7 w-2/3" />
+                            <Skeleton className="h-4 w-1/2" />
+                            <div className="space-y-3 pt-4">
+                                {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14 w-full rounded-xl" />)}
+                            </div>
+                        </SkeletonGroup>
                     )}
 
                     {/* Table View */}

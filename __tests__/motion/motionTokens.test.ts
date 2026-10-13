@@ -12,13 +12,15 @@ function tsxFiles(dir: string): string[] {
   });
 }
 
-const motionFiles = ['components', 'pages', 'hooks']
+const motionFiles = ['components', 'pages', 'hooks', 'context']
   .flatMap(tsxFiles)
-  .filter(file => readFileSync(join(ROOT, file), 'utf8').includes("from 'motion/react'"));
+  .filter(file => /from ['"]motion\/react['"]/.test(readFileSync(join(ROOT, file), 'utf8')));
 
 describe('13.1 · el movimiento sale de MOTION', () => {
-  it('hay componentes con motion/react que vigilar', () => {
-    expect(motionFiles.length).toBeGreaterThan(25);
+  it('vigila todos los componentes motion, incluidos los añadidos después de la base de 31', () => {
+    expect(motionFiles.length).toBeGreaterThanOrEqual(31);
+    const overrides = motionFiles.filter(file => /<MotionConfig\b[^>]*reducedMotion=(?:"never"|'never')/.test(readFileSync(join(ROOT, file), 'utf8')));
+    expect(overrides).toEqual([]);
   });
 
   it('ninguna animación de motion/react escribe una duración ni una curva literal', () => {

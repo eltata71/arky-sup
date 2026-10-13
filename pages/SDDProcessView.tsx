@@ -9,6 +9,7 @@ import type { Artifact } from '@/lib/artifacts';
 import { artifactGenerationService, documentGenerationService, classifyAIError, AIServiceError } from '../services/ai/lazy';
 import { motion, AnimatePresence } from 'motion/react';
 import { SafeRichText } from '../components/ui/SafeRichText';
+import { Skeleton, SkeletonGroup } from '../components/ui/Skeleton';
 import { useProjectArtifacts } from '../hooks/useProjectArtifacts';
 import { useArtifactGenerationPorts } from '../hooks/useArtifactPersona';
 import { MOTION } from '../lib/designTokens';
@@ -712,16 +713,14 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
         {activeTab === 'plan' && (
           <div className="h-full flex flex-col">
             {isGeneratingPlan ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-gray-500 dark:text-gray-400">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary-500/20 rounded-full blur-xl animate-pulse" />
-                  <svg className="relative animate-spin h-12 w-12 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+              <SkeletonGroup label={t('sdd.planLoading')} className="flex-1 space-y-5 overflow-y-auto p-6 md:p-10">
+                <Skeleton className="mx-auto h-8 w-full max-w-4xl" />
+                <div className="mx-auto max-w-4xl space-y-4">
+                  <Skeleton shape="text" lines={4} />
+                  <Skeleton className="h-6 w-1/2" />
+                  <Skeleton shape="text" lines={6} />
                 </div>
-                <p className="text-sm animate-pulse">{t('sdd.planLoading')}</p>
-              </div>
+              </SkeletonGroup>
             ) : sddPlan ? (
               <div className="flex-1 overflow-y-auto p-6 md:p-10">
                 <SafeRichText
@@ -748,16 +747,14 @@ const SDDProcessView: React.FC<SDDProcessViewProps> = ({ projectId }) => {
         {activeTab === 'report' && (
           <div className="h-full flex flex-col">
             {isGeneratingReport ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-gray-500 dark:text-gray-400">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary-500/20 rounded-full blur-xl animate-pulse" />
-                  <svg className="relative animate-spin h-12 w-12 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+              <SkeletonGroup label={t('sdd.healthLoading')} className="flex-1 space-y-5 overflow-y-auto p-6 md:p-10">
+                <Skeleton className="mx-auto h-8 w-full max-w-4xl" />
+                <div className="mx-auto max-w-4xl space-y-4">
+                  <Skeleton shape="text" lines={4} />
+                  <Skeleton className="h-6 w-1/2" />
+                  <Skeleton shape="text" lines={6} />
                 </div>
-                <p className="text-sm animate-pulse">{t('sdd.healthLoading')}</p>
-              </div>
+              </SkeletonGroup>
             ) : healthReport ? (
               <div className="flex-1 overflow-y-auto p-6 md:p-10">
                 <SafeRichText

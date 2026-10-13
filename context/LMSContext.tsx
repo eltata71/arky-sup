@@ -7,6 +7,7 @@ import { useTrainingSync } from '../hooks/useTrainingSync';
 import { XP_REWARDS, updateStreak, generateVerificationCode } from '../lib/lmsProgress';
 import { applyVersionWrite, seedVersionsFromCache, versionKey } from '../lib/lmsVersions';
 import { newPrefixedId } from '../lib/ids';
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 
 const defaultCourses: Course[] = [
   {
@@ -103,6 +104,7 @@ interface LMSContextType {
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
 export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const t = useUiTranslation();
   const { user, profile, isLoading: authLoading } = useAuth();
   const { syncError, trackWrite, reportSyncIssue } = useTrainingSync();
 
@@ -239,7 +241,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       } catch (error) {
         console.error("LMSProvider: Error loading data", error);
-        reportSyncIssue("Modo Offline: Algunos datos podrían no estar sincronizados.");
+        reportSyncIssue(t('training.offlineWarning'));
         
         // Fallback to cache entirely
         const localCoursesCache = JSON.parse(localStorage.getItem('lms_courses_cache') || '[]');
@@ -258,7 +260,7 @@ export const LMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     loadData();
-  }, [authLoading, user, profile, reportSyncIssue]);
+  }, [authLoading, user, profile, reportSyncIssue, t]);
 
   // Actions
   const addCourse = useCallback((course: Course) => {

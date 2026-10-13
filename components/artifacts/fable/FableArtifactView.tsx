@@ -4,6 +4,7 @@ import { ErrorBoundary } from '../../ErrorBoundary';
 import ViewerCrashFallback from '../ViewerCrashFallback';
 import { FableDiagramCanvas } from './FableDiagramCanvas';
 import type { DiagramAudience, DiagramIR } from '../../../lib/diagram';
+import { Skeleton, SkeletonGroup } from '../../ui/Skeleton';
 
 export interface FableArtifactViewProps {
   ir: DiagramIR | null;
@@ -53,10 +54,9 @@ export const FableArtifactView: React.FC<FableArtifactViewProps> = ({
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gray-50 p-8 text-center dark:bg-gray-950">
           {isLoading ? (
-            <>
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" aria-hidden />
-              <p className="text-sm text-gray-600 dark:text-gray-300">{t("ui.preparando-la-vista-fable.8cca97")}</p>
-            </>
+            <SkeletonGroup label={t("ui.preparando-la-vista-fable.8cca97")} className="grid h-full w-full max-w-4xl grid-cols-2 gap-5 p-5 md:grid-cols-3">
+              {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-32 rounded-2xl" />)}
+            </SkeletonGroup>
           ) : (
             <>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">

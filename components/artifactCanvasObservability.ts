@@ -1,4 +1,5 @@
 import type { ArtifactGenerationTraceStatus } from '../lib/artifacts';
+import { spanishFallback, type Translator } from '../lib/i18n/spanishFallback';
 
 /**
  * Banner tone vocabulary:
@@ -23,6 +24,7 @@ export const buildGenerationObservabilityAlert = ({
     activeViewMode = 'diagram',
     renderDiagnosticsSummary,
     lastDiagramErrorReason,
+    t = spanishFallback,
 }: {
     traceStatus?: ArtifactGenerationTraceStatus;
     traceErrorCount?: number;
@@ -32,6 +34,7 @@ export const buildGenerationObservabilityAlert = ({
     activeViewMode?: string;
     renderDiagnosticsSummary?: string | null;
     lastDiagramErrorReason?: string;
+    t?: Translator;
 }): GenerationObservabilityAlert | null => {
     const specializedRendererFailed = renderStatus === 'repairable' || renderStatus === 'invalid';
     const userCanSeeSomething = hasDisplayFlowNodes || hasVisibleFallbackContent;
@@ -39,45 +42,45 @@ export const buildGenerationObservabilityAlert = ({
     if (!userCanSeeSomething) {
         return {
             tone: 'rose',
-            title: 'No hay contenido visible para el artefacto',
-            body: 'La generación no puede marcarse como completada porque ninguna vista produjo contenido visible. Reintenta o copia el reporte técnico para soporte.',
-            detail: renderDiagnosticsSummary ?? (renderStatus ? `Estado de render: ${renderStatus}. Vista activa: ${activeViewMode}.` : `Vista activa: ${activeViewMode}.`),
+            title: t('observability.emptyTitle'),
+            body: t('observability.emptyBody'),
+            detail: renderDiagnosticsSummary ?? (renderStatus ? t('observability.renderAndView', { status: renderStatus, view: activeViewMode }) : t('observability.view', { view: activeViewMode })),
         };
     }
 
     if (specializedRendererFailed) {
         return {
             tone: 'amber',
-            title: 'Vista especializada degradada con fallback visible',
-            body: 'El artefacto tiene contenido útil, pero el renderizador especializado no pudo materializarlo de forma confiable. Se muestra una vista documental/Markdown o un placeholder accionable para evitar un canvas vacío.',
-            detail: renderDiagnosticsSummary ?? (lastDiagramErrorReason ? `Motivo técnico: ${lastDiagramErrorReason}.` : `Vista activa: ${activeViewMode}.`),
+            title: t('observability.degradedTitle'),
+            body: t('observability.degradedBody'),
+            detail: renderDiagnosticsSummary ?? (lastDiagramErrorReason ? t('observability.technicalReason', { reason: lastDiagramErrorReason }) : t('observability.view', { view: activeViewMode })),
         };
     }
 
     if (traceStatus === 'failed') {
         return {
             tone: 'rose',
-            title: 'Generación con errores registrados',
-            body: 'El artefacto abrió con una traza fallida. Revisa las decisiones, errores y diagnóstico antes de presentarlo o editarlo.',
-            detail: lastDiagramErrorReason ? `Motivo técnico: ${lastDiagramErrorReason}.` : undefined,
+            title: t('observability.failedTitle'),
+            body: t('observability.failedBody'),
+            detail: lastDiagramErrorReason ? t('observability.technicalReason', { reason: lastDiagramErrorReason }) : undefined,
         };
     }
 
     if (traceStatus === 'fallback') {
         return {
             tone: 'amber',
-            title: 'Se usó un fallback renderizable',
-            body: 'La IA no entregó una estructura completamente renderizable y el sistema sustituyó la salida por un respaldo determinístico para evitar un canvas vacío.',
-            detail: lastDiagramErrorReason ? `Motivo técnico: ${lastDiagramErrorReason}.` : undefined,
+            title: t('observability.fallbackTitle'),
+            body: t('observability.fallbackBody'),
+            detail: lastDiagramErrorReason ? t('observability.technicalReason', { reason: lastDiagramErrorReason }) : undefined,
         };
     }
 
     if (traceStatus === 'warning' || traceErrorCount > 0) {
         return {
             tone: 'blue',
-            title: 'Generación completada con notas',
-            body: 'El artefacto se generó y existe una vista visible, guardable y exportable. Hay observaciones menores en la traza si quieres revisar el detalle.',
-            detail: traceErrorCount > 0 ? `${traceErrorCount} evento(s) registrados — revisar es opcional.` : undefined,
+            title: t('observability.warningTitle'),
+            body: t('observability.warningBody'),
+            detail: traceErrorCount > 0 ? t('observability.eventCount', { count: String(traceErrorCount) }) : undefined,
         };
     }
 

@@ -63,7 +63,7 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     const interrupted = Number(localStorage.getItem(INTERRUPTED_KEY) ?? 0);
     localStorage.removeItem(INTERRUPTED_KEY);
-    if (interrupted > 0) addToast(t("uiMessage.p0-p1-al-cerrar-la-pestana-s.ab9b4c", { p0: String(interrupted), p1: String(interrupted === 1 ? 'generación interrumpida' : 'generaciones interrumpidas') }), 'warning', { durationMs: 8000 });
+    if (interrupted > 0) addToast(t("uiMessage.p0-p1-al-cerrar-la-pestana-s.ab9b4c", { p0: String(interrupted), p1: t(interrupted === 1 ? 'queue.interruptedOne' : 'queue.interruptedMany') }), 'warning', { durationMs: 8000 });
     const beforeUnload = () => {
       const count = countInterrupted(jobsRef.current);
       if (count) localStorage.setItem(INTERRUPTED_KEY, String(count));
@@ -115,7 +115,7 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
           while (jobsRef.current.find(item => item.id === job.id)?.status === 'running') {
             const remaining = getAiBlockingCooldownRemainingMs('artifact-generation');
             if (!remaining) break;
-            update(current => changeGenerationJob(current, job.id, { phase: `Esperando cuota · ${Math.ceil(remaining / 1000)} s` }));
+            update(current => changeGenerationJob(current, job.id, { phase: t('queue.waitingQuota', { seconds: String(Math.ceil(remaining / 1000)) }) }));
             await new Promise(resolve => window.setTimeout(resolve, Math.min(remaining, 1000)));
           }
           if (jobsRef.current.find(item => item.id === job.id)?.status !== 'running') return;

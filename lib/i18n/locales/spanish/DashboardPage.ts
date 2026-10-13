@@ -25,6 +25,7 @@ export const section: Dictionary = {
   "ui.artefactos-producidos.2bb3a6": "Artefactos producidos",
   "ui.actividad-del-portafolio.86af80": "Actividad del portafolio",
   "ui.en-que-estado-esta-todo-que.2421a4": ". En qué estado está todo, qué avanza y qué espera por una persona.",
+  "dashboard.itemUnit": "elemento(s)",
   "uiExpr.todavia-no-hay-nada-gobernad.4ddb4a": "Todavía no hay nada gobernado que medir. La cifra aparece con la primera iniciativa.",
   "uiExpr.nada-deteriorado-ninguna-ini.b75181": "Nada deteriorado: ninguna iniciativa en riesgo, ningún proyecto huérfano y ningún entregable detenido.",
   "Cada nivel abre el siguiente. Los recuentos son de todo el portafolio.": "Cada nivel abre el siguiente. Los recuentos son de todo el portafolio.",

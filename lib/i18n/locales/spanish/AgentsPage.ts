@@ -75,7 +75,6 @@ export const section: Dictionary = {
   "uiTemplate.ver-la-ficha-de-p0-p1.cfdbb0": "Ver la ficha de {p0}, {p1}",
   "uiTemplate.quitar-p0.ddd8ce": "Quitar: {p0}",
   "uiTemplate.abrir-la-ficha-de-p0-p1.c204ab": "Abrir la ficha de {p0}, {p1}",
-  "uiMessage.no-se-pudo-guardar-la-ficha.08fed8": "No se pudo guardar la ficha.",
   "Rápido": "Rápido",
   "Respuestas cortas y mecánicas. El más barato.": "Respuestas cortas y mecánicas. El más barato.",
   "Estándar": "Estándar",
