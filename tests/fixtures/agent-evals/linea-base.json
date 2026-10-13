@@ -1,0 +1,61 @@
+{
+  "fecha": "2026-10-13",
+  "actual": {
+    "precisionEnrutado": 81.5,
+    "especialistasProhibidosConvocados": 0,
+    "desactivadosConvocados": 0,
+    "precisionIntencion": 60,
+    "confirmacionCorrecta": 100,
+    "handoffsBienDecididos": 100,
+    "personaFijada": 0,
+    "recallRevisor": 100,
+    "aprobacionesSinCritica": 3,
+    "consolidacionesCorrectas": 80,
+    "promptsConVallado": 0,
+    "llamadasPorOperacion": 4.8
+  },
+  "defectosConocidos": [
+    {
+      "id": "router-raices",
+      "hallazgo": "A27",
+      "tarea": "16.8",
+      "metrica": "precisionEnrutado",
+      "descripcion": "Nueve señales del router son raíces con \\b final (integraci, modernizaci, suscripci, regulator, resilien, tarificaci, analitic, asegurad, artefact) y nunca coinciden con la palabra completa: «integración» no convoca a Mauricio ni «suscripción» a Sofía."
+    },
+    {
+      "id": "intencion-heuristica",
+      "hallazgo": "A20",
+      "tarea": "18.3",
+      "metrica": "precisionIntencion",
+      "descripcion": "El clasificador heurístico no reconoce «crea un ADR», «genera un nuevo diagrama», «todos los diagramas», «¿por qué…?» ni «sobrescribe la versión actual», y manda la memoria de proyecto al artefacto. El clasificador LLM no puede corregirlo: no conoce create, batch ni memory."
+    },
+    {
+      "id": "persona-por-texto",
+      "hallazgo": "A7",
+      "tarea": "16.2",
+      "metrica": "personaFijada",
+      "descripcion": "El runner resuelve la persona del texto de la instrucción (@Alias), no de la tarea: con una mención en el brief firma el mencionado y sin mención firma Arky; el asignado nunca es la persona activa del prompt de sistema."
+    },
+    {
+      "id": "revisor-sin-critica",
+      "hallazgo": "A16",
+      "tarea": "17.1",
+      "metrica": "aprobacionesSinCritica",
+      "descripcion": "Si la crítica del revisor falla, llega rota o vacía y la evidencia determinista no bloquea, el veredicto es una aprobación limpia, presentada como revisada."
+    },
+    {
+      "id": "consolidacion-encargo-sin-evaluador",
+      "hallazgo": "A19",
+      "tarea": "18.2",
+      "metrica": "consolidacionesCorrectas",
+      "descripcion": "La consolidación de un encargo no pasa por evaluateConsolidation: una recomendación sin veredicto se guarda tal cual, sin la pasada de corrección que sí tiene la coordinación."
+    },
+    {
+      "id": "prompts-sin-vallar",
+      "hallazgo": "A8",
+      "tarea": "17.0",
+      "metrica": "promptsConVallado",
+      "descripcion": "Ninguno de los ocho sitios medidos valla el texto que escribió una persona: brief del encargo (producir y consolidar), contenido revisado, solicitud y objetivo en la coordinación, y conocimiento, memoria e instrucción de la ficha (estos tres los cierra 16.0)."
+    }
+  ]
+}

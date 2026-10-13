@@ -1,0 +1,48 @@
+{
+  "familia": "consolidacion",
+  "origen": "redactado-a-mano",
+  "nota": "Respuestas simuladas del consolidador. `consolidaciones` es lo que devuelve en su primera y (si se le pide) segunda pasada. `debeCorregir` dice si el evaluador debía pedir la corrección; `finalValida` si la recomendación final cumple los criterios. Los casos `camino: encargo` pasan por la consolidación de un encargo (createConsolidatePort), que hoy no evalúa (A19).",
+  "casos": [
+    {
+      "id": "completa-a-la-primera", "camino": "coordinacion", "solicitud": "Arquitectura AWS del portal de siniestros",
+      "especialistas": { "felipe": "Análisis AWS: Lambda y S3; riesgo de arranque en frío.", "sofia": "Análisis de siniestros: adjudicación en el core." },
+      "consolidaciones": ["## Recomendación\n\nVeredicto: **Conditional**.\n\nFelipe propone Lambda y S3; Sofía exige mantener la adjudicación en el core. Condición: medir el arranque en frío antes de producción. Se integran ambas contribuciones en una arquitectura híbrida con el core como sistema de registro y la capa serverless para la recepción y el seguimiento de siniestros."],
+      "debeCorregir": false, "finalValida": true
+    },
+    {
+      "id": "sin-veredicto-corregida", "camino": "coordinacion", "solicitud": "Arquitectura AWS del portal de siniestros",
+      "especialistas": { "felipe": "Análisis AWS.", "sofia": "Análisis de siniestros." },
+      "consolidaciones": [
+        "Felipe y Sofía coinciden en el enfoque general y no hay más que añadir por ahora.",
+        "## Recomendación\n\nVeredicto: **Ready**.\n\nFelipe aporta la capa AWS y Sofía la adjudicación en el core; no hay contradicciones entre sus análisis y ambos se integran sin condiciones adicionales en la solución propuesta para el portal."
+      ],
+      "debeCorregir": true, "finalValida": true
+    },
+    {
+      "id": "omite-un-especialista", "camino": "coordinacion", "solicitud": "Arquitectura AWS del portal de siniestros",
+      "especialistas": { "felipe": "Análisis AWS.", "sofia": "Análisis de siniestros." },
+      "consolidaciones": [
+        "## Recomendación\n\nVeredicto: **Ready**.\n\nFelipe propone Lambda y S3 y con eso basta para avanzar; la arquitectura serverless cubre la recepción, el seguimiento y la notificación al asegurado sin cambios en ningún otro sistema.",
+        "## Recomendación\n\nVeredicto: **Ready**.\n\nFelipe propone Lambda y S3; Sofía confirma que la adjudicación sigue en el core. Ambas contribuciones se integran sin contradicciones en la arquitectura propuesta para el portal de siniestros."
+      ],
+      "debeCorregir": true, "finalValida": true
+    },
+    {
+      "id": "parcial-sin-reconocer", "camino": "coordinacion", "solicitud": "Arquitectura AWS del portal de siniestros",
+      "especialistas": { "felipe": "Análisis AWS.", "sofia": "__falla__" },
+      "consolidaciones": [
+        "## Recomendación\n\nVeredicto: **Ready**.\n\nFelipe propone Lambda y S3 para todo el portal, con colas para desacoplar la recepción de siniestros y el seguimiento posterior por parte del asegurado.",
+        "## Recomendación\n\nVeredicto: **Conditional**.\n\nFelipe propone Lambda y S3. El análisis de Sofía no llegó: la recomendación es parcial y queda condicionada a revisar la adjudicación en el core antes de comprometer la arquitectura del portal."
+      ],
+      "debeCorregir": true, "finalValida": true
+    },
+    {
+      "id": "encargo-sin-veredicto", "camino": "encargo",
+      "consolidaciones": [
+        "Los entregables están bien.",
+        "## Recomendación\n\nVeredicto: **Ready**.\n\nFelipe entregó el diagrama de contenedores y Elena lo revisó y aprobó; no hay contradicciones pendientes entre dominios y el entregable queda listo para presentarse al comité de arquitectura."
+      ],
+      "debeCorregir": true, "finalValida": true
+    }
+  ]
+}

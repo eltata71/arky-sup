@@ -1,0 +1,21 @@
+{
+  "familia": "handoff",
+  "origen": "redactado-a-mano",
+  "nota": "Contratos de traspaso entre agentes y la regla de que quien firma una tarea lo decide la tarea, no el texto del usuario (A7).",
+  "contratos": [
+    { "id": "coordinador-a-especialista", "origen": "lucia", "destino": "felipe", "tipo": "workstream", "esperado": "issued" },
+    { "id": "coordinador-a-consolidador", "origen": "lucia", "destino": "alejandro", "tipo": "consolidation", "esperado": "issued" },
+    { "id": "a-si-mismo", "origen": "lucia", "destino": "lucia", "tipo": "workstream", "esperado": "same-agent" },
+    { "id": "especialista-delega", "origen": "felipe", "destino": "natalia", "tipo": "workstream", "esperado": "topology-not-allowed" },
+    { "id": "consolidador-reparte", "origen": "alejandro", "destino": "felipe", "tipo": "workstream", "esperado": "topology-not-allowed" },
+    { "id": "workstream-al-consolidador", "origen": "lucia", "destino": "alejandro", "tipo": "workstream", "esperado": "topology-not-allowed" },
+    { "id": "sin-objetivo", "origen": "lucia", "destino": "felipe", "tipo": "workstream", "objetivo": "  ", "esperado": "missing-objective" },
+    { "id": "sin-presupuesto", "origen": "lucia", "destino": "felipe", "tipo": "workstream", "presupuesto": 0, "esperado": "no-budget" },
+    { "id": "historial-entero", "origen": "lucia", "destino": "felipe", "tipo": "workstream", "referencias": 40, "esperado": "context-overflow" }
+  ],
+  "personaFijada": [
+    { "id": "brief-menciona-otra", "asignado": "felipe", "brief": "Diseño en AWS del portal; @Carmen revisará el cumplimiento después." },
+    { "id": "brief-empieza-por-alias", "asignado": "gabriel", "brief": "Elena: prepara los NFR del cotizador." },
+    { "id": "brief-sin-mencion", "asignado": "sofia", "brief": "Modelo de pólizas y endosos del ramo de vida." }
+  ]
+}

@@ -142,7 +142,7 @@ CLAUDE.md afirma: *«The card reaches every place the agent speaks»*. Medido:
 
 | # | Hallazgo | Evidencia |
 |---|---|---|
-| **A7** | **El agente de un encargo se elige por mención en el texto, y el texto empieza por el brief del usuario.** `buildProductionInstruction` escribe `Solicitud original: ${engagement.brief}` *antes* de `Actúas como…`, y el ejecutor resuelve la persona con `officePersonaForMessage` (`@Alias`). Un brief que contenga «@Carmen» hace que la tarea de Felipe la firme Carmen: el mismo secuestro que `projectConversation.ts` documenta y evita con `personaOverride` | `OfficeRunnerAdapters.ts:112`, `:186`; `officeShared.ts:23-30` |
+| **A7** | **El agente de un encargo se elige por mención en el texto, nunca por la tarea.** `buildProductionInstruction` escribe `Solicitud original: ${engagement.brief}` *antes* de `Actúas como…`, y el ejecutor resuelve la persona con `officePersonaForMessage` (`@Alias`). Un brief que contenga «@Carmen» hace que la tarea de Felipe la firme Carmen: el mismo secuestro que `projectConversation.ts` documenta y evita con `personaOverride`. **Medido en 15.0, es más amplio:** sin mención, la persona activa del prompt de sistema es **Arky**, así que ninguna tarea de un encargo se produce con la persona de su asignado (`personaFijada` = 0 %); «Actúas como Felipe» sólo viaja en el texto del turno | `OfficeRunnerAdapters.ts:112`, `:186`; `officeShared.ts:23-30` |
 | **A8** | **Campos de usuario sin vallar en prompts de agentes.** El brief del encargo (producir y consolidar), la solicitud en el prompt del coordinador y en el objetivo de cada handoff, el contenido revisado (`artifact.content.slice(0, 12_000)`), el conocimiento y la memoria de la ficha, la memoria del agente en `agentContextComposer` y el mensaje del clasificador LLM (entre `"""`) viajan sin `wrapUntrustedContent` | `OfficeRunnerAdapters.ts:112,292,411`; `officeOrchestration.ts:191`; `officeAgentProfile.ts:327-334`; `intentClassifierLLM.ts:69-71` |
 | **A9** | **La memoria persistente no tiene procedencia ni caducidad.** Una línea extraída por el modelo de una conversación (que puede contener texto de un documento subido) se guarda y se inyecta en todos los turnos posteriores: es el vector de *memory poisoning*. No hay aprobación, supersesión ni TTL | `memoryExtractor.ts`, `agentContextComposer.ts:159-182`, `agentDefinition.ts:27-28` lo reconoce |
 | **A10** | **El servidor acepta cualquier ficha.** `save_agent_profile` sólo veta las tres claves de gobierno: no limita longitudes (el cliente corta a 280/1 200 caracteres), ni claves desconocidas, ni el *tier*; no hay revisión optimista (último en escribir gana) ni bitácora. Una llamada directa a la RPC mete un prompt de cualquier tamaño en el agente | `supabase/migrations/20260919043543_retirement_completeness.sql:236-262` |
@@ -166,6 +166,7 @@ CLAUDE.md afirma: *«The card reaches every place the agent speaks»*. Medido:
 | **A18** | **Especialistas, coordinador y consolidador devuelven texto libre.** El evaluador de la consolidación tiene que buscar palabras («Conditional», alias) con expresiones regulares; el brief del coordinador se pasa como contexto pero **no puede cambiar nada** del plan (es decorativo: una llamada que no decide) | `officeOrchestration.ts:190-205`, `officeConsolidationReview.ts:59` |
 | **A19** | **El evaluador-optimizador sólo existe en un camino.** La consolidación de un encargo (`createConsolidatePort`) no pasa por `evaluateConsolidation` | `grep evaluateConsolidation` → sólo `officeOrchestration.ts` |
 | **A20** | **El clasificador de intención LLM no conoce la mitad del vocabulario.** `VALID_TYPES` no incluye `artifact.create`, `artifacts.batch` ni `memory.save.*`; el esquema declara `type` como cadena libre, sin `enum` | `intentClassifierLLM.ts:24-32`, `:73-87` |
+| **A27** | **Nueve señales del router nunca coinciden** *(medido en 15.0)*. Son raíces con `\b` final —`integraci`, `modernizaci`, `suscripci`, `regulator`, `resilien`, `tarificaci`, `analitic`, `asegurad`, `artefact`— y la palabra sigue después de la raíz, así que «integración» no convoca a Mauricio, «suscripción» a Sofía ni «regulatorio» a Carmen | `OfficeAgentRouter.ts:82-89` |
 | **A21** | **Los niveles de modelo no se distinguen.** `quick` y `default` resuelven al mismo modelo (`gemini-2.5-flash`), así que la ficha que «baja a Tomás a rápido» no cambia nada | `lib/ai/modelCatalog.ts:33-34` |
 
 ### 3.5 No se puede medir la calidad de un agente *(O/Q)*
@@ -215,16 +216,17 @@ vigente del documento antes de implementar.**
 | Caminos donde la ficha llega al prompt | 3 de 10 | 10 de 10 | Prueba de paridad de caminos (16.1) |
 | Prompts con capa de persona duplicada o contradictoria | ≥ 1 (dock) | 0 | Prueba de 16.0 sobre el prompt compuesto |
 | Agentes desactivados que pueden recibir trabajo | encargos y menciones | 0 caminos | Prueba de 16.1 |
-| Interpolaciones de texto de usuario sin vallar en prompts de agentes | ≥ 8 sitios (A8) | 0 | Escáner de 17.0 |
-| Revisiones aprobadas sin crítica del modelo y sin decirlo | posible | 0 | Prueba de 17.1 |
+| Interpolaciones de texto de usuario sin vallar en prompts de agentes | 8 de 8 sitios medidos (15.0) | 0 | `eval:agents` (`promptsConVallado`) y escáner de 17.0 |
+| Revisiones aprobadas sin crítica del modelo y sin decirlo | 3 de 3 casos (15.0) | 0 | `eval:agents` (`aprobacionesSinCritica`) |
 | Presupuesto de handoff aplicado | 0 % | 100 % de las invocaciones | Prueba de 17.3 |
 | Llamadas de IA contadas frente a reales en un encargo | 1 por tarea (literal) | igual a las reales | Prueba de 17.3 con transporte simulado |
 | Tokens / coste por operación y por agente | sin medir | medidos y visibles | 15.2 |
 | Roles con salida validada por esquema | 0 de 4 (especialista, coordinador, consolidador, revisor) | 4 de 4 | 18.0, 18.1 |
-| Banco de evaluación de agentes | no existe | ≥ 60 casos, 5 familias, en CI | `npm run eval:agents` (15.0) |
-| Precisión del enrutado de especialistas | sin medir | ≥ 90 % de los casos del banco | `eval:agents` |
-| Precisión del clasificador de intención | sin medir | ≥ 90 % | `eval:agents` |
-| Recall del revisor sobre defectos sembrados | sin medir | ≥ 85 % (determinista + modelo simulado) | `eval:agents` |
+| Banco de evaluación de agentes | 69 casos, 5 familias + 8 sitios de vallado, en CI (15.0) | ≥ 60 casos | `npm run eval:agents` |
+| Precisión del enrutado de especialistas | **81,5 %** (15.0) | ≥ 90 % de los casos del banco | `eval:agents` |
+| Precisión del clasificador de intención | **60 %** (15.0) | ≥ 90 % | `eval:agents` |
+| Recall del revisor sobre defectos sembrados | **100 %** (15.0; lo detecta la evidencia determinista) | ≥ 85 % (determinista + modelo simulado) | `eval:agents` |
+| Tareas de encargo producidas con la persona de su asignado | **0 %** (15.0) | 100 % | `eval:agents` (`personaFijada`) |
 | Prompts de agente con id y versión en la traza | 0 | 100 % | 15.1 |
 | `diagram-evals` / `artifact-evals` / `export-evals` | línea base vigente | sin regresión | sus comandos |
 
@@ -326,7 +328,7 @@ su traza.
     5. **Consolidación** (≥ 8): resultados de especialistas (completos,
        parciales, contradictorios) y consolidaciones simuladas → veredicto del
        evaluador y si se pidió corrección.
-  - `__tests__/agents/evals/` ejecuta cada familia por el código de producción
+  - `__tests__/agent/evals/` ejecuta cada familia por el código de producción
     real (`planOfficeWorkstreams`, `classifyAgentIntent`, `createHandoff`,
     `createReviewArtifactPort` con `invokePersona` simulado,
     `executeOfficeOrchestration`).
@@ -337,8 +339,10 @@ su traza.
     renderizados), `llamadasPorOperacion`.
   - `npm run eval:agents` con su informe en `.vitest/eval-agentes.md`.
 - **Fuera de alcance:** llamar a modelos reales; juzgar la prosa.
-- **CA:** el banco corre dentro de `test:ci`; la línea base registra A4, A7,
-  A8, A16, A19 y A20 como `defectosConocidos` con la tarea que los cierra; un
+- **CA:** el banco corre dentro de `test:ci`; la línea base registra A7, A8,
+  A16, A19 y A20 (y A27, hallado al medir) como `defectosConocidos` con la
+  tarea que los cierra —A4 en encargos no tiene todavía API que medir: la
+  añade 16.1 junto con su caso—; un
   defecto que deja de medirse bajo objetivo falla hasta retirarlo de la lista;
   controles positivos (un caso construido para dar 100 % da 100 %).
 - **Métrica:** la propia línea base (se anota en la sección 4.2).
@@ -464,6 +468,18 @@ cero agentes desactivados con trabajo, persona siempre por argumento.
   incluye el caso; ningún puerto del runner llama a `resolveOfficeAgentMention`.
 - **Nota:** puede adelantarse a 16.0 porque es independiente; si 16.0 ya está,
   usa su compositor.
+
+#### 16.8 Las raíces del router coinciden *(P1 · S · corrección · 15.0 · A27)*
+- **Objetivo:** que las señales de dominio reconozcan las palabras que nombran
+  el dominio.
+- **Cambios:** en `OfficeAgentRouter.ts`, las raíces dejan de llevar `\b`
+  final (`integraci\w*`, `suscripci\w*`…); una prueba recorre `DOMAIN_SIGNALS`
+  y falla si una alternativa es una raíz que no coincide con ninguna palabra
+  completa de su lista de ejemplos.
+- **CA:** `precisionEnrutado` ≥ 90 % en el banco y el defecto `router-raices`
+  retirado de la línea base; `especialistasProhibidosConvocados` sigue en 0
+  (una raíz más laxa no puede convocar a quien no toca: el caso
+  `health-cloud-no-aws` sigue pasando).
 
 #### 16.3 Una sola orquestación *(P1 · M · corrección · 16.1 · A6)*
 - **Objetivo:** el copiloto y el dock convocan al mismo equipo de la misma forma.
@@ -671,9 +687,12 @@ dos caminos de consolidación; intención ≥ 90 % en el banco.
   el encargo (forma JSON aditiva; si cambia la tabla, migración con aprobación).
 
 #### 18.3 Clasificador de intención completo y calibrado *(P2 · M · calidad · 15.0, 17.0 · A20)*
-- **Objetivo:** que el clasificador LLM pueda corregir cualquier error del
-  heurístico y que el umbral 0,75 salga del banco.
-- **Cambios:** `VALID_TYPES` cubre todo `AgentIntentType`; `type` con `enum` en
+- **Objetivo:** que el clasificador acierte la intención —el heurístico en los
+  casos claros y el LLM en los ambiguos— y que el umbral 0,75 salga del banco.
+- **Cambios:** el heurístico reconoce las peticiones que el banco mide mal
+  (crear un ADR o un diagrama, «todos los diagramas», preguntas «¿por qué…?»,
+  «sobrescribe la versión actual», memoria del proyecto frente a la del
+  artefacto); `VALID_TYPES` cubre todo `AgentIntentType`; `type` con `enum` en
   el esquema; mensaje vallado; casos ambiguos del banco ampliados a ≥ 30;
   umbral de confianza calibrado con el banco y documentado; las acciones de
   alto impacto siguen pidiendo confirmación sea cual sea la confianza.
@@ -815,7 +834,7 @@ los agentes, y un operador puede diagnosticarlo.
 ### 7.1 Orden recomendado
 
 ```
-15.P → 15.0 → 16.2 (independiente, P0) → 15.1 → 16.0 → 16.1 → 17.0 → 17.1
+15.P → 15.0 → 16.2 (independiente, P0) → 16.8 → 15.1 → 16.0 → 16.1 → 17.0 → 17.1
      → 15.2 → 17.3 → 17.4 → 16.3 → 18.0 → 18.1 → 18.2 → 16.4 (migración)
      → 17.2 → 18.3 → 18.4 → 20.0 → 20.3 → 16.5 → 16.6 → 20.1 → 20.2
      → 19.0 → 19.1 → [19.2 si el banco lo justifica] → 20.4
@@ -857,12 +876,13 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | Tarea | Prioridad · Complejidad | Estado | PR · nota |
 |---|---|---|---|
 | 15.P Reservar tareas de este plan | P0 · S | Hecha | #236 · `localizar-tarea.sh` y `PLANES` en `comun.sh`; ramas `agentes/<id>-<tema>` |
-| 15.0 Banco `agent-evals` | P0 · L | Pendiente | |
+| 15.0 Banco `agent-evals` | P0 · L | Hecha | enrutado 81,5 %, intención 60 %, persona fijada 0 %, revisor 100 %, aprobaciones sin crítica 3, consolidación 80 %, vallado 0 %; seis defectos nombrados |
 | 15.1 Prompts con identidad | P1 · M | Pendiente | |
 | 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
 | 16.0 Compositor único en capas | P0 · L | Pendiente | |
 | 16.1 Ficha en los diez caminos | P0 · L | Pendiente | |
 | 16.2 Persona por argumento en el encargo | P0 · S | Pendiente | |
+| 16.8 Las raíces del router coinciden | P1 · S | Pendiente | hallada al medir en 15.0 (A27) |
 | 16.3 Una sola orquestación | P1 · M | Pendiente | |
 | 16.4 Ficha en el servidor (migración) | P1 · M | Pendiente | |
 | 16.5 Deriva del contrato | P2 · M | Pendiente | |

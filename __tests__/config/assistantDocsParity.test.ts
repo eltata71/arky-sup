@@ -59,6 +59,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'serializeIRPreservingDialect', rule: 'un diagrama conserva su dialecto al guardarse (plan de diagramas 6.1)' },
   { anchor: 'diagram-evals', rule: 'el banco de evaluación de diagramas y su línea base monótona (6.1)' },
   { anchor: 'export-evals', rule: 'el banco de exportación abre el fichero y nombra cada defecto (clase mundial 9.0)' },
+  { anchor: 'agent-evals', rule: 'el banco de agentes mide enrutado, intención, handoff, revisión, consolidación y vallado (agentes 15.0)' },
   { anchor: 'PdfFontSet', rule: 'el PDF escribe con fuentes incrustadas y nunca sustituye un carácter (clase mundial 9.3)' },
   { anchor: 'ExportReceipt', rule: 'la exportación enseña su recibo, contado por el exportador, antes de descargar (clase mundial 9.4)' },
   { anchor: 'buildDiagramGenerationBrief', rule: 'todo camino de diagrama recibe el mismo contexto, cercado (6.2)' },

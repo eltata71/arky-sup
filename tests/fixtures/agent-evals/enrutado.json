@@ -1,0 +1,267 @@
+{
+  "familia": "enrutado",
+  "origen": "redactado-a-mano",
+  "nota": "Lo esperado se escribió desde el dominio (quién debería analizar esto en una oficina de arquitectura de seguros), no desde la salida del router. Mide la canalización determinista: el modelo no interviene en el enrutado.",
+  "casos": [
+    {
+      "id": "aws-serverless",
+      "solicitud": "Diseña la arquitectura serverless en AWS con Lambda y S3 para el portal de asegurados",
+      "esperados": [
+        "felipe"
+      ],
+      "prohibidos": [
+        "natalia",
+        "ricardo"
+      ]
+    },
+    {
+      "id": "health-cloud-no-aws",
+      "solicitud": "Configura Health Cloud para gestionar los planes de cuidado de los asegurados",
+      "esperados": [
+        "natalia"
+      ],
+      "prohibidos": [
+        "felipe"
+      ]
+    },
+    {
+      "id": "fsc-no-aws",
+      "solicitud": "Modela pólizas de vida en Financial Services Cloud",
+      "esperados": [
+        "natalia",
+        "sofia"
+      ],
+      "prohibidos": [
+        "felipe"
+      ]
+    },
+    {
+      "id": "mulesoft-apis",
+      "solicitud": "Define las APIs de MuleSoft para exponer la elegibilidad a los prestadores",
+      "esperados": [
+        "mauricio"
+      ],
+      "prohibidos": [
+        "ricardo"
+      ]
+    },
+    {
+      "id": "as400-modernizacion",
+      "solicitud": "Plan de modernización del core en AS/400 con RPG y DB2",
+      "esperados": [
+        "ricardo"
+      ],
+      "prohibidos": [
+        "natalia"
+      ]
+    },
+    {
+      "id": "siniestros-core",
+      "solicitud": "Rediseña el flujo de siniestros y su adjudicación en el core de seguros",
+      "esperados": [
+        "sofia"
+      ],
+      "prohibidos": [
+        "felipe"
+      ]
+    },
+    {
+      "id": "reaseguro",
+      "solicitud": "Cómo integramos el cálculo de reaseguro con la emisión de pólizas",
+      "esperados": [
+        "sofia",
+        "mauricio"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "datos-actuariales",
+      "solicitud": "Arquitectura del datamart actuarial y el linaje de las reservas",
+      "esperados": [
+        "daniel"
+      ],
+      "prohibidos": [
+        "ricardo"
+      ]
+    },
+    {
+      "id": "cumplimiento-hipaa",
+      "solicitud": "Evalúa el cumplimiento HIPAA del intercambio de PHI con laboratorios",
+      "esperados": [
+        "carmen"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "solvencia",
+      "solicitud": "Requisitos regulatorios de Solvencia II para el reporting de capital",
+      "esperados": [
+        "carmen",
+        "daniel"
+      ],
+      "prohibidos": [
+        "felipe"
+      ]
+    },
+    {
+      "id": "adr-seguridad",
+      "solicitud": "Redacta un ADR sobre el modelo de amenazas STRIDE del portal",
+      "esperados": [
+        "elena"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "nfr-latencia",
+      "solicitud": "Define los NFR de latencia y resiliencia del motor de cotización",
+      "esperados": [
+        "gabriel"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "estado-hitos",
+      "solicitud": "Prepara el reporte de estado y los hitos del cronograma",
+      "esperados": [
+        "tomas"
+      ],
+      "prohibidos": [
+        "felipe",
+        "natalia"
+      ]
+    },
+    {
+      "id": "costos-nube",
+      "solicitud": "Estima los costos mensuales de la nube para el nuevo motor de reglas",
+      "esperados": [
+        "felipe"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "salesforce-sharing",
+      "solicitud": "Revisa el modelo de sharing de Salesforce para los corredores",
+      "esperados": [
+        "natalia"
+      ],
+      "prohibidos": [
+        "felipe"
+      ]
+    },
+    {
+      "id": "integracion-legacy",
+      "solicitud": "Integración entre el mainframe COBOL y las APIs del canal digital",
+      "esperados": [
+        "ricardo",
+        "mauricio"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "gdpr-datos",
+      "solicitud": "Minimización de datos personales y GDPR en el datalake de clientes",
+      "esperados": [
+        "carmen",
+        "daniel"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "diagrama-c4",
+      "solicitud": "Necesito el diagrama C4 de contenedores de la plataforma de suscripción",
+      "esperados": [
+        "elena",
+        "sofia"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "sin-senal",
+      "solicitud": "¿Qué opinas de la propuesta?",
+      "esperados": [
+        "gabriel"
+      ],
+      "prohibidos": [
+        "carmen"
+      ],
+      "nota": "Sin señal de dominio el plan cae en el generalista de software; nunca en un equipo vacío."
+    },
+    {
+      "id": "desactivado-aws",
+      "solicitud": "Arquitectura AWS con EKS para el cotizador",
+      "desactivados": [
+        "felipe"
+      ],
+      "esperados": [],
+      "prohibidos": [
+        "felipe"
+      ],
+      "nota": "Un agente apagado en su ficha no se convoca aunque la solicitud sea de su dominio."
+    },
+    {
+      "id": "desactivado-todo-fallback",
+      "solicitud": "¿Qué opinas de la propuesta?",
+      "desactivados": [
+        "gabriel",
+        "elena",
+        "tomas"
+      ],
+      "esperados": [],
+      "prohibidos": [
+        "gabriel",
+        "elena",
+        "tomas"
+      ],
+      "nota": "Si la lista de reserva entera está apagada, convoca a otro especialista habilitado."
+    },
+    {
+      "id": "tope-especialistas",
+      "solicitud": "Proyecto de AWS con Salesforce, MuleSoft, AS/400, pólizas, datos, cumplimiento, ADR y NFR",
+      "esperados": [],
+      "prohibidos": [],
+      "maxEspecialistas": 4,
+      "nota": "Una solicitud que toca nueve dominios no convoca a nueve agentes."
+    },
+    {
+      "id": "raiz-integracion",
+      "solicitud": "Integración entre el portal de corredores y el core de pólizas",
+      "esperados": [
+        "mauricio"
+      ],
+      "prohibidos": [],
+      "nota": "«integración» es la palabra con la que se pide integración; la raíz del router debe reconocerla (A27)."
+    },
+    {
+      "id": "raiz-suscripcion",
+      "solicitud": "Rediseño de la suscripción digital de vida",
+      "esperados": [
+        "sofia"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "raiz-regulatorio",
+      "solicitud": "Requisitos regulatorios del intercambio con la superintendencia",
+      "esperados": [
+        "carmen"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "raiz-resiliencia",
+      "solicitud": "Resiliencia del motor de reglas ante caídas del proveedor",
+      "esperados": [
+        "gabriel"
+      ],
+      "prohibidos": []
+    },
+    {
+      "id": "raiz-tarificacion",
+      "solicitud": "Tarificación del ramo de salud con datos de siniestralidad",
+      "esperados": [
+        "daniel"
+      ],
+      "prohibidos": []
+    }
+  ]
+}
