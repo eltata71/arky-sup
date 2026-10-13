@@ -7,7 +7,7 @@
     "precisionIntencion": 60,
     "confirmacionCorrecta": 100,
     "handoffsBienDecididos": 100,
-    "personaFijada": 0,
+    "personaFijada": 100,
     "recallRevisor": 100,
     "aprobacionesSinCritica": 3,
     "consolidacionesCorrectas": 80,
@@ -28,13 +28,6 @@
       "tarea": "18.3",
       "metrica": "precisionIntencion",
       "descripcion": "El clasificador heurístico no reconoce «crea un ADR», «genera un nuevo diagrama», «todos los diagramas», «¿por qué…?» ni «sobrescribe la versión actual», y manda la memoria de proyecto al artefacto. El clasificador LLM no puede corregirlo: no conoce create, batch ni memory."
-    },
-    {
-      "id": "persona-por-texto",
-      "hallazgo": "A7",
-      "tarea": "16.2",
-      "metrica": "personaFijada",
-      "descripcion": "El runner resuelve la persona del texto de la instrucción (@Alias), no de la tarea: con una mención en el brief firma el mencionado y sin mención firma Arky; el asignado nunca es la persona activa del prompt de sistema."
     },
     {
       "id": "revisor-sin-critica",

@@ -2769,8 +2769,18 @@ measured below target fails the bench until its entry is removed**. Expected
 values are written from the domain —who *should* analyse this— never copied
 from the current output; a case that only a real model could decide does not
 belong here. Measured on 2026-10-13: routing 81,5 %, intent 60 %, tasks
-produced with their assignee's persona 0 %, reviewer recall 100 %, clean
-approvals without a critique 3, consolidations 80 %, fenced prompt sites 0 of 8.
+produced with their assignee's persona 0 % (100 % since 16.2), reviewer recall
+100 %, clean approvals without a critique 3, consolidations 80 %, fenced prompt
+sites 0 of 8.
+
+**Who signs an engagement task is decided by the task, never by text** (16.2).
+The produce port resolved the persona with `officePersonaForMessage`, which
+looks for an `@Alias` in an instruction that opens with the user's brief: a
+brief mentioning «@Carmen» made Carmen author Felipe's task, and with no
+mention every task was produced as Arky. The port now hands the executor
+`buildOfficePersonaBriefing(task.assigneeId)`; `officeRunnerPersona.test.ts`
+fails if a runner port resolves a mention again. Mention resolution belongs to
+the chat, where the person chooses who answers.
 
 ## What NOT to Do
 

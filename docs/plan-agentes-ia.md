@@ -226,7 +226,7 @@ vigente del documento antes de implementar.**
 | Precisión del enrutado de especialistas | **81,5 %** (15.0) | ≥ 90 % de los casos del banco | `eval:agents` |
 | Precisión del clasificador de intención | **60 %** (15.0) | ≥ 90 % | `eval:agents` |
 | Recall del revisor sobre defectos sembrados | **100 %** (15.0; lo detecta la evidencia determinista) | ≥ 85 % (determinista + modelo simulado) | `eval:agents` |
-| Tareas de encargo producidas con la persona de su asignado | **0 %** (15.0) | 100 % | `eval:agents` (`personaFijada`) |
+| Tareas de encargo producidas con la persona de su asignado | 0 % (15.0) → **100 %** (16.2) | 100 % | `eval:agents` (`personaFijada`) |
 | Prompts de agente con id y versión en la traza | 0 | 100 % | 15.1 |
 | `diagram-evals` / `artifact-evals` / `export-evals` | línea base vigente | sin regresión | sus comandos |
 
@@ -881,7 +881,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
 | 16.0 Compositor único en capas | P0 · L | Pendiente | |
 | 16.1 Ficha en los diez caminos | P0 · L | Pendiente | |
-| 16.2 Persona por argumento en el encargo | P0 · S | Pendiente | |
+| 16.2 Persona por argumento en el encargo | P0 · S | Hecha | `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
 | 16.8 Las raíces del router coinciden | P1 · S | Pendiente | hallada al medir en 15.0 (A27) |
 | 16.3 Una sola orquestación | P1 · M | Pendiente | |
 | 16.4 Ficha en el servidor (migración) | P1 · M | Pendiente | |
