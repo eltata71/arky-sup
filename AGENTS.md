@@ -266,6 +266,13 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    delegación se deriva de los roles (nadie delega en sí mismo; un especialista
    no delega), y `validateAgentRegistry()` corre en el suite. No añadas un campo
    al contrato que nadie lea. Detalle en ADR-004.
+   **Y un cambio en un agente se mide** (plan de agentes, 15.0): el banco
+   `agent-evals` (`npm run eval:agents`) pasa por el código real el enrutado, la
+   intención, los handoffs, la revisión, la consolidación y el vallado de los
+   prompts, con el modelo sustituido por la respuesta del caso. Ninguna métrica
+   empeora respecto a su línea base, y toda cifra bajo su objetivo es un
+   `defectoConocido` con su hallazgo y su tarea: quien lo cierra quita la
+   entrada en el mismo commit. Ver *Agent evaluation bench* en `CLAUDE.md`.
 13. **Un agente conoce capacidades, no proveedores.** Toda llamada a un modelo
    atraviesa el kernel canónico: `Domain → services/ai → adaptador → API`. Cuatro
    reglas concretas, todas con prueba que las escanea

@@ -1,0 +1,57 @@
+{
+  "familia": "revision",
+  "origen": "redactado-a-mano",
+  "nota": "Artefactos con defectos sembrados y respuestas del revisor simuladas. `critica` es lo que devuelve el modelo: un objeto JSON, `texto-roto`, `vacia` o `falla` (la llamada lanza). `aprueba: false` = el veredicto correcto NO es una aprobación limpia: o hay defecto, o la aprobación no puede presentarse como revisada por el especialista (A16).",
+  "casos": [
+    {
+      "id": "adr-completo-critica-aprueba", "aprueba": true,
+      "artefacto": { "name": "ADR-001 Base de datos de siniestros", "type": "markdown", "content": "# ADR-001\n\n## Estado\nAceptado\n\n## Contexto\nEl volumen de siniestros crece un 30 % anual.\n\n## Decisión\nPostgreSQL gestionado con réplicas de lectura.\n\n## Alternativas consideradas\nDynamoDB; Oracle on-premise.\n\n## Consecuencias\nMenor coste de licencias; hay que migrar procedimientos." },
+      "critica": { "verdict": "approved", "summary": "Cumple el contrato del ADR.", "findings": [] }
+    },
+    {
+      "id": "adr-completo-critica-pide-cambios", "aprueba": false,
+      "artefacto": { "name": "ADR-002 Mensajería de pólizas", "type": "markdown", "content": "# ADR-002\n\n## Estado\nPropuesto\n\n## Contexto\nLa emisión publica eventos.\n\n## Decisión\nKafka gestionado.\n\n## Alternativas consideradas\nSQS.\n\n## Consecuencias\nOperación de clúster." },
+      "critica": { "verdict": "changes-requested", "summary": "Las alternativas no se comparan contra criterios.", "findings": [{ "severity": "high", "message": "Falta la comparación de alternativas." }] }
+    },
+    {
+      "id": "adr-sin-decision-critica-aprueba", "aprueba": false,
+      "artefacto": { "name": "ADR-003 Autenticación de corredores", "type": "markdown", "content": "# ADR-003\n\n## Estado\nPropuesto\n\n## Contexto\nLos corredores entran con usuario y contraseña." },
+      "critica": { "verdict": "approved", "summary": "Correcto.", "findings": [] }
+    },
+    {
+      "id": "stride-incompleto-critica-aprueba", "aprueba": false,
+      "artefacto": { "name": "Modelo de amenazas del portal", "type": "markdown", "content": "# Modelo de amenazas STRIDE\n\n## Spoofing\nSuplantación del asegurado.\n\n## Tampering\nAlteración de reclamaciones." },
+      "critica": { "verdict": "approved", "summary": "Bien.", "findings": [] }
+    },
+    {
+      "id": "c4-sin-dialecto-critica-aprueba", "aprueba": false,
+      "artefacto": { "name": "Contenedores de suscripción", "type": "mermaid-c4-container", "representation": "diagram", "content": "graph TD\n  A[Portal] --> B[Motor de suscripción]" },
+      "critica": { "verdict": "approved", "summary": "Bien.", "findings": [] }
+    },
+    {
+      "id": "erd-sin-entidades-critica-aprueba", "aprueba": false,
+      "artefacto": { "name": "Modelo de dominio de pólizas", "type": "mermaid-erd", "representation": "diagram", "content": "graph TD\n  Poliza --> Endoso" },
+      "critica": { "verdict": "approved", "summary": "Bien.", "findings": [] }
+    },
+    {
+      "id": "costos-sin-moneda-critica-aprueba", "aprueba": false,
+      "artefacto": { "name": "Modelo de costos del cotizador", "type": "markdown", "content": "# Modelo de costos\n\n## Componentes\nLambda, API Gateway, DynamoDB." },
+      "critica": { "verdict": "approved", "summary": "Bien.", "findings": [] }
+    },
+    {
+      "id": "adr-completo-critica-falla", "aprueba": false,
+      "artefacto": { "name": "ADR-004 Cifrado de PHI", "type": "markdown", "content": "# ADR-004\n\n## Estado\nAceptado\n\n## Contexto\nSe almacena PHI de asegurados.\n\n## Decisión\nCifrado con claves gestionadas por cliente.\n\n## Alternativas consideradas\nClaves del proveedor.\n\n## Consecuencias\nRotación anual obligatoria." },
+      "critica": "falla"
+    },
+    {
+      "id": "adr-completo-critica-rota", "aprueba": false,
+      "artefacto": { "name": "ADR-005 Retención de documentos", "type": "markdown", "content": "# ADR-005\n\n## Estado\nAceptado\n\n## Contexto\nLa norma exige 10 años.\n\n## Decisión\nArchivo en almacenamiento frío.\n\n## Alternativas consideradas\nCinta.\n\n## Consecuencias\nRecuperación lenta." },
+      "critica": "texto-roto"
+    },
+    {
+      "id": "adr-completo-critica-vacia", "aprueba": false,
+      "artefacto": { "name": "ADR-006 Firma electrónica", "type": "markdown", "content": "# ADR-006\n\n## Estado\nAceptado\n\n## Contexto\nLa póliza se firma en línea.\n\n## Decisión\nProveedor de firma avanzada.\n\n## Alternativas consideradas\nFirma simple.\n\n## Consecuencias\nCoste por firma." },
+      "critica": "vacia"
+    }
+  ]
+}

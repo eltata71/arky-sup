@@ -633,6 +633,7 @@ npm test               # Vitest watch mode
 npm run test:ci        # Vitest single run
 npm run eval:diagrams  # The diagram evaluation bench, with its table (see *A diagram keeps its dialect*)
 npm run eval:exports   # The export evaluation bench: DOCX/PPTX/PDF opened and counted (see *Export evaluation bench*)
+npm run eval:agents    # The agent evaluation bench: routing, intent, handoffs, review, consolidation, fencing (see *Agent evaluation bench*)
 npm run test:coverage  # Vitest + v8 coverage (applies the thresholds)
 npm run test:shard -- --shard=1/4   # One CI shard: coverage into a blob report
 npm run test:merge-reports          # Merge the shards' blobs and enforce the thresholds
@@ -2746,6 +2747,30 @@ anything) — and only a failure spends the one extra call. If the correction
 itself fails, the original answer is kept: an imperfect recommendation beats an
 error where the answer should be. The refinement emits its own event, because
 two "recommendation signed" events in a row are indistinguishable to a reader.
+
+### Agent evaluation bench
+
+A change to an agent is measured, not argued (plan de agentes, 15.0).
+`tests/fixtures/agent-evals/` holds hand-written cases in five families —
+routing, intent, handoff (including *who would sign a task*), review with
+seeded defects and simulated critiques, and consolidation on both roads— and
+`__tests__/agent/evals/` runs each through the production code with the model
+replaced by the case's answer: `planOfficeWorkstreams`, `classifyAgentIntent`,
+`createHandoff`, the runner's real produce, review and consolidate ports, and
+`executeOfficeOrchestration`. A sixth measure renders eight agent prompts with
+a marker in the field a person wrote and checks it lands inside
+`wrapUntrustedContent`. `npm run eval:agents` prints the table.
+
+The rules are the export bench's: **the baseline only improves**
+(`linea-base.json`, with direction per metric — fewer forbidden specialists is
+better), **every figure below its target is a `defectoConocido`** with its
+finding (A1–A27) and the plan task that closes it, and **a defect no longer
+measured below target fails the bench until its entry is removed**. Expected
+values are written from the domain —who *should* analyse this— never copied
+from the current output; a case that only a real model could decide does not
+belong here. Measured on 2026-10-13: routing 81,5 %, intent 60 %, tasks
+produced with their assignee's persona 0 %, reviewer recall 100 %, clean
+approvals without a critique 3, consolidations 80 %, fenced prompt sites 0 of 8.
 
 ## What NOT to Do
 

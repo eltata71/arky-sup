@@ -1,0 +1,22 @@
+{
+  "familia": "intencion",
+  "origen": "redactado-a-mano",
+  "nota": "Lo esperado es lo que una persona querría que ocurriera. `confirmacion: true` exige que la acción pida confirmación antes de ejecutarse; las acciones de alto impacto (regenerar, crear, varios artefactos, sobrescribir) la piden siempre.",
+  "casos": [
+    { "id": "regenerar", "mensaje": "Regenera este diagrama desde cero con la nueva información del proyecto", "tipo": "artifact.regenerate", "confirmacion": true },
+    { "id": "patch-renombrar", "mensaje": "Cambia el nombre del nodo Gateway por API Gateway", "tipo": "artifact.patch" },
+    { "id": "patch-etiqueta", "mensaje": "Corrige la etiqueta de la relación entre Portal y Core: debe decir HTTPS", "tipo": "artifact.patch" },
+    { "id": "mejorar", "mensaje": "Mejora este artefacto, que se vea más profesional y completo", "tipo": "artifact.improve", "confirmacion": true },
+    { "id": "aplicar-sugerencias", "mensaje": "Aplica las sugerencias pendientes", "tipo": "artifact.applySuggestion", "sugerenciasPendientes": true },
+    { "id": "nueva-version", "mensaje": "Crea una nueva versión de este artefacto sin cambiar nada", "tipo": "artifact.createVersion" },
+    { "id": "explicar", "mensaje": "Explícame qué representa este diagrama", "tipo": "artifact.explainOnly" },
+    { "id": "explicar-por-que", "mensaje": "¿Por qué el portal habla directamente con el core?", "tipo": "artifact.explainOnly" },
+    { "id": "crear-adr", "mensaje": "Crea un ADR sobre la elección de la base de datos de siniestros", "tipo": "artifact.create", "confirmacion": true },
+    { "id": "crear-diagrama", "mensaje": "Genera un nuevo diagrama de secuencia del pago de siniestros", "tipo": "artifact.create", "confirmacion": true },
+    { "id": "memoria-global", "mensaje": "Guarda en la memoria global que siempre usamos OpenAPI 3.1", "tipo": "memory.save.global" },
+    { "id": "memoria-proyecto", "mensaje": "Recuerda para este proyecto que el canal de corredores corre en AS/400", "tipo": "memory.save.project" },
+    { "id": "lote", "mensaje": "Actualiza todos los diagramas del proyecto con la nueva nomenclatura", "tipo": "artifacts.batch", "confirmacion": true },
+    { "id": "conversacion", "mensaje": "Gracias, buen trabajo", "tipo": "unknown" },
+    { "id": "sobrescribir-actual", "mensaje": "Mejora la sección de riesgos y sobrescribe la versión actual", "tipo": "artifact.improve", "confirmacion": true }
+  ]
+}
