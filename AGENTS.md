@@ -277,6 +277,12 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    el puerto de producción entrega `buildOfficePersonaBriefing(task.assigneeId)`;
    resolver un `@Alias` del brief dejaba que el usuario cambiara el autor, y sin
    mención firmaba Arky. Resolver menciones es cosa del chat.
+   **Un prompt de agente tiene nombre y versión** (15.1):
+   `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
+   huella de su texto sobre un caso canónico; cambiar el texto sin subir la
+   versión falla la suite. Cada invocación lleva el sello `id@vN#hash`
+   (`stampPrompt`) hasta los eventos de coordinación y `OfficeTask.promptStamps`.
+   Un prompt nuevo entra en el catálogo en el mismo cambio.
    **Una raíz del router lleva `\w*` detrás** (16.8): `\b(integraci)\b` no
    coincide nunca con «integración»; cada raíz tiene su palabra completa en
    `officeAgentRouter.test.ts`, y una forma ambigua («integral», «regular») se

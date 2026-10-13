@@ -1,4 +1,5 @@
 import { newPrefixedId } from '../../../lib/ids';
+import { agentPromptRef, stampPrompt, type AgentPromptId } from '../../../lib/agents/promptCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import { foldOfficeText, hasExactOfficeMention } from '../domain/officeShared';
@@ -65,6 +66,12 @@ export interface OfficeOrchestrationResult {
    */
   rejectedHandoffs?: RejectedHandoff[];
   /**
+   * El sello de cada invocación, en el orden en que se hicieron
+   * (`office.workstream@v1#…`): qué plantilla, en qué versión, y qué texto
+   * exacto llegó al modelo (plan de agentes, 15.1).
+   */
+  promptStamps?: string[];
+  /**
    * Qué dijo el evaluador de la consolidación, y si hubo una pasada de
    * corrección. Se devuelve —en vez de quedarse dentro— porque un consumidor
    * que presenta la recomendación tiene derecho a saber que salió a la segunda,
@@ -90,6 +97,11 @@ export interface OfficeOrchestrationOptions {
 export type OfficeAgentInvoker = (
   personaId: OfficeAgentId,
   instruction: string,
+  /**
+   * El sello de la plantilla que compuso `instruction` (`lib/agents/promptCatalog`).
+   * Opcional para el invocador: lo lee quien registra la invocación.
+   */
+  promptStamp?: string,
 ) => Promise<string>;
 
 export const isOfficeOrchestrationRequest = (request: string): boolean => {
@@ -182,21 +194,33 @@ export const planOfficeWorkstreams = (
   };
 };
 
+/** Lo que se le pide a la coordinadora. Plantilla `office.coordination`. */
+export const buildCoordinationPrompt = (plan: Pick<OfficeOrchestrationPlan, 'request' | 'workstreams'>): string => [
+  `Coordina la solicitud: ${plan.request}`,
+  'Revisa la descomposición determinística propuesta, explica dependencias, orden, riesgos y límites de ejecución.',
+  'No inventes evidencia. Devuelve un brief conciso que guíe a los especialistas.',
+  ...plan.workstreams.map((workstream) => `- ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}: ${workstream.objective}`),
+].join('\n');
+
 export const executeOfficeOrchestration = async (
   plan: OfficeOrchestrationPlan,
   invoke: OfficeAgentInvoker,
   options: OfficeOrchestrationOptions = {},
 ): Promise<OfficeOrchestrationResult> => {
-  const coordinationPrompt = [
-    `Coordina la solicitud: ${plan.request}`,
-    'Revisa la descomposición determinística propuesta, explica dependencias, orden, riesgos y límites de ejecución.',
-    'No inventes evidencia. Devuelve un brief conciso que guíe a los especialistas.',
-    ...plan.workstreams.map((workstream) => `- ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}: ${workstream.objective}`),
-  ].join('\n');
+  // Cada invocación sale con el sello de su plantilla y queda en el resultado,
+  // en orden: es lo que permite comparar dos respuestas y saber si cambió la
+  // plantilla o sólo el modelo.
+  const promptStamps: string[] = [];
+  const invokeStamped = (personaId: OfficeAgentId, instruction: string, promptId: AgentPromptId): Promise<string> => {
+    const stamp = stampPrompt(agentPromptRef(promptId), instruction);
+    promptStamps.push(stamp);
+    return invoke(personaId, instruction, stamp);
+  };
+  const coordinationPrompt = buildCoordinationPrompt(plan);
 
   let coordination: string;
   try {
-    coordination = await invoke(plan.coordinatorId, coordinationPrompt);
+    coordination = await invokeStamped(plan.coordinatorId, coordinationPrompt, 'office.coordination');
   } catch (error) {
     return {
       operationId: plan.operationId,
@@ -204,6 +228,7 @@ export const executeOfficeOrchestration = async (
       coordination: error instanceof Error ? error.message : String(error),
       workstreamResults: [],
       consolidation: 'La coordinación de Lucía falló; no se ejecutaron especialistas.',
+      promptStamps,
     };
   }
 
@@ -259,9 +284,10 @@ export const executeOfficeOrchestration = async (
       }
 
       try {
-        const output = await invoke(
+        const output = await invokeStamped(
           workstream.personaId,
           renderHandoffPrompt(handoff.envelope),
+          'office.workstream',
         );
         workstreamResults[index] = {
           workstreamId: workstream.id,
@@ -324,6 +350,7 @@ export const executeOfficeOrchestration = async (
       workstreamResults,
       consolidation: consolidationHandoff.rejections.map((r) => r.message).join(' '),
       rejectedHandoffs,
+      promptStamps,
     };
   }
 
@@ -331,7 +358,7 @@ export const executeOfficeOrchestration = async (
 
   let consolidation: string;
   try {
-    consolidation = await invoke(plan.consolidatorId, consolidationPrompt);
+    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation');
   } catch (error) {
     return {
       operationId: plan.operationId,
@@ -339,6 +366,7 @@ export const executeOfficeOrchestration = async (
       coordination,
       workstreamResults,
       consolidation: error instanceof Error ? error.message : String(error),
+      promptStamps,
     };
   }
 
@@ -355,9 +383,10 @@ export const executeOfficeOrchestration = async (
   const maxRefinements = Math.max(0, Math.min(1, options.maxConsolidationRefinements ?? 1));
   if (!review.ok && maxRefinements > 0) {
     try {
-      const corrected = await invoke(
+      const corrected = await invokeStamped(
         plan.consolidatorId,
         buildConsolidationRefinementPrompt(consolidation, review),
+        'office.consolidation-refinement',
       );
       if (corrected.trim().length > 0) {
         consolidation = corrected;
@@ -378,5 +407,6 @@ export const executeOfficeOrchestration = async (
     consolidationReview: review,
     refined,
     rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined,
+    promptStamps,
   };
 };

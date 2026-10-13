@@ -229,7 +229,7 @@ export const runEngagement = async (
 
       if ('produce' in outcome && outcome.produce) {
         engagement = chargeRunnerBudget(engagement, outcome.produce.aiCalls ?? 1);
-        const traced = withTaskTrace(task, outcome.produce.traceId);
+        const traced = withTaskTrace(task, outcome.produce.traceId, outcome.produce.promptStamp);
         if (outcome.produce.status === 'failed') {
           engagement = replaceRunnerTask(engagement, {
             ...traced,
@@ -269,7 +269,7 @@ export const runEngagement = async (
         const producer = engagement.tasks.find((candidate) => candidate.id === task.reviewsTaskId);
 
         engagement = replaceRunnerTask(engagement, {
-          ...withTaskTrace(task, review.traceId),
+          ...withTaskTrace(task, review.traceId, review.promptStamp),
           status: 'completed',
           review,
           completedAt: runnerNowIso(),
@@ -333,7 +333,7 @@ export const runEngagement = async (
       if ('consolidate' in outcome && outcome.consolidate) {
         engagement = chargeRunnerBudget(engagement, outcome.consolidate.aiCalls ?? 1);
         engagement = replaceRunnerTask(engagement, {
-          ...withTaskTrace(task, outcome.consolidate.traceId),
+          ...withTaskTrace(task, outcome.consolidate.traceId, outcome.consolidate.promptStamp),
           status: outcome.consolidate.status === 'success' ? 'completed' : 'failed',
           error: outcome.consolidate.status === 'success' ? undefined : outcome.consolidate.summary,
           objective: task.objective,

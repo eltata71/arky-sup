@@ -2748,6 +2748,23 @@ itself fails, the original answer is kept: an imperfect recommendation beats an
 error where the answer should be. The refinement emits its own event, because
 two "recommendation signed" events in a row are indistinguishable to a reader.
 
+### Agent prompts have a name and a version
+
+`lib/agents/promptCatalog.ts` names every Office prompt template —persona,
+profile briefing, scope briefing, coordination, workstream, consolidation and
+its refinement, production, review, engagement consolidation— with a version
+and the **fingerprint** of its text rendered on a canonical case
+(`agentPromptCatalog.test.ts`). Changing a template's text without raising its
+version fails the suite, and the failure prints the new fingerprint to copy.
+Each invocation carries a stamp, `office.review@v1#3f2a9c1e` (`stampPrompt`):
+the version says which template, the hash which exact text reached the model.
+The stamp travels to the invoker's third argument, to `CoordinationEvent.prompt`,
+to `OfficeOrchestrationResult.promptStamps` and to `OfficeTask.promptStamps`
+(kept by `normalizeEngagement` on reload). Without it, two different answers
+to the same question could not be told apart as a template change or the
+model's variability (plan de agentes, 15.1). A new agent prompt joins the
+catalog, with its canonical case, in the same change.
+
 ### Agent evaluation bench
 
 A change to an agent is measured, not argued (plan de agentes, 15.0).

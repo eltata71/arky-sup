@@ -12,6 +12,7 @@
     "aprobacionesSinCritica": 3,
     "consolidacionesCorrectas": 80,
     "promptsConVallado": 0,
+    "invocacionesConSello": 100,
     "llamadasPorOperacion": 4.8
   },
   "defectosConocidos": [

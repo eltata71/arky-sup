@@ -122,6 +122,12 @@ export interface CoordinationEvent {
   /** One line, in Spanish, saying what just happened. */
   summary: string;
   detail?: string;
+  /**
+   * Sello de la plantilla que compuso el prompt de esta invocación
+   * (`office.workstream@v1#…`, `lib/agents/promptCatalog`). Sólo en los eventos
+   * que abren o cierran una llamada a un agente.
+   */
+  prompt?: string;
   /** ms since the operation started — drives the timeline, not wall-clock time. */
   elapsedMs: number;
 }
@@ -247,6 +253,7 @@ export const coordinateRequest = async (
     to: OfficeAgentId | null,
     summary: string,
     detail?: string,
+    prompt?: string,
   ): void => {
     const event: CoordinationEvent = {
       id: newPrefixedId('coord'),
@@ -256,6 +263,7 @@ export const coordinateRequest = async (
       to,
       summary,
       detail,
+      ...(prompt ? { prompt } : {}),
       elapsedMs: Math.max(0, now() - startedAt),
     };
     events.push(event);
@@ -300,7 +308,7 @@ export const coordinateRequest = async (
    */
   let consolidatorTurns = 0;
 
-  const observedInvoke: OfficeAgentInvoker = async (personaId, instruction) => {
+  const observedInvoke: OfficeAgentInvoker = async (personaId, instruction, promptStamp) => {
     const isCoordinator = personaId === plan.coordinatorId;
     const isConsolidator = personaId === plan.consolidatorId && !isCoordinator;
     if (isConsolidator) consolidatorTurns += 1;
@@ -315,7 +323,7 @@ export const coordinateRequest = async (
 
     if (!isCoordinator) {
       emit('agent-started', phase, personaId, null,
-        `${OFFICE_AGENT_PERSONAS[personaId].alias} está trabajando.`);
+        `${OFFICE_AGENT_PERSONAS[personaId].alias} está trabajando.`, undefined, promptStamp);
     }
 
     try {
@@ -323,6 +331,7 @@ export const coordinateRequest = async (
       const output = await invoke(
         personaId,
         [...(configuredVoice ?? []), briefing, instruction].join('\n\n'),
+        promptStamp,
       );
       emit(
         isConsolidator ? 'recommendation' : 'agent-reported',
@@ -335,12 +344,13 @@ export const coordinateRequest = async (
             ? `${OFFICE_AGENT_PERSONAS[personaId].alias} firma la recomendación.`
             : `${OFFICE_AGENT_PERSONAS[personaId].alias} entrega su análisis.`,
         output,
+        promptStamp,
       );
       return output;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       emit('agent-failed', phase, personaId, null,
-        `${OFFICE_AGENT_PERSONAS[personaId].alias} no pudo completar su parte.`, message);
+        `${OFFICE_AGENT_PERSONAS[personaId].alias} no pudo completar su parte.`, message, promptStamp);
       throw error;
     }
   };
