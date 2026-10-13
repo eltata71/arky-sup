@@ -876,7 +876,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | Tarea | Prioridad · Complejidad | Estado | PR · nota |
 |---|---|---|---|
 | 15.P Reservar tareas de este plan | P0 · S | Hecha | #236 · `localizar-tarea.sh` y `PLANES` en `comun.sh`; ramas `agentes/<id>-<tema>` |
-| 15.0 Banco `agent-evals` | P0 · L | Hecha | enrutado 81,5 %, intención 60 %, persona fijada 0 %, revisor 100 %, aprobaciones sin crítica 3, consolidación 80 %, vallado 0 %; seis defectos nombrados |
+| 15.0 Banco `agent-evals` | P0 · L | Hecha | #237 · enrutado 81,5 %, intención 60 %, persona fijada 0 %, revisor 100 %, aprobaciones sin crítica 3, consolidación 80 %, vallado 0 %; seis defectos nombrados |
 | 15.1 Prompts con identidad | P1 · M | Pendiente | |
 | 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
 | 16.0 Compositor único en capas | P0 · L | Pendiente | |
