@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { test } from '@playwright/test';
 import { signInE2E } from './support/auth';
 import { accessTokenOf, hasBackendAccess } from './support/backend';
+import { seedAttention, seedInventoryItem } from './support/enterprise';
 import { createInitiative, createProjectFor, uniqueSuffix } from './support/journeys';
 import { CANONICAL_DIAGRAMS, CANONICAL_DOCUMENTS, seedArtifact } from './support/seedArtifacts';
 
@@ -66,9 +67,15 @@ test.describe('Accesibilidad — axe sobre el artefacto desplegado', () => {
     if (failures.length) throw new Error(failures.join('\n'));
   });
 
-  async function audit(page: import('@playwright/test').Page, name: string, path: string): Promise<void> {
+  async function audit(
+    page: import('@playwright/test').Page,
+    name: string,
+    path: string,
+    prepare?: () => Promise<void>,
+  ): Promise<void> {
     await page.goto(path);
     await page.waitForLoadState('networkidle');
+    await prepare?.();
     const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     const reglas = [...new Set(results.violations.map((violation) => violation.id))].sort();
     measured[name] = {
@@ -90,6 +97,24 @@ test.describe('Accesibilidad — axe sobre el artefacto desplegado', () => {
     const token = await accessTokenOf(page);
     diagramId = await seedArtifact(request, token, projectId, CANONICAL_DIAGRAMS[0]!);
     documentId = await seedArtifact(request, token, projectId, CANONICAL_DOCUMENTS[0]!);
+
+    const suffix = uniqueSuffix();
+    await seedInventoryItem(request, token, {
+      id: `a11y-cap-${suffix}`, kind: 'capability', name: `Suscripción ${suffix}`,
+      capability: { maturity: 2, investment: 'high', risk: 'medium' },
+    });
+    await seedInventoryItem(request, token, {
+      id: `a11y-app-${suffix}`, kind: 'application', name: `Core de pólizas ${suffix}`,
+      application: { functionalFit: 4, technicalFit: 2 },
+    });
+    await seedInventoryItem(request, token, {
+      id: `a11y-tech-${suffix}`, kind: 'technology', name: `Mainframe ${suffix}`,
+      technology: { ring: 'hold' },
+    });
+    await seedAttention(request, token, projectId, {
+      status: 'in-progress', priority: 'medium',
+      milestones: [{ id: `a11y-ms-${suffix}`, name: `Hito ${suffix}`, dueAt: '2027-03-31', status: 'pending' }],
+    });
   });
 
   const staticRoutes: [string, string][] = [
@@ -99,6 +124,15 @@ test.describe('Accesibilidad — axe sobre el artefacto desplegado', () => {
   for (const [name, path] of staticRoutes) {
     test(`${name} (${path})`, async ({ page }) => { await audit(page, name, path); });
   }
+
+  test('mapa de capacidades (/capabilities)', async ({ page }) => { await audit(page, 'capacidades', '/capabilities'); });
+  test('portafolio y radar (/portfolio)', async ({ page }) => { await audit(page, 'portafolio', '/portfolio'); });
+  test('plan de transición (/transition)', async ({ page }) => {
+    await audit(page, 'transicion', '/transition', async () => {
+      await page.getByRole('combobox', { name: /^Proyecto/ }).selectOption(projectId);
+      await page.getByLabel('Nombre de la meseta').waitFor();
+    });
+  });
 
   test('usuarios (/users)', async ({ page }) => { await audit(page, 'usuarios', '/users'); });
   test('espacio de trabajo', async ({ page }) => { await audit(page, 'espacio-de-trabajo', `/workspace/${projectId}`); });
