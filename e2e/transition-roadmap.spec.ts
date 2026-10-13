@@ -38,7 +38,7 @@ test.describe('Plan de transición — recorrido de la hoja de ruta', () => {
     });
 
     await page.goto('/transition');
-    await page.getByLabel('Proyecto').selectOption(projectId);
+    await page.getByRole('combobox', { name: /^Proyecto/ }).selectOption(projectId);
 
     await page.getByLabel('Añadir a la línea base').selectOption({ label: legacy });
     await page.getByRole('button', { name: 'Añadir a la base' }).click();

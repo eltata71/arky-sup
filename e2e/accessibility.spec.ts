@@ -129,7 +129,7 @@ test.describe('Accesibilidad — axe sobre el artefacto desplegado', () => {
   test('portafolio y radar (/portfolio)', async ({ page }) => { await audit(page, 'portafolio', '/portfolio'); });
   test('plan de transición (/transition)', async ({ page }) => {
     await audit(page, 'transicion', '/transition', async () => {
-      await page.getByLabel('Proyecto').selectOption(projectId);
+      await page.getByRole('combobox', { name: /^Proyecto/ }).selectOption(projectId);
       await page.getByLabel('Nombre de la meseta').waitFor();
     });
   });
