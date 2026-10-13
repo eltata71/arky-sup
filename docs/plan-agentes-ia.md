@@ -881,7 +881,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
 | 16.0 Compositor único en capas | P0 · L | Pendiente | |
 | 16.1 Ficha en los diez caminos | P0 · L | Pendiente | |
-| 16.2 Persona por argumento en el encargo | P0 · S | Hecha | `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
+| 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
 | 16.8 Las raíces del router coinciden | P1 · S | Pendiente | hallada al medir en 15.0 (A27) |
 | 16.3 Una sola orquestación | P1 · M | Pendiente | |
 | 16.4 Ficha en el servidor (migración) | P1 · M | Pendiente | |
