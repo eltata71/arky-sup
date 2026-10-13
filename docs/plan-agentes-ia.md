@@ -223,7 +223,7 @@ vigente del documento antes de implementar.**
 | Tokens / coste por operación y por agente | sin medir | medidos y visibles | 15.2 |
 | Roles con salida validada por esquema | 0 de 4 (especialista, coordinador, consolidador, revisor) | 4 de 4 | 18.0, 18.1 |
 | Banco de evaluación de agentes | 69 casos, 5 familias + 8 sitios de vallado, en CI (15.0) | ≥ 60 casos | `npm run eval:agents` |
-| Precisión del enrutado de especialistas | **81,5 %** (15.0) | ≥ 90 % de los casos del banco | `eval:agents` |
+| Precisión del enrutado de especialistas | 81,5 % (15.0) → **100 %** (16.8) | ≥ 90 % de los casos del banco | `eval:agents` |
 | Precisión del clasificador de intención | **60 %** (15.0) | ≥ 90 % | `eval:agents` |
 | Recall del revisor sobre defectos sembrados | **100 %** (15.0; lo detecta la evidencia determinista) | ≥ 85 % (determinista + modelo simulado) | `eval:agents` |
 | Tareas de encargo producidas con la persona de su asignado | 0 % (15.0) → **100 %** (16.2) | 100 % | `eval:agents` (`personaFijada`) |
@@ -882,7 +882,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 16.0 Compositor único en capas | P0 · L | Pendiente | |
 | 16.1 Ficha en los diez caminos | P0 · L | Pendiente | |
 | 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
-| 16.8 Las raíces del router coinciden | P1 · S | Pendiente | hallada al medir en 15.0 (A27) |
+| 16.8 Las raíces del router coinciden | P1 · S | Hecha | `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
 | 16.3 Una sola orquestación | P1 · M | Pendiente | |
 | 16.4 Ficha en el servidor (migración) | P1 · M | Pendiente | |
 | 16.5 Deriva del contrato | P2 · M | Pendiente | |

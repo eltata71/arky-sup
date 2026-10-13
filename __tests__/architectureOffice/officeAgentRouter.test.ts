@@ -35,6 +35,51 @@ describe('OfficeAgentRouter — brief ranking', () => {
   });
 });
 
+/*
+ * Las palabras con las que se pide trabajo de cada dominio (plan de agentes,
+ * 16.8 · A27). Nueve señales eran raíces con `\b` al final —`integraci`,
+ * `suscripci`, `regulator`…— y la palabra sigue después de la raíz, así que
+ * nunca coincidían: «integración» no convocaba a Mauricio. Cada raíz de la
+ * tabla tiene aquí al menos una palabra completa que la ejerce.
+ */
+describe('OfficeAgentRouter — las raíces coinciden con palabras completas', () => {
+  const WORDS: readonly [string, string][] = [
+    ['Integración con el core', 'mauricio'],
+    ['Integraciones entre canales', 'mauricio'],
+    ['Cómo integramos la emisión', 'mauricio'],
+    ['Integrar el canal de corredores', 'mauricio'],
+    ['Modernización del legado', 'ricardo'],
+    ['Resiliencia del motor', 'gabriel'],
+    ['Artefactos del entregable', 'elena'],
+    ['Suscripción digital', 'sofia'],
+    ['Asegurados del ramo', 'sofia'],
+    ['Modelo analítico', 'daniel'],
+    ['Analítica avanzada', 'daniel'],
+    ['Tarificación de salud', 'daniel'],
+    ['Requisitos regulatorios', 'carmen'],
+    ['Marco regulatorio', 'carmen'],
+    ['El regulador exige', 'carmen'],
+    ['Nueva regulación de datos', 'carmen'],
+  ];
+
+  it.each(WORDS)('«%s» convoca a %s', (brief, personaId) => {
+    expect(rankPersonasForBrief(brief).map((signal) => signal.personaId)).toContain(personaId);
+  });
+
+  // Una raíz más laxa no puede convocar a quien no toca: «integral» e
+  // «integridad» no son integración.
+  it.each(['Una solución integral', 'Integridad de los datos de pólizas'])(
+    '«%s» no convoca a Mauricio',
+    (brief) => {
+      expect(rankPersonasForBrief(brief).map((signal) => signal.personaId)).not.toContain('mauricio');
+    },
+  );
+
+  it('«pago regular» no convoca a Carmen', () => {
+    expect(rankPersonasForBrief('Pago regular de primas').map((signal) => signal.personaId)).not.toContain('carmen');
+  });
+});
+
 describe('OfficeAgentRouter — deliverable assignment', () => {
   it('only ever assigns a persona that declares the artifact type', () => {
     const assignment = assignDeliverable('mermaid-erd', 'Modelo de datos de pólizas y siniestros');

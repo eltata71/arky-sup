@@ -68,6 +68,15 @@ interface DomainSignal {
  * a keyword silently dropped in a merge is a specialist who silently stops
  * being called.
  */
+/*
+ * Una raíz lleva `\w*` detrás: `\b(integraci)\b` no coincide nunca con
+ * «integracion», porque la palabra sigue después de la raíz y el `\b` final
+ * exige que acabe ahí. Nueve señales estuvieron así sin que nada lo notara
+ * (plan de agentes, A27). «Integración» se escribe por formas, no por raíz:
+ * `integr\w*` convocaría a Mauricio para una «solución integral» o la
+ * «integridad» de un dato. Cada raíz tiene su palabra en
+ * `officeAgentRouter.test.ts`.
+ */
 const DOMAIN_SIGNALS: readonly DomainSignal[] = Object.freeze([
   {
     personaId: 'felipe',
@@ -79,17 +88,17 @@ const DOMAIN_SIGNALS: readonly DomainSignal[] = Object.freeze([
     pattern: /\b(salesforce|health cloud|financial services cloud|fsc|apex|flow|sharing)\b/,
     weight: 4,
   },
-  { personaId: 'mauricio', pattern: /\b(mulesoft|anypoint|api|apis|integraci|raml|openapi|asyncapi|esb)\b/ },
-  { personaId: 'ricardo', pattern: /\b(as.?400|ibm i|rpg|cobol|db2|legacy|mainframe|modernizaci)\b/ },
-  { personaId: 'gabriel', pattern: /\b(software|componente|componentes|nfr|resilien|prueba|pruebas|test|rendimiento|latencia)\b/ },
+  { personaId: 'mauricio', pattern: /\b(mulesoft|anypoint|api|apis|integra(?:r|mos|n|cion|ciones|do|dos|da|das|ndo)|raml|openapi|asyncapi|esb)\b/ },
+  { personaId: 'ricardo', pattern: /\b(as.?400|ibm i|rpg|cobol|db2|legacy|mainframe|modernizaci\w*)\b/ },
+  { personaId: 'gabriel', pattern: /\b(software|componente|componentes|nfr|resilien\w*|prueba|pruebas|test|rendimiento|latencia)\b/ },
   // `seguridad` came from the merged coordination table.
-  { personaId: 'elena', pattern: /\b(artefact|diagrama|diagramas|c4|adr|stride|amenaza|seguridad|erd|contrato|contratos)\b/ },
+  { personaId: 'elena', pattern: /\b(artefact\w*|diagrama|diagramas|c4|adr|stride|amenaza|seguridad|erd|contrato|contratos)\b/ },
   // `proyecto` came from the merged coordination table.
   { personaId: 'tomas', pattern: /\b(reporte|estado|cronograma|seguimiento|hito|hitos|backlog|proyecto)\b/ },
-  { personaId: 'sofia', pattern: /\b(poliza|polizas|siniestro|siniestros|suscripci|reaseguro|prima|primas|cobertura|coberturas|endoso|acord|asegurad|ramo|siniestralidad)\b/ },
+  { personaId: 'sofia', pattern: /\b(poliza|polizas|siniestro|siniestros|suscripci\w*|reaseguro|prima|primas|cobertura|coberturas|endoso|acord|asegurad\w*|ramo|siniestralidad)\b/ },
   // `data` came from the merged coordination table.
-  { personaId: 'daniel', pattern: /\b(dato|datos|data|analitic|analitica|actuarial|reserva|reservas|tarificaci|linaje|reporting|bi|datamart|datalake)\b/ },
-  { personaId: 'carmen', pattern: /\b(cumplimiento|compliance|regulator|regulatorio|solvencia|naic|hipaa|dora|iso 27001|auditor|auditoria|riesgo|riesgos|pii|phi|gdpr)\b/ },
+  { personaId: 'daniel', pattern: /\b(dato|datos|data|analitic\w*|actuarial|reserva|reservas|tarificaci\w*|linaje|reporting|bi|datamart|datalake)\b/ },
+  { personaId: 'carmen', pattern: /\b(cumplimiento|compliance|regulat\w*|regulador\w*|regulacion\w*|solvencia|naic|hipaa|dora|iso 27001|auditor|auditoria|riesgo|riesgos|pii|phi|gdpr)\b/ },
 ]);
 
 export interface OfficeRoutingSignal {

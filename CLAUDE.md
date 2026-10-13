@@ -2768,7 +2768,9 @@ finding (A1–A27) and the plan task that closes it, and **a defect no longer
 measured below target fails the bench until its entry is removed**. Expected
 values are written from the domain —who *should* analyse this— never copied
 from the current output; a case that only a real model could decide does not
-belong here. Measured on 2026-10-13: routing 81,5 %, intent 60 %, tasks
+belong here. Measured on 2026-10-13: routing 81,5 % (100 % since 16.8, which
+gave the router's stems a `\w*` — `\b(integraci)\b` never matched
+«integración»), intent 60 %, tasks
 produced with their assignee's persona 0 % (100 % since 16.2), reviewer recall
 100 %, clean approvals without a critique 3, consolidations 80 %, fenced prompt
 sites 0 of 8.

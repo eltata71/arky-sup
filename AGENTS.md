@@ -277,6 +277,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    el puerto de producción entrega `buildOfficePersonaBriefing(task.assigneeId)`;
    resolver un `@Alias` del brief dejaba que el usuario cambiara el autor, y sin
    mención firmaba Arky. Resolver menciones es cosa del chat.
+   **Una raíz del router lleva `\w*` detrás** (16.8): `\b(integraci)\b` no
+   coincide nunca con «integración»; cada raíz tiene su palabra completa en
+   `officeAgentRouter.test.ts`, y una forma ambigua («integral», «regular») se
+   escribe por formas, no por raíz.
 13. **Un agente conoce capacidades, no proveedores.** Toda llamada a un modelo
    atraviesa el kernel canónico: `Domain → services/ai → adaptador → API`. Cuatro
    reglas concretas, todas con prueba que las escanea
