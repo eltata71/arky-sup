@@ -29,6 +29,7 @@ import { compileArtifact } from '../../artifactCompiler';
 import { parseStructured } from '../../ai/structuredOutput';
 import { validateOfficeArtifact } from '../domain/officeArtifactValidators';
 import { newPrefixedId } from '../../../lib/ids';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../domain/officeAgentPersonas';
 import { buildOfficePersonaBriefing } from '../domain/officePersonaBriefing';
@@ -119,7 +120,8 @@ export const buildProductionInstruction = (task: OfficeTask, engagement: OfficeE
 
   const lines = [
     `Entregable: ${engagement.title}`,
-    `Solicitud original: ${engagement.brief}`,
+    // El brief es texto de una persona: viaja vallado (plan de agentes, 17.0).
+    wrapUntrustedContent('solicitud original', engagement.brief),
     '',
     // Quién eres no va aquí: va en el prompt de sistema, compuesto desde la
     // ficha del asignado (`buildOfficePersonaBriefing`). Repetirlo en el turno
@@ -292,6 +294,9 @@ export const gatherDeterministicEvidence = (artifact: Artifact): DeterministicRe
   };
 };
 
+/** Cuánto contenido ve el revisor. Lo que pasa de aquí se recorta y se dice. */
+export const REVIEW_CONTENT_LIMIT = 12_000;
+
 export const buildReviewPrompt = (
   task: OfficeTask,
   artifact: Artifact,
@@ -305,8 +310,12 @@ export const buildReviewPrompt = (
     `ARTEFACTO: ${artifact.name} (${artifact.type})`,
     `OBJETIVO DECLARADO: ${artifact.objective}`,
     '',
-    'CONTENIDO:',
-    artifact.content.slice(0, 12_000),
+    // El contenido revisado no lo escribió la aplicación: viaja vallado, y si
+    // se recorta se dice (plan de agentes, 17.0 y 17.1).
+    wrapUntrustedContent('contenido del artefacto', artifact.content.slice(0, REVIEW_CONTENT_LIMIT)),
+    ...(artifact.content.length > REVIEW_CONTENT_LIMIT
+      ? [`(Contenido recortado: se muestran ${REVIEW_CONTENT_LIMIT} de ${artifact.content.length} caracteres. No juzgues lo que no ves.)`]
+      : []),
     '',
     'CRITERIOS DE ACEPTACIÓN:',
     ...task.acceptanceCriteria.map((item) => `- ${item}`),
@@ -426,7 +435,8 @@ export const buildConsolidationPrompt = (engagement: OfficeEngagement): string =
   // La persona del consolidador va en el prompt de sistema (plan de agentes, 16.0).
   return [
     `Consolida el entregable "${engagement.title}".`,
-    `Solicitud original: ${engagement.brief}`,
+    // El brief es texto de una persona: viaja vallado (plan de agentes, 17.0).
+    wrapUntrustedContent('solicitud original', engagement.brief),
     '',
     'ENTREGABLES Y SUS REVISIONES:',
     ...deliverables,

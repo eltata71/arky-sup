@@ -27,6 +27,7 @@
  */
 
 import { newPrefixedId } from '../../../lib/ids';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import {
@@ -214,18 +215,22 @@ export const teamFromPlan = (plan: OfficeOrchestrationPlan): CoordinationTeamMem
  * record — the drift that makes a multi-agent answer contradict itself.
  */
 export const buildScopeBriefing = (scope: CoordinationScope): string => {
-  const lines = [
-    `Contexto: la solicitud se hace desde ${LEVEL_FRAMING[scope.level]}.`,
+  // El nivel es de la aplicación; los nombres y lo que se escribió en cada
+  // registro son de las personas y viajan vallados (plan de agentes, 17.0).
+  const record = [
     `${scope.level === 'initiative' ? 'Iniciativa' : scope.level === 'project' ? 'Proyecto' : 'Entregable'}: ${scope.name}`,
   ];
   for (const ancestor of scope.ancestry ?? []) {
-    lines.push(`  ↑ ${ancestor.level === 'initiative' ? 'Iniciativa de negocio' : 'Proyecto de arquitectura'}: ${ancestor.name}${ancestor.summary ? ` — ${ancestor.summary}` : ''}`);
+    record.push(`  ↑ ${ancestor.level === 'initiative' ? 'Iniciativa de negocio' : 'Proyecto de arquitectura'}: ${ancestor.name}${ancestor.summary ? ` — ${ancestor.summary}` : ''}`);
   }
   for (const line of scope.briefing) {
-    if (line.trim().length > 0) lines.push(`  · ${line.trim()}`);
+    if (line.trim().length > 0) record.push(`  · ${line.trim()}`);
   }
-  lines.push('Responde dentro de ese contexto. Si la solicitud no encaja en este nivel, dilo explícitamente en vez de responder en otro.');
-  return lines.join('\n');
+  return [
+    `Contexto: la solicitud se hace desde ${LEVEL_FRAMING[scope.level]}.`,
+    wrapUntrustedContent('registro en contexto', record.join('\n')),
+    'Responde dentro de ese contexto. Si la solicitud no encaja en este nivel, dilo explícitamente en vez de responder en otro.',
+  ].join('\n');
 };
 
 /**
