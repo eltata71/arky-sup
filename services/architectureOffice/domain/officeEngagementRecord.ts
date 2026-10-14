@@ -66,6 +66,13 @@ const asIsoDate = (value: unknown, fallback: string): string =>
 const asPositiveInt = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.floor(value) : fallback;
 
+const asConsolidationReview = (value: unknown): { ok: boolean; gaps: string[]; refined: boolean } | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+  const raw = value as Record<string, unknown>;
+  if (typeof raw.ok !== 'boolean') return undefined;
+  return { ok: raw.ok, gaps: asStringArray(raw.gaps), refined: raw.refined === true };
+};
+
 const asMeasurement = (value: unknown): AgentInvocationMeasurement | null => {
   if (!value || typeof value !== 'object') return null;
   const raw = value as Record<string, unknown>;
@@ -122,6 +129,7 @@ const normalizeTask = (value: unknown, engagementId: string): OfficeTask | null 
     executionId: typeof raw.executionId === 'string' ? raw.executionId : undefined,
     traceIds: Array.isArray(raw.traceIds) ? asStringArray(raw.traceIds) : undefined,
     promptStamps: Array.isArray(raw.promptStamps) ? asStringArray(raw.promptStamps) : undefined,
+    consolidationReview: asConsolidationReview(raw.consolidationReview),
     measurements: Array.isArray(raw.measurements)
       ? raw.measurements.map(asMeasurement).filter((item): item is AgentInvocationMeasurement => item !== null)
       : undefined,

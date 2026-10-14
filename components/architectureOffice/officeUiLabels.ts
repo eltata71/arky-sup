@@ -77,6 +77,12 @@ export const TASK_KIND_LABELS: Readonly<Record<OfficeTaskKind, string>> = Object
   report: 'Reporte',
 });
 
+export const CONSOLIDATION_REVIEW_LABELS = Object.freeze({
+  firstTime: 'Consolidación a la primera',
+  refined: 'Consolidación corregida',
+  withGaps: 'Consolidación con brechas',
+});
+
 export const REVIEW_VERDICT_LABELS: Readonly<Record<OfficeReviewVerdict, string>> = Object.freeze({
   approved: 'Aprobado',
   'changes-requested': 'Cambios solicitados',
