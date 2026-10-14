@@ -55,6 +55,10 @@ export type AiProxyFailureReason =
 export interface AiProxySuccess<T> {
   ok: true;
   value: T;
+  /** Optional metering envelope from the server. */
+  usage?: import('../../lib/ai/agentUsage').AgentInvocationUsage | null;
+  model?: string | null;
+  traceId?: string;
 }
 
 export interface AiProxyFailure {
@@ -115,7 +119,8 @@ export function isProxyFailure<T>(outcome: AiProxyOutcome<T>): outcome is AiProx
   return outcome.ok === false;
 }
 
-export const proxySuccess = <T>(value: T): AiProxySuccess<T> => ({ ok: true, value });
+export const proxySuccess = <T>(value: T, metadata: Omit<AiProxySuccess<T>, 'ok' | 'value'> = {}): AiProxySuccess<T> =>
+  ({ ok: true, value, ...metadata });
 
 export const proxyFailure = (
   reason: AiProxyFailureReason,

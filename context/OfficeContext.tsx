@@ -162,9 +162,9 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const {
     projects,
     settings,
-    createArtifact,
-    createArtifactVersion,
-    updateArtifact,
+    createArtifactConfirmed,
+    createArtifactVersionConfirmed,
+    updateArtifactConfirmed,
   } = useAppContext();
   const { user, profile, isLoading: authLoading } = useAuth();
 
@@ -333,10 +333,10 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         getSettings: () => settingsRef.current,
         getBusinessMotivation: (project) => describeAttentionMotivation(project, initiativesRef.current),
         getProfile: agentConfiguration.getProfile,
-        store: { createArtifact, createArtifactVersion, updateArtifact },
+        store: { createArtifact: createArtifactConfirmed, createArtifactVersion: createArtifactVersionConfirmed, updateArtifact: updateArtifactConfirmed },
         invokePersona: async (personaId: OfficeAgentId, prompt, project, profile) => {
-          const { chatWithProject } = await loadConversation();
-          return chatWithProject(
+          const { chatWithProjectMeasured } = await loadConversation();
+          return chatWithProjectMeasured(
             project,
             prompt,
             [],
@@ -381,7 +381,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       abortControllers.current.delete(engagementId);
       setRunningEngagementIds((previous) => previous.filter((id) => id !== engagementId));
     }
-  }, [readEngagement, createArtifact, createArtifactVersion, updateArtifact, persistCheckpoint, operationDeps, upsert, user]);
+  }, [readEngagement, createArtifactConfirmed, createArtifactVersionConfirmed, updateArtifactConfirmed, persistCheckpoint, operationDeps, upsert, user]);
 
   const cancelRun = useCallback((engagementId: string) => {
     abortControllers.current.get(engagementId)?.abort();

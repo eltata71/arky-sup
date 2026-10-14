@@ -18,6 +18,7 @@ import {
   buildProjectChatInstruction,
   consultArchitecture,
   generateProjectChatReply,
+  generateProjectChatReplyMeasured,
   processMultimodalChat,
   runAgentTurn,
   runConsistencyCheck,
@@ -33,6 +34,7 @@ export const assistantService = {
   buildProjectChatInstruction,
   /** The project chat reply, over an instruction the Office has framed. */
   generateProjectChatReply,
+  generateProjectChatReplyMeasured,
   /** Assistant turn carrying uploaded files alongside the prompt. */
   processMultimodalChat,
   /** Architecture consultation over the current project. */

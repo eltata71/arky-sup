@@ -45,8 +45,10 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
     saveChatHistory,
     loadChatHistory,
     updateArtifact,
-    createArtifact,
+    createArtifactConfirmed,
     createArtifactVersion,
+    createArtifactVersionConfirmed,
+    updateArtifactConfirmed,
     restoreArtifactVersion,
     getArtifact,
     getProject,
@@ -350,7 +352,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         // per-artifact chat — has the persistence path it needs. Omitting
         // `createArtifact` here is what historically made the agent claim
         // success while no new artifact appeared in the Hub.
-        store: { createArtifact, createArtifactVersion, updateArtifact },
+        store: { createArtifact: createArtifactConfirmed, createArtifactVersion: createArtifactVersionConfirmed, updateArtifact: updateArtifactConfirmed },
         memoryStore,
         lessonStore,
         targetOverride: target,
@@ -394,7 +396,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ project, activeA
         }
       }
     },
-    [activeArtifact, agent, project, settings, messages, createArtifact, createArtifactVersion, updateArtifact, setActiveArtifactId, profile?.uid, profile?.displayName, logAgentAction, memoryStore, lessonStore, getArtifact, offerVersionUndo, t],
+    [activeArtifact, agent, project, settings, messages, createArtifactConfirmed, createArtifactVersionConfirmed, updateArtifactConfirmed, setActiveArtifactId, profile?.uid, profile?.displayName, logAgentAction, memoryStore, lessonStore, getArtifact, offerVersionUndo, t],
   );
 
   /**

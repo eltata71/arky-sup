@@ -157,6 +157,7 @@ export interface CoordinationOutcome {
   /** Per-specialist contributions, in the order they were assigned. */
   contributions: { personaId: OfficeAgentId; status: 'completed' | 'failed'; output: string }[];
   events: CoordinationEvent[];
+  usage?: OfficeOrchestrationResult['usage'];
 }
 
 export interface CoordinateRequestInput {
@@ -167,6 +168,10 @@ export interface CoordinateRequestInput {
   /** Injectable for tests; defaults to `Date.now`. */
   now?: () => number;
   maxConcurrency?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  maxAiCalls?: number;
+  maxTokens?: number;
   /**
    * Agents the user has switched off in their card. The office does not
    * convene them; the plan guarantees the team is never left empty.
@@ -313,7 +318,7 @@ export const coordinateRequest = async (
    */
   let consolidatorTurns = 0;
 
-  const observedInvoke: OfficeAgentInvoker = async (personaId, instruction, promptStamp) => {
+  const observedInvoke: OfficeAgentInvoker = async (personaId, instruction, promptStamp, callOptions) => {
     const isCoordinator = personaId === plan.coordinatorId;
     const isConsolidator = personaId === plan.consolidatorId && !isCoordinator;
     if (isConsolidator) consolidatorTurns += 1;
@@ -332,11 +337,13 @@ export const coordinateRequest = async (
     }
 
     try {
-      const output = await invoke(
+      const invoked = await invoke(
         personaId,
         [briefing, instruction].join('\n\n'),
         promptStamp,
+        callOptions,
       );
+      const output = typeof invoked === 'string' ? invoked : invoked.text;
       emit(
         isConsolidator ? 'recommendation' : 'agent-reported',
         isConsolidator ? 'consolidating' : isCoordinator ? 'delegating' : 'reporting',
@@ -350,7 +357,7 @@ export const coordinateRequest = async (
         output,
         promptStamp,
       );
-      return output;
+      return invoked;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       emit('agent-failed', phase, personaId, null,
@@ -361,7 +368,13 @@ export const coordinateRequest = async (
 
   let result: OfficeOrchestrationResult;
   try {
-    result = await executeOfficeOrchestration(plan, observedInvoke, { maxConcurrency });
+    result = await executeOfficeOrchestration(plan, observedInvoke, {
+      maxConcurrency,
+      signal: input.signal,
+      timeoutMs: input.timeoutMs,
+      maxAiCalls: input.maxAiCalls,
+      maxTokens: input.maxTokens,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     emit('operation-failed', 'closed', null, null, 'La operación de la Oficina se detuvo.', message);
@@ -398,5 +411,6 @@ export const coordinateRequest = async (
       output: entry.output || (entry.error ?? ''),
     })),
     events,
+    usage: result.usage,
   };
 };

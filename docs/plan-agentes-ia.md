@@ -878,7 +878,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 15.P Reservar tareas de este plan | P0 · S | Hecha | #236 · `localizar-tarea.sh` y `PLANES` en `comun.sh`; ramas `agentes/<id>-<tema>` |
 | 15.0 Banco `agent-evals` | P0 · L | Hecha | #237 · enrutado 81,5 %, intención 60 %, persona fijada 0 %, revisor 100 %, aprobaciones sin crítica 3, consolidación 80 %, vallado 0 %; seis defectos nombrados |
 | 15.1 Prompts con identidad | P1 · M | Hecha | #240 · catálogo de 10 plantillas de la Oficina con huella; sello `id@vN#hash` en eventos de coordinación y en `OfficeTask.promptStamps`; `invocacionesConSello` 100 %. Los prompts de `services/agent` (intención LLM, memoria) entran con 18.3 y 17.2 |
-| 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
+| 15.2 Tokens, latencia y coste | P1 · M | En revisión | #247 · uso, modelo, latencia y traza por invocación; resumen por agente y operación; coste estimado con tabla fechada; banco con tokens y latencia |
 | 16.0 Compositor único en capas | P0 · L | Hecha | #241 · `composeAgentInstruction` en `domain/agentPromptComposer.ts`; ficha al prompt de sistema por `buildCoordinationInvoker`; instrucción de la ficha añadida (D-A2); conocimiento y memoria vallados (vallado 0 → 28,6 %); la instrucción añadida no se valla a propósito (es configuración a seguir), va subordinada en su capa; 5 plantillas a v2 |
 | 16.1 Ficha en los diez caminos | P0 · L | Hecha | corte 1 (#242) hecho: ficha en los 10 caminos (`agentProfileParity.test.ts`), menciones a desactivados las responde Arky, el copiloto no los convoca. Corte 2 (#243) hecho: el charter del encargo no asigna trabajo a desactivados (productor ni revisor; el refinamiento que los nombre se descarta; lo no asignable va a `outOfScope`), con caso en el banco. Corte 3 (#244) hecho: el alias configurado se ve en avatares, chips, tablero, charter, panel de carga y bitácora (`useAgentDisplayName`, `coordinateRequest({ agentName })`); las fichas se leen una vez por usuario y se invalidan al guardar. El brief de `EngagementRoom` para el modelo conserva el alias de fábrica, que es el que resuelve menciones |
 | 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
@@ -891,8 +891,8 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 17.0 Vallado completo | P0 · M | Hecha | #245 · `promptsConVallado` 28,6 → 100 %: solicitud de coordinación, brief del encargo, contenido revisado (con aviso de recorte), registro en contexto, mensaje del clasificador y capas de memoria del agente. La memoria base y la instrucción de la ficha quedan fuera de la valla a propósito: son configuración a seguir |
 | 17.1 Revisor sin aprobación silenciosa | P0 · S | Hecha | #246 · `aprobacionesSinCritica` 3 → 0: sin crítica legible la aprobación es `evidence-only`, la tarea queda en `awaiting-review` y el encargo se bloquea diciendo por qué; «Confirmar revisión» en el tablero la firma (`confirmEvidenceOnlyReview`, con actor en la auditoría). El contenido recortado se marca `truncated` |
 | 17.2 Memoria con procedencia | P1 · M | Pendiente | |
-| 17.3 Presupuestos y cancelación | P1 · M | Pendiente | |
-| 17.4 Éxito con persistencia confirmada | P1 · M | Pendiente | |
+| 17.3 Presupuestos y cancelación | P1 · M | En revisión | #247 · presupuesto por handoff y operación, rechazo explícito, cobro de llamadas informadas y cancelación sin consolidación parcial |
+| 17.4 Éxito con persistencia confirmada | P1 · M | En revisión | #247 · store confirmado para agente y cola; fallo remoto visible y sin anuncio de éxito; prueba de deshacer conservada |
 | 18.0 Esquemas por rol | P1 · L | Pendiente | |
 | 18.1 Revisión con esquema | P1 · M | Pendiente | |
 | 18.2 Evaluador en las dos consolidaciones | P1 · M | Pendiente | |

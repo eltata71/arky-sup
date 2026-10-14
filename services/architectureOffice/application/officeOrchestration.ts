@@ -12,6 +12,8 @@ import {
 } from '../domain/agentHandoff';
 import type { AgentHandoffKind } from '../domain/agentDefinition';
 import { workstreamCapableAgents } from '../domain/agentRegistry';
+import { HandoffBudgetExhausted, withHandoffBudget } from './handoffBudget';
+import { summarizeAgentUsage, type AgentInvocationMeasurement, type AgentInvocationResult, type AgentUsageSummary } from '../../../lib/ai/agentUsage';
 import {
   buildConsolidationRefinementPrompt,
   evaluateConsolidation,
@@ -80,6 +82,7 @@ export interface OfficeOrchestrationResult {
    */
   consolidationReview?: ConsolidationReview;
   refined?: boolean;
+  usage: { total: AgentUsageSummary; byAgent: Partial<Record<OfficeAgentId, AgentUsageSummary>> };
 }
 
 export interface OfficeOrchestrationOptions {
@@ -93,7 +96,13 @@ export interface OfficeOrchestrationOptions {
   maxConsolidationRefinements?: number;
   /** Correlation id of the attempt these handoffs belong to. */
   runId?: string;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  maxAiCalls?: number;
+  maxTokens?: number;
 }
+
+export interface OfficeAgentCallOptions { signal?: AbortSignal; timeoutMs?: number }
 
 export type OfficeAgentInvoker = (
   personaId: OfficeAgentId,
@@ -103,7 +112,8 @@ export type OfficeAgentInvoker = (
    * Opcional para el invocador: lo lee quien registra la invocación.
    */
   promptStamp?: string,
-) => Promise<string>;
+  callOptions?: OfficeAgentCallOptions,
+) => Promise<string | AgentInvocationResult>;
 
 export const isOfficeOrchestrationRequest = (request: string): boolean => {
   const normalized = foldOfficeText(request);
@@ -217,10 +227,51 @@ export const executeOfficeOrchestration = async (
   // en orden: es lo que permite comparar dos respuestas y saber si cambió la
   // plantilla o sólo el modelo.
   const promptStamps: string[] = [];
-  const invokeStamped = (personaId: OfficeAgentId, instruction: string, promptId: AgentPromptId): Promise<string> => {
+  const maxRefinements = Math.max(0, Math.min(1, options.maxConsolidationRefinements ?? 1));
+  const operationInvoke = withHandoffBudget(invoke, {
+    budget: {
+      maxAiCalls: options.maxAiCalls ?? 1 + plan.workstreams.length + 1 + maxRefinements,
+      maxTokens: options.maxTokens ?? 100_000,
+    },
+  });
+  const measurements: { personaId: OfficeAgentId; value: AgentInvocationMeasurement }[] = [];
+  const usage = (): OfficeOrchestrationResult['usage'] => ({
+    total: summarizeAgentUsage(measurements.map((item) => item.value)),
+    byAgent: Object.fromEntries([...new Set(measurements.map((item) => item.personaId))].map((personaId) => [
+      personaId,
+      summarizeAgentUsage(measurements.filter((item) => item.personaId === personaId).map((item) => item.value)),
+    ])),
+  });
+  const invokeStamped = async (personaId: OfficeAgentId, instruction: string, promptId: AgentPromptId, delegate: OfficeAgentInvoker = operationInvoke): Promise<string> => {
+    if (options.signal?.aborted) throw new Error('Operación cancelada por la persona.');
     const stamp = stampPrompt(agentPromptRef(promptId), instruction);
     promptStamps.push(stamp);
-    return invoke(personaId, instruction, stamp);
+    const startedAt = Date.now();
+    const controller = new AbortController();
+    const timeoutMs = options.timeoutMs ?? 90_000;
+    const aborted = () => controller.abort();
+    options.signal?.addEventListener('abort', aborted, { once: true });
+    const timer = setTimeout(aborted, timeoutMs);
+    let rejectOnAbort: (() => void) | undefined;
+    const abortPromise = new Promise<never>((_resolve, reject) => {
+      rejectOnAbort = () => reject(new Error(options.signal?.aborted ? 'Operación cancelada por la persona.' : 'Tiempo de invocación agotado.'));
+      controller.signal.addEventListener('abort', rejectOnAbort, { once: true });
+    });
+    try {
+      const result = await Promise.race([
+        delegate(personaId, instruction, stamp, { signal: controller.signal, timeoutMs }),
+        abortPromise,
+      ]);
+      const measured = typeof result === 'string'
+        ? { text: result, model: null, usage: null, latencyMs: Date.now() - startedAt, traceId: null, estimatedCostUsd: null }
+        : result;
+      measurements.push({ personaId, value: measured });
+      return measured.text;
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', aborted);
+      if (rejectOnAbort) controller.signal.removeEventListener('abort', rejectOnAbort);
+    }
   };
   const coordinationPrompt = buildCoordinationPrompt(plan);
 
@@ -235,15 +286,21 @@ export const executeOfficeOrchestration = async (
       workstreamResults: [],
       consolidation: 'La coordinación de Lucía falló; no se ejecutaron especialistas.',
       promptStamps,
+      usage: usage(),
     };
   }
 
   const rejectedHandoffs: RejectedHandoff[] = [];
+  const recordBudgetRejection = (sourceAgentId: OfficeAgentId, targetAgentId: OfficeAgentId, kind: AgentHandoffKind, error: unknown): void => {
+    if (error instanceof HandoffBudgetExhausted) rejectedHandoffs.push({
+      sourceAgentId, targetAgentId, kind, rejections: [error.rejection],
+    });
+  };
   const maxConcurrency = Math.max(1, Math.min(3, options.maxConcurrency ?? 3));
   const workstreamResults: OfficeWorkstreamResult[] = new Array(plan.workstreams.length);
   let nextIndex = 0;
   const worker = async (): Promise<void> => {
-    while (nextIndex < plan.workstreams.length) {
+    while (nextIndex < plan.workstreams.length && !options.signal?.aborted) {
       const index = nextIndex;
       nextIndex += 1;
       const workstream = plan.workstreams[index];
@@ -271,7 +328,7 @@ export const executeOfficeOrchestration = async (
           kind: 'analysis',
           description: 'Un análisis del dominio con supuestos, riesgos y decisiones explícitos.',
         },
-        budget: { maxAiCalls: 1 },
+        budget: { maxAiCalls: 1, maxTokens: 30_000 },
         runId: options.runId,
       });
 
@@ -297,6 +354,7 @@ export const executeOfficeOrchestration = async (
           workstream.personaId,
           renderHandoffPrompt(handoff.envelope),
           'office.workstream',
+          withHandoffBudget(operationInvoke, handoff.envelope),
         );
         workstreamResults[index] = {
           workstreamId: workstream.id,
@@ -305,6 +363,7 @@ export const executeOfficeOrchestration = async (
           output,
         };
       } catch (error) {
+        recordBudgetRejection(plan.coordinatorId, workstream.personaId, 'workstream', error);
         workstreamResults[index] = {
           workstreamId: workstream.id,
           personaId: workstream.personaId,
@@ -319,6 +378,11 @@ export const executeOfficeOrchestration = async (
     { length: Math.min(maxConcurrency, plan.workstreams.length) },
     () => worker(),
   ));
+
+  if (options.signal?.aborted) return {
+    operationId: plan.operationId, status: 'failed', coordination, workstreamResults: workstreamResults.filter(Boolean),
+    consolidation: 'Operación cancelada por la persona.', rejectedHandoffs, promptStamps, usage: usage(),
+  };
 
   // Los resultados llegan al consolidador como referencias atribuidas, no como
   // un bloque concatenado: quién dijo qué, y si su workstream salió o falló.
@@ -341,7 +405,7 @@ export const executeOfficeOrchestration = async (
       kind: 'recommendation',
       description: 'Una recomendación Ready, Conditional o Blocked con su justificación.',
     },
-    budget: { maxAiCalls: 1 + Math.max(0, options.maxConsolidationRefinements ?? 1) },
+    budget: { maxAiCalls: 1 + maxRefinements, maxTokens: 40_000 },
     runId: options.runId,
   });
 
@@ -360,22 +424,27 @@ export const executeOfficeOrchestration = async (
       consolidation: consolidationHandoff.rejections.map((r) => r.message).join(' '),
       rejectedHandoffs,
       promptStamps,
+      usage: usage(),
     };
   }
 
   const consolidationPrompt = renderHandoffPrompt(consolidationHandoff.envelope);
+  const consolidationInvoke = withHandoffBudget(operationInvoke, consolidationHandoff.envelope);
 
   let consolidation: string;
   try {
-    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation');
+    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation', consolidationInvoke);
   } catch (error) {
+    recordBudgetRejection(plan.coordinatorId, plan.consolidatorId, 'consolidation', error);
     return {
       operationId: plan.operationId,
       status: 'failed',
       coordination,
       workstreamResults,
       consolidation: error instanceof Error ? error.message : String(error),
+      rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined,
       promptStamps,
+      usage: usage(),
     };
   }
 
@@ -389,20 +458,21 @@ export const executeOfficeOrchestration = async (
    */
   let review = evaluateConsolidation(consolidation, workstreamResults);
   let refined = false;
-  const maxRefinements = Math.max(0, Math.min(1, options.maxConsolidationRefinements ?? 1));
   if (!review.ok && maxRefinements > 0) {
     try {
       const corrected = await invokeStamped(
         plan.consolidatorId,
         buildConsolidationRefinementPrompt(consolidation, review),
         'office.consolidation-refinement',
+        consolidationInvoke,
       );
       if (corrected.trim().length > 0) {
         consolidation = corrected;
         refined = true;
         review = evaluateConsolidation(consolidation, workstreamResults);
       }
-    } catch {
+    } catch (error) {
+      recordBudgetRejection(plan.coordinatorId, plan.consolidatorId, 'consolidation', error);
       /* se conserva la consolidación original y su evaluación */
     }
   }
@@ -417,5 +487,6 @@ export const executeOfficeOrchestration = async (
     refined,
     rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined,
     promptStamps,
+    usage: usage(),
   };
 };

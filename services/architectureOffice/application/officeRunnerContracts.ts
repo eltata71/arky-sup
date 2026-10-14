@@ -1,5 +1,6 @@
 import type { OfficeEngagement, OfficeTask, OfficeTaskReview } from '../domain/OfficeTypes';
 import type { PersistenceResult, PersistenceStatus } from '../../persistence';
+import type { AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
 
 export interface OfficeProduceOutcome {
   status: 'success' | 'failed';
@@ -15,6 +16,7 @@ export interface OfficeProduceOutcome {
 export interface OfficeConsolidateOutcome {
   status: 'success' | 'failed';
   summary: string;
+  measurement?: AgentInvocationMeasurement;
   aiCalls?: number;
   traceId?: string;
   /** Sello del prompt de consolidación (`lib/agents/promptCatalog`). */

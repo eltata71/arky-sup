@@ -492,6 +492,8 @@ export interface ConsolidationResult {
   finalValida: boolean;
   finalEsperada: boolean;
   llamadas: number;
+  tokensPorOperacion?: number | null;
+  latenciaPorRol?: Partial<Record<'coordinador' | 'especialista' | 'consolidador', number>>;
   /** Llamadas que llevaban un sello vigente. */
   selladas: number;
   ok: boolean;
@@ -524,14 +526,24 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
     const invoke: OfficeAgentInvoker = async (personaId, _instruction, promptStamp) => {
       calls += 1;
       if (isCurrentStamp(promptStamp)) stamped += 1;
-      if (personaId === plan.coordinatorId) return 'Brief: cada especialista analiza su dominio.';
-      if (personaId === plan.consolidatorId) {
+      let text: string;
+      if (personaId === plan.coordinatorId) text = 'Brief: cada especialista analiza su dominio.';
+      else if (personaId === plan.consolidatorId) {
         consolidatorCalls += 1;
-        return consolidator();
+        text = consolidator();
+      } else {
+        const output = specialists[personaId] ?? '';
+        if (output === '__falla__') throw new Error('timeout (simulado)');
+        text = output;
       }
-      const output = specialists[personaId] ?? '';
-      if (output === '__falla__') throw new Error('timeout (simulado)');
-      return output;
+      return {
+        text,
+        model: 'gemini-2.5-flash',
+        usage: { promptTokens: 100, completionTokens: 20, totalTokens: 120 },
+        latencyMs: 25,
+        traceId: `eval-${calls}`,
+        estimatedCostUsd: 0.00008,
+      };
     };
     const result = await executeOfficeOrchestration(plan, invoke);
     const finalValida = evaluateConsolidation(result.consolidation, result.workstreamResults).ok;
@@ -544,6 +556,12 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
       finalValida,
       finalEsperada: testCase.finalValida,
       llamadas: calls,
+      tokensPorOperacion: result.usage.total.totalTokens,
+      latenciaPorRol: {
+        coordinador: result.usage.byAgent[plan.coordinatorId]?.latencyMs,
+        especialista: plan.workstreams.reduce((sum, workstream) => sum + (result.usage.byAgent[workstream.personaId]?.latencyMs ?? 0), 0),
+        consolidador: result.usage.byAgent[plan.consolidatorId]?.latencyMs,
+      },
       selladas: stamped,
       ok: corrigio === testCase.debeCorregir && finalValida === testCase.finalValida,
     };
@@ -771,6 +789,8 @@ export const renderReport = (results: AgentEvalResults, summary: AgentEvalSummar
       const goal = target?.min !== undefined ? `≥ ${target.min}` : target?.max !== undefined ? `≤ ${target.max}` : '—';
       return `| ${metric} | ${summary[metric]} | ${goal} |`;
     }),
+    `| tokensPorOperacion | ${results.consolidacion.filter((r) => r.camino === 'coordinacion').map((r) => `${r.id}: ${r.tokensPorOperacion ?? 'sin medir'}`).join('; ')} | — |`,
+    `| latenciaPorRol | ${results.consolidacion.filter((r) => r.camino === 'coordinacion').map((r) => `${r.id}: ${JSON.stringify(r.latenciaPorRol)}`).join('; ')} | — |`,
     '',
     '## Enrutado',
     '| Caso | Convocados | Faltan | Prohibidos convocados | OK |',

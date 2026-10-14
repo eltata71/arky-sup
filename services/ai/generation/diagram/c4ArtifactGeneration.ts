@@ -151,6 +151,7 @@ export async function generateC4ArtifactContent(
     const result = await generateDiagramIRWithSelfHealing(stub, project, settings, { brief, previousIR: previousArtifact?.ir, onContextCaptured: opts.onContextCaptured ? (record) => opts.onContextCaptured?.({
         ...record, sources: [...record.sources, ...(upperLevel && record.sections.some((section) => section.scope === 'brief') ? [upperLevel.source] : [])],
     }) : undefined });
+    for (let index = 0; index < result.attempts; index += 1) opts.onModelCall?.();
     if (result.fallback === 'skeleton') {
         throw new C4SelfHealingError(
             result.declineReason
@@ -188,6 +189,7 @@ export async function generateC4ArtifactContent(
         context: `${project.name}: ${template.objective}`,
         onContextCaptured: opts.onContextCaptured,
     }, settings);
+    for (let index = 0; index < correction.calls; index += 1) opts.onModelCall?.();
     opts.onPhase?.({
         stage: 'refinement',
         status: correction.corrected ? 'success' : correction.calls ? 'warning' : 'skipped',

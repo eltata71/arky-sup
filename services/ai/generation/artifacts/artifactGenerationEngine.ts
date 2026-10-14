@@ -849,6 +849,7 @@ ${catalogDocumentReinforcement}
                     : 'Modo catálogo con cadena de fallback completa.',
                 meta: { model: modelName, onDemand: Boolean(template.requestContext) },
             });
+            opts.onModelCall?.();
             raw = await this.generateTextWithFallback(settings, modelName, fullPrompt, modelConfig, template.requestContext ? {
                 // On-demand artefacts: previous limits (45s diagrams, 60s docs)
                 // were brushing the edge of the saturated-infra reality where
@@ -938,6 +939,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
  ${template.type === 'hybrid-text-diagram' ? '- Return complete Markdown with EXACTLY ONE fenced ```mermaid block, preserving the hybrid artifact contract.' : '- Do NOT wrap the response in markdown fences — output only the raw Mermaid.'}
  - Do NOT include invalid Mermaid comments or explanatory prose inside the diagram block.`;
             try {
+                opts.onModelCall?.();
                 const retry = await this.generateTextWithFallback(settings, modelName, reinforcedPrompt, modelConfig);
                 const retryAssessment = await assessDiagramText(retry, template.type);
                 if (retryAssessment.ok) return retry;
@@ -949,6 +951,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                 if (template.type.startsWith('mermaid') || template.type === 'hybrid-text-diagram') {
                     const fallbackPrompt = this.buildFlowchartFallbackPrompt(template, basePrompt, promptArtifactsContext, consistencyInstructions);
                     try {
+                        opts.onModelCall?.();
                         const fallback = await this.generateTextWithFallback(settings, modelName, fallbackPrompt, {
                             ...modelConfig,
                             temperature: 0.2,
@@ -1030,6 +1033,7 @@ Regenerate the COMPLETE artifact ensuring:
  - It meets the visual standard: at least one valid \`\`\`mermaid diagram AND Markdown tables for every enumeration of 3+ comparable items.
  - Do not summarise or apologise — output only the complete artifact content.`;
             try {
+                opts.onModelCall?.();
                 const retryDoc = await this.generateTextWithFallback(settings, modelName, correctivePrompt, modelConfig);
                 const retryAssessment = assessDocumentArtifact(retryDoc, {
                     expectStructuredDocument: template.representation === 'document',

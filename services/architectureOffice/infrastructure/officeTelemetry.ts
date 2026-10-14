@@ -12,6 +12,8 @@
 
 import { observabilityService } from '../../observability';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../domain/officeAgentPersonas';
+import { summarizeEngagementUsage } from '../domain/officeUsage';
+import type { AgentUsageSummary } from '../../../lib/ai/agentUsage';
 import {
   summarizeEngagementProgress,
   type OfficeEngagement,
@@ -31,6 +33,7 @@ export interface OfficePersonaMetrics {
   averageScore: number | null;
   /** Mean wall-clock minutes per completed task. */
   averageMinutes: number | null;
+  usage: AgentUsageSummary | null;
 }
 
 export interface OfficeEngagementMetrics {
@@ -48,6 +51,7 @@ export interface OfficeEngagementMetrics {
   budgetUtilisation: number;
   /** Wall-clock minutes from the first task start to the last completion. */
   elapsedMinutes: number | null;
+  usage: AgentUsageSummary;
   personas: OfficePersonaMetrics[];
 }
 
@@ -68,6 +72,7 @@ const mean = (values: number[]): number | null => {
 const isProduction = (task: OfficeTask): boolean => task.kind === 'produce-artifact';
 
 export const summarizeEngagementMetrics = (engagement: OfficeEngagement): OfficeEngagementMetrics => {
+  const usage = summarizeEngagementUsage(engagement.tasks);
   const progress = summarizeEngagementProgress(engagement.tasks);
   const productions = engagement.tasks.filter(isProduction);
   const reviews = engagement.tasks.filter((task) => task.kind === 'review-artifact');
@@ -98,6 +103,7 @@ export const summarizeEngagementMetrics = (engagement: OfficeEngagement): Office
       reviewed: reviews.filter((review) => review.assigneeId === personaId).length,
       averageScore: mean(scores),
       averageMinutes: mean(durations),
+      usage: usage.byAgent[personaId] ?? null,
     };
   }).sort((a, b) => b.produced - a.produced || a.alias.localeCompare(b.alias));
 
@@ -125,6 +131,7 @@ export const summarizeEngagementMetrics = (engagement: OfficeEngagement): Office
       ? 0
       : engagement.budget.consumedAiCalls / engagement.budget.maxAiCalls,
     elapsedMinutes: minutesBetween(startedAt, completedAt),
+    usage: usage.total,
     personas,
   };
 };
@@ -157,6 +164,15 @@ export const trackEngagementCompleted = (engagement: OfficeEngagement): void => 
         aiCallsConsumed: metrics.aiCallsConsumed,
         budgetUtilisation: Math.round(metrics.budgetUtilisation * 100) / 100,
         elapsedMinutes: metrics.elapsedMinutes ?? undefined,
+        tokens: metrics.usage.totalTokens ?? undefined,
+        estimatedCostUsd: metrics.usage.estimatedCostUsd ?? undefined,
+        usageByPersona: JSON.stringify(metrics.personas.map((persona) => ({
+          personaId: persona.personaId,
+          calls: persona.usage?.calls ?? 0,
+          tokens: persona.usage?.totalTokens ?? null,
+          estimatedCostUsd: persona.usage?.estimatedCostUsd ?? null,
+          latencyMs: persona.usage?.latencyMs ?? null,
+        }))),
         gateStatus: engagement.gateAssessment?.overallStatus,
         charterProvenance: engagement.charter.provenance,
         personas: metrics.personas

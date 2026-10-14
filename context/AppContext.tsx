@@ -65,9 +65,12 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const {
     createArtifact,
+    createArtifactConfirmed,
     createArtifactVersion,
+    createArtifactVersionConfirmed,
     getArtifact,
     updateArtifact,
+    updateArtifactConfirmed,
     deleteArtifact,
     getGroupedArtifactsByView,
     applyConsistencySuggestion,
@@ -115,15 +118,15 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
    * between renders instead of being recomputed every time.
    */
   const value = useMemo<AppContextType>(() => ({
-    projects, settings, isLoading, loadError, reload, addProject, getProject, ensureProjectArtifacts, runProjectCommand, deleteProject, createArtifact,
-    createArtifactVersion, updateArtifact, deleteArtifact, getArtifact, updateSettings, t, getGroupedArtifactsByView, updateProjectContext,
+    projects, settings, isLoading, loadError, reload, addProject, getProject, ensureProjectArtifacts, runProjectCommand, deleteProject, createArtifact, createArtifactConfirmed,
+    createArtifactVersion, createArtifactVersionConfirmed, updateArtifact, updateArtifactConfirmed, deleteArtifact, getArtifact, updateSettings, t, getGroupedArtifactsByView, updateProjectContext,
     applyConsistencySuggestion, toggleArtifactFavorite, findLatestArtifactByName, getArtifactVersions,
     restoreArtifactVersion, removeCorruptArtifacts, saveChatHistory, loadChatHistory, replaceChatHistory, rebuildArchitectureGraph,
     getArchitectureGraphFreshness, savePublicationPackages, persistenceStatus, persistenceMessage,
     logAgentAction, listAgentActions,
   }), [
-    projects, settings, isLoading, loadError, reload, addProject, getProject, ensureProjectArtifacts, runProjectCommand, deleteProject, createArtifact,
-    createArtifactVersion, updateArtifact, deleteArtifact, getArtifact, updateSettings, t, getGroupedArtifactsByView, updateProjectContext,
+    projects, settings, isLoading, loadError, reload, addProject, getProject, ensureProjectArtifacts, runProjectCommand, deleteProject, createArtifact, createArtifactConfirmed,
+    createArtifactVersion, createArtifactVersionConfirmed, updateArtifact, updateArtifactConfirmed, deleteArtifact, getArtifact, updateSettings, t, getGroupedArtifactsByView, updateProjectContext,
     applyConsistencySuggestion, toggleArtifactFavorite, findLatestArtifactByName, getArtifactVersions,
     restoreArtifactVersion, removeCorruptArtifacts, saveChatHistory, loadChatHistory, replaceChatHistory, rebuildArchitectureGraph,
     getArchitectureGraphFreshness, savePublicationPackages, persistenceStatus, persistenceMessage,

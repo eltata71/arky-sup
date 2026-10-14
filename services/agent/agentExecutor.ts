@@ -39,12 +39,13 @@ import { refuseUnconfirmedAction } from './agentConfirmationGate';
 import { logAgentEvent } from './agentLogger';
 import { matchTemplateFromInstruction, buildCustomTemplate } from './templateMatcher';
 import { reuseDeterministicArtifact } from './deterministicArtifactReuse';
-import type { AgentArtifactStore } from './agentExecutorContracts';
+import type { AgentArtifactStoreLike } from './agentExecutorContracts';
+import { confirmedResult, persistenceFailureMessage } from './agentPersistenceOutcome';
 import { runArtifactPatch } from './agentPatchAction';
 import type { AgentPersonaBriefing } from './agentContextComposer';
 import { agentGenerationOptions } from './agentPersonaComposer';
 import { recordAgentGeneration } from './agentGenerationTrace';
-export type { AgentArtifactStore } from './agentExecutorContracts';
+export type { AgentArtifactStore, AgentArtifactStoreLike } from './agentExecutorContracts';
 
 /** Callback fired as the action moves through phases. */
 export type AgentPhaseListener = (phase: AgentExecutionPhase, message: string) => void;
@@ -84,7 +85,7 @@ export interface AgentExecutorInput {
   /** Suggestions currently loaded for the artifact (if any). */
   pendingSuggestions?: ArtifactReviewSuggestion[];
   /** Persistence helpers — usually the context's `{ createArtifactVersion, updateArtifact }`. */
-  store: AgentArtifactStore;
+  store: AgentArtifactStoreLike;
   /** Optional memory persistence handlers — required only for `memory.save.*` actions. */
   memoryStore?: AgentMemoryStore;
   /**
@@ -281,16 +282,23 @@ export async function executeAgentAction(input: AgentExecutorInput): Promise<Age
     const generatedTrace = plan.actionType === 'artifact.regenerate' ? { generationTrace: generation.trace(newContent) } : {};
     try {
       if (target === 'current') {
-        store.updateArtifact(project.id, artifact.id, { content: newContent, ...generatedTrace });
+        const saved = confirmedResult(await store.updateArtifact(project.id, artifact.id, { content: newContent, ...generatedTrace }));
+        if (!saved.success || saved.status !== 'success') {
+          return { ...baseResult, status: 'failed', messages: [persistenceFailureMessage(saved)], errors: [saved.message ?? saved.status], validationResult: validation };
+        }
       } else {
         const { id: _omitId, version: _omitVersion, versionGroupId: _omitGroup, createdAt: _omitDate, ...rest } = artifact;
-        const newVersion = store.createArtifactVersion(project.id, artifact.versionGroupId, {
+        const saved = confirmedResult(await store.createArtifactVersion(project.id, artifact.versionGroupId, {
           ...rest,
           content: newContent,
           ...generatedTrace,
-        });
+        }));
         // The store must return the version it created before we report success.
-        if (!newVersion || !newVersion.id) {
+        if (!saved.success || saved.status !== 'success') {
+          return { ...baseResult, status: 'failed', messages: [persistenceFailureMessage(saved)], errors: [saved.message ?? saved.status], validationResult: validation };
+        }
+        const newVersion = saved.data;
+        if (!newVersion?.id) {
           throw new Error('La creación de nueva versión no devolvió un artefacto válido.');
         }
         newVersionId = newVersion.id;
@@ -603,6 +611,7 @@ async function executeArtifactCreate(
     });
     return {
       ...result,
+      aiCalls: generation.aiCalls(),
       messages: [friendly.userMessage || 'No pude generar el artefacto. Reintenta en unos segundos.'],
       errors: [friendly.message ?? String(err)],
     };
@@ -611,6 +620,7 @@ async function executeArtifactCreate(
   if (!generatedContent || generatedContent.trim().length === 0) {
     return {
       ...result,
+      aiCalls: generation.aiCalls(),
       messages: ['La IA no devolvió contenido para el nuevo artefacto.'],
       errors: ['agent.create.emptyContent'],
     };
@@ -635,6 +645,7 @@ async function executeArtifactCreate(
   if (!validation.passed) {
     return {
       ...result,
+      aiCalls: generation.aiCalls(),
       validationResult: validation,
       messages: ['La nueva versión no superó la validación mínima de calidad y no se aplicó.'],
       errors: [validation.summary],
@@ -691,7 +702,7 @@ async function executeArtifactCreate(
   emit('persisting', 'Persistiendo nuevo artefacto…');
   let newArtifact: Artifact;
   try {
-    newArtifact = store.createArtifact(project.id, {
+    const saved = confirmedResult(await store.createArtifact(project.id, {
       name: baseTemplate.name,
       type: baseTemplate.type,
       phase: baseTemplate.phase,
@@ -701,7 +712,11 @@ async function executeArtifactCreate(
       representation: baseTemplate.representation,
       content: finalContent,
       generationTrace: generation.trace(finalContent),
-    }, deterministicId ?? undefined);
+    }, deterministicId ?? undefined));
+    if (!saved.success || saved.status !== 'success') {
+      return { ...result, aiCalls: generation.aiCalls(), messages: [persistenceFailureMessage(saved)], errors: [saved.message ?? saved.status], validationResult: validation };
+    }
+    newArtifact = saved.data as Artifact;
     // Defensive: verify the store contract. If the persistence path is
     // broken (offline Firestore, optimistic update rolled back, …) we
     // surface a clean failure instead of silently telling the user the
@@ -712,6 +727,7 @@ async function executeArtifactCreate(
   } catch (err) {
     return {
       ...result,
+      aiCalls: generation.aiCalls(),
       messages: ['No pude persistir el nuevo artefacto. Reintenta en unos segundos.'],
       errors: [err instanceof Error ? err.message : String(err)],
     };
@@ -731,6 +747,7 @@ async function executeArtifactCreate(
 
   return {
     status: 'success',
+    aiCalls: generation.aiCalls(),
     newArtifactId: newArtifact.id,
     newArtifactVersionId: null,
     previousArtifactVersionId: input.artifact.id,

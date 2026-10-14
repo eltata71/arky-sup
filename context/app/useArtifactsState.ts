@@ -21,6 +21,7 @@ import type { ConsistencySuggestion } from '../../types';
 import type { Artifact, GroupedArtifacts } from '../../lib/artifacts';
 import type { Project } from '../../services/architectureProjects';
 import { artifactRepository } from '../../services/artifacts/infrastructure/ArtifactRepository';
+import type { PersistenceResult } from '../../services/persistence';
 import { observabilityService } from '../../services/observability';
 // Ruta de fichero, no barril: este hook está en el camino de arranque
 // (`AppContext`), y el barril de `services/artifacts` alcanza el motor de IA.
@@ -69,13 +70,16 @@ export const useArtifactsState = ({ setProjects, getProject, reporter, t }: Arti
    * segunda edición consecutiva de un artefacto no se escribía (F4-03;
    * `artifactRevisionFlow.test.tsx` lo fija).
    */
-  const run = useCallback((projectId: string, intent: ArtifactIntent, onPlanned?: (plan: ArtifactPlan) => void): Artifact | undefined => {
+  const run = useCallback((projectId: string, intent: ArtifactIntent, onPlanned?: (plan: ArtifactPlan) => void, onSettled?: (result: PersistenceResult<Artifact>) => void): Artifact | undefined => {
     const snapshot = getProject(projectId);
     const plan = planArtifactIntent(snapshot?.artifacts ?? [], intent);
     if (plan) onPlanned?.(plan);
     // Sin proyecto no hay dónde guardarlo, pero una intención que produce un
     // artefacto lo devuelve igual: es el contrato que siempre tuvo el contexto.
-    if (!plan || !snapshot) return plan?.produced;
+    if (!plan || !snapshot) {
+      onSettled?.({ status: 'validation-error', success: false, operationId: `artifact-${Date.now()}`, target: 'memory', message: 'No se encontró el proyecto o la operación de artefacto.' });
+      return plan?.produced;
+    }
     const previous = snapshot.artifacts;
     const next = plan.change(previous);
     const changedIds = changedArtifactIds(previous, next);
@@ -90,6 +94,7 @@ export const useArtifactsState = ({ setProjects, getProject, reporter, t }: Arti
       if (settlement.kind === 'confirmed') {
         updateArtifactsOf(projectId, artifacts =>
           markArtifactPersistence(withConfirmedRevisions(artifacts, confirmedRevisions), changedIds, 'success'));
+        onSettled?.({ ...result, status: 'success', success: true, data: plan.produced });
         return;
       }
       observabilityService.reportError(result.error ?? new Error(result.message), {
@@ -109,9 +114,11 @@ export const useArtifactsState = ({ setProjects, getProject, reporter, t }: Arti
       });
       if (settlement.kind === 'keep-generated') {
         updateArtifactsOf(projectId, artifacts => markArtifactPersistence(artifacts, settlement.artifactIds, settlement.remote));
+        onSettled?.({ ...result, success: false, data: plan.produced });
         return;
       }
       rollback();
+      onSettled?.({ ...result, success: false, data: plan.produced });
     }).catch(e => {
       observabilityService.reportError(e, {
         source: 'operation',
@@ -125,6 +132,7 @@ export const useArtifactsState = ({ setProjects, getProject, reporter, t }: Arti
       setPersistenceStatus('error');
       setPersistenceMessage(t('uiState.29'));
       rollback();
+      onSettled?.({ status: 'failed', success: false, operationId: `artifact-${Date.now()}`, target: 'supabase', error: e, message: e instanceof Error ? e.message : String(e) });
     });
     return plan.produced;
   }, [getProject, handleWriteResult, setPersistenceMessage, setPersistenceStatus, t, updateArtifactsOf, user]);
@@ -133,6 +141,16 @@ export const useArtifactsState = ({ setProjects, getProject, reporter, t }: Arti
     // Crear siempre produce un artefacto: el plan de `create` nunca es `null`.
     return run(projectId, { kind: 'create', draft, deterministicId }) as Artifact;
   }, [run]);
+
+  /** Agent and queue writes wait for the repository's confirmation. */
+  const createArtifactConfirmed = useCallback((projectId: string, draft: NewArtifactDraft, deterministicId?: string): Promise<PersistenceResult<Artifact>> =>
+    new Promise(resolve => { run(projectId, { kind: 'create', draft, deterministicId }, undefined, resolve); }), [run]);
+
+  const createArtifactVersionConfirmed = useCallback((projectId: string, versionGroupId: string, draft: NewArtifactDraft): Promise<PersistenceResult<Artifact>> =>
+    new Promise(resolve => { run(projectId, { kind: 'create-version', versionGroupId, draft }, undefined, resolve); }), [run]);
+
+  const updateArtifactConfirmed = useCallback((projectId: string, artifactId: string, updates: Partial<Artifact>): Promise<PersistenceResult<Artifact>> =>
+    new Promise(resolve => { run(projectId, { kind: 'update', artifactId, updates }, undefined, resolve); }), [run]);
 
   const createArtifactVersion = useCallback((projectId: string, versionGroupId: string, draft: NewArtifactDraft): Artifact => {
     return run(projectId, { kind: 'create-version', versionGroupId, draft }) as Artifact;
@@ -196,9 +214,12 @@ export const useArtifactsState = ({ setProjects, getProject, reporter, t }: Arti
 
   return {
     createArtifact,
+    createArtifactConfirmed,
     createArtifactVersion,
+    createArtifactVersionConfirmed,
     getArtifact,
     updateArtifact,
+    updateArtifactConfirmed,
     deleteArtifact,
     getGroupedArtifactsByView,
     applyConsistencySuggestion,

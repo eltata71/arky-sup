@@ -113,6 +113,21 @@ describe('executeAgentAction — artifact.create', () => {
     expect(result.newArtifactId).toBeFalsy();
   });
 
+  it('does not announce a created artifact when only a local draft survived offline', async () => {
+    const plan = planAgentAction({ intent: createIntent(), artifact: ANCHOR, project: PROJECT });
+    const result = await executeAgentAction({
+      confirmedByUser: true, plan, artifact: ANCHOR, project: PROJECT, settings: SETTINGS, history: [],
+      store: {
+        createArtifact: vi.fn(async () => ({ status: 'offline' as const, success: false, operationId: 'write-1', target: 'local-draft' as const })),
+        createArtifactVersion: vi.fn(async () => ({ status: 'failed' as const, success: false, operationId: 'unused', target: 'supabase' as const })),
+        updateArtifact: vi.fn(async () => ({ status: 'failed' as const, success: false, operationId: 'unused', target: 'supabase' as const })),
+      },
+    });
+    expect(result.status).toBe('failed');
+    expect(result.newArtifactId).toBeNull();
+    expect(result.messages.join(' ')).toMatch(/sólo en este navegador/);
+  });
+
   it('returns newArtifactId (not newArtifactVersionId) on success', async () => {
     const createArtifact = vi.fn((_projectId: string, data: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => ({
       ...data,

@@ -190,6 +190,8 @@ export type AgentExecutionPhase =
 /** Outcome of an executed action. Always preserves the previous version for rollback. */
 export interface AgentActionResult {
   status: 'success' | 'failed' | 'partial' | 'cancelled' | 'requires_selection';
+  /** Actual generation turns observed by the artifact pipeline. */
+  aiCalls?: number;
   /** Newly created artifact version, if any. */
   newArtifactVersionId: string | null;
   /**

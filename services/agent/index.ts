@@ -10,7 +10,7 @@ export { refineIntentWithLLM, LLM_REFINEMENT_THRESHOLD, __resetIntentClassifierC
 export { planAgentAction } from './agentPlanner';
 export { executeAgentAction } from './agentExecutor';
 export { processAssistantChat, processAssistantChatStream, type AgentConversationTurn } from './agentConversation';
-export type { AgentExecutorInput, AgentArtifactStore, AgentMemoryStore, AgentPhaseListener } from './agentExecutor';
+export type { AgentExecutorInput, AgentArtifactStore, AgentArtifactStoreLike, AgentMemoryStore, AgentPhaseListener } from './agentExecutor';
 export { extractMemoryBullets, fallbackBulletsFromInstruction, MEMORY_BULLET_LIMITS } from './memoryExtractor';
 export { logAgentEvent, getTrace, subscribeAgentTrace, newTraceId } from './agentLogger';
 export { detectProactiveSuggestion, type ProactiveSuggestion } from './proactiveDetector';
