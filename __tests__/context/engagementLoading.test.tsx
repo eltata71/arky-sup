@@ -49,10 +49,14 @@ describe('useEngagementLoading', () => {
     expect(hook.result.current.isResolving).toBe(false);
 
     act(() => { hook.result.current.retryLoad(); });
-    await waitFor(() => expect(hook.result.current.loadError).toBeNull());
+    // El error se limpia al empezar el reintento y la lectura termina después:
+    // esperar sólo a lo primero dejaba una carrera que fallaba 1 de cada 5.
+    await waitFor(() => {
+      expect(hook.result.current.loadError).toBeNull();
+      expect(hook.result.current.isResolving).toBe(false);
+    });
     expect(list).toHaveBeenCalledTimes(2);
     expect(engagementsRef.current).toEqual([engagement]);
-    expect(hook.result.current.isResolving).toBe(false);
   });
 
   it('a project that loaded is not asked again', async () => {

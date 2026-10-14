@@ -20,6 +20,8 @@ import {
   type CopilotTurnRoute,
 } from '../services/architectureOffice';
 import { describeTurnFailure, type TurnFailure } from './useAssistantTurns';
+import { useLazyAgentProfiles } from './useLazyAgentProfiles';
+import { useMemo } from 'react';
 
 export interface CopilotTurns {
   route(text: string, project: Project, history: ChatMessage[]): CopilotTurnRoute;
@@ -37,4 +39,15 @@ const TURNS: CopilotTurns = {
   describeFailure: describeTurnFailure,
 };
 
-export const useCopilotTurns = (): CopilotTurns => TURNS;
+/**
+ * Con las fichas del usuario: la orquestación y la consulta convocan a los
+ * agentes habilitados, cada uno con su voz configurada (plan de agentes, 16.1).
+ */
+export const useCopilotTurns = (): CopilotTurns => {
+  const profiles = useLazyAgentProfiles();
+  return useMemo(() => ({
+    ...TURNS,
+    orchestrate: (text, project, settings) => runCopilotOrchestration(text, project, settings, profiles),
+    consult: (question, project, initiatives, settings) => consultCopilot(question, project, initiatives, settings, profiles),
+  }), [profiles]);
+};

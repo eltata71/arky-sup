@@ -37,7 +37,8 @@ import {
   type ArtifactModification,
   type ModelFunctionCall,
 } from '../services/agent';
-import { chatWithProject, officePersonaForMessage } from '../services/architectureOffice';
+import { chatWithProject, officePersonaForMessage, type OfficeAgentProfile } from '../services/architectureOffice';
+import { useLazyAgentProfiles } from './useLazyAgentProfiles';
 import { useArtifactContextPorts } from './useArtifactContextPorts';
 
 export interface AgentTurnInput {
@@ -87,7 +88,8 @@ export const describeTurnFailure = (error: unknown): TurnFailure => {
   };
 };
 
-const withPersona = (input: AgentTurnInput) => ({ ...input, persona: officePersonaForMessage(input.question) });
+const withPersona = (input: AgentTurnInput, profiles?: readonly OfficeAgentProfile[]) =>
+  ({ ...input, persona: officePersonaForMessage(input.question, profiles) });
 
 const TURNS: AssistantTurns = {
   askAgent: (input) => processAssistantChat(withPersona(input)),
@@ -107,12 +109,19 @@ const TURNS: AssistantTurns = {
  */
 export function useAssistantTurns(project?: Project): AssistantTurns {
   const loadContextPorts = useArtifactContextPorts(project);
+  // Las fichas del usuario: el agente que responde habla con su voz
+  // configurada, y uno desactivado no firma (plan de agentes, 16.1).
+  const profiles = useLazyAgentProfiles();
   return useMemo<AssistantTurns>(() => (project ? {
     ...TURNS,
-    askAgent: async (input) => processAssistantChat(withPersona({ ...input, ports: await loadContextPorts() })),
+    askAgent: async (input) => processAssistantChat(withPersona({ ...input, ports: await loadContextPorts() }, profiles)),
     streamAgent: async (input, onDelta) =>
-      processAssistantChatStream(withPersona({ ...input, ports: await loadContextPorts() }), onDelta),
-  } : TURNS), [project, loadContextPorts]);
+      processAssistantChatStream(withPersona({ ...input, ports: await loadContextPorts() }, profiles), onDelta),
+  } : {
+    ...TURNS,
+    askAgent: (input) => processAssistantChat(withPersona(input, profiles)),
+    streamAgent: (input, onDelta) => processAssistantChatStream(withPersona(input, profiles), onDelta),
+  }), [project, loadContextPorts, profiles]);
 }
 
 /** What the answer says once a modification's write has been attempted. */

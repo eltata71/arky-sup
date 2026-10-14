@@ -11,11 +11,20 @@ import { useMemo } from 'react';
 import type { ArtifactBusinessMotivation, ArtifactPersonaComposer } from '../lib/artifacts';
 import type { Project } from '../services/architectureProjects';
 import type { ArtifactGenerationSupport } from '../services/ai';
-import { composeArtifactPersonaInstruction } from '../services/architectureOffice';
+import { artifactPersonaComposerFor } from '../services/architectureOffice';
 import { artifactGenerationSupport } from '../services/artifacts';
 import { useProjectBusinessMotivation } from './useProjectBusinessMotivation';
+import { useLazyAgentProfiles } from './useLazyAgentProfiles';
 
-export const useArtifactPersona = (): ArtifactPersonaComposer => composeArtifactPersonaInstruction;
+/**
+ * El compositor de persona con las fichas del usuario: quien genera un
+ * artefacto habla con su voz configurada, y un agente desactivado no firma
+ * (plan de agentes, 16.1).
+ */
+export const useArtifactPersona = (): ArtifactPersonaComposer => {
+  const profiles = useLazyAgentProfiles();
+  return useMemo(() => artifactPersonaComposerFor(profiles), [profiles]);
+};
 
 export interface ArtifactGenerationPorts {
   composePersonaInstruction: ArtifactPersonaComposer;
@@ -24,10 +33,6 @@ export interface ArtifactGenerationPorts {
   businessMotivation?: readonly ArtifactBusinessMotivation[];
 }
 
-const GENERATION_PORTS: ArtifactGenerationPorts = {
-  composePersonaInstruction: composeArtifactPersonaInstruction,
-  support: artifactGenerationSupport,
-};
 
 /**
  * With the project, the ports also carry the business need it answers (plan de
@@ -37,8 +42,9 @@ const GENERATION_PORTS: ArtifactGenerationPorts = {
  */
 export const useArtifactGenerationPorts = (project?: Project): ArtifactGenerationPorts => {
   const businessMotivation = useProjectBusinessMotivation(project);
-  return useMemo(
-    () => (businessMotivation.length ? { ...GENERATION_PORTS, businessMotivation } : GENERATION_PORTS),
-    [businessMotivation],
-  );
+  const composePersonaInstruction = useArtifactPersona();
+  return useMemo(() => {
+    const ports: ArtifactGenerationPorts = { composePersonaInstruction, support: artifactGenerationSupport };
+    return businessMotivation.length ? { ...ports, businessMotivation } : ports;
+  }, [businessMotivation, composePersonaInstruction]);
 };

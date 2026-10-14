@@ -28,6 +28,7 @@ import {
   planOfficeWorkstreams,
 } from './officeOrchestration';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
+import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
 import { chatWithProject } from './projectConversation';
 import { consultOffice } from './assistantConsultation';
 
@@ -85,15 +86,23 @@ export const runCopilotOrchestration = async (
   text: string,
   project: Project,
   settings: Settings,
+  /** Las fichas resueltas del usuario (plan de agentes, 16.1). */
+  profiles: readonly OfficeAgentProfile[] = [],
 ): Promise<string> => {
-  const plan = planOfficeWorkstreams(text);
+  const byAgent = new Map(profiles.map((profile) => [profile.agentId, profile]));
+  const plan = planOfficeWorkstreams(text, {
+    unavailable: profiles.filter((profile) => !profile.enabled).map((profile) => profile.agentId),
+  });
   const result = await executeOfficeOrchestration(
     plan,
     // The persona travels through the signature, never inside the prompt
     // text: the coordinator's brief is concatenated into every workstream
     // prompt, and an `@Alias` inside it would otherwise hijack the specialist
     // that mention resolution picks for the sub-call.
-    async (personaId, instruction) => chatWithProject(project, instruction, [], settings, personaId),
+    async (personaId, instruction) => {
+      const profile = byAgent.get(personaId);
+      return chatWithProject(project, instruction, [], settings, personaId, profile?.modelTier, profile);
+    },
   );
   const completed = result.workstreamResults.filter((item) => item.status === 'completed').length;
   return [
@@ -109,13 +118,16 @@ export const consultCopilot = (
   project: Project,
   initiatives: readonly BusinessInitiative[],
   settings: Settings,
+  /** Las fichas resueltas del usuario (plan de agentes, 16.1). */
+  profiles: readonly OfficeAgentProfile[] = [],
 ): Promise<string> => consultOffice({
   request: question,
   project,
   initiatives,
   settings,
-  chat: (carrier, message, history, currentSettings, personaOverride, modelTier) =>
-    chatWithProject(carrier, message, history, currentSettings, personaOverride as OfficeAgentId | undefined, modelTier),
+  profiles,
+  chat: (carrier, message, history, currentSettings, personaOverride, modelTier, profile) =>
+    chatWithProject(carrier, message, history, currentSettings, personaOverride as OfficeAgentId | undefined, modelTier, profile),
 });
 
 /**

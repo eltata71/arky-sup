@@ -32,6 +32,7 @@ import { newPrefixedId } from '../../../lib/ids';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../domain/officeAgentPersonas';
 import { buildOfficePersonaBriefing } from '../domain/officePersonaBriefing';
+import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 import type {
   OfficeConsolidateOutcome,
@@ -55,6 +56,8 @@ export type OfficePersonaInvoker = (
   personaId: OfficeAgentId,
   prompt: string,
   project: Project,
+  /** La ficha resuelta del agente (`getProfile`), para su prompt de sistema. */
+  profile?: OfficeAgentProfile,
 ) => Promise<string>;
 
 export interface OfficeRunnerAdapterDeps {
@@ -72,6 +75,11 @@ export interface OfficeRunnerAdapterDeps {
   onProgress?: (engagement: OfficeEngagement) => void;
   /** Why the project exists (the initiatives it answers); the Office cannot resolve the portfolio itself. */
   getBusinessMotivation?: (project: Project) => readonly ArtifactBusinessMotivation[];
+  /**
+   * La ficha resuelta de un agente, cuando quien monta el runner la tiene. Sin
+   * ella el agente produce con su persona de fábrica (plan de agentes, 16.1).
+   */
+  getProfile?: (agentId: OfficeAgentId) => OfficeAgentProfile | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,7 +198,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       // Quien firma la tarea lo decide la tarea. Resolverlo del texto —que
       // empieza por el brief del usuario— dejaba que un «@Carmen» en el brief
       // cambiara el autor, y sin mención firmaba Arky (plan de agentes, A7).
-      resolvePersona: () => buildOfficePersonaBriefing(task.assigneeId),
+      resolvePersona: () => buildOfficePersonaBriefing(task.assigneeId, deps.getProfile?.(task.assigneeId)),
       businessMotivation: deps.getBusinessMotivation?.(project),
       actor: {
         id: task.assigneeId,
@@ -348,6 +356,7 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         task.assigneeId,
         reviewPrompt,
         project!,
+        deps.getProfile?.(task.assigneeId),
       );
       const parsed = parseStructured<ModelCritique>(raw);
       if (parsed.ok) critique = parsed.value;
@@ -445,6 +454,7 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
         task.assigneeId,
         consolidationPrompt,
         project,
+        deps.getProfile?.(task.assigneeId),
       );
       return {
         status: 'success',

@@ -336,8 +336,9 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         getProject: () => projectsRef.current.find((candidate) => candidate.id === engagement.projectId),
         getSettings: () => settingsRef.current,
         getBusinessMotivation: (project) => describeAttentionMotivation(project, initiativesRef.current),
+        getProfile: agentConfiguration.getProfile,
         store: { createArtifact, createArtifactVersion, updateArtifact },
-        invokePersona: async (personaId: OfficeAgentId, prompt, project) => {
+        invokePersona: async (personaId: OfficeAgentId, prompt, project, profile) => {
           const { chatWithProject } = await loadConversation();
           return chatWithProject(
             project,
@@ -345,8 +346,9 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             [],
             settingsRef.current,
             personaId,
-            // El nivel configurado en la ficha del agente, no el de fábrica.
-            agentConfiguration.tiers[personaId],
+            // La ficha del agente: su voz y su nivel de modelo, no los de fábrica.
+            profile?.modelTier,
+            profile,
           );
         },
         persist: persistCheckpoint,
