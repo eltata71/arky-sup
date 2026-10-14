@@ -47,15 +47,16 @@ const MEMORY_PATTERNS: RegExp[] = [
  * intent that does NOT require an active artifact: it fires from the global
  * copilot view where `ctx.artifact === null`.
  */
+const CREATE_NOUNS = '(diagrama|documento|artefacto|vista|modelo|mapa|resumen|grafo|esquema|plantilla|brief|adr|informe|reporte|matriz|especificaci[oó]n|nfr)';
+const CREATE_DET = '(?:(?:un|una|el|la|nuevo|nueva|otro|otra)\\s+){0,2}';
+const createPattern = (verbs: string): RegExp => new RegExp(`\\b(${verbs})\\s+${CREATE_DET}${CREATE_NOUNS}\\b`);
 const CREATE_PATTERNS: RegExp[] = [
-  /\b(crea|cr[eé]ame|cre[ae]r|crea(r)?nos)\s+(un|una|el|la|nuevo|nueva|otro|otra)?\s*(diagrama|documento|artefacto|vista|modelo|mapa|resumen|grafo|esquema|plantilla|brief)\b/,
-  /\b(gener(a|ar|emos|en))\s+(un|una|el|la|nuevo|nueva|otro|otra)?\s*(diagrama|documento|artefacto|vista|modelo|mapa|resumen|grafo|esquema)\b/,
-  /\b(constru(ye|ir|imos))\s+(un|una|el|la|nuevo|nueva)?\s*(diagrama|documento|artefacto|vista|modelo)\b/,
-  /\b(arma(me)?|prepara(me)?|haz(me)?|dise[ñn]a(me)?|elabora(me)?)\s+(un|una|el|la|nuevo|nueva)?\s*(diagrama|documento|artefacto|vista|modelo|mapa|resumen|grafo)\b/,
-  /\bnecesito\s+(un|una|el|la|otro|otra)?\s*(diagrama|documento|artefacto|vista|modelo|mapa|resumen)\b/,
-  /\bquiero\s+(un|una|el|la|otro|otra)?\s*(diagrama|documento|artefacto|vista|modelo|mapa|resumen)\b/,
-  /\bagrega(r|me)?\s+(un|una|el|la|nuevo|nueva|otro|otra)?\s*(diagrama|documento|artefacto|vista|modelo|mapa|resumen)\b/,
-  /\b(añade|anade)\s+(un|una|el|la|nuevo|nueva|otro|otra)?\s*(diagrama|documento|artefacto|vista|modelo|mapa|resumen)\b/,
+  createPattern('crea|cr[eé]ame|cre[ae]r|crea(r)?nos'),
+  createPattern('gener(a|ar|emos|en)'),
+  createPattern('constru(ye|ir|imos)'),
+  createPattern('arma(me)?|prepara(me)?|haz(me)?|dise[ñn]a(me)?|elabora(me)?|redacta(me)?|escribe(me)?'),
+  createPattern('necesito|quiero'),
+  createPattern('agrega(r|me)?|a[ñn]ade'),
 ];
 
 const RULES: PatternRule[] = [
@@ -77,6 +78,7 @@ const RULES: PatternRule[] = [
       /\b(en|sobre|para) (todos|todas) los? (artefactos|diagramas|documentos|vistas)\b/,
       /\b(en|para) (los|las) (diagramas|artefactos) c4\b/,
       /\b(en|para) todos? los? artefactos\b/,
+      /\b(actualiza|modifica|cambia|ajusta|corrige|renombra|revisa|aplica)\w*( a)? (todos|todas) (los|las) (artefactos|diagramas|documentos|vistas)\b/,
       /\bpropag(a|ar) (esto|este cambio|la convenci[oó]n|el cambio)\b/,
     ],
     baseConfidence: 0.82,
@@ -89,7 +91,7 @@ const RULES: PatternRule[] = [
       /\bregener(a|ar|alo|emos)\b/,
       /\bvuelve a (generar|crear|construir|hacer)\b/,
       /\bgener(a|ar) (de nuevo|otra vez|otra version)\b/,
-      /\brehacer (este|el) (artefacto|diagrama|documento)\b/,
+      /\b(rehacer|rehaz|rehaga)\w* (completo )?(este|el|la) (artefacto|diagrama|documento)\b/,
       /\brecrear (este|el) (artefacto|diagrama|documento)\b/,
     ],
     baseConfidence: 0.85,
@@ -111,7 +113,7 @@ const RULES: PatternRule[] = [
   {
     type: 'artifact.improve',
     patterns: [
-      /\bmejora (este|el|este?) (artefacto|diagrama|documento)\b/,
+      /\bmejora (este|el|la|esta) (artefacto|diagrama|documento|secci[oó]n|resumen)\b/,
       /\bmej[oó]ralo\b/,
       /\boptimiza (este|el) (artefacto|diagrama|documento)\b/,
       /\bperfecciona (este|el) (artefacto|diagrama|documento)\b/,
@@ -142,7 +144,7 @@ const RULES: PatternRule[] = [
   {
     type: 'artifact.createVersion',
     patterns: [
-      /\bcrea (una )?nueva versi[oó]n\b/,
+      /\b(crea|guarda|graba|registra)(r)? (una )?nueva versi[oó]n\b/,
       /\bgener(a|ar) (una )?nueva versi[oó]n\b/,
       /\bversiona (esto|este artefacto)\b/,
     ],
@@ -153,7 +155,7 @@ const RULES: PatternRule[] = [
   {
     type: 'artifact.explainOnly',
     patterns: [
-      /^\s*(explica|expl[ií]came|qu[eé] (es|hace|representa)|c[oó]mo funciona|p[oó]r qu[eé])\b/,
+      /^\s*(explica|expl[ií]came|cu[eé]ntame|qu[eé] (es|hace|representa|significa)|c[oó]mo funciona|p[oó]r qu[eé])(?=\s|$)/,
       /\bdetalla (este|el) (artefacto|diagrama|documento)\b/,
     ],
     baseConfidence: 0.7,
@@ -214,7 +216,7 @@ export function classifyAgentIntent(userInput: string, ctx: AgentContext): Agent
   // Memory-save intents take priority and don't require an active artifact
   // — the global/project scopes work from anywhere. We resolve them first so
   // a user can capture context even on the project landing page.
-  if (MEMORY_PATTERNS.some((re) => re.test(normalised))) {
+  if (!/\bnueva versi[oó]n\b/.test(normalised) && MEMORY_PATTERNS.some((re) => re.test(normalised))) {
     return classifyMemorySave(trimmed, normalised, ctx, fallback);
   }
 
@@ -234,7 +236,7 @@ export function classifyAgentIntent(userInput: string, ctx: AgentContext): Agent
   if (!top) return fallback;
 
   // If the user explicitly said "no version" → bias to current.
-  const explicitCurrent = /\b(en|sobre) (el|este) (mismo|actual)\b|\bsin (crear )?nueva versi[oó]n\b/.test(normalised);
+  const explicitCurrent = /\b(en|sobre) (el|este) (mismo|actual)\b|\bsobrescrib\w*\b|\bsin (crear )?nueva versi[oó]n\b/.test(normalised);
   const suggestedTarget: AgentIntent['suggestedTarget'] = explicitCurrent ? 'current' : 'new_version';
 
   // Confidence boost when the message also references the artifact ("este diagrama"…).
@@ -324,7 +326,7 @@ function resolveMemoryScope(normalised: string, ctx: AgentContext): MemoryScope 
   if (/\b(memoria|contexto) (del|de este) (artefacto|diagrama|documento)\b|\b(del|de este) artefacto\b/.test(normalised)) {
     return ctx.artifact ? 'artifact' : 'project';
   }
-  if (/\b(memoria|contexto) (del|de este) proyecto\b|\b(del|de este) proyecto\b/.test(normalised)) return 'project';
+  if (/\b(memoria|contexto) (del|de este) proyecto\b|\b(del|de este|para este|en este) proyecto\b/.test(normalised)) return 'project';
   // No explicit scope. When the user is anchored on an artifact and references
   // it implicitly, prefer artifact; otherwise project.
   if (ctx.artifact && /\b(este|aqu[ií]|aca|ahora)\b/.test(normalised)) return 'artifact';
