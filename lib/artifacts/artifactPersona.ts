@@ -105,6 +105,8 @@ export interface ArtifactContextPorts {
 /** Options of an artifact generation. */
 export interface ArtifactGenerationOptions extends ArtifactContextPorts {
   onPhase?: ArtifactGenerationPhaseListener;
+  /** Called once for each model generation attempt in the artifact pipeline. */
+  onModelCall?: () => void;
   architectureGraphPromptBlock?: string;
   /** Composes the Office persona over the base instruction; without it the base goes as it is. */
   composePersonaInstruction?: ArtifactPersonaComposer;

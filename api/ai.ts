@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import type { AgentInvocationUsage } from '../lib/ai/agentUsage.js';
 import { authenticateProxyCaller } from './_shared/authenticateProxyCaller.js';
 import { toGeminiSchema, toResponseFormat } from '../services/ai/schema/index.js';
 import type { IncomingMessage } from 'node:http';
@@ -52,7 +53,10 @@ interface AiProxyRequestBody {
 
 interface OpenRouterChatResponse {
   choices?: Array<{ message?: { content?: string } }>;
+  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
 }
+
+interface ProxyTextResult { text: string; usage: AgentInvocationUsage | null }
 
 const RATE_LIMIT_ENV = 'AI_PROXY_MAX_REQUESTS_PER_WINDOW';
 const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
@@ -122,7 +126,7 @@ const callGemini = async (
   apiKey: string,
   body: AiProxyRequestBody,
   model: string,
-): Promise<string> => {
+): Promise<ProxyTextResult> => {
   const contents = body.contents ?? (typeof body.prompt === 'string' ? body.prompt : '');
   const config: Record<string, unknown> = {};
   if (typeof body.systemInstruction === 'string') config.systemInstruction = body.systemInstruction;
@@ -142,14 +146,23 @@ const callGemini = async (
     contents: contents as never,
     config,
   });
-  return response.text || '';
+  const metadata = response.usageMetadata;
+  return {
+    text: response.text || '',
+    usage: metadata ? {
+      promptTokens: metadata.promptTokenCount,
+      completionTokens: metadata.candidatesTokenCount,
+      totalTokens: metadata.totalTokenCount,
+      cachedPromptTokens: metadata.cachedContentTokenCount,
+    } : null,
+  };
 };
 
 const callOpenRouter = async (
   apiKey: string,
   body: AiProxyRequestBody,
   model: string,
-): Promise<string> => {
+): Promise<ProxyTextResult> => {
   const prompt = typeof body.prompt === 'string' && body.prompt.length > 0
     ? body.prompt
     : contentsToPrompt(body.contents);
@@ -190,7 +203,14 @@ const callOpenRouter = async (
   }
 
   const data = (await response.json()) as OpenRouterChatResponse;
-    return data.choices?.[0]?.message?.content || '';
+  return {
+    text: data.choices?.[0]?.message?.content || '',
+    usage: data.usage ? {
+      promptTokens: data.usage.prompt_tokens,
+      completionTokens: data.usage.completion_tokens,
+      totalTokens: data.usage.total_tokens,
+    } : null,
+  };
   };
 
   /* ------------------------------------------------------------------ *
@@ -454,11 +474,11 @@ const callOpenRouter = async (
       return;
     }
 
-    const text = provider === 'openrouter'
+    const result = provider === 'openrouter'
       ? await callOpenRouter(apiKey, body, model)
       : await callGemini(apiKey, body, model);
 
-    sendJson(res, 200, { requestId, text, provider, model });
+    sendJson(res, 200, { requestId, ...result, provider, model });
   } catch (error) {
     const status = error instanceof ProviderHttpError ? error.status : readStatus(error);
     const retryAfterMs = readProviderRetryAfterMs(error) ?? (status === 429 ? 30_000 : status >= 500 ? 5_000 : undefined);

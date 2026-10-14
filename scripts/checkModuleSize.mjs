@@ -51,6 +51,9 @@ export const DEFAULT_MAX_BYTES = 20_000;
  */
 export const BYTE_CEILINGS = {
   'App.tsx': 20_110, // 11.5: ruta lazy, ruta y entrada de paleta de /portfolio
+  // Plan de agentes 15.2/17.3/17.4: nuevos metadatos de consumo y recibos
+  // de persistencia en las rutas existentes; la política vive en módulos propios.
+  'services/architectureOffice/application/officeOrchestration.ts': 20193, // 17.3: aplicación de presupuesto y cancelación
   /**
    * +133 bytes and +1 line, deliberately: `chatWithProject` gained a
    * `modelTier` parameter so the Architecture Office can honour the model tier
@@ -61,8 +64,8 @@ export const BYTE_CEILINGS = {
    * trace attribute a per-agent decision to the user's own preference.
    */
   // F6-01: fuera sus delegados públicos y su fábrica de cliente, que sólo leían las pruebas (94 962 → 92638)
-  'services/ai/generation/legacyTransport.ts': 22100, // plan clase mundial 10.3: +1 970, la vista previa en streaming de la ruta de texto, con vuelta al camino completo si el flujo falla
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 81400, // 11.1 ArchiMate: +100 bytes, el tipo mermaid-archimate en los mapas de la generación · , // plan clase mundial 10.3: +106, `onPartial` viaja al transporte y nunca en diagramas · plan diagramas 8.2c: −4 001, la ruta IR de flujo y React Flow sale a `diagram/structuredDiagramArtifactGeneration` · 8.2b anterior: 85 101, // plan diagramas 8.2b: +842, el brief de texto y las reglas de formato sustituyen instrucciones de tamaño y protocolos que se contradecían · plan diagramas 8.2a: −2 248, la evaluación del texto sale a `diagram/diagramTextAssessment` · plan artefactos 7.5a: +415, registra los bloques complementarios en el manifiesto de contexto · plan diagramas 6.3: 86 126 → 86092 · plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
+  'services/ai/generation/legacyTransport.ts': 23444, // plan clase mundial 10.3: +1 970, la vista previa en streaming de la ruta de texto, con vuelta al camino completo si el flujo falla
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 81556, // 11.1 ArchiMate: +100 bytes, el tipo mermaid-archimate en los mapas de la generación · , // plan clase mundial 10.3: +106, `onPartial` viaja al transporte y nunca en diagramas · plan diagramas 8.2c: −4 001, la ruta IR de flujo y React Flow sale a `diagram/structuredDiagramArtifactGeneration` · 8.2b anterior: 85 101, // plan diagramas 8.2b: +842, el brief de texto y las reglas de formato sustituyen instrucciones de tamaño y protocolos que se contradecían · plan diagramas 8.2a: −2 248, la evaluación del texto sale a `diagram/diagramTextAssessment` · plan artefactos 7.5a: +415, registra los bloques complementarios en el manifiesto de contexto · plan diagramas 6.3: 86 126 → 86092 · plan diagramas 6.2: −766, los prompts piden clases de rol en vez de colores · plan diagramas 6.1: 92 638 → 86 892, el camino C4 salió a `generation/diagram/c4ArtifactGeneration.ts`
   'components/ReactFlowCanvas.tsx': 73772, // 12.1: barra, inspector y descripción accesible a subcomponentes · // plan diagramas 8.4c: −943, la leyenda sale a `buildLegendData` · plan diagramas 4.1: +237, `onNodeDoubleClick` para abrir el nivel C4 siguiente // plan diagramas 3.3: +91, rejilla de 8 px al arrastrar (ADR-007) // 2.3: −122, `exportImage` nombra `CanvasExportOptions`
   'components/ProjectHub.tsx': 75746, // 13.2: +530 B por t() en los textos visibles; el archivo queda en 976 líneas y el catálogo/menú siguen separados
   'services/ai/prompts/diagramPrompts.ts': 45933, // 11.1 ArchiMate: +995 bytes, el prompt de ArchiMate (capas, viewpoints, relaciones) · , // plan artefactos 7.5a: +673, el puerto onContextCaptured llega a los tres constructores (la captura vive en contextManifestCapture) · plan diagramas 6.4: 52 524 → 44265, fuera tres constructores de prompts sin llamantes y el bloque `review` · plan diagramas 6.3: 57 600 → 52524, fuera los prompts de crítica y refinamiento que nadie llamaba
@@ -89,9 +92,9 @@ export const BYTE_CEILINGS = {
    * refusal live in `agentConfirmationGate`, which is why the file got shorter
    * while gaining a guarantee.
    */
-  'services/agent/agentExecutor.ts': 37846, // plan artefactos 7.3d: +31, las mejoras del agente reciben motivación y conversación · plan artefactos 7.4b: −503, el cambio puntual sale a `agentPatchAction` (parche de documento o reescritura) · plan artefactos 7.3b: +30, las generaciones del agente reciben las decisiones de su historial · 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente · 7.1a: −4 125, la validación de contenido salió a `agentContentValidation` · 7.1b: +228, el cambio puntual se niega si el modelo no puede ver el artefacto entero
+  'services/agent/agentExecutor.ts': 38989, // plan artefactos 7.3d: +31, las mejoras del agente reciben motivación y conversación · plan artefactos 7.4b: −503, el cambio puntual sale a `agentPatchAction` (parche de documento o reescritura) · plan artefactos 7.3b: +30, las generaciones del agente reciben las decisiones de su historial · 6.5: +154, la motivación de la iniciativa llega a las dos generaciones del agente · 7.1a: −4 125, la validación de contenido salió a `agentContentValidation` · 7.1b: +228, el cambio puntual se niega si el modelo no puede ver el artefacto entero
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'components/AssistantPanel.tsx': 38069, // 10.4b: +974, «Deshacer» en las tres escrituras de IA del asistente (modificar, versión nueva, agente) · plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
+  'components/AssistantPanel.tsx': 38252, // 10.4b: +974, «Deshacer» en las tres escrituras de IA del asistente (modificar, versión nueva, agente) · plan artefactos 7.3b: +88, la decisión que se acaba de decir se ofrece como memoria del proyecto · plan diagramas 1.4: +145, los cambios del copiloto pasan por `withDiagramContent` (el lienzo no los mostraba) // F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: `interpretArtifactModification` y las llamadas de IA salieron a `useAssistantTurns`
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/Workspace.tsx': 20625, // 13.2: mensajes de la cola y de generación traducidos; +70 B medidos // 12.0: el lienzo del artefacto se carga con React.lazy + Suspense // 10.2: la ejecución y el diagnóstico pasan a la cola persistente; 33 921 → 20 097 bytes. El pequeño margen sobre 20 KB evita un techo de líneas innecesario.
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 35730, // 12.7: +5 B, la capa de IA entra por su puerta diferida (`services/ai/lazy`) · plan diagramas 8.4c: +274, sin medida no hay pasadas de refinamiento · plan diagramas 8.2d: +148, compara la fidelidad con el IR que persistirá, incluidos sus metadatos · plan artefactos 7.5a: +38, la crítica y el refinamiento reciben onContextCaptured · plan artefactos 7.3c: la petición extiende ArtifactContextPorts · 7.3b · plan artefactos 7.3a: +27, la crítica y el refinamiento reciben el artefacto previo y la motivación (una sola llamada compartida) · plan artefactos 7.1a: −2 470, la conservación de contenido es la política común de `lib/artifacts` · plan diagramas 6.1: +536, acepta y devuelve el IR para no reparsear el texto (la reescritura por dialecto salió a `diagramContentRewrite`) · F3-07: el import de `Artifact`/`Project` nombra su módulo · F6-03 corte 4: rutas de `domain/`/`application/` y el tipo `ArtifactRefinementMode` importado del dominio
@@ -104,7 +107,7 @@ export const BYTE_CEILINGS = {
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/memory/ChatHistoryPanel.tsx': 33413, // 13.2: títulos visibles de historial pasan por t(); +59 B medidos.
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
-  'components/copilot/ProjectCopilotChatModal.tsx': 25118, // 10.4b: +473, «Deshacer» tras la acción confirmada del copiloto · F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
+  'components/copilot/ProjectCopilotChatModal.tsx': 25205, // 10.4b: +473, «Deshacer» tras la acción confirmada del copiloto · F6-03 corte 2b: `runProjectCommand` y `kind: '…'` en lugar de `updateProject(parcial)` // F5-02: el enrutado del turno salió a `routeCopilotTurn`
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/artifacts/fable/FableDiagramCanvas.tsx': 32954, // 13.1: duraciones desde MOTION (+90 B)
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
@@ -194,7 +197,8 @@ export const BYTE_CEILINGS = {
  * table — the list is meant to empty.
  */
 export const CEILINGS = {
-  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1458, // 11.1 ArchiMate: +3 líneas · , // plan diagramas 8.2c: −69, la ruta IR de flujo y React Flow sale a la vertical de diagramas · 8.2b anterior: 1 520, // plan diagramas 8.2b: +6 líneas para incluir el brief común y atender a la audiencia · plan diagramas 8.2a: 1 568 → 1 514 · plan diagramas 6.3: 1 571 → 1568 · plan diagramas 6.2: 1 592 → 1571 · plan diagramas 6.1: 1 723 → 1 592, el camino C4 salió a la vertical de diagramas · F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
+  'api/ai.ts': 510, // 15.2: proxy con uso medido, modelo y traza
+  'services/ai/generation/artifacts/artifactGenerationEngine.ts': 1462, // 11.1 ArchiMate: +3 líneas · , // plan diagramas 8.2c: −69, la ruta IR de flujo y React Flow sale a la vertical de diagramas · 8.2b anterior: 1 520, // plan diagramas 8.2b: +6 líneas para incluir el brief común y atender a la audiencia · plan diagramas 8.2a: 1 568 → 1 514 · plan diagramas 6.3: 1 571 → 1568 · plan diagramas 6.2: 1 592 → 1571 · plan diagramas 6.1: 1 723 → 1 592, el camino C4 salió a la vertical de diagramas · F6-01: 1 786 → 1 723 (era `services/geminiService.ts`, 1 921)
   'components/ReactFlowCanvas.tsx': 1468, // 12.1: barra, inspector y descripción accesible fuera del lienzo
   'services/diagram/quality/diagramQualityService.ts': 575,
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
@@ -207,7 +211,7 @@ export const CEILINGS = {
   // por debajo del techo y nadie fijó el número, así que la deuda seguía
   // apuntada como abierta mientras el gate estaba en verde. Un presupuesto que
   // no se baja cuando se gana es un presupuesto que permite volver a subir.
-  'services/agent/agentExecutor.ts': 904, // 7.3d: los puertos, una vez para todas las llamadas · 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
+  'services/agent/agentExecutor.ts': 918, // 7.3d: los puertos, una vez para todas las llamadas · 7.4b: `agentPatchAction` · 6.5: la motivación de la iniciativa · 7.1a: `agentContentValidation` · 7.1b: la negativa a reescribir lo que no se ve entero
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/ProjectsPage.tsx': 891, // F5-02
   'services/diagram/mermaidToIR.ts': 747, // 11.1 ArchiMate: +7 líneas · , // plan diagramas 8.3b: 873 → 740 · plan diagramas 8.2a: +2 · plan diagramas 2.1
@@ -217,7 +221,7 @@ export const CEILINGS = {
   'components/CustomArtifactRequestModal.tsx': 687, // 12.1: estado y trazabilidad salen a components/artifacts/requestModal/ · 10.1: las etiquetas de fase salen al catálogo
   'services/publicationPipeline/PublicationPipelineTypes.ts': 810,
   'constants.ts': 1006, // 11.5: dos plantillas · 11.1 ArchiMate: plantillas ArchiMate · , // 11.0: una línea más por plantilla
-  'components/AssistantPanel.tsx': 744, // 10.4b: +12 · plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
+  'components/AssistantPanel.tsx': 746, // 10.4b: +12 · plan diagramas 1.4: +1, el import de `withDiagramContent` // F5-02
   'components/artifacts/fable/FableDiagramCanvas.tsx': 790,
   'pages/SDDProcessView.tsx': 788,
   'services/artifacts/application/artifactRefinementOrchestrator.ts': 732, // plan diagramas 8.4c: +5, sin medida no hay pasadas · plan diagramas 8.2d: +2 para comparar el IR que persistirá · 7.3c: la petición extiende ArtifactContextPorts · 7.3a: la crítica y el refinamiento comparten una llamada · 7.1a: `lib/artifacts/contentPreservation`

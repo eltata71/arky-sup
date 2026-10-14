@@ -161,6 +161,24 @@ describe('executeAgentAction', () => {
     expect(result.status).toBe('success');
   });
 
+  it('waits for a rejected remote write before reporting an applied change', async () => {
+    const plan = planAgentAction({ intent: baseIntent({ type: 'artifact.patch' }), artifact: ARTIFACT });
+    const phases: string[] = [];
+    const result = await executeAgentAction({
+      confirmedByUser: true, plan, artifact: ARTIFACT, project: PROJECT, settings: SETTINGS, history: [],
+      targetOverride: 'current',
+      onPhase: (phase) => phases.push(phase),
+      store: {
+        createArtifactVersion: vi.fn(async () => ({ status: 'failed' as const, success: false, operationId: 'unused', target: 'supabase' as const })),
+        updateArtifact: vi.fn(async () => ({ status: 'conflict' as const, success: false, operationId: 'write-1', target: 'supabase' as const, message: 'revisión obsoleta' })),
+      },
+    });
+    expect(result.status).toBe('failed');
+    expect(result.messages.join(' ')).toMatch(/otra versión/);
+    expect(result.messages.join(' ')).not.toMatch(/Cambios aplicados/);
+    expect(phases).not.toContain('done');
+  });
+
   it('speaks the patch in the persona its caller resolves from the instruction, offering the artifact tool', async () => {
     const plan = planAgentAction({ intent: baseIntent({ type: 'artifact.patch' }), artifact: ARTIFACT });
     const resolvePersona = vi.fn((_message: string) => ({

@@ -39,7 +39,7 @@ const INTERRUPTED_KEY = 'arky-interrupted-generations';
 export function GenerationQueueProvider({ children }: { children: React.ReactNode }) {
   const t = useUiTranslation();
   const { user, isLoading: authLoading } = useAuth();
-  const { createArtifact, createArtifactVersion, updateArtifact } = useAppContext();
+  const { createArtifactConfirmed, createArtifactVersionConfirmed, updateArtifactConfirmed } = useAppContext();
   const { addToast } = useToast();
   const { offerUndo } = useAiUndo();
   const navigate = useNavigate();
@@ -148,12 +148,17 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
           const plan = planGenerationWrite(request.template, result, request.action, request.existingArtifact);
           let artifactId: string;
           if (plan.kind === 'replace') {
-            updateArtifact(request.project.id, plan.artifactId, plan.updates);
+            const saved = await updateArtifactConfirmed(request.project.id, plan.artifactId, plan.updates);
+            if (!saved.success || saved.status !== 'success') throw new Error(saved.message ?? 'No se confirmó el guardado del artefacto.');
             artifactId = plan.artifactId;
           } else if (plan.kind === 'new_version') {
-            artifactId = createArtifactVersion(request.project.id, plan.versionGroupId, plan.draft).id;
+            const saved = await createArtifactVersionConfirmed(request.project.id, plan.versionGroupId, plan.draft);
+            if (!saved.success || saved.status !== 'success' || !saved.data?.id) throw new Error(saved.message ?? 'No se confirmó el guardado de la versión.');
+            artifactId = saved.data.id;
           } else {
-            artifactId = createArtifact(request.project.id, plan.draft).id;
+            const saved = await createArtifactConfirmed(request.project.id, plan.draft);
+            if (!saved.success || saved.status !== 'success' || !saved.data?.id) throw new Error(saved.message ?? 'No se confirmó el guardado del artefacto.');
+            artifactId = saved.data.id;
           }
           update(current => changeGenerationJob(current, job.id, { status: 'done', phase: 'persistence', artifactId, finishedAt: Date.now() }));
           // Un cambio sobre un artefacto existente se puede deshacer (10.4b); una creación nueva no tiene «antes».
@@ -185,7 +190,7 @@ export function GenerationQueueProvider({ children }: { children: React.ReactNod
         }
       })();
     }
-  }, [jobs, update, addToast, createArtifact, createArtifactVersion, updateArtifact, navigate, retry, offerUndo, t]);
+  }, [jobs, update, addToast, createArtifactConfirmed, createArtifactVersionConfirmed, updateArtifactConfirmed, navigate, retry, offerUndo, t]);
 
   return <GenerationQueueContext.Provider value={{ jobs, enqueue, cancel, retry, open, panelOpen, setPanelOpen }}>{children}</GenerationQueueContext.Provider>;
 }

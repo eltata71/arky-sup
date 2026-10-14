@@ -25,6 +25,7 @@ import {
 import { buildOfficePersonaInstruction } from '../domain/officePersonaBriefing';
 import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
+import type { AgentInvocationResult } from '../../../lib/ai/agentUsage';
 
 /** The project instruction, framed by the persona and the Office's standards. */
 export async function composeProjectChatInstruction(
@@ -64,5 +65,27 @@ export async function chatWithProject(
     history,
     settings,
     modelTier,
+  });
+}
+
+/** Coordinated calls retain provider usage; ordinary chat keeps its text API. */
+export async function chatWithProjectMeasured(
+  project: Project,
+  message: string,
+  history: readonly ProjectChatTurn[],
+  settings: Settings,
+  personaOverride?: OfficeAgentId,
+  modelTier: ModelTier = 'default',
+  profile?: OfficeAgentProfile,
+  callOptions?: { signal?: AbortSignal; timeoutMs?: number },
+): Promise<AgentInvocationResult> {
+  return assistantService.generateProjectChatReplyMeasured({
+    systemInstruction: await composeProjectChatInstruction(project, message, settings, personaOverride, profile),
+    message,
+    history,
+    settings,
+    modelTier,
+    signal: callOptions?.signal,
+    timeoutMs: callOptions?.timeoutMs,
   });
 }

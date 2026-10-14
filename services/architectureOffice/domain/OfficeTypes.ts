@@ -13,6 +13,7 @@
 import type { ArtifactType } from '../../../types';
 import type { OfficeAgentId } from './officeAgentPersonas';
 import type { OfficeQualityAssessment } from './officeQualityGates';
+import type { AgentInvocationMeasurement, AgentUsageSummary } from '../../../lib/ai/agentUsage';
 
 /** Bumped when a stored engagement needs migrating. Mirrors `PUBLICATION_SCHEMA_VERSION`. */
 export const OFFICE_ENGAGEMENT_SCHEMA_VERSION = 1;
@@ -80,6 +81,7 @@ export type OfficeReviewVerdict = 'approved' | 'changes-requested' | 'rejected';
 
 export interface OfficeTaskReview {
   reviewerId: OfficeAgentId;
+  measurement?: AgentInvocationMeasurement;
   /** Correlation id of the invocation that produced this verdict. */
   traceId?: string;
   /** Sello del prompt de revisión (`office.review@v1#…`, plan de agentes 15.1). */
@@ -161,6 +163,8 @@ export interface OfficeTask {
    * plantilla y qué texto exacto. Uno por intento, igual que `traceIds`.
    */
   promptStamps?: string[];
+  /** Model calls attributed to this task; missing usage remains unknown. */
+  measurements?: AgentInvocationMeasurement[];
   kind: OfficeTaskKind;
   title: string;
   objective: string;
@@ -352,6 +356,7 @@ export interface OfficeEngagement {
   gateAssessment?: OfficeQualityAssessment;
   arbDecisions: OfficeArbDecision[];
   budget: OfficeBudget;
+  usage?: { total: AgentUsageSummary; byAgent: Partial<Record<OfficeAgentId, AgentUsageSummary>> };
   /**
    * The execution attempt currently in flight, or the last one that ran.
    *

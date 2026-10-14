@@ -22,7 +22,6 @@ import type { Project } from '../../architectureProjects';
 import {
   planAgentAction,
   executeAgentAction,
-  type AgentArtifactStore,
   type AgentIntent,
 } from '../../agent';
 import { parseStructured } from '../../ai/structuredOutput';
@@ -40,6 +39,8 @@ import type {
   OfficeRunnerPorts,
 } from '../application/OfficeEngagementRunner';
 import type { PersistenceResult } from '../../persistence';
+import type { AgentInvocationResult, AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
+import type { AgentArtifactStoreLike } from '../../agent';
 import type {
   OfficeEngagement,
   OfficeFindingSeverity,
@@ -58,13 +59,23 @@ export type OfficePersonaInvoker = (
   project: Project,
   /** La ficha resuelta del agente (`getProfile`), para su prompt de sistema. */
   profile?: OfficeAgentProfile,
-) => Promise<string>;
+) => Promise<string | AgentInvocationResult>;
+
+const measurementOf = (result: string | AgentInvocationResult): AgentInvocationMeasurement | undefined =>
+  typeof result === 'string' ? undefined : {
+    aiCalls: result.aiCalls,
+    model: result.model,
+    usage: result.usage,
+    latencyMs: result.latencyMs,
+    traceId: result.traceId,
+    estimatedCostUsd: result.estimatedCostUsd,
+  };
 
 export interface OfficeRunnerAdapterDeps {
   /** Reads the *current* project — the runner mutates it as artifacts land. */
   getProject: () => Project | undefined;
   getSettings: () => Settings;
-  store: AgentArtifactStore;
+  store: AgentArtifactStoreLike;
   invokePersona: OfficePersonaInvoker;
   /**
    * Escribe el punto de recuperación y dice cómo fue. Ver
@@ -210,7 +221,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     if (result.status !== 'success' || !result.newArtifactId) {
       return {
         status: 'failed',
-        aiCalls: 1,
+        aiCalls: result.aiCalls ?? 1,
         // Reported on failure too: a run that produced nothing is exactly when
         // the trace is worth having.
         traceId: result.traceId,
@@ -223,7 +234,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       status: 'success',
       artifactId: result.newArtifactId,
       versionGroupId: result.newArtifactVersionId ?? result.newArtifactId,
-      aiCalls: 1,
+      aiCalls: result.aiCalls ?? 1,
       // The thread back to `projects/{id}/agent_actions/{traceId}`: the prompt,
       // the phases, the versions and the rollback of the generation that made
       // this deliverable. It was being discarded here.
@@ -288,6 +299,7 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     const promptStamp = stampPrompt(agentPromptRef('office.review'), reviewPrompt);
 
     let critique: ModelCritique | undefined;
+    let measurement: AgentInvocationMeasurement | undefined;
     try {
       const raw = await deps.invokePersona(
         task.assigneeId,
@@ -295,8 +307,9 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         project!,
         deps.getProfile?.(task.assigneeId),
       );
-      const parsed = parseStructured<ModelCritique>(raw);
+      const parsed = parseStructured<ModelCritique>(typeof raw === 'string' ? raw : raw.text);
       if (parsed.ok) critique = parsed.value;
+      measurement = measurementOf(raw);
     } catch {
       // A reviewer that cannot be reached must not silently approve. The
       // deterministic evidence below still decides the verdict.
@@ -333,6 +346,7 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
 
     return {
       reviewerId: task.assigneeId,
+      measurement,
       traceId,
       promptStamp,
       verdict,
@@ -397,7 +411,7 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
     const consolidationPrompt = buildConsolidationPrompt(engagement);
     const promptStamp = stampPrompt(agentPromptRef('office.engagement-consolidation'), consolidationPrompt);
     try {
-      const summary = await deps.invokePersona(
+      const response = await deps.invokePersona(
         task.assigneeId,
         consolidationPrompt,
         project,
@@ -405,8 +419,9 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
       );
       return {
         status: 'success',
-        summary: summary.trim() || 'Consolidación sin contenido.',
-        aiCalls: 1,
+        measurement: measurementOf(response),
+        summary: (typeof response === 'string' ? response : response.text).trim() || 'Consolidación sin contenido.',
+        aiCalls: typeof response === 'string' ? 1 : response.aiCalls ?? 1,
         traceId,
         promptStamp,
       };

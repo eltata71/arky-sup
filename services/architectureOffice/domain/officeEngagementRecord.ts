@@ -13,6 +13,8 @@
 
 import { newPrefixedId } from '../../../lib/ids';
 import { normalizeBusinessProjectIds } from './officeShared';
+import { summarizeEngagementUsage } from './officeUsage';
+import type { AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from './officeAgentPersonas';
 import {
   OFFICE_ENGAGEMENT_SCHEMA_VERSION,
@@ -64,6 +66,29 @@ const asIsoDate = (value: unknown, fallback: string): string =>
 const asPositiveInt = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.floor(value) : fallback;
 
+const asMeasurement = (value: unknown): AgentInvocationMeasurement | null => {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  const usage = raw.usage && typeof raw.usage === 'object' ? raw.usage as Record<string, unknown> : null;
+  const token = (name: string): number | undefined =>
+    typeof usage?.[name] === 'number' && Number.isFinite(usage[name]) && (usage[name] as number) >= 0
+      ? usage[name] as number : undefined;
+  return {
+    aiCalls: asPositiveInt(raw.aiCalls, 1),
+    model: typeof raw.model === 'string' ? raw.model : null,
+    usage: usage ? {
+      promptTokens: token('promptTokens'),
+      completionTokens: token('completionTokens'),
+      totalTokens: token('totalTokens'),
+      cachedPromptTokens: token('cachedPromptTokens'),
+    } : null,
+    latencyMs: typeof raw.latencyMs === 'number' && Number.isFinite(raw.latencyMs) && raw.latencyMs >= 0 ? raw.latencyMs : 0,
+    traceId: typeof raw.traceId === 'string' ? raw.traceId : null,
+    estimatedCostUsd: typeof raw.estimatedCostUsd === 'number' && Number.isFinite(raw.estimatedCostUsd) && raw.estimatedCostUsd >= 0
+      ? raw.estimatedCostUsd : null,
+  };
+};
+
 const normalizeActor = (value: unknown): OfficeActor => {
   if (!value || typeof value !== 'object') return SYSTEM_OFFICE_ACTOR;
   const raw = value as Partial<OfficeActor>;
@@ -97,6 +122,9 @@ const normalizeTask = (value: unknown, engagementId: string): OfficeTask | null 
     executionId: typeof raw.executionId === 'string' ? raw.executionId : undefined,
     traceIds: Array.isArray(raw.traceIds) ? asStringArray(raw.traceIds) : undefined,
     promptStamps: Array.isArray(raw.promptStamps) ? asStringArray(raw.promptStamps) : undefined,
+    measurements: Array.isArray(raw.measurements)
+      ? raw.measurements.map(asMeasurement).filter((item): item is AgentInvocationMeasurement => item !== null)
+      : undefined,
     kind: raw.kind === 'review-artifact' || raw.kind === 'consolidate' || raw.kind === 'report'
       ? raw.kind
       : 'produce-artifact',
@@ -210,6 +238,7 @@ export const normalizeEngagement = (value: unknown, projectId: string): OfficeEn
       maxAiCalls: Math.max(1, asPositiveInt(budgetRaw.maxAiCalls, DEFAULT_OFFICE_BUDGET.maxAiCalls)),
       consumedAiCalls: asPositiveInt(budgetRaw.consumedAiCalls, 0),
     },
+    usage: summarizeEngagementUsage(tasks),
     currentRunId: typeof raw.currentRunId === 'string' ? raw.currentRunId : undefined,
     auditTrail: Array.isArray(raw.auditTrail)
       ? raw.auditTrail.filter((item): item is OfficeAuditEntry => Boolean(item) && typeof item === 'object')
@@ -273,4 +302,3 @@ export const withAuditEntry = (
   ],
   updatedAt: new Date().toISOString(),
 });
-

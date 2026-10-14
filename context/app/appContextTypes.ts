@@ -18,6 +18,7 @@ import type { ProjectCommandOutcome } from './useProjectsState';
 import type { AgentActionRecord } from '../../services/agent';
 import type { ChatMessage } from '../../services/chat';
 import type { PublicationPackage } from '../../services/publicationPipeline';
+import type { PersistenceResult } from '../../services/persistence';
 
 /**
  * El vocabulario del estado que este contexto entrega a las pantallas.
@@ -73,8 +74,11 @@ export interface AppContextType {
   runProjectCommand: (id: string, command: ProjectCommand) => ProjectCommandOutcome;
   deleteProject: (id: string) => void;
   createArtifact: (projectId: string, artifact: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>, deterministicId?: string) => Artifact;
+  createArtifactConfirmed: (projectId: string, artifact: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>, deterministicId?: string) => Promise<PersistenceResult<Artifact>>;
   createArtifactVersion: (projectId: string, versionGroupId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => Artifact;
+  createArtifactVersionConfirmed: (projectId: string, versionGroupId: string, artifactData: Omit<Artifact, 'id' | 'version' | 'versionGroupId' | 'createdAt'>) => Promise<PersistenceResult<Artifact>>;
   updateArtifact: (projectId: string, artifactId: string, updates: Partial<Artifact>) => void;
+  updateArtifactConfirmed: (projectId: string, artifactId: string, updates: Partial<Artifact>) => Promise<PersistenceResult<Artifact>>;
   deleteArtifact: (projectId: string, artifactId: string) => void;
   getArtifact: (projectId: string, artifactId: string) => Artifact | undefined;
   updateSettings: (updates: Partial<Settings>) => void;

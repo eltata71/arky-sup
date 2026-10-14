@@ -107,6 +107,21 @@ const makePorts = (overrides: Partial<OfficeRunnerPorts> = {}): OfficeRunnerPort
 });
 
 describe('OfficeEngagementRunner', () => {
+  it('charges three generation calls before scheduling the dependent review', async () => {
+    const tasks = [
+      task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe' }),
+      task({ id: 'r1', kind: 'review-artifact', assigneeId: 'elena', dependsOn: ['p1'], reviewsTaskId: 'p1' }),
+    ];
+    const ports = makePorts({
+      produceArtifact: vi.fn(async () => ({ status: 'success' as const, artifactId: 'a1', aiCalls: 3 })),
+    });
+    const result = await runEngagement(engagementWith(tasks, 3), ports);
+    expect(result.status).toBe('budget-exhausted');
+    expect(result.engagement.budget.consumedAiCalls).toBe(3);
+    expect(result.engagement.usage?.total.calls).toBe(3);
+    expect(ports.reviewArtifact).not.toHaveBeenCalled();
+  });
+
   it('runs a produce → review → consolidate chain to completion', async () => {
     const tasks = [
       task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' }),

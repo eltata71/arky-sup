@@ -29,6 +29,8 @@ import type { Project } from '../../architectureProjects';
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
+import type { AgentInvocationResult } from '../../../lib/ai/agentUsage';
+import type { OfficeAgentCallOptions } from './officeOrchestration';
 
 /** Marks a carrier so nothing downstream mistakes it for a stored project. */
 export const COORDINATION_CARRIER_PREFIX = 'coordination-carrier:';
@@ -76,7 +78,8 @@ export interface CoordinationInvokerDeps {
     personaOverride?: string,
     modelTier?: ModelTier,
     profile?: OfficeAgentProfile,
-  ) => Promise<string>;
+    callOptions?: OfficeAgentCallOptions,
+  ) => Promise<string | AgentInvocationResult>;
   settings: Settings;
   scope: CoordinationScope;
   /** The real project, when the scope has one behind it. */
@@ -108,7 +111,7 @@ export interface CoordinationInvokerDeps {
 export const buildCoordinationInvoker = (deps: CoordinationInvokerDeps): OfficeAgentInvoker => {
   const carrier = carrierForScope(deps.scope, deps.project);
   const profiles = new Map((deps.profiles ?? []).map((profile) => [profile.agentId, profile]));
-  return (personaId, instruction) => deps.chat(
+  return (personaId, instruction, _promptStamp, callOptions) => deps.chat(
     carrier,
     instruction,
     [],
@@ -116,5 +119,6 @@ export const buildCoordinationInvoker = (deps: CoordinationInvokerDeps): OfficeA
     personaId,
     deps.modelTiers?.[personaId],
     profiles.get(personaId),
+    callOptions,
   );
 };

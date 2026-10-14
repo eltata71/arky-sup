@@ -273,8 +273,18 @@ export async function callAiProxyDetailed(request: AiProxyRequest): Promise<AiPr
       return failureFromEnvelope(response, await readProxyErrorEnvelope(response), endpoint, traceId);
     }
 
-    const data = (await response.json().catch(() => null)) as { text?: unknown } | null;
-    if (typeof data?.text === 'string' && data.text.length > 0) return proxySuccess(data.text);
+    const data = (await response.json().catch(() => null)) as {
+      text?: unknown;
+      model?: unknown;
+      requestId?: unknown;
+      usage?: unknown;
+    } | null;
+    if (typeof data?.text === 'string' && data.text.length > 0) return proxySuccess(data.text, {
+      model: typeof data.model === 'string' ? data.model : null,
+      traceId: typeof data.requestId === 'string' ? data.requestId : traceId,
+      usage: data.usage && typeof data.usage === 'object'
+        ? data.usage as import('../../lib/ai/agentUsage').AgentInvocationUsage : null,
+    });
     return proxyFailure('malformed', { status: response.status, retryable: true, traceId });
   } catch (error) {
     return proxyFailure('network', {

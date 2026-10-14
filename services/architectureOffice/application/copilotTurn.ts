@@ -29,7 +29,7 @@ import {
 } from './officeOrchestration';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
-import { chatWithProject } from './projectConversation';
+import { chatWithProject, chatWithProjectMeasured } from './projectConversation';
 import { consultOffice } from './assistantConsultation';
 
 export type CopilotTurnRoute =
@@ -126,8 +126,8 @@ export const consultCopilot = (
   initiatives,
   settings,
   profiles,
-  chat: (carrier, message, history, currentSettings, personaOverride, modelTier, profile) =>
-    chatWithProject(carrier, message, history, currentSettings, personaOverride as OfficeAgentId | undefined, modelTier, profile),
+  chat: (carrier, message, history, currentSettings, personaOverride, modelTier, profile, callOptions) =>
+    chatWithProjectMeasured(carrier, message, history, currentSettings, personaOverride as OfficeAgentId | undefined, modelTier, profile, callOptions),
 });
 
 /**

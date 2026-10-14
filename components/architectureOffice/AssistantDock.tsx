@@ -34,7 +34,7 @@ import {
   type CoordinationTeamMember,
 } from '../../services/architectureOffice/application/officeCoordination';
 import { buildCoordinationInvoker } from '../../services/architectureOffice/application/officeCoordinationInvoker';
-import { chatWithProject, configuredModelTiers, disabledAgentIds } from '../../services/architectureOffice';
+import { chatWithProjectMeasured, configuredModelTiers, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
 import { useAgentDisplayName } from '../../hooks/useAgentDisplayName';
 import type { Settings } from '../../types';
@@ -130,8 +130,8 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
       request,
       scope,
       invoke: buildCoordinationInvoker({
-        chat: (carrier, message, history, currentSettings, personaOverride, modelTier, profile) =>
-          chatWithProject(
+        chat: (carrier, message, history, currentSettings, personaOverride, modelTier, profile, callOptions) =>
+          chatWithProjectMeasured(
             carrier,
             message,
             history,
@@ -139,6 +139,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
             personaOverride as never,
             modelTier,
             profile,
+            callOptions,
           ),
         settings,
         scope,

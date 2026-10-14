@@ -32,6 +32,8 @@ import { assertDirectCallAllowed, assertDirectCallAllowedFor } from '../aiProxyE
 import { AIRetryPolicy } from '../retry/AIRetryPolicy';
 import { AIServiceError, classifyAIError, isTransientGeminiError } from '../errors';
 import { buildCanonicalRequest, routeLegacyRequest, withGeminiHealth } from './legacyGeminiBridge';
+import { newTraceId } from '../../../lib/traceId';
+import type { AgentInvocationUsage } from '../../../lib/ai/agentUsage';
 
 /** El cliente de Gemini tal como lo construye su adaptador. */
 export type GeminiClient = ReturnType<typeof createGeminiAIClient>;
@@ -65,8 +67,25 @@ export interface LegacyGenerationOptions {
 /** Lo que devuelve una generación completa. */
 export interface LegacyGenerationResult {
     text: string;
+    aiCalls?: number;
     functionCalls?: Array<{ name?: string; args?: Record<string, unknown> }>;
+    usage?: AgentInvocationUsage | null;
+    model?: string | null;
+    latencyMs?: number;
+    traceId?: string | null;
 }
+
+const measuredUsage = (metadata: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+    cachedContentTokenCount?: number;
+} | undefined): AgentInvocationUsage | null => metadata ? {
+    promptTokens: metadata.promptTokenCount,
+    completionTokens: metadata.candidatesTokenCount,
+    totalTokens: metadata.totalTokenCount,
+    cachedPromptTokens: metadata.cachedContentTokenCount,
+} : null;
 
 /**
  * Normalise a Gemini `config` at the SDK boundary: schemas written in the
@@ -190,7 +209,7 @@ export class LegacyGenerationTransport {
         contents: unknown,
         config: LegacyGenerationConfig,
         options: { signal?: AbortSignal }
-    ): Promise<string | null> {
+    ): Promise<LegacyGenerationResult | null> {
         if (!isAiProxyConfigured()) {
             assertDirectCallAllowedFor(settings, 'not-configured');
             return null;
@@ -220,7 +239,12 @@ export class LegacyGenerationTransport {
             responseSchema: config.responseSchema,
             signal: options.signal,
         });
-        if (isProxySuccess(outcome)) return outcome.value;
+        if (isProxySuccess(outcome)) return {
+            text: outcome.value,
+            usage: outcome.usage ?? null,
+            model: outcome.model ?? null,
+            traceId: outcome.traceId ?? null,
+        };
         assertDirectCallAllowed(settings, outcome);
         return null;
     }
@@ -281,7 +305,7 @@ export class LegacyGenerationTransport {
         // Proxy first, like the other two paths: skipping it left users without
         // a personal key with no model at all in production.
         const proxied = await this.tryAiProxy(settings, preferredModel, contents, config, options);
-        if (proxied !== null) return proxied;
+        if (proxied !== null) return proxied.text;
 
         const textRequest = buildCanonicalRequest(preferredModel, contents, config, options, 'generation');
         const textRoute = routeLegacyRequest(settings, textRequest);
@@ -317,11 +341,12 @@ export class LegacyGenerationTransport {
         contents: unknown,
         config: LegacyGenerationConfig = {},
         options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
-    ): Promise<{ text: string; functionCalls?: Array<{ name?: string; args?: Record<string, unknown> }> }> {
+    ): Promise<LegacyGenerationResult> {
+        const startedAt = Date.now();
         // Synchronous guard: with no proxy, not even an extra microtask.
         if (isAiProxyConfigured()) {
             const proxied = await this.tryAiProxy(settings, preferredModel, contents, config, options);
-            if (proxied !== null) return { text: proxied };
+            if (proxied !== null) return { ...proxied, aiCalls: 1, latencyMs: Date.now() - startedAt };
         } else {
             assertDirectCallAllowedFor(settings, 'not-configured');
         }
@@ -340,21 +365,35 @@ export class LegacyGenerationTransport {
             // rather than pushed into the contract as a legacy alias.
             return {
                 text: response.text || '',
+                aiCalls: response.trace.retryCount + 1,
+                usage: response.usage,
+                model: response.trace.modelEffective,
+                latencyMs: Date.now() - startedAt,
+                traceId: response.trace.requestId,
                 functionCalls: response.toolCalls?.map((call) => ({
                     name: call.name,
                     args: call.arguments,
                 })),
             };
         }
-        return this.runWithModelFallback(settings, preferredModel, async (model, ai, signal) => {
+        let aiCalls = 0;
+        const result = await this.runWithModelFallback(settings, preferredModel, async (model, ai, signal) => {
+            aiCalls += 1;
             const response = await ai.models.generateContent({
                 model,
                 contents: contents as GeminiContents,
                 config: atGeminiBoundary({ ...config, abortSignal: signal }),
             });
             const functionCalls = (response as { functionCalls?: Array<{ name?: string; args?: Record<string, unknown> }> }).functionCalls;
-            return { text: response.text || '', functionCalls };
+            return {
+                text: response.text || '', functionCalls,
+                usage: measuredUsage(response.usageMetadata),
+                model,
+                latencyMs: Date.now() - startedAt,
+                traceId: newTraceId('project-chat'),
+            };
         }, options);
+        return { ...result, aiCalls };
     }
 
     /**

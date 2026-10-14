@@ -43,6 +43,7 @@ import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import { canRunEngagement, transitionEngagement } from '../domain/officeEngagementTransitions';
 import { withAuditEntry } from '../domain/officeEngagementRecord';
 import { awaitsReviewConfirmation } from '../domain/reviewConfirmation';
+import { summarizeEngagementUsage, unknownInvocation } from '../domain/officeUsage';
 import { createRunCheckpoint } from './officeRunCheckpoint';
 import { resumeInterruptedTasks } from './officeRunResumption';
 import { chargeRunnerBudget, isRunnerBudgetExhausted, replaceRunnerTask, runnerBlockingFindings, runnerNowIso, withTaskTrace } from './officeRunnerState';
@@ -108,7 +109,9 @@ export const runEngagement = async (
    * recargar se reanuda desde mucho antes de donde el usuario lo vio.
    */
   const checkpoint = createRunCheckpoint(ports.persist, ports.onProgress);
-  const save = async (): Promise<void> => { engagement = await checkpoint.save(engagement); };
+  const save = async (): Promise<void> => {
+    engagement = await checkpoint.save({ ...engagement, usage: summarizeEngagementUsage(engagement.tasks) });
+  };
   const stoppedByPersistence = (): OfficeRunResult => ({
     engagement,
     status: 'not-persisted',
@@ -231,9 +234,13 @@ export const runEngagement = async (
       if ('produce' in outcome && outcome.produce) {
         engagement = chargeRunnerBudget(engagement, outcome.produce.aiCalls ?? 1);
         const traced = withTaskTrace(task, outcome.produce.traceId, outcome.produce.promptStamp);
+        const measured = { ...traced, measurements: [
+          ...(traced.measurements ?? []),
+          ...Array.from({ length: outcome.produce.aiCalls ?? 1 }, () => unknownInvocation(outcome.produce?.traceId)),
+        ] };
         if (outcome.produce.status === 'failed') {
           engagement = replaceRunnerTask(engagement, {
-            ...traced,
+            ...measured,
             status: 'failed',
             error: outcome.produce.message ?? 'La producción del artefacto no se completó.',
             completedAt: runnerNowIso(),
@@ -247,7 +254,7 @@ export const runEngagement = async (
           continue;
         }
         engagement = replaceRunnerTask(engagement, {
-          ...traced,
+          ...measured,
           status: 'completed',
           producedArtifactId: outcome.produce.artifactId,
           producedVersionGroupId: outcome.produce.versionGroupId,
@@ -265,7 +272,7 @@ export const runEngagement = async (
       }
 
       if ('review' in outcome && outcome.review) {
-        engagement = chargeRunnerBudget(engagement, 1);
+        engagement = chargeRunnerBudget(engagement, outcome.review.measurement?.aiCalls ?? 1);
         const review = outcome.review;
         const producer = engagement.tasks.find((candidate) => candidate.id === task.reviewsTaskId);
 
@@ -274,6 +281,7 @@ export const runEngagement = async (
         const needsConfirmation = review.verdict === 'approved' && review.basis === 'evidence-only';
         engagement = replaceRunnerTask(engagement, {
           ...withTaskTrace(task, review.traceId, review.promptStamp),
+          measurements: [...(task.measurements ?? []), review.measurement ?? unknownInvocation(review.traceId)],
           status: needsConfirmation ? 'awaiting-review' : 'completed',
           review,
           completedAt: needsConfirmation ? undefined : runnerNowIso(),
@@ -347,6 +355,10 @@ export const runEngagement = async (
         engagement = chargeRunnerBudget(engagement, outcome.consolidate.aiCalls ?? 1);
         engagement = replaceRunnerTask(engagement, {
           ...withTaskTrace(task, outcome.consolidate.traceId, outcome.consolidate.promptStamp),
+          measurements: [
+            ...(task.measurements ?? []),
+            outcome.consolidate.measurement ?? unknownInvocation(outcome.consolidate.traceId),
+          ],
           status: outcome.consolidate.status === 'success' ? 'completed' : 'failed',
           error: outcome.consolidate.status === 'success' ? undefined : outcome.consolidate.summary,
           objective: task.objective,

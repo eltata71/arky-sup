@@ -20,6 +20,7 @@
 
 import type { Settings } from '../../../types';
 import { legacyTransport } from './legacyTransport';
+import type { AgentInvocationUsage } from '../../../lib/ai/agentUsage';
 
 /** Options shared by both gateway calls. */
 export interface AIGatewayOptions {
@@ -32,7 +33,12 @@ export interface AIGatewayOptions {
 /** Result of a buffered generation. */
 export interface AIGatewayResult {
   text: string;
+  aiCalls?: number;
   functionCalls?: Array<{ name?: string; args?: Record<string, unknown> }>;
+  usage?: AgentInvocationUsage | null;
+  model?: string | null;
+  latencyMs?: number;
+  traceId?: string | null;
 }
 
 /**

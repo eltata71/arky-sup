@@ -57,6 +57,7 @@ export interface HandoffExpectedOutput {
 /** The ceiling this handoff may consume. Never unbounded. */
 export interface HandoffBudget {
   maxAiCalls: number;
+  maxTokens?: number;
 }
 
 export interface AgentHandoffEnvelope {
@@ -85,7 +86,8 @@ export type HandoffRejectionCode =
   | 'missing-objective'
   | 'missing-expected-output'
   | 'no-budget'
-  | 'context-overflow';
+  | 'context-overflow'
+  | 'budget-exhausted';
 
 export interface HandoffRejection {
   code: HandoffRejectionCode;
@@ -131,6 +133,9 @@ export const validateHandoff = (
   }
   if (!Number.isFinite(envelope.budget.maxAiCalls) || envelope.budget.maxAiCalls < 1) {
     fail('no-budget', 'Un handoff sin presupuesto no tiene condición de parada.');
+  }
+  if (envelope.budget.maxTokens !== undefined && (!Number.isFinite(envelope.budget.maxTokens) || envelope.budget.maxTokens < 1)) {
+    fail('no-budget', 'El presupuesto de tokens del handoff debe ser positivo.');
   }
   if (envelope.contextReferences.length > MAX_HANDOFF_CONTEXT_REFERENCES) {
     fail(

@@ -6,11 +6,14 @@ export function recordAgentGeneration(operationId: string, source: ArtifactGener
   const startedAt = new Date().toISOString();
   const recorder = createContextManifestRecorder(startedAt);
   const degradations: string[] = [];
+  let aiCalls = 0;
   return {
     options: {
+      onModelCall: (): void => { aiCalls += 1; },
       onContextCaptured: recorder.capture,
       onDegraded: (message: string): void => { degradations.push(message); },
     },
+    aiCalls: (): number => aiCalls,
     trace: (content: string): ArtifactGenerationTrace => {
       const contextManifest = recorder.manifest();
       const citationWarning = describeCitationReview(reviewContextCitations(content, contextManifest));
