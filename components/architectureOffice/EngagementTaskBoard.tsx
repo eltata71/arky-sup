@@ -123,7 +123,9 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
             )}
           </div>
           <p className="text-xs leading-snug text-gray-600 dark:text-gray-300">{task.review.summary}</p>
-          <EvidenceReviewConfirm task={task} />
+          {task.review.basis === 'evidence-only' && task.review.verdict === 'approved' && (
+            <EvidenceReviewConfirm task={task} />
+          )}
           {task.review.findings.length > 0 && (
             <ul className="space-y-1">
               {task.review.findings.slice(0, 4).map((finding, index) => {
