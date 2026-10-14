@@ -588,9 +588,8 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
     finalValida,
     finalEsperada: testCase.finalValida,
     llamadas: calls,
-    // El puerto devuelve un sello por invocación; las correcciones (18.2) lo
-    // añadirán por cada pasada.
-    selladas: isCurrentStamp(outcome.promptStamp) ? Math.min(1, calls) : 0,
+    // Un sello por invocación: el de la consolidación y, si hubo, el de la corrección.
+    selladas: (isCurrentStamp(outcome.promptStamp) ? 1 : 0) + (isCurrentStamp(outcome.refinement?.promptStamp) ? 1 : 0),
     ok: corrigio === testCase.debeCorregir && finalValida === testCase.finalValida,
   };
 };

@@ -21,6 +21,7 @@ import { PersonaChip } from './PersonaAvatar';
 import { EvidenceReviewConfirm } from './EvidenceReviewConfirm';
 import { SEVERITY_ICONS, TASK_KIND_ICONS, TASK_STATUS_ICONS } from './officeUiIcons';
 import {
+  CONSOLIDATION_REVIEW_LABELS,
   describeAging,
   REVIEW_VERDICT_LABELS,
   REVIEW_VERDICT_TONES,
@@ -110,6 +111,18 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
 
       {task.error && (
         <p className="text-xs leading-snug text-red-600 dark:text-red-400">{task.error}</p>
+      )}
+
+      {task.consolidationReview && (
+        <Badge tone={task.consolidationReview.ok ? 'success' : 'warning'} size="xs">
+          {translateConfig(
+            !task.consolidationReview.ok
+              ? CONSOLIDATION_REVIEW_LABELS.withGaps
+              : task.consolidationReview.refined
+                ? CONSOLIDATION_REVIEW_LABELS.refined
+                : CONSOLIDATION_REVIEW_LABELS.firstTime,
+          )}
+        </Badge>
       )}
 
       {task.review && (

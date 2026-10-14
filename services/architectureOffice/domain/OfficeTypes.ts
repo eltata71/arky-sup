@@ -163,6 +163,12 @@ export interface OfficeTask {
    * plantilla y qué texto exacto. Uno por intento, igual que `traceIds`.
    */
   promptStamps?: string[];
+  /**
+   * Veredicto del evaluador mecánico sobre la consolidación del encargo
+   * (plan de agentes, 18.2): `ok` si el texto final cumple los criterios,
+   * `refined` si hizo falta la única pasada de corrección.
+   */
+  consolidationReview?: { ok: boolean; gaps: string[]; refined: boolean };
   /** Model calls attributed to this task; missing usage remains unknown. */
   measurements?: AgentInvocationMeasurement[];
   kind: OfficeTaskKind;

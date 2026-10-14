@@ -1,7 +1,7 @@
 {
   "familia": "consolidacion",
   "origen": "redactado-a-mano",
-  "nota": "Respuestas simuladas del consolidador. `consolidaciones` es lo que devuelve en su primera y (si se le pide) segunda pasada. `debeCorregir` dice si el evaluador debía pedir la corrección; `finalValida` si la recomendación final cumple los criterios. Los casos `camino: encargo` pasan por la consolidación de un encargo (createConsolidatePort), que hoy no evalúa (A19).",
+  "nota": "Respuestas simuladas del consolidador. `consolidaciones` es lo que devuelve en su primera y (si se le pide) segunda pasada. `debeCorregir` dice si el evaluador debía pedir la corrección; `finalValida` si la recomendación final cumple los criterios. Los casos `camino: encargo` pasan por la consolidación de un encargo (createConsolidatePort), que evalúa y corrige una vez, como la coordinación (18.2).",
   "casos": [
     {
       "id": "completa-a-la-primera", "camino": "coordinacion", "solicitud": "Arquitectura AWS del portal de siniestros",

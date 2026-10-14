@@ -100,4 +100,18 @@ describe('la tarea del encargo guarda sus sellos', () => {
     const restored = normalizeEngagement(stored, 'proj-1');
     expect(restored?.tasks[0].promptStamps).toEqual(['office.production@v1#0000abcd']);
   });
+
+  it('la revisión de la consolidación sobrevive a la recarga y descarta formas inválidas', () => {
+    const stored = (consolidationReview: unknown) => ({
+      id: 'eng-1',
+      title: 'Portal',
+      brief: 'Brief.',
+      status: 'in-progress',
+      tasks: [{ ...task, consolidationReview }],
+    });
+    const ok = normalizeEngagement(stored({ ok: true, gaps: [], refined: true }), 'proj-1');
+    expect(ok?.tasks[0].consolidationReview).toEqual({ ok: true, gaps: [], refined: true });
+    const bad = normalizeEngagement(stored({ gaps: ['x'] }), 'proj-1');
+    expect(bad?.tasks[0].consolidationReview).toBeUndefined();
+  });
 });

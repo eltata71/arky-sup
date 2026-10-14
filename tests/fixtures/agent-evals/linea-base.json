@@ -10,7 +10,7 @@
     "personaFijada": 100,
     "recallRevisor": 100,
     "aprobacionesSinCritica": 0,
-    "consolidacionesCorrectas": 80,
+    "consolidacionesCorrectas": 100,
     "promptsConVallado": 100,
     "invocacionesConSello": 100,
     "llamadasPorOperacion": 4.8
@@ -22,13 +22,6 @@
       "tarea": "18.3",
       "metrica": "precisionIntencion",
       "descripcion": "El clasificador heurístico no reconoce «crea un ADR», «genera un nuevo diagrama», «todos los diagramas», «¿por qué…?» ni «sobrescribe la versión actual», y manda la memoria de proyecto al artefacto. El clasificador LLM no puede corregirlo: no conoce create, batch ni memory."
-    },
-    {
-      "id": "consolidacion-encargo-sin-evaluador",
-      "hallazgo": "A19",
-      "tarea": "18.2",
-      "metrica": "consolidacionesCorrectas",
-      "descripcion": "La consolidación de un encargo no pasa por evaluateConsolidation: una recomendación sin veredicto se guarda tal cual, sin la pasada de corrección que sí tiene la coordinación."
     }
   ]
 }

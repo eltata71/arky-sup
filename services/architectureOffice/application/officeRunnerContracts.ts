@@ -21,6 +21,10 @@ export interface OfficeConsolidateOutcome {
   traceId?: string;
   /** Sello del prompt de consolidación (`lib/agents/promptCatalog`). */
   promptStamp?: string;
+  /** Veredicto del evaluador sobre el texto final y si hubo corrección (18.2). */
+  review?: { ok: boolean; gaps: string[]; refined: boolean };
+  /** La única pasada de corrección, cuando la hubo. */
+  refinement?: { traceId: string; promptStamp: string; measurement?: AgentInvocationMeasurement };
 }
 
 /** External dependencies for the pure Office task scheduler. */

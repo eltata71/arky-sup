@@ -26,6 +26,7 @@ import {
 } from '../../agent';
 import { parseStructured } from '../../ai/structuredOutput';
 import { newPrefixedId } from '../../../lib/ids';
+import { createConsolidatePort, measurementOf } from './officeConsolidationPort';
 import { REVIEW_CONTENT_LIMIT, buildReviewPrompt, gatherDeterministicEvidence } from './officeReviewPrompt';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
@@ -34,7 +35,6 @@ import { buildOfficePersonaBriefing } from '../domain/officePersonaBriefing';
 import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 import type {
-  OfficeConsolidateOutcome,
   OfficeProduceOutcome,
   OfficeRunnerPorts,
 } from '../application/OfficeEngagementRunner';
@@ -61,15 +61,6 @@ export type OfficePersonaInvoker = (
   profile?: OfficeAgentProfile,
 ) => Promise<string | AgentInvocationResult>;
 
-const measurementOf = (result: string | AgentInvocationResult): AgentInvocationMeasurement | undefined =>
-  typeof result === 'string' ? undefined : {
-    aiCalls: result.aiCalls,
-    model: result.model,
-    usage: result.usage,
-    latencyMs: result.latencyMs,
-    traceId: result.traceId,
-    estimatedCostUsd: result.estimatedCostUsd,
-  };
 
 export interface OfficeRunnerAdapterDeps {
   /** Reads the *current* project — the runner mutates it as artifacts land. */
@@ -367,74 +358,8 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     };
   };
 
-// ---------------------------------------------------------------------------
-// Consolidation
-// ---------------------------------------------------------------------------
-
-export const buildConsolidationPrompt = (engagement: OfficeEngagement): string => {
-  const deliverables = engagement.tasks
-    .filter((task) => task.kind === 'produce-artifact')
-    .map((task) => {
-      const review = engagement.tasks.find((candidate) => candidate.reviewsTaskId === task.id)?.review;
-      return [
-        `### ${task.title} — ${OFFICE_AGENT_PERSONAS[task.assigneeId].alias} (${task.status})`,
-        review ? `Revisión de ${OFFICE_AGENT_PERSONAS[review.reviewerId].alias}: ${review.verdict} — ${review.summary}` : 'Sin revisión registrada.',
-        task.error ? `Error: ${task.error}` : '',
-      ].filter(Boolean).join('\n');
-    });
-
-  // La persona del consolidador va en el prompt de sistema (plan de agentes, 16.0).
-  return [
-    `Consolida el entregable "${engagement.title}".`,
-    // El brief es texto de una persona: viaja vallado (plan de agentes, 17.0).
-    wrapUntrustedContent('solicitud original', engagement.brief),
-    '',
-    'ENTREGABLES Y SUS REVISIONES:',
-    ...deliverables,
-    '',
-    'Compara los dominios, resuelve o escala las contradicciones con dueño, y cierra con un veredicto Ready, Conditional o Blocked justificado con evidencia concreta.',
-    'No inventes evidencia. Si un entregable falló, dilo y explica la consecuencia.',
-  ].join('\n');
-};
-
-export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
-  async (task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeConsolidateOutcome> => {
-    const project = deps.getProject();
-    if (!project) {
-      return { status: 'failed', summary: 'El proyecto del entregable ya no está disponible.' };
-    }
-    // Minted here, not returned by the model call: this path reaches the model
-    // through the legacy chat façade, which carries no trace id. It identifies
-    // the invocation inside its run — it does not join to an agent action, and
-    // `OfficeTask.traceIds` says so.
-    const traceId = newPrefixedId('office-consolidate');
-    const consolidationPrompt = buildConsolidationPrompt(engagement);
-    const promptStamp = stampPrompt(agentPromptRef('office.engagement-consolidation'), consolidationPrompt);
-    try {
-      const response = await deps.invokePersona(
-        task.assigneeId,
-        consolidationPrompt,
-        project,
-        deps.getProfile?.(task.assigneeId),
-      );
-      return {
-        status: 'success',
-        measurement: measurementOf(response),
-        summary: (typeof response === 'string' ? response : response.text).trim() || 'Consolidación sin contenido.',
-        aiCalls: typeof response === 'string' ? 1 : response.aiCalls ?? 1,
-        traceId,
-        promptStamp,
-      };
-    } catch (error) {
-      return {
-        status: 'failed',
-        summary: error instanceof Error ? error.message : String(error),
-        aiCalls: 1,
-        traceId,
-        promptStamp,
-      };
-    }
-  };
+// La consolidación del encargo vive en `officeConsolidationPort.ts`.
+export { buildConsolidationPrompt, createConsolidatePort } from './officeConsolidationPort';
 
 // ---------------------------------------------------------------------------
 

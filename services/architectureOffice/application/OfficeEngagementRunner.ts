@@ -353,11 +353,15 @@ export const runEngagement = async (
 
       if ('consolidate' in outcome && outcome.consolidate) {
         engagement = chargeRunnerBudget(engagement, outcome.consolidate.aiCalls ?? 1);
+        const refinement = outcome.consolidate.refinement;
+        const consolidated = withTaskTrace(task, outcome.consolidate.traceId, outcome.consolidate.promptStamp);
         engagement = replaceRunnerTask(engagement, {
-          ...withTaskTrace(task, outcome.consolidate.traceId, outcome.consolidate.promptStamp),
+          ...(refinement ? withTaskTrace(consolidated, refinement.traceId, refinement.promptStamp) : consolidated),
+          consolidationReview: outcome.consolidate.review,
           measurements: [
             ...(task.measurements ?? []),
             outcome.consolidate.measurement ?? unknownInvocation(outcome.consolidate.traceId),
+            ...(refinement ? [refinement.measurement ?? unknownInvocation(refinement.traceId)] : []),
           ],
           status: outcome.consolidate.status === 'success' ? 'completed' : 'failed',
           error: outcome.consolidate.status === 'success' ? undefined : outcome.consolidate.summary,
