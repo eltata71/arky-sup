@@ -82,6 +82,11 @@ export interface ConsultOfficeParams {
   settings: Settings;
   /** Cómo se habla con el modelo. La pantalla lo aporta; esto no lo sabe. */
   chat: Parameters<typeof buildCoordinationInvoker>[0]['chat'];
+  /**
+   * Las fichas resueltas del usuario: cada agente habla con la suya, y los
+   * desactivados no se convocan (plan de agentes, 16.1).
+   */
+  profiles?: Parameters<typeof buildCoordinationInvoker>[0]['profiles'];
 }
 
 /**
@@ -105,7 +110,10 @@ export const consultOffice = async (params: ConsultOfficeParams): Promise<string
         briefing: [`Descripción: ${params.project.description}`],
       },
       project: params.project,
+      profiles: params.profiles,
+      modelTiers: Object.fromEntries((params.profiles ?? []).map((profile) => [profile.agentId, profile.modelTier])),
     }),
+    unavailableAgents: (params.profiles ?? []).filter((profile) => !profile.enabled).map((profile) => profile.agentId),
   });
   return `${outcome.answer}${buildTeamAttribution(outcome)}`;
 };

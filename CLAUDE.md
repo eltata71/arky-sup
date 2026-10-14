@@ -2630,8 +2630,15 @@ Three properties worth keeping:
   Arky's card, and `AssistantDock` hands the resolved profiles to
   `buildCoordinationInvoker`, which gives each agent its own to `chatWithProject`
   — into the **system** prompt, never prepended to the message. A card that
-  changed how an agent *looks* and not what it *says* would be decoration. (Today
-  three paths read it; 16.1 of the agents plan takes it to all ten.)
+  changed how an agent *looks* and not what it *says* would be decoration. Since
+  16.1 it reaches **all ten paths** an agent speaks through —capture, platform
+  guide, dock, artifact generation (`useArtifactPersona`), the agent executor
+  (`useAgentActions`), the assistant chat (`useAssistantTurns`), the
+  engagement's produce/review/consolidate ports (`getProfile`, loaded by
+  `loadAgentConfiguration`) and the copilot (`useCopilotTurns`)—, and
+  `agentProfileParity.test.ts` runs each path with a marker in the card. A
+  mention of an agent the user disabled is answered by Arky, who says so
+  (`resolveMentionedSpeaker`); the copilot does not convene a disabled agent.
 - **One composer, in layers** (agents plan 16.0). `composeAgentInstruction`
   (`domain/agentPromptComposer.ts`) is the only place an agent's identity is
   written: the caller's context, then the **contract** (role, domains, scope

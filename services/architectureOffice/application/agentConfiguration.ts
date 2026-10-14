@@ -20,6 +20,7 @@ import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import {
   resolveAgentProfiles,
+  type OfficeAgentProfile,
   type OfficeAgentProfileOverride,
 } from '../domain/officeAgentProfile';
 import { officeAgentProfileRepository } from '../infrastructure/OfficeAgentProfileRepository';
@@ -29,12 +30,22 @@ export interface OfficeAgentConfiguration {
   concurrency: ReadonlyMap<string, number>;
   /** Model tier per agent. A missing entry lets the engine pick its own. */
   tiers: Partial<Record<OfficeAgentId, ModelTier>>;
+  /**
+   * Las fichas resueltas. El runner las lee para que cada agente produzca,
+   * revise y consolide con su voz configurada (plan de agentes, 16.1). Vacío =
+   * las personas de fábrica.
+   */
+  profiles: readonly OfficeAgentProfile[];
+  /** La ficha de un agente, o `undefined` si no hay fichas cargadas. */
+  getProfile: (agentId: OfficeAgentId) => OfficeAgentProfile | undefined;
 }
 
 /** Nothing configured — every agent runs as the product ships it. */
 export const DEFAULT_AGENT_CONFIGURATION: OfficeAgentConfiguration = {
   concurrency: new Map(),
   tiers: {},
+  profiles: [],
+  getProfile: () => undefined,
 };
 
 export interface AgentConfigurationDeps {
@@ -65,6 +76,8 @@ export const loadAgentConfiguration = async (
     return {
       concurrency: new Map(profiles.map((agent) => [agent.agentId, agent.maxConcurrentTasks])),
       tiers,
+      profiles,
+      getProfile: (agentId) => profiles.find((profile) => profile.agentId === agentId),
     };
   } catch {
     return DEFAULT_AGENT_CONFIGURATION;

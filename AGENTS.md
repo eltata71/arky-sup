@@ -284,6 +284,11 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    sistema, nunca antepuesta al mensaje; su instrucción **se añade**, no
    sustituye (D-A2); conocimiento y memoria van vallados. Nada fuera del
    compositor escribe «Actúas como» ni «Eres … agente de la Oficina».
+   **Y la ficha llega a los diez caminos** (16.1): captura, guía, dock,
+   generación, ejecutor, chat, los tres puertos del encargo (`getProfile`) y el
+   copiloto; `agentProfileParity.test.ts` los recorre con un marcador. Un camino
+   nuevo por el que hable un agente añade su fila. Una mención a un agente
+   desactivado la responde Arky y lo dice.
    **Un prompt de agente tiene nombre y versión** (15.1):
    `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
    huella de su texto sobre un caso canónico; cambiar el texto sin subir la

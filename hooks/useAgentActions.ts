@@ -28,7 +28,8 @@ import {
 } from '../services/agent';
 import { extractMemoryBullets, fallbackBulletsFromInstruction } from '../services/agent/memoryExtractor';
 import { buildAgentLesson, mergeAgentLesson } from '../services/agent/agentLessonRecorder';
-import { officePersonaForMessage } from '../services/architectureOffice';
+import { officePersonaResolverFor } from '../services/architectureOffice';
+import { useLazyAgentProfiles } from './useLazyAgentProfiles';
 import { describeAttentionMotivation } from '../services/portfolioGraph';
 import { useInitiatives } from '../context/InitiativeContext';
 
@@ -159,6 +160,12 @@ export function useAgentActions(): UseAgentActionsResult {
   const [lastIntent, setLastIntent] = useState<AgentIntent | null>(null);
   const [proactiveSuggestion, setProactiveSuggestion] = useState<ProactiveSuggestion | null>(null);
   const [memoryDraft, setMemoryDraft] = useState<MemoryDraft | null>(null);
+  // Las fichas del usuario: el agente que ejecuta habla con su voz configurada
+  // (plan de agentes, 16.1). En una ref, como el resto del contexto que lee la
+  // ejecución, para no rehacer los callbacks cada vez que se cargan.
+  const agentProfiles = useLazyAgentProfiles();
+  const agentProfilesRef = useRef(agentProfiles);
+  agentProfilesRef.current = agentProfiles;
 
   const planRef = useRef<AgentActionPlan | null>(null);
   planRef.current = pendingPlan;
@@ -390,7 +397,7 @@ export function useAgentActions(): UseAgentActionsResult {
         confirmedByUser: true,
         // The patch speaks as whoever the instruction names — the Office's
         // rule, supplied here because the agent must not look the Office up.
-        resolvePersona: officePersonaForMessage,
+        resolvePersona: officePersonaResolverFor(agentProfilesRef.current),
         // Why the project exists, resolved by the portfolio's rule.
         businessMotivation: describeAttentionMotivation(project, initiativesRef.current),
         actor: actor ? { id: actor.id ?? null, name: actor.name ?? null } : undefined,
