@@ -11,6 +11,7 @@ import React from 'react';
 import { Badge, Card, EmptyState, cn } from '../../ui';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../../services/architectureOffice/domain/officeAgentPersonas';
 import { PersonaAvatar } from '../PersonaAvatar';
+import { useAgentDisplayName } from '../../../hooks/useAgentDisplayName';
 import { OFFICE_HEALTH_VISUALS } from '../officeChartTokens';
 import type { OfficeSpecialistLoad } from '../../../services/architectureOffice';
 
@@ -24,6 +25,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
   className,
 }) => {
   const t = useUiTranslation();
+  const displayName = useAgentDisplayName();
   const busiest = Math.max(1, ...specialists.map((entry) => entry.active));
   const working = specialists.filter((entry) => entry.active > 0 || entry.completed > 0 || entry.reviewed > 0);
 
@@ -48,7 +50,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
               <PersonaAvatar personaId={entry.personaId} size="md" decorative />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {persona?.alias ?? entry.personaId}
+                  {displayName(entry.personaId as OfficeAgentId)}
                 </p>
                 <p className="truncate text-2xs text-gray-500 dark:text-gray-400">
                   {persona?.role ?? t("uiExpr.especialista.8c8c55")}
@@ -69,7 +71,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
               aria-valuenow={entry.active}
               aria-valuemin={0}
               aria-valuemax={busiest}
-              aria-label={t("uiTemplate.carga-de-p0.27097a", { p0: String(persona?.alias ?? entry.personaId) })}
+              aria-label={t("uiTemplate.carga-de-p0.27097a", { p0: String(displayName(entry.personaId as OfficeAgentId)) })}
             >
               <div
                 className={cn('h-full rounded-full transition-all duration-500', OFFICE_HEALTH_VISUALS.running.surface)}

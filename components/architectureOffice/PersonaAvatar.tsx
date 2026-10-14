@@ -9,8 +9,9 @@
 
 import React from 'react';
 import { cn } from '../ui/cn';
-import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import type { OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import { personaIcon } from './officeUiIcons';
+import { useAgentDisplayName } from '../../hooks/useAgentDisplayName';
 
 /**
  * Six tinted surfaces, all of them holding their contrast in both themes.
@@ -65,7 +66,8 @@ export const PersonaAvatar: React.FC<PersonaAvatarProps> = ({
   decorative = false,
   className,
 }) => {
-  const persona = OFFICE_AGENT_PERSONAS[personaId];
+  // El alias configurado en la ficha, no el de fábrica (plan de agentes, 16.1).
+  const displayName = useAgentDisplayName();
   const Icon = personaIcon(personaId);
   return (
     <span
@@ -83,7 +85,7 @@ export const PersonaAvatar: React.FC<PersonaAvatarProps> = ({
         * name and then again as "alias — role". The role is available as text
         * wherever it matters; here the name alone is what a reader needs.
         */}
-      {!decorative && <span className="sr-only">{persona?.alias ?? personaId}</span>}
+      {!decorative && <span className="sr-only">{displayName(personaId)}</span>}
     </span>
   );
 };
@@ -95,7 +97,7 @@ export const PersonaChip: React.FC<{
   prefix?: string;
   className?: string;
 }> = ({ personaId, prefix, className }) => {
-  const persona = OFFICE_AGENT_PERSONAS[personaId];
+  const displayName = useAgentDisplayName();
   return (
     <span
       className={cn(
@@ -105,7 +107,7 @@ export const PersonaChip: React.FC<{
     >
       <PersonaAvatar personaId={personaId} size="xs" decorative />
       <span className="text-2xs font-medium text-gray-700 dark:text-gray-200">
-        {prefix ? `${prefix} ` : ''}{persona?.alias ?? personaId}
+        {prefix ? `${prefix} ` : ''}{displayName(personaId)}
       </span>
     </span>
   );

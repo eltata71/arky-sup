@@ -16,7 +16,6 @@ import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
 import React from 'react';
 import { Badge, Card, cn } from '../ui';
 import { ArrowUpRight } from 'lucide-react';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import type { OfficeTask, OfficeTaskStatus } from '../../services/architectureOffice';
 import { PersonaChip } from './PersonaAvatar';
 import { SEVERITY_ICONS, TASK_KIND_ICONS, TASK_STATUS_ICONS } from './officeUiIcons';
@@ -61,7 +60,6 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
 }) => {
   const translateConfig = useUiTranslation();
   const t = useUiTranslation();
-  const reviewer = task.reviewerId ? OFFICE_AGENT_PERSONAS[task.reviewerId] : undefined;
   const aging = describeAging(task.dueAt);
   const StatusGlyph = TASK_STATUS_ICONS[task.status];
   const KindGlyph = TASK_KIND_ICONS[task.kind];
@@ -86,8 +84,8 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
           {translateConfig(TASK_KIND_LABELS[task.kind])}
         </Badge>
         <PersonaChip personaId={task.assigneeId} />
-        {reviewer && task.kind === 'produce-artifact' && (
-          <PersonaChip personaId={reviewer.id} prefix={t("Revisa")} />
+        {task.reviewerId && task.kind === 'produce-artifact' && (
+          <PersonaChip personaId={task.reviewerId} prefix={t("Revisa")} />
         )}
         {task.attempts > 1 && (
           <Badge tone="warning" size="xs" outline>{t("ui.intento.7766b1")} {task.attempts}/{task.maxAttempts}</Badge>

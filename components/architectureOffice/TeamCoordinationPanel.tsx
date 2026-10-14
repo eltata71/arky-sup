@@ -26,7 +26,8 @@ import { ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../ui/cn';
 import { PersonaAvatar } from './PersonaAvatar';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import type { OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import { useAgentDisplayName } from '../../hooks/useAgentDisplayName';
 import type {
   CoordinationEvent,
   CoordinationTeamMember,
@@ -142,6 +143,8 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
 }) => {
   const translateConfig = useUiTranslation();
   const t = useUiTranslation();
+  // El alias que el usuario dio a cada agente en su ficha (plan de agentes, 16.1).
+  const displayName = useAgentDisplayName();
   const reducedMotion = useReducedMotion();
   /**
    * The agent the reader is inspecting. Filtering the log to one persona is
@@ -268,7 +271,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
           className="w-full"
           style={{ maxHeight: `${height}px` }}
           role="img"
-          aria-label={t("uiTemplate.topologia-del-equipo-p0-repa.7d7ec3", { p0: String(coordinatorNode ? OFFICE_AGENT_PERSONAS[coordinatorNode.personaId].alias : 'coordinador'), p1: String(specialistNodes.length), p2: String(consolidatorNode ? OFFICE_AGENT_PERSONAS[consolidatorNode.personaId].alias : 'el consolidador') })}
+          aria-label={t("uiTemplate.topologia-del-equipo-p0-repa.7d7ec3", { p0: String(coordinatorNode ? displayName(coordinatorNode.personaId) : 'coordinador'), p1: String(specialistNodes.length), p2: String(consolidatorNode ? displayName(consolidatorNode.personaId) : 'el consolidador') })}
         >
           {/* Edges first, so the nodes sit on top of them. */}
           <g>
@@ -309,7 +312,6 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
 
           {layout.map((node) => {
             const state = agentStates.get(node.personaId) ?? 'idle';
-            const persona = OFFICE_AGENT_PERSONAS[node.personaId];
             const styles = AGENT_STATE_STYLES[state];
             return (
               <foreignObject
@@ -333,7 +335,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
                     <PersonaAvatar personaId={node.personaId} size="sm" decorative />
                   </span>
                   <span className="max-w-[88px] truncate text-[9px] font-semibold leading-tight text-gray-700 dark:text-gray-200">
-                    {persona.alias}
+                    {displayName(node.personaId)}
                   </span>
                   <span className={cn('text-[8px] font-medium leading-none', styles.ink)}>
                     {node.role === 'coordinator' ? t("uiExpr.coordina.6db29f")
@@ -360,7 +362,6 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
             {t("ui.todo-el-equipo.9763cb")}
           </button>
           {layout.map((node) => {
-            const persona = OFFICE_AGENT_PERSONAS[node.personaId];
             const state = agentStates.get(node.personaId) ?? 'idle';
             const active = focusedAgent === node.personaId;
             return (
@@ -371,7 +372,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
                 aria-pressed={active}
                 className={cn(FILTER_CHIP, active ? FILTER_CHIP_ON : FILTER_CHIP_OFF)}
               >
-                {persona.alias}
+                {displayName(node.personaId)}
                 {/* State as a coloured dot, not a middot glyph: a bare "·"
                     reads as punctuation the reader has to decode. The word is
                     carried for assistive technology, which cannot see colour. */}
@@ -390,7 +391,7 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
       <ol
         className={cn('space-y-1.5 overflow-y-auto pr-1', expanded ? 'max-h-[26rem]' : 'max-h-56')}
         aria-label={focusedAgent
-          ? t("uiTemplate.bitacora-de-coordinacion-fil.e21697", { p0: String(OFFICE_AGENT_PERSONAS[focusedAgent].alias) })
+          ? t("uiTemplate.bitacora-de-coordinacion-fil.e21697", { p0: String(displayName(focusedAgent)) })
           : t("uiExpr.bitacora-de-coordinacion.5928f3")}
       >
         {/* Only a *filter* that hides everything needs explaining. An empty
@@ -398,11 +399,11 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
             header already says. */}
         {visibleEvents.length === 0 && focusedAgent !== null && (
           <li className="rounded-lg bg-gray-50 px-3 py-4 text-center text-2xs text-gray-500 dark:bg-gray-900/60 dark:text-gray-400">
-            {OFFICE_AGENT_PERSONAS[focusedAgent].alias} {t("ui.todavia-no-ha-intervenido.9dde01")}
+            {displayName(focusedAgent)} {t("ui.todavia-no-ha-intervenido.9dde01")}
           </li>
         )}
         {visibleEvents.map((event) => {
-          const fromPersona = event.from ? OFFICE_AGENT_PERSONAS[event.from] : null;
+
           const failed = event.kind === 'agent-failed' || event.kind === 'operation-failed';
           return (
             <li
@@ -414,8 +415,8 @@ export const TeamCoordinationPanel: React.FC<TeamCoordinationPanelProps> = ({
                   : 'bg-gray-50 text-gray-600 dark:bg-gray-900/60 dark:text-gray-300',
               )}
             >
-              {fromPersona
-                ? <PersonaAvatar personaId={fromPersona.id} size="xs" decorative />
+              {event.from
+                ? <PersonaAvatar personaId={event.from} size="xs" decorative />
                 : <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gray-200 text-[9px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">Tú</span>}
               <span className="min-w-0 flex-1">
                 <span className="block leading-snug">{event.summary}</span>

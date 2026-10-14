@@ -173,6 +173,11 @@ export interface CoordinateRequestInput {
   unavailableAgents?: readonly OfficeAgentId[];
   /** Stopping condition: how many specialists one request may convene. */
   maxSpecialists?: number;
+  /**
+   * El nombre con el que se escribe a cada agente en la bitácora: el alias de
+   * su ficha. Sin él, el de fábrica (plan de agentes, 16.1 corte 3).
+   */
+  agentName?: (personaId: OfficeAgentId) => string;
   // La ficha de cada agente ya no se antepone al mensaje: llega a su prompt de
   // sistema a través del invocador (`buildCoordinationInvoker`, `profiles`).
   // Anteponerla le daba al agente personalizado dos identidades, la de fábrica
@@ -236,6 +241,8 @@ export const coordinateRequest = async (
   input: CoordinateRequestInput,
 ): Promise<CoordinationOutcome> => {
   const { request, scope, invoke, onEvent, now = Date.now, maxConcurrency } = input;
+  const nameOf = (personaId: OfficeAgentId): string =>
+    input.agentName?.(personaId) ?? OFFICE_AGENT_PERSONAS[personaId].alias;
   const startedAt = now();
   const events: CoordinationEvent[] = [];
 
@@ -277,15 +284,15 @@ export const coordinateRequest = async (
   const briefing = buildScopeBriefing(scope);
 
   emit('request-received', 'framing', null, plan.coordinatorId,
-    `${OFFICE_AGENT_PERSONAS[plan.coordinatorId].alias} recibe la solicitud desde ${scope.name}.`,
+    `${nameOf(plan.coordinatorId)} recibe la solicitud desde ${scope.name}.`,
     request);
 
   emit('team-assembled', 'framing', plan.coordinatorId, null,
-    `Equipo convocado: ${team.filter((member) => member.role === 'specialist').length} especialista(s), coordina ${OFFICE_AGENT_PERSONAS[plan.coordinatorId].alias}, consolida ${OFFICE_AGENT_PERSONAS[plan.consolidatorId].alias}.`);
+    `Equipo convocado: ${team.filter((member) => member.role === 'specialist').length} especialista(s), coordina ${nameOf(plan.coordinatorId)}, consolida ${nameOf(plan.consolidatorId)}.`);
 
   for (const workstream of plan.workstreams) {
     emit('assignment', 'delegating', plan.coordinatorId, workstream.personaId,
-      `${OFFICE_AGENT_PERSONAS[workstream.personaId].alias} recibe: ${OFFICE_AGENT_PERSONAS[workstream.personaId].domains[0]}.`,
+      `${nameOf(workstream.personaId)} recibe: ${OFFICE_AGENT_PERSONAS[workstream.personaId].domains[0]}.`,
       workstream.objective);
   }
 
@@ -308,7 +315,7 @@ export const coordinateRequest = async (
     const isRefinement = isConsolidator && consolidatorTurns > 1;
     if (isRefinement) {
       emit('handoff', 'consolidating', personaId, null,
-        `${OFFICE_AGENT_PERSONAS[personaId].alias} corrige su recomendación contra los criterios de la Oficina.`);
+        `${nameOf(personaId)} corrige su recomendación contra los criterios de la Oficina.`);
     }
     const phase: CoordinationPhase = isCoordinator
       ? 'framing'
@@ -316,7 +323,7 @@ export const coordinateRequest = async (
 
     if (!isCoordinator) {
       emit('agent-started', phase, personaId, null,
-        `${OFFICE_AGENT_PERSONAS[personaId].alias} está trabajando.`, undefined, promptStamp);
+        `${nameOf(personaId)} está trabajando.`, undefined, promptStamp);
     }
 
     try {
@@ -331,10 +338,10 @@ export const coordinateRequest = async (
         personaId,
         isCoordinator ? null : isConsolidator ? null : plan.consolidatorId,
         isCoordinator
-          ? `${OFFICE_AGENT_PERSONAS[personaId].alias} encuadra el trabajo y reparte.`
+          ? `${nameOf(personaId)} encuadra el trabajo y reparte.`
           : isConsolidator
-            ? `${OFFICE_AGENT_PERSONAS[personaId].alias} firma la recomendación.`
-            : `${OFFICE_AGENT_PERSONAS[personaId].alias} entrega su análisis.`,
+            ? `${nameOf(personaId)} firma la recomendación.`
+            : `${nameOf(personaId)} entrega su análisis.`,
         output,
         promptStamp,
       );
@@ -342,7 +349,7 @@ export const coordinateRequest = async (
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       emit('agent-failed', phase, personaId, null,
-        `${OFFICE_AGENT_PERSONAS[personaId].alias} no pudo completar su parte.`, message, promptStamp);
+        `${nameOf(personaId)} no pudo completar su parte.`, message, promptStamp);
       throw error;
     }
   };

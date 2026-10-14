@@ -2644,7 +2644,12 @@ Three properties worth keeping:
   reviewer (returning `null` rather than assigning someone switched off), a
   model refinement that names one is discarded, and a deliverable nobody
   enabled can do is written into the charter's `outOfScope` instead of
-  vanishing.
+  vanishing. And the configured alias is what every screen shows (cut 3):
+  avatars, chips, the task board, the charter, the load panel and the
+  coordination log go through `useAgentDisplayName` (or `coordinateRequest`'s
+  `agentName`). The cards are read once per user (`useLazyAgentProfiles`,
+  lazy-loaded so no route pays for the repository) and invalidated when one is
+  saved. Mentions still resolve by the shipped alias — the stable handle.
 - **One composer, in layers** (agents plan 16.0). `composeAgentInstruction`
   (`domain/agentPromptComposer.ts`) is the only place an agent's identity is
   written: the caller's context, then the **contract** (role, domains, scope
