@@ -18,6 +18,7 @@ import { Badge, Card, cn } from '../ui';
 import { ArrowUpRight } from 'lucide-react';
 import type { OfficeTask, OfficeTaskStatus } from '../../services/architectureOffice';
 import { PersonaChip } from './PersonaAvatar';
+import { EvidenceReviewConfirm } from './EvidenceReviewConfirm';
 import { SEVERITY_ICONS, TASK_KIND_ICONS, TASK_STATUS_ICONS } from './officeUiIcons';
 import {
   describeAging,
@@ -122,6 +123,9 @@ const TaskCard: React.FC<{ task: OfficeTask; tasks: OfficeTask[]; onOpenArtifact
             )}
           </div>
           <p className="text-xs leading-snug text-gray-600 dark:text-gray-300">{task.review.summary}</p>
+          {task.review.basis === 'evidence-only' && task.review.verdict === 'approved' && (
+            <EvidenceReviewConfirm task={task} />
+          )}
           {task.review.findings.length > 0 && (
             <ul className="space-y-1">
               {task.review.findings.slice(0, 4).map((finding, index) => {

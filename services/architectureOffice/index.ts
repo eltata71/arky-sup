@@ -72,3 +72,7 @@ export { normalizeBusinessProjectIds } from './domain/officeShared';
 // Tipos que otros módulos ya usaban entrando por ruta de fichero: se publican
 // aquí, en la puerta, sin coste en el bundle (se borran al compilar).
 export type { CoordinationEvent, CoordinationTeamMember } from './application/officeCoordination';
+export type {
+  EngagementOperationDeps,
+  OfficeOperationResult,
+} from './application/engagementOperations';

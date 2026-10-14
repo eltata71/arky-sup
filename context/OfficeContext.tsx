@@ -28,8 +28,10 @@ import {
   officeEngagementRepository,
 } from '../services/architectureOffice/infrastructure/OfficeEngagementRepository';
 import { can } from '../lib/authz';
+import { useCharterCommands } from './office/useCharterCommands';
 import {
   approveCharterOperation,
+  confirmReviewOperation,
   requestCharterChangesOperation,
   createEngagementOperation,
   decideEngagementOperation,
@@ -98,6 +100,8 @@ interface OfficeContextType {
   createEngagement: (input: CreateEngagementInput) => Promise<OfficeOperationResult>;
   approveCharter: (engagementId: string) => Promise<OfficeOperationResult>;
   requestCharterChanges: (engagementId: string, reason: string) => Promise<OfficeOperationResult>;
+  /** Confirma una aprobación que el especialista no llegó a revisar (17.1). */
+  confirmReview: (engagementId: string, taskId: string) => Promise<OfficeOperationResult>;
   /** Runs (or resumes) the task DAG. Safe to call on a partially run engagement. */
   runEngagementNow: (engagementId: string) => Promise<OfficeOperationResult>;
   cancelRun: (engagementId: string) => void;
@@ -151,6 +155,8 @@ const loadRunner = () =>
     runEngagement: runner.runEngagement,
     loadAgentConfiguration: configuration.loadAgentConfiguration,
   }));
+
+const CHARTER_OPERATIONS = { approveCharterOperation, requestCharterChangesOperation, confirmReviewOperation };
 
 export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const {
@@ -299,17 +305,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     );
   }, [actor, operationDeps]);
 
-  const approveCharter = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
-    const engagement = readEngagement(engagementId);
-    if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
-    return approveCharterOperation(operationDeps, engagement, actor);
-  }, [readEngagement, actor, operationDeps]);
-
-  const requestCharterChanges = useCallback(async (engagementId: string, reason: string): Promise<OfficeOperationResult> => {
-    const engagement = readEngagement(engagementId);
-    if (!engagement) return { ok: false, reason: 'El encargo no existe.' };
-    return requestCharterChangesOperation(operationDeps, engagement, actor, reason);
-  }, [readEngagement, actor, operationDeps]);
+  const { approveCharter, requestCharterChanges, confirmReview } = useCharterCommands(readEngagement, actor, operationDeps, CHARTER_OPERATIONS);
 
   const runEngagementNow = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
@@ -434,6 +430,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     createEngagement,
     approveCharter,
     requestCharterChanges,
+    confirmReview,
     runEngagementNow,
     cancelRun,
     evaluateGates,
@@ -442,7 +439,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }), [
     engagements, runningEngagementIds, isLoading, isResolving, loadError, retryLoad, canApprove, arbEligibility, canApproveCharters, charterEligibility,
     loadEngagements, getEngagement, listEngagementsForProject,
-    createEngagement, approveCharter, requestCharterChanges, runEngagementNow, cancelRun,
+    createEngagement, approveCharter, requestCharterChanges, confirmReview, runEngagementNow, cancelRun,
     evaluateGates, decideEngagement, deleteEngagement,
   ]);
 

@@ -2813,6 +2813,20 @@ configuration the agent must follow, and the fence would present them as data
 to analyse. The bench's `promptsConVallado` holds the Office sites at 100 %;
 `agentPromptFencing.test.ts` holds the agent's.
 
+### A reviewer never approves in silence
+
+Plan de agentes 17.1 (decision D-A5). When the specialist's critique did not
+arrive, came back unreadable or carried no verdict, and the deterministic
+evidence does not block, the review is `approved` **with
+`basis: 'evidence-only'`**, its summary says nobody reviewed the content, the
+review task stays in `awaiting-review` (not schedulable, not terminal) and the
+run ends `blocked` with that reason. A person signs it from the task board
+(`EvidenceReviewConfirm` → `confirmReview` → `confirmEvidenceOnlyReview`), which
+records `humanConfirmation` and a `review-confirmed` audit entry with the actor;
+the next run continues to consolidation. It used to read «el entregable cumple
+su contrato» about a review nobody made. A review whose content was cut at
+`REVIEW_CONTENT_LIMIT` carries `truncated`.
+
 ### Agent evaluation bench
 
 A change to an agent is measured, not argued (plan de agentes, 15.0).

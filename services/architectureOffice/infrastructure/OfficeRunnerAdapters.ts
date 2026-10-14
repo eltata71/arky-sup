@@ -27,7 +27,7 @@ import {
 } from '../../agent';
 import { parseStructured } from '../../ai/structuredOutput';
 import { newPrefixedId } from '../../../lib/ids';
-import { buildReviewPrompt, gatherDeterministicEvidence } from './officeReviewPrompt';
+import { REVIEW_CONTENT_LIMIT, buildReviewPrompt, gatherDeterministicEvidence } from './officeReviewPrompt';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../domain/officeAgentPersonas';
@@ -314,6 +314,10 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
 
     const findings = [...evidence.findings, ...modelFindings];
     const modelVerdict = critique?.verdict;
+    // La crítica cuenta sólo si dio un veredicto que se pueda leer: una llamada
+    // fallida, un JSON roto o una respuesta vacía no son una revisión
+    // (plan de agentes, 17.1).
+    const critiqued = modelVerdict === 'approved' || modelVerdict === 'changes-requested' || modelVerdict === 'rejected';
 
     // Deterministic evidence outranks the model: a blocking validator or a
     // critical contract issue is `changes-requested` whatever the model said.
@@ -335,11 +339,16 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       findings,
       deterministicScore: evidence.score,
       blockingValidatorIds: evidence.blockingValidatorIds,
-      summary: typeof critique?.summary === 'string' && critique.summary.trim().length > 0
-        ? critique.summary
-        : verdict === 'approved'
-          ? 'El entregable cumple su contrato y los criterios de aceptación.'
-          : 'El entregable necesita correcciones antes de avanzar.',
+      basis: critiqued ? 'model-and-evidence' : 'evidence-only',
+      ...(artifact.content.length > REVIEW_CONTENT_LIMIT ? { truncated: true } : {}),
+      summary: !critiqued && verdict === 'approved'
+        // Nunca «cumple su contrato» sin que nadie lo haya revisado.
+        ? 'La revisión del especialista no llegó: la evidencia determinista no encuentra defectos bloqueantes, pero nadie ha revisado el contenido. Confírmalo antes de seguir.'
+        : typeof critique?.summary === 'string' && critique.summary.trim().length > 0
+          ? critique.summary
+          : verdict === 'approved'
+            ? 'El entregable cumple su contrato y los criterios de aceptación.'
+            : 'El entregable necesita correcciones antes de avanzar.',
       decidedAt,
     };
   };

@@ -35,6 +35,7 @@ import {
   decideEngagement as decideEngagementRule,
 } from '../domain/OfficeArbService';
 import { evaluateOfficeQualityGates } from '../domain/officeQualityGates';
+import { confirmEvidenceOnlyReview } from '../domain/reviewConfirmation';
 import { createOfficeEngagement } from '../domain/officeEngagementFactory';
 import type {
   OfficeActor,
@@ -267,6 +268,22 @@ export const requestCharterChangesOperation = async (
   const confirmedEngagement = written.data ?? result.engagement;
   deps.onDraft?.(confirmedEngagement);
   return { ok: true, engagement: confirmedEngagement, persistence: written.status };
+};
+
+/**
+ * Una persona confirma una aprobación que el especialista no llegó a revisar
+ * (plan de agentes, 17.1). La regla —qué se puede confirmar y qué queda en la
+ * auditoría— es de `confirmEvidenceOnlyReview`; aquí sólo se escribe.
+ */
+export const confirmReviewOperation = async (
+  deps: EngagementOperationDeps,
+  engagement: OfficeEngagement,
+  taskId: string,
+  actor: OfficeActor,
+): Promise<OfficeOperationResult> => {
+  const result = confirmEvidenceOnlyReview(engagement, taskId, actor);
+  if (!result.ok) return { ok: false, reason: result.reason };
+  return confirmed(await persist(deps, result.engagement), result.engagement);
 };
 
 export const evaluateGatesOperation = async (

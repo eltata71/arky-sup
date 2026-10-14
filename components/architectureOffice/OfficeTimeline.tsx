@@ -39,6 +39,8 @@ const AUDIT_TONES: Record<string, TimelineItem['tone']> = {
   'engagement-cancelled': 'danger',
   'budget-exhausted': 'danger',
   'task-changes-requested': 'warning',
+  'review-awaiting-confirmation': 'warning',
+  'review-confirmed': 'success',
   'charter-changes-requested': 'warning',
   'task-completed': 'success',
   'charter-approved': 'success',

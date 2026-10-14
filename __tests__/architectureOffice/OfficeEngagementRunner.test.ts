@@ -12,6 +12,7 @@ import {
   type OfficeTaskReview,
 } from '../../services/architectureOffice/domain/OfficeTypes';
 import type { OfficeAgentId } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import { confirmEvidenceOnlyReview } from '../../services/architectureOffice/domain/reviewConfirmation';
 import type { PersistenceResult, PersistenceStatus } from '../../services/persistence';
 
 const task = (overrides: Partial<OfficeTask> & Pick<OfficeTask, 'id' | 'kind' | 'assigneeId'>): OfficeTask => ({
@@ -685,5 +686,65 @@ describe('nadie ejecuta un charter sin aprobar, entre por donde entre', () => {
 
     expect(result.status).not.toBe('refused');
     expect(ports.produceArtifact).toHaveBeenCalled();
+  });
+});
+
+/*
+ * Una aprobación sin crítica del especialista espera a una persona
+ * (plan de agentes, 17.1 · A16 · D-A5).
+ */
+describe('OfficeEngagementRunner · revisión sin crítica del especialista', () => {
+  const chain = () => [
+    task({ id: 'p1', kind: 'produce-artifact', assigneeId: 'felipe', reviewerId: 'elena' }),
+    task({ id: 'r1', kind: 'review-artifact', assigneeId: 'elena', dependsOn: ['p1'], reviewsTaskId: 'p1' }),
+    task({ id: 'c1', kind: 'consolidate', assigneeId: 'alejandro', dependsOn: ['r1'] }),
+  ];
+  const evidenceOnly = (reviewerId: OfficeAgentId): OfficeTaskReview => ({
+    ...approval(reviewerId),
+    basis: 'evidence-only',
+    summary: 'La revisión del especialista no llegó.',
+  });
+  const human = { id: 'u-ana', name: 'Ana', role: 'reviewer' };
+
+  it('no avanza: la revisión espera confirmación y el encargo lo dice', async () => {
+    const ports = makePorts({ reviewArtifact: vi.fn(async (current: OfficeTask) => evidenceOnly(current.assigneeId)) });
+    const result = await runEngagement(engagementWith(chain()), ports);
+
+    const review = result.engagement.tasks.find((item) => item.id === 'r1')!;
+    expect(review.status).toBe('awaiting-review');
+    expect(ports.consolidate).not.toHaveBeenCalled();
+    expect(result.status).toBe('blocked');
+    expect(result.message).toContain('confirmación');
+    expect(result.engagement.auditTrail.map((entry) => entry.action)).toContain('review-awaiting-confirmation');
+  });
+
+  it('confirmada por una persona, la siguiente ejecución sigue y consolida', async () => {
+    const ports = makePorts({ reviewArtifact: vi.fn(async (current: OfficeTask) => evidenceOnly(current.assigneeId)) });
+    const blocked = (await runEngagement(engagementWith(chain()), ports)).engagement;
+
+    const confirmation = confirmEvidenceOnlyReview(blocked, 'r1', human, () => '2026-10-14T10:00:00.000Z');
+    expect(confirmation.ok).toBe(true);
+    const confirmedReview = confirmation.engagement.tasks.find((item) => item.id === 'r1')!;
+    expect(confirmedReview.status).toBe('completed');
+    expect(confirmedReview.review?.humanConfirmation).toEqual({ by: human, at: '2026-10-14T10:00:00.000Z' });
+    const audit = confirmation.engagement.auditTrail.at(-1)!;
+    expect(audit.action).toBe('review-confirmed');
+    expect(audit.actor).toEqual(human);
+
+    const resumed = await runEngagement(confirmation.engagement, ports);
+    expect(ports.consolidate).toHaveBeenCalledTimes(1);
+    expect(resumed.status).toBe('completed');
+  });
+
+  it('una revisión con crítica no pide confirmación', async () => {
+    const ports = makePorts({ reviewArtifact: vi.fn(async (current: OfficeTask) => ({ ...approval(current.assigneeId), basis: 'model-and-evidence' as const })) });
+    const result = await runEngagement(engagementWith(chain()), ports);
+    expect(result.status).toBe('completed');
+  });
+
+  it('no confirma lo que no espera confirmación', () => {
+    const engagement = engagementWith(chain());
+    expect(confirmEvidenceOnlyReview(engagement, 'r1', human).ok).toBe(false);
+    expect(confirmEvidenceOnlyReview(engagement, 'no-existe', human).ok).toBe(false);
   });
 });

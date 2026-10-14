@@ -84,6 +84,17 @@ export interface OfficeTaskReview {
   traceId?: string;
   /** Sello del prompt de revisión (`office.review@v1#…`, plan de agentes 15.1). */
   promptStamp?: string;
+  /**
+   * Sobre qué se tomó el veredicto (plan de agentes, 17.1 · D-A5). Si la crítica
+   * del especialista no llegó o no se pudo leer, el veredicto se apoya sólo en
+   * la evidencia determinista: `evidence-only`, y una aprobación así espera a
+   * que una persona la confirme. Ausente en revisiones anteriores a la regla.
+   */
+  basis?: 'model-and-evidence' | 'evidence-only';
+  /** El revisor vio el contenido recortado (`REVIEW_CONTENT_LIMIT`). */
+  truncated?: boolean;
+  /** Quién confirmó una aprobación `evidence-only`, y cuándo. */
+  humanConfirmation?: { by: OfficeActor; at: string };
   verdict: OfficeReviewVerdict;
   findings: OfficeReviewFinding[];
   /** Deterministic score from the artifact compiler, when one was available. */
@@ -264,6 +275,8 @@ export type OfficeAuditAction =
   | 'task-failed'
   | 'task-changes-requested'
   | 'task-cancelled'
+  | 'review-awaiting-confirmation'
+  | 'review-confirmed'
   | 'gates-evaluated'
   | 'submitted-to-arb'
   | 'arb-decided'
