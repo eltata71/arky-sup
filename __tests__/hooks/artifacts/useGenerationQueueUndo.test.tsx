@@ -74,7 +74,7 @@ describe('cola de generación y deshacer', () => {
   });
 
   it('no anuncia éxito ni ofrece deshacer si la base no confirma el guardado', async () => {
-    mocks.updateArtifactConfirmed.mockResolvedValueOnce({ success: false, status: 'offline', message: 'Sin conexión' });
+    mocks.updateArtifactConfirmed.mockResolvedValueOnce({ success: false, status: 'offline' });
     await start('replace', existing);
     await waitFor(() => expect(mocks.updateArtifactConfirmed).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(mocks.addToast).toHaveBeenCalled());
