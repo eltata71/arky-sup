@@ -216,7 +216,7 @@ vigente del documento antes de implementar.**
 | Caminos donde la ficha llega al prompt | 3 de 10 → **10 de 10** (16.1 corte 1) | 10 de 10 | Prueba de paridad de caminos (16.1) |
 | Prompts con capa de persona duplicada o contradictoria | ≥ 1 (dock) → **0** (16.0) | 0 | Prueba de 16.0 sobre el prompt compuesto |
 | Agentes desactivados que pueden recibir trabajo | encargos y menciones → **0 caminos** (16.1) | 0 caminos | Prueba de 16.1 |
-| Interpolaciones de texto de usuario sin vallar en prompts de agentes | 8 de 8 sitios medidos (15.0) | 0 | `eval:agents` (`promptsConVallado`) y escáner de 17.0 |
+| Interpolaciones de texto de usuario sin vallar en prompts de agentes | 8 de 8 sitios medidos (15.0) → **0** (17.0) | 0 | `eval:agents` (`promptsConVallado`) y escáner de 17.0 |
 | Revisiones aprobadas sin crítica del modelo y sin decirlo | 3 de 3 casos (15.0) | 0 | `eval:agents` (`aprobacionesSinCritica`) |
 | Presupuesto de handoff aplicado | 0 % | 100 % de las invocaciones | Prueba de 17.3 |
 | Llamadas de IA contadas frente a reales en un encargo | 1 por tarea (literal) | igual a las reales | Prueba de 17.3 con transporte simulado |
@@ -888,7 +888,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 16.5 Deriva del contrato | P2 · M | Pendiente | |
 | 16.6 Ver y ensayar el agente | P2 · M | Pendiente | |
 | 16.7 Agentes de la organización | P3 · L | Descartada | D-A1 = A (fichas por usuario), 2026-10-13 |
-| 17.0 Vallado completo | P0 · M | Pendiente | |
+| 17.0 Vallado completo | P0 · M | Hecha | `promptsConVallado` 28,6 → 100 %: solicitud de coordinación, brief del encargo, contenido revisado (con aviso de recorte), registro en contexto, mensaje del clasificador y capas de memoria del agente. La memoria base y la instrucción de la ficha quedan fuera de la valla a propósito: son configuración a seguir |
 | 17.1 Revisor sin aprobación silenciosa | P0 · S | Pendiente | |
 | 17.2 Memoria con procedencia | P1 · M | Pendiente | |
 | 17.3 Presupuestos y cancelación | P1 · M | Pendiente | |
