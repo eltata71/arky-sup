@@ -215,7 +215,7 @@ vigente del documento antes de implementar.**
 |---|---|---|---|
 | Caminos donde la ficha llega al prompt | 3 de 10 → **10 de 10** (16.1 corte 1) | 10 de 10 | Prueba de paridad de caminos (16.1) |
 | Prompts con capa de persona duplicada o contradictoria | ≥ 1 (dock) → **0** (16.0) | 0 | Prueba de 16.0 sobre el prompt compuesto |
-| Agentes desactivados que pueden recibir trabajo | encargos y menciones | 0 caminos | Prueba de 16.1 |
+| Agentes desactivados que pueden recibir trabajo | encargos y menciones → **0 caminos** (16.1) | 0 caminos | Prueba de 16.1 |
 | Interpolaciones de texto de usuario sin vallar en prompts de agentes | 8 de 8 sitios medidos (15.0) | 0 | `eval:agents` (`promptsConVallado`) y escáner de 17.0 |
 | Revisiones aprobadas sin crítica del modelo y sin decirlo | 3 de 3 casos (15.0) | 0 | `eval:agents` (`aprobacionesSinCritica`) |
 | Presupuesto de handoff aplicado | 0 % | 100 % de las invocaciones | Prueba de 17.3 |
@@ -880,7 +880,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 15.1 Prompts con identidad | P1 · M | Hecha | #240 · catálogo de 10 plantillas de la Oficina con huella; sello `id@vN#hash` en eventos de coordinación y en `OfficeTask.promptStamps`; `invocacionesConSello` 100 %. Los prompts de `services/agent` (intención LLM, memoria) entran con 18.3 y 17.2 |
 | 15.2 Tokens, latencia y coste | P1 · M | Pendiente | |
 | 16.0 Compositor único en capas | P0 · L | Hecha | #241 · `composeAgentInstruction` en `domain/agentPromptComposer.ts`; ficha al prompt de sistema por `buildCoordinationInvoker`; instrucción de la ficha añadida (D-A2); conocimiento y memoria vallados (vallado 0 → 28,6 %); la instrucción añadida no se valla a propósito (es configuración a seguir), va subordinada en su capa; 5 plantillas a v2 |
-| 16.1 Ficha en los diez caminos | P0 · L | En curso | corte 1 (#242) hecho: ficha en los 10 caminos (`agentProfileParity.test.ts`), menciones a desactivados las responde Arky, el copiloto no los convoca. Corte 2 (#243) hecho: el charter del encargo no asigna trabajo a desactivados (productor ni revisor; el refinamiento que los nombre se descarta; lo no asignable va a `outOfScope`), con caso en el banco. Queda corte 3 (alias configurado en pantallas y eventos) |
+| 16.1 Ficha en los diez caminos | P0 · L | Hecha | corte 1 (#242) hecho: ficha en los 10 caminos (`agentProfileParity.test.ts`), menciones a desactivados las responde Arky, el copiloto no los convoca. Corte 2 (#243) hecho: el charter del encargo no asigna trabajo a desactivados (productor ni revisor; el refinamiento que los nombre se descarta; lo no asignable va a `outOfScope`), con caso en el banco. Corte 3 hecho: el alias configurado se ve en avatares, chips, tablero, charter, panel de carga y bitácora (`useAgentDisplayName`, `coordinateRequest({ agentName })`); las fichas se leen una vez por usuario y se invalidan al guardar. El brief de `EngagementRoom` para el modelo conserva el alias de fábrica, que es el que resuelve menciones |
 | 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
 | 16.8 Las raíces del router coinciden | P1 · S | Hecha | #239 · `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
 | 16.3 Una sola orquestación | P1 · M | Pendiente | |

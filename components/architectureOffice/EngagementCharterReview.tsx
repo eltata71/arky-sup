@@ -16,18 +16,18 @@ import React from 'react';
 import { Alert, Badge, Card } from '../ui';
 // Por el barril: este fichero es nuevo y el presupuesto de imports profundos
 // sólo puede bajar. Lo monta un diálogo que ya se carga de forma perezosa.
-import {
-  OFFICE_AGENT_PERSONAS,
-  type OfficeEngagement,
-} from '../../services/architectureOffice';
+import type { OfficeEngagement } from '../../services/architectureOffice';
 import { ENGAGEMENT_KIND_LABELS } from './officeUiLabels';
+import { useAgentDisplayName } from '../../hooks/useAgentDisplayName';
 
 export interface EngagementCharterReviewProps {
   engagement: OfficeEngagement;
 }
 
 export const EngagementCharterReview: React.FC<EngagementCharterReviewProps> = ({ engagement }) =>{
-  const translateConfig = useUiTranslation(); const t = useUiTranslation(); return  (
+  const translateConfig = useUiTranslation(); const t = useUiTranslation();
+  // El alias configurado en la ficha (plan de agentes, 16.1).
+  const displayName = useAgentDisplayName(); return  (
   <>
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="ai">{translateConfig(ENGAGEMENT_KIND_LABELS[engagement.charter.kind])}</Badge>
@@ -68,10 +68,10 @@ export const EngagementCharterReview: React.FC<EngagementCharterReviewProps> = (
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{deliverable.templateName}</p>
                 <div className="flex flex-wrap gap-1.5">
                   <Badge tone="primary" size="xs" outline>
-                    {t("ui.produce.a05840")} {OFFICE_AGENT_PERSONAS[deliverable.assigneeId].alias}
+                    {t("ui.produce.a05840")} {displayName(deliverable.assigneeId)}
                   </Badge>
                   <Badge tone="info" size="xs" outline>
-                    {t("ui.revisa.37e765")} {OFFICE_AGENT_PERSONAS[deliverable.reviewerId].alias}
+                    {t("ui.revisa.37e765")} {displayName(deliverable.reviewerId)}
                   </Badge>
                   {deliverable.dependsOnTemplateNames.length > 0 && (
                     <Badge tone="gray" size="xs" outline>

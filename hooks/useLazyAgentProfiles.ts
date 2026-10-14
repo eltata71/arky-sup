@@ -25,9 +25,52 @@ export type ProfileAgentId = OfficeAgentProfile['agentId'];
 export const disabledProfileIds = (profiles: readonly OfficeAgentProfile[]): ProfileAgentId[] =>
   profiles.filter((profile) => !profile.enabled).map((profile) => profile.agentId);
 
+/*
+ * Una lectura por usuario, compartida. El avatar de un agente se pinta en
+ * listas —tableros, paneles, el charter— y cada instancia pidiendo sus fichas
+ * por su cuenta sería una lectura por avatar. Las suscripciones reciben la
+ * lista nueva cuando alguien guarda una ficha (`invalidateLazyAgentProfiles`).
+ */
+const cache = new Map<string, Promise<readonly OfficeAgentProfile[]>>();
+const listeners = new Set<() => void>();
+
+const loadProfiles = (userId: string): Promise<readonly OfficeAgentProfile[]> => {
+  let pending = cache.get(userId);
+  if (!pending) {
+    // Lazy on purpose: the cards' door must not join a route's chunk.
+    pending = import('../services/architectureOffice/agents')
+      .then(async ({ officeAgentProfileRepository, resolveAgentProfiles }) =>
+        resolveAgentProfiles(await officeAgentProfileRepository.list(userId)))
+      .catch(() => {
+        // Sin fichas hablan las personas de fábrica; la próxima vez se reintenta.
+        cache.delete(userId);
+        return NONE;
+      });
+    cache.set(userId, pending);
+  }
+  return pending;
+};
+
+/**
+ * Olvida las fichas leídas: quien guarda o restaura una ficha lo llama, y cada
+ * pantalla montada vuelve a leerlas. Sin esto, renombrar a un agente no se
+ * vería hasta recargar.
+ */
+export const invalidateLazyAgentProfiles = (): void => {
+  cache.clear();
+  for (const listener of listeners) listener();
+};
+
 export const useLazyAgentProfiles = (): readonly OfficeAgentProfile[] => {
   const userId = useOptionalAuth()?.user?.uid ?? '';
   const [profiles, setProfiles] = useState<readonly OfficeAgentProfile[]>(NONE);
+  const [generation, setGeneration] = useState(0);
+
+  useEffect(() => {
+    const listener = () => setGeneration((value) => value + 1);
+    listeners.add(listener);
+    return () => { listeners.delete(listener); };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -35,15 +78,9 @@ export const useLazyAgentProfiles = (): readonly OfficeAgentProfile[] => {
       setProfiles(NONE);
       return () => { alive = false; };
     }
-    // Lazy on purpose: the cards' door must not join a route's chunk.
-    void import('../services/architectureOffice/agents')
-      .then(async ({ officeAgentProfileRepository, resolveAgentProfiles }) => {
-        const stored = await officeAgentProfileRepository.list(userId);
-        if (alive) setProfiles(resolveAgentProfiles(stored));
-      })
-      .catch(() => { /* sin fichas: hablan las personas de fábrica */ });
+    void loadProfiles(userId).then((loaded) => { if (alive) setProfiles(loaded); });
     return () => { alive = false; };
-  }, [userId]);
+  }, [userId, generation]);
 
   return profiles;
 };

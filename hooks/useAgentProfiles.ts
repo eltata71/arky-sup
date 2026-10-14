@@ -26,6 +26,7 @@ import {
   type OfficeAgentProfileInput,
   type OfficeAgentProfileOverride,
 } from '../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
+import { invalidateLazyAgentProfiles } from './useLazyAgentProfiles';
 
 export interface AgentProfilesApi {
   /** Las trece fichas, con lo configurado ya aplicado. */
@@ -93,6 +94,8 @@ export const useAgentProfiles = (): AgentProfilesApi => {
       ...previous.filter((entry) => entry.agentId !== created.override.agentId),
     ]);
     const result = await officeAgentProfileRepository.save(created.override);
+    // Los demás caminos y pantallas leen la ficha nueva (plan de agentes, 16.1).
+    invalidateLazyAgentProfiles();
     setNotice(result.success ? null : t('uiMessage.no-se-pudo-guardar-la-ficha.08fed8'));
     return created;
   }, [userId, t]);
@@ -101,6 +104,7 @@ export const useAgentProfiles = (): AgentProfilesApi => {
     if (!userId) return;
     setOverrides((previous) => previous.filter((entry) => entry.agentId !== agentId));
     const result = await officeAgentProfileRepository.reset(userId, agentId);
+    invalidateLazyAgentProfiles();
     setNotice(result.success ? null : t('uiMessage.no-se-pudo-guardar-la-ficha.08fed8'));
   }, [userId, t]);
 

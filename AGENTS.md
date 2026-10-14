@@ -291,7 +291,8 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    desactivado la responde Arky y lo dice, y un encargo no le asigna trabajo:
    `assignDeliverable` lo excluye como productor y revisor, el refinamiento que
    lo nombre se descarta y lo que nadie habilitado pueda hacer queda escrito en
-   `outOfScope` del charter.
+   `outOfScope` del charter. Toda pantalla muestra el alias configurado
+   (`useAgentDisplayName`); ninguna lee `OFFICE_AGENT_PERSONAS[…].alias`.
    **Un prompt de agente tiene nombre y versión** (15.1):
    `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
    huella de su texto sobre un caso canónico; cambiar el texto sin subir la

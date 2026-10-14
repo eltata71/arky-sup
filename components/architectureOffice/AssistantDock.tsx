@@ -36,6 +36,7 @@ import {
 import { buildCoordinationInvoker } from '../../services/architectureOffice/application/officeCoordinationInvoker';
 import { chatWithProject, configuredModelTiers, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
+import { useAgentDisplayName } from '../../hooks/useAgentDisplayName';
 import type { Settings } from '../../types';
 import type { Project } from '../../context/AppContext';
 import { SafeRichText } from '../ui/SafeRichText';
@@ -98,6 +99,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
    * de lo que dice cuando responde.
    */
   const { profiles } = useAgentProfiles();
+  const displayName = useAgentDisplayName();
   const unavailableAgents = useMemo(() => disabledAgentIds(profiles), [profiles]);
   const agentModelTiers = useMemo(() => configuredModelTiers(profiles), [profiles]);
   const dialogRef = useFocusTrap<HTMLDivElement>(open);
@@ -150,6 +152,8 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
       // Las fichas configuradas viajan con la operación: quien respondió es el
       // agente que el usuario configuró, no la persona de fábrica.
       unavailableAgents,
+      // La bitácora escribe a cada agente con el alias de su ficha.
+      agentName: displayName,
     });
 
     setTeam(outcome.team);
@@ -161,7 +165,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
       status: outcome.status,
       contributions: outcome.contributions,
     }]);
-  }, [running, scope, settings, project, nextId, profiles, unavailableAgents, agentModelTiers]);
+  }, [running, scope, settings, project, nextId, profiles, unavailableAgents, agentModelTiers, displayName]);
 
   /**
    * Copying is the most common thing a user does with an answer several
@@ -330,7 +334,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                             <div key={contribution.personaId} className="rounded-lg bg-white/70 p-2 dark:bg-gray-950/50">
                               <p className="flex items-center gap-1.5 text-2xs font-semibold text-gray-700 dark:text-gray-200">
                                 <PersonaAvatar personaId={contribution.personaId} size="xs" decorative />
-                                {OFFICE_AGENT_PERSONAS[contribution.personaId].alias} · {OFFICE_AGENT_PERSONAS[contribution.personaId].role}
+                                {displayName(contribution.personaId)} · {OFFICE_AGENT_PERSONAS[contribution.personaId].role}
                                 {contribution.status === 'failed' && (
                                   <span className="text-[#dc2626] dark:text-[#ef4444]">{t("ui.no-entrego.f52d6b")}</span>
                                 )}
