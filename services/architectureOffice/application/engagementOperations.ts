@@ -25,11 +25,9 @@
  */
 
 import type { PersistenceResult, PersistenceStatus } from '../../persistence';
-import {
-  applyCharterRefinement,
-  buildCharterRefinementPrompt,
-  planCharterDeterministic,
-} from '../domain/OfficeEngagementPlanner';
+import type { OfficeAgentId } from '../domain/agentDefinition';
+import { planCharterDeterministic } from '../domain/OfficeEngagementPlanner';
+import { applyCharterRefinement, buildCharterRefinementPrompt } from '../domain/charterRefinement';
 import {
   approveCharter as approveCharterRule,
   requestCharterChanges as requestCharterChangesRule,
@@ -167,6 +165,11 @@ export interface CreateEngagementCommand {
   maxDeliverables?: number;
   /** Salta el refinamiento por IA (pruebas y modo sin conexión). */
   deterministicOnly?: boolean;
+  /**
+   * Agentes que el usuario desactivó en su ficha: el charter no les asigna
+   * trabajo (plan de agentes, 16.1).
+   */
+  unavailableAgents?: readonly OfficeAgentId[];
 }
 
 export const createEngagementOperation = async (
@@ -179,6 +182,7 @@ export const createEngagementOperation = async (
     title: command.title,
     brief: command.brief,
     maxDeliverables: command.maxDeliverables,
+    unavailable: command.unavailableAgents,
   });
 
   let charter: OfficeCharter = scaffold;
@@ -187,7 +191,7 @@ export const createEngagementOperation = async (
       const raw = await deps.refineCharter(
         buildCharterRefinementPrompt({ title: command.title, brief: command.brief }, scaffold),
       );
-      charter = applyCharterRefinement(scaffold, raw).charter;
+      charter = applyCharterRefinement(scaffold, raw, { unavailable: command.unavailableAgents }).charter;
     } catch {
       // El charter determinista es un plan completo y ejecutable.
     }

@@ -167,7 +167,6 @@ export const BYTE_CEILINGS = {
    * adición legítima lo rompe. Un presupuesto sin holgura no protege el
    * fichero, sólo obliga a tocar este archivo.
    */
-  'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 21006, // F6-03 corte 3: la ruta de `officeEngagementRecord`
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/ArtifactSelectionStep.tsx': 20185,
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
@@ -256,7 +255,6 @@ export const CEILINGS = {
   'context/LMSContext.tsx': 530,
   'services/diagram/irToReactFlow.ts': 545,
   'pages/EngagementRoom.tsx': 545, // 14.7: +2 líneas, 14.1: +3 líneas, ídem
-  'services/architectureOffice/domain/OfficeEngagementPlanner.ts': 540,
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'components/artifacts/ArtifactInspectorPanel.tsx': 509,
 };

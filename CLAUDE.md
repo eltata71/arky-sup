@@ -2639,6 +2639,12 @@ Three properties worth keeping:
   `agentProfileParity.test.ts` runs each path with a marker in the card. A
   mention of an agent the user disabled is answered by Arky, who says so
   (`resolveMentionedSpeaker`); the copilot does not convene a disabled agent.
+  Nor does an engagement give one work (16.1, cut 2): the intake wizard sends
+  `unavailableAgents`, `assignDeliverable` excludes them as producer *and*
+  reviewer (returning `null` rather than assigning someone switched off), a
+  model refinement that names one is discarded, and a deliverable nobody
+  enabled can do is written into the charter's `outOfScope` instead of
+  vanishing.
 - **One composer, in layers** (agents plan 16.0). `composeAgentInstruction`
   (`domain/agentPromptComposer.ts`) is the only place an agent's identity is
   written: the caller's context, then the **contract** (role, domains, scope

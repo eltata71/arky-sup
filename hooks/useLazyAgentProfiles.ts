@@ -18,6 +18,13 @@ import type { OfficeAgentProfile } from '../services/architectureOffice/agents';
 
 const NONE: readonly OfficeAgentProfile[] = Object.freeze([]);
 
+/** El id de un agente, para quien sólo maneja fichas y no quiere importar la Oficina. */
+export type ProfileAgentId = OfficeAgentProfile['agentId'];
+
+/** Los agentes que el usuario desactivó en su ficha. */
+export const disabledProfileIds = (profiles: readonly OfficeAgentProfile[]): ProfileAgentId[] =>
+  profiles.filter((profile) => !profile.enabled).map((profile) => profile.agentId);
+
 export const useLazyAgentProfiles = (): readonly OfficeAgentProfile[] => {
   const userId = useOptionalAuth()?.user?.uid ?? '';
   const [profiles, setProfiles] = useState<readonly OfficeAgentProfile[]>(NONE);

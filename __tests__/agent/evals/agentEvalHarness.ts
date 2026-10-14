@@ -25,6 +25,7 @@ import {
   type OfficeAgentInvoker,
 } from '../../../services/architectureOffice/application/officeOrchestration';
 import { createHandoff, MAX_HANDOFF_CONTEXT_REFERENCES } from '../../../services/architectureOffice/domain/agentHandoff';
+import { planCharterDeterministic } from '../../../services/architectureOffice/domain/OfficeEngagementPlanner';
 import type { AgentHandoffKind, OfficeAgentId } from '../../../services/architectureOffice/domain/agentDefinition';
 import {
   evaluateConsolidation,
@@ -247,7 +248,14 @@ export const runRouting = (testCase: RoutingCase): RoutingResult => {
   const convocados = plan.workstreams.map((workstream) => workstream.personaId);
   const faltan = testCase.esperados.filter((id) => !convocados.includes(id));
   const prohibidosConvocados = testCase.prohibidos.filter((id) => convocados.includes(id));
-  const desactivadosConvocados = (testCase.desactivados ?? []).filter((id) => convocados.includes(id));
+  // Un desactivado no se convoca en la coordinación ni recibe trabajo en el
+  // charter de un encargo con la misma solicitud (16.1 corte 2).
+  const charterWorkers = testCase.desactivados?.length
+    ? planCharterDeterministic({ title: testCase.id, brief: testCase.solicitud, unavailable: testCase.desactivados })
+      .deliverables.flatMap((deliverable) => [deliverable.assigneeId, deliverable.reviewerId])
+    : [];
+  const desactivadosConvocados = (testCase.desactivados ?? [])
+    .filter((id) => convocados.includes(id) || charterWorkers.includes(id));
   const topeRespetado = convocados.length >= 1 && convocados.length <= (testCase.maxEspecialistas ?? 4);
   return {
     id: testCase.id,
