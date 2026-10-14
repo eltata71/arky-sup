@@ -264,7 +264,7 @@ export const LAYER_VIOLATION_BUDGET = {
 export const DEEP_IMPORT_BUDGET = {
   'api -> services/ai': 1,
   'components -> services/ai': 1,
-  'components -> services/architectureOffice': 15, // 12.7: 19 → 15, la capa de IA por su puerta diferida · F5-02: capacidades y copiloto, por la puerta
+  'components -> services/architectureOffice': 14, // agentes 16.1: 15 → 14, los nombres de agente por `useAgentDisplayName` · 12.7: 19 → 15, la capa de IA por su puerta diferida · F5-02: capacidades y copiloto, por la puerta
   'components -> services/artifacts': 7,
   'components -> services/diagram': 14,
   'components -> services/quality': 2,

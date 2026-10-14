@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useOptionalAuth } from '../context/AuthContext';
-import type { OfficeAgentProfile } from '../services/architectureOffice/agents';
+import type { OfficeAgentProfile } from '../services/architectureOffice/agentProfilesLoader';
 
 const NONE: readonly OfficeAgentProfile[] = Object.freeze([]);
 
@@ -38,9 +38,10 @@ const loadProfiles = (userId: string): Promise<readonly OfficeAgentProfile[]> =>
   let pending = cache.get(userId);
   if (!pending) {
     // Lazy on purpose: the cards' door must not join a route's chunk.
-    pending = import('../services/architectureOffice/agents')
-      .then(async ({ officeAgentProfileRepository, resolveAgentProfiles }) =>
-        resolveAgentProfiles(await officeAgentProfileRepository.list(userId)))
+    // Su propia puerta, no `agents.ts`: importar ésa en diferido fijaba en la
+    // ruta todo lo que reexporta.
+    pending = import('../services/architectureOffice/agentProfilesLoader')
+      .then(({ loadResolvedAgentProfiles }) => loadResolvedAgentProfiles(userId))
       .catch(() => {
         // Sin fichas hablan las personas de fábrica; la próxima vez se reintenta.
         cache.delete(userId);

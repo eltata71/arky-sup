@@ -17,11 +17,10 @@ vi.mock('../../context/AuthContext', () => ({
   useOptionalAuth: () => ({ user: { uid: 'u-1' } }),
 }));
 
-vi.mock('../../services/architectureOffice/agents', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../services/architectureOffice/agents')>();
+vi.mock('../../services/architectureOffice/agentProfilesLoader', async () => {
+  const { resolveAgentProfiles } = await import('../../services/architectureOffice/domain/officeAgentProfile');
   return {
-    ...actual,
-    officeAgentProfileRepository: { list: vi.fn(async () => stored.overrides) },
+    loadResolvedAgentProfiles: vi.fn(async () => resolveAgentProfiles(stored.overrides as never)),
   };
 });
 

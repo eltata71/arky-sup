@@ -9,7 +9,7 @@
  * que se le escribe.
  */
 import { useCallback } from 'react';
-import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../services/architectureOffice/domain';
 import { useLazyAgentProfiles, type ProfileAgentId } from './useLazyAgentProfiles';
 
 export type AgentDisplayName = (agentId: ProfileAgentId) => string;
