@@ -895,8 +895,8 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 17.4 Éxito con persistencia confirmada | P1 · M | Hecha | #247 · store confirmado para agente y cola; fallo remoto visible y sin anuncio de éxito; prueba de deshacer conservada |
 | 18.0 Esquemas por rol | P1 · L | Pendiente | |
 | 18.1 Revisión con esquema | P1 · M | Pendiente | |
-| 18.2 Evaluador en las dos consolidaciones | P1 · M | En revisión | #248 · el encargo evalúa y corrige una vez; la revisión queda en la tarea y el banco sube a 100 % |
-| 18.3 Clasificador de intención | P2 · M | Pendiente | |
+| 18.2 Evaluador en las dos consolidaciones | P1 · M | Hecha | #248 · el encargo evalúa y corrige una vez; la revisión queda en la tarea y el banco sube a 100 % |
+| 18.3 Clasificador de intención | P2 · M | En revisión | #249 · el heurístico reconoce crear (con doble determinante y ADR/NFR), lote, «para este proyecto» y sobrescribir; el LLM conoce los 12 tipos (enum en el esquema); 31 casos, precisión 100 %, confirmación 100 %. Umbral LLM 0,55 se mantiene: ningún caso del banco queda bajo él |
 | 18.4 Niveles de modelo | P2 · S | Pendiente | D-A4 aprobada |
 | 19.0 Herramientas de lectura | P2 · XL | Pendiente | |
 | 19.1 Política de contexto | P2 · L | Pendiente | |

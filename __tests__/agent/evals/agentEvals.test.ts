@@ -126,7 +126,7 @@ beforeAll(async () => {
 describe('el corpus del banco de agentes', () => {
   it('tiene las cinco familias con el mínimo de casos del plan', () => {
     expect(corpus.enrutado.length).toBeGreaterThanOrEqual(20);
-    expect(corpus.intencion.length).toBeGreaterThanOrEqual(15);
+    expect(corpus.intencion.length).toBeGreaterThanOrEqual(30);
     expect(corpus.contratos.length + corpus.personaFijada.length).toBeGreaterThanOrEqual(8);
     expect(corpus.revision.length).toBeGreaterThanOrEqual(10);
     expect(corpus.consolidacion.length).toBeGreaterThanOrEqual(5);

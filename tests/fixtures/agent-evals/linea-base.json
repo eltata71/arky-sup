@@ -4,7 +4,7 @@
     "precisionEnrutado": 100,
     "especialistasProhibidosConvocados": 0,
     "desactivadosConvocados": 0,
-    "precisionIntencion": 60,
+    "precisionIntencion": 100,
     "confirmacionCorrecta": 100,
     "handoffsBienDecididos": 100,
     "personaFijada": 100,
@@ -15,13 +15,5 @@
     "invocacionesConSello": 100,
     "llamadasPorOperacion": 4.8
   },
-  "defectosConocidos": [
-    {
-      "id": "intencion-heuristica",
-      "hallazgo": "A20",
-      "tarea": "18.3",
-      "metrica": "precisionIntencion",
-      "descripcion": "El clasificador heurístico no reconoce «crea un ADR», «genera un nuevo diagrama», «todos los diagramas», «¿por qué…?» ni «sobrescribe la versión actual», y manda la memoria de proyecto al artefacto. El clasificador LLM no puede corregirlo: no conoce create, batch ni memory."
-    }
-  ]
+  "defectosConocidos": []
 }

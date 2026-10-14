@@ -23,6 +23,11 @@ import type { AgentContext, AgentIntent, AgentIntentType, AgentImpactLevel, Agen
 import { logAgentEvent } from './agentLogger';
 
 const VALID_TYPES: readonly AgentIntentType[] = [
+  'artifact.create',
+  'artifacts.batch',
+  'memory.save.global',
+  'memory.save.project',
+  'memory.save.artifact',
   'artifact.regenerate',
   'artifact.improve',
   'artifact.patch',
@@ -57,6 +62,11 @@ Possible intent types:
 - artifact.createVersion → snapshot a new version without changing content
 - artifact.applySuggestion → apply already-loaded suggestions / recommendations
 - artifact.explainOnly   → user just wants an explanation, no modification
+- artifact.create        → user wants a NEW artifact (diagram, ADR, document…) next to the current one
+- artifacts.batch        → the same change applied to several/all artifacts of the project
+- memory.save.global     → remember something for every project
+- memory.save.project    → remember something for this project
+- memory.save.artifact   → remember something for the active artifact only
 - unknown                → no actionable intent / pure conversation
 
 Set "impact": "low" (cheap, reversible), "medium" (rewrite scope, new version expected) or "high" (regeneration).
@@ -73,7 +83,7 @@ ${wrapUntrustedContent('mensaje del usuario', userInput)}
 const SCHEMA = {
   type: 'object',
   properties: {
-    type: { type: 'string', description: 'Intent type from the allowed set.' },
+    type: { type: 'string', enum: [...VALID_TYPES], description: 'Intent type from the allowed set.' },
     confidence: { type: 'number', description: 'Confidence between 0 and 1.' },
     impact: { type: 'string', description: 'low | medium | high' },
     suggestedTarget: { type: 'string', description: 'new_version | current' },
