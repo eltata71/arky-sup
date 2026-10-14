@@ -191,6 +191,12 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
           <p className="whitespace-pre-wrap rounded-xl bg-gray-50 px-3 py-2.5 text-sm leading-relaxed text-gray-700 dark:bg-gray-900/50 dark:text-gray-200">
             {profile.instruction}
           </p>
+          {profile.organizationInstruction && (
+            <p className="mt-2 whitespace-pre-wrap rounded-xl bg-primary-50 px-3 py-2.5 text-sm leading-relaxed text-gray-700 dark:bg-primary-900/20 dark:text-gray-200">
+              <span className="font-medium">{t("ui.anadida-por-tu-organizacion.8e2b17")}</span>{' '}
+              {profile.organizationInstruction}
+            </p>
+          )}
         </Section>
 
         <div className="grid gap-3 sm:grid-cols-2">

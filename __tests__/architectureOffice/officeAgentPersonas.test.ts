@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   OFFICE_AGENT_PERSONAS,
   resolveOfficeAgentMention,
-  buildOfficePersonaInstruction,
 } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import { buildOfficePersonaInstruction } from '../../services/architectureOffice/domain/officePersonaBriefing';
 import {
   findAgentsThatProduce,
   findAgentsThatReview,

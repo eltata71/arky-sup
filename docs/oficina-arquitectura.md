@@ -292,8 +292,10 @@ Tres propiedades que conviene no perder:
 2. **Las listas son aditivas.** Enseñarle a Sofía el canal de corredores de esta
    compañía no puede hacerle olvidar ACORD.
 3. **La ficha llega a todos los sitios donde el agente habla.** `AssistantDock`
-   pasa `customizedAgentBriefings` y `disabledAgentIds` a `coordinateRequest`, y
-   la captura asistida lee la ficha de Arky. Una ficha que cambiara cómo se *ve*
+   pasa las fichas resueltas a `buildCoordinationInvoker` —cada agente recibe la
+   suya en su prompt de sistema, compuesta por `composeAgentInstruction`— y
+   `disabledAgentIds` a `coordinateRequest`; la captura asistida lee la ficha de
+   Arky. La instrucción de la ficha se añade a la del producto, no la sustituye. Una ficha que cambiara cómo se *ve*
    un agente y no lo que *dice* sería decoración.
 
 Un agente desactivado no se convoca y **no se borra**: los encargos que ya lo

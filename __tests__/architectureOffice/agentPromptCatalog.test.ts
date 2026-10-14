@@ -19,10 +19,8 @@ import {
   type AgentPromptId,
 } from '../../lib/agents/promptCatalog';
 import type { Artifact } from '../../lib/artifacts';
-import {
-  OFFICE_AGENT_PERSONAS,
-  buildOfficePersonaInstruction,
-} from '../../services/architectureOffice/domain/officeAgentPersonas';
+import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
+import { buildOfficePersonaInstruction } from '../../services/architectureOffice/domain/officePersonaBriefing';
 import {
   buildAgentProfileBriefing,
   createAgentProfileOverride,

@@ -34,7 +34,7 @@ import {
   type CoordinationTeamMember,
 } from '../../services/architectureOffice/application/officeCoordination';
 import { buildCoordinationInvoker } from '../../services/architectureOffice/application/officeCoordinationInvoker';
-import { chatWithProject, configuredModelTiers, customizedAgentBriefings, disabledAgentIds } from '../../services/architectureOffice';
+import { chatWithProject, configuredModelTiers, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
 import type { Settings } from '../../types';
 import type { Project } from '../../context/AppContext';
@@ -98,7 +98,6 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
    * de lo que dice cuando responde.
    */
   const { profiles } = useAgentProfiles();
-  const agentBriefings = useMemo(() => customizedAgentBriefings(profiles), [profiles]);
   const unavailableAgents = useMemo(() => disabledAgentIds(profiles), [profiles]);
   const agentModelTiers = useMemo(() => configuredModelTiers(profiles), [profiles]);
   const dialogRef = useFocusTrap<HTMLDivElement>(open);
@@ -129,7 +128,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
       request,
       scope,
       invoke: buildCoordinationInvoker({
-        chat: (carrier, message, history, currentSettings, personaOverride, modelTier) =>
+        chat: (carrier, message, history, currentSettings, personaOverride, modelTier, profile) =>
           chatWithProject(
             carrier,
             message,
@@ -137,18 +136,20 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
             currentSettings,
             personaOverride as never,
             modelTier,
+            profile,
           ),
         settings,
         scope,
         project,
         // El nivel de modelo que cada agente tiene configurado en su ficha.
         modelTiers: agentModelTiers,
+        // La ficha de cada agente llega a su prompt de sistema.
+        profiles,
       }),
       onEvent: (event) => setEvents((prev) => [...prev, event]),
       // Las fichas configuradas viajan con la operación: quien respondió es el
       // agente que el usuario configuró, no la persona de fábrica.
       unavailableAgents,
-      agentBriefings,
     });
 
     setTeam(outcome.team);
@@ -160,7 +161,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
       status: outcome.status,
       contributions: outcome.contributions,
     }]);
-  }, [running, scope, settings, project, nextId, agentBriefings, unavailableAgents, agentModelTiers]);
+  }, [running, scope, settings, project, nextId, profiles, unavailableAgents, agentModelTiers]);
 
   /**
    * Copying is the most common thing a user does with an answer several

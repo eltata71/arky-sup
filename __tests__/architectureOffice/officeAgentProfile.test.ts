@@ -11,7 +11,6 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAgentProfileBriefing,
   createAgentProfileOverride,
-  customizedAgentBriefings,
   disabledAgentIds,
   resolveAgentProfile,
   resolveAgentProfiles,
@@ -137,10 +136,20 @@ describe('buildAgentProfileBriefing', () => {
     expect(text).toContain('Ninguna decisión sin control identificado');
   });
 
-  it('briefs only the customised agents: the rest already get their shipped instruction', () => {
-    const profiles = resolveAgentProfiles([overrideFor({ agentId: 'felipe', userId: 'u1', alias: 'Fel' })]);
-    const briefings = customizedAgentBriefings(profiles);
+  it('personalizar un agente no le quita su alcance ni su frontera (A3)', () => {
+    const profile = resolveAgentProfile('felipe', overrideFor({ agentId: 'felipe', userId: 'u1', alias: 'Fel', knowledge: ['Usamos AWS Organizations.'] }));
+    const text = buildAgentProfileBriefing(profile).join('\n');
+    expect(text).toContain('Eres Fel,');
+    expect(text).toContain('Te ocupas de:');
+    expect(text).toContain('No te ocupas de:');
+  });
 
-    expect(Object.keys(briefings)).toEqual(['felipe']);
+  it('la instrucción de la ficha se añade a la del producto, no la sustituye (D-A2)', () => {
+    const profile = resolveAgentProfile('felipe', overrideFor({ agentId: 'felipe', userId: 'u1', instruction: 'Cita siempre el pilar de Well-Architected.' }));
+    expect(profile.instruction).toBe(OFFICE_AGENT_PERSONAS.felipe.instruction);
+    expect(profile.organizationInstruction).toBe('Cita siempre el pilar de Well-Architected.');
+    const text = buildAgentProfileBriefing(profile).join('\n');
+    expect(text).toContain(OFFICE_AGENT_PERSONAS.felipe.instruction);
+    expect(text).toContain('Cita siempre el pilar de Well-Architected.');
   });
 });

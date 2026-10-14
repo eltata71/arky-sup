@@ -27,6 +27,8 @@
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import { listAgents } from './agentRegistry';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId, type OfficeAgentPersona } from './officeAgentPersonas';
+import type { OfficeAgentScope } from './agentDefinition';
+import { composeAgentVoice } from './agentPromptComposer';
 
 export const OFFICE_AGENT_PROFILE_SCHEMA_VERSION = 1;
 
@@ -58,7 +60,11 @@ export interface OfficeAgentProfileOverride {
   knowledge?: string[];
   /** What the agent must carry across engagements — decisions, conventions, vetoes. */
   memory?: string[];
-  /** Replaces the persona's own instruction when set. */
+  /**
+   * Instrucción adicional de la organización. **Se añade** a la del producto
+   * en su propia capa del prompt; no la sustituye (D-A2, plan de agentes 16.0).
+   * El nombre del campo se conserva para leer las fichas ya guardadas.
+   */
   instruction?: string;
   /** How much model this agent gets. */
   modelTier?: ModelTier;
@@ -86,7 +92,12 @@ export interface OfficeAgentProfile {
   domains: string[];
   capabilities: OfficeAgentPersona['capabilities'];
   orchestrationRole: OfficeAgentPersona['orchestrationRole'];
+  /** Lo que el agente hace y lo que no: del contrato, nunca de la ficha. */
+  scope: OfficeAgentScope;
+  /** La instrucción del producto. La ficha no la sustituye. */
   instruction: string;
+  /** Lo que la organización añadió a la instrucción, cuando añadió algo. */
+  organizationInstruction?: string;
   /** The persona's own standards plus any organisation skills added on top. */
   skills: string[];
   knowledge: string[];
@@ -255,7 +266,9 @@ export const resolveAgentProfile = (
     domains: [...persona.domains],
     capabilities: persona.capabilities,
     orchestrationRole: persona.orchestrationRole,
-    instruction: applied?.instruction ?? persona.instruction,
+    scope: { goals: [...persona.scope.goals], nonGoals: [...persona.scope.nonGoals] },
+    instruction: persona.instruction,
+    organizationInstruction: applied?.instruction,
     skills: [...personaSkills(persona), ...extraSkills],
     knowledge: applied?.knowledge ?? [],
     memory: applied?.memory ?? [],
@@ -309,50 +322,14 @@ export const resolveAgentProfiles = (
 /**
  * The persona's configured voice, as the lines a prompt carries.
  *
- * One composer, used by the coordinated team and by the single-agent capture
- * assistant alike, so a customisation the user made on the agent's card reaches
- * every place that agent speaks. A second composer somewhere else is how "I
- * changed Elena's instruction and nothing happened" becomes a support ticket.
+ * Delega en `composeAgentVoice`, el único compositor (plan de agentes, 16.0):
+ * contrato con alcance y no-objetivos, capa de la organización y reglas de la
+ * Oficina. Lo leen la captura asistida y la guía de la plataforma dentro de su
+ * propio prompt; la coordinación ya no lo antepone al mensaje, porque la ficha
+ * llega al prompt de sistema de cada agente.
  */
-export const buildAgentProfileBriefing = (profile: OfficeAgentProfile): string[] => {
-  const lines = [
-    `Eres ${profile.alias}, ${profile.role}, agente de la Oficina de Arquitectura de Arky.`,
-    `Dominios: ${profile.domains.join(', ')}.`,
-    `Capacidades: ${profile.capabilities.join(', ')}.`,
-    profile.instruction,
-  ];
-  if (profile.skills.length > 0) {
-    lines.push(`Habilidades declaradas: ${profile.skills.join(', ')}.`);
-  }
-  if (profile.knowledge.length > 0) {
-    lines.push('Conocimiento de la organización que debes aplicar:');
-    lines.push(...profile.knowledge.map((entry) => `- ${entry}`));
-  }
-  if (profile.memory.length > 0) {
-    lines.push('Memoria de trabajo que debes respetar en cada respuesta:');
-    lines.push(...profile.memory.map((entry) => `- ${entry}`));
-  }
-  return lines.filter((line) => line.trim().length > 0);
-};
-
-/**
- * Las líneas de prompt de los agentes **personalizados**, y sólo de ésos.
- *
- * Un agente sin ficha guardada ya recibe su instrucción de fábrica por el
- * camino de siempre (`buildOfficePersonaInstruction`, dentro del motor).
- * Mandarle además estas líneas sería decirle dos veces lo mismo, y un prompt
- * que se repite a sí mismo enseña al modelo que la repetición es la señal.
- */
-export const customizedAgentBriefings = (
-  profiles: readonly OfficeAgentProfile[],
-): Partial<Record<OfficeAgentId, string[]>> => {
-  const briefings: Partial<Record<OfficeAgentId, string[]>> = {};
-  for (const profile of profiles) {
-    if (!profile.customized) continue;
-    briefings[profile.agentId] = buildAgentProfileBriefing(profile);
-  }
-  return briefings;
-};
+export const buildAgentProfileBriefing = (profile: OfficeAgentProfile): string[] =>
+  composeAgentVoice(profile).split('\n');
 
 /**
  * El nivel de modelo que cada agente tiene configurado en su ficha.

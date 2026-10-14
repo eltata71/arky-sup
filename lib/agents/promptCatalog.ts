@@ -37,13 +37,13 @@ export interface AgentPromptEntry {
 
 export const AGENT_PROMPTS: Readonly<Record<AgentPromptId, AgentPromptEntry>> = Object.freeze({
   'office.persona': {
-    version: 1,
-    fingerprint: '5cea9c89',
+    version: 2,
+    fingerprint: '5f74d5ed',
     description: 'Persona especializada activa: rol, dominios, alcance, no-objetivos e instrucción.',
   },
   'office.profile-briefing': {
-    version: 1,
-    fingerprint: 'd495503f',
+    version: 2,
+    fingerprint: 'a26f12b0',
     description: 'La voz configurada de un agente en su ficha: conocimiento, memoria e instrucción de la organización.',
   },
   'office.scope-briefing': {
@@ -72,18 +72,18 @@ export const AGENT_PROMPTS: Readonly<Record<AgentPromptId, AgentPromptEntry>> = 
     description: 'La única pasada de corrección del consolidador, con los huecos que encontró el evaluador.',
   },
   'office.production': {
-    version: 1,
-    fingerprint: 'dbd65391',
+    version: 2,
+    fingerprint: 'cd2e2516',
     description: 'La instrucción con la que un agente produce el artefacto de una tarea de encargo.',
   },
   'office.review': {
-    version: 1,
-    fingerprint: 'cc5e74b1',
+    version: 2,
+    fingerprint: 'a5107613',
     description: 'La revisión de un artefacto por otro agente, con la evidencia determinista y el JSON esperado.',
   },
   'office.engagement-consolidation': {
-    version: 1,
-    fingerprint: 'd9373e72',
+    version: 2,
+    fingerprint: '79826462',
     description: 'La consolidación final de un encargo sobre sus entregables y revisiones.',
   },
 });

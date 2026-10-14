@@ -2627,9 +2627,25 @@ Three properties worth keeping:
   never reach anyone who had opened her card once. Teaching Sofía about this
   company's broker channel must not make her forget ACORD.
 - **The card reaches every place the agent speaks.** `useCaptureAssistant` reads
-  Arky's card, and `AssistantDock` passes `customizedAgentBriefings` and
-  `disabledAgentIds` into `coordinateRequest`. A card that changed how an agent
-  *looks* and not what it *says* would be decoration.
+  Arky's card, and `AssistantDock` hands the resolved profiles to
+  `buildCoordinationInvoker`, which gives each agent its own to `chatWithProject`
+  — into the **system** prompt, never prepended to the message. A card that
+  changed how an agent *looks* and not what it *says* would be decoration. (Today
+  three paths read it; 16.1 of the agents plan takes it to all ten.)
+- **One composer, in layers** (agents plan 16.0). `composeAgentInstruction`
+  (`domain/agentPromptComposer.ts`) is the only place an agent's identity is
+  written: the caller's context, then the **contract** (role, domains, scope
+  *and non-goals*, the product's instruction — not configurable), then the
+  **organisation** layer, then the Office rules last. There used to be two
+  composers: the shipped persona went into the system prompt and the card was
+  prepended to the message, so a customised agent had two identities and lost
+  its non-goals. The card's instruction is **added**, never a replacement
+  (`organizationInstruction`, decision D-A2) and sits in its own layer,
+  subordinate: if it clashes with the contract or the rules, they win.
+  Knowledge and memory are data and travel inside `wrapUntrustedContent`; the
+  added instruction is configuration to follow, so it is not fenced.
+  `agentPromptComposer.test.ts` scans `services/` for «Actúas como» or a second
+  «Eres … agente de la Oficina» outside the composer.
 - **Per user, one document per agent.** `users/{uid}/agentProfiles/{agentId}`,
   through `OfficeAgentProfileRepository` over `services/persistence` — so a
   customisation survives a database outage in the local mirror instead of

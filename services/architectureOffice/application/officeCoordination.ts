@@ -173,17 +173,10 @@ export interface CoordinateRequestInput {
   unavailableAgents?: readonly OfficeAgentId[];
   /** Stopping condition: how many specialists one request may convene. */
   maxSpecialists?: number;
-  /**
-   * The configured voice of each agent whose card the user edited, keyed by
-   * agent. Prepended to that agent's prompt so a customisation reaches every
-   * place the agent speaks — a card that changed nothing about the answers
-   * would be decoration.
-   *
-   * Only customised agents appear here: the rest already receive their
-   * shipped instruction through the engine's own persona composer, and saying
-   * it twice teaches the model that repetition is the signal.
-   */
-  agentBriefings?: Partial<Record<OfficeAgentId, string[]>>;
+  // La ficha de cada agente ya no se antepone al mensaje: llega a su prompt de
+  // sistema a través del invocador (`buildCoordinationInvoker`, `profiles`).
+  // Anteponerla le daba al agente personalizado dos identidades, la de fábrica
+  // en el sistema y la suya en el turno (plan de agentes, 16.0).
 }
 
 /**
@@ -327,10 +320,9 @@ export const coordinateRequest = async (
     }
 
     try {
-      const configuredVoice = input.agentBriefings?.[personaId];
       const output = await invoke(
         personaId,
-        [...(configuredVoice ?? []), briefing, instruction].join('\n\n'),
+        [briefing, instruction].join('\n\n'),
         promptStamp,
       );
       emit(

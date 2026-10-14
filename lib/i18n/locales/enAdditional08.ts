@@ -1,7 +1,9 @@
 import type { Dictionary } from '../translations';
 
 export const enAdditional08: Dictionary = {
-  "ui.sustituye-a-la-instruccion-d.2c2fc6": "This replaces the default instruction when you enter one. It is the first thing the agent reads for each task, so tell it how to work, not what to answer.",
+  "ui.se-anade-a-la-instruccion-del.5d1e07": "This is added to the agent's instruction; it does not replace it. Tell it how to work in your organisation, not what to answer. If it clashes with the agent's contract or the Office rules, those win.",
+  "ui.instruccion-adicional-de-tu-o.3a9c42": "Additional instruction from your organisation (optional)",
+  "ui.anadida-por-tu-organizacion.8e2b17": "Added by your organisation:",
   "ui.un-agente-inactivo-no-entra.5c6654": "An inactive agent does not join teams or receive tasks. It is not deleted: existing engagements that name it would become unreadable.",
   "ui.quien-produce-y-quien-revisa.4df37e": "Who produces and who reviews each artifact is not a preference: this separation of duties makes a review meaningful. The Office router decides it from this product profile.",
   "ui.toda-solicitud-pasa-por-las.4c75f4": "Every request passes through all three stages. Select a person to see their place in the process, or open their profile to learn about their responsibility and experience.",
