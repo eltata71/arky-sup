@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ARTIFACT_TEMPLATES } from '../../constants';
 import {
-  applyCharterRefinement,
   buildTasksFromCharter,
   inferEngagementKind,
   planCharterDeterministic,
   validateCharter,
 } from '../../services/architectureOffice/domain/OfficeEngagementPlanner';
+import { applyCharterRefinement } from '../../services/architectureOffice/domain/charterRefinement';
 import { findTaskCycle } from '../../services/architectureOffice/domain/OfficeTypes';
 import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 

@@ -169,6 +169,13 @@ interface AssignmentOptions {
   preferredIds?: readonly OfficeAgentId[];
   /** Persona ids excluded from production (e.g. already at capacity). */
   excludeAssignees?: readonly OfficeAgentId[];
+  /**
+   * Agentes que el usuario desactivó en su ficha: no producen ni revisan
+   * (plan de agentes, 16.1). Si no queda productor o revisor independiente
+   * habilitado, no hay asignación —`null`—, nunca una asignación a alguien
+   * apagado.
+   */
+  unavailable?: readonly OfficeAgentId[];
 }
 
 const scoreCandidate = (
@@ -220,7 +227,8 @@ export const assignDeliverable = (
 ): OfficeAssignment | null => {
   const normalizedBrief = foldOfficeText(brief);
   const preferred = new Set(options.preferredIds ?? []);
-  const excluded = new Set(options.excludeAssignees ?? []);
+  const unavailable = new Set(options.unavailable ?? []);
+  const excluded = new Set([...(options.excludeAssignees ?? []), ...unavailable]);
 
   const producers = findAgentsThatProduce(type)
     .filter((persona) => !excluded.has(persona.id))
@@ -231,15 +239,17 @@ export const assignDeliverable = (
   const winner = producers[0];
 
   const reviewers = findAgentsThatReview(type)
-    .filter((persona) => persona.id !== winner.persona.id)
+    .filter((persona) => persona.id !== winner.persona.id && !unavailable.has(persona.id))
     .map((persona) => ({ persona, ...scoreCandidate(persona, type, normalizedBrief, preferred) }))
     .sort((a, b) => b.score - a.score || a.persona.id.localeCompare(b.persona.id));
 
   // Elena is the artifact steward and reviews nearly everything, so she is the
   // structural fallback when no domain reviewer declares the type. Alejandro
   // backs her up for the handful of types she authors herself.
+  const fallbackReviewer: OfficeAgentId = winner.persona.id === 'elena' ? 'alejandro' : 'elena';
   const reviewerId = reviewers[0]?.persona.id
-    ?? (winner.persona.id === 'elena' ? 'alejandro' : 'elena');
+    ?? (unavailable.has(fallbackReviewer) ? undefined : fallbackReviewer);
+  if (!reviewerId) return null;
 
   return {
     assigneeId: winner.persona.id,

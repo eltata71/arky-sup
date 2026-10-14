@@ -262,6 +262,22 @@
         "daniel"
       ],
       "prohibidos": []
+    },
+    {
+      "id": "desactivados-encargo",
+      "solicitud": "Contenedores C4 del portal sobre AWS con APIs MuleSoft",
+      "desactivados": [
+        "felipe",
+        "mauricio",
+        "elena"
+      ],
+      "esperados": [],
+      "prohibidos": [
+        "felipe",
+        "mauricio",
+        "elena"
+      ],
+      "nota": "Ni la coordinación ni el charter del encargo asignan trabajo a un agente apagado (16.1 corte 2)."
     }
   ]
 }

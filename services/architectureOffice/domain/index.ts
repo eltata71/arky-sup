@@ -20,6 +20,7 @@ export * from './OfficeTypes';
 export * from './agentDefinition';
 export * from './agentHandoff';
 export * from './agentPromptComposer';
+export * from './charterRefinement';
 export * from './agentRegistry';
 export * from './officeAgentPersonas';
 export * from './officeAgentProfile';

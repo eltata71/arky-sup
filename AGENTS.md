@@ -288,7 +288,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    generación, ejecutor, chat, los tres puertos del encargo (`getProfile`) y el
    copiloto; `agentProfileParity.test.ts` los recorre con un marcador. Un camino
    nuevo por el que hable un agente añade su fila. Una mención a un agente
-   desactivado la responde Arky y lo dice.
+   desactivado la responde Arky y lo dice, y un encargo no le asigna trabajo:
+   `assignDeliverable` lo excluye como productor y revisor, el refinamiento que
+   lo nombre se descarta y lo que nadie habilitado pueda hacer queda escrito en
+   `outOfScope` del charter.
    **Un prompt de agente tiene nombre y versión** (15.1):
    `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
    huella de su texto sobre un caso canónico; cambiar el texto sin subir la

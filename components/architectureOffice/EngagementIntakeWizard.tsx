@@ -29,6 +29,7 @@ import type { OfficeEngagement } from '../../context/OfficeContext';
 import { EngagementCharterReview } from './EngagementCharterReview';
 import { CaptureAssist, FormAssistBar } from '../capture';
 import { useDeliverableCapture } from '../../hooks/useLevelCapture';
+import { disabledProfileIds, useLazyAgentProfiles, type ProfileAgentId } from '../../hooks/useLazyAgentProfiles';
 import { EA_LEVELS } from '../../lib/eaTerminology';
 
 export interface EngagementIntakeSubmit {
@@ -39,6 +40,8 @@ export interface EngagementIntakeSubmit {
   initiativeIds: string[];
   /** Code mirror, derived from `initiativeIds`. Never captured by hand. */
   businessProjectIds: string[];
+  /** Agentes desactivados en la ficha: el charter no les asigna trabajo (plan de agentes, 16.1). */
+  unavailableAgents?: ProfileAgentId[];
 }
 
 export interface IntakeProjectOption {
@@ -78,6 +81,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
   onClose,
 }) => {
   const t = useUiTranslation();
+  const agentProfiles = useLazyAgentProfiles();
   const [step, setStep] = useState<Step>('brief');
   const [projectChoice, setProjectChoice] = useState<string>(initialProjectId ?? '');
   const [title, setTitle] = useState('');
@@ -161,6 +165,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
         brief: trimmedBrief,
         initiativeIds,
         businessProjectIds: codesForInitiativeIds(initiativeIds, initiatives),
+        unavailableAgents: disabledProfileIds(agentProfiles),
       });
       if (!created) {
         setError(t("uiMessage.la-oficina-no-pudo-proponer.0a60ed"));
@@ -173,7 +178,7 @@ export const EngagementIntakeWizard: React.FC<EngagementIntakeWizardProps> = ({
       setError(caught instanceof Error ? caught.message : String(caught));
       setStep('brief');
     }
-  }, [title, brief, initiativeIds, initiatives, projectChoice, projects, onPropose, t]);
+  }, [title, brief, initiativeIds, initiatives, projectChoice, projects, onPropose, t, agentProfiles]);
 
   if (!open) return null;
 
