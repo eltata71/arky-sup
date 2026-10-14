@@ -1,4 +1,5 @@
 import { newPrefixedId } from '../../../lib/ids';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt, type AgentPromptId } from '../../../lib/agents/promptCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
@@ -188,7 +189,9 @@ export const planOfficeWorkstreams = (
     workstreams: unique.map((personaId, index) => ({
       id: `ws-${index + 1}-${personaId}`,
       personaId,
-      objective: `Analiza desde ${OFFICE_AGENT_PERSONAS[personaId].role}: ${request}`,
+      // La solicitud no va en el objetivo: es texto de una persona y viaja
+      // vallada como referencia del handoff (plan de agentes, 17.0).
+      objective: `Analiza la solicitud desde tu dominio (${OFFICE_AGENT_PERSONAS[personaId].role}).`,
       acceptanceCriteria: criteriaFor(personaId),
     })),
   };
@@ -196,7 +199,10 @@ export const planOfficeWorkstreams = (
 
 /** Lo que se le pide a la coordinadora. Plantilla `office.coordination`. */
 export const buildCoordinationPrompt = (plan: Pick<OfficeOrchestrationPlan, 'request' | 'workstreams'>): string => [
-  `Coordina la solicitud: ${plan.request}`,
+  'Coordina la solicitud que sigue.',
+  // Lo que escribió la persona viaja vallado: es material a coordinar, no
+  // órdenes para la coordinadora (plan de agentes, 17.0).
+  wrapUntrustedContent('solicitud', plan.request),
   'Revisa la descomposición determinística propuesta, explica dependencias, orden, riesgos y límites de ejecución.',
   'No inventes evidencia. Devuelve un brief conciso que guíe a los especialistas.',
   ...plan.workstreams.map((workstream) => `- ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}: ${workstream.objective}`),
@@ -252,12 +258,15 @@ export const executeOfficeOrchestration = async (
         objective: workstream.objective,
         constraints: [],
         acceptanceCriteria: [...workstream.acceptanceCriteria],
-        contextReferences: [{
-          kind: 'coordination-brief',
-          label: 'Brief de coordinación',
-          from: plan.coordinatorId,
-          content: coordination,
-        }],
+        contextReferences: [
+          { kind: 'record', label: 'Solicitud', content: plan.request },
+          {
+            kind: 'coordination-brief',
+            label: 'Brief de coordinación',
+            from: plan.coordinatorId,
+            content: coordination,
+          },
+        ],
         expectedOutput: {
           kind: 'analysis',
           description: 'Un análisis del dominio con supuestos, riesgos y decisiones explícitos.',

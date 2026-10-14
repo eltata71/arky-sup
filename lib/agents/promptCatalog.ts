@@ -47,13 +47,13 @@ export const AGENT_PROMPTS: Readonly<Record<AgentPromptId, AgentPromptEntry>> = 
     description: 'La voz configurada de un agente en su ficha: conocimiento, memoria e instrucción de la organización.',
   },
   'office.scope-briefing': {
-    version: 1,
-    fingerprint: 'eceac265',
+    version: 2,
+    fingerprint: '1f7cd94a',
     description: 'El registro desde el que se pregunta (iniciativa, proyecto o entregable) y su ascendencia.',
   },
   'office.coordination': {
-    version: 1,
-    fingerprint: '007abd2f',
+    version: 2,
+    fingerprint: '6eba7152',
     description: 'El encargo a la coordinadora: revisar la descomposición y escribir el brief para los especialistas.',
   },
   'office.workstream': {
@@ -72,18 +72,18 @@ export const AGENT_PROMPTS: Readonly<Record<AgentPromptId, AgentPromptEntry>> = 
     description: 'La única pasada de corrección del consolidador, con los huecos que encontró el evaluador.',
   },
   'office.production': {
-    version: 2,
-    fingerprint: 'cd2e2516',
+    version: 3,
+    fingerprint: '5890afd1',
     description: 'La instrucción con la que un agente produce el artefacto de una tarea de encargo.',
   },
   'office.review': {
-    version: 2,
-    fingerprint: 'a5107613',
+    version: 3,
+    fingerprint: 'dc1680d4',
     description: 'La revisión de un artefacto por otro agente, con la evidencia determinista y el JSON esperado.',
   },
   'office.engagement-consolidation': {
-    version: 2,
-    fingerprint: '79826462',
+    version: 3,
+    fingerprint: 'abc3fe4f',
     description: 'La consolidación final de un encargo sobre sus entregables y revisiones.',
   },
 });

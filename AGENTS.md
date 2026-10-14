@@ -293,6 +293,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    lo nombre se descarta y lo que nadie habilitado pueda hacer queda escrito en
    `outOfScope` del charter. Toda pantalla muestra el alias configurado
    (`useAgentDisplayName`); ninguna lee `OFFICE_AGENT_PERSONAS[…].alias`.
+   **Lo que escribió una persona viaja vallado en todo prompt de agente**
+   (17.0): solicitud, brief, contenido revisado, registro en contexto, mensaje
+   del clasificador y capas de memoria. La memoria base y la instrucción de la
+   ficha no se vallan: son configuración a seguir.
    **Un prompt de agente tiene nombre y versión** (15.1):
    `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
    huella de su texto sobre un caso canónico; cambiar el texto sin subir la

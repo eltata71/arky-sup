@@ -25,10 +25,10 @@ import {
   type AgentArtifactStore,
   type AgentIntent,
 } from '../../agent';
-import { compileArtifact } from '../../artifactCompiler';
 import { parseStructured } from '../../ai/structuredOutput';
-import { validateOfficeArtifact } from '../domain/officeArtifactValidators';
 import { newPrefixedId } from '../../../lib/ids';
+import { buildReviewPrompt, gatherDeterministicEvidence } from './officeReviewPrompt';
+import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../domain/officeAgentPersonas';
 import { buildOfficePersonaBriefing } from '../domain/officePersonaBriefing';
@@ -119,7 +119,8 @@ export const buildProductionInstruction = (task: OfficeTask, engagement: OfficeE
 
   const lines = [
     `Entregable: ${engagement.title}`,
-    `Solicitud original: ${engagement.brief}`,
+    // El brief es texto de una persona: viaja vallado (plan de agentes, 17.0).
+    wrapUntrustedContent('solicitud original', engagement.brief),
     '',
     // Quién eres no va aquí: va en el prompt de sistema, compuesto desde la
     // ficha del asignado (`buildOfficePersonaBriefing`). Repetirlo en el turno
@@ -250,78 +251,14 @@ const asSeverity = (value: unknown): OfficeFindingSeverity =>
  * Deterministic evidence gathered before the reviewer persona is consulted.
  * Exported so the review verdict can be reproduced in a test without any AI.
  */
-export interface DeterministicReviewEvidence {
-  findings: OfficeReviewFinding[];
-  blockingValidatorIds: string[];
-  score?: number;
-  blocking: boolean;
-}
-
-export const gatherDeterministicEvidence = (artifact: Artifact): DeterministicReviewEvidence => {
-  const findings: OfficeReviewFinding[] = [];
-  const blockingValidatorIds: string[] = [];
-
-  const validation = validateOfficeArtifact(artifact);
-  for (const result of validation.results) {
-    if (!result.passed) blockingValidatorIds.push(result.validatorId);
-    for (const issue of result.issues) {
-      findings.push({
-        severity: issue.severity === 'error' ? 'high' : 'medium',
-        message: issue.message,
-        evidence: `${result.validatorId}:${issue.code}`,
-      });
-    }
-  }
-
-  // `applyRepairs: false` — the reviewer reports what the producer actually
-  // delivered, not what auto-repair could have salvaged.
-  const compilation = compileArtifact(artifact, { applyRepairs: false, source: 'manual' });
-  const score = compilation.score.value;
-  for (const issue of compilation.issues.critical) {
-    findings.push({ severity: 'critical', message: issue.message, evidence: compilation.contractId });
-  }
-  for (const issue of compilation.issues.high) {
-    findings.push({ severity: 'high', message: issue.message, evidence: compilation.contractId });
-  }
-
-  return {
-    findings,
-    blockingValidatorIds,
-    score,
-    blocking: validation.blocking || compilation.issues.critical.length > 0,
-  };
-};
-
-export const buildReviewPrompt = (
-  task: OfficeTask,
-  artifact: Artifact,
-  evidence: DeterministicReviewEvidence,
-): string => {
-  // La persona del revisor va en el prompt de sistema (`chatWithProject` con
-  // `personaOverride`); aquí sólo el encargo (plan de agentes, 16.0).
-  return [
-    'Revisas el trabajo de otro arquitecto de la Oficina.',
-    '',
-    `ARTEFACTO: ${artifact.name} (${artifact.type})`,
-    `OBJETIVO DECLARADO: ${artifact.objective}`,
-    '',
-    'CONTENIDO:',
-    artifact.content.slice(0, 12_000),
-    '',
-    'CRITERIOS DE ACEPTACIÓN:',
-    ...task.acceptanceCriteria.map((item) => `- ${item}`),
-    '',
-    'HALLAZGOS DETERMINISTAS YA DETECTADOS (no los repitas, complétalos):',
-    evidence.findings.length > 0
-      ? evidence.findings.map((finding) => `- [${finding.severity}] ${finding.message}`).join('\n')
-      : '- ninguno',
-    evidence.score !== undefined ? `\nPUNTUACIÓN DEL COMPILADOR: ${evidence.score}/100` : '',
-    '',
-    'Emite un veredicto sobre si el artefacto es utilizable como entregable de la Oficina.',
-    'No inventes defectos: cada hallazgo debe citar algo presente o ausente en el contenido.',
-    'Responde únicamente con JSON: {"verdict":"approved"|"changes-requested"|"rejected","summary":"...","findings":[{"severity":"critical"|"high"|"medium"|"low","message":"...","evidence":"..."}]}',
-  ].join('\n');
-};
+// La evidencia determinista y el prompt de la revisión viven en
+// `officeReviewPrompt.ts` (separados cuando este fichero pasó su techo).
+export {
+  REVIEW_CONTENT_LIMIT,
+  buildReviewPrompt,
+  gatherDeterministicEvidence,
+  type DeterministicReviewEvidence,
+} from './officeReviewPrompt';
 
 export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
   async (task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeTaskReview> => {
@@ -426,7 +363,8 @@ export const buildConsolidationPrompt = (engagement: OfficeEngagement): string =
   // La persona del consolidador va en el prompt de sistema (plan de agentes, 16.0).
   return [
     `Consolida el entregable "${engagement.title}".`,
-    `Solicitud original: ${engagement.brief}`,
+    // El brief es texto de una persona: viaja vallado (plan de agentes, 17.0).
+    wrapUntrustedContent('solicitud original', engagement.brief),
     '',
     'ENTREGABLES Y SUS REVISIONES:',
     ...deliverables,

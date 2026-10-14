@@ -2799,6 +2799,20 @@ to the same question could not be told apart as a template change or the
 model's variability (plan de agentes, 15.1). A new agent prompt joins the
 catalog, with its canonical case, in the same change.
 
+### What a person wrote is fenced in every agent prompt
+
+Plan de agentes 17.0. Every agent prompt fences the text it did not write
+(`wrapUntrustedContent`): the request in a coordination —as a handoff reference,
+never inside the workstream's objective—, the record in scope, an engagement's
+brief, the content a reviewer reads (and says so when it is cut at
+`REVIEW_CONTENT_LIMIT`), the intent classifier's message, and the data layers of
+the agent's system prompt —global memory, project context and initial capture,
+project and artifact memory, chat decisions—. Two things stay outside on
+purpose: the agent's **base memory** and the card's **added instruction** are
+configuration the agent must follow, and the fence would present them as data
+to analyse. The bench's `promptsConVallado` holds the Office sites at 100 %;
+`agentPromptFencing.test.ts` holds the agent's.
+
 ### Agent evaluation bench
 
 A change to an agent is measured, not argued (plan de agentes, 15.0).
