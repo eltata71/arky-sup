@@ -25,6 +25,7 @@ export * from './agentRegistry';
 export * from './officeAgentPersonas';
 export * from './officeAgentProfile';
 export * from './officePersonaBriefing';
+export * from './reviewConfirmation';
 export * from './officeArchitectureKnowledge';
 export * from './officeArtifactValidators';
 export * from './officeConsolidationReview';

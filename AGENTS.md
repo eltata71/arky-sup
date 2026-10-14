@@ -297,6 +297,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    (17.0): solicitud, brief, contenido revisado, registro en contexto, mensaje
    del clasificador y capas de memoria. La memoria base y la instrucción de la
    ficha no se vallan: son configuración a seguir.
+   **Un revisor nunca aprueba en silencio** (17.1, D-A5): sin crítica legible
+   del especialista la aprobación es `basis: 'evidence-only'`, la tarea queda en
+   `awaiting-review` y el encargo se bloquea hasta que una persona la confirme
+   (`confirmEvidenceOnlyReview`, con actor en la auditoría).
    **Un prompt de agente tiene nombre y versión** (15.1):
    `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
    huella de su texto sobre un caso canónico; cambiar el texto sin subir la

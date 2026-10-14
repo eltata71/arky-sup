@@ -9,7 +9,7 @@
     "handoffsBienDecididos": 100,
     "personaFijada": 100,
     "recallRevisor": 100,
-    "aprobacionesSinCritica": 3,
+    "aprobacionesSinCritica": 0,
     "consolidacionesCorrectas": 80,
     "promptsConVallado": 100,
     "invocacionesConSello": 100,
@@ -22,13 +22,6 @@
       "tarea": "18.3",
       "metrica": "precisionIntencion",
       "descripcion": "El clasificador heurístico no reconoce «crea un ADR», «genera un nuevo diagrama», «todos los diagramas», «¿por qué…?» ni «sobrescribe la versión actual», y manda la memoria de proyecto al artefacto. El clasificador LLM no puede corregirlo: no conoce create, batch ni memory."
-    },
-    {
-      "id": "revisor-sin-critica",
-      "hallazgo": "A16",
-      "tarea": "17.1",
-      "metrica": "aprobacionesSinCritica",
-      "descripcion": "Si la crítica del revisor falla, llega rota o vacía y la evidencia determinista no bloquea, el veredicto es una aprobación limpia, presentada como revisada."
     },
     {
       "id": "consolidacion-encargo-sin-evaluador",

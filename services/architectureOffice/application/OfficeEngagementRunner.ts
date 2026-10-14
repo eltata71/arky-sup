@@ -42,6 +42,7 @@ export type {
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import { canRunEngagement, transitionEngagement } from '../domain/officeEngagementTransitions';
 import { withAuditEntry } from '../domain/officeEngagementRecord';
+import { awaitsReviewConfirmation } from '../domain/reviewConfirmation';
 import { createRunCheckpoint } from './officeRunCheckpoint';
 import { resumeInterruptedTasks } from './officeRunResumption';
 import { chargeRunnerBudget, isRunnerBudgetExhausted, replaceRunnerTask, runnerBlockingFindings, runnerNowIso, withTaskTrace } from './officeRunnerState';
@@ -268,12 +269,24 @@ export const runEngagement = async (
         const review = outcome.review;
         const producer = engagement.tasks.find((candidate) => candidate.id === task.reviewsTaskId);
 
+        // Una aprobación sin crítica del especialista no avanza sola: la tarea
+        // espera a que una persona la confirme (plan de agentes, 17.1 · D-A5).
+        const needsConfirmation = review.verdict === 'approved' && review.basis === 'evidence-only';
         engagement = replaceRunnerTask(engagement, {
           ...withTaskTrace(task, review.traceId, review.promptStamp),
-          status: 'completed',
+          status: needsConfirmation ? 'awaiting-review' : 'completed',
           review,
-          completedAt: runnerNowIso(),
+          completedAt: needsConfirmation ? undefined : runnerNowIso(),
         });
+        if (needsConfirmation) {
+          engagement = withAuditEntry(
+            engagement,
+            'review-awaiting-confirmation',
+            `La revisión de "${producer?.title ?? task.title}" no recibió la crítica de ${OFFICE_AGENT_PERSONAS[task.assigneeId].alias}: espera tu confirmación.`,
+            { taskId: task.id },
+          );
+          continue;
+        }
 
         if (review.verdict === 'approved' || !producer) {
           engagement = withAuditEntry(
@@ -376,18 +389,23 @@ export const runEngagement = async (
   const stuck = engagement.tasks.filter((task) => !isTerminalTaskStatus(task.status));
 
   if (stuck.length > 0) {
+    const awaiting = engagement.tasks.filter(awaitsReviewConfirmation).length;
     engagement = transitionEngagement(
       engagement,
       'blocked',
       'engagement-blocked',
-      `${stuck.length} tarea(s) no pueden avanzar porque una dependencia falló.`,
+      awaiting > 0
+        ? `${awaiting} revisión(es) esperan confirmación: el especialista no llegó a revisar.`
+        : `${stuck.length} tarea(s) no pueden avanzar porque una dependencia falló.`,
     );
     await save();
     if (checkpoint.failure) return stoppedByPersistence();
     return {
       engagement,
       status: 'blocked',
-      message: `El encargo quedó bloqueado: ${stuck.length} tarea(s) dependen de un entregable que no se completó.`,
+      message: awaiting > 0
+        ? `El encargo espera tu confirmación en ${awaiting} revisión(es) que el especialista no llegó a hacer.`
+        : `El encargo quedó bloqueado: ${stuck.length} tarea(s) dependen de un entregable que no se completó.`,
     };
   }
 
