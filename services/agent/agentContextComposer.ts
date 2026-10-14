@@ -34,7 +34,7 @@ import type { Project } from '../architectureProjects';
 import type { ChatMessage } from '../chat';
 import { assembleArtifactContext, bundleItems, buildBasePrompt, buildBusinessMotivationBlock } from '../ai/lazy';
 import { compactBullet } from '../memory';
-import { wrapUntrustedContent } from '../../lib/untrustedContent';
+import { fencedSection } from './fencedSection';
 
 export type { AgentPersonaBriefing } from './agentPersonaBriefing';
 import type { AgentPersonaBriefing } from './agentPersonaBriefing';
@@ -138,18 +138,6 @@ export interface BuildAgentSystemInstructionOptions extends ArtifactContextPorts
  * Builds the system instruction Gemini receives BEFORE any chat turn. Always
  * returns a non-empty string. Never throws.
  */
-/**
- * Una capa de memoria o contexto como datos vallados (plan de agentes, 17.0).
- *
- * Lo que traen estas capas lo escribió una persona o lo extrajo un modelo de
- * una conversación —que puede citar un documento subido—: aplicarlo es su
- * propósito, obedecerlo como orden no. El encabezado es de la aplicación y va
- * fuera de la valla. La memoria base del agente no pasa por aquí: es la
- * configuración de su comportamiento, igual que la instrucción de su ficha.
- */
-const fencedSection = (header: string, label: string, bullets: readonly string[]): string =>
-  [header, wrapUntrustedContent(label, bullets.map((bullet) => `- ${bullet}`).join('\n'))].join('\n');
-
 export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOptions): string {
   const budget = { ...DEFAULT_CONTEXT_BUDGET, ...(opts.budget ?? {}) };
   const { project, activeArtifact, settings, userQuery } = opts;
@@ -215,7 +203,7 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
   //    the user's query. When no query is available we keep natural order.
   const globalSelected = bundleItems(bundle, 'global');
   if (globalSelected.length > 0) {
-    sections.push(fencedSection('Memoria Global (estándares y preferencias):', 'memoria global', globalSelected));
+    sections.push(fencedSection('Memoria Global (estándares y preferencias):', globalSelected));
   }
 
   // 4-bis. Project header (name + description). buildBasePrompt also
@@ -235,7 +223,7 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
 
   const projectSelected = bundleItems(bundle, 'proyecto');
   if (projectSelected.length > 0) {
-    sections.push(fencedSection('Contexto del Proyecto (selección relevante):', 'contexto del proyecto', projectSelected));
+    sections.push(fencedSection('Contexto del Proyecto (selección relevante):', projectSelected));
   }
 
   // 5-bis. Captura Inicial — objetivos, alcance y stakeholders registrados al
@@ -243,7 +231,7 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
   //    original intent of the project, so the agent never drifts from it.
   const initialCaptureSelected = bundleItems(bundle, 'capturaInicial');
   if (initialCaptureSelected.length > 0) {
-    sections.push(fencedSection('Captura Inicial del Proyecto (objetivos, alcance, stakeholders):', 'captura inicial', initialCaptureSelected));
+    sections.push(fencedSection('Captura Inicial del Proyecto (objetivos, alcance, stakeholders):', initialCaptureSelected));
   }
 
   // 6. Project agent memory — project-scoped learnings (lower priority than
@@ -251,13 +239,13 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
   //    artifacts within the project).
   const projectAgentSelected = bundleItems(bundle, 'memoriaProyecto');
   if (projectAgentSelected.length > 0) {
-    sections.push(fencedSection('Memoria del Agente (Proyecto):', 'memoria del proyecto', projectAgentSelected));
+    sections.push(fencedSection('Memoria del Agente (Proyecto):', projectAgentSelected));
   }
   // 6-ter. Decisiones de la conversación — lo acordado en el chat, aunque el
   //    historial no se envíe (7.3b).
   const conversationDecisions = bundleItems(bundle, 'conversacion');
   if (conversationDecisions.length > 0) {
-    sections.push(fencedSection('Decisiones recientes de la conversación (acordadas en el chat):', 'decisiones de la conversación', conversationDecisions));
+    sections.push(fencedSection('Decisiones recientes de la conversación (acordadas en el chat):', conversationDecisions));
   }
   // 6-quater. Los entregables en curso y la razón de negocio del proyecto (7.3d).
   const deliverables = bundleItems(bundle, 'entregable');
@@ -299,7 +287,7 @@ export function buildAgentSystemInstruction(opts: BuildAgentSystemInstructionOpt
 
     const artifactSelected = bundleItems(bundle, 'artefacto');
     if (artifactSelected.length > 0) {
-      sections.push(fencedSection('Memoria del Artefacto:', 'memoria del artefacto', artifactSelected));
+      sections.push(fencedSection('Memoria del Artefacto:', artifactSelected));
     }
   }
 
