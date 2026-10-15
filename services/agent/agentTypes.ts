@@ -125,6 +125,8 @@ export interface AgentIntent {
 export interface MemoryDraft {
   scope: MemoryScope;
   bullets: string[];
+  /** Where the proposed notes came from; saved only after card confirmation. */
+  origin?: 'user' | 'model-extracted';
   /** Lifecycle of the AI extraction that produces the initial draft. */
   status: 'extracting' | 'ready' | 'failed';
   /** Populated when `status === 'failed'`. Surfaced in the card. */

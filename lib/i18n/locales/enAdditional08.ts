@@ -89,4 +89,12 @@ export const enAdditional08: Dictionary = {
   "observability.warningTitle": "Generation completed with notes",
   "observability.warningBody": "The artifact has a visible view that can be saved and exported. Minor observations are available in the trace.",
   "observability.eventCount": "{count} events recorded — review is optional.",
+  "mem.originModel": "AI extracted",
+  "mem.originImported": "Imported",
+  "mem.originUser": "User",
+  "mem.pending": "Pending approval",
+  "mem.expires": "Expires",
+  "mem.confirm": "Confirm",
+  "mem.confirmed": "Memory confirmed",
+  "mem.replacePreview": "This note will replace: {note}",
 };

@@ -9,6 +9,7 @@ import type { ChatModalPurpose, Settings, UploadedFile } from '../../../../types
 import type { Project } from '../../../architectureProjects';
 import { resolveModelForSettings } from '../../catalog';
 import { aiGateway } from '../aiGateway';
+import { formatMemoryTextsForPrompt } from '../../../memory';
 import type { AssistantConversationTurn, AssistantCourseSummary } from './assistantPorts';
 
 const PROJECT_JSON_SHAPE = '{"action": "createProject", "data": {"name": "...", "description": "...", "projectContext": [...], "initialArtifacts": [...]}}';
@@ -40,7 +41,7 @@ Whenever you are answering ANY question, you MUST take this into account.
 You must adhere to the highest standards of the Life and Health Insurance industry, as well as the best standards in Technology.
 
 Global Context/Standards:
-${settings.globalContext.map(c => `- ${c}`).join('\n')}
+${formatMemoryTextsForPrompt(settings.globalContext, settings.globalContextEntries).map(c => `- ${c}`).join('\n')}
 
 Review architecture and provide feedback. If the user asks specific information about a project or a course, you MUST use the provided context below to answer. If the user asks general questions, provide advice based on your knowledge as Arquitecto Agente.
 

@@ -177,6 +177,12 @@ export interface MemoryEntry {
   authorId?: string | null;
   /** Nombre visible del autor que creó la nota. */
   authorName?: string | null;
+  /** Missing on old records; read as a confirmed user note. */
+  origin?: 'user' | 'model-extracted' | 'imported';
+  sourceTraceId?: string | null;
+  confirmedBy?: string | null;
+  expiresAt?: string | null;
+  supersedes?: string | null;
 }
 
 export interface Settings {

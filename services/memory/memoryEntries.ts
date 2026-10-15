@@ -16,6 +16,7 @@
  */
 
 import type { MemoryEntry, MemoryPriority, MemoryScope } from '../../types';
+import { findSecretShapes } from '../../lib/secretShapes';
 
 export const MEMORY_PRIORITIES: readonly MemoryPriority[] = ['high', 'medium', 'low'] as const;
 
@@ -53,6 +54,11 @@ export interface CreateMemoryEntryOptions {
   authorName?: string | null;
   /** ISO timestamp override; defaults to now. */
   createdAt?: string | null;
+  origin?: MemoryEntry['origin'];
+  sourceTraceId?: string | null;
+  confirmedBy?: string | null;
+  expiresAt?: string | null;
+  supersedes?: string | null;
 }
 
 /** Builds a brand-new note with metadata (default priority: media, fecha: ahora). */
@@ -65,6 +71,11 @@ export function createMemoryEntry(text: string, opts: CreateMemoryEntryOptions =
     updatedAt: null,
     authorId: opts.authorId ?? null,
     authorName: opts.authorName ?? null,
+    origin: opts.origin ?? 'user',
+    sourceTraceId: opts.sourceTraceId ?? null,
+    confirmedBy: opts.confirmedBy ?? null,
+    expiresAt: opts.expiresAt ?? null,
+    supersedes: opts.supersedes ?? null,
   };
 }
 
@@ -87,6 +98,11 @@ export function sanitizeMemoryEntry(raw: unknown): MemoryEntry | null {
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null,
     authorId: typeof raw.authorId === 'string' ? raw.authorId : null,
     authorName: typeof raw.authorName === 'string' ? raw.authorName : null,
+    origin: raw.origin === 'model-extracted' || raw.origin === 'imported' ? raw.origin : 'user',
+    sourceTraceId: typeof raw.sourceTraceId === 'string' ? raw.sourceTraceId : null,
+    confirmedBy: typeof raw.confirmedBy === 'string' ? raw.confirmedBy : null,
+    expiresAt: typeof raw.expiresAt === 'string' ? raw.expiresAt : null,
+    supersedes: typeof raw.supersedes === 'string' ? raw.supersedes : null,
   };
 }
 
@@ -137,13 +153,80 @@ export function reconcileMemoryEntries(
       updatedAt: null,
       authorId: null,
       authorName: null,
+      origin: 'user',
+      confirmedBy: 'legacy',
     };
   });
 }
 
 /** Projects the entries back into the legacy text mirror. */
 export function memoryEntriesToTexts(entries: MemoryEntry[]): string[] {
+  for (const entry of entries) assertMemoryHasNoSecrets(entry.text);
   return entries.map((entry) => entry.text);
+}
+
+export function assertMemoryHasNoSecrets(text: string): void {
+  if (findSecretShapes(text).length > 0) throw new Error('memory-secret');
+}
+
+/** A proposed model note needs explicit confirmation; expired and superseded notes never enter prompts. */
+export function isMemoryEntryActive(entry: MemoryEntry, now = new Date().toISOString(), entries: readonly MemoryEntry[] = []): boolean {
+  if (entry.origin === 'model-extracted' && !entry.confirmedBy) return false;
+  if (entry.expiresAt && (!Number.isFinite(Date.parse(entry.expiresAt)) || Date.parse(entry.expiresAt) <= Date.parse(now))) return false;
+  if (entries.some((candidate) => candidate.supersedes === entry.id && candidate.id !== entry.id &&
+    (candidate.origin !== 'model-extracted' || candidate.confirmedBy) &&
+    (!candidate.expiresAt || Date.parse(candidate.expiresAt) > Date.parse(now)))) return false;
+  return true;
+}
+
+/** Conservative contradiction detector: only an explicit negation of the same claim is a replacement. */
+export function suggestMemorySupersession(text: string, entries: readonly MemoryEntry[]): MemoryEntry | null {
+  const normalise = (value: string) => value.toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const claim = (value: string) => {
+    const cleaned = normalise(value);
+    const negated = /^(?:no|nunca|never|not)\s+/.test(cleaned);
+    return { negated, subject: cleaned.replace(/^(?:no|nunca|never|not)\s+/, '') };
+  };
+  const proposed = claim(text);
+  if (proposed.subject.length < 8) return null;
+  return entries.find((entry) => {
+    const prior = claim(entry.text);
+    return prior.subject === proposed.subject && prior.negated !== proposed.negated && isMemoryEntryActive(entry);
+  }) ?? null;
+}
+
+export function confirmMemoryEntry(entries: readonly MemoryEntry[], entryId: string, actorId: string): MemoryEntry[] {
+  return entries.map((entry) => entry.id === entryId && entry.origin === 'model-extracted'
+    ? { ...entry, confirmedBy: actorId, updatedAt: new Date().toISOString() }
+    : entry);
+}
+
+/** Materialises a person's note and approved document suggestions with provenance. */
+export function createConfirmedMemoryEntries(input: {
+  typedText: string;
+  extractedTexts: readonly string[];
+  existing: readonly MemoryEntry[];
+  priority: MemoryPriority;
+  actorId: string | null;
+  actorName: string | null;
+  sourceTraceId: string | null;
+  expiresAt: string | null;
+}): MemoryEntry[] {
+  const make = (text: string, origin: MemoryEntry['origin']) => createMemoryEntry(text, {
+    priority: input.priority,
+    authorId: input.actorId,
+    authorName: input.actorName,
+    origin,
+    sourceTraceId: origin === 'model-extracted' ? input.sourceTraceId : null,
+    confirmedBy: origin === 'model-extracted' ? (input.actorId ?? 'user-confirmed') : null,
+    expiresAt: input.expiresAt,
+    supersedes: suggestMemorySupersession(text, input.existing)?.id ?? null,
+  });
+  return [
+    ...(input.typedText ? [make(input.typedText, 'user')] : []),
+    ...input.extractedTexts.map((text) => make(text, 'model-extracted')),
+  ];
 }
 
 const entryTime = (entry: MemoryEntry): number => {
@@ -219,13 +302,14 @@ export function formatMemoryEntryAnnotation(entry: MemoryEntry): string {
 export function formatMemoryTextsForPrompt(
   texts: string[] | null | undefined,
   entries: MemoryEntry[] | null | undefined,
-  opts: { limit?: number; annotate?: boolean } = {},
+  opts: { limit?: number; annotate?: boolean; now?: string } = {},
 ): string[] {
   const reconciled = reconcileMemoryEntries(texts, entries);
+  const active = reconciled.filter((entry) => isMemoryEntryActive(entry, opts.now, reconciled));
   const hasMetadata = reconciled.some(
     (entry) => entry.createdAt !== null || entry.priority !== DEFAULT_MEMORY_PRIORITY,
   );
-  const ordered = hasMetadata ? sortMemoryEntriesForContext(reconciled) : reconciled;
+  const ordered = hasMetadata ? sortMemoryEntriesForContext(active) : active;
   const limited = typeof opts.limit === 'number' && opts.limit >= 0 ? ordered.slice(0, opts.limit) : ordered;
   const annotate = opts.annotate !== false;
   return limited.map((entry) => (annotate ? `${formatMemoryEntryAnnotation(entry)}${entry.text}` : entry.text));
@@ -243,6 +327,9 @@ export function appendMemoryNotes(input: {
   authorId?: string | null;
   authorName?: string | null;
   priority?: MemoryPriority;
+  origin?: MemoryEntry['origin'];
+  sourceTraceId?: string | null;
+  confirmedBy?: string | null;
 }): { entries: MemoryEntry[]; texts: string[]; added: string[] } {
   const reconciled = reconcileMemoryEntries(input.existingTexts, input.existingEntries);
   const seen = new Set(reconciled.map((entry) => entry.text.trim().toLowerCase()));
@@ -251,6 +338,7 @@ export function appendMemoryNotes(input: {
   for (const raw of input.newTexts) {
     const text = typeof raw === 'string' ? raw.trim() : '';
     if (!text) continue;
+    assertMemoryHasNoSecrets(text);
     const key = text.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -259,6 +347,10 @@ export function appendMemoryNotes(input: {
       priority: input.priority,
       authorId: input.authorId,
       authorName: input.authorName,
+      origin: input.origin,
+      sourceTraceId: input.sourceTraceId,
+      confirmedBy: input.confirmedBy,
+      supersedes: suggestMemorySupersession(text, appended)?.id ?? null,
     }));
   }
   return { entries: appended, texts: memoryEntriesToTexts(appended), added };

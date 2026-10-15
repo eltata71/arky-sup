@@ -3,8 +3,10 @@ import {
   DEFAULT_MEMORY_PRIORITY,
   appendMemoryNotes,
   createMemoryEntry,
+  createConfirmedMemoryEntries,
   formatMemoryEntryAnnotation,
   formatMemoryTextsForPrompt,
+  isMemoryEntryActive,
   memoryEntriesToTexts,
   normalizeMemoryPriority,
   reconcileMemoryEntries,
@@ -12,6 +14,7 @@ import {
   sanitizeMemoryEntryList,
   sortMemoryEntriesByRecency,
   sortMemoryEntriesForContext,
+  suggestMemorySupersession,
 } from '../../services/memory/memoryEntries';
 import type { MemoryEntry } from '../../types';
 
@@ -23,9 +26,22 @@ const entry = (overrides: Partial<MemoryEntry> & { text: string }): MemoryEntry 
   updatedAt: overrides.updatedAt ?? null,
   authorId: overrides.authorId ?? null,
   authorName: overrides.authorName ?? null,
+  origin: overrides.origin,
+  sourceTraceId: overrides.sourceTraceId,
+  confirmedBy: overrides.confirmedBy,
+  expiresAt: overrides.expiresAt,
+  supersedes: overrides.supersedes,
 });
 
 describe('memoryEntries', () => {
+  it('stamps approved document suggestions and keeps typed notes user-authored', () => {
+    const records = createConfirmedMemoryEntries({
+      typedText: 'Usar Kafka', extractedTexts: ['No usar RabbitMQ'], existing: [],
+      priority: 'medium', actorId: 'u1', actorName: 'Ana', sourceTraceId: 'document:brief.pdf', expiresAt: null,
+    });
+    expect(records.map((record) => record.origin)).toEqual(['user', 'model-extracted']);
+    expect(records[1]).toMatchObject({ confirmedBy: 'u1', sourceTraceId: 'document:brief.pdf' });
+  });
   describe('createMemoryEntry', () => {
     it('defaults to prioridad media with a timestamp and the given author', () => {
       const created = createMemoryEntry('Usar Kafka', { authorId: 'u1', authorName: 'Ana' });
@@ -147,6 +163,16 @@ describe('memoryEntries', () => {
   });
 
   describe('formatMemoryTextsForPrompt', () => {
+    it('excludes unconfirmed model proposals and expired notes, while keeping legacy notes', () => {
+      const texts = ['proposal', 'expired', 'legacy'];
+      const entries = [
+        entry({ text: 'proposal', origin: 'model-extracted' }),
+        entry({ text: 'expired', expiresAt: '2020-01-01T00:00:00Z' }),
+      ];
+      expect(formatMemoryTextsForPrompt(texts, entries, { now: '2026-10-15T00:00:00Z' })).toEqual(['legacy']);
+      expect(isMemoryEntryActive(entry({ text: 'approved', origin: 'model-extracted', confirmedBy: 'u1' }), '2026-10-15T00:00:00Z')).toBe(true);
+    });
+
     it('is byte-identical to the input for legacy data (no metadata)', () => {
       const texts = ['uno', 'dos', 'tres'];
       expect(formatMemoryTextsForPrompt(texts, undefined)).toEqual(texts);
@@ -189,6 +215,29 @@ describe('memoryEntries', () => {
   });
 
   describe('appendMemoryNotes', () => {
+    it('proposes an explicit contradiction as a replacement and suppresses the old claim after confirmation', () => {
+      const prior = entry({ id: 'old', text: 'Usar Kafka' });
+      expect(suggestMemorySupersession('No usar Kafka', [prior])?.id).toBe('old');
+      const result = appendMemoryNotes({
+        existingTexts: [prior.text], existingEntries: [prior], newTexts: ['No usar Kafka'],
+        origin: 'model-extracted', confirmedBy: 'u1',
+      });
+      expect(result.entries[1].supersedes).toBe('old');
+      expect(formatMemoryTextsForPrompt(result.texts, result.entries, { annotate: false })).toEqual(['No usar Kafka']);
+      expect(formatMemoryTextsForPrompt(result.texts, result.entries).join(' ')).not.toContain('Usar Kafka');
+      expect(suggestMemorySupersession('Usar RabbitMQ', [prior])).toBeNull();
+      const pending = appendMemoryNotes({
+        existingTexts: [prior.text], existingEntries: [prior], newTexts: ['No usar Kafka'],
+        origin: 'model-extracted',
+      });
+      expect(formatMemoryTextsForPrompt(pending.texts, pending.entries, { annotate: false })).toEqual(['Usar Kafka']);
+    });
+    it('rejects a secret before it can enter persisted memory', () => {
+      expect(() => appendMemoryNotes({
+        existingTexts: [], existingEntries: [],
+        newTexts: ['sk-or-v1-' + 'a'.repeat(64)],
+      })).toThrow('memory-secret');
+    });
     it('stamps author + timestamp on new notes and dedupes case-insensitively', () => {
       const existingEntries = [entry({ text: 'Usar Kafka', priority: 'high' })];
       const result = appendMemoryNotes({

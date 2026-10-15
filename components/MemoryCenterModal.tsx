@@ -12,10 +12,13 @@ import {
     DEFAULT_MEMORY_PRIORITY,
     MEMORY_PRIORITY_LABEL_ES,
     createMemoryEntry,
+    createConfirmedMemoryEntries,
+    confirmMemoryEntry,
     memoryEntriesToTexts,
     reconcileMemoryEntries,
     resolveMemoryExtractionScope,
     sortMemoryEntriesByRecency,
+    suggestMemorySupersession,
 } from '../services/memory';
 import {
     PlusIcon,
@@ -29,6 +32,7 @@ import { ChatHistoryPanel } from './memory/ChatHistoryPanel';
 import { ListView } from './memory/MemoryEntryViews';
 import { CreateEntry, EditEntry, ViewEntry } from './memory/MemoryEntryForms';
 import type { RenderableEntry } from './memory/memoryEntryModel';
+import { ACCEPTED_TYPES, deriveInitialCaptureFallback, readFileAsBase64, type ScopeAction } from './memory/memoryCenterSupport';
 
 interface MemoryCenterModalProps {
     isOpen: boolean;
@@ -36,38 +40,6 @@ interface MemoryCenterModalProps {
     project: Project;
 }
 
-type ScopeAction =
-    | { mode: 'list' }
-    | { mode: 'view'; entryId: string | null; derivedIndex?: number }
-    | { mode: 'edit'; entryId: string }
-    | { mode: 'create' };
-
-const readFileAsBase64 = (file: File): Promise<{ name: string; type: string; base64Data: string }> =>
-    new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const result = typeof reader.result === 'string' ? reader.result : '';
-            const base64 = result.includes(',') ? result.split(',')[1] : result;
-            resolve({ name: file.name, type: file.type || 'application/octet-stream', base64Data: base64 });
-        };
-        reader.onerror = () => reject(reader.error ?? new Error('No se pudo leer el archivo'));
-        reader.readAsDataURL(file);
-    });
-
-const ACCEPTED_TYPES = '.txt,.md,.markdown,.pdf,.doc,.docx,.gdoc,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown';
-
-const deriveInitialCaptureFallback = (project: Project): string[] => {
-    const fallback: string[] = [];
-    const trimmedDescription = project.description?.trim();
-    if (trimmedDescription) {
-        fallback.push(`Descripción inicial del proyecto: ${trimmedDescription}`);
-    }
-    (project.projectContext ?? []).forEach(item => {
-        const trimmed = typeof item === 'string' ? item.trim() : '';
-        if (trimmed && !fallback.includes(trimmed)) fallback.push(trimmed);
-    });
-    return fallback;
-};
 export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, onClose, project }) => {
     const { settings, updateSettings, runProjectCommand, updateArtifact, t } = useAppContext();
     const { profile } = useAuth();
@@ -80,6 +52,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
     const [draft, setDraft] = useState('');
     const [draftPriority, setDraftPriority] = useState<MemoryPriority>(DEFAULT_MEMORY_PRIORITY);
+    const [draftExpiresAt, setDraftExpiresAt] = useState('');
     const [search, setSearch] = useState('');
     const [isExtracting, setIsExtracting] = useState(false);
     const [extractedSuggestions, setExtractedSuggestions] = useState<{ value: string; accepted: boolean }[]>([]);
@@ -93,6 +66,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
             setAction({ mode: 'list' });
             setDraft('');
             setDraftPriority(DEFAULT_MEMORY_PRIORITY);
+            setDraftExpiresAt('');
             setSearch('');
             setExtractedSuggestions([]);
             setExtractionFileName(null);
@@ -103,6 +77,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         setAction({ mode: 'list' });
         setDraft('');
         setDraftPriority(DEFAULT_MEMORY_PRIORITY);
+        setDraftExpiresAt('');
         setSearch('');
         setExtractedSuggestions([]);
         setExtractionFileName(null);
@@ -169,8 +144,8 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
      */
     const persistRecords = useCallback(async (nextRecords: MemoryEntry[]): Promise<boolean> => {
         setIsSaving(true);
-        const texts = memoryEntriesToTexts(nextRecords);
         try {
+            const texts = memoryEntriesToTexts(nextRecords);
             switch (activeScope) {
                 case 'global':
                     await updateSettings({ globalContext: texts, globalContextEntries: nextRecords });
@@ -206,11 +181,6 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         }
     }, [activeScope, currentArtifact, project.id, addToast, updateArtifact, runProjectCommand, updateSettings, t]);
 
-    const author = useMemo(() => ({
-        authorId: profile?.uid ?? null,
-        authorName: profile?.displayName ?? null,
-    }), [profile?.uid, profile?.displayName]);
-
     const handleMaterializeFallback = useCallback(async () => {
         if (!showFallback || initialCaptureFallback.length === 0) return;
         // Las entradas derivadas provienen de la creación del proyecto: se
@@ -227,6 +197,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         }
         setDraft('');
         setDraftPriority(DEFAULT_MEMORY_PRIORITY);
+        setDraftExpiresAt('');
         setExtractedSuggestions([]);
         setExtractionFileName(null);
         setAction({ mode: 'create' });
@@ -243,7 +214,12 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         const baseRecords = showFallback
             ? initialCaptureFallback.map(text => createMemoryEntry(text, { createdAt: null }))
             : entryRecords;
-        const newRecords = toAdd.map(text => createMemoryEntry(text, { priority: draftPriority, ...author }));
+        const newRecords = createConfirmedMemoryEntries({
+            typedText: value, extractedTexts: fromExtraction, existing: baseRecords,
+            priority: draftPriority, actorId: profile?.uid ?? null, actorName: profile?.displayName ?? null,
+            sourceTraceId: extractionFileName ? `document:${extractionFileName}` : null,
+            expiresAt: draftExpiresAt ? `${draftExpiresAt}T23:59:59.999Z` : null,
+        });
         const ok = await persistRecords([...baseRecords, ...newRecords]);
         if (ok) {
             addToast(t("uiMessage.p0-entrada-s-anadida-s.fd596a", { p0: String(toAdd.length) }), 'success');
@@ -258,7 +234,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
             return;
         }
         const next = entryRecords.map((entry) => entry.id === entryId
-            ? { ...entry, text: value, priority: draftPriority, updatedAt: new Date().toISOString() }
+            ? { ...entry, text: value, priority: draftPriority, expiresAt: draftExpiresAt ? `${draftExpiresAt}T23:59:59.999Z` : null, updatedAt: new Date().toISOString() }
             : entry);
         const ok = await persistRecords(next);
         if (ok) {
@@ -271,6 +247,12 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         const next = entryRecords.map((entry) => entry.id === entryId ? { ...entry, priority } : entry);
         const ok = await persistRecords(next);
         if (ok) addToast(t("uiMessage.prioridad-cambiada-a-p0.d81e7b", { p0: String(MEMORY_PRIORITY_LABEL_ES[priority].toLowerCase()) }), 'success');
+    };
+
+    const handleConfirmEntry = async (entryId: string) => {
+        const next = confirmMemoryEntry(entryRecords, entryId, profile?.uid ?? 'user-confirmed');
+        const ok = await persistRecords(next);
+        if (ok) addToast(t('mem.confirmed'), 'success');
     };
 
     const handleDelete = (entryId: string | null, isDerived: boolean) => {
@@ -298,6 +280,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
         if (!entry) return;
         setDraft(entry.text);
         setDraftPriority(entry.priority);
+        setDraftExpiresAt(entry.expiresAt?.slice(0, 10) ?? '');
         setAction({ mode: 'edit', entryId });
     };
 
@@ -507,6 +490,7 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                                 startEdit(item.entry.id);
                             }}
                             onDelete={(item) => handleDelete(item.isDerived ? null : item.entry.id, item.isDerived)}
+                            onConfirm={(item) => { void handleConfirmEntry(item.entry.id); }}
                             onChangePriority={(item, priority) => {
                                 if (item.isDerived) {
                                     addToast(t("uiMessage.convierte-la-captura-inicial.397433"), 'info');
@@ -537,6 +521,8 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                             onChange={setDraft}
                             priority={draftPriority}
                             onPriorityChange={setDraftPriority}
+                            expiresAt={draftExpiresAt}
+                            onExpiresAtChange={setDraftExpiresAt}
                             isSaving={isSaving}
                             onSave={() => handleSaveEdit(action.entryId)}
                             onCancel={() => setAction({ mode: 'list' })}
@@ -547,6 +533,9 @@ export const MemoryCenterModal: React.FC<MemoryCenterModalProps> = ({ isOpen, on
                             onChange={setDraft}
                             priority={draftPriority}
                             onPriorityChange={setDraftPriority}
+                            expiresAt={draftExpiresAt}
+                            onExpiresAtChange={setDraftExpiresAt}
+                            replacementPreview={suggestMemorySupersession(draft, entryRecords)?.text ?? null}
                             isSaving={isSaving}
                             onSave={handleSaveNew}
                             onCancel={() => setAction({ mode: 'list' })}

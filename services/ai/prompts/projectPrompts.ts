@@ -193,7 +193,7 @@ const motivationBlock = (opts: BasePromptOptions, project?: Project): string => 
   // The initiatives, then the industry packs they and the project activate (6.4).
   const packs = buildDomainPackBlock(resolveDomainPacks({
     motivations: opts.businessMotivation,
-    texts: [project?.description, ...(project?.projectContext ?? [])],
+    texts: [project?.description, ...formatMemoryTextsForPrompt(project?.projectContext, project?.projectContextEntries, { annotate: false })],
   }));
   const block = [buildBusinessMotivationBlock(opts.businessMotivation), packs].filter(Boolean).join('\n\n');
   return block ? `\n${block}\n` : '';

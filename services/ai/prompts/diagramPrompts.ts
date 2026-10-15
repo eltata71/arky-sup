@@ -23,8 +23,10 @@ import { extractDiagramSignals, renderDiagramSignals } from '../../diagram';
 import { captureDiagramProjectBlock, captureDiagramRequest } from './contextManifestCapture';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { METADATA_SCHEMA, STORY_INSTRUCTIONS } from './diagramStorySchema';
-import { ARCHITECTURE_SIGNAL_PATTERN } from './artifactContext';
 import { renderDiagramContextBundle } from './artifactContextRender';
+import { formatMemoryTextsForPrompt } from '../../memory';
+import { prioritizeProjectContext } from './projectContextPriority';
+export { prioritizeProjectContext } from './projectContextPriority';
 
 /**
  * Ten-dimension rubric the Mermaid prompts carry for self-review. It asked
@@ -589,49 +591,6 @@ export function buildSkeletonIRFromArtifact(artifact: Artifact, project: Project
  * to the constraints that distinguish a generic e-commerce diagram from one
  * that respects the user's regulated environment.
  */
-interface ScoredItem {
-    item: string;
-    index: number;
-    score: number;
-}
-
-/**
- * Heuristic: prioritise the project-context bullets most likely to ground
- * the diagram in real architectural signals. Used to avoid drowning the
- * model in 50+ "ok / sí / gracias" echoes from the guided-creation chat.
- *
- *  - Recency weight: later items get a larger bonus (the asistente collects
- *    decisions late in the conversation).
- *  - Keyword boost: items mentioning architecture / regulation / tech terms
- *    win two extra points.
- *  - Length sanity: items shorter than 12 chars are likely UI noise and lose
- *    one point.
- *
- * The selection is taken by score desc, then re-sorted by original index so
- * the prompt preserves the narrative ordering the user wrote.
- */
-export function prioritizeProjectContext(rawItems: readonly string[], opts: { limit: number }): string[] {
-    const cleaned: ScoredItem[] = [];
-    rawItems.forEach((raw, idx) => {
-        const item = (raw ?? '').trim();
-        if (!item) return;
-        const recencyWeight = idx / Math.max(1, rawItems.length - 1); // 0..1
-        const keywordBoost = ARCHITECTURE_SIGNAL_PATTERN.test(item) ? 2 : 0;
-        const lengthSanity = item.length < 12 ? -1 : 0;
-        cleaned.push({ item, index: idx, score: recencyWeight + keywordBoost + lengthSanity });
-    });
-
-    if (cleaned.length <= opts.limit) {
-        return cleaned.sort((a, b) => a.index - b.index).map((c) => c.item);
-    }
-
-    const top = [...cleaned]
-        .sort((a, b) => b.score - a.score || b.index - a.index)
-        .slice(0, opts.limit)
-        .sort((a, b) => a.index - b.index);
-    return top.map((c) => c.item);
-}
-
 export interface ProjectContextBlockOptions extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
     /** Cap for projectContext bullets. Defaults to 12. */
     maxContextItems?: number;
@@ -663,7 +622,8 @@ export function buildProjectContextBlock(
         lines.push(`- Description: ${truncate(project.description.trim(), maxDescriptionChars)}`);
     }
     if (!opts.settings && Array.isArray(project.projectContext) && project.projectContext.length) {
-        const items = prioritizeProjectContext(project.projectContext, { limit: maxContextItems });
+        const activeContext = formatMemoryTextsForPrompt(project.projectContext, project.projectContextEntries, { annotate: false });
+        const items = prioritizeProjectContext(activeContext, { limit: maxContextItems });
         if (items.length) {
             lines.push(`- Constraints / context:`);
             for (const item of items) lines.push(`    • ${item}`);

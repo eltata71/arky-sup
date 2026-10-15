@@ -59,6 +59,10 @@ export const EntryMetaLine: React.FC<{ entry: MemoryEntry }> = ({ entry }) => {
                     <span>{t("ui.por.34b983")} {entry.authorName}</span>
                 </>
             )}
+            <span aria-hidden>•</span>
+            <span>{t(entry.origin === 'model-extracted' ? 'mem.originModel' : entry.origin === 'imported' ? 'mem.originImported' : 'mem.originUser')}</span>
+            {entry.origin === 'model-extracted' && !entry.confirmedBy && <><span aria-hidden>•</span><span>{t('mem.pending')}</span></>}
+            {entry.expiresAt && <><span aria-hidden>•</span><span>{t('mem.expires')}: {entry.expiresAt.slice(0, 10)}</span></>}
         </>
     );
 };
@@ -71,13 +75,14 @@ interface ListViewProps {
     onView: (item: RenderableEntry) => void;
     onEdit: (item: RenderableEntry) => void;
     onDelete: (item: RenderableEntry) => void;
+    onConfirm: (item: RenderableEntry) => void;
     onChangePriority: (item: RenderableEntry, priority: MemoryPriority) => void;
     scopeLabel: string;
     isArtifactSelectionMissing: boolean;
 }
 
 export const ListView: React.FC<ListViewProps> = ({
-    entries, totalCount, search, onSearchChange, onView, onEdit, onDelete, onChangePriority, scopeLabel, isArtifactSelectionMissing,
+    entries, totalCount, search, onSearchChange, onView, onEdit, onDelete, onConfirm, onChangePriority, scopeLabel, isArtifactSelectionMissing,
 }) => {
     const { t } = useAppContext();
     if (isArtifactSelectionMissing) {
@@ -120,6 +125,7 @@ export const ListView: React.FC<ListViewProps> = ({
                             onView={() => onView(item)}
                             onEdit={() => onEdit(item)}
                             onDelete={() => onDelete(item)}
+                            onConfirm={() => onConfirm(item)}
                             onChangePriority={(priority) => onChangePriority(item, priority)}
                         />
                     ))}
@@ -134,10 +140,11 @@ interface MemoryCardProps {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    onConfirm: () => void;
     onChangePriority: (priority: MemoryPriority) => void;
 }
 
-const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete, onChangePriority }) => {
+const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete, onConfirm, onChangePriority }) => {
     const { t } = useAppContext();
     const { entry, isDerived } = item;
     const headline = deriveEntryHeadline(entry.text);
@@ -186,6 +193,9 @@ const MemoryCard: React.FC<MemoryCardProps> = ({ item, onView, onEdit, onDelete,
                     </div>
                 </div>
                 <div className="flex flex-shrink-0 flex-col items-end gap-1">
+                    {entry.origin === 'model-extracted' && !entry.confirmedBy && !isDerived && (
+                        <button type="button" onClick={onConfirm} className="rounded-lg bg-primary-600 px-2 py-1 text-xs font-bold text-white">{t('mem.confirm')}</button>
+                    )}
                     <ActionButton label={t('mem.view')} icon={<EyeIcon className="h-4 w-4" />} onClick={onView} />
                     <ActionButton label={t('mem.edit')} icon={<PencilIcon className="h-4 w-4" />} onClick={onEdit} disabled={isDerived} />
                     <ActionButton label={t('mem.delete')} icon={<TrashIcon className="h-4 w-4" />} onClick={onDelete} variant="danger" disabled={isDerived} />

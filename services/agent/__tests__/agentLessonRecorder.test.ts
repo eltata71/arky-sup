@@ -85,6 +85,8 @@ describe('agentLessonRecorder', () => {
       expect(lessonEntry.authorName).toBe(AGENT_LESSON_AUTHOR);
       expect(lessonEntry.priority).toBe('low');
       expect(lessonEntry.createdAt).toBeTruthy();
+      expect(lessonEntry.origin).toBe('model-extracted');
+      expect(lessonEntry.confirmedBy).toBeNull();
     });
 
     it('returns null for duplicate lessons', () => {

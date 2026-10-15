@@ -213,6 +213,7 @@ describe('executeAgentAction — memory.save.*', () => {
       store: buildStore(),
       memoryStore: entriesAwareStore,
       memoryBullets: ['Decisión: usar PostgreSQL 15'],
+      memoryOrigin: 'model-extracted',
       actor: { id: 'user-1', name: 'Ana' },
     });
     expect(result.status).toBe('success');
@@ -223,6 +224,9 @@ describe('executeAgentAction — memory.save.*', () => {
     expect(saved!.authorName).toBe('Ana');
     expect(saved!.priority).toBe('medium');
     expect(saved!.createdAt).toBeTruthy();
+    expect(saved!.origin).toBe('model-extracted');
+    expect(saved!.confirmedBy).toBe('user-1');
+    expect(saved!.sourceTraceId).toBe(plan.traceId);
   });
 
   it('returns failed when memory store is missing', async () => {

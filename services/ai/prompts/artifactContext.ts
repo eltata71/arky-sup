@@ -269,7 +269,7 @@ function candidatesFor(scope: ArtifactContextScope, sources: ArtifactContextSour
     case 'global':
       return memoryCandidates(settings.globalContext, settings.globalContextEntries, ranking);
     case 'agente':
-      return memoryCandidates(sources.agentMemory ?? settings.agentMemory, undefined, ranking);
+      return memoryCandidates(sources.agentMemory ?? settings.agentMemory, sources.agentMemory ? undefined : settings.agentMemoryEntries, ranking);
     case 'entregable': {
       const deliverables = sources.deliverables ?? [];
       const items = deliverables.slice(0, ranking.limit).map((deliverable) => ({

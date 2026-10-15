@@ -67,7 +67,7 @@
     "services/identity": ["lib", "services/adapters", "services/observability", "services/persistence", "services/ports"],
     "services/learning": ["services/adapters", "services/persistence", "types"],
     "services/lucid": [],
-    "services/memory": ["types.ts"],
+    "services/memory": ["lib", "types.ts"],
     "services/observability": ["lib"],
     "services/ports": [],
     "services/adapters": ["lib", "services/ports"],
