@@ -13,6 +13,7 @@
 import type { MemoryEntry } from '../../types';
 import {
   formatMemoryEntryAnnotation,
+  isMemoryEntryActive,
   MEMORY_PRIORITY_WEIGHT,
   reconcileMemoryEntries,
   sortMemoryEntriesForContext,
@@ -204,7 +205,8 @@ export interface RankedMemoryNote {
 export function rankRelevantMemoryEntries(opts: SelectRelevantMemoryEntriesOptions): RankedMemoryNote[] {
   const { texts, entries, query, limit, bulletCharCap, extraScore } = opts;
   if (limit <= 0) return [];
-  const reconciled = reconcileMemoryEntries(texts, entries).filter((entry) => entry.text.trim().length > 0);
+  const all = reconcileMemoryEntries(texts, entries);
+  const reconciled = all.filter((entry) => entry.text.trim().length > 0 && isMemoryEntryActive(entry, undefined, all));
   if (reconciled.length === 0) return [];
 
   const ordered = sortMemoryEntriesForContext(reconciled);

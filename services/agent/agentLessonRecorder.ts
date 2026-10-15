@@ -116,6 +116,7 @@ export function mergeAgentLesson(input: MergeAgentLessonInput): MergeAgentLesson
     priority: 'low',
     authorId: 'arquitecto-agente',
     authorName: AGENT_LESSON_AUTHOR,
+    origin: 'model-extracted',
   }));
 
   return { texts: memoryEntriesToTexts(next), entries: next };

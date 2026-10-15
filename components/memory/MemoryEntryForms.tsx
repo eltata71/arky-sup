@@ -56,11 +56,13 @@ interface EditEntryProps {
     onChange: (value: string) => void;
     priority: MemoryPriority;
     onPriorityChange: (priority: MemoryPriority) => void;
+    expiresAt: string;
+    onExpiresAtChange: (value: string) => void;
     isSaving: boolean;
     onSave: () => void;
     onCancel: () => void;
 }
-export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel }) => {
+export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority, onPriorityChange, expiresAt, onExpiresAtChange, isSaving, onSave, onCancel }) => {
     const { t } = useAppContext();
     return (
     <div className="flex flex-1 flex-col">
@@ -80,6 +82,10 @@ export const EditEntry: React.FC<EditEntryProps> = ({ draft, onChange, priority,
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('mem.priority')}</span>
             <PrioritySelector value={priority} onChange={onPriorityChange} />
         </div>
+        <label className="mt-3 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+            {t('mem.expires')}
+            <input type="date" value={expiresAt} onChange={(event) => onExpiresAtChange(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-900 dark:border-white/10 dark:bg-gray-800 dark:text-white" />
+        </label>
         <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" onClick={onCancel} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.05]">
                 {t("ui.cancelar.c111e0")}
@@ -98,6 +104,9 @@ interface CreateEntryProps {
     onChange: (value: string) => void;
     priority: MemoryPriority;
     onPriorityChange: (priority: MemoryPriority) => void;
+    expiresAt: string;
+    onExpiresAtChange: (value: string) => void;
+    replacementPreview?: string | null;
     isSaving: boolean;
     onSave: () => void;
     onCancel: () => void;
@@ -110,7 +119,7 @@ interface CreateEntryProps {
 }
 
 export const CreateEntry: React.FC<CreateEntryProps> = ({
-    draft, onChange, priority, onPriorityChange, isSaving, onSave, onCancel, onPickFile, isExtracting,
+    draft, onChange, priority, onPriorityChange, expiresAt, onExpiresAtChange, replacementPreview, isSaving, onSave, onCancel, onPickFile, isExtracting,
     extractedSuggestions, extractionFileName, onUpdateSuggestion, onClearSuggestions,
 }) => {
     const { t } = useAppContext();
@@ -135,6 +144,11 @@ export const CreateEntry: React.FC<CreateEntryProps> = ({
             <PrioritySelector value={priority} onChange={onPriorityChange} />
             <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('mem.defaultPriority')}</span>
         </div>
+        <label className="mt-3 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+            {t('mem.expires')}
+            <input type="date" value={expiresAt} onChange={(event) => onExpiresAtChange(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-900 dark:border-white/10 dark:bg-gray-800 dark:text-white" />
+        </label>
+        {replacementPreview && <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">{t('mem.replacePreview', { note: replacementPreview })}</p>}
 
         <div className="mt-4 rounded-2xl border border-dashed border-primary-300 bg-primary-50/40 p-4 dark:border-primary-500/30 dark:bg-primary-500/[0.06]">
             <div className="flex flex-wrap items-start justify-between gap-3">

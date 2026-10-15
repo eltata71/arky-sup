@@ -50,14 +50,7 @@ export type { AgentArtifactStore, AgentArtifactStoreLike } from './agentExecutor
 /** Callback fired as the action moves through phases. */
 export type AgentPhaseListener = (phase: AgentExecutionPhase, message: string) => void;
 
-/**
- * Persistence handlers for the three memory scopes. Mirrors the existing
- * AppContext shape so callers can pass it inline:
- *   `{ updateGlobalContext: (next) => updateSettings({ globalContext: next }) }`.
- *
- * The executor reads the current value, deduplicates against the new
- * bullets, and writes the merged array — caller logic stays minimal.
- */
+/** Persistence ports for the three memory scopes; the executor merges notes. */
 export interface AgentMemoryStore {
   getGlobalContext: () => string[];
   updateGlobalContext: (next: string[], nextEntries?: MemoryEntry[]) => void;
@@ -65,12 +58,7 @@ export interface AgentMemoryStore {
   updateProjectContext: (projectId: string, next: string[], nextEntries?: MemoryEntry[]) => void;
   getArtifactMemory: (projectId: string, artifactId: string) => string[];
   updateArtifactMemory: (projectId: string, artifactId: string, next: string[], nextEntries?: MemoryEntry[]) => void;
-  /**
-   * Optional structured-metadata readers (fecha, autor, prioridad). When
-   * provided the executor preserves existing metadata and stamps new notes
-   * with author + timestamp; when absent the notes are saved metadata-less
-   * (legacy behaviour).
-   */
+  /** Optional readers preserve existing structured metadata on a save. */
   getGlobalContextEntries?: () => MemoryEntry[];
   getProjectContextEntries?: (projectId: string) => MemoryEntry[];
   getArtifactMemoryEntries?: (projectId: string, artifactId: string) => MemoryEntry[];
@@ -94,6 +82,7 @@ export interface AgentExecutorInput {
    * back to a sanitised single bullet built from the user instruction.
    */
   memoryBullets?: string[];
+  memoryOrigin?: MemoryEntry['origin'];
   /** Lifecycle listener (UI uses this to animate the action card). */
   onPhase?: AgentPhaseListener;
   /** Optional override — if `'current'` the new content overwrites in-place. */
@@ -456,6 +445,9 @@ async function executeMemorySave(
     newTexts: incomingBullets,
     authorId: input.actor?.id ?? null,
     authorName: input.actor?.name ?? 'Arquitecto Agente',
+    origin: input.memoryOrigin ?? 'user',
+    sourceTraceId: plan.traceId,
+    confirmedBy: input.confirmedByUser ? (input.actor?.id ?? 'user-confirmed') : null,
   });
   const newBullets = mergeResult.added;
 

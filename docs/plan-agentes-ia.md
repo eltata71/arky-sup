@@ -890,13 +890,13 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 16.7 Agentes de la organización | P3 · L | Descartada | D-A1 = A (fichas por usuario), 2026-10-13 |
 | 17.0 Vallado completo | P0 · M | Hecha | #245 · `promptsConVallado` 28,6 → 100 %: solicitud de coordinación, brief del encargo, contenido revisado (con aviso de recorte), registro en contexto, mensaje del clasificador y capas de memoria del agente. La memoria base y la instrucción de la ficha quedan fuera de la valla a propósito: son configuración a seguir |
 | 17.1 Revisor sin aprobación silenciosa | P0 · S | Hecha | #246 · `aprobacionesSinCritica` 3 → 0: sin crítica legible la aprobación es `evidence-only`, la tarea queda en `awaiting-review` y el encargo se bloquea diciendo por qué; «Confirmar revisión» en el tablero la firma (`confirmEvidenceOnlyReview`, con actor en la auditoría). El contenido recortado se marca `truncated` |
-| 17.2 Memoria con procedencia | P1 · M | Pendiente | |
+| 17.2 Memoria con procedencia | P1 · M | En revisión | #250 · origen, traza, confirmación, caducidad y sustitución en JSON; las propuestas no confirmadas y las notas vencidas no entran en prompts; rechazo de claves; Centro de Memoria muestra origen, confirmación y vencimiento |
 | 17.3 Presupuestos y cancelación | P1 · M | Hecha | #247 · presupuesto por handoff y operación, rechazo explícito, cobro de llamadas informadas y cancelación sin consolidación parcial |
 | 17.4 Éxito con persistencia confirmada | P1 · M | Hecha | #247 · store confirmado para agente y cola; fallo remoto visible y sin anuncio de éxito; prueba de deshacer conservada |
 | 18.0 Esquemas por rol | P1 · L | Pendiente | |
 | 18.1 Revisión con esquema | P1 · M | Pendiente | |
 | 18.2 Evaluador en las dos consolidaciones | P1 · M | Hecha | #248 · el encargo evalúa y corrige una vez; la revisión queda en la tarea y el banco sube a 100 % |
-| 18.3 Clasificador de intención | P2 · M | En revisión | #249 · el heurístico reconoce crear (con doble determinante y ADR/NFR), lote, «para este proyecto» y sobrescribir; el LLM conoce los 12 tipos (enum en el esquema); 31 casos, precisión 100 %, confirmación 100 %. Umbral LLM 0,55 se mantiene: ningún caso del banco queda bajo él |
+| 18.3 Clasificador de intención | P2 · M | Hecha | #249 · el heurístico reconoce crear (con doble determinante y ADR/NFR), lote, «para este proyecto» y sobrescribir; el LLM conoce los 12 tipos (enum en el esquema); 31 casos, precisión 100 %, confirmación 100 %. Umbral LLM 0,55 se mantiene: ningún caso del banco queda bajo él |
 | 18.4 Niveles de modelo | P2 · S | Pendiente | D-A4 aprobada |
 | 19.0 Herramientas de lectura | P2 · XL | Pendiente | |
 | 19.1 Política de contexto | P2 · L | Pendiente | |

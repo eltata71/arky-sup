@@ -33,7 +33,7 @@ import type { Artifact, ArtifactContextPorts } from '../../lib/artifacts';
 import type { Project } from '../architectureProjects';
 import type { ChatMessage } from '../chat';
 import { assembleArtifactContext, bundleItems, buildBasePrompt, buildBusinessMotivationBlock } from '../ai/lazy';
-import { compactBullet } from '../memory';
+import { compactBullet, formatMemoryTextsForPrompt } from '../memory';
 import { fencedSection } from './fencedSection';
 
 export type { AgentPersonaBriefing } from './agentPersonaBriefing';
@@ -112,7 +112,7 @@ export const DEFAULT_CONTEXT_BUDGET: ContextBudget = {
  * configured list is empty/missing. Always returns a non-empty array.
  */
 export function getAgentBaseMemory(settings: Settings | null | undefined): string[] {
-  const configured = Array.isArray(settings?.agentMemory) ? settings!.agentMemory! : [];
+  const configured = settings ? formatMemoryTextsForPrompt(settings.agentMemory, settings.agentMemoryEntries, { annotate: false }) : [];
   const cleaned = configured.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
   return cleaned.length > 0 ? cleaned : [...DEFAULT_AGENT_MEMORY];
 }

@@ -2813,6 +2813,17 @@ configuration the agent must follow, and the fence would present them as data
 to analyse. The bench's `promptsConVallado` holds the Office sites at 100 %;
 `agentPromptFencing.test.ts` holds the agent's.
 
+### Persistent memory has provenance and approval
+
+Plan de agentes 17.2. `MemoryEntry` carries origin, source trace, confirmation,
+expiry and supersession in the existing JSON fields. `reconcileMemoryEntries`
+reads old text-only notes as confirmed user notes. Model-extracted notes and
+automatic lessons are proposals until a person confirms them; pending, expired
+and superseded notes never enter prompt composition. `memoryEntriesToTexts`
+and `appendMemoryNotes` reject published secret-key shapes before persistence.
+The Memory Center shows origin and expiry, lets a person confirm a proposal,
+and offers a replacement when a new note explicitly negates the same claim.
+
 ### A reviewer never approves in silence
 
 Plan de agentes 17.1 (decision D-A5). When the specialist's critique did not

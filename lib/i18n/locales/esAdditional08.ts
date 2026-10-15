@@ -133,4 +133,12 @@ export const esAdditional08: Dictionary = {
   "observability.warningTitle": "Generación completada con notas",
   "observability.warningBody": "El artefacto se generó y existe una vista visible, guardable y exportable. Hay observaciones menores en la traza si quieres revisar el detalle.",
   "observability.eventCount": "{count} evento(s) registrados — revisar es opcional.",
+  "mem.originModel": "Extraída por IA",
+  "mem.originImported": "Importada",
+  "mem.originUser": "Usuario",
+  "mem.pending": "Pendiente de aprobación",
+  "mem.expires": "Caduca",
+  "mem.confirm": "Confirmar",
+  "mem.confirmed": "Memoria confirmada",
+  "mem.replacePreview": "Esta nota reemplazará: {note}",
 };

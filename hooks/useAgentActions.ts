@@ -232,7 +232,7 @@ export function useAgentActions(): UseAgentActionsResult {
         });
         if (planRef.current?.traceId !== plan.traceId) return; // plan changed mid-flight
         if (bullets && bullets.length > 0) {
-          setMemoryDraft({ scope, bullets, status: 'ready' });
+          setMemoryDraft({ scope, bullets, status: 'ready', origin: 'model-extracted' });
         } else {
           // Fall back to a sanitised version of the user's literal instruction
           // so we always offer something to confirm.
@@ -240,6 +240,7 @@ export function useAgentActions(): UseAgentActionsResult {
           setMemoryDraft({
             scope,
             bullets: fallback,
+            origin: 'user',
             status: fallback.length > 0 ? 'ready' : 'failed',
             errorMessage: fallback.length === 0 ? 'No pude extraer conceptos para guardar.' : undefined,
           });
@@ -390,6 +391,7 @@ export function useAgentActions(): UseAgentActionsResult {
         store,
         memoryStore,
         memoryBullets: draftSnapshot?.bullets,
+        memoryOrigin: draftSnapshot?.origin ?? 'user',
         targetOverride,
         // `confirmAndExecute` only ever runs on a plan the user has seen in the
         // action card and accepted; that acceptance is what this flag carries

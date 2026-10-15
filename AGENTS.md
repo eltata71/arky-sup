@@ -670,6 +670,15 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
     Oficina entran por el puerto `RadarStandard` (puerta `standards.ts`,
     `useApplicationPortfolio`) y nunca eligen anillo. Detalle en CLAUDE.md.
 
+29. **La memoria persistente exige procedencia y confirmación** (agentes 17.2).
+    `MemoryEntry` conserva origen, traza, aprobación, caducidad y sustitución en
+    los campos JSON existentes; las notas antiguas se leen como notas de usuario
+    confirmadas. Una nota extraída por IA o una lección automática no entra en
+    ningún prompt sin confirmación humana. Las notas caducadas y sustituidas
+    tampoco entran; `services/memory` aplica ese filtro en cada composición y
+    rechaza claves con forma de secreto antes de guardar. El Centro de Memoria
+    muestra origen y fecha de caducidad. Detalle en CLAUDE.md.
+
 ---
 
 ## Sincronización de capacidades
