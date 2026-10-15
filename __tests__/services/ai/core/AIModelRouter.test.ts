@@ -34,10 +34,10 @@ describe('AIModelRouter', () => {
     expect(route.fallbackChain).not.toContain(route.id);
   });
 
-  it('honours the user-selected model for the deep tier', () => {
-    const route = router.route({ mode: 'high-quality', settings: baseSettings('gemini-2.5-pro') });
-    expect(route.id).toBe('gemini-2.5-pro');
-    expect(route.source).toBe('user');
+  it('keeps the deep tier floor even when the user picked another model', () => {
+    const route = router.route({ mode: 'high-quality', settings: baseSettings('gemini-2.5-flash') });
+    expect(route.id).toBe(MODEL_TIERS.deep);
+    expect(route.source).toBe('tier-floor');
     expect(route.tier).toBe('deep');
   });
 

@@ -27,6 +27,7 @@ import {
   type OfficeAgentProfileOverride,
 } from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
+import { useEffectiveAgentModel } from '../../../hooks/useEffectiveAgentModel';
 
 const TIER_OPTIONS: { value: ModelTier; label: string; hint: string }[] = [
   { value: 'quick', label: 'Rápido', hint: 'Respuestas cortas y mecánicas. El más barato.' },
@@ -128,6 +129,7 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
   const [knowledge, setKnowledge] = useState<string[]>(override?.knowledge ?? []);
   const [memory, setMemory] = useState<string[]>(override?.memory ?? []);
   const [modelTier, setModelTier] = useState<ModelTier>(override?.modelTier ?? 'default');
+  const effectiveModel = useEffectiveAgentModel(modelTier);
   const [maxConcurrentTasks, setMaxConcurrentTasks] = useState(
     override?.maxConcurrentTasks ?? profile.maxConcurrentTasks,
   );
@@ -285,6 +287,9 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
               </select>
               <p className="text-2xs text-gray-500 dark:text-gray-400">
                 {translateConfig(TIER_OPTIONS.find((option) => option.value === modelTier)?.hint ?? '')}
+              </p>
+              <p className="break-all text-2xs text-gray-500 dark:text-gray-400">
+                {t('agent.effectiveModel')}: {effectiveModel === undefined ? t('agent.modelLoading') : effectiveModel ?? t('agent.modelUnavailable')}
               </p>
             </div>
             <div className="space-y-1.5">

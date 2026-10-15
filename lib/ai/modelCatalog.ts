@@ -19,18 +19,14 @@ export const MODEL_FALLBACK_CHAIN: readonly string[] = [
  * Cost-aware model tiers used by diagram services to avoid paying flagship
  * prices for trivially-structured tasks.
  *
- *  - `quick`   → stable Flash for mechanical conversions, schema mapping, small
- *               fixes and syntax repair. The previous Flash-Lite floor returned
- *               404 for the production API key, so cost optimization cannot
- *               override availability.
+ *  - `quick`   → stable 3.1 Flash-Lite for mechanical conversions and extraction.
  *  - `default` → standard generation that benefits from light reasoning
  *               (creating an artifact from a brief, projecting an audience).
- *  - `deep`    → reserved for explicit deep-reasoning paths (multi-artifact
- *               consistency, full-rubric review). Defaults to the user-chosen
- *               model unless overridden.
+ *  - `deep`    → Pro for explicit deep-reasoning paths (multi-artifact
+ *               consistency, full-rubric review).
  */
 export const MODEL_TIERS = {
-  quick:   DEFAULT_TEXT_MODEL,
+  quick:   'gemini-3.1-flash-lite',
   default: 'gemini-2.5-flash',
   deep:    'gemini-2.5-pro',
 } as const;
@@ -39,17 +35,14 @@ export type ModelTier = keyof typeof MODEL_TIERS;
 
 /**
  * Resolve the canonical model id for a given tier, honouring the user's
- * explicitly selected model when it already matches or exceeds the tier
- * requirement (we never silently downgrade a user-requested model).
+ * explicitly selected model for the standard tier. Quick and deep are
+ * intentional floors; the settings preference may coincide with either floor.
  */
 export function resolveTierModel(tier: ModelTier, userModel?: string): string {
   const tierModel = MODEL_TIERS[tier];
   const requested = (userModel || '').trim();
   if (!requested) return tierModel;
-  // Honour user's pick for `default`/`deep` tiers; for `quick` we still prefer
-  // flash-lite to keep mechanical hops cheap unless the user picked an even
-  // smaller model.
-  if (tier === 'quick') return tierModel;
+  if (tier !== 'default') return tierModel;
   return resolveTextModel(requested);
 }
 
@@ -73,9 +66,8 @@ export interface ResolvedModel {
  * Single resolution entry-point used by every text-generation call site.
  *
  * Precedence:
- *   1. settings.aiConfig.model (user/global preference) — when valid AND tier
- *      doesn't force a floor (the `quick` tier intentionally uses the stable
- *      Flash model so mechanical work remains available).
+ *   1. settings.aiConfig.model (user/global preference) on `default` only.
+ *      Quick and deep retain their declared cost/quality floors.
  *   2. tier default (when user has no preference).
  *   3. DEFAULT_TEXT_MODEL (hard fallback) — when settings is missing entirely.
  */
@@ -92,10 +84,8 @@ export function resolveEffectiveModel(tier: ModelTier, settings?: Settings): Res
     return { id: tierModel, source: 'global', tier };
   }
 
-  // The `quick` tier is a deterministic floor: low-cost mechanical hops use
-  // the stable Flash model regardless of user preference. We still record
-  // the original request so the trace can explain the override.
-  if (tier === 'quick') {
+  // Explicit tiers remain meaningful even when Settings names another model.
+  if (tier !== 'default') {
     return { id: tierModel, source: 'tier-floor', tier, requested };
   }
 
@@ -157,7 +147,6 @@ const FALLBACK_MODELS: GeminiModelOption[] = [
 const MODEL_ALIAS_TO_STABLE: Record<string, string> = {
   'gemini-3-flash-preview': DEFAULT_TEXT_MODEL,
   'gemini-2.5-flash-preview': DEFAULT_TEXT_MODEL,
-  'gemini-3.1-flash-lite': DEFAULT_TEXT_MODEL,
 };
 
 export const resolveTextModel = (requestedModel?: string): string => {

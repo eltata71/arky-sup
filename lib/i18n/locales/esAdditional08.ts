@@ -141,4 +141,7 @@ export const esAdditional08: Dictionary = {
   "mem.confirm": "Confirmar",
   "mem.confirmed": "Memoria confirmada",
   "mem.replacePreview": "Esta nota reemplazará: {note}",
+  "agent.effectiveModel": "Modelo efectivo",
+  "agent.modelLoading": "Resolviendo…",
+  "agent.modelUnavailable": "No disponible",
 };

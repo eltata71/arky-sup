@@ -29,6 +29,7 @@ import {
   type OfficeAgentProfile,
 } from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import { AgentProfileAvatar } from './AgentProfileAvatar';
+import { useEffectiveAgentModel } from '../../../hooks/useEffectiveAgentModel';
 
 const TIER_LABELS: Record<OfficeAgentProfile['modelTier'], string> = {
   quick: 'Rápido',
@@ -138,6 +139,7 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
 }) => {
   const translateConfig = useUiTranslation();
   const t = useUiTranslation();
+  const effectiveModel = useEffectiveAgentModel(profile.modelTier);
   const inherited = inheritedProfileEntries(profile.agentId);
   const standards = getOfficeArchitectureContext().standards
     .filter((standard) => profile.standardIds.includes(standard.id));
@@ -208,6 +210,9 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
           <Section title={t("ui.modelo.b3a01b")} icon={<Cpu className="h-3.5 w-3.5 text-sky-500" />} hint={translateConfig(TIER_HINTS[profile.modelTier])}>
             <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
               {translateConfig(TIER_LABELS[profile.modelTier])} {t("ui.hasta.b6296e")} {profile.maxConcurrentTasks} {t("ui.tarea-s-a-la-vez.92f208")}
+            </p>
+            <p className="break-all text-xs text-gray-500 dark:text-gray-400">
+              {t('agent.effectiveModel')}: {effectiveModel === undefined ? t('agent.modelLoading') : effectiveModel ?? t('agent.modelUnavailable')}
             </p>
           </Section>
         </div>

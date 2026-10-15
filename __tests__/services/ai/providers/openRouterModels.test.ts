@@ -11,11 +11,11 @@ describe('openRouterModels catalog', () => {
     vi.unstubAllGlobals();
   });
 
-  it('exposes a tier mapping (all tiers default to openrouter/auto)', () => {
+  it('exposes distinct tier models', () => {
     expect(OPENROUTER_MODEL_TIERS).toEqual({
-      quick: 'openrouter/auto',
-      default: 'openrouter/auto',
-      deep: 'openrouter/auto',
+      quick: 'google/gemini-3.1-flash-lite',
+      default: 'google/gemini-2.5-flash',
+      deep: 'anthropic/claude-opus-5',
     });
   });
 

@@ -14,27 +14,26 @@
 import { describe, it, expect } from 'vitest';
 import { resolveModelForProviderSwitch } from '../../pages/SettingsPage';
 import { DEFAULT_TEXT_MODEL } from '../../lib/ai/modelCatalog';
-
-const OPENROUTER_DEFAULT_MODEL = 'openrouter/auto';
+import { DEFAULT_OPENROUTER_MODEL } from '../../services/ai/generation/providerModelDirectory';
 
 describe('resolveModelForProviderSwitch (Task 9 provider -> model mapping)', () => {
-  it('defaults to openrouter/auto when switching to openrouter from an unset provider', () => {
+  it('defaults to the OpenRouter standard tier when switching from an unset provider', () => {
     // provider currently undefined (legacy install) -> switching to openrouter
     const model = resolveModelForProviderSwitch(
       'provider',
       'openrouter',
       undefined,
     );
-    expect(model).toBe(OPENROUTER_DEFAULT_MODEL);
+    expect(model).toBe(DEFAULT_OPENROUTER_MODEL);
   });
 
-  it('defaults to openrouter/auto when switching from gemini to openrouter', () => {
+  it('defaults to the OpenRouter standard tier when switching from gemini', () => {
     const model = resolveModelForProviderSwitch(
       'provider',
       'openrouter',
       'gemini',
     );
-    expect(model).toBe(OPENROUTER_DEFAULT_MODEL);
+    expect(model).toBe(DEFAULT_OPENROUTER_MODEL);
   });
 
   it('resets to the Gemini default when switching back from openrouter to gemini', () => {

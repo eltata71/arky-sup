@@ -22,12 +22,13 @@ export interface AgentInvocationResult extends AgentInvocationMeasurement {
 }
 
 /** USD per million tokens, Google Gemini Developer API standard paid tier.
- * Source: https://ai.google.dev/gemini-api/docs/pricing (checked 2026-10-14).
+ * Source: https://ai.google.dev/gemini-api/docs/pricing (checked 2026-10-15).
  * Higher Pro rates apply above 200k prompt tokens; cache and audio need their
  * own tariffs, so those requests deliberately return unknown cost. */
 const PRICE_USD_PER_MILLION: Readonly<Record<string, { input: number; output: number }>> = {
   'gemini-2.5-flash': { input: 0.30, output: 2.50 },
   'gemini-2.5-pro': { input: 1.25, output: 10.00 },
+  'gemini-3.1-flash-lite': { input: 0.25, output: 1.50 },
 };
 
 export const estimateAgentCostUsd = (
