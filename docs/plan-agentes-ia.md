@@ -897,11 +897,11 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 18.1 Revisión con esquema | P1 · M | Pendiente | |
 | 18.2 Evaluador en las dos consolidaciones | P1 · M | Hecha | #248 · el encargo evalúa y corrige una vez; la revisión queda en la tarea y el banco sube a 100 % |
 | 18.3 Clasificador de intención | P2 · M | Hecha | #249 · el heurístico reconoce crear (con doble determinante y ADR/NFR), lote, «para este proyecto» y sobrescribir; el LLM conoce los 12 tipos (enum en el esquema); 31 casos, precisión 100 %, confirmación 100 %. Umbral LLM 0,55 se mantiene: ningún caso del banco queda bajo él |
-| 18.4 Niveles de modelo | P2 · S | En revisión | #251 · `quick`, `default` y `deep` tienen IDs distintos por proveedor; la preferencia explícita sólo afecta a `default`; la ficha muestra el modelo resuelto |
+| 18.4 Niveles de modelo | P2 · S | Hecha | #251 · `quick`, `default` y `deep` tienen IDs distintos por proveedor; la preferencia explícita sólo afecta a `default`; la ficha muestra el modelo resuelto |
 | 19.0 Herramientas de lectura | P2 · XL | Pendiente | |
 | 19.1 Política de contexto | P2 · L | Pendiente | |
 | 19.2 Bucle de herramientas | P3 · L | Espera medición | |
-| 20.0 Traza en árbol | P1 · M | Pendiente | |
+| 20.0 Traza en árbol | P1 · M | En revisión | #252 · `describeOperation` deriva el árbol (agentes, eventos, handoffs rechazados, revisión, sellos de prompt) del `CoordinationOutcome`, sin almacenarlo; «Ver traza» en la dock (árbol accesible, carga diferida) y exportación JSON con las credenciales omitidas (`redactSecretShapes`) |
 | 20.1 Panel de calidad de agentes | P2 · M | Pendiente | |
 | 20.2 Intervención humana | P2 · M | Pendiente | |
 | 20.3 E2E de los agentes | P1 · M | Pendiente | |
