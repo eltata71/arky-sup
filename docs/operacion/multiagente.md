@@ -4,6 +4,60 @@ Arky se mantiene con varios agentes a la vez —Claude Code, Codex y Hermes—
 sobre el mismo clon. Este documento es el contrato que les impide pisarse, y
 `scripts/agentes/` es lo que lo comprueba.
 
+## Fábrica Hermes de mantenimiento
+
+La unidad operativa es el proyecto nativo de Hermes `arky-sup-factory`
+(`ARKY-SUP Software Factory`), vinculado a este repositorio y al Canvas
+`arky-maintenance` (tenant `arky-sup`). HermesWebUI mantiene además un espejo
+de navegación con el mismo nombre: sirve para agrupar sesiones, pero no
+sustituye al proyecto nativo ni al Canvas.
+
+La fuente de verdad funcional es `docs/plan-agentes-ia.md`, olas 15–20. José
+coordina el ingreso, comprueba plan/PR/worktrees y conserva la trazabilidad en
+Canvas; no escribe código de producto. José es el primero de los doce Bots y
+enruta a los otros once: Sofía (producto), Alba
+(solución), Camilo (software), Viviana (frontend), Andrés (backend), Mateo
+(datos), Valentina (QA), Diego (DevOps), Lucía (seguridad), Elena (UX) y Rafael
+(revisión independiente). Cada uno es un perfil Hermes aislado con su propio
+SOUL, modelo, skills, herramientas y `Bot Chat`.
+
+Los nombres Sofía, Lucía y Elena también aparecen entre las personas-agente del
+dominio de la Oficina de Arquitectura. No son la misma entidad: en este
+documento `Hermes/<nombre>` identifica el perfil externo de mantenimiento y
+`Arky/<nombre>` la persona interna del producto. Perfil, almacenamiento y ciclo
+de vida están separados; ningún handoff Hermes se registra como trabajo del
+dominio de Arky.
+
+El flujo normal es:
+
+1. José valida necesidad, dependencias y ownership existente.
+2. Sofía y Alba/Camilo producen criterios, SDD o ADR cuando corresponde.
+3. Un solo especialista escritor trabaja en un worktree reservado y publicado.
+4. Un revisor independiente —Valentina, Lucía o Rafael según el alcance— revisa
+   el mismo SHA sin editarlo; nunca es el productor.
+5. Diego verifica CI/despliegue; José registra evidencia y solicita los hitos
+   humanos de arquitectura, merge, deploy o rollback.
+
+`message_agent` permite handoffs directos entre los `Bot Chat`; los grupos
+multi-Bot son una superficie de Hermes Desktop y se usan sólo para debates
+acotados. El dispatcher del gateway es la única autoridad de Canvas cuando
+`kanban.dispatch_in_gateway=true`; no se instala un cron de dispatch paralelo.
+Una PR o worktree abierto ya reserva la tarea: Canvas la refleja, nunca lanza
+un segundo escritor.
+
+Comprobación mínima antes de asignar:
+
+```bash
+hermes project show arky-sup-factory
+hermes kanban --board arky-maintenance diagnostics
+hermes kanban --board arky-maintenance dispatch --dry-run --json
+bash scripts/agentes/estado.sh
+gh pr list --state open
+```
+
+La fábrica no reemplaza a las personas/agentes que existen dentro del producto
+Arky: aquéllos son dominio de la aplicación; estos Bots mantienen el repositorio.
+
 ## Lo que pasó y por qué existe esto
 
 El 2026-10-07 la auditoría del espacio de trabajo encontró diecinueve

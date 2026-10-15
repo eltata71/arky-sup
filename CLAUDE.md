@@ -22,6 +22,20 @@ The app is **frontend-first**: there is no custom domain backend. Persistence go
 
 The single exception to "frontend-only" is `api/` — one **stateless** Vercel serverless function (`api/ai.ts`; the legacy Gemini-only `api/gemini.ts` was retired in F6-01) that exist purely to keep provider API keys off the client. They hold no domain logic and the app degrades to a direct provider call when they are unset or fail. Do not add domain endpoints there.
 
+### External maintenance factory
+
+Repository maintenance is coordinated through the Hermes project
+`arky-sup-factory` and Canvas `arky-maintenance`. José routes work but does not
+edit product code; one specialist owns each published worktree, and a distinct
+read-only reviewer validates the same final SHA. These twelve Hermes Bots are
+external maintenance profiles, not the agent personas implemented by Arky's
+domain. Where a human name overlaps, `Hermes/<name>` denotes the external
+maintainer and `Arky/<name>` the internal product persona. An open PR/worktree
+is an ownership reservation and must never be redispatched. See
+`docs/operacion/multiagente.md` for the roster, handoff flow, human gates and
+verification commands. Keep this section and `AGENTS.md` in sync whenever the
+factory contract changes.
+
 ### El backend es Supabase, y Firebase ya no existe (F9)
 
 `docs/plan-transformacion-supabase-ddd.md` es el mandato y `docs/fase-1/adrs.md`
