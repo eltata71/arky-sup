@@ -69,8 +69,8 @@ describe('resolveInCatalog', () => {
     expect(out.source).toBe('global');
   });
 
-  it('honours a requested model the catalog owns', () => {
-    const out = resolveInCatalog(geminiCatalog, 'deep', 'gemini-2.5-pro');
+  it('honours a requested model for the default tier', () => {
+    const out = resolveInCatalog(geminiCatalog, 'default', 'gemini-2.5-pro');
     expect(out.id).toBe('gemini-2.5-pro');
     expect(out.source).toBe('user');
   });
@@ -80,6 +80,12 @@ describe('resolveInCatalog', () => {
     expect(out.id).toBe(geminiCatalog.tiers.quick);
     expect(out.source).toBe('tier-floor');
     expect(out.requested).toBe('gemini-2.5-pro');
+  });
+
+  it('keeps the deep tier on its floor even against a user preference', () => {
+    const out = resolveInCatalog(geminiCatalog, 'deep', 'gemini-2.5-flash');
+    expect(out.id).toBe(geminiCatalog.tiers.deep);
+    expect(out.source).toBe('tier-floor');
   });
 
   it('substitutes a foreign id rather than forwarding it, and says so', () => {
@@ -122,6 +128,22 @@ describe('provider resolution from settings', () => {
 });
 
 describe('resolveModelForSettings — the regression this phase closes', () => {
+  it('resolves three distinct shipped tier ids per provider without a user override', () => {
+    for (const provider of registeredCatalogProviders()) {
+      if (provider !== 'gemini' && provider !== 'openrouter' && provider !== 'anthropic') {
+        throw new Error(`Add ${provider} to Settings.aiConfig.provider before shipping its catalog`);
+      }
+      const settings = settingsFor({ provider, model: '' });
+      const ids = (['quick', 'default', 'deep'] as const).map((tier) => resolveModelForSettings(tier, settings).id);
+      expect(new Set(ids).size, `${provider}: ${ids.join(', ')}`).toBe(3);
+    }
+  });
+
+  it('documents the sole collision exception: a user-selected standard model', () => {
+    const settings = settingsFor({ provider: 'gemini', model: geminiCatalog.tiers.deep });
+    expect(resolveModelForSettings('default', settings).id).toBe(geminiCatalog.tiers.deep);
+    expect(resolveModelForSettings('deep', settings).source).toBe('tier-floor');
+  });
   /**
    * Every tier, for every registered provider, must resolve to an id that
    * provider owns. This is the assertion that would have caught the original

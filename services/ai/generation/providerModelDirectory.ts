@@ -14,6 +14,10 @@
  */
 
 import type { AIProviderId } from '../core';
+import { OPENROUTER_MODEL_TIERS } from '../providers/openrouter/openRouterModels';
+
+/** Initial Settings selection on a provider switch; Auto stays selectable. */
+export const DEFAULT_OPENROUTER_MODEL = OPENROUTER_MODEL_TIERS.default;
 
 /** One model a provider can run, in terms a settings screen can render. */
 export interface AIModelOption {

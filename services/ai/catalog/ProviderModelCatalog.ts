@@ -64,8 +64,9 @@ export interface CatalogResolution {
  * Resolve a tier to a concrete model within one provider's space.
  *
  * Precedence, high → low:
- *   1. A requested model this catalog owns — except on `quick`, which is a
- *      deliberate cost floor for mechanical hops.
+ *   1. A requested model this catalog owns on `default` only. An explicit
+ *      preference may coincide with another tier; that is the documented
+ *      exception to distinct tier ids.
  *   2. The catalog's tier model.
  *   3. The catalog's default model.
  *
@@ -91,8 +92,8 @@ export function resolveInCatalog(
     return { id: tierModel, source: 'fallback', tier, requested };
   }
 
-  if (tier === 'quick') {
-    // The floor is honoured, but it is this provider's floor.
+  if (tier !== 'default') {
+    // Both explicit floors are honoured in the active provider's id space.
     return { id: tierModel, source: 'tier-floor', tier, requested };
   }
 

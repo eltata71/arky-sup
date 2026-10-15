@@ -9,14 +9,13 @@
  */
 
 /**
- * Tier -> model mapping. All tiers currently default to `openrouter/auto`
- * (OpenRouter routes to the best model for the prompt). Kept as a single
- * source of truth in case tier-specific models are wired later.
+ * Tier -> fixed model mapping. `openrouter/auto` remains a selectable user
+ * preference, but it cannot stand for three distinct cost/quality levels.
  */
 export const OPENROUTER_MODEL_TIERS = {
-  quick: 'openrouter/auto',
-  default: 'openrouter/auto',
-  deep: 'openrouter/auto',
+  quick: 'google/gemini-3.1-flash-lite',
+  default: 'google/gemini-2.5-flash',
+  deep: 'anthropic/claude-opus-5',
 } as const;
 
 export type OpenRouterModelTier = keyof typeof OPENROUTER_MODEL_TIERS;

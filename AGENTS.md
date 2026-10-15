@@ -301,6 +301,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    del especialista la aprobación es `basis: 'evidence-only'`, la tarea queda en
    `awaiting-review` y el encargo se bloquea hasta que una persona la confirme
    (`confirmEvidenceOnlyReview`, con actor en la auditoría).
+   **Cada nivel de modelo tiene su propio id** (18.4, D-A4): `quick`, `default`
+   y `deep` resuelven a tres modelos distintos por proveedor; sólo `default`
+   respeta el modelo elegido en Ajustes, y la ficha del agente muestra el
+   modelo resuelto (`useEffectiveAgentModel`, catálogo cargado en diferido).
    **Un prompt de agente tiene nombre y versión** (15.1):
    `lib/agents/promptCatalog.ts` cataloga las plantillas de la Oficina con la
    huella de su texto sobre un caso canónico; cambiar el texto sin subir la

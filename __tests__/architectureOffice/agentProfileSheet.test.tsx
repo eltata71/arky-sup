@@ -15,6 +15,10 @@ import { AgentProfileCard, AgentProfileSheet, AgentTeamMap } from '../../compone
 import { resolveAgentProfile, resolveAgentProfiles } from '../../services/architectureOffice/domain/officeAgentProfile';
 import { DEFAULT_MAX_SPECIALISTS } from '../../services/architectureOffice/application/officeOrchestration';
 
+vi.mock('../../hooks/useEffectiveAgentModel', () => ({
+  useEffectiveAgentModel: () => 'gemini-2.5-flash',
+}));
+
 const sofia = () => resolveAgentProfile('sofia', {
   agentId: 'sofia',
   userId: 'u1',

@@ -29,6 +29,7 @@ describe('medición de una operación de la Oficina', () => {
 
   it('deja el coste sin medir si hay caché o un modelo sin precio fechado', () => {
     expect(estimateAgentCostUsd('gemini-2.5-flash', { promptTokens: 100, completionTokens: 20, cachedPromptTokens: 10 })).toBeNull();
+    expect(estimateAgentCostUsd('gemini-3.1-flash-lite', { promptTokens: 1_000_000, completionTokens: 1_000_000 })).toBe(1.75);
     expect(estimateAgentCostUsd('otro-modelo', { promptTokens: 100, completionTokens: 20 })).toBeNull();
     expect(summarizeAgentUsage([]).totalTokens).toBeNull();
   });

@@ -4,21 +4,16 @@ import { useAppContext } from '../context/AppContext';
 import { Settings, AIConfig } from '../types';
 import { DocumentTextIcon, PaintBrushIcon, LanguageIcon, SunIcon, MoonIcon, PlusCircleIcon, TrashIcon, CpuChipIcon, ArrowLeftIcon } from '../components/Icons';
 import { DEFAULT_TEXT_MODEL, listCurrentGeminiModels, type GeminiModelOption } from '../lib/ai';
-import { listModelsForProvider, type AIModelOption } from '../services/ai/generation/providerModelDirectory';
+import { DEFAULT_OPENROUTER_MODEL, listModelsForProvider, type AIModelOption } from '../services/ai/generation/providerModelDirectory';
 import { Button, Card, Input, Badge, CardEyebrow } from '../components/ui';
 import { AccountPanel } from '../components/account/AccountPanel';
 
 type Tab = 'context' | 'appearance' | 'ai' | 'account';
 
-// Default model used when the user switches the provider to OpenRouter. Must be
-// an id OpenRouter recognises ('openrouter/auto' routes to the best model) so
-// the Task-8 routing never forwards a Gemini id to OpenRouter and hits a 404.
-const OPENROUTER_DEFAULT_MODEL = 'openrouter/auto';
-
 /**
  * When the user switches the active AI provider, the persisted `aiConfig.model`
  * must belong to the newly selected provider's catalog. Switching to openrouter
- * defaults to `openrouter/auto`; switching back to gemini resets to the Gemini
+ * defaults to the OpenRouter standard tier; switching back to gemini resets to the Gemini
  * default. Returns `undefined` when no model change is required.
  */
 export function resolveModelForProviderSwitch(
@@ -27,7 +22,7 @@ export function resolveModelForProviderSwitch(
   currentProvider: AIConfig['provider'] | undefined,
 ): string | undefined {
   if (field !== 'provider') return undefined;
-  if (value === 'openrouter' && currentProvider !== 'openrouter') return OPENROUTER_DEFAULT_MODEL;
+  if (value === 'openrouter' && currentProvider !== 'openrouter') return DEFAULT_OPENROUTER_MODEL;
   if (value === 'gemini' && currentProvider !== 'gemini') return DEFAULT_TEXT_MODEL;
   return undefined;
 }

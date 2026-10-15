@@ -97,4 +97,7 @@ export const enAdditional08: Dictionary = {
   "mem.confirm": "Confirm",
   "mem.confirmed": "Memory confirmed",
   "mem.replacePreview": "This note will replace: {note}",
+  "agent.effectiveModel": "Effective model",
+  "agent.modelLoading": "Resolving…",
+  "agent.modelUnavailable": "Unavailable",
 };

@@ -37,13 +37,13 @@ describe('resolveEffectiveModel', () => {
         expect(result.requested).toBe('gemini-2.5-pro');
     });
 
-    it('honours the user preference for deep tier', () => {
-        const result = resolveEffectiveModel('deep', baseSettings({ model: 'gemini-2.5-pro' }));
-        expect(result.id).toBe('gemini-2.5-pro');
-        expect(result.source).toBe('user');
+    it('keeps the deep tier on Pro even when the user selected Flash', () => {
+        const result = resolveEffectiveModel('deep', baseSettings({ model: 'gemini-2.5-flash' }));
+        expect(result.id).toBe(MODEL_TIERS.deep);
+        expect(result.source).toBe('tier-floor');
     });
 
-    it('forces stable Flash for the quick tier even when the user picked pro, with source=tier-floor', () => {
+    it('forces stable Flash-Lite for the quick tier even when the user picked pro, with source=tier-floor', () => {
         const result = resolveEffectiveModel('quick', baseSettings({ model: 'gemini-2.5-pro' }));
         expect(result.id).toBe(MODEL_TIERS.quick);
         expect(result.source).toBe('tier-floor');
@@ -56,12 +56,15 @@ describe('resolveEffectiveModel', () => {
         expect(result.id).toBe(DEFAULT_TEXT_MODEL);
     });
 
-    it('normalises deprecated alias model ids to a stable supported model', () => {
-        // `gemini-3.1-flash-lite` maps to DEFAULT_TEXT_MODEL via the alias table.
-        const result = resolveEffectiveModel('default', baseSettings({ model: 'gemini-3.1-flash-lite' }));
+    it('normalises deprecated preview ids to a stable supported model', () => {
+        const result = resolveEffectiveModel('default', baseSettings({ model: 'gemini-3-flash-preview' }));
         expect(result.id).toBe(DEFAULT_TEXT_MODEL);
         expect(result.source).toBe('user');
-        expect(result.requested).toBe('gemini-3.1-flash-lite');
+        expect(result.requested).toBe('gemini-3-flash-preview');
+    });
+
+    it('preserves the stable quick model when explicitly selected for the standard tier', () => {
+        expect(resolveEffectiveModel('default', baseSettings({ model: MODEL_TIERS.quick })).id).toBe(MODEL_TIERS.quick);
     });
 
     it('exposes IMAGE_MODEL and TTS_MODEL as centralised constants', () => {
