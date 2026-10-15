@@ -52,8 +52,8 @@ export const AGENT_PROMPTS: Readonly<Record<AgentPromptId, AgentPromptEntry>> = 
     description: 'El registro desde el que se pregunta (iniciativa, proyecto o entregable) y su ascendencia.',
   },
   'office.coordination': {
-    version: 2,
-    fingerprint: '6eba7152',
+    version: 3,
+    fingerprint: '094d9bb9',
     description: 'El encargo a la coordinadora: revisar la descomposición y escribir el brief para los especialistas.',
   },
   'office.workstream': {

@@ -332,6 +332,7 @@ export const section: Dictionary = {
   "Atención": "Atención",
   "En riesgo": "En riesgo",
   "Todos": "Todos",
+  "Coordinación": "Coordinación",
   "Actividad": "Actividad",
   "Motivación": "Motivación",
   "Objetivos": "Objetivos",

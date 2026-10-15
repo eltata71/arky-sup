@@ -16,7 +16,7 @@ import type { Settings } from '../../../types';
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import type { Project } from '../../architectureProjects';
 import { assistantService, buildProjectChatInstruction } from '../../ai/lazy';
-import type { ProjectChatTurn } from '../../ai';
+import type { ProjectChatTurn, AIJsonSchema } from '../../ai';
 import {
   OFFICE_AGENT_PERSONAS,
   resolveOfficeAgentMention,
@@ -77,7 +77,7 @@ export async function chatWithProjectMeasured(
   personaOverride?: OfficeAgentId,
   modelTier: ModelTier = 'default',
   profile?: OfficeAgentProfile,
-  callOptions?: { signal?: AbortSignal; timeoutMs?: number },
+  callOptions?: { signal?: AbortSignal; timeoutMs?: number; responseSchema?: AIJsonSchema },
 ): Promise<AgentInvocationResult> {
   return assistantService.generateProjectChatReplyMeasured({
     systemInstruction: await composeProjectChatInstruction(project, message, settings, personaOverride, profile),
@@ -87,5 +87,6 @@ export async function chatWithProjectMeasured(
     modelTier,
     signal: callOptions?.signal,
     timeoutMs: callOptions?.timeoutMs,
+    responseSchema: callOptions?.responseSchema,
   });
 }
