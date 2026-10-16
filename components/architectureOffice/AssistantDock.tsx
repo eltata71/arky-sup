@@ -15,12 +15,18 @@ import { useUiTranslation } from '../../lib/i18n/UiTranslationContext';
  * event stream, never by a re-enactment.
  */
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useRef, useState } from 'react';
 
 import { Check, Copy, PanelRightClose, PanelRightOpen, RotateCcw, X } from 'lucide-react';
 import { Button, Spinner, cn } from '../ui';
 import { AIArchitectAvatar } from '../ui/AIArchitectIdentity';
 import { TeamCoordinationPanel } from './TeamCoordinationPanel';
+import { lazyWithRetry } from '../routing/lazyWithRetry';
+
+const OperationTracePanel = lazyWithRetry(
+  () => import('./OperationTracePanel').then((m) => ({ default: m.OperationTracePanel })),
+  { chunkName: 'OperationTracePanel' },
+);
 import { PersonaAvatar } from './PersonaAvatar';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
@@ -48,6 +54,7 @@ interface DockTurn {
   text: string;
   status?: CoordinationOutcome['status'];
   contributions?: CoordinationOutcome['contributions'];
+  outcome?: CoordinationOutcome;
 }
 
 export interface AssistantDockProps {
@@ -165,6 +172,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
       text: outcome.answer,
       status: outcome.status,
       contributions: outcome.contributions,
+      outcome,
     }]);
   }, [running, scope, settings, project, nextId, profiles, unavailableAgents, agentModelTiers, displayName]);
 
@@ -323,6 +331,12 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                       <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1 text-2xs font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
                         {t("ui.recomendacion-parcial-algun.e57a1f")}
                       </p>
+                    )}
+
+                    {turn.outcome && (
+                      <Suspense fallback={null}>
+                        <OperationTracePanel outcome={turn.outcome} />
+                      </Suspense>
                     )}
 
                     {turn.contributions && turn.contributions.length > 0 && (
