@@ -56,7 +56,14 @@ export function findSecretShapes(text: string): string[] {
  * rather than reported, because an export is a copy that outlives the screen.
  */
 export function redactSecretShapes(text: string): string {
-  let out = text;
+  // Detection needs only BEGIN; redaction must consume the entire PEM. Do this
+  // before replacing that header with the other shapes. An absent/truncated END
+  // has no safe boundary: discard the remainder of this field (fail closed),
+  // including encrypted PEM metadata and any partial footer.
+  let out = text.replace(
+    /-----BEGIN ([A-Z ]*PRIVATE KEY)-----[\s\S]*?(?:-----END \1-----|(?![\s\S]))/g,
+    '[credencial omitida]',
+  );
   for (const shape of SECRET_KEY_SHAPES) {
     out = out.replace(new RegExp(shape.pattern.source, 'g'), '[credencial omitida]');
   }
