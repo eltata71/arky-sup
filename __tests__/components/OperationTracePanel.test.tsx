@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { generateKeyPairSync } from 'node:crypto';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { OperationTracePanel } from '../../components/architectureOffice/OperationTracePanel';
 import type { CoordinationOutcome } from '../../services/architectureOffice/application/officeCoordination';
@@ -13,6 +14,28 @@ const outcome = {
 } as unknown as CoordinationOutcome;
 
 describe('OperationTracePanel', () => {
+  it.each(['complete', 'truncated'])('never renders or copies %s PEM material', async (state) => {
+    const pem = generateKeyPairSync('ec', { namedCurve: 'prime256v1' }).privateKey
+      .export({ type: 'sec1', format: 'pem' }).toString();
+    const secret = state === 'complete' ? pem : pem.split('-----END')[0];
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    const o: CoordinationOutcome = { ...outcome, framing: secret, events: [{
+      id: 'pem-event', kind: 'agent-started', from: 'elena',
+      to: 'elena', phase: 'analysis', elapsedMs: 0, summary: secret, detail: secret,
+    }] };
+    const { container } = render(<OperationTracePanel outcome={o} />);
+    fireEvent.click(screen.getAllByRole('button')[0]);
+    expect(container.textContent).toContain('[credencial omitida]');
+    fireEvent.click(screen.getAllByRole('button')[1]);
+    await screen.findByRole('status');
+    expect(writeText).toHaveBeenCalledOnce();
+    for (const line of pem.trim().split('\n')) {
+      expect(container.innerHTML.includes(line)).toBe(false);
+      expect(String(writeText.mock.calls[0][0]).includes(line)).toBe(false);
+    }
+  });
+
   it('abre con el teclado/botón, muestra el árbol y los sellos, y exporta', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
