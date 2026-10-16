@@ -2,7 +2,9 @@ import { newPrefixedId } from '../../../lib/ids';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt, type AgentPromptId } from '../../../lib/agents/promptCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
-import { parseStructured, type AIJsonSchema } from '../../ai';
+// Boot/route code: parseStructured enters by its small door, not the services/ai barrel (the barrel drags the whole AI layer into every route that imports the Office).
+import { parseStructured } from '../../ai/structuredOutput';
+import type { AIJsonSchema } from '../../ai';
 import {
   applyCoordinationBrief, evaluateRecommendationFields, readCoordinationBrief, readRecommendation, readSpecialistAnalysis,
   renderCoordinationBrief, renderRecommendation, renderSpecialistAnalysis,
