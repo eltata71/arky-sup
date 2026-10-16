@@ -11,6 +11,18 @@ Garantizar que el mismo set de capacidades (agentes especializados + skills) fun
 - Claude Code
 - OpenAI Codex/Koder
 
+## Fábrica externa de mantenimiento
+
+La coordinación operativa vive en Hermes: proyecto `arky-sup-factory`, Canvas
+`arky-maintenance` y José como coordinador que no escribe código. Los doce Bots
+Hermes son perfiles externos para mantener el repositorio; no son las personas
+agente del dominio que implementa la aplicación. Una PR/worktree abierto reserva
+ownership y prohíbe lanzar un segundo escritor. Productor y revisor trabajan
+sobre el mismo SHA y siempre son distintos. El contrato completo, el roster y
+los comandos de comprobación están en `docs/operacion/multiagente.md`. Cuando
+un nombre coincida, `Hermes/<nombre>` es el mantenedor externo y
+`Arky/<nombre>` la persona-agente interna.
+
 ---
 
 ## Fuentes de verdad de capacidades AI

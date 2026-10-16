@@ -23,6 +23,9 @@ dist-ssr
 __pycache__/
 *.py[cod]
 
+# Entornos virtuales Python locales.
+.venv/
+
 # Exportaciones de origen, mapas de identidad y cargas ETL contienen PII.
 # Se mantienen locales, con permisos de propietario, y nunca se versionan.
 .migration-private/
