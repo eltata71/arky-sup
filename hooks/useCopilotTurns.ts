@@ -22,10 +22,11 @@ import {
 import { describeTurnFailure, type TurnFailure } from './useAssistantTurns';
 import { useLazyAgentProfiles } from './useLazyAgentProfiles';
 import { useMemo } from 'react';
+import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 
 export interface CopilotTurns {
   route(text: string, project: Project, history: ChatMessage[]): CopilotTurnRoute;
-  orchestrate(text: string, project: Project, settings: Settings): Promise<string>;
+  orchestrate(text: string, project: Project, settings: Settings, initiatives?: readonly BusinessInitiative[]): Promise<string>;
   consult(question: string, project: Project, initiatives: readonly BusinessInitiative[], settings: Settings): Promise<string>;
   anchorFor(project: Project): Artifact;
   describeFailure(error: unknown): TurnFailure;
@@ -33,7 +34,7 @@ export interface CopilotTurns {
 
 const TURNS: CopilotTurns = {
   route: routeCopilotTurn,
-  orchestrate: runCopilotOrchestration,
+  orchestrate: (text, project, settings, initiatives) => runCopilotOrchestration(text, project, settings, [], { initiatives }),
   consult: consultCopilot,
   anchorFor: copilotAnchorFor,
   describeFailure: describeTurnFailure,
@@ -45,9 +46,10 @@ const TURNS: CopilotTurns = {
  */
 export const useCopilotTurns = (): CopilotTurns => {
   const profiles = useLazyAgentProfiles();
+  const t = useUiTranslation();
   return useMemo(() => ({
     ...TURNS,
-    orchestrate: (text, project, settings) => runCopilotOrchestration(text, project, settings, profiles),
+    orchestrate: (text, project, settings, initiatives) => runCopilotOrchestration(text, project, settings, profiles, { initiatives, t }),
     consult: (question, project, initiatives, settings) => consultCopilot(question, project, initiatives, settings, profiles),
-  }), [profiles]);
+  }), [profiles, t]);
 };
