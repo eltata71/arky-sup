@@ -287,7 +287,6 @@ export const DEEP_IMPORT_BUDGET = {
   // los barriles de cada contexto: es código perezoso, y la regla del barril
   // contra el bundle lo permite.
   'services/agent -> services/memory': 2,
-  'services/architectureOffice -> services/ai': 2,
   'services/architectureOffice -> services/diagram': 1,
   'services/architectureProjects -> services/memory': 2,
   'services/architectureProjects -> services/publicationPipeline': 4,

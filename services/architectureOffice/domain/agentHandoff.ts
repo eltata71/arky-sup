@@ -210,3 +210,5 @@ export const renderHandoffPrompt = (envelope: AgentHandoffEnvelope): string => {
 
   return lines.join('\n');
 };
+
+export const DEFAULT_MAX_SPECIALISTS = 4;

@@ -2,18 +2,23 @@ import { newPrefixedId } from '../../../lib/ids';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt, type AgentPromptId } from '../../../lib/agents/promptCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
+// Boot/route code: parseStructured enters by its small door, not the services/ai barrel (the barrel drags the whole AI layer into every route that imports the Office).
+import { parseStructured } from '../../ai/structuredOutput';
+import type { AIJsonSchema } from '../../ai';
+import {
+  applyCoordinationBrief, evaluateRecommendationFields, readCoordinationBrief, readRecommendation, readSpecialistAnalysis,
+  renderCoordinationBrief, renderRecommendation, renderSpecialistAnalysis,
+  type ContractReading, type SpecialistAnalysis,
+} from '../domain/orchestrationContracts';
+import { COORDINATION_BRIEF_SCHEMA, RECOMMENDATION_SCHEMA, SPECIALIST_ANALYSIS_SCHEMA } from './orchestrationSchemas';
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import { foldOfficeText, hasExactOfficeMention } from '../domain/officeShared';
 import { rankSpecialistsForRequest } from '../domain/OfficeAgentRouter';
-import {
-  createHandoff,
-  renderHandoffPrompt,
-  type HandoffRejection,
-} from '../domain/agentHandoff';
+import { createHandoff, renderHandoffPrompt, DEFAULT_MAX_SPECIALISTS } from '../domain/agentHandoff';
 import type { AgentHandoffKind } from '../domain/agentDefinition';
 import { workstreamCapableAgents } from '../domain/agentRegistry';
 import { HandoffBudgetExhausted, withHandoffBudget } from './handoffBudget';
-import { summarizeAgentUsage, type AgentInvocationMeasurement, type AgentInvocationResult, type AgentUsageSummary } from '../../../lib/ai/agentUsage';
+import { summarizeAgentUsage, type AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
 import {
   buildConsolidationRefinementPrompt,
   evaluateConsolidation,
@@ -21,99 +26,11 @@ import {
   type OfficeWorkstreamResult,
 } from '../domain/officeConsolidationReview';
 
-export interface OfficeWorkstream {
-  id: string;
-  /**
-   * Who runs the workstream.
-   *
-   * It was `Exclude<OfficeAgentId, 'arky' | 'lucia' | 'alejandro'>` — three
-   * names hand-kept in step with a registry that already declares the same
-   * fact as `orchestrationRole` and `capabilities`. The rule now lives in one
-   * place (`canTakeWorkstream`) and is checked at runtime, so a persona added
-   * without `consult` cannot be handed work by a regex that happens to match.
-   */
-  personaId: OfficeAgentId;
-  objective: string;
-  acceptanceCriteria: string[];
-}
+export * from './officeOrchestrationTypes';
+import type {
+  OfficeAgentInvoker, OfficeOrchestrationOptions, OfficeOrchestrationPlan, OfficeOrchestrationResult, OfficePlanOptions, RejectedHandoff,
+} from './officeOrchestrationTypes';
 
-export interface OfficeOrchestrationPlan {
-  operationId: string;
-  request: string;
-  coordinatorId: 'lucia';
-  consolidatorId: 'alejandro';
-  workstreams: OfficeWorkstream[];
-}
-
-export interface RejectedHandoff {
-  sourceAgentId: OfficeAgentId;
-  targetAgentId: OfficeAgentId;
-  kind: AgentHandoffKind;
-  rejections: HandoffRejection[];
-}
-
-export type { OfficeWorkstreamResult } from '../domain/officeConsolidationReview';
-
-export interface OfficeOrchestrationResult {
-  operationId: string;
-  status: 'completed' | 'partial' | 'failed';
-  coordination: string;
-  workstreamResults: OfficeWorkstreamResult[];
-  consolidation: string;
-  /**
-   * Handoffs the Office refused to issue, with the reason.
-   *
-   * Reported rather than thrown or swallowed: a workstream whose handoff was
-   * rejected is work that did not happen, and a caller presenting the
-   * recommendation has a right to know the team was smaller than it looks.
-   */
-  rejectedHandoffs?: RejectedHandoff[];
-  /**
-   * El sello de cada invocación, en el orden en que se hicieron
-   * (`office.workstream@v1#…`): qué plantilla, en qué versión, y qué texto
-   * exacto llegó al modelo (plan de agentes, 15.1).
-   */
-  promptStamps?: string[];
-  /**
-   * Qué dijo el evaluador de la consolidación, y si hubo una pasada de
-   * corrección. Se devuelve —en vez de quedarse dentro— porque un consumidor
-   * que presenta la recomendación tiene derecho a saber que salió a la segunda,
-   * o que salió con huecos reconocidos.
-   */
-  consolidationReview?: ConsolidationReview;
-  refined?: boolean;
-  usage: { total: AgentUsageSummary; byAgent: Partial<Record<OfficeAgentId, AgentUsageSummary>> };
-}
-
-export interface OfficeOrchestrationOptions {
-  maxConcurrency?: number;
-  /**
-   * Cuántas veces puede el consolidador corregir su recomendación tras la
-   * evaluación. Uno por defecto, y uno es el tope razonable: la segunda pasada
-   * ya tiene toda la información que va a tener, y un bucle sin límite es la
-   * forma cara de no converger.
-   */
-  maxConsolidationRefinements?: number;
-  /** Correlation id of the attempt these handoffs belong to. */
-  runId?: string;
-  signal?: AbortSignal;
-  timeoutMs?: number;
-  maxAiCalls?: number;
-  maxTokens?: number;
-}
-
-export interface OfficeAgentCallOptions { signal?: AbortSignal; timeoutMs?: number }
-
-export type OfficeAgentInvoker = (
-  personaId: OfficeAgentId,
-  instruction: string,
-  /**
-   * El sello de la plantilla que compuso `instruction` (`lib/agents/promptCatalog`).
-   * Opcional para el invocador: lo lee quien registra la invocación.
-   */
-  promptStamp?: string,
-  callOptions?: OfficeAgentCallOptions,
-) => Promise<string | AgentInvocationResult>;
 
 export const isOfficeOrchestrationRequest = (request: string): boolean => {
   const normalized = foldOfficeText(request);
@@ -130,32 +47,8 @@ const criteriaFor = (personaId: OfficeAgentId): string[] => {
   ];
 };
 
-export interface OfficePlanOptions {
-  /**
-   * Especialistas que no deben convocarse — normalmente porque el usuario los
-   * desactivó en su ficha.
-   *
-   * Nunca puede dejar el equipo vacío: una solicitud sin ningún especialista
-   * produciría una recomendación firmada por nadie, que es peor que una
-   * recomendación de un especialista que no era el ideal. Si el filtro se lo
-   * lleva todo, el plan cae en el generalista de software y lo dice el propio
-   * roster.
-   */
-  unavailable?: readonly OfficeAgentId[];
-  /**
-   * Tope de especialistas por operación.
-   *
-   * Un límite explícito, no un efecto secundario del enrutado: una solicitud
-   * que menciona siete dominios convoca a siete agentes, y cada uno es una
-   * llamada al proveedor y unos segundos de espera. Anthropic lo dice como
-   * condición de parada — un sistema de agentes necesita un límite declarado,
-   * no un límite emergente.
-   */
-  maxSpecialists?: number;
-}
-
 /** Cuántos especialistas puede convocar una operación si nadie dice otra cosa. */
-export const DEFAULT_MAX_SPECIALISTS = 4;
+export { DEFAULT_MAX_SPECIALISTS };
 
 export const planOfficeWorkstreams = (
   request: string,
@@ -215,6 +108,7 @@ export const buildCoordinationPrompt = (plan: Pick<OfficeOrchestrationPlan, 'req
   wrapUntrustedContent('solicitud', plan.request),
   'Revisa la descomposición determinística propuesta, explica dependencias, orden, riesgos y límites de ejecución.',
   'No inventes evidencia. Devuelve un brief conciso que guíe a los especialistas.',
+  'Responde sólo con JSON: summary, order, dependencies, dropWorkstreams (especialistas que no hacen falta; nunca todos) y extraConstraints.',
   ...plan.workstreams.map((workstream) => `- ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}: ${workstream.objective}`),
 ].join('\n');
 
@@ -242,7 +136,7 @@ export const executeOfficeOrchestration = async (
       summarizeAgentUsage(measurements.filter((item) => item.personaId === personaId).map((item) => item.value)),
     ])),
   });
-  const invokeStamped = async (personaId: OfficeAgentId, instruction: string, promptId: AgentPromptId, delegate: OfficeAgentInvoker = operationInvoke): Promise<string> => {
+  const invokeStamped = async (personaId: OfficeAgentId, instruction: string, promptId: AgentPromptId, delegate: OfficeAgentInvoker = operationInvoke, responseSchema?: AIJsonSchema): Promise<string> => {
     if (options.signal?.aborted) throw new Error('Operación cancelada por la persona.');
     const stamp = stampPrompt(agentPromptRef(promptId), instruction);
     promptStamps.push(stamp);
@@ -259,7 +153,7 @@ export const executeOfficeOrchestration = async (
     });
     try {
       const result = await Promise.race([
-        delegate(personaId, instruction, stamp, { signal: controller.signal, timeoutMs }),
+        delegate(personaId, instruction, stamp, { signal: controller.signal, timeoutMs, ...(responseSchema ? { responseSchema } : {}) }),
         abortPromise,
       ]);
       const measured = typeof result === 'string'
@@ -273,11 +167,20 @@ export const executeOfficeOrchestration = async (
       if (rejectOnAbort) controller.signal.removeEventListener('abort', rejectOnAbort);
     }
   };
+  const structuredDegraded: string[] = [];
+  const readContract = <T,>(label: string, raw: string, reader: (value: unknown) => ContractReading<T>): T | null => {
+    const parsed = parseStructured<unknown>(raw);
+    if (!parsed.ok) { structuredDegraded.push(`${label}: la respuesta no era JSON; se conserva el texto.`); return null; }
+    const reading = reader(parsed.value);
+    for (const note of reading.discarded) structuredDegraded.push(`${label}: ${note}`);
+    if (reading.value === null) structuredDegraded.push(`${label}: no cumple el contrato; se conserva el texto.`);
+    return reading.value;
+  };
   const coordinationPrompt = buildCoordinationPrompt(plan);
 
   let coordination: string;
   try {
-    coordination = await invokeStamped(plan.coordinatorId, coordinationPrompt, 'office.coordination');
+    coordination = await invokeStamped(plan.coordinatorId, coordinationPrompt, 'office.coordination', undefined, COORDINATION_BRIEF_SCHEMA);
   } catch (error) {
     return {
       operationId: plan.operationId,
@@ -290,6 +193,12 @@ export const executeOfficeOrchestration = async (
     };
   }
 
+  const coordinationBrief = readContract('Coordinación', coordination, readCoordinationBrief);
+  if (coordinationBrief) coordination = renderCoordinationBrief(coordinationBrief);
+  const briefApplication = applyCoordinationBrief(coordinationBrief, plan.workstreams);
+  const activeWorkstreams = plan.workstreams.filter((w) => briefApplication.keep.includes(w.id));
+  const analyses: Partial<Record<string, SpecialistAnalysis>> = {};
+
   const rejectedHandoffs: RejectedHandoff[] = [];
   const recordBudgetRejection = (sourceAgentId: OfficeAgentId, targetAgentId: OfficeAgentId, kind: AgentHandoffKind, error: unknown): void => {
     if (error instanceof HandoffBudgetExhausted) rejectedHandoffs.push({
@@ -297,13 +206,13 @@ export const executeOfficeOrchestration = async (
     });
   };
   const maxConcurrency = Math.max(1, Math.min(3, options.maxConcurrency ?? 3));
-  const workstreamResults: OfficeWorkstreamResult[] = new Array(plan.workstreams.length);
+  const workstreamResults: OfficeWorkstreamResult[] = new Array(activeWorkstreams.length);
   let nextIndex = 0;
   const worker = async (): Promise<void> => {
-    while (nextIndex < plan.workstreams.length && !options.signal?.aborted) {
+    while (nextIndex < activeWorkstreams.length && !options.signal?.aborted) {
       const index = nextIndex;
       nextIndex += 1;
-      const workstream = plan.workstreams[index];
+      const workstream = activeWorkstreams[index];
       // El encargo viaja como contrato, no como cadena concatenada: quién lo
       // manda, para qué, con qué criterios, qué se espera de vuelta y con qué
       // tope. La cadena es una representación del contrato, no al revés.
@@ -313,7 +222,7 @@ export const executeOfficeOrchestration = async (
         targetAgentId: workstream.personaId,
         reason: 'La operación necesita el análisis de este dominio.',
         objective: workstream.objective,
-        constraints: [],
+        constraints: [...briefApplication.extraConstraints],
         acceptanceCriteria: [...workstream.acceptanceCriteria],
         contextReferences: [
           { kind: 'record', label: 'Solicitud', content: plan.request },
@@ -326,7 +235,7 @@ export const executeOfficeOrchestration = async (
         ],
         expectedOutput: {
           kind: 'analysis',
-          description: 'Un análisis del dominio con supuestos, riesgos y decisiones explícitos.',
+          description: 'Un análisis del dominio con supuestos, riesgos y decisiones explícitos, como JSON (summary, findings, assumptions, risks, decisions, outOfScope, evidence, confidence).',
         },
         budget: { maxAiCalls: 1, maxTokens: 30_000 },
         runId: options.runId,
@@ -350,12 +259,16 @@ export const executeOfficeOrchestration = async (
       }
 
       try {
-        const output = await invokeStamped(
+        const rawOutput = await invokeStamped(
           workstream.personaId,
           renderHandoffPrompt(handoff.envelope),
           'office.workstream',
           withHandoffBudget(operationInvoke, handoff.envelope),
+          SPECIALIST_ANALYSIS_SCHEMA,
         );
+        const analysis = readContract(`Análisis de ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}`, rawOutput, readSpecialistAnalysis);
+        if (analysis) analyses[workstream.id] = analysis;
+        const output = analysis ? renderSpecialistAnalysis(analysis) : rawOutput;
         workstreamResults[index] = {
           workstreamId: workstream.id,
           personaId: workstream.personaId,
@@ -375,7 +288,7 @@ export const executeOfficeOrchestration = async (
     }
   };
   await Promise.all(Array.from(
-    { length: Math.min(maxConcurrency, plan.workstreams.length) },
+    { length: Math.min(maxConcurrency, activeWorkstreams.length) },
     () => worker(),
   ));
 
@@ -403,7 +316,7 @@ export const executeOfficeOrchestration = async (
     })),
     expectedOutput: {
       kind: 'recommendation',
-      description: 'Una recomendación Ready, Conditional o Blocked con su justificación.',
+      description: 'Una recomendación como JSON: verdict (ready|conditional|blocked), rationale, contributions por especialista, contradictions con owner, conditions y openQuestions.',
     },
     budget: { maxAiCalls: 1 + maxRefinements, maxTokens: 40_000 },
     runId: options.runId,
@@ -433,7 +346,7 @@ export const executeOfficeOrchestration = async (
 
   let consolidation: string;
   try {
-    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation', consolidationInvoke);
+    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation', consolidationInvoke, RECOMMENDATION_SCHEMA);
   } catch (error) {
     recordBudgetRejection(plan.coordinatorId, plan.consolidatorId, 'consolidation', error);
     return {
@@ -456,7 +369,14 @@ export const executeOfficeOrchestration = async (
    * se conserva la consolidación original: una recomendación imperfecta vale
    * más que un error donde debería estar la respuesta.
    */
-  let review = evaluateConsolidation(consolidation, workstreamResults);
+  let recommendation = readContract('Recomendación', consolidation, readRecommendation);
+  if (recommendation) consolidation = renderRecommendation(recommendation);
+  const evaluate = (): ConsolidationReview => {
+    if (!recommendation) return evaluateConsolidation(consolidation, workstreamResults);
+    const gaps = evaluateRecommendationFields(recommendation, workstreamResults);
+    return { ok: gaps.length === 0, gaps };
+  };
+  let review = evaluate();
   let refined = false;
   if (!review.ok && maxRefinements > 0) {
     try {
@@ -465,11 +385,14 @@ export const executeOfficeOrchestration = async (
         buildConsolidationRefinementPrompt(consolidation, review),
         'office.consolidation-refinement',
         consolidationInvoke,
+        RECOMMENDATION_SCHEMA,
       );
       if (corrected.trim().length > 0) {
-        consolidation = corrected;
+        const correctedRecommendation = readContract('Recomendación corregida', corrected, readRecommendation);
+        recommendation = correctedRecommendation;
+        consolidation = correctedRecommendation ? renderRecommendation(correctedRecommendation) : corrected;
         refined = true;
-        review = evaluateConsolidation(consolidation, workstreamResults);
+        review = evaluate();
       }
     } catch (error) {
       recordBudgetRejection(plan.coordinatorId, plan.consolidatorId, 'consolidation', error);
@@ -485,6 +408,11 @@ export const executeOfficeOrchestration = async (
     consolidation,
     consolidationReview: review,
     refined,
+    ...(coordinationBrief ? { coordinationBrief } : {}),
+    ...(Object.keys(analyses).length > 0 ? { analyses } : {}),
+    ...(recommendation ? { recommendation } : {}),
+    ...(briefApplication.dropped.length > 0 ? { droppedWorkstreams: briefApplication.dropped } : {}),
+    ...(structuredDegraded.length > 0 ? { structuredDegraded } : {}),
     rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined,
     promptStamps,
     usage: usage(),

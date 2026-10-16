@@ -11,6 +11,6 @@
 export * from './domain/officeAgentProfile';
 export * from './infrastructure/OfficeAgentProfileRepository';
 export * from './domain/officeArchitectureKnowledge';
-export { DEFAULT_MAX_SPECIALISTS } from './application/officeOrchestration';
+export { DEFAULT_MAX_SPECIALISTS } from './domain/agentHandoff';
 export type { OfficeAgentId } from './domain/agentDefinition';
 export { OFFICE_AGENT_PERSONAS } from './domain/officeAgentPersonas';

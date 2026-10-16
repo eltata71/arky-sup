@@ -85,7 +85,6 @@ export const section: Dictionary = {
   "Estándar": "Estándar",
   "Razonamiento": "Razonamiento",
   "Para consistencia entre artefactos y revisiones de rúbrica completa.": "Para consistencia entre artefactos y revisiones de rúbrica completa.",
-  "Coordinación": "Coordinación",
   "Especialistas": "Especialistas",
   "Personalizados": "Personalizados",
   "Inactivos": "Inactivos",

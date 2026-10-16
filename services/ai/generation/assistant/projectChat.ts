@@ -10,6 +10,7 @@
  */
 import type { Settings } from '../../../../types';
 import type { ModelTier } from '../../../../lib/ai/modelCatalog';
+import type { AIJsonSchema } from '../../schema';
 import { resolveModelForSettings } from '../../catalog';
 import { buildProjectChatInstruction } from './projectChatInstruction';
 import { aiGateway } from '../aiGateway';
@@ -32,6 +33,8 @@ export interface ProjectChatReplyRequest {
     modelTier?: ModelTier;
     signal?: AbortSignal;
     timeoutMs?: number;
+    /** Pide JSON con esta forma; la respuesta sigue siendo texto que quien llama lee con tolerancia. */
+    responseSchema?: AIJsonSchema;
 }
 
 export async function generateProjectChatReply(request: ProjectChatReplyRequest): Promise<string> {
@@ -53,6 +56,7 @@ export async function generateProjectChatReplyMeasured(request: ProjectChatReply
         {
             systemInstruction,
             temperature: settings.aiConfig?.temperature ?? 0.7,
+            ...(request.responseSchema ? { responseSchema: request.responseSchema, responseMimeType: 'application/json' } : {}),
         },
         { maxRetries: 1, signal: request.signal, timeoutMs: request.timeoutMs },
     );
