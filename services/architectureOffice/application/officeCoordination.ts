@@ -158,6 +158,11 @@ export interface CoordinationOutcome {
   contributions: { personaId: OfficeAgentId; status: 'completed' | 'failed'; output: string }[];
   events: CoordinationEvent[];
   usage?: OfficeOrchestrationResult['usage'];
+  /** Handoffs refused before spending a call — the team was smaller than planned. */
+  rejectedHandoffs?: OfficeOrchestrationResult['rejectedHandoffs'];
+  promptStamps?: OfficeOrchestrationResult['promptStamps'];
+  refined?: OfficeOrchestrationResult['refined'];
+  consolidationReview?: OfficeOrchestrationResult['consolidationReview'];
 }
 
 export interface CoordinateRequestInput {
@@ -412,5 +417,9 @@ export const coordinateRequest = async (
     })),
     events,
     usage: result.usage,
+    rejectedHandoffs: result.rejectedHandoffs,
+    promptStamps: result.promptStamps,
+    refined: result.refined,
+    consolidationReview: result.consolidationReview,
   };
 };

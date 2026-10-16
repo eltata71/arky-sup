@@ -48,3 +48,17 @@ export function findSecretShapes(text: string): string[] {
   }
   return found;
 }
+
+/**
+ * `text` with every published key shape replaced by `[credencial omitida]`.
+ *
+ * For what is shown or exported after the fact (a trace): the value is removed
+ * rather than reported, because an export is a copy that outlives the screen.
+ */
+export function redactSecretShapes(text: string): string {
+  let out = text;
+  for (const shape of SECRET_KEY_SHAPES) {
+    out = out.replace(new RegExp(shape.pattern.source, 'g'), '[credencial omitida]');
+  }
+  return out;
+}

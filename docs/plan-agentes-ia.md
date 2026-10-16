@@ -893,15 +893,15 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 17.2 Memoria con procedencia | P1 · M | Hecha | #250 · origen, traza, confirmación, caducidad y sustitución en JSON; las propuestas no confirmadas y las notas vencidas no entran en prompts; rechazo de claves; Centro de Memoria muestra origen, confirmación y vencimiento |
 | 17.3 Presupuestos y cancelación | P1 · M | Hecha | #247 · presupuesto por handoff y operación, rechazo explícito, cobro de llamadas informadas y cancelación sin consolidación parcial |
 | 17.4 Éxito con persistencia confirmada | P1 · M | Hecha | #247 · store confirmado para agente y cola; fallo remoto visible y sin anuncio de éxito; prueba de deshacer conservada |
-| 18.0 Esquemas por rol | P1 · L | Pendiente | |
+| 18.0 Esquemas por rol | P1 · L | En curso | PR #253: coordinador, especialista y consolidador devuelven JSON validado; el texto es la representación |
 | 18.1 Revisión con esquema | P1 · M | Pendiente | |
 | 18.2 Evaluador en las dos consolidaciones | P1 · M | Hecha | #248 · el encargo evalúa y corrige una vez; la revisión queda en la tarea y el banco sube a 100 % |
 | 18.3 Clasificador de intención | P2 · M | Hecha | #249 · el heurístico reconoce crear (con doble determinante y ADR/NFR), lote, «para este proyecto» y sobrescribir; el LLM conoce los 12 tipos (enum en el esquema); 31 casos, precisión 100 %, confirmación 100 %. Umbral LLM 0,55 se mantiene: ningún caso del banco queda bajo él |
-| 18.4 Niveles de modelo | P2 · S | En revisión | #251 · `quick`, `default` y `deep` tienen IDs distintos por proveedor; la preferencia explícita sólo afecta a `default`; la ficha muestra el modelo resuelto |
+| 18.4 Niveles de modelo | P2 · S | Hecha | #251 · `quick`, `default` y `deep` tienen IDs distintos por proveedor; la preferencia explícita sólo afecta a `default`; la ficha muestra el modelo resuelto |
 | 19.0 Herramientas de lectura | P2 · XL | Pendiente | |
 | 19.1 Política de contexto | P2 · L | Pendiente | |
 | 19.2 Bucle de herramientas | P3 · L | Espera medición | |
-| 20.0 Traza en árbol | P1 · M | Pendiente | |
+| 20.0 Traza en árbol | P1 · M | En revisión | #252 · `describeOperation` deriva el árbol (agentes, eventos, handoffs rechazados, revisión, sellos de prompt) del `CoordinationOutcome`, sin almacenarlo; «Ver traza» en la dock (árbol accesible, carga diferida) y exportación JSON con las credenciales omitidas (`redactSecretShapes`) |
 | 20.1 Panel de calidad de agentes | P2 · M | Pendiente | |
 | 20.2 Intervención humana | P2 · M | Pendiente | |
 | 20.3 E2E de los agentes | P1 · M | Pendiente | |
