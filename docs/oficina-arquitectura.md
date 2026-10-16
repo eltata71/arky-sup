@@ -320,6 +320,22 @@ al arquitecto AWS.
 
 ### 7.2 Límites de la coordinación y corrección acotada
 
+El dock y el atajo explícito del copiloto comparten `coordinateRequest`
+(plan de agentes, 16.3). `runCopilotOrchestration` usa el mismo
+`buildCoordinationInvoker` y chat medido: ficha, tier, especialistas desactivados,
+eventos, esquemas, límites y cancelación viajan por la misma puerta. El contexto
+del proyecto incluye las iniciativas enlazadas cuando la superficie las entrega.
+`isOfficeOrchestrationRequest` sólo decide el atajo de enrutado; las acciones
+sobre artefactos siguen pasando por el ejecutor del agente.
+
+El modal del copiloto conserva su formato de conversación: presenta un resumen
+del equipo convocado con alias configurados, cada handoff rechazado con código
+y motivo, el estado del evaluador, sus salvedades y si se aplicó una corrección.
+Si no hubo evaluación, dice «sin evaluar», nunca aprobado. El escáner
+`officeOrchestrationSingleDoor.test.ts` impide llamadas de producción a
+`executeOfficeOrchestration` fuera de `coordinateRequest`; las pruebas y bancos
+pueden seguir ejercitando el motor directamente.
+
 La orquestación lleva topes **declarados**, no emergentes:
 
 | Límite | Dónde | Valor |
