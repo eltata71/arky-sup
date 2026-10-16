@@ -505,3 +505,23 @@ en el aviso raíz o el vencimiento hace fallar CI. Cuando se publique una
 versión corregida de `braces`, se actualizan las dependencias y se retira la
 excepción. En la misma PR se actualizó DOMPurify a 3.4.16, que corrige
 [GHSA-p98j-92pf-mc4p](https://github.com/advisories/GHSA-p98j-92pf-mc4p).
+
+## Hallazgos de baseline al unificar la coordinación (16.3, 2026-10-16)
+
+La base contractual `8e17efb6b4e17b881d55a7a8f464ec83fa87c50f` conserva tres
+avisos de `react-hooks/exhaustive-deps` en
+`context/office/useCharterCommands.ts:41,46,51`: las operaciones inyectadas no
+figuran en las dependencias de sus callbacks. `npm run lint` devuelve exit 0
+con 0 errores y 3 avisos; eso no cumple el contrato de lint 0/0. No se modifica
+ese hook desde 16.3. Responsable propuesto para el corte independiente:
+Hermes/Viviana, previa priorización de José; cierre con regresión del cambio de
+operaciones inyectadas y lint sin avisos, no con una excepción del linter.
+
+También se observa una excepción preexistente a la disponibilidad en
+`application/officeOrchestration.ts`: coordinador/consolidador son fijos y, si
+todos los especialistas están desactivados, el último recurso vuelve a Gabriel
+(`planOfficeWorkstreams`, líneas 81–91). Unificar los caminos no resuelve esa
+política. Requiere decisión del propietario sobre cómo rechazar una operación
+sin equipo disponible; no se introducen sustitutos ni se cambia la gobernanza
+en esta tarea. Responsable de triage: José; implementación propuesta:
+Hermes/Andrés, con regresiones de cero llamadas y resultado explícito de bloqueo.
