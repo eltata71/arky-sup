@@ -22,7 +22,7 @@ describe('OperationTracePanel', () => {
     Object.assign(navigator, { clipboard: { writeText } });
     const o: CoordinationOutcome = { ...outcome, framing: secret, events: [{
       id: 'pem-event', kind: 'agent-started', from: 'elena',
-      to: 'elena', phase: 'analysis', elapsedMs: 0, summary: secret, detail: secret,
+      to: 'elena', phase: 'working', elapsedMs: 0, summary: secret, detail: secret,
     }] };
     const { container } = render(<OperationTracePanel outcome={o} />);
     fireEvent.click(screen.getAllByRole('button')[0]);
