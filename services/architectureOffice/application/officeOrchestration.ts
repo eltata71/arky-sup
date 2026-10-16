@@ -14,7 +14,7 @@ import { COORDINATION_BRIEF_SCHEMA, RECOMMENDATION_SCHEMA, SPECIALIST_ANALYSIS_S
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import { foldOfficeText, hasExactOfficeMention } from '../domain/officeShared';
 import { rankSpecialistsForRequest } from '../domain/OfficeAgentRouter';
-import { createHandoff, renderHandoffPrompt } from '../domain/agentHandoff';
+import { createHandoff, renderHandoffPrompt, DEFAULT_MAX_SPECIALISTS } from '../domain/agentHandoff';
 import type { AgentHandoffKind } from '../domain/agentDefinition';
 import { workstreamCapableAgents } from '../domain/agentRegistry';
 import { HandoffBudgetExhausted, withHandoffBudget } from './handoffBudget';
@@ -48,7 +48,7 @@ const criteriaFor = (personaId: OfficeAgentId): string[] => {
 };
 
 /** Cuántos especialistas puede convocar una operación si nadie dice otra cosa. */
-export const DEFAULT_MAX_SPECIALISTS = 4;
+export { DEFAULT_MAX_SPECIALISTS };
 
 export const planOfficeWorkstreams = (
   request: string,
