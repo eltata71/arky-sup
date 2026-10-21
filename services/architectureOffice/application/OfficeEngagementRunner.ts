@@ -236,7 +236,9 @@ export const runEngagement = async (
         const traced = withTaskTrace(task, outcome.produce.traceId, outcome.produce.promptStamp);
         const measured = { ...traced, measurements: [
           ...(traced.measurements ?? []),
-          ...Array.from({ length: outcome.produce.aiCalls ?? 1 }, () => unknownInvocation(outcome.produce?.traceId)),
+          ...(outcome.produce.measurements?.length ? outcome.produce.measurements
+            : Array.from({ length: outcome.produce.aiCalls ?? 1 }, () => unknownInvocation(outcome.produce?.traceId)))
+            .map((measurement) => ({ ...measurement, runId: task.runId, promptStamp: measurement.promptStamp ?? outcome.produce?.promptStamp })),
         ] };
         if (outcome.produce.status === 'failed') {
           engagement = replaceRunnerTask(engagement, {
@@ -281,7 +283,8 @@ export const runEngagement = async (
         const needsConfirmation = review.verdict === 'approved' && review.basis === 'evidence-only';
         engagement = replaceRunnerTask(engagement, {
           ...withTaskTrace(task, review.traceId, review.promptStamp),
-          measurements: [...(task.measurements ?? []), review.measurement ?? unknownInvocation(review.traceId)],
+          measurements: [...(task.measurements ?? []), { ...(review.measurement ?? unknownInvocation(review.traceId)),
+            runId: task.runId, promptStamp: review.measurement?.promptStamp ?? review.promptStamp }],
           status: needsConfirmation ? 'awaiting-review' : 'completed',
           review,
           completedAt: needsConfirmation ? undefined : runnerNowIso(),
@@ -352,26 +355,27 @@ export const runEngagement = async (
       }
 
       if ('consolidate' in outcome && outcome.consolidate) {
-        engagement = chargeRunnerBudget(engagement, outcome.consolidate.aiCalls ?? 1);
-        const refinement = outcome.consolidate.refinement;
-        const consolidated = withTaskTrace(task, outcome.consolidate.traceId, outcome.consolidate.promptStamp);
+        const { consolidate } = outcome;
+        engagement = chargeRunnerBudget(engagement, consolidate.aiCalls ?? 1);
+        const refinement = consolidate.refinement;
+        const consolidated = withTaskTrace(task, consolidate.traceId, consolidate.promptStamp);
         engagement = replaceRunnerTask(engagement, {
           ...(refinement ? withTaskTrace(consolidated, refinement.traceId, refinement.promptStamp) : consolidated),
-          consolidationReview: outcome.consolidate.review,
+          consolidationReview: consolidate.review,
           measurements: [
             ...(task.measurements ?? []),
-            outcome.consolidate.measurement ?? unknownInvocation(outcome.consolidate.traceId),
-            ...(refinement ? [refinement.measurement ?? unknownInvocation(refinement.traceId)] : []),
+            { ...(consolidate.measurement ?? unknownInvocation(consolidate.traceId)), runId: task.runId, promptStamp: consolidate.measurement?.promptStamp ?? consolidate.promptStamp },
+            ...(refinement ? [{ ...(refinement.measurement ?? unknownInvocation(refinement.traceId)), runId: task.runId, promptStamp: refinement.measurement?.promptStamp ?? refinement.promptStamp }] : []),
           ],
-          status: outcome.consolidate.status === 'success' ? 'completed' : 'failed',
-          error: outcome.consolidate.status === 'success' ? undefined : outcome.consolidate.summary,
+          status: consolidate.status === 'success' ? 'completed' : 'failed',
+          error: consolidate.status === 'success' ? undefined : consolidate.summary,
           objective: task.objective,
           completedAt: runnerNowIso(),
         });
         engagement = withAuditEntry(
           engagement,
-          outcome.consolidate.status === 'success' ? 'task-completed' : 'task-failed',
-          outcome.consolidate.summary,
+          consolidate.status === 'success' ? 'task-completed' : 'task-failed',
+          consolidate.summary,
           { taskId: task.id },
         );
       }

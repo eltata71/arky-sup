@@ -25,7 +25,7 @@ import {
   type AgentIntent,
 } from '../../agent';
 import { parseStructured } from '../../ai/structuredOutput';
-import { newPrefixedId } from '../../../lib/ids';
+import { newTraceId } from '../../../lib/traceId';
 import { createConsolidatePort, measurementOf } from './officeConsolidationPort';
 import { REVIEW_CONTENT_LIMIT, buildReviewPrompt, gatherDeterministicEvidence } from './officeReviewPrompt';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
@@ -40,6 +40,7 @@ import type {
 } from '../application/OfficeEngagementRunner';
 import type { PersistenceResult } from '../../persistence';
 import type { AgentInvocationResult, AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
+import type { OfficeAgentCallOptions } from '../application/officeOrchestrationTypes';
 import type { AgentArtifactStoreLike } from '../../agent';
 import type {
   OfficeEngagement,
@@ -59,6 +60,7 @@ export type OfficePersonaInvoker = (
   project: Project,
   /** La ficha resuelta del agente (`getProfile`), para su prompt de sistema. */
   profile?: OfficeAgentProfile,
+  callOptions?: OfficeAgentCallOptions,
 ) => Promise<string | AgentInvocationResult>;
 
 
@@ -185,6 +187,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     const anchor = createOfficeAnchorArtifact(task);
     const intent = buildCreateIntent(task, engagement);
     const promptStamp = stampPrompt(agentPromptRef('office.production'), intent.userInstruction);
+    const measurements: AgentInvocationMeasurement[] = [];
     const plan = planAgentAction({
       intent,
       artifact: anchor,
@@ -192,6 +195,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     });
 
     const result = await executeAgentAction({
+      invocation: { operationId: task.runId, onMeasurement: (measurement) => measurements.push({ ...measurement, promptStamp }) },
       plan,
       artifact: anchor,
       project,
@@ -212,11 +216,12 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     if (result.status !== 'success' || !result.newArtifactId) {
       return {
         status: 'failed',
-        aiCalls: result.aiCalls ?? 1,
+        aiCalls: measurements.length ? measurements.reduce((sum, item) => sum + (item.aiCalls ?? 1), 0) : result.aiCalls ?? 1,
         // Reported on failure too: a run that produced nothing is exactly when
         // the trace is worth having.
         traceId: result.traceId,
         promptStamp,
+        measurements,
         message: result.messages[0] ?? result.errors[0] ?? 'La generación no produjo un artefacto utilizable.',
       };
     }
@@ -225,12 +230,13 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       status: 'success',
       artifactId: result.newArtifactId,
       versionGroupId: result.newArtifactVersionId ?? result.newArtifactId,
-      aiCalls: result.aiCalls ?? 1,
+      aiCalls: measurements.length ? measurements.reduce((sum, item) => sum + (item.aiCalls ?? 1), 0) : result.aiCalls ?? 1,
       // The thread back to `projects/{id}/agent_actions/{traceId}`: the prompt,
       // the phases, the versions and the rollback of the generation that made
       // this deliverable. It was being discarded here.
       traceId: result.traceId,
       promptStamp,
+      measurements,
     };
   };
 
@@ -265,9 +271,8 @@ export {
 export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
   async (task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeTaskReview> => {
     const decidedAt = new Date().toISOString();
-    // Minted by the Office: the review path reaches the model through the legacy
-    // chat façade, which returns no trace of its own. See `OfficeTask.traceIds`.
-    const traceId = newPrefixedId('office-review');
+    // Sent to the gateway; legacy string-only ports retain the local id.
+    let traceId = newTraceId('office-review');
     const project = deps.getProject();
     const producer = engagement.tasks.find((candidate) => candidate.id === task.reviewsTaskId);
     const artifact = project && producer?.producedArtifactId
@@ -297,10 +302,12 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         reviewPrompt,
         project!,
         deps.getProfile?.(task.assigneeId),
+        { operationId: task.runId, invocationId: traceId },
       );
       const parsed = parseStructured<ModelCritique>(typeof raw === 'string' ? raw : raw.text);
       if (parsed.ok) critique = parsed.value;
       measurement = measurementOf(raw);
+      traceId = measurement?.traceId ?? traceId;
     } catch {
       // A reviewer that cannot be reached must not silently approve. The
       // deterministic evidence below still decides the verdict.

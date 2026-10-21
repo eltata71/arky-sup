@@ -30,9 +30,8 @@ export interface OfficeRunSummary {
   auditTrail: OfficeAuditEntry[];
   /**
    * Every correlation id the attempt produced, de-duplicated, in the order the
-   * tasks recorded them. The `agent-` ones join to
-   * `projects/{id}/agent_actions/{traceId}`; the `office-` ones identify an
-   * invocation through the legacy chat façade and join to nothing.
+   * tasks recorded them. Measured runs use the canonical model trace ids;
+   * legacy unmeasured tasks can still carry agent-action or local Office ids.
    */
   traceIds: string[];
   startedAt?: string;
@@ -49,7 +48,10 @@ export const runIdsOf = (engagement: OfficeEngagement): string[] => {
     ordered.push(runId);
   };
   for (const entry of engagement.auditTrail) add(entry.runId);
-  for (const task of engagement.tasks) add(task.runId);
+  for (const task of engagement.tasks) {
+    for (const measurement of task.measurements ?? []) add(measurement.runId);
+    add(task.runId);
+  }
   add(engagement.currentRunId);
   return ordered;
 };
@@ -62,8 +64,14 @@ export const describeRun = (
   const tasks = engagement.tasks.filter((task) => task.runId === runId);
   const auditTrail = engagement.auditTrail.filter((entry) => entry.runId === runId);
   const traceIds: string[] = [];
-  for (const task of tasks) {
-    for (const traceId of task.traceIds ?? []) {
+  for (const task of engagement.tasks) {
+    const measurements = task.measurements ?? [];
+    // A retried task keeps measurements from earlier runs. Its accumulated
+    // legacy ids have no run attribution, so never mix them into measured runs.
+    const ids = measurements.some((item) => item.runId)
+      ? measurements.filter((item) => item.runId === runId).flatMap((item) => item.traceId ? [item.traceId] : [])
+      : task.runId === runId ? [...(task.traceIds ?? []), ...measurements.flatMap((item) => item.traceId ? [item.traceId] : [])] : [];
+    for (const traceId of ids) {
       if (!traceIds.includes(traceId)) traceIds.push(traceId);
     }
   }

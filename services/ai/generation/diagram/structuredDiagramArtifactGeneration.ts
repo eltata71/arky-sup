@@ -56,6 +56,7 @@ export async function generateStructuredDiagramArtifactContent(
     const result = await generateDiagramIRWithSelfHealing(stub, project, settings, {
         audience,
         previousIR: previous?.ir,
+        invocation: opts.invocation,
         brief,
         onContextCaptured: opts.onContextCaptured,
     });
@@ -77,6 +78,7 @@ export async function generateStructuredDiagramArtifactContent(
             audience: request.audience,
         } : undefined,
         context: `${project.name}: ${template.objective}`,
+        invocation: opts.invocation,
         onContextCaptured: opts.onContextCaptured,
     }, settings);
     opts.onPhase?.({

@@ -16,6 +16,7 @@
 
 import type { ArtifactTemplate, MemoryEntry, Settings } from '../../types';
 import type { Artifact, ArtifactBusinessMotivation } from '../../lib/artifacts';
+import type { InvocationTelemetry } from '../../lib/ai/agentUsage';
 import type { Project } from '../architectureProjects';
 import type { ArtifactReviewSuggestion } from '../review';
 import type { ChatMessage } from '../chat';
@@ -65,6 +66,7 @@ export interface AgentMemoryStore {
 }
 
 export interface AgentExecutorInput {
+  invocation?: InvocationTelemetry;
   plan: AgentActionPlan;
   artifact: Artifact;
   project: Project;
@@ -590,7 +592,7 @@ async function executeArtifactCreate(
     generatedContent = await artifactGenerationService.generateArtifactContent(
       project,
       generationTemplate,
-      settings, undefined, { ...agentGenerationOptions(input.resolvePersona, input.businessMotivation, input.history), ...generation.options },
+      settings, undefined, { ...agentGenerationOptions(input.resolvePersona, input.businessMotivation, input.history), ...generation.options, invocation: input.invocation },
     );
   } catch (err) {
     const friendly = err instanceof AIServiceError ? err : classifyAIError(err);

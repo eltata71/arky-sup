@@ -851,21 +851,19 @@ ${catalogDocumentReinforcement}
             });
             opts.onModelCall?.();
             raw = await this.generateTextWithFallback(settings, modelName, fullPrompt, modelConfig, template.requestContext ? {
-                // On-demand artefacts: previous limits (45s diagrams, 60s docs)
-                // were brushing the edge of the saturated-infra reality where
-                // Gemini Flash with thinking can take 35-55s on its own. Give
-                // the request a realistic ceiling AND retry the underlying
-                // model once on transient blips before falling back.
+                // On-demand requests retain the bounded timeout and model chain.
                 timeoutMs: isDiagramArtifact ? 75000 : 90000,
                 maxCandidates: isDiagramArtifact ? 3 : 3,
                 maxRetries: 2,
                 onPartial: isDiagramArtifact ? undefined : onPartial,
+                ...opts.invocation,
             } : {
                 // Catalog artefacts also benefit from a couple of retries on
                 // transient errors — the user has no reason to be punished by
                 // a single 503 when Gemini routinely recovers in 1-3s.
                 maxRetries: 2,
                 onPartial: isDiagramArtifact ? undefined : onPartial,
+                ...opts.invocation,
             });
             if (!raw || raw.trim().length === 0) {
                 console.warn(`[artifactGenerationEngine] Empty generation for "${template.name}"; using deterministic fallback.`);
@@ -940,7 +938,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
  - Do NOT include invalid Mermaid comments or explanatory prose inside the diagram block.`;
             try {
                 opts.onModelCall?.();
-                const retry = await this.generateTextWithFallback(settings, modelName, reinforcedPrompt, modelConfig);
+                const retry = await this.generateTextWithFallback(settings, modelName, reinforcedPrompt, modelConfig, opts.invocation);
                 const retryAssessment = await assessDiagramText(retry, template.type);
                 if (retryAssessment.ok) return retry;
                 console.warn(
@@ -955,7 +953,7 @@ PREVIOUS ATTEMPT FAILED PARSING (${firstAssessment.reason}). Regenerate ensuring
                         const fallback = await this.generateTextWithFallback(settings, modelName, fallbackPrompt, {
                             ...modelConfig,
                             temperature: 0.2,
-                        });
+                        }, opts.invocation);
                         const normalizedFallback = template.type === 'hybrid-text-diagram'
                             ? buildHybridMarkdownFromMermaid(template, fallback)
                             : fallback;
@@ -1034,7 +1032,7 @@ Regenerate the COMPLETE artifact ensuring:
  - Do not summarise or apologise — output only the complete artifact content.`;
             try {
                 opts.onModelCall?.();
-                const retryDoc = await this.generateTextWithFallback(settings, modelName, correctivePrompt, modelConfig);
+                const retryDoc = await this.generateTextWithFallback(settings, modelName, correctivePrompt, modelConfig, opts.invocation);
                 const retryAssessment = assessDocumentArtifact(retryDoc, {
                     expectStructuredDocument: template.representation === 'document',
                     expectVisualEnrichment,

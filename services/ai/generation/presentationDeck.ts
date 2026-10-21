@@ -60,6 +60,7 @@ export async function generatePresentationDeck(
     responseSchema: PRESENTATION_RESPONSE_SCHEMA,
   };
   const raw = await legacyTransport.generateTextWithFallback(settings, modelName, fullPrompt, modelConfig, {
+    ...ports.invocation,
     timeoutMs: DECK_TIMEOUT_MS,
     maxRetries: 2,
   });
@@ -81,6 +82,7 @@ Regenerate the COMPLETE deck ensuring:
  - JSON only, matching the contract exactly.`;
     try {
       const retryRaw = await legacyTransport.generateTextWithFallback(settings, modelName, correctivePrompt, modelConfig, {
+        ...ports.invocation,
         timeoutMs: DECK_TIMEOUT_MS,
         maxRetries: 1,
       });

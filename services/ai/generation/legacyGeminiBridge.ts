@@ -44,6 +44,8 @@ export type { RoutedRequest };
 export type LegacyGenerationConfig = Record<string, unknown>;
 
 interface LegacyCallOptions {
+  operationId?: string;
+  requestId?: string;
   timeoutMs?: number;
   maxCandidates?: number;
   maxRetries?: number;
@@ -114,6 +116,8 @@ export function buildCanonicalRequest(
 
   return {
     purpose,
+    operationId: options.operationId,
+    requestId: options.requestId,
     prompt: contentsToPrompt(contents),
     modelOverride: preferredModel,
     temperature: typeof config.temperature === 'number' ? config.temperature : undefined,

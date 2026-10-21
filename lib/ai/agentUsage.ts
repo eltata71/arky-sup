@@ -7,6 +7,13 @@ export interface AgentInvocationUsage {
 }
 
 export interface AgentInvocationMeasurement {
+  runId?: string;
+  invocationId?: string;
+  promptStamp?: string;
+  status?: 'completed' | 'failed';
+  startedAtMs?: number;
+  /** Names returned by the model, not arguments nor claims of tool execution. */
+  toolCalls?: string[];
   /** Provider requests attempted, including retries when known. */
   aiCalls?: number;
   model: string | null;
@@ -19,6 +26,12 @@ export interface AgentInvocationMeasurement {
 
 export interface AgentInvocationResult extends AgentInvocationMeasurement {
   text: string;
+}
+
+/** Per-call observer, never a global collector shared by concurrent runs. */
+export interface InvocationTelemetry {
+  operationId?: string;
+  onMeasurement?: (measurement: AgentInvocationMeasurement) => void;
 }
 
 /** USD per million tokens, Google Gemini Developer API standard paid tier.

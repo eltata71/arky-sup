@@ -113,6 +113,8 @@ export type CoordinationEventKind =
  * without the log becoming a wall.
  */
 export interface CoordinationEvent {
+  invocationId?: string;
+  handoffId?: string;
   id: string;
   kind: CoordinationEventKind;
   phase: CoordinationPhase;
@@ -147,6 +149,8 @@ export interface CoordinationTeamMember {
 }
 
 export interface CoordinationOutcome {
+  runId?: string;
+  invocations?: OfficeOrchestrationResult['invocations'];
   operationId: string;
   status: 'completed' | 'partial' | 'failed';
   team: CoordinationTeamMember[];
@@ -269,6 +273,7 @@ export const coordinateRequest = async (
     summary: string,
     detail?: string,
     prompt?: string,
+    correlation?: { invocationId?: string; handoffId?: string },
   ): void => {
     const event: CoordinationEvent = {
       id: newPrefixedId('coord'),
@@ -279,6 +284,8 @@ export const coordinateRequest = async (
       summary,
       detail,
       ...(prompt ? { prompt } : {}),
+      ...(correlation?.invocationId ? { invocationId: correlation.invocationId } : {}),
+      ...(correlation?.handoffId ? { handoffId: correlation.handoffId } : {}),
       elapsedMs: Math.max(0, now() - startedAt),
     };
     events.push(event);
@@ -330,7 +337,7 @@ export const coordinateRequest = async (
     const isRefinement = isConsolidator && consolidatorTurns > 1;
     if (isRefinement) {
       emit('handoff', 'consolidating', personaId, null,
-        `${nameOf(personaId)} corrige su recomendación contra los criterios de la Oficina.`);
+        `${nameOf(personaId)} corrige su recomendación contra los criterios de la Oficina.`, undefined, promptStamp, callOptions);
     }
     const phase: CoordinationPhase = isCoordinator
       ? 'framing'
@@ -338,7 +345,7 @@ export const coordinateRequest = async (
 
     if (!isCoordinator) {
       emit('agent-started', phase, personaId, null,
-        `${nameOf(personaId)} está trabajando.`, undefined, promptStamp);
+        `${nameOf(personaId)} está trabajando.`, undefined, promptStamp, callOptions);
     }
 
     try {
@@ -361,12 +368,13 @@ export const coordinateRequest = async (
             : `${nameOf(personaId)} entrega su análisis.`,
         output,
         promptStamp,
+        callOptions,
       );
       return invoked;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       emit('agent-failed', phase, personaId, null,
-        `${nameOf(personaId)} no pudo completar su parte.`, message, promptStamp);
+        `${nameOf(personaId)} no pudo completar su parte.`, message, promptStamp, callOptions);
       throw error;
     }
   };
@@ -374,6 +382,7 @@ export const coordinateRequest = async (
   let result: OfficeOrchestrationResult;
   try {
     result = await executeOfficeOrchestration(plan, observedInvoke, {
+      runId: plan.operationId,
       maxConcurrency,
       signal: input.signal,
       timeoutMs: input.timeoutMs,
@@ -406,6 +415,8 @@ export const coordinateRequest = async (
 
   return {
     operationId: result.operationId,
+    runId: plan.operationId,
+    invocations: result.invocations,
     status: result.status,
     team,
     answer: result.consolidation,

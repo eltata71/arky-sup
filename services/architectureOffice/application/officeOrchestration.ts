@@ -1,10 +1,8 @@
 import { newPrefixedId } from '../../../lib/ids';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
-import { agentPromptRef, stampPrompt, type AgentPromptId } from '../../../lib/agents/promptCatalog';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 // Boot/route code: parseStructured enters by its small door, not the services/ai barrel (the barrel drags the whole AI layer into every route that imports the Office).
 import { parseStructured } from '../../ai/structuredOutput';
-import type { AIJsonSchema } from '../../ai';
 import {
   applyCoordinationBrief, evaluateRecommendationFields, readCoordinationBrief, readRecommendation, readSpecialistAnalysis,
   renderCoordinationBrief, renderRecommendation, renderSpecialistAnalysis,
@@ -18,7 +16,7 @@ import { createHandoff, renderHandoffPrompt, DEFAULT_MAX_SPECIALISTS } from '../
 import type { AgentHandoffKind } from '../domain/agentDefinition';
 import { workstreamCapableAgents } from '../domain/agentRegistry';
 import { HandoffBudgetExhausted, withHandoffBudget } from './handoffBudget';
-import { summarizeAgentUsage, type AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
+
 import {
   buildConsolidationRefinementPrompt,
   evaluateConsolidation,
@@ -120,7 +118,6 @@ export const executeOfficeOrchestration = async (
   // Cada invocación sale con el sello de su plantilla y queda en el resultado,
   // en orden: es lo que permite comparar dos respuestas y saber si cambió la
   // plantilla o sólo el modelo.
-  const promptStamps: string[] = [];
   const maxRefinements = Math.max(0, Math.min(1, options.maxConsolidationRefinements ?? 1));
   const operationInvoke = withHandoffBudget(invoke, {
     budget: {
@@ -128,45 +125,9 @@ export const executeOfficeOrchestration = async (
       maxTokens: options.maxTokens ?? 100_000,
     },
   });
-  const measurements: { personaId: OfficeAgentId; value: AgentInvocationMeasurement }[] = [];
-  const usage = (): OfficeOrchestrationResult['usage'] => ({
-    total: summarizeAgentUsage(measurements.map((item) => item.value)),
-    byAgent: Object.fromEntries([...new Set(measurements.map((item) => item.personaId))].map((personaId) => [
-      personaId,
-      summarizeAgentUsage(measurements.filter((item) => item.personaId === personaId).map((item) => item.value)),
-    ])),
-  });
-  const invokeStamped = async (personaId: OfficeAgentId, instruction: string, promptId: AgentPromptId, delegate: OfficeAgentInvoker = operationInvoke, responseSchema?: AIJsonSchema): Promise<string> => {
-    if (options.signal?.aborted) throw new Error('Operación cancelada por la persona.');
-    const stamp = stampPrompt(agentPromptRef(promptId), instruction);
-    promptStamps.push(stamp);
-    const startedAt = Date.now();
-    const controller = new AbortController();
-    const timeoutMs = options.timeoutMs ?? 90_000;
-    const aborted = () => controller.abort();
-    options.signal?.addEventListener('abort', aborted, { once: true });
-    const timer = setTimeout(aborted, timeoutMs);
-    let rejectOnAbort: (() => void) | undefined;
-    const abortPromise = new Promise<never>((_resolve, reject) => {
-      rejectOnAbort = () => reject(new Error(options.signal?.aborted ? 'Operación cancelada por la persona.' : 'Tiempo de invocación agotado.'));
-      controller.signal.addEventListener('abort', rejectOnAbort, { once: true });
-    });
-    try {
-      const result = await Promise.race([
-        delegate(personaId, instruction, stamp, { signal: controller.signal, timeoutMs, ...(responseSchema ? { responseSchema } : {}) }),
-        abortPromise,
-      ]);
-      const measured = typeof result === 'string'
-        ? { text: result, model: null, usage: null, latencyMs: Date.now() - startedAt, traceId: null, estimatedCostUsd: null }
-        : result;
-      measurements.push({ personaId, value: measured });
-      return measured.text;
-    } finally {
-      clearTimeout(timer);
-      options.signal?.removeEventListener('abort', aborted);
-      if (rejectOnAbort) controller.signal.removeEventListener('abort', rejectOnAbort);
-    }
-  };
+  // Accounting is execution-only: route imports must not download its runtime.
+  const { createOfficeInvocationRecorder } = await import('./officeInvocationRecorder');
+  const { promptStamps, invocations, usage, invokeStamped } = createOfficeInvocationRecorder(plan, operationInvoke, options);
   const structuredDegraded: string[] = [];
   const readContract = <T,>(label: string, raw: string, reader: (value: unknown) => ContractReading<T>): T | null => {
     const parsed = parseStructured<unknown>(raw);
@@ -188,7 +149,7 @@ export const executeOfficeOrchestration = async (
       coordination: error instanceof Error ? error.message : String(error),
       workstreamResults: [],
       consolidation: 'La coordinación de Lucía falló; no se ejecutaron especialistas.',
-      promptStamps,
+      promptStamps, invocations,
       usage: usage(),
     };
   }
@@ -265,6 +226,8 @@ export const executeOfficeOrchestration = async (
           'office.workstream',
           withHandoffBudget(operationInvoke, handoff.envelope),
           SPECIALIST_ANALYSIS_SCHEMA,
+          handoff.envelope.handoffId,
+          workstream.id,
         );
         const analysis = readContract(`Análisis de ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}`, rawOutput, readSpecialistAnalysis);
         if (analysis) analyses[workstream.id] = analysis;
@@ -294,7 +257,7 @@ export const executeOfficeOrchestration = async (
 
   if (options.signal?.aborted) return {
     operationId: plan.operationId, status: 'failed', coordination, workstreamResults: workstreamResults.filter(Boolean),
-    consolidation: 'Operación cancelada por la persona.', rejectedHandoffs, promptStamps, usage: usage(),
+    consolidation: 'Operación cancelada por la persona.', rejectedHandoffs, promptStamps, invocations, usage: usage(),
   };
 
   // Los resultados llegan al consolidador como referencias atribuidas, no como
@@ -336,7 +299,7 @@ export const executeOfficeOrchestration = async (
       workstreamResults,
       consolidation: consolidationHandoff.rejections.map((r) => r.message).join(' '),
       rejectedHandoffs,
-      promptStamps,
+      promptStamps, invocations,
       usage: usage(),
     };
   }
@@ -346,7 +309,7 @@ export const executeOfficeOrchestration = async (
 
   let consolidation: string;
   try {
-    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation', consolidationInvoke, RECOMMENDATION_SCHEMA);
+    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation', consolidationInvoke, RECOMMENDATION_SCHEMA, consolidationHandoff.envelope.handoffId);
   } catch (error) {
     recordBudgetRejection(plan.coordinatorId, plan.consolidatorId, 'consolidation', error);
     return {
@@ -356,7 +319,7 @@ export const executeOfficeOrchestration = async (
       workstreamResults,
       consolidation: error instanceof Error ? error.message : String(error),
       rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined,
-      promptStamps,
+      promptStamps, invocations,
       usage: usage(),
     };
   }
@@ -386,6 +349,7 @@ export const executeOfficeOrchestration = async (
         'office.consolidation-refinement',
         consolidationInvoke,
         RECOMMENDATION_SCHEMA,
+        consolidationHandoff.envelope.handoffId,
       );
       if (corrected.trim().length > 0) {
         const correctedRecommendation = readContract('Recomendación corregida', corrected, readRecommendation);
@@ -414,7 +378,7 @@ export const executeOfficeOrchestration = async (
     ...(briefApplication.dropped.length > 0 ? { droppedWorkstreams: briefApplication.dropped } : {}),
     ...(structuredDegraded.length > 0 ? { structuredDegraded } : {}),
     rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined,
-    promptStamps,
+    promptStamps, invocations,
     usage: usage(),
   };
 };

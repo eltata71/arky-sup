@@ -24,6 +24,8 @@ import type { AgentInvocationUsage } from '../../../lib/ai/agentUsage';
 
 /** Options shared by both gateway calls. */
 export interface AIGatewayOptions {
+  operationId?: string;
+  requestId?: string;
   timeoutMs?: number;
   maxCandidates?: number;
   maxRetries?: number;
