@@ -84,3 +84,31 @@ export const RECOMMENDATION_SCHEMA: AIJsonSchema = {
   },
   required: ['verdict', 'rationale'],
 };
+
+/**
+ * La crítica del revisor de un encargo (plan de agentes, 18.1). Cada hallazgo
+ * declara qué criterio de aceptación numerado incumple, para que el productor
+ * sepa qué corregir exactamente.
+ */
+export const REVIEW_CRITIQUE_SCHEMA: AIJsonSchema = {
+  type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['approved', 'changes-requested', 'rejected'] },
+    summary: str('Resumen de la revisión en pocas frases.'),
+    findings: {
+      type: 'array',
+      description: 'Hallazgos con severidad, el criterio numerado que incumplen y su evidencia.',
+      items: {
+        type: 'object',
+        properties: {
+          severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
+          message: str('El hallazgo, citando algo presente o ausente en el contenido.'),
+          criterion: { type: 'integer', description: 'El número del criterio de aceptación incumplido (los criterios van numerados en el prompt).' },
+          evidence: str('La cita textual o el validator que respalda el hallazgo. Nunca inventado.'),
+        },
+        required: ['severity', 'message'],
+      },
+    },
+  },
+  required: ['verdict', 'summary'],
+};

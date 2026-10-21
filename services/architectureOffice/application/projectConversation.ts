@@ -77,7 +77,13 @@ export async function chatWithProjectMeasured(
   personaOverride?: OfficeAgentId,
   modelTier: ModelTier = 'default',
   profile?: OfficeAgentProfile,
-  callOptions?: { signal?: AbortSignal; timeoutMs?: number; responseSchema?: AIJsonSchema },
+  callOptions?: {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    responseSchema?: AIJsonSchema;
+    /** Temperatura impuesta por quien llama; ausente = la del usuario (18.1). */
+    temperature?: number;
+  },
 ): Promise<AgentInvocationResult> {
   return assistantService.generateProjectChatReplyMeasured({
     systemInstruction: await composeProjectChatInstruction(project, message, settings, personaOverride, profile),
@@ -88,5 +94,6 @@ export async function chatWithProjectMeasured(
     signal: callOptions?.signal,
     timeoutMs: callOptions?.timeoutMs,
     responseSchema: callOptions?.responseSchema,
+    temperature: callOptions?.temperature,
   });
 }

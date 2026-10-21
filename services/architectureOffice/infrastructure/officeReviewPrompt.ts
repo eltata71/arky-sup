@@ -76,8 +76,8 @@ export const buildReviewPrompt = (
       ? [`(Contenido recortado: se muestran ${REVIEW_CONTENT_LIMIT} de ${artifact.content.length} caracteres. No juzgues lo que no ves.)`]
       : []),
     '',
-    'CRITERIOS DE ACEPTACIÓN:',
-    ...task.acceptanceCriteria.map((item) => `- ${item}`),
+    'CRITERIOS DE ACEPTACIÓN (numerados; cita el número exacto en cada hallazgo):',
+    ...task.acceptanceCriteria.map((item, index) => `${index + 1}. ${item}`),
     '',
     'HALLAZGOS DETERMINISTAS YA DETECTADOS (no los repitas, complétalos):',
     evidence.findings.length > 0
@@ -87,7 +87,8 @@ export const buildReviewPrompt = (
     '',
     'Emite un veredicto sobre si el artefacto es utilizable como entregable de la Oficina.',
     'No inventes defectos: cada hallazgo debe citar algo presente o ausente en el contenido.',
-    'Responde únicamente con JSON: {"verdict":"approved"|"changes-requested"|"rejected","summary":"...","findings":[{"severity":"critical"|"high"|"medium"|"low","message":"...","evidence":"..."}]}',
+    'Cada hallazgo declara qué criterio de aceptación numerado incumple en «criterion» (el número que aparece delante del criterio). Si el hallazgo no corresponde a ningún criterio, omite «criterion».',
+    'Responde únicamente con JSON: {"verdict":"approved"|"changes-requested"|"rejected","summary":"...","findings":[{"severity":"critical"|"high"|"medium"|"low","message":"...","criterion":2,"evidence":"..."}]}',
   ].join('\n');
 };
 
