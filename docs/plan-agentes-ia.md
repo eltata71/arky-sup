@@ -901,7 +901,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 19.0 Herramientas de lectura | P2 · XL | Pendiente | |
 | 19.1 Política de contexto | P2 · L | Pendiente | |
 | 19.2 Bucle de herramientas | P3 · L | Espera medición | |
-| 20.0 Traza en árbol | P1 · M | En revisión | #252 · `describeOperation` deriva el árbol (agentes, eventos, handoffs rechazados, revisión, sellos de prompt) del `CoordinationOutcome`, sin almacenarlo; «Ver traza» en la dock (árbol accesible, carga diferida) y exportación JSON con las credenciales omitidas (`redactSecretShapes`) |
+| 20.0 Traza en árbol | P1 · M | Hecha | #252 · `2f2af2c` · fusión 2026-10-16 · producción `success`. `describeOperation` deriva el árbol (agentes, eventos, handoffs rechazados, revisión, sellos de prompt) del `CoordinationOutcome`, sin almacenarlo; «Ver traza» en la dock (árbol accesible, carga diferida) y exportación JSON con las credenciales omitidas (`redactSecretShapes`). Remediación H1 (redacción integral PEM, `lib/secretShapes.ts`): #256 · `327e5b6` · fusión 2026-10-21 · producción `success`; revisión independiente aprobada sobre `7571f1f` (SHA de cabeza exacto) con RED→GREEN en clon aislado. Remediación H2 (#257) no fusionada: head idéntico a #256, delta 0; su remediación real queda en la tarjeta nueva de H2 |
 | 20.1 Panel de calidad de agentes | P2 · M | Pendiente | |
 | 20.2 Intervención humana | P2 · M | Pendiente | |
 | 20.3 E2E de los agentes | P1 · M | Pendiente | |
