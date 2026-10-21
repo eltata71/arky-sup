@@ -256,6 +256,7 @@ export const section: Dictionary = {
   "queue.interruptedMany": "generaciones interrumpidas",
   "queue.waitingQuota": "Esperando cuota · {seconds} s",
   "training.offlineWarning": "Modo sin conexión: algunos datos podrían no estar sincronizados.",
+  "agent.coste-estimado.464251": "Coste estimado",
   "trace.rejected": "Traspaso rechazado",
   "uiExpr.ctrl.dd6a02": "Ctrl",
   "uiExpr.modo-claro.8212b7": "Modo claro",
