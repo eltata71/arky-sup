@@ -65,6 +65,7 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'confirmEvidenceOnlyReview', rule: 'una aprobación sin crítica del especialista la confirma una persona (agentes 17.1)' },
   { anchor: 'composeAgentInstruction', rule: 'la voz de un agente se compone en un solo sitio, por capas, y la ficha se añade (agentes 16.0)' },
   { anchor: 'agentProfileParity', rule: 'la ficha de un agente llega a los diez caminos por los que habla (agentes 16.1)' },
+  { anchor: 'officeOrchestrationSingleDoor', rule: 'copiloto y dock convocan al mismo equipo por la misma puerta (agentes 16.3)' },
   { anchor: 'PdfFontSet', rule: 'el PDF escribe con fuentes incrustadas y nunca sustituye un carácter (clase mundial 9.3)' },
   { anchor: 'ExportReceipt', rule: 'la exportación enseña su recibo, contado por el exportador, antes de descargar (clase mundial 9.4)' },
   { anchor: 'buildDiagramGenerationBrief', rule: 'todo camino de diagrama recibe el mismo contexto, cercado (6.2)' },
