@@ -785,6 +785,18 @@ rojo), #222 `marked` 18 (los renderers reciben tokens: el typecheck falla en
 `useDocumentRendering`; necesita tarea propia) y #221 `@types/node` 26 (el
 runtime es Node 24; typecheck pasa, pero tipar APIs que no existen es deuda).
 
+### Dependabot #258 y #259, evaluados el 2026-10-22
+
+Sobre `main` con 344,3/345,0 KB gz de arranque. Aplicadas en una rama propia las
+subidas menores y de parche del grupo #258 (`@supabase/supabase-js` 2.118.0,
+`uuid`, `jsdom`, `postcss`, `typescript-eslint`, `@vitest/coverage-v8`,
+`@playwright/test`, `@axe-core/playwright`; `dompurify` ya estaba por #266):
+bundle intacto y suite completa en verde. **Rechazadas por el presupuesto de
+arranque**, que ninguna prueba ve: `motion` 14.3.0 (+3,8 KB gz → 348,1) dentro
+del grupo, y `lucide-react` 1.58.0 de #259 (+1,0 → 345,3; typecheck y 6 017
+pruebas en verde). Quedan excluidas en `dependabot.yml`; reabrir cuando el
+presupuesto tenga holgura.
+
 Las exclusiones nuevas en `.github/dependabot.yml` detienen sólo las propuestas
 mayores de los dos paquetes rechazados. Para reabrir una subida, retirar su
 exclusión y volver a medir los presupuestos sobre `main` vigente.
