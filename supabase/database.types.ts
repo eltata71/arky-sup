@@ -1076,12 +1076,7 @@ export type Database = {
         Args: { p_changes: Json; p_project_id: string }
         Returns: Json
       }
-      save_agent_profile:
-        | { Args: { p_profile: Json }; Returns: undefined }
-        | {
-            Args: { p_expected_revision: number; p_profile: Json }
-            Returns: Json
-          }
+      save_agent_profile: { Args: { p_profile: Json }; Returns: undefined }
       save_artifact_comment: { Args: { p_comment: Json }; Returns: undefined }
       save_business_initiative: {
         Args: { p_expected_revision: number; p_initiative: Json }

@@ -21,9 +21,9 @@ select ok(not has_table_privilege('authenticated', 'api.agent_profile_changes', 
   'El cliente no borra la bitácora');
 select ok(not has_table_privilege('anon', 'api.agent_profile_changes', 'SELECT'),
   'Anónimo no lee la bitácora');
-select ok(has_function_privilege('authenticated', 'api.save_agent_profile(jsonb,bigint)', 'EXECUTE'),
+select ok(has_function_privilege('authenticated', 'api.save_agent_profile(jsonb)', 'EXECUTE'),
   'El cliente autenticado guarda fichas por la RPC');
-select ok(not has_function_privilege('anon', 'api.save_agent_profile(jsonb,bigint)', 'EXECUTE'),
+select ok(not has_function_privilege('anon', 'api.save_agent_profile(jsonb)', 'EXECUTE'),
   'Anónimo no guarda fichas');
 select ok(has_function_privilege('authenticated', 'api.list_agent_profile_changes(text,integer)', 'EXECUTE'),
   'El cliente autenticado lee su bitácora por la RPC');
@@ -47,33 +47,35 @@ on conflict (id) do nothing;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a1000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"a2000000-0000-4000-8000-000000000001"}';
 
-select is(api.save_agent_profile('{"agentId":"lucia","alias":"Lucía","modelTier":"deep","maxConcurrentTasks":3,"definitionVersion":1}'::jsonb, 0) ->> 'revision', '1',
-  'Crear una ficha devuelve la revisión uno');
+select lives_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Lucía","modelTier":"deep","maxConcurrentTasks":3,"definitionVersion":1,"revision":0}'::jsonb)$$,
+  'Crear una ficha con revisión esperada cero funciona');
 select is(api.list_agent_profiles() -> 0 ->> 'revision', '1',
   'La lectura trae la revisión junto al documento');
 select is(api.list_agent_profiles() -> 0 ->> 'userId', 'a1000000-0000-4000-8000-000000000001',
   'El servidor estampa el propietario real en el documento');
-select is(api.save_agent_profile('{"agentId":"lucia","alias":"Lucía B","modelTier":"deep","maxConcurrentTasks":3,"definitionVersion":1}'::jsonb, 1) ->> 'revision', '2',
-  'Guardar con la revisión vigente la avanza');
+select lives_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Lucía B","modelTier":"deep","maxConcurrentTasks":3,"definitionVersion":1,"revision":1}'::jsonb)$$,
+  'Guardar con la revisión vigente funciona');
+select is(api.list_agent_profiles() -> 0 ->> 'revision', '2',
+  'Guardar con la revisión vigente la avanza en uno');
 
 -- Concurrencia optimista
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Vieja"}'::jsonb, 1)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Vieja"}'::jsonb || '{"revision":1}'::jsonb)$$,
   'P0001', 'Conflicto de ficha: recarga antes de guardar',
   'Una revisión vieja no pisa una edición posterior');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Otra"}'::jsonb, 0)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Otra"}'::jsonb || '{"revision":0}'::jsonb)$$,
   'P0001', 'Conflicto de ficha: recarga antes de guardar',
   'Crear sobre una ficha que ya existe es un conflicto');
-select throws_ok($$select api.save_agent_profile('{"agentId":"carmen","alias":"Nueva"}'::jsonb, 5)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"carmen","alias":"Nueva"}'::jsonb || '{"revision":5}'::jsonb)$$,
   'P0001', 'Conflicto de ficha: recarga antes de guardar',
   'Una revisión esperada sobre una ficha inexistente es un conflicto');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia"}'::jsonb, -1)$$,
-  '22023', 'La revisión esperada debe ser cero o positiva',
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia"}'::jsonb || '{"revision":-1}'::jsonb)$$,
+  '22023', 'revision debe ser un entero de cero en adelante',
   'Una revisión negativa no es válida');
 
--- Ruta heredada: la firma de un argumento guarda sin comprobar revisión, pero
+-- Ruta heredada: sin `revision` en el documento se guarda sin comprobar, pero
 -- pasa por la misma validación y deja el mismo rastro.
 select lives_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Lucía B","modelTier":"deep","maxConcurrentTasks":3,"definitionVersion":1}'::jsonb)$$,
-  'El código aún desplegado puede guardar con un argumento');
+  'El código aún desplegado puede guardar sin revisión esperada');
 select is(api.list_agent_profiles() -> 0 ->> 'revision', '3',
   'La ruta heredada también avanza la revisión');
 select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","isAdmin":true}'::jsonb)$$,
@@ -81,51 +83,51 @@ select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","isAdmin":t
   'La ruta heredada no esquiva la lista blanca');
 
 -- Gobernanza (se conserva)
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","orchestrationRole":"consolidator"}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","orchestrationRole":"consolidator"}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'La ficha no puede alterar la gobernanza del agente',
   'La ficha no cambia el papel de orquestación');
 
 -- Lista blanca y límites
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","isAdmin":true}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","isAdmin":true}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'La ficha contiene claves no admitidas: isAdmin',
   'Una clave fuera de la lista blanca no entra');
-select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','alias',repeat('a',41)), 2)$$,
+select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','alias',repeat('a',41)) || jsonb_build_object('revision', 2))$$,
   '22023', 'El alias debe tener entre 1 y 40 caracteres',
   'Un alias de 41 caracteres no entra');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"  "}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"  "}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'El alias debe tener entre 1 y 40 caracteres',
   'Un alias en blanco no entra');
-select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','role',repeat('r',121)), 2)$$,
+select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','role',repeat('r',121)) || jsonb_build_object('revision', 2))$$,
   '22023', 'El rol no puede exceder 120 caracteres',
   'Un rol de 121 caracteres no entra');
-select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','instruction',repeat('i',1201)), 2)$$,
+select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','instruction',repeat('i',1201)) || jsonb_build_object('revision', 2))$$,
   '22023', 'La instrucción no puede exceder 1200 caracteres',
   'Una instrucción de 1201 caracteres no entra');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","avatar":"123456789"}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","avatar":"123456789"}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'El avatar no puede exceder 8 caracteres',
   'Un avatar de 9 caracteres no entra');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","modelTier":"ultra"}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","modelTier":"ultra"}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'modelTier debe ser quick, default o deep',
   'Un nivel de modelo desconocido no entra');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","maxConcurrentTasks":6}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","maxConcurrentTasks":6}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'maxConcurrentTasks debe ser un entero de 1 a 5',
   'Seis tareas simultáneas no entran');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","maxConcurrentTasks":0}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","maxConcurrentTasks":0}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'maxConcurrentTasks debe ser un entero de 1 a 5',
   'Cero tareas simultáneas no entran');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","enabled":"si"}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","enabled":"si"}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'enabled debe ser booleano',
   'enabled no admite texto');
-select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','skills',(select jsonb_agg('s' || n) from generate_series(1,13) n)), 2)$$,
+select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','skills',(select jsonb_agg('s' || n) from generate_series(1,13) n)) || jsonb_build_object('revision', 2))$$,
   '22023', 'skills admite como máximo 12 entradas',
   'Trece habilidades no entran');
-select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','memory',jsonb_build_array(repeat('m',281))), 2)$$,
+select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','memory',jsonb_build_array(repeat('m',281))) || jsonb_build_object('revision', 2))$$,
   '22023', 'memory: cada entrada es texto de hasta 280 caracteres',
   'Una entrada de memoria de 281 caracteres no entra');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","knowledge":"texto"}'::jsonb, 2)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","knowledge":"texto"}'::jsonb || '{"revision":2}'::jsonb)$$,
   '22023', 'knowledge debe ser una lista',
   'La lista de conocimiento no admite un texto suelto');
-select lives_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','alias',repeat('a',40),'skills',(select jsonb_agg('s' || n) from generate_series(1,12) n),'maxConcurrentTasks',5), 3)$$,
+select lives_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','alias',repeat('a',40),'skills',(select jsonb_agg('s' || n) from generate_series(1,12) n),'maxConcurrentTasks',5) || jsonb_build_object('revision', 3))$$,
   'Los valores en el límite sí entran');
 
 -- Bitácora
@@ -151,8 +153,10 @@ select is(api.list_agent_profile_changes('lucia', 1) -> 0 ->> 'action', 'reset',
   'El reinicio también queda en la bitácora');
 select is(jsonb_array_length(api.list_agent_profiles()), 0,
   'Tras el reinicio no queda ficha');
-select is(api.save_agent_profile('{"agentId":"lucia","alias":"Otra vez"}'::jsonb, 0) ->> 'revision', '1',
+select lives_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Otra vez","revision":0}'::jsonb)$$,
   'Tras reiniciar se puede crear de nuevo con revisión cero');
+select is(api.list_agent_profiles() -> 0 ->> 'revision', '1',
+  'Una ficha recreada empieza en la revisión uno');
 reset role;
 
 -- La bitácora es de sólo añadir, incluso para quien es dueño de la tabla.
@@ -167,14 +171,14 @@ select is(jsonb_array_length(api.list_agent_profiles()), 0,
   'Otro usuario no ve las fichas ajenas');
 select is(jsonb_array_length(api.list_agent_profile_changes(null, 50)), 0,
   'Otro usuario no ve la bitácora ajena');
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Intruso"}'::jsonb, 1)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Intruso"}'::jsonb || '{"revision":1}'::jsonb)$$,
   'P0001', 'Conflicto de ficha: recarga antes de guardar',
   'Otro usuario no escribe sobre la ficha ajena: la suya no existe');
 reset role;
 
 -- ───────────────────────────────────────────── anónimo y sesión revocada
 set local role anon;
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia"}'::jsonb, 0)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia"}'::jsonb || '{"revision":0}'::jsonb)$$,
   '42501', 'permission denied for schema api',
   'Anónimo no ejecuta el guardado');
 reset role;
@@ -182,7 +186,7 @@ reset role;
 delete from auth.sessions where id = 'a2000000-0000-4000-8000-000000000001';
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a1000000-0000-4000-8000-000000000001","role":"authenticated","session_id":"a2000000-0000-4000-8000-000000000001"}';
-select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Fantasma"}'::jsonb, 1)$$,
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Fantasma"}'::jsonb || '{"revision":1}'::jsonb)$$,
   '42501', null,
   'Una sesión revocada no escribe fichas');
 select throws_ok($$select api.list_agent_profile_changes(null, 50)$$,

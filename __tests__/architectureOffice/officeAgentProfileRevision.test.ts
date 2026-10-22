@@ -41,27 +41,26 @@ describe('la revisión de la ficha', () => {
     expect(normalizeAgentProfileOverride({ ...override(), revision: 1.5 }, 'u-rev')?.revision).toBeUndefined();
   });
 
-  it('una ficha nueva se guarda esperando la revisión cero y sin revisión en el documento', async () => {
-    callRpc.mockResolvedValueOnce({ revision: 1 });
+  it('una ficha nueva se guarda esperando la revisión cero', async () => {
+    callRpc.mockResolvedValueOnce(undefined);
     const result = await officeAgentProfileRepository.save(override());
-    const [name, args] = callRpc.mock.calls[0] as [string, { p_profile: Record<string, unknown>; p_expected_revision: number }];
+    const [name, args] = callRpc.mock.calls[0] as [string, { p_profile: Record<string, unknown> }];
     expect(name).toBe('save_agent_profile');
-    expect(args.p_expected_revision).toBe(0);
-    expect('revision' in args.p_profile).toBe(false);
+    expect(args.p_profile.revision).toBe(0);
     expect(result.success).toBe(true);
     expect(result.data?.revision).toBe(1);
   });
 
-  it('una edición envía la revisión que leyó y recibe la nueva', async () => {
-    callRpc.mockResolvedValueOnce({ revision: 3 });
+  it('una edición envía la revisión que leyó y confirma la siguiente', async () => {
+    callRpc.mockResolvedValueOnce(undefined);
     const result = await officeAgentProfileRepository.save(override({ revision: 2 }));
-    const args = callRpc.mock.calls[0][1] as { p_expected_revision: number };
-    expect(args.p_expected_revision).toBe(2);
+    const args = callRpc.mock.calls[0][1] as { p_profile: { revision: number } };
+    expect(args.p_profile.revision).toBe(2);
     expect(result.data?.revision).toBe(3);
   });
 
   it('un conflicto se informa como conflicto y no deja la versión rechazada en el espejo', async () => {
-    callRpc.mockResolvedValueOnce({ revision: 2 });
+    callRpc.mockResolvedValueOnce(undefined);
     await officeAgentProfileRepository.save(override({ revision: 1, alias: 'Confirmada' }));
 
     callRpc.mockRejectedValueOnce(conflictError());

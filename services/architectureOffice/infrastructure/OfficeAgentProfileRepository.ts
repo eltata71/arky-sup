@@ -188,16 +188,13 @@ export const officeAgentProfileRepository: OfficeAgentProfileRepository = {
       result = await executeRemoteWrite<OfficeAgentProfileOverride>(
         { operationName: 'saveAgentProfile', userId: override.userId },
         async () => {
-          // La revisión no es parte del documento: viaja como argumento. Sin
-          // revisión (ficha que nunca se guardó) el servidor crea; con una
-          // vieja, devuelve conflicto.
-          const { revision: expected, ...document } = override;
-          const saved = await callRpc<{ revision?: unknown }>('save_agent_profile', {
-            p_profile: document,
-            p_expected_revision: expected ?? 0,
-          });
-          const confirmed = typeof saved?.revision === 'number' ? saved.revision : undefined;
-          return confirmed === undefined ? override : { ...override, revision: confirmed };
+          // La revisión esperada viaja en el documento y el servidor no la
+          // guarda en él (`api.save_agent_profile`): una ficha que nunca se
+          // guardó espera 0 (crear); una vieja devuelve conflicto. La nueva es
+          // la esperada más uno, exactamente.
+          const expected = override.revision ?? 0;
+          await callRpc<void>('save_agent_profile', { p_profile: { ...override, revision: expected } });
+          return { ...override, revision: expected + 1 };
         },
       );
     } catch (error) {
