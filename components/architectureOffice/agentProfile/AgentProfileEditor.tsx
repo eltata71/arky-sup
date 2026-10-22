@@ -15,7 +15,7 @@ import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
  * el canal de corredores de esta compañía no puede hacerle olvidar ACORD.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, Input, cn } from '../../ui';
 import { Plus, Trash2 } from 'lucide-react';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
@@ -28,6 +28,8 @@ import {
 } from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import { useEffectiveAgentModel } from '../../../hooks/useEffectiveAgentModel';
+import type { DraftAgentProfileState } from '../../../services/architectureOffice/rehearsal';
+import { AgentRehearsalSection } from './AgentRehearsalSection';
 
 const TIER_OPTIONS: { value: ModelTier; label: string; hint: string }[] = [
   { value: 'quick', label: 'Rápido', hint: 'Respuestas cortas y mecánicas. El más barato.' },
@@ -136,8 +138,21 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
   const [enabled, setEnabled] = useState(override?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
   useEffect(() => { setError(null); }, [alias, avatar, modelTier, maxConcurrentTasks]);
+
+  const draft: DraftAgentProfileState = useMemo(() => ({
+    agentId: profile.agentId,
+    alias: alias.trim() || undefined,
+    role: role.trim() || undefined,
+    avatar: avatar.trim() || undefined,
+    instruction: instruction.trim() || undefined,
+    skills,
+    knowledge,
+    memory,
+    modelTier,
+    maxConcurrentTasks,
+    enabled,
+  }), [profile.agentId, alias, role, avatar, instruction, skills, knowledge, memory, modelTier, maxConcurrentTasks, enabled]);
 
   const submit = useCallback(async () => {
     setSaving(true);
@@ -242,6 +257,7 @@ export const AgentProfileEditor: React.FC<AgentProfileEditorProps> = ({
             <p className="text-2xs text-gray-500 dark:text-gray-400">
               {t("ui.se-anade-a-la-instruccion-del.5d1e07")}
             </p>
+            <AgentRehearsalSection agentId={profile.agentId} draft={draft} />
           </div>
 
           <EntryList
