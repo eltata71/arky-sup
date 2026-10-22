@@ -20,6 +20,18 @@
 -- Aditiva respecto a la aplicación en ejecución: la firma antigua
 -- `save_agent_profile(jsonb)` sigue resolviendo porque `p_expected_revision`
 -- tiene valor por defecto (0 = crear).
+--
+-- Reversión (como migración NUEVA, nunca editando ésta; casi nunca hace falta,
+-- porque revertir el código basta: es aditiva):
+--   1. drop function api.save_agent_profile(jsonb, bigint);
+--      y recrear save_agent_profile(jsonb) con la definición de 20260919043543.
+--   2. create or replace api.list_agent_profiles() con la definición de
+--      20260919043543 (sin `revision`) y delete_agent_profile(text) igual.
+--   3. drop function api.list_agent_profile_changes(text, integer);
+--      drop table api.agent_profile_changes;
+--      drop function private.agent_profile_problem(jsonb);
+--      drop function private.agent_profile_changes_immutable();
+--   4. alter table api.agent_profiles drop column revision;
 begin;
 
 -- ───────────────────────────────────────────────────────────── revisión
