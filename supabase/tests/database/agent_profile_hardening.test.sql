@@ -70,6 +70,16 @@ select throws_ok($$select api.save_agent_profile('{"agentId":"lucia"}'::jsonb, -
   '22023', 'La revisión esperada debe ser cero o positiva',
   'Una revisión negativa no es válida');
 
+-- Ruta heredada: la firma de un argumento guarda sin comprobar revisión, pero
+-- pasa por la misma validación y deja el mismo rastro.
+select lives_ok($$select api.save_agent_profile('{"agentId":"lucia","alias":"Lucía B","modelTier":"deep","maxConcurrentTasks":3,"definitionVersion":1}'::jsonb)$$,
+  'El código aún desplegado puede guardar con un argumento');
+select is(api.list_agent_profiles() -> 0 ->> 'revision', '3',
+  'La ruta heredada también avanza la revisión');
+select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","isAdmin":true}'::jsonb)$$,
+  '22023', 'La ficha contiene claves no admitidas: isAdmin',
+  'La ruta heredada no esquiva la lista blanca');
+
 -- Gobernanza (se conserva)
 select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","orchestrationRole":"consolidator"}'::jsonb, 2)$$,
   '22023', 'La ficha no puede alterar la gobernanza del agente',
@@ -115,21 +125,21 @@ select throws_ok($$select api.save_agent_profile(jsonb_build_object('agentId','l
 select throws_ok($$select api.save_agent_profile('{"agentId":"lucia","knowledge":"texto"}'::jsonb, 2)$$,
   '22023', 'knowledge debe ser una lista',
   'La lista de conocimiento no admite un texto suelto');
-select lives_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','alias',repeat('a',40),'skills',(select jsonb_agg('s' || n) from generate_series(1,12) n),'maxConcurrentTasks',5), 2)$$,
+select lives_ok($$select api.save_agent_profile(jsonb_build_object('agentId','lucia','alias',repeat('a',40),'skills',(select jsonb_agg('s' || n) from generate_series(1,12) n),'maxConcurrentTasks',5), 3)$$,
   'Los valores en el límite sí entran');
 
 -- Bitácora
-select is(jsonb_array_length(api.list_agent_profile_changes('lucia', 50)), 3,
+select is(jsonb_array_length(api.list_agent_profile_changes('lucia', 50)), 4,
   'Sólo los guardados válidos dejan rastro: ni conflictos ni rechazos');
-select is(api.list_agent_profile_changes('lucia', 50) -> 2 ->> 'action', 'save',
+select is(api.list_agent_profile_changes('lucia', 50) -> 3 ->> 'action', 'save',
   'La entrada más antigua es el primer guardado');
-select is(api.list_agent_profile_changes('lucia', 50) -> 2 ->> 'contractVersion', '1',
+select is(api.list_agent_profile_changes('lucia', 50) -> 3 ->> 'contractVersion', '1',
   'La bitácora guarda la versión del contrato contra la que se escribió');
-select is(api.list_agent_profile_changes('lucia', 50) -> 1 ->> 'revision', '2',
+select is(api.list_agent_profile_changes('lucia', 50) -> 2 ->> 'revision', '2',
   'La bitácora guarda la revisión resultante');
-select ok((api.list_agent_profile_changes('lucia', 50) -> 1 -> 'changedFields') ? 'alias',
+select ok((api.list_agent_profile_changes('lucia', 50) -> 2 -> 'changedFields') ? 'alias',
   'La bitácora lista los campos que cambiaron');
-select ok(not ((api.list_agent_profile_changes('lucia', 50) -> 1 -> 'changedFields') ? 'modelTier'),
+select ok(not ((api.list_agent_profile_changes('lucia', 50) -> 2 -> 'changedFields') ? 'modelTier'),
   'Un campo sin cambio no figura');
 select is(jsonb_array_length(api.list_agent_profile_changes(null, 1)), 1,
   'El límite de la lectura se respeta');

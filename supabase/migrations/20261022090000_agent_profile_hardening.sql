@@ -18,13 +18,15 @@
 --    `list_agent_profile_changes`.
 --
 -- Aditiva respecto a la aplicación en ejecución: la firma antigua
--- `save_agent_profile(jsonb)` sigue resolviendo porque `p_expected_revision`
--- tiene valor por defecto (0 = crear).
+-- `save_agent_profile(jsonb)` se conserva como envoltorio heredado (guarda sin
+-- comprobar revisión, como hasta hoy) para el código aún desplegado; el
+-- cliente nuevo usa la de dos argumentos. No se borra ninguna función.
 --
 -- Reversión (como migración NUEVA, nunca editando ésta; casi nunca hace falta,
 -- porque revertir el código basta: es aditiva):
 --   1. drop function api.save_agent_profile(jsonb, bigint);
---      y recrear save_agent_profile(jsonb) con la definición de 20260919043543.
+--      y recrear save_agent_profile(jsonb) con la definición de 20260919043543
+--      (hoy es un envoltorio de la de dos argumentos).
 --   2. create or replace api.list_agent_profiles() con la definición de
 --      20260919043543 (sin `revision`) y delete_agent_profile(text) igual.
 --   3. drop function api.list_agent_profile_changes(text, integer);
@@ -171,9 +173,7 @@ end;
 $$;
 
 -- ───────────────────────────────────────────────────────────── escritura
-drop function api.save_agent_profile(jsonb);
-
-create function api.save_agent_profile(p_profile jsonb, p_expected_revision bigint default 0)
+create function api.save_agent_profile(p_profile jsonb, p_expected_revision bigint)
 returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -192,7 +192,8 @@ begin
   if jsonb_typeof(p_profile) is distinct from 'object' or agent = '' then
     raise exception 'La ficha de agente requiere agentId' using errcode = '22023';
   end if;
-  if p_expected_revision is null or p_expected_revision < 0 then
+  -- `null` es la ruta heredada (la firma de un argumento): sin comprobación.
+  if p_expected_revision < 0 then
     raise exception 'La revisión esperada debe ser cero o positiva' using errcode = '22023';
   end if;
   -- La mitad de gobernanza de la ficha no es configurable desde una pantalla:
@@ -215,7 +216,7 @@ begin
   where owner_id = actor and agent_id = agent;
 
   if previous is null then
-    if p_expected_revision <> 0 then
+    if p_expected_revision is not null and p_expected_revision <> 0 then
       raise exception 'Conflicto de ficha: recarga antes de guardar' using errcode = 'P0001';
     end if;
     insert into api.agent_profiles (owner_id, agent_id, data)
@@ -228,7 +229,8 @@ begin
   else
     update api.agent_profiles
       set data = stored, revision = revision + 1, updated_at = now()
-    where owner_id = actor and agent_id = agent and revision = p_expected_revision
+    where owner_id = actor and agent_id = agent
+      and (p_expected_revision is null or revision = p_expected_revision)
     returning revision into saved_revision;
     if saved_revision is null then
       raise exception 'Conflicto de ficha: recarga antes de guardar' using errcode = 'P0001';
@@ -256,7 +258,19 @@ begin
 end;
 $$;
 comment on function api.save_agent_profile(jsonb, bigint) is
-  'Guarda la ficha del agente del auth.uid con validación completa, concurrencia optimista (0 = crear) y bitácora. Devuelve la revisión nueva.';
+  'Guarda la ficha del agente del auth.uid con validación completa, concurrencia optimista (0 = crear; null = ruta heredada, sin comprobación) y bitácora. Devuelve la revisión nueva.';
+
+-- Envoltorio heredado: el código aún desplegado llama con un argumento y
+-- espera `void`. Pasa por la misma validación y la misma bitácora.
+create or replace function api.save_agent_profile(p_profile jsonb)
+returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform api.save_agent_profile(p_profile, null);
+end;
+$$;
+comment on function api.save_agent_profile(jsonb) is
+  'Heredada: guarda sin comprobar revisión. Usar la de dos argumentos.';
 
 create or replace function api.delete_agent_profile(p_agent_id text)
 returns void
@@ -316,6 +330,7 @@ revoke all on function private.agent_profile_changes_immutable() from public, an
 revoke all on function api.save_agent_profile(jsonb, bigint) from public, anon, authenticated, service_role;
 revoke all on function api.list_agent_profile_changes(text, integer) from public, anon, authenticated, service_role;
 grant execute on function api.save_agent_profile(jsonb, bigint) to authenticated;
+-- La de un argumento conserva sus privilegios (create or replace no los toca).
 grant execute on function api.list_agent_profile_changes(text, integer) to authenticated;
 
 notify pgrst, 'reload schema';
