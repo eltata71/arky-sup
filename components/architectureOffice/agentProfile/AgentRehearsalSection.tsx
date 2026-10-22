@@ -12,8 +12,8 @@ import type {
   EffectiveInstructionPreview,
   RehearsalResult,
   RehearsalSampleQuestion,
-} from '../../../services/architectureOffice/application/draftAgentRehearsal';
-import { sampleQuestionsFor } from '../../../services/architectureOffice/application/draftAgentRehearsal';
+} from '../../../services/architectureOffice/rehearsal';
+import { sampleQuestionsFor } from '../../../services/architectureOffice/rehearsal';
 
 const labelClass = 'text-2xs font-semibold uppercase tracking-widest-2 text-gray-500 dark:text-gray-400';
 
@@ -26,7 +26,7 @@ const labelClass = 'text-2xs font-semibold uppercase tracking-widest-2 text-gray
  */
 let rehearsalService: Promise<DraftAgentRehearsalService> | null = null;
 const rehearsalServicePromise = (): Promise<DraftAgentRehearsalService> => {
-  rehearsalService ??= import('../../../services/architectureOffice/application/draftAgentRehearsal')
+  rehearsalService ??= import('../../../services/architectureOffice/rehearsal')
     .then((module) => module.createDraftAgentRehearsal());
   return rehearsalService;
 };

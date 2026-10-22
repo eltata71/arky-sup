@@ -28,7 +28,7 @@ import {
 } from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import { useEffectiveAgentModel } from '../../../hooks/useEffectiveAgentModel';
-import type { DraftAgentProfileState } from '../../../services/architectureOffice/application/draftAgentRehearsal';
+import type { DraftAgentProfileState } from '../../../services/architectureOffice/rehearsal';
 import { AgentRehearsalSection } from './AgentRehearsalSection';
 
 const TIER_OPTIONS: { value: ModelTier; label: string; hint: string }[] = [
