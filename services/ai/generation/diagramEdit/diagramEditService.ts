@@ -49,6 +49,7 @@ import { resolveEffectiveModel } from '../../../../lib/ai/modelCatalog';
 // rules check.
 import { applySemanticPatch } from '../../../diagram';
 import { aiGateway } from '../aiGateway';
+import { observeGeneration } from '../invocationMeasurement';
 import { defineSchema, parseStructured } from '../../structuredOutput';
 import type { Settings } from '../../../../types';
 
@@ -56,7 +57,7 @@ import type { Settings } from '../../../../types';
  *  edit and becomes a rewrite with extra steps. */
 export const MAX_PATCH_OPERATIONS = 12;
 
-export interface DiagramEditRequest extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
+export interface DiagramEditRequest extends Pick<ArtifactContextPorts, 'onContextCaptured' | 'invocation'> {
     ir: DiagramIR;
     /** What the architect asked for, in their own words. */
     instruction: string;
@@ -247,13 +248,13 @@ export const diagramEditService = {
 
         try {
             const model = resolveEffectiveModel('default', settings).id;
-            const response = await aiGateway.generateContent(
+            const response = await observeGeneration(request.invocation ?? {}, (correlation) => aiGateway.generateContent(
                 settings,
                 model,
                 buildPrompt(request),
                 { responseMimeType: 'application/json', responseSchema: PATCH_SCHEMA, temperature: 0.2 },
-                { signal: options.signal },
-            );
+                { signal: options.signal, ...correlation },
+            ));
 
             const parsed = parseStructured<unknown>(response.text);
             if (!parsed.ok) {

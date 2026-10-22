@@ -49,6 +49,22 @@ const request = 'Lucía, coordina la arquitectura AWS y el cumplimiento HIPAA';
 beforeAll(() => ensureFullSpanish());
 beforeEach(() => { transport.mode = 'valid'; transport.calls = []; vi.clearAllMocks(); });
 
+/**
+ * `invocationId` lo acuña la Oficina por invocación (H2) y cambia en cada
+ * ejecución; lo que debe coincidir entre dock y copiloto es qué invocaciones
+ * ocurren y cuáles comparten id, no el valor aleatorio. Se sustituye por su
+ * orden de aparición.
+ */
+const withStableInvocationIds = (events: CoordinationEvent[]): CoordinationEvent[] => {
+  const ordinal = new Map<string, string>();
+  return events.map((event) => {
+    const raw = (event as { invocationId?: string }).invocationId;
+    if (!raw) return event;
+    if (!ordinal.has(raw)) ordinal.set(raw, `invocation-${ordinal.size + 1}`);
+    return { ...event, invocationId: ordinal.get(raw) } as CoordinationEvent;
+  });
+};
+
 describe('16.3 · dock y copiloto usan la misma coordinación', () => {
   it('mismas fichas y now producen el mismo equipo, prompts, tiers y eventos', async () => {
     const scope = buildProjectScope(project, []);
@@ -65,7 +81,7 @@ describe('16.3 · dock y copiloto usan la misma coordinación', () => {
     transport.calls = [];
     const events: CoordinationEvent[] = [];
     const summary = await runCopilotOrchestration(request, project, settings, profiles, { now: () => 42, onEvent: (event) => events.push(event) });
-    expect(events).toEqual(dock.events);
+    expect(withStableInvocationIds(events)).toEqual(withStableInvocationIds(dock.events));
     expect(transport.calls.map((call) => call.slice(0, 7))).toEqual(dockCalls);
     expect(transport.calls.map((call) => call[4])).not.toContain('carmen');
     expect(vi.mocked(chatWithProjectMeasured)).toHaveBeenCalled();

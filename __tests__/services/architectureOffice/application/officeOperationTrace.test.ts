@@ -63,4 +63,26 @@ describe('officeOperationTrace', () => {
     expect(exported).toContain('[credencial omitida]');
     expect(exported).toContain('office.review@v1#3f2a9c1e');
   });
+
+  it('produce el mismo árbol ante eventos equivalentes en otro orden (forma neutral)', () => {
+    const base = outcome();
+    base.team = [
+      { personaId: 'elena', role: 'specialist', rationale: 'dominio' },
+      { personaId: 'lucia', role: 'coordinator', rationale: 'encuadra' },
+    ] as typeof base.team;
+    base.events = [
+      { id: 'e2', kind: 'agent-reported', from: 'elena', to: 'alejandro', summary: 'Entrega', elapsedMs: 20 },
+      { id: 'e1', kind: 'agent-started', from: 'elena', to: 'elena', summary: 'Empieza', elapsedMs: 10 },
+      { id: 'e3', kind: 'request-received', from: null, to: 'lucia', summary: 'Solicitud', elapsedMs: 0 },
+    ] as typeof base.events;
+    // Los ids son la identidad de un evento; el orden de llegada no puede
+    // cambiar el árbol que un lector reconstruye. Los ids de nodo se derivan
+    // del evento, no de su posición.
+    const shuffled: CoordinationOutcome = {
+      ...base,
+      events: [...base.events].reverse(),
+      team: [...base.team].reverse(),
+    } as CoordinationOutcome;
+    expect(describeOperation(shuffled)).toEqual(describeOperation(base));
+  });
 });

@@ -3,6 +3,7 @@ import type { PersistenceResult, PersistenceStatus } from '../../persistence';
 import type { AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
 
 export interface OfficeProduceOutcome {
+  measurements?: AgentInvocationMeasurement[];
   status: 'success' | 'failed';
   artifactId?: string;
   versionGroupId?: string;

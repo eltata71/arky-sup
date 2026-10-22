@@ -35,7 +35,7 @@ import type { DiagramAudience, DiagramIR } from '../../../../lib/diagram';
 import { analyzeDiagramQuality, checkRequestFidelity, detectArchitecturalViolations } from '../../../diagram';
 import { diagramEditService } from '../diagramEdit/diagramEditService';
 
-export interface SelfCorrectionInput extends Pick<ArtifactContextPorts, 'onContextCaptured'> {
+export interface SelfCorrectionInput extends Pick<ArtifactContextPorts, 'onContextCaptured' | 'invocation'> {
     artifactType: ArtifactType;
     audience: DiagramAudience;
     request?: {
@@ -95,6 +95,7 @@ export async function correctDiagramOnce(
             ...findings.map((finding) => `- ${finding}`),
         ].join('\n'),
         context: input.context,
+        invocation: input.invocation,
         onContextCaptured: input.onContextCaptured,
     }, settings);
     if (!proposal.ok || !proposal.preview) {

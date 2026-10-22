@@ -2,7 +2,7 @@ import type { AIJsonSchema } from '../../ai';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import type { AgentHandoffKind } from '../domain/agentDefinition';
 import type { HandoffRejection } from '../domain/agentHandoff';
-import type { AgentInvocationResult, AgentUsageSummary } from '../../../lib/ai/agentUsage';
+import type { AgentInvocationMeasurement, AgentInvocationResult, AgentUsageSummary } from '../../../lib/ai/agentUsage';
 import type { ConsolidationReview, OfficeWorkstreamResult } from '../domain/officeConsolidationReview';
 import type { CoordinationBrief, Recommendation, SpecialistAnalysis } from '../domain/orchestrationContracts';
 
@@ -40,7 +40,22 @@ export interface RejectedHandoff {
 }
 
 
+export interface OfficeInvocationRecord {
+  invocationId: string;
+  personaId: OfficeAgentId;
+  role: 'coordinator' | 'specialist' | 'consolidator' | 'producer' | 'reviewer';
+  promptId: string;
+  promptStamp: string;
+  handoffId?: string;
+  workstreamId?: string;
+  attempt: 'primary' | 'refinement';
+  status: 'completed' | 'failed';
+  measurement: AgentInvocationMeasurement;
+  startedAtMs: number;
+}
+
 export interface OfficeOrchestrationResult {
+  invocations?: OfficeInvocationRecord[];
   operationId: string;
   status: 'completed' | 'partial' | 'failed';
   coordination: string;
@@ -99,10 +114,15 @@ export interface OfficeOrchestrationOptions {
 }
 
 export interface OfficeAgentCallOptions {
+  operationId?: string;
+  invocationId?: string;
+  handoffId?: string;
   signal?: AbortSignal;
   timeoutMs?: number;
   /** 18.0: la forma JSON que se le pide al modelo en este traspaso. */
   responseSchema?: AIJsonSchema;
+  /** Temperatura impuesta por quien llama; ausente = la del usuario (18.1). */
+  temperature?: number;
 }
 
 export type OfficeAgentInvoker = (

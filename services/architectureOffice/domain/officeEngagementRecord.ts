@@ -82,6 +82,12 @@ const asMeasurement = (value: unknown): AgentInvocationMeasurement | null => {
       ? usage[name] as number : undefined;
   return {
     aiCalls: asPositiveInt(raw.aiCalls, 1),
+    runId: typeof raw.runId === 'string' ? raw.runId : undefined,
+    invocationId: typeof raw.invocationId === 'string' ? raw.invocationId : undefined,
+    promptStamp: typeof raw.promptStamp === 'string' ? raw.promptStamp : undefined,
+    status: raw.status === 'completed' || raw.status === 'failed' ? raw.status : undefined,
+    startedAtMs: typeof raw.startedAtMs === 'number' && Number.isFinite(raw.startedAtMs) ? raw.startedAtMs : undefined,
+    toolCalls: Array.isArray(raw.toolCalls) ? asStringArray(raw.toolCalls) : undefined,
     model: typeof raw.model === 'string' ? raw.model : null,
     usage: usage ? {
       promptTokens: token('promptTokens'),

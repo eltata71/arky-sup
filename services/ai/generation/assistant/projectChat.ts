@@ -25,6 +25,8 @@ export interface ProjectChatTurn {
 }
 
 export interface ProjectChatReplyRequest {
+    operationId?: string;
+    invocationId?: string;
     /** The project instruction, already framed by whoever answers. */
     systemInstruction: string;
     message: string;
@@ -66,7 +68,8 @@ export async function generateProjectChatReplyMeasured(request: ProjectChatReply
             temperature: request.temperature ?? settings.aiConfig?.temperature ?? 0.7,
             ...(request.responseSchema ? { responseSchema: request.responseSchema, responseMimeType: 'application/json' } : {}),
         },
-        { maxRetries: 1, signal: request.signal, timeoutMs: request.timeoutMs },
+        { maxRetries: 1, signal: request.signal, timeoutMs: request.timeoutMs,
+          operationId: request.operationId, requestId: request.invocationId },
     );
     const reported = result.usage?.totalTokens !== undefined
         || result.usage?.promptTokens !== undefined
@@ -77,11 +80,13 @@ export async function generateProjectChatReplyMeasured(request: ProjectChatReply
         : reported;
     return {
         text: result.text,
+        runId: request.operationId, invocationId: request.invocationId, status: 'completed', startedAtMs: startedAt,
         aiCalls: result.aiCalls ?? 1,
         usage,
         model: result.model ?? null,
         latencyMs: result.latencyMs ?? Date.now() - startedAt,
         traceId: result.traceId ?? null,
+        toolCalls: result.functionCalls?.flatMap((call) => call.name ? [call.name] : []),
         estimatedCostUsd: estimateAgentCostUsd(result.model ?? null, usage),
     };
 }

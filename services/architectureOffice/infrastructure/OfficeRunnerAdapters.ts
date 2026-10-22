@@ -24,8 +24,8 @@ import {
   executeAgentAction,
   type AgentIntent,
 } from '../../agent';
-import { parseStructured, type AIJsonSchema } from '../../ai/structuredOutput';
-import { newPrefixedId } from '../../../lib/ids';
+import { parseStructured } from '../../ai/structuredOutput';
+import { newTraceId } from '../../../lib/traceId';
 import { createConsolidatePort, measurementOf } from './officeConsolidationPort';
 import { REVIEW_CONTENT_LIMIT, buildReviewPrompt, gatherDeterministicEvidence } from './officeReviewPrompt';
 import { REVIEW_CRITIQUE_SCHEMA } from '../application/orchestrationSchemas';
@@ -43,6 +43,7 @@ import type {
 } from '../application/OfficeEngagementRunner';
 import type { PersistenceResult } from '../../persistence';
 import type { AgentInvocationResult, AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
+import type { OfficeAgentCallOptions } from '../application/officeOrchestrationTypes';
 import type { AgentArtifactStoreLike } from '../../agent';
 import type {
   OfficeEngagement,
@@ -61,19 +62,7 @@ export type OfficePersonaInvoker = (
   project: Project,
   /** La ficha resuelta del agente (`getProfile`), para su prompt de sistema. */
   profile?: OfficeAgentProfile,
-  /**
-   * Opciones de la llamada: `signal`, `timeoutMs`, `responseSchema` y
-   * `temperature`. El esquema y la temperatura viajan aquí, no dentro del
-   * prompt: el revisor recibe la forma declarada y la temperatura del
-   * contrato, y ninguna ficha puede alterarlas (plan de agentes, 18.1).
-   */
-  callOptions?: {
-    signal?: AbortSignal;
-    timeoutMs?: number;
-    responseSchema?: AIJsonSchema;
-    /** Temperatura impuesta por quien llama; ausente = la del usuario (18.1). */
-    temperature?: number;
-  },
+  callOptions?: OfficeAgentCallOptions,
 ) => Promise<string | AgentInvocationResult>;
 
 
@@ -200,6 +189,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     const anchor = createOfficeAnchorArtifact(task);
     const intent = buildCreateIntent(task, engagement);
     const promptStamp = stampPrompt(agentPromptRef('office.production'), intent.userInstruction);
+    const measurements: AgentInvocationMeasurement[] = [];
     const plan = planAgentAction({
       intent,
       artifact: anchor,
@@ -207,6 +197,7 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     });
 
     const result = await executeAgentAction({
+      invocation: { operationId: task.runId, onMeasurement: (measurement) => measurements.push({ ...measurement, promptStamp }) },
       plan,
       artifact: anchor,
       project,
@@ -227,11 +218,12 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     if (result.status !== 'success' || !result.newArtifactId) {
       return {
         status: 'failed',
-        aiCalls: result.aiCalls ?? 1,
+        aiCalls: measurements.length ? measurements.reduce((sum, item) => sum + (item.aiCalls ?? 1), 0) : result.aiCalls ?? 1,
         // Reported on failure too: a run that produced nothing is exactly when
         // the trace is worth having.
         traceId: result.traceId,
         promptStamp,
+        measurements,
         message: result.messages[0] ?? result.errors[0] ?? 'La generación no produjo un artefacto utilizable.',
       };
     }
@@ -240,12 +232,13 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       status: 'success',
       artifactId: result.newArtifactId,
       versionGroupId: result.newArtifactVersionId ?? result.newArtifactId,
-      aiCalls: result.aiCalls ?? 1,
+      aiCalls: measurements.length ? measurements.reduce((sum, item) => sum + (item.aiCalls ?? 1), 0) : result.aiCalls ?? 1,
       // The thread back to `projects/{id}/agent_actions/{traceId}`: the prompt,
       // the phases, the versions and the rollback of the generation that made
       // this deliverable. It was being discarded here.
       traceId: result.traceId,
       promptStamp,
+      measurements,
     };
   };
 
@@ -269,9 +262,8 @@ export {
 export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
   async (task: OfficeTask, engagement: OfficeEngagement): Promise<OfficeTaskReview> => {
     const decidedAt = new Date().toISOString();
-    // Minted by the Office: the review path reaches the model through the legacy
-    // chat façade, which returns no trace of its own. See `OfficeTask.traceIds`.
-    const traceId = newPrefixedId('office-review');
+    // Sent to the gateway; legacy string-only ports retain the local id.
+    let traceId = newTraceId('office-review');
     const project = deps.getProject();
     const producer = engagement.tasks.find((candidate) => candidate.id === task.reviewsTaskId);
     const artifact = project && producer?.producedArtifactId
@@ -307,9 +299,14 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         reviewPrompt,
         project!,
         deps.getProfile?.(task.assigneeId),
-        // Esquema y temperatura del rol de revisión: la forma del veredicto no
-        // depende del ánimo del modelo, ni su Temperatura de su ficha.
-        { responseSchema: REVIEW_CRITIQUE_SCHEMA, temperature: REVIEWER_TEMPERATURE },
+        {
+          operationId: task.runId,
+          invocationId: traceId,
+          // Esquema y temperatura del rol de revisión: la forma del veredicto no
+          // depende del ánimo del modelo ni de la ficha (18.1).
+          responseSchema: REVIEW_CRITIQUE_SCHEMA,
+          temperature: REVIEWER_TEMPERATURE,
+        },
       );
       const parsed = parseStructured<unknown>(typeof raw === 'string' ? raw : raw.text);
       if (parsed.ok) {
@@ -320,6 +317,7 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         critiqueNotes.push('La respuesta no era JSON legible.');
       }
       measurement = measurementOf(raw);
+      traceId = measurement?.traceId ?? traceId;
     } catch {
       // A reviewer that cannot be reached must not silently approve. The
       // deterministic evidence below still decides the verdict.

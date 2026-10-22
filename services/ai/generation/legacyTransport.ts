@@ -32,6 +32,7 @@ import { assertDirectCallAllowed, assertDirectCallAllowedFor } from '../aiProxyE
 import { AIRetryPolicy } from '../retry/AIRetryPolicy';
 import { AIServiceError, classifyAIError, isTransientGeminiError } from '../errors';
 import { buildCanonicalRequest, routeLegacyRequest, withGeminiHealth } from './legacyGeminiBridge';
+import { observeGeneration } from './invocationMeasurement';
 import { newTraceId } from '../../../lib/traceId';
 import type { AgentInvocationUsage } from '../../../lib/ai/agentUsage';
 
@@ -56,6 +57,9 @@ export const MAX_BACKOFF_MS = 16000;
 
 /** Las opciones de una llamada: tope de tiempo, candidatos, reintentos y cancelación. */
 export interface LegacyGenerationOptions {
+    onMeasurement?: (measurement: import('../../../lib/ai/agentUsage').AgentInvocationMeasurement) => void;
+    operationId?: string;
+    requestId?: string;
     timeoutMs?: number;
     maxCandidates?: number;
     maxRetries?: number;
@@ -208,7 +212,7 @@ export class LegacyGenerationTransport {
         preferredModel: string,
         contents: unknown,
         config: LegacyGenerationConfig,
-        options: { signal?: AbortSignal }
+        options: { signal?: AbortSignal; requestId?: string }
     ): Promise<LegacyGenerationResult | null> {
         if (!isAiProxyConfigured()) {
             assertDirectCallAllowedFor(settings, 'not-configured');
@@ -229,6 +233,7 @@ export class LegacyGenerationTransport {
         }
 
         const outcome = await callAiProxyDetailed({
+            traceId: options.requestId,
             provider: proxyProvider,
             model: preferredModel,
             contents,
@@ -256,6 +261,11 @@ export class LegacyGenerationTransport {
         config: LegacyGenerationConfig,
         options: LegacyGenerationOptions = {}
     ): Promise<string> {
+        if (options.onMeasurement) {
+            return (await observeGeneration(options, (correlation) => this.generateContentWithFallback(
+                settings, preferredModel, contents, config, { ...options, ...correlation },
+            ))).text;
+        }
         const { onPartial, ...callOptions } = options;
         if (onPartial) {
             const streamed = await this.tryStreamText(settings, preferredModel, contents, config, callOptions, onPartial);
@@ -327,20 +337,13 @@ export class LegacyGenerationTransport {
         }, options);
     }
 
-    /**
-     * Public entry point for arbitrary text/chat generation with the full
-     * model-fallback pipeline. Use this from any assistant (chat, guided
-     * creation, LMS, training) instead of calling `ai.models.generateContent`
-     * directly — that bypass is what caused guided-creation to surface a
-     * single 429 as a hard error while artifact generation silently fell
-     * back to Flash.
-     */
+    /** Buffered generation; correlated direct calls use the canonical executor and AITrace. */
     public async generateContentWithFallback(
         settings: Settings,
         preferredModel: string,
         contents: unknown,
         config: LegacyGenerationConfig = {},
-        options: { timeoutMs?: number; maxCandidates?: number; maxRetries?: number; signal?: AbortSignal } = {}
+        options: LegacyGenerationOptions = {}
     ): Promise<LegacyGenerationResult> {
         const startedAt = Date.now();
         // Synchronous guard: with no proxy, not even an extra microtask.
@@ -353,16 +356,13 @@ export class LegacyGenerationTransport {
 
         const contentRequest = buildCanonicalRequest(preferredModel, contents, config, options, 'generation');
         const contentRoute = routeLegacyRequest(settings, contentRequest);
-        if (contentRoute.plan.primary.provider !== 'gemini') {
+        if (contentRoute.plan.primary.provider !== 'gemini' || options.operationId) {
             const response = await aiRequestExecutor.execute(contentRoute.provider, contentRequest, undefined, {
                 settings,
                 routePlan: contentRoute.plan,
                 resolveProvider: contentRoute.resolveProvider,
             });
-            // The canonical response carries `toolCalls`; this façade's own
-            // result shape still speaks `{ name, args }` because its callers
-            // do. The mapping is one line and it is here, at the boundary,
-            // rather than pushed into the contract as a legacy alias.
+            // Tool wire mapping belongs to this boundary, not to the neutral contract.
             return {
                 text: response.text || '',
                 aiCalls: response.trace.retryCount + 1,

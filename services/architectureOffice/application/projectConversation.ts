@@ -16,7 +16,7 @@ import type { Settings } from '../../../types';
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
 import type { Project } from '../../architectureProjects';
 import { assistantService, buildProjectChatInstruction } from '../../ai/lazy';
-import type { ProjectChatTurn, AIJsonSchema } from '../../ai';
+import type { ProjectChatTurn } from '../../ai';
 import {
   OFFICE_AGENT_PERSONAS,
   resolveOfficeAgentMention,
@@ -26,6 +26,7 @@ import { buildOfficePersonaInstruction } from '../domain/officePersonaBriefing';
 import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
 import { getOfficeArchitectureContext } from '../domain/officeArchitectureKnowledge';
 import type { AgentInvocationResult } from '../../../lib/ai/agentUsage';
+import type { OfficeAgentCallOptions } from './officeOrchestrationTypes';
 
 /** The project instruction, framed by the persona and the Office's standards. */
 export async function composeProjectChatInstruction(
@@ -77,13 +78,7 @@ export async function chatWithProjectMeasured(
   personaOverride?: OfficeAgentId,
   modelTier: ModelTier = 'default',
   profile?: OfficeAgentProfile,
-  callOptions?: {
-    signal?: AbortSignal;
-    timeoutMs?: number;
-    responseSchema?: AIJsonSchema;
-    /** Temperatura impuesta por quien llama; ausente = la del usuario (18.1). */
-    temperature?: number;
-  },
+  callOptions?: OfficeAgentCallOptions,
 ): Promise<AgentInvocationResult> {
   return assistantService.generateProjectChatReplyMeasured({
     systemInstruction: await composeProjectChatInstruction(project, message, settings, personaOverride, profile),
@@ -94,6 +89,8 @@ export async function chatWithProjectMeasured(
     signal: callOptions?.signal,
     timeoutMs: callOptions?.timeoutMs,
     responseSchema: callOptions?.responseSchema,
+    operationId: callOptions?.operationId,
+    invocationId: callOptions?.invocationId,
     temperature: callOptions?.temperature,
   });
 }

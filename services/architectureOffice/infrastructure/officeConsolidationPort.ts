@@ -3,7 +3,7 @@
  * una sola vez (plan de agentes, 18.2).
  */
 import type { AgentInvocationResult, AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
-import { newPrefixedId } from '../../../lib/ids';
+import { newTraceId } from '../../../lib/traceId';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
@@ -14,6 +14,8 @@ import type { OfficeRunnerAdapterDeps } from './OfficeRunnerAdapters';
 
 export const measurementOf = (result: string | AgentInvocationResult): AgentInvocationMeasurement | undefined =>
   typeof result === 'string' ? undefined : {
+    runId: result.runId, invocationId: result.invocationId, status: result.status, startedAtMs: result.startedAtMs,
+    toolCalls: result.toolCalls,
     aiCalls: result.aiCalls,
     model: result.model,
     usage: result.usage,
@@ -68,11 +70,9 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
     if (!project) {
       return { status: 'failed', summary: 'El proyecto del entregable ya no está disponible.' };
     }
-    // Minted here, not returned by the model call: this path reaches the model
-    // through the legacy chat façade, which carries no trace id. It identifies
-    // the invocation inside its run — it does not join to an agent action, and
-    // `OfficeTask.traceIds` says so.
-    const traceId = newPrefixedId('office-consolidate');
+    // Sent to the gateway before invocation. Prefer its returned canonical id;
+    // legacy string-only ports retain this local correlation id.
+    let traceId = newTraceId('office-consolidate');
     const consolidationPrompt = buildConsolidationPrompt(engagement);
     const promptStamp = stampPrompt(agentPromptRef('office.engagement-consolidation'), consolidationPrompt);
     const textOf = (response: string | AgentInvocationResult) => (typeof response === 'string' ? response : response.text).trim();
@@ -83,7 +83,9 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
         consolidationPrompt,
         project,
         deps.getProfile?.(task.assigneeId),
+        { operationId: task.runId, invocationId: traceId },
       );
+      traceId = typeof response === 'string' ? traceId : response.traceId ?? traceId;
       let summary = textOf(response) || 'Consolidación sin contenido.';
       let aiCalls = callsOf(response);
       // Mismo evaluador y mismo tope que la coordinación del dock (18.2): una
@@ -94,13 +96,13 @@ export const createConsolidatePort = (deps: OfficeRunnerAdapterDeps) =>
       if (!review.ok) {
         const refinementPrompt = buildConsolidationRefinementPrompt(summary, review);
         const refinementStamp = stampPrompt(agentPromptRef('office.consolidation-refinement'), refinementPrompt);
-        const refinementTraceId = newPrefixedId('office-consolidate');
+        const refinementTraceId = newTraceId('office-consolidate');
         aiCalls += 1;
         try {
-          const corrected = await deps.invokePersona(task.assigneeId, refinementPrompt, project, deps.getProfile?.(task.assigneeId));
+          const corrected = await deps.invokePersona(task.assigneeId, refinementPrompt, project, deps.getProfile?.(task.assigneeId), { operationId: task.runId, invocationId: refinementTraceId });
           const correctedText = textOf(corrected);
           aiCalls += callsOf(corrected) - 1;
-          refinement = { traceId: refinementTraceId, promptStamp: refinementStamp, measurement: measurementOf(corrected) };
+          refinement = { traceId: typeof corrected === 'string' ? refinementTraceId : corrected.traceId ?? refinementTraceId, promptStamp: refinementStamp, measurement: measurementOf(corrected) };
           if (correctedText) {
             summary = correctedText;
             review = { ...evaluateConsolidation(summary, contributions) };

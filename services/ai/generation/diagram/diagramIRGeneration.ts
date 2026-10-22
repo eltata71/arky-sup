@@ -24,6 +24,7 @@ export async function generateDiagramIR(
     project: Project,
     settings: Settings,
     opts: {
+        invocation?: ArtifactContextPorts['invocation'];
         onContextCaptured?: ArtifactContextPorts['onContextCaptured'];
         audience?: DiagramAudience;
         previousIR?: DiagramIR;
@@ -57,7 +58,7 @@ export async function generateDiagramIR(
     const modelName = resolveModelForSettings('default', settings).id;
 
     try {
-        const text = await legacyTransport.generateTextWithFallback(settings, modelName, prompt, config);
+        const text = await legacyTransport.generateTextWithFallback(settings, modelName, prompt, config, opts.invocation);
         const read = readModelDiagramIR(text);
         if (read.declined !== undefined) {
             // The model said the input is not enough. That is an answer, not a
@@ -99,7 +100,7 @@ export async function generateDiagramIRWithSelfHealing(
     artifact: Artifact,
     project: Project,
     settings: Settings,
-    opts: Pick<ArtifactContextPorts, 'onContextCaptured'> & { audience?: DiagramAudience; previousIR?: DiagramIR; skipCorrective?: boolean; brief?: string } = {},
+    opts: Pick<ArtifactContextPorts, 'onContextCaptured' | 'invocation'> & { audience?: DiagramAudience; previousIR?: DiagramIR; skipCorrective?: boolean; brief?: string } = {},
 ): Promise<{
     ir: DiagramIR;
     attempts: number;
@@ -119,6 +120,7 @@ export async function generateDiagramIRWithSelfHealing(
     if (!opts.skipCorrective) {
         let declineReason: string | undefined;
         const first = await generateDiagramIR(artifact, project, settings, {
+            invocation: opts.invocation,
             audience, previousIR: opts.previousIR, brief: opts.brief, onContextCaptured: opts.onContextCaptured, onDecline: (reason) => { declineReason = reason; }, onDropped,
         });
         if (first && first.nodes.length > 0) {
@@ -150,7 +152,7 @@ export async function generateDiagramIRWithSelfHealing(
     const lastFailureReason = opts.skipCorrective
         ? (artifact.lastDiagramError?.reason ?? 'empty-ir')
         : 'empty-ir';
-    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason, opts.brief, onDropped, opts.onContextCaptured);
+    const correctiveIR = await generateDiagramIRCorrective(artifact, project, settings, audience, lastFailureReason, opts.brief, onDropped, opts.onContextCaptured, opts.invocation);
     if (correctiveIR && correctiveIR.nodes.length > 0) {
         warnings.push('[diagram-retry] attempt 2 (corrective) succeeded');
         return { ir: correctiveIR, attempts: opts.skipCorrective ? 1 : 2, fallback: 'none', warnings, lastReason: lastFailureReason, dropped };
@@ -183,6 +185,7 @@ async function generateDiagramIRCorrective(
     brief?: string,
     onDropped?: (dropped: string[]) => void,
     onContextCaptured?: ArtifactContextPorts['onContextCaptured'],
+    invocation?: ArtifactContextPorts['invocation'],
 ): Promise<DiagramIR | null> {
     const dialect = buildDialectInstruction(artifact.type);
     const responseSchema = buildDiagramIRSchema();
@@ -203,7 +206,7 @@ async function generateDiagramIRCorrective(
     });
     const modelName = resolveModelForSettings('default', settings).id;
     try {
-        const text = await legacyTransport.generateTextWithFallback(settings, modelName, prompt, config);
+        const text = await legacyTransport.generateTextWithFallback(settings, modelName, prompt, config, invocation);
         const read = readModelDiagramIR(text);
         if (read.dropped.length) onDropped?.(read.dropped);
         if (!read.ir) return null;
