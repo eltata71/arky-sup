@@ -345,8 +345,6 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             // La ficha del agente: su voz y su nivel de modelo, no los de fábrica.
             profile?.modelTier,
             profile,
-            // Esquema y temperatura de la llamada (el revisor recibe los suyos,
-            // definidos en el contrato; la ficha no los altera).
             callOptions,
           );
         },

@@ -29,11 +29,11 @@ const reviewPromptSource = readFileSync(
 
 describe('review logic changes (task 18.1)', () => {
   it('invokes the reviewer with the ReviewCritique schema', () => {
-    expect(REVIEW_CRITIQUE_SCHEMA.properties.verdict).toEqual({
+    expect(REVIEW_CRITIQUE_SCHEMA.properties?.verdict).toEqual({
       type: 'string',
       enum: ['approved', 'changes-requested', 'rejected'],
     });
-    expect(REVIEW_CRITIQUE_SCHEMA.properties.findings).toBeDefined();
+    expect(REVIEW_CRITIQUE_SCHEMA.properties?.findings).toBeDefined();
   });
 
   it('uses the declared reviewer temperature in the contract', () => {

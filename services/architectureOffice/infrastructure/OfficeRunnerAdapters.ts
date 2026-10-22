@@ -46,7 +46,6 @@ import type { AgentInvocationResult, AgentInvocationMeasurement } from '../../..
 import type { AgentArtifactStoreLike } from '../../agent';
 import type {
   OfficeEngagement,
-  OfficeFindingSeverity,
   OfficeReviewFinding,
   OfficeTask,
   OfficeTaskReview,
