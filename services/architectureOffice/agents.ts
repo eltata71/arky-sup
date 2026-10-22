@@ -9,6 +9,7 @@
  * Nothing here calls a model. A module that does, does not belong behind this door.
  */
 export * from './domain/officeAgentProfile';
+export * from './domain/agentProfileDrift';
 export * from './infrastructure/OfficeAgentProfileRepository';
 export * from './domain/officeArchitectureKnowledge';
 export { DEFAULT_MAX_SPECIALISTS } from './domain/agentHandoff';

@@ -2621,6 +2621,15 @@ autoran sin declarar `generate`. El vocabulario tiene tres verbos de autoría.
 Detalle y lo que deliberadamente **no** se construyó —tool policy, context
 policy, memory policy con scopes— en `ADR-004`.
 
+**Una personalización se escribe contra una versión del contrato** (16.5). El
+override guarda `definitionVersion` al crearse (`createAgentProfileOverride`) y
+`describeContractDrift` (`domain/agentProfileDrift.ts`, pura y sin texto) dice si
+está al día, si el producto cambió el contrato después (*derivada*) o si es
+anterior al registro de la versión (*sin registrar*, que nunca se declara
+vigente). `describeProfileDifferences` da fábrica / organización / efectivo campo
+a campo, y sólo lo que la organización tocó y cambia el resultado. La hoja del
+agente lo pinta con la bitácora de 16.4 en `AgentContractSection`.
+
 The split that makes all of this safe is in
 `services/architectureOffice/officeAgentProfile.ts`:
 

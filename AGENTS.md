@@ -425,6 +425,9 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    `mirror-source.yml`; aplica la subida sobre `main` actual.
    También vetadas (2026-10-12): `tailwindcss` 4, `marked` 18 y `@types/node` 26;
    ver CLAUDE.md → *Dependabot #220–#224*.
+   Una personalización guarda la versión del contrato contra la que se escribió y la
+   hoja del agente avisa de la deriva y muestra las diferencias (16.5, CLAUDE.md →
+   *The agents have a card*).
    La ficha del agente se valida y se registra en el servidor (16.4): `save_agent_profile`
    exige lista blanca, límites y `expected_revision`, y escribe `api.agent_profile_changes`
    (append-only); ver CLAUDE.md → *Data Layer*.

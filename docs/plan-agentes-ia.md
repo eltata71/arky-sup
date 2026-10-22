@@ -885,7 +885,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 16.8 Las raíces del router coinciden | P1 · S | Hecha | #239 · `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
 | 16.3 Una sola orquestación | P1 · M | En curso | PR #255 · el atajo del copiloto delega en `coordinateRequest`; resumen de equipo, rechazos y evaluador; pendiente de gates, revisión independiente y aprobación humana |
 | 16.4 Ficha en el servidor (migración) | P1 · M | En curso | migración `20261022090000_agent_profile_hardening` y contrato pgTAP escritos; pendiente: CI de la base y aprobación para aplicarla a ArkyDB-US antes de fusionar |
-| 16.5 Deriva del contrato | P2 · M | Pendiente | |
+| 16.5 Deriva del contrato | P2 · M | En curso | `definitionVersion` al guardar, `describeContractDrift` y `describeProfileDifferences` (dominio), `AgentContractSection` en la hoja con la bitácora de 16.4; apilada sobre #269 |
 | 16.6 Ver y ensayar el agente | P2 · M | Pendiente | |
 | 16.7 Agentes de la organización | P3 · L | Descartada | D-A1 = A (fichas por usuario), 2026-10-13 |
 | 17.0 Vallado completo | P0 · M | Hecha | #245 · `promptsConVallado` 28,6 → 100 %: solicitud de coordinación, brief del encargo, contenido revisado (con aviso de recorte), registro en contexto, mensaje del clasificador y capas de memoria del agente. La memoria base y la instrucción de la ficha quedan fuera de la valla a propósito: son configuración a seguir |

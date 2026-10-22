@@ -92,6 +92,7 @@ export const normalizeAgentProfileOverride = (
     agentId,
     userId,
     schemaVersion: typeof value.schemaVersion === 'number' ? value.schemaVersion : OFFICE_AGENT_PROFILE_SCHEMA_VERSION,
+    definitionVersion: typeof value.definitionVersion === 'number' && Number.isInteger(value.definitionVersion) && value.definitionVersion >= 1 ? value.definitionVersion : undefined,
     revision: typeof value.revision === 'number' && Number.isInteger(value.revision) && value.revision > 0 ? value.revision : undefined,
     alias: typeof value.alias === 'string' && value.alias.trim() ? value.alias.trim() : undefined,
     role: typeof value.role === 'string' && value.role.trim() ? value.role.trim() : undefined,
