@@ -883,7 +883,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 16.1 Ficha en los diez caminos | P0 · L | Hecha | corte 1 (#242) hecho: ficha en los 10 caminos (`agentProfileParity.test.ts`), menciones a desactivados las responde Arky, el copiloto no los convoca. Corte 2 (#243) hecho: el charter del encargo no asigna trabajo a desactivados (productor ni revisor; el refinamiento que los nombre se descarta; lo no asignable va a `outOfScope`), con caso en el banco. Corte 3 (#244) hecho: el alias configurado se ve en avatares, chips, tablero, charter, panel de carga y bitácora (`useAgentDisplayName`, `coordinateRequest({ agentName })`); las fichas se leen una vez por usuario y se invalidan al guardar. El brief de `EngagementRoom` para el modelo conserva el alias de fábrica, que es el que resuelve menciones |
 | 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
 | 16.8 Las raíces del router coinciden | P1 · S | Hecha | #239 · `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
-| 16.3 Una sola orquestación | P1 · M | En curso | #255 (borrador) |
+| 16.3 Una sola orquestación | P1 · M | En curso | PR #255 · el atajo del copiloto delega en `coordinateRequest`; resumen de equipo, rechazos y evaluador; pendiente de gates, revisión independiente y aprobación humana |
 | 16.4 Ficha en el servidor (migración) | P1 · M | Pendiente | |
 | 16.5 Deriva del contrato | P2 · M | Pendiente | |
 | 16.6 Ver y ensayar el agente | P2 · M | Pendiente | |

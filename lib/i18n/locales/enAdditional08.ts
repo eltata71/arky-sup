@@ -1,6 +1,15 @@
 import type { Dictionary } from '../translations';
 
 export const enAdditional08: Dictionary = {
+  "copilot.operation": "Operation {id} — {status}",
+  "copilot.team": "Team convened: coordinated by {coordinator}; specialists: {specialists}; consolidated by {consolidator}.",
+  "copilot.completed": "Workstreams completed: {done}/{total}.",
+  "copilot.rejected": "Rejected handoffs: {count}.",
+  "copilot.notEvaluated": "Evaluator: not evaluated.",
+  "copilot.reviewOk": "Evaluator: no caveats.",
+  "copilot.reviewGaps": "Evaluator: with caveats.",
+  "copilot.refined": "Correction: applied.",
+  "copilot.notRefined": "Correction: not applied.",
   "ui.se-anade-a-la-instruccion-del.5d1e07": "This is added to the agent's instruction; it does not replace it. Tell it how to work in your organisation, not what to answer. If it clashes with the agent's contract or the Office rules, those win.",
   "ui.instruccion-adicional-de-tu-o.3a9c42": "Additional instruction from your organisation (optional)",
   "ui.anadida-por-tu-organizacion.8e2b17": "Added by your organisation:",

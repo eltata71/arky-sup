@@ -1,6 +1,15 @@
 import type { Dictionary } from '../translations';
 
 export const esAdditional08: Dictionary = {
+  "copilot.operation": "Operación {id} — {status}",
+  "copilot.team": "Equipo convocado: coordina {coordinator}; especialistas: {specialists}; consolida {consolidator}.",
+  "copilot.completed": "Workstreams completados: {done}/{total}.",
+  "copilot.rejected": "Handoffs rechazados: {count}.",
+  "copilot.notEvaluated": "Evaluador: sin evaluar.",
+  "copilot.reviewOk": "Evaluador: sin salvedades.",
+  "copilot.reviewGaps": "Evaluador: con salvedades.",
+  "copilot.refined": "Corrección: aplicada.",
+  "copilot.notRefined": "Corrección: no aplicada.",
   "ui.generar-plan-sdd.f002e8": "Generar Plan SDD",
   "ui.reporte-de-salud.2b22d2": "Reporte de Salud",
   "ui.generado-y-guardado-en-el-wo.3f55eb": "generado y guardado en el Workspace.",

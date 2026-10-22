@@ -38,17 +38,17 @@ export const useCharterCommands = (
   const approveCharter = useCallback(async (engagementId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     return engagement ? approveCharterOperation(operationDeps, engagement, actor) : MISSING;
-  }, [readEngagement, actor, operationDeps]);
+  }, [readEngagement, actor, operationDeps, approveCharterOperation]);
 
   const requestCharterChanges = useCallback(async (engagementId: string, reason: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     return engagement ? requestCharterChangesOperation(operationDeps, engagement, actor, reason) : MISSING;
-  }, [readEngagement, actor, operationDeps]);
+  }, [readEngagement, actor, operationDeps, requestCharterChangesOperation]);
 
   const confirmReview = useCallback(async (engagementId: string, taskId: string): Promise<OfficeOperationResult> => {
     const engagement = readEngagement(engagementId);
     return engagement ? confirmReviewOperation(operationDeps, engagement, taskId, actor) : MISSING;
-  }, [readEngagement, actor, operationDeps]);
+  }, [readEngagement, actor, operationDeps, confirmReviewOperation]);
 
   return { approveCharter, requestCharterChanges, confirmReview };
 };
