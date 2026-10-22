@@ -222,16 +222,15 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
     // Clear any stale disambiguation prompt — a new turn supersedes it.
     setPendingDisambiguation(null);
 
-    // Where the turn goes is `routeCopilotTurn`'s decision (Office
-    // application layer): an explicit «Lucía, coordina…» runs the
-    // orchestration, an executable intent becomes a plan, an ambiguous
-    // modification asks the person to pick, and the rest is consulted.
+    // `routeCopilotTurn` decides: explicit coordination shares the dock's
+    // engine; actions propose plans, ambiguous references ask the person to
+    // pick, and the rest is consulted.
     const route = turns.route(text, project, newMessages);
     if (route.kind === 'office-orchestration') {
       setIsLoading(true);
       setLastError(null);
       try {
-        const summary = await turns.orchestrate(text, project, settings);
+        const summary = await turns.orchestrate(text, project, settings, initiatives);
         if (isMounted.current) setMessages((prev) => [...prev, createChatMessage('model', summary)]);
       } catch (error) {
         const friendly = turns.describeFailure(error);
@@ -259,7 +258,7 @@ export const ProjectCopilotChatModal: React.FC<ProjectCopilotChatModalProps> = (
 
     // Nothing actionable → the Office team answers.
     await conversationalReply(text);
-  }, [turns, userInput, isLoading, messages, project, settings, proposeAnchoredPlan, conversationalReply]);
+  }, [turns, userInput, isLoading, messages, project, settings, initiatives, proposeAnchoredPlan, conversationalReply]);
 
   /**
    * Promote a disambiguation choice into a real plan. We re-classify the

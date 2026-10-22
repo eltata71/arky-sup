@@ -2710,6 +2710,15 @@ one entry point for an assistant request, at any of the three levels. Rules:
 `AssistantDock` is the shared surface (initiative, project, deliverable): chat on
 one side, coordination on the other.
 
+**Una sola orquestación (agentes 16.3).** El copiloto del Workspace y el dock
+convocan al mismo equipo de la misma forma: `runCopilotOrchestration` delega en
+`coordinateRequest` —eventos, fichas, desactivados, tiers, evaluador— y sólo
+formatea el resultado; `isOfficeOrchestrationRequest` es un atajo explícito, no
+un segundo motor. La prueba que lo defiende es
+`officeOrchestrationSingleDoor.test.ts`: `executeOfficeOrchestration` sólo se
+llama desde `coordinateRequest`, y la misma solicitud desde dock y copiloto, con
+el mismo `now` y las mismas fichas, produce el mismo plan.
+
 **Una sola tabla de enrutado, y la ficha del agente manda.** Había dos tablas
 respondiendo la misma pregunta —`OfficeAgentRouter.DOMAIN_SIGNALS` y una copia
 dentro de `officeOrchestration`— y habían divergido: el router aprendió que
