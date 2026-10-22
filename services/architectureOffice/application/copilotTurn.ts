@@ -16,21 +16,21 @@ import type { Settings } from '../../../types';
 import type { Artifact } from '../../../lib/artifacts';
 import type { Project } from '../../architectureProjects';
 import type { BusinessInitiative } from '../../businessInitiatives';
+import { spanishFallback, type Translator } from '../../../lib/i18n/spanishFallback';
 import {
   classifyAgentIntent,
   resolveArtifactReference,
   type AgentContext,
   type AgentIntent,
 } from '../../agent';
-import {
-  executeOfficeOrchestration,
-  isOfficeOrchestrationRequest,
-  planOfficeWorkstreams,
-} from './officeOrchestration';
+import { isOfficeOrchestrationRequest } from './officeOrchestration';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
-import type { OfficeAgentProfile } from '../domain/officeAgentProfile';
-import { chatWithProject, chatWithProjectMeasured } from './projectConversation';
-import { consultOffice } from './assistantConsultation';
+import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
+import { configuredModelTiers, disabledAgentIds, type OfficeAgentProfile } from '../domain/officeAgentProfile';
+import { chatWithProjectMeasured } from './projectConversation';
+import { buildProjectScope, consultOffice } from './assistantConsultation';
+import { coordinateRequest, type CoordinateRequestInput } from './officeCoordination';
+import { buildCoordinationInvoker } from './officeCoordinationInvoker';
 
 export type CopilotTurnRoute =
   /** An explicit coordination command: the Office's orchestration engine. */
@@ -78,37 +78,50 @@ export const routeCopilotTurn = (
   return { kind: 'consult' };
 };
 
-/**
- * Runs an explicit coordination command and returns the summary to post:
- * relevant specialists run independently, the consolidator signs one answer.
- */
+export interface CopilotOrchestrationOptions extends Pick<CoordinateRequestInput,
+  'now' | 'onEvent' | 'signal' | 'timeoutMs' | 'maxAiCalls' | 'maxTokens' | 'maxConcurrency' | 'maxSpecialists'> {
+  initiatives?: readonly BusinessInitiative[];
+  t?: Translator;
+}
+
+/** The explicit shortcut uses the dock's coordination; only its presentation differs. */
 export const runCopilotOrchestration = async (
   text: string,
   project: Project,
   settings: Settings,
   /** Las fichas resueltas del usuario (plan de agentes, 16.1). */
   profiles: readonly OfficeAgentProfile[] = [],
+  options: CopilotOrchestrationOptions = {},
 ): Promise<string> => {
   const byAgent = new Map(profiles.map((profile) => [profile.agentId, profile]));
-  const plan = planOfficeWorkstreams(text, {
-    unavailable: profiles.filter((profile) => !profile.enabled).map((profile) => profile.agentId),
+  const nameOf = (id: OfficeAgentId): string => byAgent.get(id)?.alias ?? OFFICE_AGENT_PERSONAS[id].alias;
+  const { initiatives = [], t = spanishFallback, ...controls } = options;
+  const scope = buildProjectScope(project, initiatives);
+  const outcome = await coordinateRequest({
+    ...controls,
+    request: text,
+    scope,
+    invoke: buildCoordinationInvoker({
+      chat: (carrier, message, history, currentSettings, personaId, modelTier, profile, callOptions) =>
+        chatWithProjectMeasured(carrier, message, history, currentSettings, personaId as OfficeAgentId | undefined, modelTier, profile, callOptions),
+      settings, scope, project, profiles, modelTiers: configuredModelTiers(profiles),
+    }),
+    unavailableAgents: disabledAgentIds(profiles),
+    agentName: nameOf,
   });
-  const result = await executeOfficeOrchestration(
-    plan,
-    // The persona travels through the signature, never inside the prompt
-    // text: the coordinator's brief is concatenated into every workstream
-    // prompt, and an `@Alias` inside it would otherwise hijack the specialist
-    // that mention resolution picks for the sub-call.
-    async (personaId, instruction) => {
-      const profile = byAgent.get(personaId);
-      return chatWithProject(project, instruction, [], settings, personaId, profile?.modelTier, profile);
-    },
-  );
-  const completed = result.workstreamResults.filter((item) => item.status === 'completed').length;
+  const memberNames = (role: string): string => outcome.team.filter((member) => member.role === role).map((member) => nameOf(member.personaId)).join(', ');
+  const review = outcome.consolidationReview;
+  const rejections = outcome.rejectedHandoffs ?? [];
   return [
-    `**Operación ${result.operationId} — ${result.status.toUpperCase()}**`,
-    `Workstreams completados: ${completed}/${result.workstreamResults.length}.`,
-    result.consolidation,
+    `**${t('copilot.operation', { id: outcome.operationId, status: outcome.status.toUpperCase() })}**`,
+    t('copilot.team', { coordinator: memberNames('coordinator'), specialists: memberNames('specialist'), consolidator: memberNames('consolidator') }),
+    t('copilot.completed', { done: String(outcome.contributions.filter((item) => item.status === 'completed').length), total: String(outcome.contributions.length) }),
+    t('copilot.rejected', { count: String(rejections.length) }),
+    ...rejections.map((handoff) => `- ${nameOf(handoff.sourceAgentId)} → ${nameOf(handoff.targetAgentId)}: ${handoff.rejections.map((rejection) => `${rejection.code}: ${rejection.message}`).join('; ')}`),
+    !review ? t('copilot.notEvaluated') : review.ok ? t('copilot.reviewOk') : t('copilot.reviewGaps'),
+    ...(review && !review.ok ? review.gaps.map((gap) => `- ${gap}`) : []),
+    outcome.refined ? t('copilot.refined') : t('copilot.notRefined'),
+    outcome.answer,
   ].join('\n\n');
 };
 

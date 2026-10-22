@@ -305,6 +305,10 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    lo nombre se descarta y lo que nadie habilitado pueda hacer queda escrito en
    `outOfScope` del charter. Toda pantalla muestra el alias configurado
    (`useAgentDisplayName`); ninguna lee `OFFICE_AGENT_PERSONAS[…].alias`.
+   **Y copiloto y dock convocan al mismo equipo por la misma puerta (16.3):**
+   `runCopilotOrchestration` delega en `coordinateRequest` y sólo formatea;
+   `executeOfficeOrchestration` sólo se llama desde `coordinateRequest`
+   (`officeOrchestrationSingleDoor.test.ts`).
    **Lo que escribió una persona viaja vallado en todo prompt de agente**
    (17.0): solicitud, brief, contenido revisado, registro en contexto, mensaje
    del clasificador y capas de memoria. La memoria base y la instrucción de la

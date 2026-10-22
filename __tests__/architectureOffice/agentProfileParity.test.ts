@@ -63,15 +63,15 @@ vi.mock('../../services/agent', async (importOriginal) => {
   };
 });
 
-// El copiloto llama a `chatWithProject` directamente: se intercepta para leer
-// qué ficha le entrega a cada agente.
+// El copiloto usa el invocador medido de la coordinación: se intercepta el
+// transporte, no la coordinación, para comprobar qué ficha recibe cada agente.
 vi.mock('../../services/architectureOffice/application/projectConversation', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/architectureOffice/application/projectConversation')>();
   return {
     ...actual,
-    chatWithProject: vi.fn(async (...args: unknown[]) => {
+    chatWithProjectMeasured: vi.fn(async (...args: unknown[]) => {
       captured.chatProfiles.push(args[6] as OfficeAgentProfile | undefined);
-      return 'Veredicto: Ready. Análisis con su dominio.'.padEnd(240, '.');
+      return { text: 'Veredicto: Ready. Análisis con su dominio.'.padEnd(240, '.'), usage: null, model: null, latencyMs: 1, traceId: null, estimatedCostUsd: null };
     }),
   };
 });
@@ -110,7 +110,7 @@ const artifact = {
   id: 'art-1', versionGroupId: 'art-1', version: 1, createdAt: NOW, name: 'Documento', type: 'markdown', phase: 'Fase 2',
   architecturalView: 'Vista de Gestión y Soporte', content: '# Documento', objective: 'Objetivo.', keyConcepts: [], representation: 'document',
 };
-const project = { id: 'proj-1', name: 'Portal', description: 'Portal.', artifacts: [artifact] } as unknown as Project;
+const project = { id: 'proj-1', name: 'Portal', description: 'Portal.', projectContext: [], artifacts: [artifact] } as unknown as Project;
 const settings = { aiConfig: {} } as unknown as Settings;
 
 const runnerDeps = (invokePersona: OfficeRunnerAdapterDeps['invokePersona']): OfficeRunnerAdapterDeps => ({
@@ -164,7 +164,7 @@ const PATHS: readonly [string, () => Promise<string>][] = [
     const { runCopilotOrchestration } = await import('../../services/architectureOffice/application/copilotTurn');
     await runCopilotOrchestration('Arquitectura AWS del portal', project, settings, PROFILES);
     // Todos los agentes de la operación recibieron su ficha.
-    return captured.chatProfiles.every(Boolean) ? captured.chatProfiles.map(systemWith).join('\n') : '';
+    return captured.chatProfiles.length > 0 && captured.chatProfiles.every(Boolean) ? captured.chatProfiles.map(systemWith).join('\n') : '';
   }],
 ];
 
@@ -210,10 +210,11 @@ describe('un agente desactivado no habla en su nombre', () => {
   it('la orquestación del copiloto no lo convoca', async () => {
     const { runCopilotOrchestration } = await import('../../services/architectureOffice/application/copilotTurn');
     captured.chatProfiles = [];
-    const { chatWithProject } = await import('../../services/architectureOffice/application/projectConversation');
-    vi.mocked(chatWithProject).mockClear();
+    const { chatWithProjectMeasured } = await import('../../services/architectureOffice/application/projectConversation');
+    vi.mocked(chatWithProjectMeasured).mockClear();
     await runCopilotOrchestration('Cumplimiento HIPAA del intercambio de PHI', project, settings, off);
-    const convened = vi.mocked(chatWithProject).mock.calls.map((args) => args[4]);
+    const convened = vi.mocked(chatWithProjectMeasured).mock.calls.map((args) => args[4]);
+    expect(convened.length).toBeGreaterThan(0);
     expect(convened).not.toContain('carmen');
   });
 
