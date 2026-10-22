@@ -28,6 +28,9 @@ import { parseStructured } from '../../ai/structuredOutput';
 import { newTraceId } from '../../../lib/traceId';
 import { createConsolidatePort, measurementOf } from './officeConsolidationPort';
 import { REVIEW_CONTENT_LIMIT, buildReviewPrompt, gatherDeterministicEvidence } from './officeReviewPrompt';
+import { REVIEW_CRITIQUE_SCHEMA } from '../application/orchestrationSchemas';
+import { REVIEWER_TEMPERATURE } from '../domain/agentDefinition';
+import { readReviewCritique, type ReviewCritique } from '../domain/reviewCritique';
 import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import { agentPromptRef, stampPrompt } from '../../../lib/agents/promptCatalog';
 import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../domain/officeAgentPersonas';
@@ -44,7 +47,6 @@ import type { OfficeAgentCallOptions } from '../application/officeOrchestrationT
 import type { AgentArtifactStoreLike } from '../../agent';
 import type {
   OfficeEngagement,
-  OfficeFindingSeverity,
   OfficeReviewFinding,
   OfficeTask,
   OfficeTaskReview,
@@ -244,17 +246,6 @@ export const createProduceArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
 // Review
 // ---------------------------------------------------------------------------
 
-interface ModelCritique {
-  verdict?: unknown;
-  summary?: unknown;
-  findings?: unknown;
-}
-
-const SEVERITIES: readonly OfficeFindingSeverity[] = ['critical', 'high', 'medium', 'low'];
-
-const asSeverity = (value: unknown): OfficeFindingSeverity =>
-  SEVERITIES.includes(value as OfficeFindingSeverity) ? (value as OfficeFindingSeverity) : 'medium';
-
 /**
  * Deterministic evidence gathered before the reviewer persona is consulted.
  * Exported so the review verdict can be reproduced in a test without any AI.
@@ -294,7 +285,13 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
     const reviewPrompt = buildReviewPrompt(task, artifact, evidence);
     const promptStamp = stampPrompt(agentPromptRef('office.review'), reviewPrompt);
 
-    let critique: ModelCritique | undefined;
+    // El revisor se invoca con la forma de su crítica declarada —esquema y
+    // temperatura del contrato, que la ficha no puede subir (plan de agentes,
+    // 18.1)—. La respuesta sigue llegando como texto: el esquema la guía, y
+    // `readReviewCritique` la lee tolerante porque un esquema pedido no es un
+    // esquema cumplido.
+    let critique: ReviewCritique | null = null;
+    const critiqueNotes: string[] = [];
     let measurement: AgentInvocationMeasurement | undefined;
     try {
       const raw = await deps.invokePersona(
@@ -302,10 +299,23 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         reviewPrompt,
         project!,
         deps.getProfile?.(task.assigneeId),
-        { operationId: task.runId, invocationId: traceId },
+        {
+          operationId: task.runId,
+          invocationId: traceId,
+          // Esquema y temperatura del rol de revisión: la forma del veredicto no
+          // depende del ánimo del modelo ni de la ficha (18.1).
+          responseSchema: REVIEW_CRITIQUE_SCHEMA,
+          temperature: REVIEWER_TEMPERATURE,
+        },
       );
-      const parsed = parseStructured<ModelCritique>(typeof raw === 'string' ? raw : raw.text);
-      if (parsed.ok) critique = parsed.value;
+      const parsed = parseStructured<unknown>(typeof raw === 'string' ? raw : raw.text);
+      if (parsed.ok) {
+        const reading = readReviewCritique(parsed.value);
+        critique = reading.value;
+        critiqueNotes.push(...reading.discarded);
+      } else {
+        critiqueNotes.push('La respuesta no era JSON legible.');
+      }
       measurement = measurementOf(raw);
       traceId = measurement?.traceId ?? traceId;
     } catch {
@@ -313,21 +323,26 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       // deterministic evidence below still decides the verdict.
     }
 
-    const modelFindings: OfficeReviewFinding[] = Array.isArray(critique?.findings)
-      ? (critique!.findings as Record<string, unknown>[])
-        .filter((item) => item && typeof item === 'object' && typeof item.message === 'string')
-        .map((item) => ({
-          severity: asSeverity(item.severity),
-          message: item.message as string,
-          evidence: typeof item.evidence === 'string' ? item.evidence : undefined,
-        }))
-      : [];
-
-    const findings = [...evidence.findings, ...modelFindings];
+    const findings: OfficeReviewFinding[] = [
+      ...evidence.findings,
+      ...(critique?.findings ?? []).map((finding) => ({
+        severity: finding.severity,
+        message: finding.criterion
+          ? `${finding.message} [criterio ${finding.criterion}]`
+          : finding.message,
+        evidence: finding.evidence,
+      })),
+    ];
+    // Lo que la lectura descartó se nombra en el resumen: una severidad fuera
+    // de vocabulario o un criterio no numérico no desaparece sin decirlo (18.0).
+    const critiqueSummary = critique?.summary ?? '';
+    const summaryWithNotes = critiqueNotes.length > 0 && critique
+      ? `${critiqueSummary}\n${critiqueNotes.map((note) => `(${note})`).join(' ')}`
+      : critiqueSummary;
     const modelVerdict = critique?.verdict;
     // La crítica cuenta sólo si dio un veredicto que se pueda leer: una llamada
     // fallida, un JSON roto o una respuesta vacía no son una revisión
-    // (plan de agentes, 17.1).
+    // (plan de agentes, 17.1). Con contrato, eso es `critique !== null`.
     const critiqued = modelVerdict === 'approved' || modelVerdict === 'changes-requested' || modelVerdict === 'rejected';
 
     // Deterministic evidence outranks the model: a blocking validator or a
@@ -356,8 +371,8 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       summary: !critiqued && verdict === 'approved'
         // Nunca «cumple su contrato» sin que nadie lo haya revisado.
         ? 'La revisión del especialista no llegó: la evidencia determinista no encuentra defectos bloqueantes, pero nadie ha revisado el contenido. Confírmalo antes de seguir.'
-        : typeof critique?.summary === 'string' && critique.summary.trim().length > 0
-          ? critique.summary
+        : summaryWithNotes.trim().length > 0
+          ? summaryWithNotes
           : verdict === 'approved'
             ? 'El entregable cumple su contrato y los criterios de aceptación.'
             : 'El entregable necesita correcciones antes de avanzar.',

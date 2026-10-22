@@ -147,6 +147,18 @@ export const AUTHORING_CAPABILITIES: readonly OfficeAgentCapability[] = Object.f
   'report',
 ]);
 
+/**
+ * Temperatura del revisor (plan de agentes, 18.1).
+ *
+ * La crítica es un juicio sobre lo que otro entregó, no una creación: un
+ * revisor a 0.7 se inventa defectos y escribe con entusiasmo lo que el
+ * contenido no dice. Vive en el contrato —no en la ficha— porque una ficha que
+ * pudiera subirla sube también la alucinación: `OfficeAgentProfileOverride`
+ * no la toca, y ninguna ruta de invocación la lee de la ficha. Las trece
+ * personas comparten este valor: revisar bien es una sola manera de revisar.
+ */
+export const REVIEWER_TEMPERATURE = 0.2;
+
 /** One thing wrong with a definition, in terms a maintainer can act on. */
 export interface AgentDefinitionIssue {
   agentId: OfficeAgentId;

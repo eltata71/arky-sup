@@ -37,6 +37,14 @@ export interface ProjectChatReplyRequest {
     timeoutMs?: number;
     /** Pide JSON con esta forma; la respuesta sigue siendo texto que quien llama lee con tolerancia. */
     responseSchema?: AIJsonSchema;
+    /**
+     * Temperatura de la llamada. AUSENTE significa la del usuario
+     * (`settings.aiConfig?.temperature ?? 0.7`), como siempre; PRESENTE la
+     * impone quien llama y no se puede subir desde la ficha (plan de agentes,
+     * 18.1): el revisor llega con la del contrato por esta puerta, no por
+     * configuración.
+     */
+    temperature?: number;
 }
 
 export async function generateProjectChatReply(request: ProjectChatReplyRequest): Promise<string> {
@@ -57,7 +65,7 @@ export async function generateProjectChatReplyMeasured(request: ProjectChatReply
         fullMessage,
         {
             systemInstruction,
-            temperature: settings.aiConfig?.temperature ?? 0.7,
+            temperature: request.temperature ?? settings.aiConfig?.temperature ?? 0.7,
             ...(request.responseSchema ? { responseSchema: request.responseSchema, responseMimeType: 'application/json' } : {}),
         },
         { maxRetries: 1, signal: request.signal, timeoutMs: request.timeoutMs,

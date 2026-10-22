@@ -121,6 +121,8 @@ export interface OfficeAgentCallOptions {
   timeoutMs?: number;
   /** 18.0: la forma JSON que se le pide al modelo en este traspaso. */
   responseSchema?: AIJsonSchema;
+  /** Temperatura impuesta por quien llama; ausente = la del usuario (18.1). */
+  temperature?: number;
 }
 
 export type OfficeAgentInvoker = (

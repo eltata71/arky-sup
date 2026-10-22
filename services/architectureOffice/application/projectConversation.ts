@@ -91,5 +91,6 @@ export async function chatWithProjectMeasured(
     responseSchema: callOptions?.responseSchema,
     operationId: callOptions?.operationId,
     invocationId: callOptions?.invocationId,
+    temperature: callOptions?.temperature,
   });
 }
