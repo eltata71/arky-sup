@@ -334,7 +334,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         getBusinessMotivation: (project) => describeAttentionMotivation(project, initiativesRef.current),
         getProfile: agentConfiguration.getProfile,
         store: { createArtifact: createArtifactConfirmed, createArtifactVersion: createArtifactVersionConfirmed, updateArtifact: updateArtifactConfirmed },
-        invokePersona: async (personaId: OfficeAgentId, prompt, project, profile) => {
+        invokePersona: async (personaId: OfficeAgentId, prompt, project, profile, callOptions) => {
           const { chatWithProjectMeasured } = await loadConversation();
           return chatWithProjectMeasured(
             project,
@@ -345,6 +345,7 @@ export const OfficeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             // La ficha del agente: su voz y su nivel de modelo, no los de fábrica.
             profile?.modelTier,
             profile,
+            callOptions,
           );
         },
         persist: persistCheckpoint,
