@@ -118,6 +118,7 @@ export const esAdditional08: Dictionary = {
   "certificate.verification": "Verificación:",
   "toast.close": "Cerrar notificación",
   "agentProfile.signInRequired": "Hace falta una sesión iniciada para configurar un agente.",
+  "agentProfile.conflict": "Esta ficha cambió en otra pestaña o sesión. Se recargó la versión guardada: revisa y vuelve a aplicar tu cambio.",
   "agentProfile.rejection.unknown-agent": "Ese agente no existe en la Oficina de Arquitectura.",
   "agentProfile.rejection.empty-alias": "El nombre del agente no puede quedar vacío. Bórralo del formulario si quieres volver al nombre por defecto.",
   "agentProfile.rejection.invalid-avatar": "El avatar admite uno o dos emoji. Deja el campo vacío para usar el icono de su dominio.",

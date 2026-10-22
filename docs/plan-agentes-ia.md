@@ -884,7 +884,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 16.2 Persona por argumento en el encargo | P0 · S | Hecha | #238 · `personaFijada` 0 → 100 %; defecto `persona-por-texto` retirado |
 | 16.8 Las raíces del router coinciden | P1 · S | Hecha | #239 · `precisionEnrutado` 81,5 → 100 %, prohibidos 0; defecto `router-raices` retirado |
 | 16.3 Una sola orquestación | P1 · M | En curso | PR #255 · el atajo del copiloto delega en `coordinateRequest`; resumen de equipo, rechazos y evaluador; pendiente de gates, revisión independiente y aprobación humana |
-| 16.4 Ficha en el servidor (migración) | P1 · M | Pendiente | |
+| 16.4 Ficha en el servidor (migración) | P1 · M | En curso | migración `20261022090000_agent_profile_hardening` y contrato pgTAP escritos; pendiente: CI de la base y aprobación para aplicarla a ArkyDB-US antes de fusionar |
 | 16.5 Deriva del contrato | P2 · M | Pendiente | |
 | 16.6 Ver y ensayar el agente | P2 · M | Pendiente | |
 | 16.7 Agentes de la organización | P3 · L | Descartada | D-A1 = A (fichas por usuario), 2026-10-13 |

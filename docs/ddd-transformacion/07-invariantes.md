@@ -81,6 +81,15 @@ Leyenda: `UI` React · `TS` función de dominio en TypeScript ·
 | A-03 | Editar un artefacto no borra los demás | Por construcción: ningún comando recibe la lista (ADR-106); la RPC compuesta, retirada (`retiredRpcs.test.ts`) | ✅ | F4-03, F4-06 |
 | A-04 | Una decisión de revisión es inmutable | `RPC` (`on conflict do nothing`) | ✅ | — |
 
+## Agentes
+
+| # | Invariante | Autoridad | ¿Basta? | Desde |
+|---|---|---|---|---|
+| G-01 | La ficha de un agente sólo contiene claves conocidas y respeta los límites del editor (alias 40, rol 120, instrucción 1 200, 12 entradas × 280, tier `quick`/`default`/`deep`, 1–5 tareas, avatar ≤ 8) | `TS` (`createAgentProfileOverride`) + `RPC` (`private.agent_profile_problem`, `22023`) + contrato `agent_profile_hardening` | ✅ | 16.4 |
+| G-02 | La gobernanza del agente (qué produce, qué revisa, su papel de orquestación) no se configura desde una ficha | `RPC` (`22023`) + `TS` | ✅ | F9 |
+| G-03 | Dos pestañas no se pisan la misma ficha | `SQL` (`revision`) + `RPC` (`p_expected_revision`, `P0001`) | ✅ | 16.4 |
+| G-04 | Todo cambio de una ficha queda registrado (quién, cuándo, campos, versión del contrato) y la bitácora no se reescribe | `RPC` (misma transacción) + `SQL` (disparador que rechaza `update`; privilegios revocados) | ✅ | 16.4 |
+
 ## Identidad y Acceso
 
 | # | Invariante | Autoridad | ¿Basta? | Desde |
