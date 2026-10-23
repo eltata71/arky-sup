@@ -128,7 +128,7 @@ export const ROUTE_BUDGETS_GZIP_KB = {
   AuthPage: 10,
   DashboardPage: 60,
   SettingsPage: 30,
-  AgentsPage: 51, // 18.4: la ficha muestra el modelo efectivo (+0,2 KB gz: hook y 3 textos)
+  AgentsPage: 52, // 18.4: la ficha muestra el modelo efectivo (+0,2 KB gz: hook y 3 textos); 16.5: comparación de deriva (+0,5)
   CapabilityMapPage: 30,
   PortfolioPage: 30,
   TransitionPlanPage: 30,

@@ -247,6 +247,7 @@ const AgentsPage: React.FC = () => {
       {viewingProfile && !editingProfile && (
         <AgentProfileSheet
           profile={viewingProfile}
+          override={overrides.find((entry) => entry.agentId === viewingProfile.agentId)}
           onClose={() => setViewing(null)}
           onEdit={() => setEditing(viewingProfile.agentId)}
         />
