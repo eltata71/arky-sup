@@ -53,7 +53,6 @@ export const BYTE_CEILINGS = {
   'App.tsx': 20_110, // 11.5: ruta lazy, ruta y entrada de paleta de /portfolio
   // Plan de agentes 15.2/17.3/17.4: nuevos metadatos de consumo y recibos
   // de persistencia en las rutas existentes; la política vive en módulos propios.
-  'services/architectureOffice/application/officeOrchestration.ts': 17645, // 17.3: aplicación de presupuesto y cancelación
   /**
    * +133 bytes and +1 line, deliberately: `chatWithProject` gained a
    * `modelTier` parameter so the Architecture Office can honour the model tier
