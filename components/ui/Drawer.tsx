@@ -111,11 +111,13 @@ export const Drawer: React.FC<DrawerProps> = ({
     }, [isOpen, onClose]);
 
     const cornerRadius = side === 'bottom' ? 'rounded-t-2xl' : '';
+    // El panel va en z-[190]: por encima del botón flotante del centro de
+    // monitoreo (z-180), que si no tapa el pie del panel y su acción principal.
 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100]">
+                <div className="fixed inset-0 z-[190]">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
