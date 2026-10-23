@@ -63,6 +63,8 @@ const SHARED_ANCHORS: readonly { readonly anchor: string; readonly rule: string 
   { anchor: 'agent-evals', rule: 'el banco de agentes mide enrutado, intención, handoff, revisión, consolidación y vallado (agentes 15.0)' },
   { anchor: 'stampPrompt', rule: 'un prompt de agente tiene nombre, versión y huella, y cada invocación lleva su sello (agentes 15.1)' },
   { anchor: 'confirmEvidenceOnlyReview', rule: 'una aprobación sin crítica del especialista la confirma una persona (agentes 17.1)' },
+  { anchor: 'withHandoffBudget', rule: 'el presupuesto de handoffs se aplica, no sólo se declara (19.0)' },
+  { anchor: 'eval:agents', rule: 'el banco de agentes mide cada cambio (15.0)' },
   { anchor: 'composeAgentInstruction', rule: 'la voz de un agente se compone en un solo sitio, por capas, y la ficha se añade (agentes 16.0)' },
   { anchor: 'agentProfileParity', rule: 'la ficha de un agente llega a los diez caminos por los que habla (agentes 16.1)' },
   { anchor: 'officeOrchestrationSingleDoor', rule: 'copiloto y dock convocan al mismo equipo por la misma puerta (agentes 16.3)' },

@@ -1,6 +1,6 @@
-# Alineación con los principios de Anthropic para construir agentes
+# Alineación de los agentes con los estándares (Anthropic, OpenAI, OWASP LLM)
 
-**Fecha:** 2026-09-05 · **Alcance:** `services/architectureOffice/`, `services/ai/generation/capture/`, `lib/capture/`
+**Fecha:** 2026-09-05; ampliado el 2026-10-23 (plan de agentes, 20.4) con OpenAI y OWASP LLM y con las olas 15–19 · **Alcance:** `services/architectureOffice/`, `services/ai/generation/capture/`, `lib/capture/`
 
 Este documento dice, principio a principio, **qué hace este producto**, **por qué**
 y **dónde está el código**. No es una lista de buenas intenciones: cada fila
@@ -186,6 +186,36 @@ y el comité (ARB) sigue decidiendo al final. Y la ficha de un agente **no puede
 apagar el gobierno**: qué produce y qué revisa cada uno, y el papel de cada uno
 en la orquestación, no son configurables — un agente que produce y revisa lo
 mismo dejaría de ser una revisión.
+
+## 11. Tabla por principio: fichero y prueba
+
+Las olas 15–19 del plan de agentes añadieron lo que las secciones anteriores
+sólo prometían. Cada fila nombra el principio, de qué estándar viene, dónde
+está y qué prueba falla si se rompe.
+
+| Principio | Estándar | Fichero | Prueba |
+|---|---|---|---|
+| Medir antes de cambiar (evaluación continua) | Anthropic: evals · OpenAI: *evals* | `tests/fixtures/agent-evals/`, `npm run eval:agents` | `__tests__/agent/evals/agentEvals.test.ts` (la línea base sólo mejora) |
+| Instrucciones con identidad y versión | OpenAI: instrucciones claras · OWASP LLM07 | `lib/agents/promptCatalog.ts` (`stampPrompt`) | `agentPromptCatalog.test.ts` |
+| Una sola composición en capas; la ficha no reemplaza el contrato | OpenAI: *instructions* · OWASP LLM01 | `domain/agentPromptComposer.ts` (`composeAgentInstruction`) | `__tests__/architectureOffice/agentPromptComposer.test.ts`, `__tests__/agent/agentProfileParity.test.ts` |
+| Lo que escribió una persona va vallado | OWASP LLM01 (inyección indirecta) | `lib/untrustedContent.ts` (`wrapUntrustedContent`) | `agentPromptFencing.test.ts`, métrica `promptsConVallado` |
+| Handoff como contrato, rechazado antes de gastar | Anthropic: orquestador-trabajadores · OpenAI: *handoffs* | `domain/agentHandoff.ts` | banco, familia handoff |
+| Presupuesto aplicado, no sólo declarado | OWASP LLM10 (consumo sin límite) | `application/handoffBudget.ts` (`withHandoffBudget`, `HandoffBudgetExhausted`) | `handoffBudget.test.ts` |
+| Contexto mínimo por rol | OWASP LLM02 (divulgación) y LLM06 (agencia excesiva) | `domain/agentContextPolicy.ts` | `agentContextPolicy.test.ts` |
+| Herramientas de lectura, descritas y acotadas | Anthropic: interfaz agente-herramienta · OpenAI: *tools* | `services/ai/tools/registry.ts`, `governedTools.ts` (`allowedToolsFor`) | `toolRegistry.test.ts`, banco, familia 6 |
+| Salidas estructuradas verificadas | OpenAI: *structured outputs* · OWASP LLM05 | `services/ai/structuredOutput/`, `orchestrationSchemas.ts` | `structuredOutput.test.ts` |
+| Revisor que no aprueba en silencio | Anthropic: evaluador · OWASP LLM09 (exceso de confianza) | `confirmEvidenceOnlyReview` | `aprobacionesSinCritica` en el banco |
+| Memoria con procedencia y aprobación | OWASP LLM04 (envenenamiento) | `services/memory/memoryEntries.ts` (17.2) | `__tests__/memory/memoryEntries.test.ts` |
+| Aprobación humana antes de gastar o actuar | Anthropic: humano en el bucle · OWASP LLM06 | `services/agent/agentConfirmationGate.ts`, `services/architectureOffice/planApproval.ts` | `planApproval.test.ts` y `planApprovalPanel.test.tsx` |
+| Trazabilidad de cada ejecución | OpenAI: *tracing* | `officeRunTrace.ts`, `operationInvocationTrace.ts` | `operationTraceCorrelation.test.ts` |
+| Claves y secretos no salen ni vuelven | OWASP LLM02 | `lib/secretShapes.ts`, `services/ai/guardrails/` | `secretShapes.test.ts` |
+
+## 12. Lo que se midió y no se adoptó
+
+El plan 19.2 midió una alternativa y la dejó «medido, no adoptado»: el
+resultado y la razón están en `docs/plan-agentes-ia.md`. Un estándar describe
+lo que conviene en general; aquí cuenta lo que el banco muestra en este
+producto.
 
 ---
 

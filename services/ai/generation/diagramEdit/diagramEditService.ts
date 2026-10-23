@@ -15,7 +15,7 @@
  *    one acceptance criterion — did it do what was asked, and is the result
  *    still a valid diagram. The Office's team is for a question answered from
  *    several domains at once; this is not one. Same reasoning as assisted
- *    capture, and `docs/agentes-anthropic-alineacion.md` records it.
+ *    capture, and `docs/agentes-alineacion-estandares.md` records it.
  *
  * 2. **It proposes; it never writes.** The result is a `DiagramPatch` plus the
  *    preview of what applying it would do. Whoever confirms is whoever signs —

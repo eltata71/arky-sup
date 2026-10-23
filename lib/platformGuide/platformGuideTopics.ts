@@ -120,7 +120,7 @@ export const PLATFORM_GUIDE_TOPICS: readonly PlatformGuideTopic[] = Object.freez
   topic({
     id: 'configurar-agente',
     question: '¿Puedo cambiar cómo trabaja un agente?',
-    answer: 'Sí, en su ficha: nombre, avatar, instrucción, habilidades, conocimiento de tu organización, memoria, modelo y cuántas tareas acepta a la vez. Lo que añades se suma a lo que el agente ya sabe, nunca lo sustituye. Lo que no se configura es su papel en la orquestación ni qué artefactos produce y revisa: eso es gobierno, y un agente que produjera y revisara lo mismo apagaría la revisión.',
+    answer: 'Sí, en su ficha: nombre, avatar, instrucción, habilidades, conocimiento de tu organización, memoria, modelo y cuántas tareas acepta a la vez. Lo que añades se suma a lo que el agente ya sabe, nunca lo sustituye. Cada ficha dice si está al día con el contrato del producto o si se escribió contra una versión anterior. Lo que no se configura es su papel en la orquestación ni qué artefactos produce y revisa: eso es gobierno, y un agente que produjera y revisara lo mismo apagaría la revisión.',
     where: 'Agentes → abre una ficha → Configurar.',
     keywords: ['configurar', 'personalizar', 'agente', 'memoria', 'conocimiento', 'modelo', 'avatar', 'instruccion'],
   }),

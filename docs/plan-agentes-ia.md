@@ -62,7 +62,7 @@ guardado, y en cada paso se leyó el código que lo atiende.
 | Capa de IA | `services/ai/tools/`, `services/ai/guardrails/`, `services/ai/tracing/`, `services/ai/structuredOutput/`, `lib/ai/modelCatalog.ts`, `services/ai/generation/assistant/*` |
 | Superficies | `hooks/useArtifactPersona.ts`, `hooks/useAgentActions.ts`, `hooks/useAssistantTurns.ts`, `components/architectureOffice/AssistantDock.tsx`, `TeamCoordinationPanel.tsx` |
 | Pruebas y bancos | `__tests__/architectureOffice/` (36 ficheros), `__tests__/agent/`, `services/agent/__tests__/`, bancos `diagram-evals`, `artifact-evals`, `export-evals` |
-| Documentación | `docs/agentes-anthropic-alineacion.md`, `docs/oficina-arquitectura.md`, `docs/arquitecto-agente.md`, ADR-004 |
+| Documentación | `docs/agentes-alineacion-estandares.md`, `docs/oficina-arquitectura.md`, `docs/arquitecto-agente.md`, ADR-004 |
 
 ---
 
@@ -191,7 +191,7 @@ CLAUDE.md afirma: *«The card reaches every place the agent speaks»*. Medido:
 ### 4.1 Referentes
 
 Se citan por nombre; el entorno de revisión no descargó los textos, así que no
-hay citas literales (igual que en `docs/agentes-anthropic-alineacion.md`). **La
+hay citas literales (igual que en `docs/agentes-alineacion-estandares.md`). **La
 tarea que dependa de una lectura concreta debe verificarla contra la versión
 vigente del documento antes de implementar.**
 
@@ -836,7 +836,7 @@ los agentes, y un operador puede diagnosticarlo.
 
 #### 20.4 Documentación y alineación de cierre *(P1 · S · documentación · olas 15–19 · —)*
 - **Objetivo:** que la documentación diga lo que el código hace.
-- **Cambios:** `docs/agentes-anthropic-alineacion.md` → ampliar a
+- **Cambios:** `docs/agentes-alineacion-estandares.md` → ampliar a
   `docs/agentes-alineacion-estandares.md` (Anthropic, OpenAI, OWASP LLM) con
   fila por principio, fichero y prueba; ADR-110 «Contrato de agente v2:
   capas de instrucción, salidas estructuradas, presupuesto aplicado,
@@ -927,7 +927,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 20.1 Panel de calidad de agentes | P2 · M | Hecha | #271 · `7519be3` · fusión 2026-10-23 · `buildAgentQualityReport` (dominio puro) y `AgentQualityPanel` en diferido en `/agents` (49,3 de 51 KB gz); handoffs rechazados declarados «aún no se registra» hasta persistirlos por encargo |
 | 20.2 Intervención humana | P2 · M | Hecha | #272 · `5c4f043` · fusión 2026-10-23 · `planApproval` (puro) y `coordinateRequest` con puerto `approval` antes de la primera llamada (umbral 4 especialistas, medido); `usePlanApprovalGate` + `PlanApprovalPanel` en el dock. El recorrido E2E con proveedor simulado se cubre en 20.3 |
 | 20.3 E2E de los agentes | P1 · M | Hecha | `e2e/agents.spec.ts` con cuenta propia `agents@arky.e2e`: la ficha de Elena (conocimiento con marcador) llega una vez y vallada al prompt interceptado, apagarla la saca del equipo, restaurar la borra de la base; axe en el dock y en `/agents` (sin críticos; las cifras salen en el primer CI). El encargo con revisor de JSON roto no se repite en el navegador: desde 17.1 la revisión se aprueba `evidence-only` y espera firma (no dice «no disponible»), y lo cubren `OfficeEngagementRunner`, `reviewCritique`, `EvidenceReviewConfirm` y el banco |
-| 20.4 Documentación de cierre | P1 · S | Pendiente | |
+| 20.4 Documentación de cierre | P1 · S | Hecha | `docs/agentes-alineacion-estandares.md` (Anthropic, OpenAI, OWASP LLM), ADR-110, `docs/operacion/runbook-agentes.md`, anclas `withHandoffBudget` y `eval:agents`, guía de la plataforma |
 
 ---
 
