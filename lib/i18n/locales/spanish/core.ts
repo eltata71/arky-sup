@@ -316,6 +316,7 @@ export const section: Dictionary = {
   "Borrador": "Borrador",
   "Cambios solicitados": "Cambios solicitados",
   "Aprobado": "Aprobado",
+  "Rechazado": "Rechazado",
   "C4 generation fell back to a deterministic skeleton after retries.": "C4 generation fell back to a deterministic skeleton after retries.",
   "Estrategia": "Estrategia",
   "Componentes, vistas lógicas, datos.": "Componentes, vistas lógicas, datos.",

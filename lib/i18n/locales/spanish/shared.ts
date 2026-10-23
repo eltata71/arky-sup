@@ -460,7 +460,6 @@ export const section: Dictionary = {
   "uiMessage.la-oficina-no-pudo-proponer.0a60ed": "La Oficina no pudo proponer un charter para este entregable.",
   "uiMessage.no-se-pudo-guardar-la-ficha.08fed8": "No se pudo guardar la ficha.",
   "uiMessage.no-se-pudo-crear-la-iniciati.ccb680": "No se pudo crear la iniciativa.",
-  "Rechazado": "Rechazado",
   "En espera": "En espera",
   "Trabajando": "Trabajando",
   "Entregó": "Entregó",
