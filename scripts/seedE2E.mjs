@@ -72,6 +72,16 @@ const ACCOUNTS = [
     role: 'architect',
     ownsFixtures: false,
   },
+  // 20.3: la quinta, sólo para el recorrido de los agentes. Ese recorrido
+  // edita la ficha de Elena (conocimiento con marcador, desactivarla) y las
+  // fichas son por usuario: con una cuenta compartida, cualquier otra prueba
+  // que convoque a Elena en paralelo vería el marcador o a Elena apagada.
+  {
+    email: process.env.E2E_AGENTS_EMAIL ?? 'agents@arky.e2e',
+    displayName: 'Agentes E2E',
+    role: 'architect',
+    ownsFixtures: false,
+  },
 ];
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);

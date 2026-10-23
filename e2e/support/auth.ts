@@ -45,11 +45,22 @@ export const E2E_PROJECTIONS = {
   displayName: 'Proyecciones E2E',
 } as const;
 
+/**
+ * Sólo para el recorrido de los agentes (20.3): edita la ficha de Elena, que es
+ * por usuario, y otra prueba de la misma cuenta la vería con el marcador.
+ */
+export const E2E_AGENTS = {
+  email: 'agents@arky.e2e',
+  password: E2E_PASSWORD,
+  displayName: 'Agentes E2E',
+} as const;
+
 type E2EAccount =
   | typeof E2E_ARCHITECT
   | typeof E2E_REVIEWER
   | typeof E2E_PREFERENCES
-  | typeof E2E_PROJECTIONS;
+  | typeof E2E_PROJECTIONS
+  | typeof E2E_AGENTS;
 
 /**
  * Lo que la pantalla y el navegador dijeron mientras se intentaba entrar.

@@ -904,7 +904,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 20.0 Traza en árbol | P1 · M | Hecha | #252 · `2f2af2c` · fusión 2026-10-16 · producción `success`. `describeOperation` deriva el árbol (agentes, eventos, handoffs rechazados, revisión, sellos de prompt) del `CoordinationOutcome`, sin almacenarlo; «Ver traza» en la dock (árbol accesible, carga diferida) y exportación JSON con las credenciales omitidas (`redactSecretShapes`). Remediación H1 (redacción integral PEM, `lib/secretShapes.ts`): #256 · `327e5b6` · fusión 2026-10-21 · producción `success`; revisión independiente aprobada sobre `7571f1f` (SHA de cabeza exacto) con RED→GREEN en clon aislado. Remediación H2 (#257) no fusionada: head idéntico a #256, delta 0; su remediación real queda en la tarjeta nueva de H2 |
 | 20.1 Panel de calidad de agentes | P2 · M | En curso | #271 · `buildAgentQualityReport` (dominio puro) y `AgentQualityPanel` en diferido en `/agents` (49,3 de 51 KB gz); handoffs rechazados declarados «aún no se registra» hasta persistirlos por encargo |
 | 20.2 Intervención humana | P2 · M | Pendiente | |
-| 20.3 E2E de los agentes | P1 · M | Pendiente | |
+| 20.3 E2E de los agentes | P1 · M | En curso | `e2e/agents.spec.ts` con cuenta propia `agents@arky.e2e`: la ficha de Elena (conocimiento con marcador) llega una vez y vallada al prompt interceptado, apagarla la saca del equipo, restaurar la borra de la base; axe en el dock y en `/agents` (sin críticos; las cifras salen en el primer CI). Falta el encargo con revisor de JSON roto |
 | 20.4 Documentación de cierre | P1 · S | Pendiente | |
 
 ---
