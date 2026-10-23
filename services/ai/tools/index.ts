@@ -26,3 +26,5 @@ export {
   extractMarkdownSection,
 } from './officeReadTools';
 export type { ArtifactReadPort, ReadableArtifact, ReadableStandard, StandardsReadPort } from './officeReadTools';
+export { createGetInitiativeMotivationTool, createQueryKnowledgeGraphTool } from './contextReadTools';
+export type { GraphEntityView, GraphRelationView, KnowledgeGraphReadPort, MotivationReadPort, MotivationView } from './contextReadTools';
