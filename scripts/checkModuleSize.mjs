@@ -53,7 +53,7 @@ export const BYTE_CEILINGS = {
   'App.tsx': 20_110, // 11.5: ruta lazy, ruta y entrada de paleta de /portfolio
   // Plan de agentes 15.2/17.3/17.4: nuevos metadatos de consumo y recibos
   // de persistencia en las rutas existentes; la política vive en módulos propios.
-  'services/architectureOffice/application/officeOrchestration.ts': 20193, // 17.3: aplicación de presupuesto y cancelación
+  'services/architectureOffice/application/officeOrchestration.ts': 17645, // 17.3: aplicación de presupuesto y cancelación
   /**
    * +133 bytes and +1 line, deliberately: `chatWithProject` gained a
    * `modelTier` parameter so the Architecture Office can honour the model tier
@@ -175,9 +175,9 @@ export const BYTE_CEILINGS = {
   // 13.2: las llamadas t() sustituyen texto de interfaz y añaden unos bytes o un import.
   'pages/UserManagementPage.tsx': 20084,
   // 13.2: la copia del idioma sale a módulos acotados; se baja el techo.
-  'lib/i18n/locales/es.ts': 40187, // 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 40 187 B medidos. // 13.2: +231 B por importar los lotes de mensajes; las cadenas viven en módulos separados // 13.2: +8769 B de traducciones para ProjectHub y los inspectores de diagrama; el diccionario español único es eager por contrato R-16
+  'lib/i18n/locales/es.ts': 40265, // 16.5: +78 B por importar el lote de claves de la ficha del agente (esAgentProfile01); 40 265 B medidos. 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 40 187 B medidos. // 13.2: +231 B por importar los lotes de mensajes; las cadenas viven en módulos separados // 13.2: +8769 B de traducciones para ProjectHub y los inspectores de diagrama; el diccionario español único es eager por contrato R-16
   // 13.2: la copia del idioma sale a módulos acotados; se baja el techo.
-  'lib/i18n/locales/en.ts': 38056, // 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 38 056 B medidos. // 13.2: +230 B por importar los lotes de mensajes; inglés sigue diferido // 13.2: +8371 B del mismo lote; inglés sigue en su módulo cargado con import()
+  'lib/i18n/locales/en.ts': 38134, // 16.5: +78 B por importar enAgentProfile01; 38 134 B medidos. 13.2 + 14.2: imports de lotes UI y claves kg.chain* combinados; 38 056 B medidos. // 13.2: +230 B por importar los lotes de mensajes; inglés sigue diferido // 13.2: +8371 B del mismo lote; inglés sigue en su módulo cargado con import()
 };
 
 /**
