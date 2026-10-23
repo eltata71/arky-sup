@@ -49,6 +49,11 @@ export interface OfficeAgentProfileOverride {
   agentId: OfficeAgentId;
   userId: string;
   schemaVersion: number;
+  /**
+   * Revisión de la fila (16.4): viaja con el registro, desde la lectura hasta
+   * el siguiente guardado, nunca en un mapa del repositorio ni en el documento.
+   */
+  revision?: number;
   /** Display name. The persona's alias is what mentions (`@Elena`) still resolve. */
   alias?: string;
   role?: string;

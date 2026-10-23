@@ -92,6 +92,7 @@ export const normalizeAgentProfileOverride = (
     agentId,
     userId,
     schemaVersion: typeof value.schemaVersion === 'number' ? value.schemaVersion : OFFICE_AGENT_PROFILE_SCHEMA_VERSION,
+    revision: typeof value.revision === 'number' && Number.isInteger(value.revision) && value.revision > 0 ? value.revision : undefined,
     alias: typeof value.alias === 'string' && value.alias.trim() ? value.alias.trim() : undefined,
     role: typeof value.role === 'string' && value.role.trim() ? value.role.trim() : undefined,
     avatar: typeof value.avatar === 'string' && value.avatar.trim() ? value.avatar.trim() : undefined,
@@ -106,8 +107,38 @@ export const normalizeAgentProfileOverride = (
   };
 };
 
+/** Una entrada de la bitácora de fichas (16.4): quién cambió qué agente, y cuándo. */
+export interface OfficeAgentProfileChange {
+  agentId: string;
+  action: 'save' | 'reset';
+  changedFields: string[];
+  revision: number;
+  /** Versión del contrato del agente contra la que se escribió la ficha, si la declaró. */
+  contractVersion: number | null;
+  changedAt: string;
+}
+
+export const normalizeAgentProfileChange = (raw: unknown): OfficeAgentProfileChange | null => {
+  if (!raw || typeof raw !== 'object') return null;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.agentId !== 'string' || typeof value.changedAt !== 'string') return null;
+  if (value.action !== 'save' && value.action !== 'reset') return null;
+  return {
+    agentId: value.agentId,
+    action: value.action,
+    changedFields: Array.isArray(value.changedFields)
+      ? value.changedFields.filter((field): field is string => typeof field === 'string')
+      : [],
+    revision: typeof value.revision === 'number' ? value.revision : 0,
+    contractVersion: typeof value.contractVersion === 'number' ? value.contractVersion : null,
+    changedAt: value.changedAt,
+  };
+};
+
 export interface OfficeAgentProfileRepository {
   list(userId: string): Promise<OfficeAgentProfileOverride[]>;
+  /** La bitácora de cambios de las fichas, más reciente primero. Sin servidor, vacía. */
+  changes(agentId?: string, limit?: number): Promise<OfficeAgentProfileChange[]>;
   save(override: OfficeAgentProfileOverride): Promise<PersistenceResult<OfficeAgentProfileOverride>>;
   /** Returns the agent to its shipped defaults. */
   reset(userId: string, agentId: OfficeAgentId): Promise<PersistenceResult<void>>;
@@ -136,20 +167,44 @@ export const officeAgentProfileRepository: OfficeAgentProfileRepository = {
     }
   },
 
+  async changes(agentId, limit = 50) {
+    try {
+      const rows = await callRpc<unknown>('list_agent_profile_changes', {
+        p_agent_id: agentId ?? null,
+        p_limit: limit,
+      });
+      return (Array.isArray(rows) ? rows : [])
+        .map(normalizeAgentProfileChange)
+        .filter((entry): entry is OfficeAgentProfileChange => entry !== null);
+    } catch {
+      // La bitácora informa, no decide: sin ella la ficha sigue funcionando.
+      return [];
+    }
+  },
+
   async save(override) {
     let result: PersistenceResult<OfficeAgentProfileOverride>;
     try {
       result = await executeRemoteWrite<OfficeAgentProfileOverride>(
         { operationName: 'saveAgentProfile', userId: override.userId },
         async () => {
-          await callRpc<void>('save_agent_profile', { p_profile: override });
-          return override;
+          // La revisión esperada viaja en el documento y el servidor no la
+          // guarda en él (`api.save_agent_profile`): una ficha que nunca se
+          // guardó espera 0 (crear); una vieja devuelve conflicto. La nueva es
+          // la esperada más uno, exactamente.
+          const expected = override.revision ?? 0;
+          await callRpc<void>('save_agent_profile', { p_profile: { ...override, revision: expected } });
+          return { ...override, revision: expected + 1 };
         },
       );
     } catch (error) {
       result = createFailureResult('saveAgentProfile', error);
     }
-    mirror.upsert(override.userId, withId(override), result);
+    // Sólo lo confirmado entra en el espejo con su revisión; un conflicto no
+    // deja en él la versión que el servidor rechazó.
+    if (result.status !== 'conflict') {
+      mirror.upsert(override.userId, withId(result.data ?? override), result);
+    }
     return result;
   },
 
