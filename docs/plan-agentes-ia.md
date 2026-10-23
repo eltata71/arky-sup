@@ -1,8 +1,10 @@
 # Plan de agentes de IA: configuración, orquestación y generación de artefactos
 
 **Fecha:** 2026-10-13
-**Estado:** **aprobado por el propietario el 2026-10-13**, con D-A1 = A (las
-fichas son de cada usuario) y D-A2…D-A5 según la recomendación (sección 7.2)
+**Estado:** **cerrado el 2026-10-23**; todas las tareas ejecutables de la sección
+8 están hechas. La 19.2 se cerró por medición, sin adoptar el bucle de
+herramientas. Aprobado por el propietario el 2026-10-13, con D-A1 = A (las
+fichas son de cada usuario) y D-A2…D-A5 según la recomendación (sección 7.2).
 **Continúa:** `docs/plan-clase-mundial.md` (olas 9–14, cerrado el 2026-10-13 con
 #234). La transformación DDD está cerrada desde el 2026-09-27.
 **Numeración:** las olas siguen a las de los planes anteriores y empiezan en la
