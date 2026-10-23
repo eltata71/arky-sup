@@ -86,6 +86,9 @@ updates:
       # responda.
       - dependency-name: "@playwright/test"
         update-types: [version-update:semver-patch]
+      # 4.14 resuelve playwright-core 1.64.1 y duplica los tipos de Page.
+      - dependency-name: "@axe-core/playwright"
+        update-types: [version-update:semver-minor]
       # Tailwind 4 pasa a configuración CSS y a otro plugin de PostCSS; es una
       # migración propia, no una subida (2026-10-12).
       - dependency-name: "tailwindcss"
