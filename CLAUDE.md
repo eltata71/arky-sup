@@ -2635,6 +2635,15 @@ autoran sin declarar `generate`. El vocabulario tiene tres verbos de autoría.
 Detalle y lo que deliberadamente **no** se construyó —tool policy, context
 policy, memory policy con scopes— en `ADR-004`.
 
+**`/agents` también dice cómo trabaja cada agente** (20.1). `buildAgentQualityReport`
+(`services/architectureOffice/application/agentQuality.ts`, pura) deriva de los
+encargos —no se almacena— las tareas, la aprobación a la primera, los reintentos,
+el coste estimado y la latencia p50/p90 por agente y ventana de 7/30 días.
+Sin medir no es cero (`null`), el coste sólo se suma si todas las llamadas lo
+traen y los handoffs rechazados se declaran *aún no registrados* porque viven en
+el resultado de la coordinación y no en el encargo. El panel
+(`AgentQualityPanel`) se carga en diferido: `/agents` vive pegada a su techo.
+
 The split that makes all of this safe is in
 `services/architectureOffice/officeAgentProfile.ts`:
 

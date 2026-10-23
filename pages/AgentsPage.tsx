@@ -21,7 +21,7 @@ import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
  * conocimiento, memoria, modelo y carga— es de quien usa el producto.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { Alert, Button, Card, EmptyState, Input, SectionHeader, Skeleton, cn } from '../components/ui';
 import { Network, Search, Sparkles, UserRoundCheck, UsersRound } from 'lucide-react';
 import { TYPE } from '../lib/designTokens';
@@ -32,6 +32,14 @@ import {
   AgentTeamMap,
 } from '../components/architectureOffice/agentProfile';
 import { useAgentProfiles } from '../hooks/useAgentProfiles';
+import { lazyWithRetry } from '../components/routing/lazyWithRetry';
+
+// El panel de calidad (20.1) se descarga al abrir /agents, no con la ruta: ésta
+// vive a un kilobyte de su techo y el panel sólo hace falta a quien lo lee.
+const AgentQualityPanel = lazyWithRetry(
+  () => import('../components/architectureOffice/agentProfile/AgentQualityPanel'),
+  { chunkName: 'AgentQualityPanel' },
+);
 import { PRODUCT_NAME } from '../lib/eaTerminology';
 import type { OfficeAgentId, OfficeAgentProfile } from '../services/architectureOffice';
 
@@ -230,6 +238,12 @@ const AgentsPage: React.FC = () => {
 
       {/* El expediente. Se cierra al abrir el formulario para que nunca haya dos
           capas sobre el mismo agente diciendo cosas distintas. */}
+      <div className="mt-6">
+        <Suspense fallback={null}>
+          <AgentQualityPanel />
+        </Suspense>
+      </div>
+
       {viewingProfile && !editingProfile && (
         <AgentProfileSheet
           profile={viewingProfile}
