@@ -767,6 +767,28 @@ con **menos** contexto inyectado; si no lo muestra, 19.2 no se ejecuta.
   citada **y** el coste medio por operación sube < 50 %; si no, se documenta el
   resultado y se cierra como «medido, no adoptado».
 
+**Resultado de 19.2 — medido, no adoptado (2026-10-23).**
+- *Qué se midió:* tras 19.0 y 19.1 el banco da `llamadasBienResueltas` 100 %,
+  `denegacionesRegistradas` 100 %, `respuestasAcotadas` 100 %,
+  `llamadasInnecesarias` 0 y `llamadasPorOperacion` 4,6; y el contexto del
+  consolidador bajó 31 % (`tokensPorOperacion` 6 398 → 4 410). Es decir: la
+  interfaz de herramientas funciona y el contexto por rol ya recorta lo que
+  sobraba, sin que ningún especialista haya necesitado consultar.
+- *Por qué no se adopta:* el criterio exige mejora en **hallazgos y evidencia
+  citada**, y el banco no puede medirla: sus respuestas del modelo están
+  escritas a mano (mide la tubería, no el modelo), de modo que un bucle de
+  varias consultas devolvería por construcción lo que la conversación simulada
+  ya contiene. Construirlo sería publicar un mecanismo cuya única justificación
+  es una mejora que nadie ha podido observar, y cada turno extra suma una
+  llamada al modelo por especialista (hoy 4,6 por operación) sobre una
+  superficie —herramientas con confirmación, topes de handoff, evento por
+  llamada— que habría que gobernar y mantener.
+- *Qué queda listo si se reabre:* `governTools` aplica la política por rol,
+  `createToolRegistry` acota y valida cada llamada y el handoff ya declara su
+  presupuesto. Reabrir exige primero un banco con respuestas de un modelo real
+  (o grabadas de uno) que pueda puntuar hallazgos y citas; con esa medición, el
+  criterio de coste (< 50 %) se evalúa sobre `llamadasPorOperacion`.
+
 ---
 
 ### Ola 20 — Observabilidad, control humano y operación *(clase mundial operativa)*
@@ -900,7 +922,7 @@ cabe en el JSON existente. **Todas paran y piden aprobación antes de tocar
 | 18.4 Niveles de modelo | P2 · S | Hecha | #251 · `quick`, `default` y `deep` tienen IDs distintos por proveedor; la preferencia explícita sólo afecta a `default`; la ficha muestra el modelo resuelto |
 | 19.0 Herramientas de lectura | P2 · XL | Hecha | Corte 1 hecho: `services/ai/tools/registry.ts` (`defineReadTool`, `createToolRegistry`; 22 pruebas). Corte 2 hecho: las cinco herramientas (`read_artifact`, `search_artifacts`, `list_office_standards`, `query_knowledge_graph`, `get_initiative_motivation`) sobre puertos de `services/ai/tools/`, implementados en `services/architectureOffice/application/contextReadPorts.ts`. Corte 3 hecho: `ROLE_TOOL_POLICY` (derivada del rol, validada por `validateAgentDefinition`) y `governTools`, que rechaza y registra lo no permitido; el bucle que llame a las herramientas es 19.2, así que `governTools` es el punto de aplicación que ese bucle debe usar. Corte 4 hecho: familia 6 «uso de herramientas» del banco (`herramientas.json`, 11 conversaciones simuladas): oferta por rol, llamadas bien resueltas (herramienta correcta, entrada inválida, id inexistente, denegada), denegaciones registradas, respuestas acotadas y llamadas innecesarias (máx. 0); todas en 100 % / 0 en la línea base |
 | 19.1 Política de contexto | P2 · L | Hecha | `agentContextPolicy` por rol, manifiesto en cada invocación; `tokensPorOperacion` en el caso con análisis largos 6 398 → 4 410 (−31 %) |
-| 19.2 Bucle de herramientas | P3 · L | Espera medición | |
+| 19.2 Bucle de herramientas | P3 · L | Hecha (medido, no adoptado) | Cierre por el criterio del propio plan: el banco no puede mostrar mejora en hallazgos/evidencia citada, así que no se construye el bucle. Ver «Resultado de 19.2» |
 | 20.0 Traza en árbol | P1 · M | Hecha | #252 · `2f2af2c` · fusión 2026-10-16 · producción `success`. `describeOperation` deriva el árbol (agentes, eventos, handoffs rechazados, revisión, sellos de prompt) del `CoordinationOutcome`, sin almacenarlo; «Ver traza» en la dock (árbol accesible, carga diferida) y exportación JSON con las credenciales omitidas (`redactSecretShapes`). Remediación H1 (redacción integral PEM, `lib/secretShapes.ts`): #256 · `327e5b6` · fusión 2026-10-21 · producción `success`; revisión independiente aprobada sobre `7571f1f` (SHA de cabeza exacto) con RED→GREEN en clon aislado. Remediación H2 (correlación canónica de trazas: `describeOperation`, registros de invocación de la Oficina correlacionados con el kernel de IA): #262 · `be1a5bc` · fusión 2026-10-22; el #257 original era idéntico a #256 (delta 0) |
 | 20.1 Panel de calidad de agentes | P2 · M | Hecha | #271 · `7519be3` · fusión 2026-10-23 · `buildAgentQualityReport` (dominio puro) y `AgentQualityPanel` en diferido en `/agents` (49,3 de 51 KB gz); handoffs rechazados declarados «aún no se registra» hasta persistirlos por encargo |
 | 20.2 Intervención humana | P2 · M | Hecha | #272 · `5c4f043` · fusión 2026-10-23 · `planApproval` (puro) y `coordinateRequest` con puerto `approval` antes de la primera llamada (umbral 4 especialistas, medido); `usePlanApprovalGate` + `PlanApprovalPanel` en el dock. El recorrido E2E con proveedor simulado se cubre en 20.3 |
