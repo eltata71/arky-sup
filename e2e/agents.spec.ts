@@ -135,6 +135,7 @@ test.describe('Agentes — de la ficha al prompt', () => {
 
     // 4. Accesibilidad del dock abierto: nada crítico.
     const dock = await new AxeBuilder({ page })
+      .include('[role="dialog"]')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
     console.log(`[a11y] dock de agentes: ${dock.violations.map((violation) => `${violation.id}(${violation.impact})`).join(', ') || '—'}`);
