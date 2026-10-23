@@ -198,3 +198,10 @@ export type { ArtifactSuggestion, ArtifactSuggestionAction } from './artifactSug
 export type { ArtifactSuggestionGapType } from './artifactSuggestionService';
 
 export { captureArtifactContext } from './prompts/contextManifestCapture';
+
+export type {
+  ArtifactReadPort,
+  KnowledgeGraphReadPort,
+  MotivationReadPort,
+  StandardsReadPort,
+} from './tools';
