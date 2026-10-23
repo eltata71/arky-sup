@@ -73,6 +73,22 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "react-dom"
         update-types: [version-update:semver-major]
+      # motion 14.3 suma 3,8 KB gz a la carga inicial (344,3 → 348,1 de 345) y
+      # lucide-react 1.58 suma 1,0 (→ 345,3). Reabrir con holgura en el
+      # presupuesto o tras recortar la carga inicial (2026-10-22).
+      - dependency-name: "motion"
+        update-types: [version-update:semver-minor]
+      - dependency-name: "lucide-react"
+        update-types: [version-update:semver-major]
+      # @playwright/test 1.64.1 cambia la clave de caché de navegadores y la
+      # descarga se cuelga en CI (el paso agota los 25 min, dos veces, 2026-10-22);
+      # con 1.64.0 en caché el recorrido pasa en 6 min. Reabrir cuando la descarga
+      # responda.
+      - dependency-name: "@playwright/test"
+        update-types: [version-update:semver-patch]
+      # 4.14 resuelve playwright-core 1.64.1 y duplica los tipos de Page.
+      - dependency-name: "@axe-core/playwright"
+        update-types: [version-update:semver-minor]
       # Tailwind 4 pasa a configuración CSS y a otro plugin de PostCSS; es una
       # migración propia, no una subida (2026-10-12).
       - dependency-name: "tailwindcss"
