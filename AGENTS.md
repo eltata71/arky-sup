@@ -434,6 +434,12 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    primera llamada (20.2, CLAUDE.md → *The agents have a card*); cancelar no gasta.
    `/agents` muestra la calidad por agente derivada de los encargos (20.1, CLAUDE.md →
    *The agents have a card*); sin medir es `null`, nunca 0.
+   Una personalización guarda la versión del contrato contra la que se escribió y la
+   hoja del agente avisa de la deriva y muestra las diferencias (16.5, CLAUDE.md →
+   *The agents have a card*).
+   La ficha del agente se valida y se registra en el servidor (16.4): `save_agent_profile`
+   exige lista blanca, límites y `expected_revision`, y escribe `api.agent_profile_changes`
+   (append-only); ver CLAUDE.md → *Data Layer*.
    **El plan de clase mundial (olas 9–14) está cerrado desde 2026-10-13**: no
    hay tarea abierta en `docs/plan-clase-mundial.md`; lo nuevo es un plan nuevo.
    **El plan en curso es `docs/plan-agentes-ia.md`** (olas 15–20, aprobado el

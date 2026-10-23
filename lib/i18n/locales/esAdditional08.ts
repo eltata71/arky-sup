@@ -118,6 +118,7 @@ export const esAdditional08: Dictionary = {
   "certificate.verification": "Verificación:",
   "toast.close": "Cerrar notificación",
   "agentProfile.signInRequired": "Hace falta una sesión iniciada para configurar un agente.",
+  "agentProfile.conflict": "Esta ficha cambió en otra pestaña o sesión. Se recargó la versión guardada: revisa y vuelve a aplicar tu cambio.",
   "planApproval.title": "Aprueba el plan antes de gastar",
   "planApproval.description": "Esta solicitud convoca a {p0} especialistas y puede hacer hasta {p1} llamadas al modelo. Todavía no se ha invocado a nadie.",
   "planApproval.minimum": "Desmarca a quien no haga falta. Debe quedar al menos un especialista.",

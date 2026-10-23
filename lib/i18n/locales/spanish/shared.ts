@@ -374,6 +374,7 @@ export const section: Dictionary = {
   "ui.pasa-el-cursor-por-cualquier.8d9c14": ". Pasa el cursor por cualquier tarjeta para resaltar su cadena completa.",
   "ui.proyecto-s-sin-iniciativa-de.5da7e1": "proyecto(s) sin iniciativa de negocio. Enlázalos para que aparezcan en la cadena.",
   "agentProfile.signInRequired": "Hace falta una sesión iniciada para configurar un agente.",
+  "agentProfile.conflict": "Esta ficha cambió en otra pestaña o sesión. Se recargó la versión guardada: revisa y vuelve a aplicar tu cambio.",
   "planApproval.title": "Aprueba el plan antes de gastar",
   "planApproval.description": "Esta solicitud convoca a {p0} especialistas y puede hacer hasta {p1} llamadas al modelo. Todavía no se ha invocado a nadie.",
   "planApproval.minimum": "Desmarca a quien no haga falta. Debe quedar al menos un especialista.",

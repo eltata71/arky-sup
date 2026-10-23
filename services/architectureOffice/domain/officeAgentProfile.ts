@@ -49,6 +49,16 @@ export interface OfficeAgentProfileOverride {
   agentId: OfficeAgentId;
   userId: string;
   schemaVersion: number;
+  /**
+   * Revisión de la fila (16.4): viaja con el registro, desde la lectura hasta
+   * el siguiente guardado, nunca en un mapa del repositorio ni en el documento.
+   */
+  revision?: number;
+  /**
+   * Versión del contrato del agente (`AgentDefinition.version`) contra la que se
+   * escribió la personalización (16.5). Ausente en las anteriores a 16.5.
+   */
+  definitionVersion?: number;
   /** Display name. The persona's alias is what mentions (`@Elena`) still resolve. */
   alias?: string;
   role?: string;
@@ -224,6 +234,7 @@ export const createAgentProfileOverride = (
       agentId: input.agentId,
       userId: input.userId,
       schemaVersion: OFFICE_AGENT_PROFILE_SCHEMA_VERSION,
+      definitionVersion: OFFICE_AGENT_PERSONAS[input.agentId].version,
       alias: cleanText(input.alias, 40),
       role: cleanText(input.role, 120),
       avatar: cleanText(input.avatar, 8),
