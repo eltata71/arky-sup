@@ -21,9 +21,13 @@ import { createInitiative, uniqueSuffix } from './support/journeys';
  * cuenta compartida cualquier otra prueba que convocara a Elena en paralelo
  * vería el marcador.
  *
- * No cubierto aquí, y dicho: el encargo con un revisor que devuelve JSON roto
- * («revisión no disponible»). Exige correr un encargo entero con dos firmas y
- * queda para su propio recorrido.
+ * No cubierto aquí, y dicho: el encargo con un revisor que devuelve JSON roto.
+ * Desde 17.1 esa revisión no dice «no disponible»: se aprueba con
+ * `basis: 'evidence-only'` y espera la firma de una persona. Esa regla la
+ * sostienen `OfficeEngagementRunner.test.ts`, `reviewCritique.test.ts`,
+ * `EvidenceReviewConfirm.test.tsx` y la familia de revisión del banco
+ * (`npm run eval:agents`); correr un encargo entero con dos firmas en el
+ * navegador sólo repetiría esas pruebas con más piezas que pueden fallar.
  */
 
 test.skip(({ browserName }) => browserName !== 'chromium', 'Journeys autenticados: sólo desktop-chromium.');
