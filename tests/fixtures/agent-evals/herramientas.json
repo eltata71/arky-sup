@@ -1,0 +1,107 @@
+{
+  "descripcion": "Familia 6 — uso de herramientas (plan de agentes 19.0). Conversaciones simuladas: cada caso trae las llamadas que el modelo haría (o ninguna) y el desenlace que el dominio exige de la canalización. Mide el registro, la validación y la política por rol, nunca al modelo.",
+  "mundo": {
+    "artefactos": [
+      { "id": "art-adr-01", "name": "ADR-001 Mensajería de siniestros", "type": "adr", "version": 2, "objective": "Decidir el broker de eventos", "content": "# ADR-001\n\n## Contexto\nLos siniestros llegan por tres canales.\n\n## Decisión\nSe adopta un broker gestionado.\n\n## Consecuencias\nMenos operación propia." },
+      { "id": "art-nfr-01", "name": "Requisitos no funcionales de pólizas", "type": "nfr", "version": 1, "objective": "Disponibilidad y latencia", "content": "# NFR\n\n## Disponibilidad\n99,9 % mensual.\n\n## Latencia\np95 bajo 400 ms." }
+    ],
+    "grafo": {
+      "entities": [
+        { "id": "ent-1", "name": "Servicio de Siniestros", "type": "service", "description": "Registra y adjudica siniestros" },
+        { "id": "ent-2", "name": "Broker de eventos", "type": "infrastructure" }
+      ],
+      "relations": [ { "sourceEntityId": "ent-1", "targetEntityId": "ent-2", "type": "publishes-to", "label": "eventos de siniestro" } ]
+    },
+    "motivaciones": [
+      { "title": "Reducir el tiempo de adjudicación", "code": "NEG-2026-001", "need": "Adjudicar siniestros en menos de 48 horas", "objectives": ["Automatizar la validación"], "expectedOutcomes": ["Adjudicación en 48 h"], "kpis": ["Tiempo medio de adjudicación"] }
+    ]
+  },
+  "casos": [
+    {
+      "id": "especialista-lee-adr",
+      "rol": "participant",
+      "necesita": "read_artifact",
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [
+        { "herramienta": "search_artifacts", "entrada": { "query": "mensajería" }, "esperado": "ok" },
+        { "herramienta": "read_artifact", "entrada": { "artifactId": "art-adr-01", "section": "Decisión" }, "esperado": "ok" }
+      ]
+    },
+    {
+      "id": "generalista-pide-estandares",
+      "rol": "generalist",
+      "necesita": "list_office_standards",
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [ { "herramienta": "list_office_standards", "entrada": {}, "esperado": "ok" } ]
+    },
+    {
+      "id": "id-inexistente-se-puede-corregir",
+      "rol": "participant",
+      "necesita": "read_artifact",
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [ { "herramienta": "read_artifact", "entrada": { "artifactId": "art-no-existe" }, "esperado": "error-accionable" } ]
+    },
+    {
+      "id": "parametro-obligatorio-ausente",
+      "rol": "participant",
+      "necesita": "read_artifact",
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [ { "herramienta": "read_artifact", "entrada": {}, "esperado": "entrada-invalida" } ]
+    },
+    {
+      "id": "parametro-de-tipo-incorrecto",
+      "rol": "participant",
+      "necesita": "search_artifacts",
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [ { "herramienta": "search_artifacts", "entrada": { "query": 42 }, "esperado": "entrada-invalida" } ]
+    },
+    {
+      "id": "herramienta-inventada",
+      "rol": "generalist",
+      "necesita": null,
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [ { "herramienta": "write_artifact", "entrada": { "artifactId": "art-adr-01" }, "esperado": "denegada" } ]
+    },
+    {
+      "id": "coordinador-no-lee-artefactos",
+      "rol": "coordinator",
+      "necesita": "get_initiative_motivation",
+      "ofrecidas": ["list_office_standards", "get_initiative_motivation"],
+      "llamadas": [
+        { "herramienta": "read_artifact", "entrada": { "artifactId": "art-adr-01" }, "esperado": "denegada" },
+        { "herramienta": "get_initiative_motivation", "entrada": {}, "esperado": "ok" }
+      ]
+    },
+    {
+      "id": "consolidador-no-busca-artefactos",
+      "rol": "consolidator",
+      "necesita": "query_knowledge_graph",
+      "ofrecidas": ["list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [
+        { "herramienta": "search_artifacts", "entrada": { "query": "disponibilidad" }, "esperado": "denegada" },
+        { "herramienta": "query_knowledge_graph", "entrada": { "name": "Siniestros" }, "esperado": "ok" }
+      ]
+    },
+    {
+      "id": "motivacion-de-iniciativa",
+      "rol": "participant",
+      "necesita": "get_initiative_motivation",
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": [ { "herramienta": "get_initiative_motivation", "entrada": { "initiativeId": "NEG-2026-001" }, "esperado": "ok" } ]
+    },
+    {
+      "id": "pregunta-resuelta-sin-herramienta",
+      "rol": "participant",
+      "necesita": null,
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": []
+    },
+    {
+      "id": "saludo-sin-herramienta",
+      "rol": "generalist",
+      "necesita": null,
+      "ofrecidas": ["read_artifact", "search_artifacts", "list_office_standards", "query_knowledge_graph", "get_initiative_motivation"],
+      "llamadas": []
+    }
+  ]
+}
