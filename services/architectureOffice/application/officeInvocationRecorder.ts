@@ -2,6 +2,7 @@ import { newTraceId } from '../../../lib/traceId';
 import { agentPromptRef, stampPrompt, type AgentPromptId } from '../../../lib/agents/promptCatalog';
 import { summarizeAgentUsage, type AgentInvocationMeasurement } from '../../../lib/ai/agentUsage';
 import type { AIJsonSchema } from '../../ai';
+import type { ContextManifest } from '../domain/agentContextPolicy';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import type { OfficeAgentInvoker, OfficeInvocationRecord, OfficeOrchestrationOptions, OfficeOrchestrationPlan, OfficeOrchestrationResult } from './officeOrchestrationTypes';
 import { HandoffBudgetExhausted } from './handoffBudget';
@@ -25,7 +26,7 @@ export const createOfficeInvocationRecorder = (
   const invokeStamped = async (
     personaId: OfficeAgentId, instruction: string, promptId: AgentPromptId,
     delegate: OfficeAgentInvoker = operationInvoke, responseSchema?: AIJsonSchema,
-    handoffId?: string, workstreamId?: string,
+    handoffId?: string, workstreamId?: string, contextManifest?: ContextManifest,
   ): Promise<string> => {
     if (options.signal?.aborted) throw new Error('Operación cancelada por la persona.');
     const stamp = stampPrompt(agentPromptRef(promptId), instruction);
@@ -36,6 +37,7 @@ export const createOfficeInvocationRecorder = (
       invocationId, personaId, promptId, promptStamp: stamp,
       role: personaId === plan.coordinatorId ? 'coordinator' : personaId === plan.consolidatorId ? 'consolidator' : 'specialist',
       handoffId: handoffId ?? `${plan.operationId}:intake`, workstreamId,
+      ...(contextManifest ? { contextManifest } : {}),
       attempt: promptId === 'office.consolidation-refinement' ? 'refinement' : 'primary',
       status: 'failed', startedAtMs: startedAt,
       measurement: { model: null, usage: null, latencyMs: 0, traceId: null, estimatedCostUsd: null },

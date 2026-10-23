@@ -557,7 +557,7 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
     let calls = 0;
     let stamped = 0;
     let consolidatorCalls = 0;
-    const invoke: OfficeAgentInvoker = async (personaId, _instruction, promptStamp) => {
+    const invoke: OfficeAgentInvoker = async (personaId, instruction, promptStamp) => {
       calls += 1;
       if (isCurrentStamp(promptStamp)) stamped += 1;
       let text: string;
@@ -570,10 +570,13 @@ export const runConsolidation = async (testCase: ConsolidationCase): Promise<Con
         if (output === '__falla__') throw new Error('timeout (simulado)');
         text = output;
       }
+      // Tokens estimados de lo que realmente viajó: así recortar contexto mueve la cifra.
+      const promptTokens = Math.ceil(instruction.length / 4);
+      const completionTokens = Math.ceil(text.length / 4);
       return {
         text,
         model: 'gemini-2.5-flash',
-        usage: { promptTokens: 100, completionTokens: 20, totalTokens: 120 },
+        usage: { promptTokens, completionTokens, totalTokens: promptTokens + completionTokens },
         latencyMs: 25,
         traceId: `eval-${calls}`,
         estimatedCostUsd: 0.00008,
