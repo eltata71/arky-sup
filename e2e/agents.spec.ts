@@ -81,6 +81,10 @@ async function askTheTeam(page: Page, initiativeTitle: string): Promise<void> {
   await expect(box).toBeVisible({ timeout: 15_000 });
   await box.fill(REQUEST);
   await box.press('Enter');
+  // Con 4 especialistas la Oficina pide aprobar el plan antes de gastar (20.2);
+  // con menos no lo pide, así que el clic es condicional.
+  const approve = page.getByRole('button', { name: 'Aprobar y empezar' });
+  await approve.click({ timeout: 10_000 }).catch(() => undefined);
 }
 
 test.describe('Agentes — de la ficha al prompt', () => {
