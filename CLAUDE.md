@@ -785,6 +785,20 @@ rojo), #222 `marked` 18 (los renderers reciben tokens: el typecheck falla en
 `useDocumentRendering`; necesita tarea propia) y #221 `@types/node` 26 (el
 runtime es Node 24; typecheck pasa, pero tipar APIs que no existen es deuda).
 
+### Dependabot #258 y #259, evaluados el 2026-10-22
+
+Sobre `main` con 344,3/345,0 KB gz de arranque. Aplicadas en una rama propia las
+subidas menores y de parche del grupo #258 (`@supabase/supabase-js` 2.118.0,
+`uuid`, `jsdom`, `postcss`, `typescript-eslint`, `@vitest/coverage-v8`,
+`@playwright/test`, `@axe-core/playwright`; `dompurify` ya estaba por #266):
+bundle intacto y suite completa en verde. **Rechazadas por el presupuesto de
+arranque**, que ninguna prueba ve: `motion` 14.3.0 (+3,8 KB gz → 348,1) dentro
+del grupo, y `lucide-react` 1.58.0 de #259 (+1,0 → 345,3; typecheck y 6 017
+pruebas en verde). Quedan excluidas en `dependabot.yml`; reabrir cuando el
+presupuesto tenga holgura. Tampoco se aplicaron `@playwright/test` 1.64.1 ni `@axe-core/playwright` 4.14 (arrastra `playwright-core` 1.64.1 y rompe el typecheck por tipos duplicados): 1.64.1 invalida la
+caché de navegadores y su descarga en CI se colgó dos veces hasta agotar los 25 min
+(con 1.64.0 en caché, 6 min); excluido el parche hasta que la descarga responda.
+
 Las exclusiones nuevas en `.github/dependabot.yml` detienen sólo las propuestas
 mayores de los dos paquetes rechazados. Para reabrir una subida, retirar su
 exclusión y volver a medir los presupuestos sobre `main` vigente.
@@ -2620,6 +2634,26 @@ ejecución**, y estaban en la regla: Alejandro `consolidate` y Tomás `report`
 autoran sin declarar `generate`. El vocabulario tiene tres verbos de autoría.
 Detalle y lo que deliberadamente **no** se construyó —tool policy, context
 policy, memory policy con scopes— en `ADR-004`.
+
+**Una operación cara pide aprobación antes de gastar** (20.2). Cuando el plan
+determinista convoca el máximo de especialistas (`APPROVAL_SPECIALIST_THRESHOLD`,
+4: una petición vaga ya convoca 3 y preguntar siempre sería fricción sin criterio),
+`coordinateRequest` espera `input.approval` **antes de la primera llamada**: la
+persona aprueba, quita a un especialista (nunca a todos) o cancela, y cancelar no
+deja estado porque nada había empezado (`outcome.cancelled`). La propuesta da una
+cota de llamadas (`maxModelCalls`), no un coste: el coste se mide al terminar. Sin
+puerto —el copiloto, la consulta del asistente— o por debajo del umbral, todo sigue
+como antes. Si la pantalla falla, se cancela: ante la duda no se gasta. El dock lo
+monta con `usePlanApprovalGate` y `PlanApprovalPanel`.
+
+**`/agents` también dice cómo trabaja cada agente** (20.1). `buildAgentQualityReport`
+(`services/architectureOffice/application/agentQuality.ts`, pura) deriva de los
+encargos —no se almacena— las tareas, la aprobación a la primera, los reintentos,
+el coste estimado y la latencia p50/p90 por agente y ventana de 7/30 días.
+Sin medir no es cero (`null`), el coste sólo se suma si todas las llamadas lo
+traen y los handoffs rechazados se declaran *aún no registrados* porque viven en
+el resultado de la coordinación y no en el encargo. El panel
+(`AgentQualityPanel`) se carga en diferido: `/agents` vive pegada a su techo.
 
 The split that makes all of this safe is in
 `services/architectureOffice/officeAgentProfile.ts`:
