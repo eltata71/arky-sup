@@ -12,6 +12,7 @@ import { COORDINATION_BRIEF_SCHEMA, RECOMMENDATION_SCHEMA, SPECIALIST_ANALYSIS_S
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import { foldOfficeText, hasExactOfficeMention } from '../domain/officeShared';
 import { rankSpecialistsForRequest } from '../domain/OfficeAgentRouter';
+import { applyContextPolicy, compactAnalysisForConsolidator } from '../domain/agentContextPolicy';
 import { createHandoff, renderHandoffPrompt, DEFAULT_MAX_SPECIALISTS } from '../domain/agentHandoff';
 import type { AgentHandoffKind } from '../domain/agentDefinition';
 import { workstreamCapableAgents } from '../domain/agentRegistry';
@@ -177,6 +178,10 @@ export const executeOfficeOrchestration = async (
       // El encargo viaja como contrato, no como cadena concatenada: quién lo
       // manda, para qué, con qué criterios, qué se espera de vuelta y con qué
       // tope. La cadena es una representación del contrato, no al revés.
+      const specialistContext = applyContextPolicy('specialist', [
+        { kind: 'record', label: 'Solicitud', content: plan.request },
+        { kind: 'coordination-brief', label: 'Brief de coordinación', from: plan.coordinatorId, content: coordination },
+      ]);
       const handoff = createHandoff({
         kind: 'workstream',
         sourceAgentId: plan.coordinatorId,
@@ -185,15 +190,7 @@ export const executeOfficeOrchestration = async (
         objective: workstream.objective,
         constraints: [...briefApplication.extraConstraints],
         acceptanceCriteria: [...workstream.acceptanceCriteria],
-        contextReferences: [
-          { kind: 'record', label: 'Solicitud', content: plan.request },
-          {
-            kind: 'coordination-brief',
-            label: 'Brief de coordinación',
-            from: plan.coordinatorId,
-            content: coordination,
-          },
-        ],
+        contextReferences: specialistContext.references,
         expectedOutput: {
           kind: 'analysis',
           description: 'Un análisis del dominio con supuestos, riesgos y decisiones explícitos, como JSON (summary, findings, assumptions, risks, decisions, outOfScope, evidence, confidence).',
@@ -228,6 +225,7 @@ export const executeOfficeOrchestration = async (
           SPECIALIST_ANALYSIS_SCHEMA,
           handoff.envelope.handoffId,
           workstream.id,
+          specialistContext.manifest,
         );
         const analysis = readContract(`Análisis de ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}`, rawOutput, readSpecialistAnalysis);
         if (analysis) analyses[workstream.id] = analysis;
@@ -262,6 +260,19 @@ export const executeOfficeOrchestration = async (
 
   // Los resultados llegan al consolidador como referencias atribuidas, no como
   // un bloque concatenado: quién dijo qué, y si su workstream salió o falló.
+  // El consolidador lee el análisis estructurado compacto, nunca el texto
+  // completo de cada especialista (plan de agentes, 19.1): el detalle sigue en
+  // el resultado del workstream para quien lo abra.
+  const consolidatorContext = applyContextPolicy('consolidator', workstreamResults.map((result) => {
+    const analysis = analyses[result.workstreamId];
+    return {
+      kind: 'workstream-result' as const,
+      label: `Workstream ${result.workstreamId}`,
+      from: result.personaId,
+      status: result.status,
+      content: result.output ? (analysis ? compactAnalysisForConsolidator(analysis) : result.output) : `Error: ${result.error ?? 'sin resultado'}`,
+    };
+  }));
   const consolidationHandoff = createHandoff({
     kind: 'consolidation',
     sourceAgentId: plan.coordinatorId,
@@ -270,13 +281,7 @@ export const executeOfficeOrchestration = async (
     objective: `Consolida la operación para la solicitud: ${plan.request}`,
     constraints: ['Compara dominios y resuelve contradicciones sin inventar evidencia.'],
     acceptanceCriteria: ['La recomendación es Ready, Conditional o Blocked, y cita a cada contribuyente.'],
-    contextReferences: workstreamResults.map((result) => ({
-      kind: 'workstream-result' as const,
-      label: `Workstream ${result.workstreamId}`,
-      from: result.personaId,
-      status: result.status,
-      content: result.output || `Error: ${result.error ?? 'sin resultado'}`,
-    })),
+    contextReferences: consolidatorContext.references,
     expectedOutput: {
       kind: 'recommendation',
       description: 'Una recomendación como JSON: verdict (ready|conditional|blocked), rationale, contributions por especialista, contradictions con owner, conditions y openQuestions.',
@@ -309,7 +314,7 @@ export const executeOfficeOrchestration = async (
 
   let consolidation: string;
   try {
-    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation', consolidationInvoke, RECOMMENDATION_SCHEMA, consolidationHandoff.envelope.handoffId);
+    consolidation = await invokeStamped(plan.consolidatorId, consolidationPrompt, 'office.consolidation', consolidationInvoke, RECOMMENDATION_SCHEMA, consolidationHandoff.envelope.handoffId, undefined, consolidatorContext.manifest);
   } catch (error) {
     recordBudgetRejection(plan.coordinatorId, plan.consolidatorId, 'consolidation', error);
     return {

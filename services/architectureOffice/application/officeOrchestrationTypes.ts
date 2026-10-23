@@ -1,6 +1,7 @@
 import type { AIJsonSchema } from '../../ai';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import type { AgentHandoffKind } from '../domain/agentDefinition';
+import type { ContextManifest } from '../domain/agentContextPolicy';
 import type { HandoffRejection } from '../domain/agentHandoff';
 import type { AgentInvocationMeasurement, AgentInvocationResult, AgentUsageSummary } from '../../../lib/ai/agentUsage';
 import type { ConsolidationReview, OfficeWorkstreamResult } from '../domain/officeConsolidationReview';
@@ -51,6 +52,8 @@ export interface OfficeInvocationRecord {
   attempt: 'primary' | 'refinement';
   status: 'completed' | 'failed';
   measurement: AgentInvocationMeasurement;
+  /** What the role's context policy let this call read (plan de agentes, 19.1). */
+  contextManifest?: ContextManifest;
   startedAtMs: number;
 }
 
