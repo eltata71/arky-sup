@@ -10,3 +10,19 @@
 export { toAnthropicTools, toGeminiTools, toOpenAITools } from './AITool';
 export { MODIFY_ARTIFACT_TOOL, MODIFY_ARTIFACT_TOOL_NAME } from './artifactTools';
 export type { AIToolCall, AIToolDefinition, AIToolResult } from '../core/AITool';
+export {
+  MAX_RESPONSE_CHARS_CEILING,
+  READ_TOOL_NAME_PATTERN,
+  createToolRegistry,
+  defineReadTool,
+  validateReadToolSpec,
+  validateToolInput,
+} from './registry';
+export type { ReadTool, ReadToolOutput, ReadToolSpec, ToolExecution, ToolRegistry } from './registry';
+export {
+  createListOfficeStandardsTool,
+  createReadArtifactTool,
+  createSearchArtifactsTool,
+  extractMarkdownSection,
+} from './officeReadTools';
+export type { ArtifactReadPort, ReadableArtifact, ReadableStandard, StandardsReadPort } from './officeReadTools';
