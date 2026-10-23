@@ -37,6 +37,12 @@ import {
   type OfficeOrchestrationPlan,
   type OfficeOrchestrationResult,
 } from './officeOrchestration';
+import {
+  applyApprovalDecision,
+  proposeFromPlan,
+  requiresPlanApproval,
+  type PlanApprovalPort,
+} from './planApproval';
 
 // ---------------------------------------------------------------------------
 // The level the request was made from
@@ -102,6 +108,9 @@ export type CoordinationEventKind =
   | 'agent-failed'
   | 'handoff'
   | 'recommendation'
+  | 'approval-requested'
+  | 'approval-decided'
+  | 'operation-cancelled'
   | 'operation-failed';
 
 /**
@@ -153,6 +162,8 @@ export interface CoordinationOutcome {
   invocations?: OfficeOrchestrationResult['invocations'];
   operationId: string;
   status: 'completed' | 'partial' | 'failed';
+  /** La persona canceló el plan antes de empezar: no se invocó a nadie (20.2). */
+  cancelled?: boolean;
   team: CoordinationTeamMember[];
   /** The consolidator's answer — what the user reads as *the* reply. */
   answer: string;
@@ -193,6 +204,12 @@ export interface CoordinateRequestInput {
    * su ficha. Sin él, el de fábrica (plan de agentes, 16.1 corte 3).
    */
   agentName?: (personaId: OfficeAgentId) => string;
+  /**
+   * Aprobación del plan (20.2). Si se da y el plan convoca a tantos
+   * especialistas como el umbral, se espera la decisión **antes de la primera
+   * llamada**. Sin ella, o por debajo del umbral, todo sigue como antes.
+   */
+  approval?: PlanApprovalPort;
   // La ficha de cada agente ya no se antepone al mensaje: llega a su prompt de
   // sistema a través del invocador (`buildCoordinationInvoker`, `profiles`).
   // Anteponerla le daba al agente personalizado dos identidades, la de fábrica
@@ -298,16 +315,50 @@ export const coordinateRequest = async (
     }
   };
 
-  const plan = planOfficeWorkstreams(request, {
+  let plan = planOfficeWorkstreams(request, {
     unavailable: input.unavailableAgents,
     maxSpecialists: input.maxSpecialists,
   });
-  const team = teamFromPlan(plan);
   const briefing = buildScopeBriefing(scope);
 
   emit('request-received', 'framing', null, plan.coordinatorId,
     `${nameOf(plan.coordinatorId)} recibe la solicitud desde ${scope.name}.`,
     request);
+
+  // El plan es determinista y no ha llamado a ningún modelo: es el momento de
+  // enseñárselo a la persona, antes de gastar nada (20.2).
+  if (input.approval && requiresPlanApproval(plan)) {
+    const proposal = proposeFromPlan(plan);
+    emit('approval-requested', 'framing', plan.coordinatorId, null,
+      `El plan convoca ${proposal.specialists.length} especialistas (hasta ${proposal.maxModelCalls} llamadas al modelo): espera tu aprobación.`);
+    let application: ReturnType<typeof applyApprovalDecision>;
+    try {
+      application = applyApprovalDecision(plan, await input.approval(proposal));
+    } catch {
+      // Una pantalla que falla no aprueba: ante la duda no se gasta.
+      application = { outcome: 'cancelled' };
+    }
+    if (application.outcome === 'cancelled') {
+      emit('operation-cancelled', 'closed', null, null,
+        'Operación cancelada antes de empezar: no se invocó a ningún agente.');
+      return {
+        operationId: plan.operationId,
+        status: 'failed',
+        cancelled: true,
+        team: teamFromPlan(plan),
+        answer: '',
+        framing: '',
+        contributions: [],
+        events,
+      };
+    }
+    plan = application.plan;
+    emit('approval-decided', 'framing', null, plan.coordinatorId,
+      application.removed.length > 0
+        ? `Plan aprobado sin ${application.removed.map(nameOf).join(', ')}.`
+        : 'Plan aprobado tal como se propuso.');
+  }
+  const team = teamFromPlan(plan);
 
   emit('team-assembled', 'framing', plan.coordinatorId, null,
     `Equipo convocado: ${team.filter((member) => member.role === 'specialist').length} especialista(s), coordina ${nameOf(plan.coordinatorId)}, consolida ${nameOf(plan.consolidatorId)}.`);

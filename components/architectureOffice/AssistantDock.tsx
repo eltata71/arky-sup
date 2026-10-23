@@ -43,6 +43,8 @@ import { buildCoordinationInvoker } from '../../services/architectureOffice/appl
 import { chatWithProjectMeasured, configuredModelTiers, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
 import { useAgentDisplayName } from '../../hooks/useAgentDisplayName';
+import { usePlanApprovalGate } from '../../hooks/usePlanApprovalGate';
+import { PlanApprovalPanel } from './PlanApprovalPanel';
 import type { Settings } from '../../types';
 import type { Project } from '../../context/AppContext';
 import { SafeRichText } from '../ui/SafeRichText';
@@ -111,6 +113,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
   const agentModelTiers = useMemo(() => configuredModelTiers(profiles), [profiles]);
   const dialogRef = useFocusTrap<HTMLDivElement>(open);
   const turnCounter = useRef(0);
+  const approvalGate = usePlanApprovalGate();
 
   const nextId = useCallback((): string => {
     turnCounter.current += 1;
@@ -157,6 +160,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
         profiles,
       }),
       onEvent: (event) => setEvents((prev) => [...prev, event]),
+      approval: approvalGate.request,
       // Las fichas configuradas viajan con la operación: quien respondió es el
       // agente que el usuario configuró, no la persona de fábrica.
       unavailableAgents,
@@ -169,12 +173,12 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
     setTurns((prev) => [...prev, {
       id: nextId(),
       role: 'office',
-      text: outcome.answer,
+      text: outcome.cancelled ? t('planApproval.cancelledTurn') : outcome.answer,
       status: outcome.status,
       contributions: outcome.contributions,
       outcome,
     }]);
-  }, [running, scope, settings, project, nextId, profiles, unavailableAgents, agentModelTiers, displayName]);
+  }, [running, scope, settings, project, nextId, profiles, unavailableAgents, agentModelTiers, displayName, approvalGate.request, t]);
 
   /**
    * Copying is the most common thing a user does with an answer several
@@ -373,6 +377,12 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                 </div>
               )}
             </div>
+
+            {approvalGate.pending && (
+              <div className="border-t border-gray-200 px-5 py-3 dark:border-gray-800">
+                <PlanApprovalPanel gate={approvalGate} />
+              </div>
+            )}
 
             <form
               className="flex items-end gap-2 border-t border-gray-200 px-5 py-3 dark:border-gray-800"
