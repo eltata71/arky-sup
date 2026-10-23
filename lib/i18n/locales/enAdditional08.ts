@@ -74,6 +74,7 @@ export const enAdditional08: Dictionary = {
   "certificate.verification": "Verification:",
   "toast.close": "Dismiss notification",
   "agentProfile.signInRequired": "Sign in to configure an agent.",
+  "agentProfile.conflict": "This profile changed in another tab or session. The saved version was reloaded: review it and apply your change again.",
   "planApproval.title": "Approve the plan before spending",
   "planApproval.description": "This request convenes {p0} specialists and may make up to {p1} model calls. Nobody has been invoked yet.",
   "planApproval.minimum": "Untick anyone who is not needed. At least one specialist must remain.",

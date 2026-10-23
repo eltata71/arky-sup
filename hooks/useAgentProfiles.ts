@@ -13,7 +13,7 @@
  * entere.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOptionalAuth } from '../context/AuthContext';
 import { useUiTranslation } from '../lib/i18n/UiTranslationContext';
 import {
@@ -71,6 +71,8 @@ export const useAgentProfiles = (): AgentProfilesApi => {
   }, [userId]);
 
   const profiles = useMemo(() => resolveAgentProfiles(overrides), [overrides]);
+  const overridesRef = useRef(overrides);
+  overridesRef.current = overrides;
 
   const save = useCallback(async (
     input: Omit<OfficeAgentProfileInput, 'userId'>,
@@ -86,16 +88,31 @@ export const useAgentProfiles = (): AgentProfilesApi => {
     if (created.outcome === 'rejected') {
       return { ...created, message: t(`agentProfile.rejection.${created.code}`) };
     }
+    // La revisión que se leyó viaja con la ficha (16.4): sin ella el servidor
+    // creería que es la primera vez y rechazaría una edición legítima.
+    const known = overridesRef.current.find((entry) => entry.agentId === created.override.agentId);
+    const outgoing = { ...created.override, revision: known?.revision };
 
     // El estado local se actualiza con lo que la fábrica aceptó, no con lo que
     // el formulario envió: lo que se ve en pantalla es lo que se guardó.
     setOverrides((previous) => [
-      created.override,
+      outgoing,
       ...previous.filter((entry) => entry.agentId !== created.override.agentId),
     ]);
-    const result = await officeAgentProfileRepository.save(created.override);
+    const result = await officeAgentProfileRepository.save(outgoing);
     // Los demás caminos y pantallas leen la ficha nueva (plan de agentes, 16.1).
     invalidateLazyAgentProfiles();
+    if (result.status === 'conflict') {
+      // Otra pestaña guardó antes: se recarga lo guardado en vez de pisarlo.
+      officeAgentProfileRepository.clearCache(userId);
+      setOverrides(await officeAgentProfileRepository.list(userId));
+      setNotice(t('agentProfile.conflict'));
+      return created;
+    }
+    if (result.success && result.data) {
+      const confirmed = result.data;
+      setOverrides((previous) => previous.map((entry) => (entry.agentId === confirmed.agentId ? confirmed : entry)));
+    }
     setNotice(result.success ? null : t('uiMessage.no-se-pudo-guardar-la-ficha.08fed8'));
     return created;
   }, [userId, t]);

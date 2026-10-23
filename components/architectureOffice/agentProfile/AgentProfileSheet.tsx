@@ -27,8 +27,10 @@ import {
   getOfficeArchitectureContext,
   inheritedProfileEntries,
   type OfficeAgentProfile,
+  type OfficeAgentProfileOverride,
 } from '../../../services/architectureOffice/agents'; // the cards' door, not the barrel (F6-05)
 import { AgentProfileAvatar } from './AgentProfileAvatar';
+import { AgentContractSection } from './AgentContractSection';
 import { useEffectiveAgentModel } from '../../../hooks/useEffectiveAgentModel';
 
 const TIER_LABELS: Record<OfficeAgentProfile['modelTier'], string> = {
@@ -128,12 +130,15 @@ const ProvenanceList: React.FC<{
 export interface AgentProfileSheetProps {
   /** El perfil resuelto: la persona del producto con lo configurado aplicado. */
   profile: OfficeAgentProfile;
+  /** Lo guardado de este agente (con su versión de contrato y revisión), si lo hay. */
+  override?: OfficeAgentProfileOverride;
   onClose: () => void;
   onEdit: () => void;
 }
 
 export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
   profile,
+  override,
   onClose,
   onEdit,
 }) => {
@@ -286,6 +291,8 @@ export const AgentProfileSheet: React.FC<AgentProfileSheetProps> = ({
             </ul>
           )}
         </Section>
+
+        <AgentContractSection agentId={profile.agentId} override={override} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Section
