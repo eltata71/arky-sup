@@ -43,13 +43,14 @@ mientras tanto y el peor retraso del bucle de eventos. El informe va a
 `generation-experience` (30 días): son las cifras de partida de la ola 10, y
 cada tarea de la ola las compara.
 
-## Las cuentas sembradas, y por qué hay cuatro
+## Las cuentas sembradas, y por qué hay cinco
 
 | Cuenta | Rol | Para qué |
 |---|---|---|
 | `architect@arky.e2e` | superadmin | la cuenta por defecto; es dueña de los datos semilla |
 | `reviewer@arky.e2e` | reviewer | firma en el comité: el autor no puede firmar lo suyo |
 | `preferences@arky.e2e` | viewer | cambia el idioma de la interfaz |
+| `agents@arky.e2e` | architect | edita la ficha de Elena (20.3); las fichas son por usuario |
 | `projections@arky.e2e` | architect | afirma que un pendiente existe antes de que se procese |
 
 **Regla para añadir una cuenta:** un recorrido necesita cuenta propia cuando
