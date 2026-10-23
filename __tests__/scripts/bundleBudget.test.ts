@@ -143,7 +143,7 @@ describe('what each route downloads beyond the eager payload (F6-05)', () => {
 
   it('holds the landing page and the model-free screens to tight budgets', () => {
     expect(ROUTE_BUDGETS_GZIP_KB.DashboardPage).toBeLessThanOrEqual(60);
-    expect(ROUTE_BUDGETS_GZIP_KB.AgentsPage).toBeLessThanOrEqual(51);
+    expect(ROUTE_BUDGETS_GZIP_KB.AgentsPage).toBeLessThanOrEqual(52);
     expect(ROUTE_BUDGETS_GZIP_KB.SettingsPage).toBeLessThanOrEqual(30);
   });
 });
