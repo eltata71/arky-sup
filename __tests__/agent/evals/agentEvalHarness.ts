@@ -56,6 +56,23 @@ import {
   type OfficeTaskReview,
 } from '../../../services/architectureOffice/domain/OfficeTypes';
 import type { Settings } from '../../../types';
+import {
+  createGetInitiativeMotivationTool,
+  createListOfficeStandardsTool,
+  createQueryKnowledgeGraphTool,
+  createReadArtifactTool,
+  createSearchArtifactsTool,
+  createToolRegistry,
+  governTools,
+} from '../../../services/ai/tools';
+import {
+  createArtifactReadPort,
+  createKnowledgeGraphReadPort,
+  createMotivationReadPort,
+  createStandardsReadPort,
+} from '../../../services/architectureOffice/application/contextReadPorts';
+import { allowedToolsFor } from '../../../services/architectureOffice/domain/agentDefinition';
+import type { OfficeAgentOrchestrationRole } from '../../../services/architectureOffice/domain/agentDefinition';
 
 export const CORPUS_DIR = join(process.cwd(), 'tests', 'fixtures', 'agent-evals');
 
@@ -120,7 +137,24 @@ export interface ConsolidationCase {
 
 const read = <T>(file: string): T => JSON.parse(readFileSync(join(CORPUS_DIR, file), 'utf8')) as T;
 
+export type ToolCallOutcome = 'ok' | 'error-accionable' | 'entrada-invalida' | 'denegada';
+
+export interface ToolUseCase {
+  id: string;
+  rol: OfficeAgentOrchestrationRole;
+  necesita: string | null;
+  ofrecidas: string[];
+  llamadas: { herramienta: string; entrada: unknown; esperado: ToolCallOutcome }[];
+}
+
+interface ToolWorld {
+  artefactos: Parameters<typeof createArtifactReadPort>[0];
+  grafo: Parameters<typeof createKnowledgeGraphReadPort>[0];
+  motivaciones: Parameters<typeof createMotivationReadPort>[0];
+}
+
 export const loadCorpus = () => ({
+  herramientas: read<{ mundo: ToolWorld; casos: ToolUseCase[] }>('herramientas.json'),
   enrutado: read<{ casos: RoutingCase[] }>('enrutado.json').casos,
   intencion: read<{ casos: IntentCase[] }>('intencion.json').casos,
   contratos: read<{ contratos: HandoffContractCase[] }>('handoff.json').contratos,
@@ -678,7 +712,63 @@ export const runFencing = async (): Promise<FenceResult[]> => {
 // Resumen
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Familia 7 — uso de herramientas
+// ---------------------------------------------------------------------------
+
+export interface ToolUseResult {
+  id: string;
+  ofertaCorrecta: boolean;
+  llamadas: number;
+  resueltas: number;
+  denegacionesRegistradas: boolean;
+  respuestasAcotadas: boolean;
+  /** Llamadas hechas en un caso que no necesitaba ninguna herramienta. */
+  innecesarias: number;
+}
+
+const OUTCOME_ERRORS: Readonly<Record<ToolCallOutcome, RegExp | null>> = {
+  ok: null,
+  'error-accionable': /No existe|usa search_artifacts|no encontr/i,
+  'entrada-invalida': /Entrada no válida/,
+  denegada: /no está permitida/,
+};
+
+export const runToolUse = async (testCase: ToolUseCase, world: ToolWorld): Promise<ToolUseResult> => {
+  const registry = createToolRegistry([
+    createReadArtifactTool(createArtifactReadPort(world.artefactos)),
+    createSearchArtifactsTool(createArtifactReadPort(world.artefactos)),
+    createListOfficeStandardsTool(createStandardsReadPort()),
+    createQueryKnowledgeGraphTool(createKnowledgeGraphReadPort(world.grafo)),
+    createGetInitiativeMotivationTool(createMotivationReadPort(world.motivaciones)),
+  ]);
+  const governed = governTools(registry, allowedToolsFor({ orchestrationRole: testCase.rol }));
+  const offered = governed.definitions().map((d) => d.name).sort();
+  let resolved = 0;
+  let bounded = true;
+  for (const call of testCase.llamadas) {
+    const result = await governed.execute(call.herramienta, call.entrada);
+    const pattern = OUTCOME_ERRORS[call.esperado];
+    const matches = pattern === null ? result.ok : !result.ok && pattern.test(result.text);
+    if (matches) resolved += 1;
+    const tool = registry.get(call.herramienta);
+    if (tool && result.text.length > tool.maxResponseChars) bounded = false;
+  }
+  const expectedDenials = testCase.llamadas.filter((c) => c.esperado === 'denegada').map((c) => c.herramienta);
+  const logged = governed.denied().map((d) => d.name);
+  return {
+    id: testCase.id,
+    ofertaCorrecta: JSON.stringify(offered) === JSON.stringify([...testCase.ofrecidas].sort()),
+    llamadas: testCase.llamadas.length,
+    resueltas: resolved,
+    denegacionesRegistradas: JSON.stringify(expectedDenials) === JSON.stringify(logged),
+    respuestasAcotadas: bounded,
+    innecesarias: testCase.necesita === null ? testCase.llamadas.filter((c) => c.esperado !== 'denegada').length : 0,
+  };
+};
+
 export interface AgentEvalResults {
+  herramientas: ToolUseResult[];
   enrutado: RoutingResult[];
   intencion: IntentResult[];
   contratos: HandoffContractResult[];
@@ -700,6 +790,11 @@ export interface AgentEvalSummary {
   aprobacionesSinCritica: number;
   consolidacionesCorrectas: number;
   promptsConVallado: number;
+  ofertaPorRol: number;
+  llamadasBienResueltas: number;
+  denegacionesRegistradas: number;
+  respuestasAcotadas: number;
+  llamadasInnecesarias: number;
   invocacionesConSello: number;
   llamadasPorOperacion: number;
 }
@@ -728,6 +823,14 @@ export const summarize = (results: AgentEvalResults): AgentEvalSummary => {
     aprobacionesSinCritica: withoutCritique.filter((r) => r.aprobacionLimpia).length,
     consolidacionesCorrectas: pct(results.consolidacion.filter((r) => r.ok).length, results.consolidacion.length),
     promptsConVallado: pct(results.vallado.filter((r) => r.presente && r.vallado).length, results.vallado.length),
+    ofertaPorRol: pct(results.herramientas.filter((r) => r.ofertaCorrecta).length, results.herramientas.length),
+    llamadasBienResueltas: pct(
+      results.herramientas.reduce((n, r) => n + r.resueltas, 0),
+      results.herramientas.reduce((n, r) => n + r.llamadas, 0),
+    ),
+    denegacionesRegistradas: pct(results.herramientas.filter((r) => r.denegacionesRegistradas).length, results.herramientas.length),
+    respuestasAcotadas: pct(results.herramientas.filter((r) => r.respuestasAcotadas).length, results.herramientas.length),
+    llamadasInnecesarias: results.herramientas.reduce((n, r) => n + r.innecesarias, 0),
     invocacionesConSello: pct(
       results.consolidacion.reduce((n, r) => n + r.selladas, 0)
         + results.revision.filter((r) => r.sellada).length
@@ -759,6 +862,11 @@ export const TARGETS: Readonly<Record<Exclude<AgentEvalMetric, 'llamadasPorOpera
   consolidacionesCorrectas: { min: 100 },
   promptsConVallado: { min: 100 },
   invocacionesConSello: { min: 100 },
+  ofertaPorRol: { min: 100 },
+  llamadasBienResueltas: { min: 100 },
+  denegacionesRegistradas: { min: 100 },
+  respuestasAcotadas: { min: 100 },
+  llamadasInnecesarias: { max: 0 },
 };
 
 /** Para la línea base: qué dirección es «mejor» en cada métrica. */
@@ -766,6 +874,7 @@ export const LOWER_IS_BETTER: readonly AgentEvalMetric[] = [
   'especialistasProhibidosConvocados',
   'desactivadosConvocados',
   'aprobacionesSinCritica',
+  'llamadasInnecesarias',
 ];
 
 export const meetsTarget = (metric: keyof typeof TARGETS, value: number): boolean => {
@@ -814,6 +923,9 @@ export const renderReport = (results: AgentEvalResults, summary: AgentEvalSummar
     '| Caso | Camino | Corrigió | Debía | Final válida | Llamadas | OK |',
     '|---|---|---|---|---|---|---|',
     ...results.consolidacion.map((r) => `| ${r.id} | ${r.camino} | ${r.corrigio ? 'sí' : 'no'} | ${r.debeCorregir ? 'sí' : 'no'} | ${r.finalValida ? 'sí' : 'no'} | ${r.llamadas} | ${yes(r.ok)} |`),
+    '',
+    '## Herramientas',
+    ...results.herramientas.map((r) => `- ${r.id}: oferta ${r.ofertaCorrecta ? 'correcta' : '**incorrecta**'}, ${r.resueltas}/${r.llamadas} llamadas bien resueltas${r.innecesarias > 0 ? ', **llamadas innecesarias**' : ''}`),
     '',
     '## Vallado',
     ...results.vallado.map((r) => `- ${r.sitio}: ${r.presente ? (r.vallado ? 'vallado' : '**sin vallar**') : '**no aparece**'}`),

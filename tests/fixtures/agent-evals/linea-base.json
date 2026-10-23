@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-14",
+  "fecha": "2026-10-23",
   "actual": {
     "precisionEnrutado": 100,
     "especialistasProhibidosConvocados": 0,
@@ -12,6 +12,11 @@
     "aprobacionesSinCritica": 0,
     "consolidacionesCorrectas": 100,
     "promptsConVallado": 100,
+    "ofertaPorRol": 100,
+    "llamadasBienResueltas": 100,
+    "denegacionesRegistradas": 100,
+    "respuestasAcotadas": 100,
+    "llamadasInnecesarias": 0,
     "invocacionesConSello": 100,
     "llamadasPorOperacion": 4.8
   },

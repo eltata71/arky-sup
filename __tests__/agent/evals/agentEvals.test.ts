@@ -37,6 +37,7 @@ import {
   runPinnedPersona,
   runReview,
   runRouting,
+  runToolUse,
   summarize,
   type AgentEvalMetric,
   type AgentEvalResults,
@@ -102,6 +103,7 @@ beforeAll(async () => {
     revision,
     consolidacion,
     vallado: await runFencing(),
+    herramientas: await Promise.all(corpus.herramientas.casos.map((c) => runToolUse(c, corpus.herramientas.mundo))),
   };
   summary = summarize(results);
 
@@ -130,6 +132,7 @@ describe('el corpus del banco de agentes', () => {
     expect(corpus.contratos.length + corpus.personaFijada.length).toBeGreaterThanOrEqual(8);
     expect(corpus.revision.length).toBeGreaterThanOrEqual(10);
     expect(corpus.consolidacion.length).toBeGreaterThanOrEqual(5);
+    expect(corpus.herramientas.casos.length).toBeGreaterThanOrEqual(10);
   });
 
   it('cubre los caminos que el plan pide medir', () => {
