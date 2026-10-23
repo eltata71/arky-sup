@@ -425,6 +425,9 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    `mirror-source.yml`; aplica la subida sobre `main` actual.
    También vetadas (2026-10-12): `tailwindcss` 4, `marked` 18 y `@types/node` 26;
    ver CLAUDE.md → *Dependabot #220–#224*.
+   Las herramientas de lectura de los agentes se declaran sólo con `defineReadTool`
+   (`services/ai/tools/registry.ts`, 19.0): cuándo usarla y cuándo no, tope de respuesta,
+   ninguna escribe; ver CLAUDE.md → *AI Layer*.
    Una operación que convoca el máximo de especialistas pide aprobación antes de la
    primera llamada (20.2, CLAUDE.md → *The agents have a card*); cancelar no gasta.
    `/agents` muestra la calidad por agente derivada de los encargos (20.1, CLAUDE.md →
