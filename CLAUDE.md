@@ -2635,6 +2635,17 @@ autoran sin declarar `generate`. El vocabulario tiene tres verbos de autoría.
 Detalle y lo que deliberadamente **no** se construyó —tool policy, context
 policy, memory policy con scopes— en `ADR-004`.
 
+**Una operación cara pide aprobación antes de gastar** (20.2). Cuando el plan
+determinista convoca el máximo de especialistas (`APPROVAL_SPECIALIST_THRESHOLD`,
+4: una petición vaga ya convoca 3 y preguntar siempre sería fricción sin criterio),
+`coordinateRequest` espera `input.approval` **antes de la primera llamada**: la
+persona aprueba, quita a un especialista (nunca a todos) o cancela, y cancelar no
+deja estado porque nada había empezado (`outcome.cancelled`). La propuesta da una
+cota de llamadas (`maxModelCalls`), no un coste: el coste se mide al terminar. Sin
+puerto —el copiloto, la consulta del asistente— o por debajo del umbral, todo sigue
+como antes. Si la pantalla falla, se cancela: ante la duda no se gasta. El dock lo
+monta con `usePlanApprovalGate` y `PlanApprovalPanel`.
+
 **`/agents` también dice cómo trabaja cada agente** (20.1). `buildAgentQualityReport`
 (`services/architectureOffice/application/agentQuality.ts`, pura) deriva de los
 encargos —no se almacena— las tareas, la aprobación a la primera, los reintentos,
