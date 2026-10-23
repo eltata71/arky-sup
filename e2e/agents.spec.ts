@@ -59,11 +59,16 @@ async function captureProviderCalls(page: Page): Promise<{ calls: CapturedCall[]
   return { calls, reset: () => { calls.length = 0; } };
 }
 
+/** El editor, no el cajón de la ficha que queda abierto detrás al guardar. */
+function editorOf(page: Page) {
+  return page.locator('[role="dialog"][aria-labelledby="agent-profile-title"]');
+}
+
 async function openElenaEditor(page: Page): Promise<void> {
   await page.goto('/agents');
   await page.getByRole('button', { name: /Ver la ficha de Elena/ }).first().click();
   await page.getByRole('button', { name: 'Configurar ficha' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+  await expect(editorOf(page)).toBeVisible({ timeout: 15_000 });
 }
 
 async function askTheTeam(page: Page, initiativeTitle: string): Promise<void> {
@@ -86,7 +91,7 @@ test.describe('Agentes — de la ficha al prompt', () => {
 
     // 1. Se enseña algo a Elena y se guarda: lo afirma la base, no la pantalla.
     await openElenaEditor(page);
-    const dialog = page.getByRole('dialog');
+    const dialog = editorOf(page);
     await dialog.getByLabel('Conocimiento de la organización').fill(marker);
     await dialog.getByLabel('Conocimiento de la organización').press('Enter');
     await dialog.getByRole('button', { name: 'Guardar ficha' }).click();
@@ -130,7 +135,7 @@ test.describe('Agentes — de la ficha al prompt', () => {
 
     // 5. Se apaga a Elena: la siguiente solicitud ya no la convoca.
     await openElenaEditor(page);
-    const second = page.getByRole('dialog');
+    const second = editorOf(page);
     await second.getByLabel('Disponible para la Oficina').uncheck();
     await second.getByRole('button', { name: 'Guardar ficha' }).click();
     await expect(second).toBeHidden({ timeout: 15_000 });
@@ -149,7 +154,7 @@ test.describe('Agentes — de la ficha al prompt', () => {
 
     // 6. Se restauran sus valores de fábrica: la ficha desaparece de la base.
     await openElenaEditor(page);
-    await page.getByRole('dialog').getByRole('button', { name: 'Restaurar valores de fábrica' }).click();
+    await editorOf(page).getByRole('button', { name: 'Restaurar valores de fábrica' }).click();
     await expect.poll(async () => {
       const stored = await rpc<{ agentId: string }[]>(request, token, 'list_agent_profiles');
       return stored.some((entry) => entry.agentId === 'elena');
