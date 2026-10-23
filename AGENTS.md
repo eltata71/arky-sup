@@ -425,6 +425,8 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    `mirror-source.yml`; aplica la subida sobre `main` actual.
    También vetadas (2026-10-12): `tailwindcss` 4, `marked` 18 y `@types/node` 26;
    ver CLAUDE.md → *Dependabot #220–#224*.
+   `/agents` muestra la calidad por agente derivada de los encargos (20.1, CLAUDE.md →
+   *The agents have a card*); sin medir es `null`, nunca 0.
    **El plan de clase mundial (olas 9–14) está cerrado desde 2026-10-13**: no
    hay tarea abierta en `docs/plan-clase-mundial.md`; lo nuevo es un plan nuevo.
    **El plan en curso es `docs/plan-agentes-ia.md`** (olas 15–20, aprobado el
