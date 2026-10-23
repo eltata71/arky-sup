@@ -19,3 +19,10 @@ export {
   validateToolInput,
 } from './registry';
 export type { ReadTool, ReadToolOutput, ReadToolSpec, ToolExecution, ToolRegistry } from './registry';
+export {
+  createListOfficeStandardsTool,
+  createReadArtifactTool,
+  createSearchArtifactsTool,
+  extractMarkdownSection,
+} from './officeReadTools';
+export type { ArtifactReadPort, ReadableArtifact, ReadableStandard, StandardsReadPort } from './officeReadTools';
