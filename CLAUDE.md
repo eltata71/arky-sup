@@ -2479,7 +2479,7 @@ single-domain question with one acceptance criterion; running it through a
 coordinator, four specialists and a consolidator would cost five model calls and
 several seconds to produce a sentence. Anthropic's guidance on building agents
 puts this first — use the simplest pattern that solves the task — and
-`docs/agentes-anthropic-alineacion.md` records the mapping principle by
+`docs/agentes-alineacion-estandares.md` records the mapping principle by
 principle.
 
 So there are three entry points and they never merge:
@@ -2918,6 +2918,11 @@ replaced by the case's answer: `planOfficeWorkstreams`, `classifyAgentIntent`,
 a marker in the field a person wrote and checks it lands inside
 `wrapUntrustedContent`. `npm run eval:agents` prints the table.
 
+**The handoff budget is applied, not only declared** (19.0): `withHandoffBudget`
+(`services/architectureOffice/application/handoffBudget.ts`) cuts a run with
+`HandoffBudgetExhausted` when its calls run out, and `agentContextPolicy` limits
+what each role reads and leaves a manifest of what was delivered.
+
 The rules are the export bench's: **the baseline only improves**
 (`linea-base.json`, with direction per metric — fewer forbidden specialists is
 better), **every figure below its target is a `defectoConocido`** with its
@@ -3118,7 +3123,7 @@ Read the relevant doc before modifying a subsystem — they carry the rationale 
 | `docs/diagram-world-class-audit.md`, `docs/diagram-world-class-audit-2026-04-17.md` | Diagram module audits |
 | `docs/oficina-arquitectura.md` | Architecture Office: engagement model, task DAG, runner ports, ARB governance, separation of duties, known limits |
 | `docs/guia-oficina-arquitectura.md` | Architecture Office **user guide** (Spanish): intake, charter, gates, ARB, troubleshooting |
-| `docs/agentes-anthropic-alineacion.md` | Which agent pattern is used where, its limits and guardrails, mapped to Anthropic's guidance principle by principle |
+| `docs/agentes-alineacion-estandares.md` | Which agent pattern is used where, its limits and guardrails, mapped to Anthropic's guidance principle by principle |
 | `docs/architecture-knowledge-graph.md`, `docs/consistency-engine.md`, `docs/traceability-engine.md` | AKG, consistency, traceability/impact |
 | `docs/publication-pipeline.md`, `-packages.md`, `-governance.md`, `-accessibility.md` | Publication pipeline |
 | `docs/export-hardening.md` | Export adapters and their guarantees |
@@ -3126,7 +3131,7 @@ Read the relevant doc before modifying a subsystem — they carry the rationale 
 | `docs/ui-ux-world-class-plan.md` | UI/UX upgrade plan |
 | `docs/technical-debt-audit.md` | Prioritised debt — **record new debt here** |
 | `docs/ddd-transformacion/` | **The canonical record of the DDD transformation, closed on 2026-09-27**: start with `14-informe-cierre.md` (managerial and technical closing report), then baseline, findings, master plan, backlog, progress log (`08-avance.md`), phase closures, residual debt (`13-deuda-residual.md`) and evidence. `adr/` holds ADR-100…109 — the last three are the projection outbox (107), the engine strangled through ports (108), and small doors with per-route budgets (109) |
-| `docs/operacion/` | Operations: the deployment contract, and four runbooks — **applying a migration to `ArkyDB-US`** (`runbook-migraciones.md`), **a route that shows «Error en la aplicación»** (`runbook-ruta-no-carga.md`), **a knowledge graph that does not update** (`runbook-proyecciones.md`), and **how the E2E suite runs, how to read a failure and when a journey needs its own seeded account** (`runbook-e2e.md`), and **how several agents share the clone without contradicting each other** (`multiagente.md`). Read the first before any `supabase db push`
+| `docs/operacion/` | Operations: the deployment contract, and four runbooks — **applying a migration to `ArkyDB-US`** (`runbook-migraciones.md`), **a route that shows «Error en la aplicación»** (`runbook-ruta-no-carga.md`), **a knowledge graph that does not update** (`runbook-proyecciones.md`), and **how the E2E suite runs, how to read a failure and when a journey needs its own seeded account** (`runbook-e2e.md`), and **how several agents share the clone without contradicting each other** (`multiagente.md`). **Diagnosing an agent** — a card that was ignored, a review that approved something bad, an operation that cost too much — is `runbook-agentes.md`. Read the first before any `supabase db push`
 | `docs/aws-migration-plan.md` | **Propuesta, sin ejecutar, y hoy histórica**: se escribió contra la infraestructura Firebase/Vercel, que F9 sustituyó. Plan por fases para migrar a AWS dentro de la capa gratuita: Cognito, DynamoDB en tabla única, Lambda + API Gateway, S3 + CloudFront, CI/CD por OIDC, y los cuatro riesgos estructurales medidos sobre este código |
 | `docs/top-10-monolito-modular-ddd-2026-09-01.md` | Open review: modular-monolith boundaries, DDD, tech debt and CI/CD — measured dependency graph, cycle census and the root cause of the 8m49s test step |
 | `specs/00-index.md` | SDD artifacts: BRD, use cases, ADRs, domain model, NFR, BDD, traceability matrix |

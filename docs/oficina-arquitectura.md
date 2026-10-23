@@ -354,7 +354,7 @@ error donde debería estar la respuesta. La corrección emite su propio evento,
 porque dos «recomendación firmada» seguidas no se distinguen.
 
 Detalle y correspondencia con la guía de Anthropic:
-`docs/agentes-anthropic-alineacion.md`.
+`docs/agentes-alineacion-estandares.md`.
 
 ---
 
@@ -417,5 +417,5 @@ a `observabilityService` y nunca lanza.
 | Compilación y puntuación | `services/artifactCompiler/`, `docs/artifact-compiler.md` |
 | Grafo de conocimiento | `docs/architecture-knowledge-graph.md` |
 | Publicación | `docs/publication-pipeline.md`, `docs/publication-governance.md` |
-| Patrones de agentes, topes y guardarraíles | `docs/agentes-anthropic-alineacion.md` |
+| Patrones de agentes, topes y guardarraíles | `docs/agentes-alineacion-estandares.md` |
 | Seguridad y claims | `docs/security-hardening.md` |

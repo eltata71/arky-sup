@@ -117,7 +117,7 @@ tocar el planificador, el ejecutor o la gobernanza. La guía de uso para el
 arquitecto está en **`docs/guia-oficina-arquitectura.md`**, y la alineación con
 los principios de Anthropic para construir agentes —qué patrón se usa para qué,
 con qué topes y con qué guardarraíles— en
-**`docs/agentes-anthropic-alineacion.md`**.
+**`docs/agentes-alineacion-estandares.md`**.
 
 Reglas que no se negocian al trabajar aquí:
 
@@ -154,7 +154,7 @@ Reglas que no se negocian al trabajar aquí:
 9. **Un formulario no se orquesta.** Completar un campo es tarea de un solo
    agente (`services/ai/generation/capture/`); el equipo completo se reserva
    para una pregunta de arquitectura. El razonamiento, con la tabla de cuándo
-   usar cada patrón, está en `docs/agentes-anthropic-alineacion.md`.
+   usar cada patrón, está en `docs/agentes-alineacion-estandares.md`.
 10. **La ayuda de la plataforma tampoco se orquesta, y no depende del modelo.**
     «¿Cómo funciona esto?» la contesta un solo agente sobre el catálogo escrito
     de `lib/platformGuide`; si el proveedor falla, se muestran los temas del
@@ -285,6 +285,9 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    empeora respecto a su línea base, y toda cifra bajo su objetivo es un
    `defectoConocido` con su hallazgo y su tarea: quien lo cierra quita la
    entrada en el mismo commit. Ver *Agent evaluation bench* en `CLAUDE.md`.
+   **Y el presupuesto de un handoff se aplica, no sólo se declara** (19.0):
+   `withHandoffBudget` corta con `HandoffBudgetExhausted` al agotarse las llamadas,
+   y la política de contexto por rol deja un manifiesto de lo entregado.
    **Y en un encargo, quien firma lo decide la tarea, nunca el texto** (16.2):
    el puerto de producción entrega `buildOfficePersonaBriefing(task.assigneeId)`;
    resolver un `@Alias` del brief dejaba que el usuario cambiara el autor, y sin
