@@ -80,6 +80,12 @@ updates:
         update-types: [version-update:semver-minor]
       - dependency-name: "lucide-react"
         update-types: [version-update:semver-major]
+      # @playwright/test 1.64.1 cambia la clave de caché de navegadores y la
+      # descarga se cuelga en CI (el paso agota los 25 min, dos veces, 2026-10-22);
+      # con 1.64.0 en caché el recorrido pasa en 6 min. Reabrir cuando la descarga
+      # responda.
+      - dependency-name: "@playwright/test"
+        update-types: [version-update:semver-patch]
       # Tailwind 4 pasa a configuración CSS y a otro plugin de PostCSS; es una
       # migración propia, no una subida (2026-10-12).
       - dependency-name: "tailwindcss"

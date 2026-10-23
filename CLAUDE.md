@@ -795,7 +795,9 @@ bundle intacto y suite completa en verde. **Rechazadas por el presupuesto de
 arranque**, que ninguna prueba ve: `motion` 14.3.0 (+3,8 KB gz → 348,1) dentro
 del grupo, y `lucide-react` 1.58.0 de #259 (+1,0 → 345,3; typecheck y 6 017
 pruebas en verde). Quedan excluidas en `dependabot.yml`; reabrir cuando el
-presupuesto tenga holgura.
+presupuesto tenga holgura. Tampoco se aplicó `@playwright/test` 1.64.1: invalida la
+caché de navegadores y su descarga en CI se colgó dos veces hasta agotar los 25 min
+(con 1.64.0 en caché, 6 min); excluido el parche hasta que la descarga responda.
 
 Las exclusiones nuevas en `.github/dependabot.yml` detienen sólo las propuestas
 mayores de los dos paquetes rechazados. Para reabrir una subida, retirar su
