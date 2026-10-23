@@ -15,12 +15,10 @@
  * **What is deliberately not here**, because the brief asks for it and the
  * product does not yet have anything that would enforce it:
  *
- * - **Tool policy.** There is exactly one tool in the product
- *   (`MODIFY_ARTIFACT_TOOL`). `allowedTools` and `requiresApproval` per agent
- *   would be thirteen records describing a choice nobody can make, which is the
- *   speculative abstraction this repository rules out — and worse, a permission
- *   surface that looks like governance and enforces nothing. It belongs with
- *   the tool registry, when there are tools to register.
+ * - **Per-agent tool lists.** The read-tool registry exists since 19.0 and its
+ *   policy is `ROLE_TOOL_POLICY`, derived from the orchestration role below,
+ *   not written thirteen times. `requiresApproval` stays out: no read tool
+ *   needs one, and writing stays `MODIFY_ARTIFACT_TOOL` with its confirmation.
  * - **Context policy** (required/forbidden/max context). The context budget is
  *   per call today (`services/ai/callControl`), not per agent, and no caller
  *   can express "this agent must never see the chat history".
@@ -33,6 +31,8 @@
 
 import type { ArtifactType } from '../../../types';
 import type { ModelTier } from '../../../lib/ai/modelCatalog';
+import { READ_TOOL_NAMES } from '../../../lib/agents/readToolNames';
+import type { ReadToolName } from '../../../lib/agents/readToolNames';
 
 export type OfficeAgentId =
   | 'arky'
@@ -159,6 +159,26 @@ export const AUTHORING_CAPABILITIES: readonly OfficeAgentCapability[] = Object.f
  */
 export const REVIEWER_TEMPERATURE = 0.2;
 
+/**
+ * Política de herramientas de lectura por rol (plan de agentes, 19.0).
+ *
+ * Se deriva del rol —no se lista por agente— por la misma razón que la
+ * topología de delegación: son los roles. El coordinador reparte y no lee
+ * artefactos; el consolidador lee análisis, nunca el detalle; sólo el
+ * especialista y el generalista consultan artefactos. Ninguna herramienta
+ * escribe.
+ */
+export const ROLE_TOOL_POLICY: Readonly<Record<OfficeAgentOrchestrationRole, readonly ReadToolName[]>> = Object.freeze({
+  generalist: READ_TOOL_NAMES,
+  participant: READ_TOOL_NAMES,
+  coordinator: ['list_office_standards', 'get_initiative_motivation'],
+  consolidator: ['list_office_standards', 'query_knowledge_graph', 'get_initiative_motivation'],
+});
+
+/** Herramientas que este agente puede llamar. */
+export const allowedToolsFor = (agent: Pick<OfficeAgentPersona, 'orchestrationRole'>): readonly ReadToolName[] =>
+  ROLE_TOOL_POLICY[agent.orchestrationRole];
+
 /** One thing wrong with a definition, in terms a maintainer can act on. */
 export interface AgentDefinitionIssue {
   agentId: OfficeAgentId;
@@ -171,7 +191,8 @@ export interface AgentDefinitionIssue {
     | 'participant-cannot-consult'
     | 'coordinator-authors'
     | 'invalid-concurrency'
-    | 'invalid-version';
+    | 'invalid-version'
+    | 'invalid-tool-policy';
   message: string;
 }
 
@@ -225,6 +246,13 @@ export const validateAgentDefinition = (
   }
   if (!Number.isInteger(definition.maxConcurrentTasks) || definition.maxConcurrentTasks < 1) {
     fail('invalid-concurrency', 'La capacidad concurrente debe ser un entero ≥ 1.');
+  }
+  const policy = allowedToolsFor(definition);
+  if (policy.some((tool) => !(READ_TOOL_NAMES as readonly string[]).includes(tool))) {
+    fail('invalid-tool-policy', 'La política de herramientas nombra una herramienta que no existe.');
+  }
+  if (policy.length === 0) {
+    fail('invalid-tool-policy', 'Un agente sin ninguna herramienta permitida no puede consultar su contexto.');
   }
 
   return issues;

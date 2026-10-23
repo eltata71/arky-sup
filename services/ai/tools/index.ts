@@ -28,3 +28,5 @@ export {
 export type { ArtifactReadPort, ReadableArtifact, ReadableStandard, StandardsReadPort } from './officeReadTools';
 export { createGetInitiativeMotivationTool, createQueryKnowledgeGraphTool } from './contextReadTools';
 export type { GraphEntityView, GraphRelationView, KnowledgeGraphReadPort, MotivationReadPort, MotivationView } from './contextReadTools';
+export { governTools } from './governedTools';
+export type { DeniedToolCall, GovernedTools } from './governedTools';
