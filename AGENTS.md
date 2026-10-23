@@ -445,8 +445,9 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    (append-only); ver CLAUDE.md → *Data Layer*.
    **El plan de clase mundial (olas 9–14) está cerrado desde 2026-10-13**: no
    hay tarea abierta en `docs/plan-clase-mundial.md`; lo nuevo es un plan nuevo.
-   **El plan en curso es `docs/plan-agentes-ia.md`** (olas 15–20, aprobado el
-   2026-10-13; ramas `agentes/<id>-<tema>`).
+   **El plan de agentes de IA (olas 15–20) está cerrado desde 2026-10-23**:
+   `docs/plan-agentes-ia.md` no tiene tareas abiertas. El trabajo nuevo requiere
+   un plan nuevo; sus tareas usaron ramas `agentes/<id>-<tema>`.
 19. **Iniciativas es el contexto piloto: copia su forma** (F3-05,
     `docs/ddd-transformacion/09-cierre-fase-3.md`). `domain/` guarda las reglas
     sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);

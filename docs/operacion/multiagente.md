@@ -119,7 +119,7 @@ Cada plan con tabla de seguimiento está en `PLANES`, en
 | Plan | Prefijo | Estado |
 |---|---|---|
 | `docs/plan-clase-mundial.md` (olas 9–14) | `clase-mundial/` | Cerrado el 2026-10-13 |
-| `docs/plan-agentes-ia.md` (olas 15–20) | `agentes/` | En curso desde el 2026-10-13 |
+| `docs/plan-agentes-ia.md` (olas 15–20) | `agentes/` | Cerrado el 2026-10-23 |
 
 Un plan nuevo se añade a esa lista en el mismo commit que lo aprueba; si no,
 `nueva-tarea.sh` no encuentra sus tareas. La tabla se lee tal como está en
