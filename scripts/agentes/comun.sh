@@ -17,6 +17,7 @@ WORKTREES="${ARKY_WORKTREES:-$(dirname "$PRINCIPAL")/arky-sup-worktrees}"
 PLANES=(
   "docs/plan-clase-mundial.md|clase-mundial"
   "docs/plan-agentes-ia.md|agentes"
+  "docs/plan-remediacion-agentes.md|remediacion"
 )
 
 # Contenido de un plan tal como está en origin/main, o en ARKY_PLANES_DIR si se
