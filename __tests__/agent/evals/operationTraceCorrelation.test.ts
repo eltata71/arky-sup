@@ -56,14 +56,18 @@ describe('operation trace correlation bench', () => {
       invoke: async () => { throw new Error('provider unavailable'); },
     });
     expect(outcome.status).toBe('failed');
-    expect(outcome.invocations).toHaveLength(1);
-    const invocation = outcome.invocations![0];
-    expect(invocation.status).toBe('failed');
-    expect(invocation.measurement).toMatchObject({ model: null, usage: null, traceId: null });
+    // Sin coordinadora que llamar (21.2), fallan los especialistas: una
+    // invocación por cada uno, ninguna con contabilidad inventada.
+    const specialists = outcome.team.filter((member) => member.role === 'specialist').length;
+    expect(outcome.invocations).toHaveLength(specialists);
     const nodes = flatten(describeOperation(outcome));
-    expect(nodes.find((node) => node.id === invocation.invocationId)?.status).toBe('failed');
-    expect(nodes.some((node) => node.kind === 'handoff'
-      && node.children.some((child) => child.id === invocation.invocationId))).toBe(true);
+    for (const invocation of outcome.invocations!) {
+      expect(invocation.status).toBe('failed');
+      expect(invocation.measurement).toMatchObject({ model: null, usage: null, traceId: null });
+      expect(nodes.find((node) => node.id === invocation.invocationId)?.status).toBe('failed');
+      expect(nodes.some((node) => node.kind === 'handoff'
+        && node.children.some((child) => child.id === invocation.invocationId))).toBe(true);
+    }
     for (const event of outcome.events) expect(nodes.filter((node) => node.id === event.id)).toHaveLength(1);
   });
 });

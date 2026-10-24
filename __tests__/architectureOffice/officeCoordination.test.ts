@@ -156,8 +156,8 @@ describe('coordinateRequest', () => {
     expect(outcome.status).toBe('completed');
   });
 
-  it('fails closed when the coordinator itself cannot answer, and says why', async () => {
-    const invoke = vi.fn(async () => { throw new Error('sin proveedor'); });
+  it('fails closed when no specialist can answer, and says why', async () => {
+    const invoke = vi.fn(async (_personaId: string) => { throw new Error('sin proveedor'); });
     const outcome = await coordinateRequest({
       request: 'Evalúa la integración con MuleSoft',
       scope,
@@ -169,8 +169,9 @@ describe('coordinateRequest', () => {
     // A failed operation still explains itself: the status is what the UI keys
     // off to avoid presenting this as a recommendation, but leaving the reader
     // with an empty panel would tell them nothing about what went wrong.
-    expect(outcome.answer).toMatch(/coordinaci/i);
-    expect(outcome.contributions).toHaveLength(0);
+    expect(outcome.answer).toMatch(/ningún especialista/i);
+    // Nada que consolidar: el consolidador no se llama.
+    expect(invoke.mock.calls.some(([personaId]) => personaId === 'alejandro')).toBe(false);
     expect(outcome.events.some((event) => event.kind === 'agent-failed')).toBe(true);
   });
 });

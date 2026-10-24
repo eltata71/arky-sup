@@ -127,8 +127,8 @@ tarea prevé migración.
 
 | Tarea | Prioridad · Complejidad | Estado | PR · nota |
 |---|---|---|---|
-| 21.P Plan y reserva | P1 · S | En curso | este plan; `PLANES` con prefijo `remediacion` |
-| 21.2 Encuadre determinista (D-A3 = B) | P1 · M | Pendiente | — |
+| 21.P Plan y reserva | P1 · S | Hecha | #289 · `14f3f97` · plan en `PLANES` con prefijo `remediacion`; de paso, `zod` 4.6.7 por GHSA-mrhx-c7xc-m3w5 |
+| 21.2 Encuadre determinista (D-A3 = B) | P1 · M | Hecha | #290 · ninguna operación invoca a la coordinadora; `llamadasPorOperacion` 4,6 → 3,6; sin análisis no se consolida |
 | 21.0 El proxy transporta herramientas | P1 · M | Pendiente | — |
 | 21.1 Herramientas conectadas | P1 · L | Pendiente | — |
 | 21.3 Rol configurado y escáner | P1 · S | Pendiente | — |
