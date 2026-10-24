@@ -2835,10 +2835,12 @@ self-correction:
 
 | Limit | Where | Value |
 |---|---|---|
+| Coordinator calls | `buildDeterministicFraming` | **0** — the framing is the deterministic plan (D-A3 = B, remediation 21.2) |
 | Specialists per operation | `planOfficeWorkstreams` | 4 (`DEFAULT_MAX_SPECIALISTS`) |
 | Specialists in parallel | `executeOfficeOrchestration` | 3 |
 | Consolidator corrections | `executeOfficeOrchestration` | **1** |
 | Agents the user switched off | `unavailableAgents` | never empties the team |
+| Consolidation with no analysis delivered | `executeOfficeOrchestration` | never — fails closed and says so |
 
 The correction is the evaluator-optimizer pattern, kept cheap:
 `officeConsolidationReview.ts` evaluates the recommendation **without calling a

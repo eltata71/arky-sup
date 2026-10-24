@@ -9,18 +9,6 @@ import type { AIJsonSchema } from '../../ai';
 const str = (description: string): AIJsonSchema => ({ type: 'string', description });
 const strList = (description: string): AIJsonSchema => ({ type: 'array', description, items: { type: 'string' } });
 
-export const COORDINATION_BRIEF_SCHEMA: AIJsonSchema = {
-  type: 'object',
-  properties: {
-    summary: str('Plan de coordinación en pocas frases.'),
-    order: strList('Orden recomendado de los especialistas, por alias.'),
-    dependencies: strList('Dependencias entre workstreams, una por entrada.'),
-    dropWorkstreams: strList('Alias o ids de especialistas que NO hacen falta en esta petición.'),
-    extraConstraints: strList('Restricciones adicionales para los especialistas (máximo 5).'),
-  },
-  required: ['summary'],
-};
-
 export const SPECIALIST_ANALYSIS_SCHEMA: AIJsonSchema = {
   type: 'object',
   properties: {

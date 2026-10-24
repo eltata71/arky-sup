@@ -29,7 +29,6 @@ import {
 import { renderHandoffPrompt, type AgentHandoffEnvelope } from '../../services/architectureOffice/domain/agentHandoff';
 import { buildConsolidationRefinementPrompt } from '../../services/architectureOffice/domain/officeConsolidationReview';
 import { buildScopeBriefing } from '../../services/architectureOffice/application/officeCoordination';
-import { buildCoordinationPrompt } from '../../services/architectureOffice/application/officeOrchestration';
 import {
   buildConsolidationPrompt,
   buildProductionInstruction,
@@ -149,10 +148,6 @@ const RENDER: Readonly<Record<AgentPromptId, () => string>> = {
     name: 'Portal de siniestros',
     briefing: ['Reducir el tiempo de pago de siniestros.'],
     ancestry: [{ level: 'initiative', name: 'Experiencia del asegurado', summary: 'Pagos más rápidos.' }],
-  }),
-  'office.coordination': () => buildCoordinationPrompt({
-    request: 'Arquitectura AWS del portal de siniestros',
-    workstreams: [{ id: 'ws-1-felipe', personaId: 'felipe', objective: 'Analiza AWS.', acceptanceCriteria: [] }],
   }),
   'office.workstream': () => renderHandoffPrompt(envelope('workstream')),
   'office.consolidation': () => renderHandoffPrompt(envelope('consolidation')),

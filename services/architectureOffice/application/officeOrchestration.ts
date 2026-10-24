@@ -1,14 +1,13 @@
 import { newPrefixedId } from '../../../lib/ids';
-import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 // Boot/route code: parseStructured enters by its small door, not the services/ai barrel (the barrel drags the whole AI layer into every route that imports the Office).
 import { parseStructured } from '../../ai/structuredOutput';
 import {
-  applyCoordinationBrief, evaluateRecommendationFields, readCoordinationBrief, readRecommendation, readSpecialistAnalysis,
-  renderCoordinationBrief, renderRecommendation, renderSpecialistAnalysis,
+  evaluateRecommendationFields, readRecommendation, readSpecialistAnalysis,
+  renderRecommendation, renderSpecialistAnalysis,
   type ContractReading, type SpecialistAnalysis,
 } from '../domain/orchestrationContracts';
-import { COORDINATION_BRIEF_SCHEMA, RECOMMENDATION_SCHEMA, SPECIALIST_ANALYSIS_SCHEMA } from './orchestrationSchemas';
+import { RECOMMENDATION_SCHEMA, SPECIALIST_ANALYSIS_SCHEMA } from './orchestrationSchemas';
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import { foldOfficeText, hasExactOfficeMention } from '../domain/officeShared';
 import { rankSpecialistsForRequest } from '../domain/OfficeAgentRouter';
@@ -99,15 +98,20 @@ export const planOfficeWorkstreams = (
   };
 };
 
-/** Lo que se le pide a la coordinadora. Plantilla `office.coordination`. */
-export const buildCoordinationPrompt = (plan: Pick<OfficeOrchestrationPlan, 'request' | 'workstreams'>): string => [
-  'Coordina la solicitud que sigue.',
-  // Lo que escribió la persona viaja vallado: es material a coordinar, no
-  // órdenes para la coordinadora (plan de agentes, 17.0).
-  wrapUntrustedContent('solicitud', plan.request),
-  'Revisa la descomposición determinística propuesta, explica dependencias, orden, riesgos y límites de ejecución.',
-  'No inventes evidencia. Devuelve un brief conciso que guíe a los especialistas.',
-  'Responde sólo con JSON: summary, order, dependencies, dropWorkstreams (especialistas que no hacen falta; nunca todos) y extraConstraints.',
+/**
+ * El encuadre de la operación: el plan determinista, escrito (plan de
+ * remediación, 21.2 · D-A3 = B).
+ *
+ * Hubo una llamada a la coordinadora que devolvía un brief estructurado —orden,
+ * dependencias, especialistas que sobraban, restricciones—. D-A3 la condicionó a
+ * que el banco mostrara mejora, y el banco no puede mostrarla: sus respuestas
+ * están escritas a mano, así que mide la tubería y no el modelo. Por la regla
+ * que ya estaba decidida, el encuadre es determinista: el router eligió a los
+ * especialistas y el plan dice quién hace qué. Una llamada menos por operación.
+ * La solicitud no va aquí: viaja vallada como referencia propia del handoff.
+ */
+export const buildDeterministicFraming = (plan: Pick<OfficeOrchestrationPlan, 'workstreams'>): string => [
+  `Encuadre determinista: ${plan.workstreams.length} especialista(s) analizan la solicitud en paralelo y el consolidador firma la recomendación.`,
   ...plan.workstreams.map((workstream) => `- ${OFFICE_AGENT_PERSONAS[workstream.personaId].alias}: ${workstream.objective}`),
 ].join('\n');
 
@@ -122,7 +126,7 @@ export const executeOfficeOrchestration = async (
   const maxRefinements = Math.max(0, Math.min(1, options.maxConsolidationRefinements ?? 1));
   const operationInvoke = withHandoffBudget(invoke, {
     budget: {
-      maxAiCalls: options.maxAiCalls ?? 1 + plan.workstreams.length + 1 + maxRefinements,
+      maxAiCalls: options.maxAiCalls ?? plan.workstreams.length + 1 + maxRefinements,
       maxTokens: options.maxTokens ?? 100_000,
     },
   });
@@ -138,27 +142,9 @@ export const executeOfficeOrchestration = async (
     if (reading.value === null) structuredDegraded.push(`${label}: no cumple el contrato; se conserva el texto.`);
     return reading.value;
   };
-  const coordinationPrompt = buildCoordinationPrompt(plan);
-
-  let coordination: string;
-  try {
-    coordination = await invokeStamped(plan.coordinatorId, coordinationPrompt, 'office.coordination', undefined, COORDINATION_BRIEF_SCHEMA);
-  } catch (error) {
-    return {
-      operationId: plan.operationId,
-      status: 'failed',
-      coordination: error instanceof Error ? error.message : String(error),
-      workstreamResults: [],
-      consolidation: 'La coordinación de Lucía falló; no se ejecutaron especialistas.',
-      promptStamps, invocations,
-      usage: usage(),
-    };
-  }
-
-  const coordinationBrief = readContract('Coordinación', coordination, readCoordinationBrief);
-  if (coordinationBrief) coordination = renderCoordinationBrief(coordinationBrief);
-  const briefApplication = applyCoordinationBrief(coordinationBrief, plan.workstreams);
-  const activeWorkstreams = plan.workstreams.filter((w) => briefApplication.keep.includes(w.id));
+  // Sin llamada a la coordinadora: el encuadre es el plan (21.2 · D-A3 = B).
+  const coordination = buildDeterministicFraming(plan);
+  const activeWorkstreams = plan.workstreams;
   const analyses: Partial<Record<string, SpecialistAnalysis>> = {};
 
   const rejectedHandoffs: RejectedHandoff[] = [];
@@ -188,7 +174,7 @@ export const executeOfficeOrchestration = async (
         targetAgentId: workstream.personaId,
         reason: 'La operación necesita el análisis de este dominio.',
         objective: workstream.objective,
-        constraints: [...briefApplication.extraConstraints],
+        constraints: [],
         acceptanceCriteria: [...workstream.acceptanceCriteria],
         contextReferences: specialistContext.references,
         expectedOutput: {
@@ -256,6 +242,16 @@ export const executeOfficeOrchestration = async (
   if (options.signal?.aborted) return {
     operationId: plan.operationId, status: 'failed', coordination, workstreamResults: workstreamResults.filter(Boolean),
     consolidation: 'Operación cancelada por la persona.', rejectedHandoffs, promptStamps, invocations, usage: usage(),
+  };
+
+  // Sin un solo análisis no hay nada que consolidar. La coordinadora era la
+  // que fallaba cerrado cuando no podía responder; sin su llamada (21.2), la
+  // regla se queda con quien la necesita: una recomendación firmada sobre
+  // ningún análisis sería trabajo con forma de trabajo, y una llamada pagada.
+  if (!workstreamResults.some((result) => result?.status === 'completed')) return {
+    operationId: plan.operationId, status: 'failed', coordination, workstreamResults: workstreamResults.filter(Boolean),
+    consolidation: 'Ningún especialista entregó su análisis; no se consolidó una recomendación.',
+    rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined, promptStamps, invocations, usage: usage(),
   };
 
   // Los resultados llegan al consolidador como referencias atribuidas, no como
@@ -377,10 +373,8 @@ export const executeOfficeOrchestration = async (
     consolidation,
     consolidationReview: review,
     refined,
-    ...(coordinationBrief ? { coordinationBrief } : {}),
     ...(Object.keys(analyses).length > 0 ? { analyses } : {}),
     ...(recommendation ? { recommendation } : {}),
-    ...(briefApplication.dropped.length > 0 ? { droppedWorkstreams: briefApplication.dropped } : {}),
     ...(structuredDegraded.length > 0 ? { structuredDegraded } : {}),
     rejectedHandoffs: rejectedHandoffs.length > 0 ? rejectedHandoffs : undefined,
     promptStamps, invocations,
