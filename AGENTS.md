@@ -450,6 +450,9 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    **El plan de agentes de IA (olas 15–20) está cerrado desde 2026-10-23**:
    `docs/plan-agentes-ia.md` no tiene tareas abiertas. El trabajo nuevo requiere
    un plan nuevo; sus tareas usaron ramas `agentes/<id>-<tema>`.
+   **El plan de remediación de agentes (ola 21) está en ejecución desde 2026-10-24**:
+   `docs/plan-remediacion-agentes.md` cierra los nueve criterios del doble chequeo;
+   ramas `remediacion/<id>-<tema>`.
 19. **Iniciativas es el contexto piloto: copia su forma** (F3-05,
     `docs/ddd-transformacion/09-cierre-fase-3.md`). `domain/` guarda las reglas
     sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);
