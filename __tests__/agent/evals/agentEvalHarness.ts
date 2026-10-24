@@ -694,7 +694,8 @@ export const runFencing = async (): Promise<FenceResult[]> => {
       ? 'Veredicto: Ready. '.padEnd(240, '.')
       : 'Análisis.';
   }, { maxConsolidationRefinements: 0 });
-  sites.push({ sitio: 'coordinación · solicitud al coordinador', prompt: prompts.get(plan.coordinatorId) ?? '' });
+  // Sin sitio del coordinador: desde 21.2 el encuadre es determinista y no
+  // hay prompt que vallar. La solicitud viaja vallada al especialista.
   sites.push({ sitio: 'coordinación · objetivo del especialista', prompt: prompts.get(plan.workstreams[0].personaId) ?? '' });
 
   sites.push({ sitio: 'ficha · conocimiento', prompt: buildAgentProfileBriefing(profileWith('knowledge')).join('\n') });

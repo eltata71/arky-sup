@@ -3,7 +3,8 @@
 **Fecha:** 2026-10-13
 **Estado:** **cerrado el 2026-10-23**; todas las tareas ejecutables de la sección
 8 están hechas. La 19.2 se cerró por medición, sin adoptar el bucle de
-herramientas. Aprobado por el propietario el 2026-10-13, con D-A1 = A (las
+herramientas. El doble chequeo del 2026-10-24 encontró nueve criterios no
+cumplidos del todo; los cierra `docs/plan-remediacion-agentes.md` (ola 21). Aprobado por el propietario el 2026-10-13, con D-A1 = A (las
 fichas son de cada usuario) y D-A2…D-A5 según la recomendación (sección 7.2).
 **Continúa:** `docs/plan-clase-mundial.md` (olas 9–14, cerrado el 2026-10-13 con
 #234). La transformación DDD está cerrada desde el 2026-09-27.
@@ -883,7 +884,7 @@ para D-A2…D-A5, **la recomendación** de la última columna.
 |---|---|---|---|---|
 | **D-A1** | ¿Las fichas de agente son de cada usuario o de la organización? | A: por usuario (hoy). B: por organización, con capa personal opcional | B diseñada como migración aditiva, sólo con multi-organización | **A** — por usuario; 16.7 descartada |
 | **D-A2** | ¿La instrucción de la ficha reemplaza o añade? | A: reemplaza (hoy, en teoría). B: añade en la capa de organización | **B**: un reemplazo puede quitar la frontera de dominio y las reglas de honestidad (A3) | **B** — se añade |
-| **D-A3** | ¿El coordinador decide o se elimina? | A: su salida estructurada puede quitar especialistas y añadir restricciones (18.0). B: se elimina la llamada y el encuadre es determinista | **A** si el banco muestra mejora; si no, **B** (ahorra una llamada por operación) | **A condicionada al banco**; 18.0 registra la cifra y, si no hay mejora, aplica B |
+| **D-A3** | ¿El coordinador decide o se elimina? | A: su salida estructurada puede quitar especialistas y añadir restricciones (18.0). B: se elimina la llamada y el encuadre es determinista | **A** si el banco muestra mejora; si no, **B** (ahorra una llamada por operación) | **A condicionada al banco**; 18.0 registra la cifra y, si no hay mejora, aplica B. **Resuelta B** en la remediación 21.2 (2026-10-24): el banco no puede medir mejora y nadie había aplicado la consecuencia |
 | **D-A4** | Catálogo de modelos y presupuesto en tokens | Actualizar tiers por proveedor; topes en tokens además de llamadas | **Sí a ambos**, con tabla de precios fechada y marcada como estimación | **Sí a ambos** |
 | **D-A5** | Revisor sin crítica del modelo | A: `changes-requested` automático. B: `approved` marcado *evidence-only* con confirmación humana | **B**: no bloquea el trabajo por una caída del proveedor y no finge una revisión | **B** — *evidence-only* con confirmación humana |
 

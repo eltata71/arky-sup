@@ -18,7 +18,6 @@ export type AgentPromptId =
   | 'office.persona'
   | 'office.profile-briefing'
   | 'office.scope-briefing'
-  | 'office.coordination'
   | 'office.workstream'
   | 'office.consolidation'
   | 'office.consolidation-refinement'
@@ -50,11 +49,6 @@ export const AGENT_PROMPTS: Readonly<Record<AgentPromptId, AgentPromptEntry>> = 
     version: 2,
     fingerprint: '1f7cd94a',
     description: 'El registro desde el que se pregunta (iniciativa, proyecto o entregable) y su ascendencia.',
-  },
-  'office.coordination': {
-    version: 3,
-    fingerprint: '094d9bb9',
-    description: 'El encargo a la coordinadora: revisar la descomposición y escribir el brief para los especialistas.',
   },
   'office.workstream': {
     version: 1,
