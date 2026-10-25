@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Centinela de cron para scripts/agentes/vigilar-limites.py (repo arky-sup).
+# Corre --cron contra cada tablero real -- lista a mano, igual que HUELLAS en
+# vigilancia-tarjetas.sh. Silencio total en stdout = nada que avisar (patron
+# --no-agent de Hermes cron: "Empty stdout = silent"). Si algo falla, el
+# script real escribe su propio latido con el error y termina con codigo
+# distinto de cero, lo que dispara --failure-deliver de este job.
+set -u
+REPO=/home/tata/workspace/arky-sup
+BOARDS=(
+  "arky-maintenance:/home/tata/.hermes/kanban/boards/arky-maintenance/kanban.db"
+  "latam-factory:/home/tata/.hermes/kanban/boards/latam-factory/kanban.db"
+)
+EXIT=0
+for entry in "${BOARDS[@]}"; do
+  tablero="${entry%%:*}"
+  db="${entry#*:}"
+  if [ ! -f "$db" ]; then
+    echo "VIGILAR-LIMITES: no existe la base de $tablero ($db)"
+    EXIT=1
+    continue
+  fi
+  python3 "${REPO}/scripts/agentes/vigilar-limites.py" "$db" "$tablero" --profile arkysupabase --cron
+  rc=$?
+  [ "$rc" != 0 ] && EXIT=$rc
+done
+exit "$EXIT"
