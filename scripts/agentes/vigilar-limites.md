@@ -53,12 +53,17 @@ para aislar el efecto de este script del de Hermes.
   una sola ventana de sondeo (hasta 2 minutos). Es una foto entre dos
   chequeos, no vigilancia continua — la misma limitación honesta de
   `vigilar-tarjetas.py`.
-- **No es un corte único**: `reclaim` devuelve la tarea a `ready`, no a un
-  estado terminal. Una hija sin reloj puede volver a correr y esto la para
-  de nuevo cada ventana (~10–12 min), no de una vez por todas. Es una correa
-  recurrente, no una ejecución. Puede ser lo que se quiere (permite
-  reintentos legítimos de verdad) o no, según el caso — queda nombrado, no
-  resuelto aquí.
+- **Resuelto, no solo nombrado: la correa recurrente escala al segundo golpe.**
+  `reclaim` por sí solo devuelve la tarea a `ready` — la segunda vez que este
+  script interviene sobre la MISMA tarea (contado por su propia firma en
+  `task_events`, no por el contador de fallos de Hermes, que `reclaim_task`
+  resetea a propósito en cada intervención manual), ya no la reclama otra
+  vez: reclama (sigue haciendo falta para matar el proceso real) y a
+  continuación bloquea con `kind=needs_input`, que no se autopromueve — pide
+  un humano. Confirmado leyendo el código que `block` *sin* `reclaim` antes
+  no mata el proceso real — por eso siempre va reclaim primero, incluso en
+  la escalada. Probado contra dos rondas reales seguidas (tablero desechable):
+  1ª vez → `ready`; 2ª vez → `blocked`, confirmado que no se autopromueve.
 
 ## Uso
 

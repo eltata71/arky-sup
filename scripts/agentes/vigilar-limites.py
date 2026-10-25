@@ -31,9 +31,21 @@ eso es justo lo que hace esto, con una sola comprobación.
 
 Limitación honesta, la misma de vigilar-tarjetas.py: es una foto entre dos
 chequeos. Una tarea que empieza y termina su daño dentro de una sola ventana
-de sondeo no se atrapa a tiempo. Y `reclaim` devuelve la tarea a `ready`, no
-a un estado terminal -- una hija sin reloj puede volver a correr y esto la
-para de nuevo cada ventana, no de una vez por todas.
+de sondeo no se atrapa a tiempo.
+
+`reclaim` por sí solo devuelve la tarea a `ready`, no a un estado terminal --
+una hija sin reloj podría volver a correr y pararse de nuevo cada ventana,
+indefinidamente, consumiendo presupuesto igual que si nunca se hubiera
+parado. Por eso la SEGUNDA vez que este script interviene sobre la MISMA
+tarea (contado por su propia firma en `task_events`, no por el contador de
+fallos de Hermes -- `reclaim_task` lo resetea a propósito en cada
+intervención manual, "fresh retry budget" para un worker que de verdad se
+cayó), no la reclama otra vez: la reclama (eso sigue haciendo falta para
+matar el proceso real) y a continuación la bloquea con `kind=needs_input`,
+que no se autopromueve -- quiere un humano. Confirmado leyendo el código que
+`block` por sí solo, sin `reclaim` antes, NO mata el proceso real -- solo
+limpia la fila y deja el worker real huérfano y corriendo sin que nada lo
+siga; por eso siempre va reclaim primero.
 
 Uso:
     python3 scripts/agentes/vigilar-limites.py <kanban.db> <board> --profile arkysupabase [--dry-run] [--cron]
@@ -67,9 +79,30 @@ def write_heartbeat(board: str, runtime_hits: int, error: str = None) -> None:
         pass
 
 
+MARKER = "vigilar-limites:"  # firma estable para contar nuestras propias intervenciones previas
+
+
+def _prior_interventions(con: sqlite3.Connection, task_id: str) -> int:
+    """Cuántas veces este script ya actuó sobre esta tarea (reclaim o block),
+    buscando nuestra propia firma en el payload de task_events. `reclaim_task`
+    resetea el contador de fallos de Hermes en cada intervención manual (es
+    "fresh retry budget" a propósito, para un worker que de verdad se cayó) --
+    así que sin este conteo propio, una hija sin reloj se reclamaría cada
+    ventana indefinidamente y Hermes nunca lo vería como un bucle."""
+    rows = con.execute(
+        "SELECT count(*) FROM task_events WHERE task_id=? AND kind='reclaimed' AND payload LIKE ?",
+        (task_id, f"%{MARKER}%"),
+    ).fetchone()
+    return rows[0] if rows else 0
+
+
 def check_runtime(con: sqlite3.Connection, profile: str, board: str, ceiling_seconds: int, dry_run: bool) -> list[dict]:
     """Para (reclaim real) cualquier tarea 'running' sin max_runtime_seconds que
-    lleve corriendo más del techo. Devuelve lo que paró (o pararía, en dry_run)."""
+    lleve corriendo más del techo. A partir de la segunda vez sobre la MISMA
+    tarea, no la reclama otra vez -- la bloquea para revisión humana, porque
+    reclamar sin fin es cambiar "corre para siempre" por "corre, para, corre
+    otra vez, para" indefinidamente, que consume presupuesto igual. Devuelve
+    lo que paró/bloqueó (o habría, en dry_run)."""
     now = time.time()
     rows = con.execute(
         "SELECT id, assignee, worker_started_at, title FROM tasks "
@@ -80,18 +113,40 @@ def check_runtime(con: sqlite3.Connection, profile: str, board: str, ceiling_sec
         elapsed = now - row["worker_started_at"]
         if elapsed < ceiling_seconds:
             continue
-        entry = {"id": row["id"], "assignee": row["assignee"], "elapsed_seconds": int(elapsed), "title": row["title"]}
+        prior = _prior_interventions(con, row["id"])
+        escalate = prior >= 1  # ya se reclamó una vez por esto: a la segunda, se bloquea, no se reclama otra vez
+        entry = {
+            "id": row["id"], "assignee": row["assignee"], "elapsed_seconds": int(elapsed),
+            "title": row["title"], "prior_interventions": prior, "escalated": escalate,
+        }
         hits.append(entry)
         if dry_run:
             continue
-        reason = (
-            f"vigilar-limites: sin max_runtime_seconds (hueco conocido del auto-decomposer), "
+        # SIEMPRE reclaim primero: es lo único que de verdad termina el proceso
+        # real del worker (confirmado leyendo block_task -- a diferencia de
+        # reclaim_task, NO llama a nada que mate el proceso, solo limpia la
+        # fila; llamar a block directo sobre una tarea 'running' habría dejado
+        # el worker real huérfano y corriendo, sin que nada lo siguiera).
+        reclaim_reason = (
+            f"{MARKER} sin max_runtime_seconds (hueco conocido del auto-decomposer), "
             f"corriendo {int(elapsed)}s, techo de seguridad {ceiling_seconds}s. Detenida externamente."
+            + (" Ya se detuvo antes por esto; se bloquea a continuación en vez de dejarla reintentar." if escalate else "")
         )
         subprocess.run(
-            ["hermes", "-p", profile, "kanban", "--board", board, "reclaim", row["id"], "--reason", reason],
+            ["hermes", "-p", profile, "kanban", "--board", board, "reclaim", row["id"], "--reason", reclaim_reason],
             check=False,
         )
+        if escalate:
+            block_reason = (
+                f"{MARKER} ya se detuvo {prior} vez/veces por falta de max_runtime_seconds "
+                f"y volvió a correr sin reloj cada vez. Reclamar otra vez solo reinicia el "
+                f"ciclo -- se bloquea para revisión humana en vez de dejarla reintentar sola."
+            )
+            subprocess.run(
+                ["hermes", "-p", profile, "kanban", "--board", board, "block", "--kind", "needs_input",
+                 row["id"], block_reason],
+                check=False,
+            )
     return hits
 
 
