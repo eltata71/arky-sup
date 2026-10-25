@@ -56,8 +56,20 @@ ALERTA (nunca modifica título/cuerpo, solo comenta).
   acorta con más frecuencia, no se elimina.
 - **`edited` no lleva autor en su payload** (a diferencia de `commented`), así
   que INFO dice que fue explícito, no quién lo hizo.
-- **No está en cron todavía.** El script está construido y probado; falta la
-  decisión operativa de programarlo (y con qué cadencia, y en qué perfil) --
-  ver la tarjeta de endurecimiento correspondiente.
+- **Programado en cron** (`vigilancia-tarjetas-watch`, perfil `arkysupabase`,
+  `0 0,12 * * *`, job `69a68d75eb8a`), vía un envoltorio delgado en
+  `~/.hermes/profiles/arkysupabase/scripts/vigilancia-tarjetas.sh` (fuera de
+  este repo porque Hermes exige que los scripts de cron vivan en la carpeta
+  del perfil; la lógica real sigue aquí, versionada). Entrega a
+  `bot-chat:arkysupabase` -- el único canal realmente visible hoy: este
+  gateway tiene "No messaging platforms enabled" (sin Telegram/Discord/Signal),
+  así que `local` (lo que ya usaba `blocked-tasks-watch`) solo queda grabado en
+  `hermes cron runs`, nadie lo ve. `--failure-deliver` al mismo canal empuja un
+  aviso si el script revienta.
+  **Límite honesto que queda sin cubrir**: si el propio gateway deja de
+  tickear (no revienta, simplemente deja de correr nada), ningún cron -- ni
+  este ni `blocked-tasks-watch` -- puede avisar de eso por sí mismo. El
+  respaldo es `hermes cron status` / `hermes gateway status`, que alguien
+  tiene que mirar.
 - **Hay que mantener a mano qué (`db`, `board`, huella) vigilar**, igual que
   `PLANES` en `comun.sh`.
