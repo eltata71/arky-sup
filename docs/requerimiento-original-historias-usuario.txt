@@ -1,0 +1,1524 @@
+BLOQUE 1 — HISTORIAS DE USUARIO: DEFINICIÓN, CONFIGURACIÓN Y ADMINISTRACIÓN DE AGENTES
+LATAM AI SOFTWARE FACTORY — HERMES AGENT
+
+HU-AG-001 — José: Agente Orquestador General
+
+Nombre: José
+Perfil Hermes: jose-orchestrator
+Rol: Chief AI Software Factory Orchestrator
+Especialidad: Planificación, coordinación, delegación, supervisión y optimización integral de la fábrica de software.
+
+Historia de usuario
+Como usuario de la fábrica de software, quiero disponer de un agente orquestador central llamado José, responsable de recibir mis solicitudes, analizar los objetivos, elaborar planes de trabajo, distribuir tareas entre agentes especializados y supervisar su ejecución, para garantizar que los proyectos se desarrollen eficientemente, cumpliendo los requisitos de calidad, tiempo y costo.
+
+Responsabilidades:
+- Recibir solicitudes de creación, modificación y mantenimiento de aplicaciones.
+- Analizar los objetivos y determinar el alcance inicial.
+- Elaborar planes estructurados en fases, actividades y tareas.
+- Identificar dependencias y oportunidades de ejecución paralela.
+- Seleccionar los agentes especializados adecuados.
+- Coordinar la selección de modelos de IA según complejidad y costo-beneficio.
+- Administrar prioridades, disponibilidad y carga de trabajo.
+- Supervisar el progreso y detectar bloqueos.
+- Coordinar revisiones, pruebas, integraciones y entregas.
+- Gestionar errores, reintentos y escalaciones.
+- Solicitar aprobaciones humanas cuando corresponda.
+- Consolidar entregables y comunicar resultados.
+
+Capacidades requeridas:
+- Hermes Profiles y SOUL.md.
+- Hermes Kanban y Kanban Dispatcher.
+- Kanban Auto Decomposition.
+- Delegación mediante mecanismos nativos de Hermes.
+- Memoria persistente.
+- Skills de planificación y supervisión.
+- Acceso autorizado a herramientas de coordinación.
+- Integración con el motor de selección de modelos.
+
+Criterios de aceptación:
+1. José puede transformar una solicitud en un plan de trabajo estructurado.
+2. Cada tarea tiene responsable, prioridad, dependencias y criterios de aceptación.
+3. José delega actividades a especialistas en lugar de ejecutarlas indiscriminadamente.
+4. Puede supervisar tareas concurrentes y gestionar sus resultados.
+5. Detecta bloqueos y aplica políticas de recuperación o escalación.
+6. Mantiene trazabilidad de decisiones, asignaciones y resultados.
+7. No puede omitir controles de calidad, seguridad ni aprobaciones obligatorias.
+
+----------------------------------------------------------------------
+
+HU-AG-002 — Viviana: Analista de Negocio
+
+Nombre: Viviana
+Perfil Hermes: viviana-business-analyst
+Rol: Business Analyst Agent
+Especialidad: Ingeniería de requerimientos y análisis funcional.
+
+Historia de usuario
+Como responsable de producto, quiero contar con Viviana como agente especializada en análisis de negocio, para transformar necesidades expresadas en lenguaje natural en requerimientos estructurados, verificables y suficientemente detallados para su posterior diseño y desarrollo.
+
+Responsabilidades:
+- Analizar solicitudes y necesidades del negocio.
+- Identificar actores, procesos y reglas de negocio.
+- Documentar requerimientos funcionales y no funcionales.
+- Elaborar historias de usuario y casos de uso.
+- Definir criterios de aceptación.
+- Identificar restricciones, excepciones y dependencias.
+- Construir matrices de trazabilidad.
+- Detectar ambigüedades e inconsistencias.
+- Gestionar cambios funcionales.
+
+Entregables:
+- Especificación de requerimientos.
+- Historias de usuario.
+- Casos de uso.
+- Reglas de negocio.
+- Matriz de trazabilidad.
+
+Criterios de aceptación:
+1. Los requerimientos son claros, consistentes y verificables.
+2. Las historias incluyen criterios de aceptación.
+3. Los aspectos ambiguos se identifican antes del diseño.
+4. Los requerimientos quedan vinculados con las tareas de implementación.
+5. Las modificaciones mantienen historial y trazabilidad.
+
+----------------------------------------------------------------------
+
+HU-AG-003 — María: Product Owner
+
+Nombre: María
+Perfil Hermes: maria-product-owner
+Rol: Product Owner Agent
+Especialidad: Gestión del producto, priorización y valor de negocio.
+
+Historia de usuario
+Como propietario de producto, quiero contar con María para organizar y priorizar las funcionalidades según su valor, complejidad y dependencias, para garantizar que la fábrica concentre sus esfuerzos en las entregas de mayor impacto.
+
+Responsabilidades:
+- Definir visión y objetivos de producto.
+- Administrar el backlog funcional.
+- Establecer prioridades.
+- Identificar funcionalidades del MVP.
+- Elaborar roadmaps.
+- Evaluar impacto de cambios.
+- Validar el alcance funcional de las entregas.
+- Proponer criterios de aceptación de negocio.
+- Coordinar decisiones funcionales con Viviana y José.
+
+Entregables:
+- Product backlog.
+- Roadmap.
+- Definición del MVP.
+- Priorización funcional.
+- Criterios de aceptación de negocio.
+
+Criterios de aceptación:
+1. Cada funcionalidad tiene una prioridad justificada.
+2. Existe una definición explícita del alcance del MVP.
+3. Se identifican dependencias de negocio.
+4. Los cambios de alcance se comunican al orquestador.
+5. Ninguna funcionalidad se considera aceptada únicamente por estar técnicamente implementada.
+
+----------------------------------------------------------------------
+
+HU-AG-004 — Ignacio: Arquitecto de Soluciones
+
+Nombre: Ignacio
+Perfil Hermes: ignacio-solution-architect
+Rol: Solution Architect Agent
+Especialidad: Arquitectura de soluciones e integración empresarial.
+
+Historia de usuario
+Como responsable de arquitectura, quiero contar con Ignacio para diseñar soluciones tecnológicas alineadas con los requerimientos, principios arquitectónicos y restricciones del proyecto, para garantizar sistemas seguros, escalables, integrables y mantenibles.
+
+Responsabilidades:
+- Diseñar la arquitectura de solución.
+- Definir componentes y responsabilidades.
+- Evaluar alternativas tecnológicas.
+- Diseñar integraciones y contratos.
+- Aplicar Domain-Driven Design cuando corresponda.
+- Definir arquitectura orientada a eventos.
+- Elaborar diagramas C4.
+- Documentar decisiones ADR.
+- Evaluar atributos de calidad.
+- Identificar riesgos y deuda técnica.
+- Revisar consistencia arquitectónica.
+
+Entregables:
+- Arquitectura de solución.
+- Diagramas C4.
+- Decisiones ADR.
+- Contratos de integración.
+- Evaluación de riesgos arquitectónicos.
+
+Criterios de aceptación:
+1. La arquitectura satisface los requisitos funcionales y no funcionales.
+2. Los componentes tienen responsabilidades y relaciones definidas.
+3. Las decisiones relevantes están documentadas.
+4. Los riesgos y restricciones arquitectónicas son visibles.
+5. El diseño es revisado antes de comenzar desarrollos de alto impacto.
+
+----------------------------------------------------------------------
+
+HU-AG-005 — Camilo: Arquitecto de Software
+
+Nombre: Camilo
+Perfil Hermes: camilo-software-architect
+Rol: Software Architect Agent
+Especialidad: Diseño interno, modularidad y calidad estructural del software.
+
+Historia de usuario
+Como líder técnico, quiero contar con Camilo para transformar la arquitectura de solución en un diseño de software implementable, definiendo módulos, contratos, patrones y estructuras, para facilitar el desarrollo y mantenimiento de las aplicaciones.
+
+Responsabilidades:
+- Definir arquitectura interna.
+- Diseñar módulos y componentes.
+- Establecer contratos e interfaces.
+- Aplicar patrones de diseño.
+- Definir convenciones de desarrollo.
+- Gestionar dependencias entre módulos.
+- Evaluar calidad estructural.
+- Revisar refactorizaciones.
+- Prevenir acoplamiento innecesario.
+- Proponer mejoras de mantenibilidad.
+
+Entregables:
+- Arquitectura de software.
+- Diseño modular.
+- Contratos e interfaces.
+- Estándares técnicos.
+- Lineamientos de implementación.
+
+Criterios de aceptación:
+1. Los módulos tienen límites y responsabilidades claros.
+2. Las interfaces están documentadas y validadas.
+3. El diseño mantiene coherencia con la arquitectura de solución.
+4. Las decisiones favorecen pruebas y mantenimiento.
+5. Se identifican y controlan dependencias técnicas.
+
+----------------------------------------------------------------------
+
+HU-AG-006 — Sofía: Diseñadora UX/UI
+
+Nombre: Sofía
+Perfil Hermes: sofia-ux-designer
+Rol: UX/UI Design Agent
+Especialidad: Experiencia de usuario y diseño de interfaces.
+
+Historia de usuario
+Como usuario de las aplicaciones desarrolladas por la fábrica, quiero que Sofía diseñe interfaces intuitivas, accesibles y visualmente consistentes, para que las soluciones ofrezcan una experiencia de uso moderna y eficiente.
+
+Responsabilidades:
+- Analizar necesidades de interacción.
+- Diseñar flujos de navegación.
+- Crear wireframes.
+- Elaborar prototipos.
+- Definir componentes visuales.
+- Mantener sistemas de diseño.
+- Diseñar interfaces responsive.
+- Evaluar accesibilidad.
+- Documentar especificaciones para frontend.
+
+Entregables:
+- Prototipos.
+- Flujos UX.
+- Componentes visuales.
+- Sistema de diseño.
+- Especificaciones de interfaz.
+
+Criterios de aceptación:
+1. Los diseños responden a los requerimientos funcionales.
+2. Existe consistencia visual entre pantallas.
+3. Los componentes contemplan accesibilidad.
+4. Se definen estados de carga, error y confirmación.
+5. Las especificaciones permiten desarrollar las interfaces sin ambigüedades relevantes.
+
+----------------------------------------------------------------------
+
+HU-AG-007 — Valentina: Desarrolladora Frontend
+
+Nombre: Valentina
+Perfil Hermes: valentina-frontend
+Rol: Frontend Developer Agent
+Especialidad: Desarrollo de interfaces web.
+
+Historia de usuario
+Como responsable de desarrollo, quiero que Valentina implemente las interfaces de usuario según los diseños y contratos establecidos, para entregar aplicaciones funcionales, responsive, accesibles y mantenibles.
+
+Responsabilidades:
+- Desarrollar componentes frontend.
+- Implementar interfaces.
+- Integrar APIs.
+- Gestionar estados de aplicación.
+- Implementar validaciones.
+- Optimizar rendimiento.
+- Garantizar accesibilidad.
+- Crear pruebas de componentes.
+- Corregir defectos frontend.
+- Documentar componentes reutilizables.
+
+Entregables:
+- Código frontend.
+- Componentes reutilizables.
+- Pruebas automatizadas.
+- Documentación técnica.
+
+Criterios de aceptación:
+1. Las interfaces cumplen los diseños aprobados.
+2. Las integraciones utilizan los contratos definidos.
+3. El código supera las validaciones de calidad.
+4. Existen pruebas automatizadas relevantes.
+5. La interfaz es funcional y accesible en los dispositivos definidos.
+
+----------------------------------------------------------------------
+
+HU-AG-008 — Mateo: Desarrollador Backend
+
+Nombre: Mateo
+Perfil Hermes: mateo-backend
+Rol: Backend Developer Agent
+Especialidad: Servicios, APIs y lógica de negocio.
+
+Historia de usuario
+Como responsable técnico, quiero que Mateo implemente los servicios y procesos backend, para garantizar que las aplicaciones ejecuten correctamente las reglas de negocio, integraciones y operaciones de persistencia.
+
+Responsabilidades:
+- Implementar servicios.
+- Desarrollar APIs.
+- Implementar lógica de negocio.
+- Aplicar autenticación y autorización.
+- Integrar bases de datos.
+- Implementar procesos asíncronos.
+- Gestionar errores.
+- Optimizar rendimiento.
+- Elaborar pruebas unitarias y de integración.
+- Documentar contratos.
+
+Entregables:
+- Servicios backend.
+- APIs.
+- Pruebas.
+- Contratos.
+- Documentación técnica.
+
+Criterios de aceptación:
+1. Los servicios cumplen las reglas de negocio.
+2. Los contratos de APIs son consistentes.
+3. Se implementan controles de seguridad.
+4. Los errores se gestionan adecuadamente.
+5. Las pruebas automatizadas relevantes son satisfactorias.
+
+----------------------------------------------------------------------
+
+HU-AG-009 — Daniela: Arquitecta de Datos
+
+Nombre: Daniela
+Perfil Hermes: daniela-data-architect
+Rol: Data Architect Agent
+Especialidad: Arquitectura, modelado y persistencia de datos.
+
+Historia de usuario
+Como arquitecto de soluciones, quiero que Daniela diseñe e implemente las estructuras de datos necesarias para las aplicaciones, para garantizar integridad, seguridad, consistencia y rendimiento de la información.
+
+Responsabilidades:
+- Diseñar modelos conceptuales, lógicos y físicos.
+- Definir esquemas.
+- Establecer restricciones e índices.
+- Gestionar migraciones.
+- Diseñar estrategias de respaldo.
+- Evaluar rendimiento de consultas.
+- Definir políticas de retención.
+- Controlar integridad y consistencia.
+- Documentar estructuras de datos.
+
+Entregables:
+- Modelos de datos.
+- Scripts.
+- Migraciones.
+- Políticas de persistencia.
+- Documentación.
+
+Criterios de aceptación:
+1. El modelo de datos soporta los requerimientos.
+2. Existen reglas de integridad.
+3. Las migraciones son verificables.
+4. Se evalúan requisitos de seguridad y rendimiento.
+5. El diseño mantiene trazabilidad con las entidades del negocio.
+
+----------------------------------------------------------------------
+
+HU-AG-010 — Andrés: Especialista en Integraciones
+
+Nombre: Andrés
+Perfil Hermes: andres-integration
+Rol: Integration Engineer Agent
+Especialidad: APIs, mensajería e interoperabilidad.
+
+Historia de usuario
+Como arquitecto de soluciones, quiero contar con Andrés para diseñar e implementar las integraciones entre componentes internos y sistemas externos, para garantizar intercambios de información seguros, confiables y observables.
+
+Responsabilidades:
+- Diseñar integraciones REST y GraphQL.
+- Implementar mensajería y eventos.
+- Configurar webhooks.
+- Definir contratos de integración.
+- Implementar mecanismos de resiliencia.
+- Gestionar autenticación entre sistemas.
+- Configurar conectores MCP autorizados.
+- Manejar errores y reintentos.
+- Implementar pruebas de contratos.
+
+Entregables:
+- Integraciones funcionales.
+- Contratos.
+- Conectores.
+- Pruebas.
+- Documentación.
+
+Criterios de aceptación:
+1. Las integraciones cumplen los contratos acordados.
+2. Existen controles de errores y reintentos.
+3. Se aplican mecanismos de seguridad.
+4. Los intercambios relevantes son trazables.
+5. Las pruebas de integración son satisfactorias.
+
+----------------------------------------------------------------------
+
+HU-AG-011 — Paola: Ingeniera de Calidad
+
+Nombre: Paola
+Perfil Hermes: paola-qa
+Rol: Quality Assurance Agent
+Especialidad: Pruebas, validación y aseguramiento de calidad.
+
+Historia de usuario
+Como responsable de calidad, quiero que Paola diseñe y ejecute pruebas sobre los componentes desarrollados, para identificar defectos y verificar que los entregables cumplen los requerimientos y criterios de aceptación.
+
+Responsabilidades:
+- Elaborar estrategias de pruebas.
+- Diseñar casos de prueba.
+- Implementar automatización.
+- Ejecutar pruebas unitarias complementarias.
+- Ejecutar pruebas de integración.
+- Ejecutar pruebas end-to-end.
+- Ejecutar regresión.
+- Evaluar cobertura.
+- Registrar defectos.
+- Verificar correcciones.
+- Recomendar aprobación o rechazo técnico.
+
+Entregables:
+- Plan de pruebas.
+- Casos de prueba.
+- Resultados.
+- Evidencias.
+- Informe de calidad.
+
+Criterios de aceptación:
+1. Los criterios de aceptación están cubiertos por pruebas apropiadas.
+2. Los defectos quedan registrados.
+3. Las fallas relevantes impiden completar la validación.
+4. Los resultados tienen evidencias verificables.
+5. Las correcciones se someten a regresión cuando corresponda.
+
+----------------------------------------------------------------------
+
+HU-AG-012 — Julián: Especialista en Seguridad
+
+Nombre: Julián
+Perfil Hermes: julian-security
+Rol: Security Engineer Agent
+Especialidad: Seguridad de aplicaciones y DevSecOps.
+
+Historia de usuario
+Como responsable de seguridad, quiero que Julián evalúe los componentes y procesos de desarrollo, para identificar vulnerabilidades, verificar políticas y prevenir riesgos antes de liberar las aplicaciones.
+
+Responsabilidades:
+- Realizar análisis de amenazas.
+- Evaluar controles de acceso.
+- Revisar seguridad de APIs.
+- Ejecutar análisis de vulnerabilidades.
+- Detectar secretos expuestos.
+- Revisar dependencias.
+- Evaluar configuraciones.
+- Verificar aislamiento de procesos.
+- Identificar riesgos de prompt injection.
+- Recomendar acciones correctivas.
+
+Entregables:
+- Informe de seguridad.
+- Vulnerabilidades identificadas.
+- Evaluación de riesgos.
+- Recomendaciones correctivas.
+
+Criterios de aceptación:
+1. Los controles críticos están verificados.
+2. Las vulnerabilidades se clasifican por severidad.
+3. Los hallazgos críticos bloquean la promoción correspondiente.
+4. Existe evidencia de las verificaciones.
+5. Los riesgos aceptados cuentan con autorización.
+
+----------------------------------------------------------------------
+
+HU-AG-013 — Ricardo: Ingeniero DevOps
+
+Nombre: Ricardo
+Perfil Hermes: ricardo-devops
+Rol: DevOps Engineer Agent
+Especialidad: Automatización, integración continua y despliegue continuo.
+
+Historia de usuario
+Como responsable de ingeniería, quiero que Ricardo configure y ejecute los procesos de construcción, integración y despliegue, para garantizar entregas reproducibles, controladas y seguras.
+
+Responsabilidades:
+- Construir pipelines CI/CD.
+- Configurar entornos.
+- Gestionar contenedores.
+- Automatizar builds.
+- Ejecutar validaciones.
+- Preparar despliegues.
+- Configurar infraestructura como código.
+- Implementar estrategias de rollback.
+- Administrar artefactos de despliegue.
+- Registrar resultados operacionales.
+
+Entregables:
+- Pipelines.
+- Configuraciones.
+- Builds.
+- Paquetes.
+- Evidencias de despliegue.
+
+Criterios de aceptación:
+1. Los builds son reproducibles.
+2. Los pipelines ejecutan los controles definidos.
+3. Los resultados son trazables.
+4. Existe procedimiento de rollback.
+5. Ningún despliegue a producción se realiza sin autorización explícita.
+
+----------------------------------------------------------------------
+
+HU-AG-014 — Lucía: Ingeniera SRE
+
+Nombre: Lucía
+Perfil Hermes: lucia-sre
+Rol: Site Reliability Engineer Agent
+Especialidad: Observabilidad, confiabilidad y operación.
+
+Historia de usuario
+Como responsable de operación, quiero que Lucía supervise el comportamiento técnico de las aplicaciones y de la fábrica, para detectar incidentes, anticipar degradaciones y mantener niveles adecuados de disponibilidad y rendimiento.
+
+Responsabilidades:
+- Configurar observabilidad.
+- Analizar logs.
+- Monitorear métricas.
+- Administrar alertas.
+- Analizar trazas.
+- Detectar anomalías.
+- Investigar incidentes.
+- Verificar disponibilidad.
+- Evaluar rendimiento.
+- Recomendar acciones correctivas.
+
+Entregables:
+- Dashboards operativos.
+- Alertas.
+- Informes de incidentes.
+- Recomendaciones.
+
+Criterios de aceptación:
+1. Los componentes críticos tienen observabilidad.
+2. Los eventos relevantes son trazables.
+3. Las alertas se generan según umbrales definidos.
+4. Los incidentes tienen seguimiento.
+5. Las acciones correctivas quedan registradas.
+
+----------------------------------------------------------------------
+
+HU-AG-015 — Natalia: Especialista en Documentación
+
+Nombre: Natalia
+Perfil Hermes: natalia-documentation
+Rol: Technical Documentation Agent
+Especialidad: Documentación funcional, técnica y operativa.
+
+Historia de usuario
+Como miembro del equipo de ingeniería, quiero que Natalia genere y mantenga actualizada la documentación de los proyectos, para facilitar la comprensión, operación, transferencia de conocimiento y mantenimiento de las aplicaciones.
+
+Responsabilidades:
+- Documentar arquitectura.
+- Mantener README.
+- Elaborar manuales.
+- Documentar APIs.
+- Consolidar ADR.
+- Crear runbooks.
+- Actualizar diagramas.
+- Elaborar guías de instalación.
+- Documentar procedimientos operativos.
+- Mantener consistencia entre código y documentación.
+
+Entregables:
+- Documentación funcional.
+- Documentación técnica.
+- Documentación arquitectónica.
+- Documentación operativa.
+
+Criterios de aceptación:
+1. Los documentos corresponden a la implementación real.
+2. Los cambios importantes actualizan la documentación relacionada.
+3. Los procedimientos pueden reproducirse.
+4. Existen referencias entre documentación y componentes.
+5. No se presentan funcionalidades no implementadas como existentes.
+
+----------------------------------------------------------------------
+
+HU-AG-016 — Sergio: Especialista FinOps y LLMOps
+
+Nombre: Sergio
+Perfil Hermes: sergio-llmops
+Rol: AI Optimization and FinOps Agent
+Especialidad: Evaluación de modelos, eficiencia y control de costos.
+
+Historia de usuario
+Como administrador de la fábrica de software, quiero que Sergio supervise y optimice la utilización de modelos de inteligencia artificial, para obtener el mejor equilibrio entre capacidad, calidad, tiempo y costo de ejecución.
+
+Responsabilidades:
+- Administrar el catálogo de modelos.
+- Consultar disponibilidad y precios.
+- Evaluar desempeño.
+- Comparar modelos.
+- Analizar consumo de tokens.
+- Estimar costos.
+- Controlar presupuestos.
+- Evaluar estrategias de routing.
+- Identificar modelos sobredimensionados.
+- Recomendar alternativas.
+- Analizar costo por resultado aceptado.
+- Mantener métricas de eficiencia.
+
+Entregables:
+- Políticas recomendadas de selección.
+- Reportes de costos.
+- Evaluaciones de modelos.
+- Recomendaciones de optimización.
+
+Criterios de aceptación:
+1. Los identificadores de modelos son válidos y verificables.
+2. Las tarifas muestran su fuente y fecha.
+3. Se distingue el costo real del estimado.
+4. Las recomendaciones consideran calidad y riesgo, no solamente precio.
+5. Los presupuestos y límites autorizados se respetan.
+6. Los cambios de políticas quedan registrados.
+
+----------------------------------------------------------------------
+
+HU-AG-017 — Elena: Release Manager
+
+Nombre: Elena
+Perfil Hermes: elena-release
+Rol: Release Management Agent
+Especialidad: Coordinación y gobierno de liberaciones.
+
+Historia de usuario
+Como responsable de entregas, quiero que Elena coordine las liberaciones de software, verificando que los componentes, pruebas, aprobaciones y procedimientos estén completos, para minimizar los riesgos de puesta en producción.
+
+Responsabilidades:
+- Consolidar entregables.
+- Preparar planes de liberación.
+- Verificar Quality Gates.
+- Revisar aprobaciones.
+- Coordinar despliegues.
+- Mantener registro de versiones.
+- Elaborar criterios Go/No-Go.
+- Coordinar rollback.
+- Supervisar verificaciones posteriores al despliegue.
+
+Entregables:
+- Plan de release.
+- Checklist.
+- Evidencias.
+- Registro de liberación.
+
+Criterios de aceptación:
+1. Cada liberación tiene una versión identificable.
+2. Los controles previos están completos.
+3. Los riesgos pendientes son visibles.
+4. Producción requiere aprobación autorizada.
+5. Existe procedimiento de reversión y seguimiento posterior.
+
+----------------------------------------------------------------------
+
+HU-AG-018 — Gabriel: Ingeniero de Mantenimiento
+
+Nombre: Gabriel
+Perfil Hermes: gabriel-maintenance
+Rol: Application Maintenance Agent
+Especialidad: Mantenimiento correctivo, preventivo y evolutivo.
+
+Historia de usuario
+Como responsable de aplicaciones, quiero que Gabriel analice y resuelva incidentes, defectos y solicitudes de mejora, para garantizar la continuidad operativa y evolución sostenible de los sistemas desarrollados.
+
+Responsabilidades:
+- Analizar defectos.
+- Investigar causas raíz.
+- Aplicar correcciones.
+- Actualizar dependencias.
+- Ejecutar refactorizaciones.
+- Resolver incidencias.
+- Identificar deuda técnica.
+- Proponer mejoras.
+- Coordinar regresión con QA.
+- Mantener documentación relacionada.
+
+Entregables:
+- Correcciones.
+- Mejoras.
+- Análisis de causa raíz.
+- Pruebas.
+- Documentación.
+
+Criterios de aceptación:
+1. Los incidentes tienen diagnóstico registrado.
+2. Las correcciones cumplen los criterios de aceptación.
+3. Se ejecutan pruebas de regresión relevantes.
+4. Los cambios no comprometen la arquitectura ni los controles de seguridad.
+5. Los resultados quedan vinculados al historial de mantenimiento.
+
+----------------------------------------------------------------------
+
+HU-AG-019 — Configuración y personalización transversal de agentes
+
+Historia de usuario
+Como administrador de LATAM AI SOFTWARE FACTORY, quiero configurar y personalizar individualmente todos los agentes especializados desde Hermes Web Dashboard, para administrar sus identidades, capacidades, modelos, memorias, herramientas y comportamiento sin depender de modificaciones manuales de archivos.
+
+Atributos configurables:
+- Identidad: Nombre, identificador, avatar, rol, especialidad.
+- Personalidad: SOUL.md, comportamiento, idioma, estilo.
+- Inteligencia: Proveedor, modelo, fallback, política de selección.
+- Memoria: Memoria individual, compartida, alcance, retención.
+- Skills: Habilidades asignadas, activación, versiones.
+- Herramientas: Toolsets, plugins, MCP, permisos.
+- Operación: Estado, prioridad, concurrencia, timeout.
+- Economía: Presupuesto, límites de consumo, alertas.
+- Seguridad: Autorizaciones, aislamiento, restricciones.
+- Observabilidad: Sesiones, tareas, actividad, errores, costos.
+
+Criterios de aceptación:
+1. Cada agente mantiene un perfil persistente de Hermes.
+2. Los cambios realizados desde el Dashboard se reflejan en la configuración operativa real.
+3. El usuario puede crear, modificar, duplicar, activar y desactivar agentes.
+4. Las configuraciones relevantes cuentan con historial y posibilidad de restauración.
+5. Las modificaciones se validan antes de aplicarse.
+6. No se permite alterar políticas obligatorias mediante cambios de personalidad o memoria.
+7. Los agentes conservan sus identidades y configuraciones después de reiniciar Hermes.
+
+
+======================================================================
+BLOQUE 2 — HISTORIAS DE USUARIO: ORQUESTACIÓN DE AGENTES Y FLUJOS DE TRABAJO
+LATAM AI SOFTWARE FACTORY — HERMES AGENT
+======================================================================
+
+HU-ORQ-001 — Recepción centralizada de solicitudes
+
+Historia de usuario
+Como usuario de la fábrica de software, quiero registrar solicitudes de creación, modificación, corrección o mantenimiento de aplicaciones directamente desde Hermes Web Dashboard o mediante una conversación con Hermes, para que José las reciba y gestione a través de un flujo único de trabajo.
+
+Comportamiento esperado:
+1. El usuario registra la solicitud.
+2. José identifica el tipo de requerimiento.
+3. El sistema crea un identificador único.
+4. La solicitud se relaciona con un proyecto nuevo o existente.
+5. Se almacena el contenido original.
+6. Se registra su fecha, origen y prioridad inicial.
+7. Se inicia el análisis de la solicitud.
+
+Criterios de aceptación:
+- Toda solicitud tiene identificador y trazabilidad.
+- El usuario puede consultar su estado.
+- Una solicitud no se ejecuta sin identificar su contexto.
+- Se evitan duplicaciones accidentales.
+- El Dashboard refleja la recepción.
+
+----------------------------------------------------------------------
+
+HU-ORQ-002 — Análisis inicial y clasificación
+
+Historia de usuario
+Como agente orquestador José, quiero analizar cada solicitud y clasificarla según su naturaleza, alcance, complejidad y riesgo, para determinar el proceso de atención más adecuado y los especialistas que deben participar.
+
+Tipos de solicitudes:
+- Nuevo proyecto.
+- Nueva funcionalidad.
+- Corrección de defecto.
+- Cambio de requerimiento.
+- Refactorización.
+- Modernización.
+- Integración.
+- Optimización.
+- Actualización tecnológica.
+- Mantenimiento.
+- Incidente.
+- Investigación técnica.
+
+Flujo de atención:
+1. José analiza la solicitud.
+2. Clasifica su naturaleza.
+3. Identifica información faltante.
+4. Solicita apoyo de Viviana cuando el análisis funcional lo requiere.
+5. Solicita participación de Ignacio ante incertidumbre arquitectónica relevante.
+6. Establece una evaluación preliminar.
+7. Determina si puede atenderse mediante una tarea directa o requiere planificación completa.
+
+Criterios de aceptación:
+- Las solicitudes tienen clasificación.
+- Se registra una evaluación inicial de complejidad y riesgo.
+- Las ambigüedades relevantes se identifican.
+- No se aplican procesos excesivamente complejos a actividades triviales.
+- Las solicitudes críticas reciben controles adicionales.
+
+----------------------------------------------------------------------
+
+HU-ORQ-003 — Levantamiento y validación de requerimientos
+
+Historia de usuario
+Como agente orquestador José, quiero delegar en Viviana el análisis de los requerimientos y en María la evaluación de prioridades de negocio, para obtener una definición funcional suficientemente completa antes de iniciar las actividades de diseño y desarrollo.
+
+Flujo de atención:
+1. José asigna el análisis a Viviana.
+2. Viviana identifica necesidades, actores, reglas y restricciones.
+3. Viviana elabora historias de usuario y criterios de aceptación.
+4. María revisa el valor y la prioridad de las funcionalidades.
+5. Se identifican dependencias y alcance del MVP.
+6. José consolida los resultados.
+7. Se solicita aclaración al usuario cuando exista una decisión de negocio no inferible.
+8. Los requerimientos aprobados quedan vinculados al proyecto.
+
+Criterios de aceptación:
+- Existen requerimientos claros y verificables.
+- Las historias tienen criterios de aceptación.
+- Las decisiones de alcance están documentadas.
+- Las ambigüedades críticas están resueltas o registradas como bloqueos.
+- Los requerimientos mantienen trazabilidad con el desarrollo.
+
+----------------------------------------------------------------------
+
+HU-ORQ-004 — Elaboración automática del plan de trabajo
+
+Historia de usuario
+Como usuario, quiero que José elabore automáticamente un plan de trabajo estructurado a partir de los requerimientos, para conocer las fases, actividades, dependencias, responsabilidades y entregables antes de ejecutar el proyecto.
+
+Comportamiento esperado:
+1. José recibe los requerimientos.
+2. Identifica las disciplinas necesarias.
+3. Define las fases aplicables.
+4. Establece entregables.
+5. Descompone el alcance en actividades.
+6. Identifica criterios de aceptación.
+7. Determina controles de calidad.
+8. Establece dependencias.
+9. Identifica riesgos.
+10. Registra el plan en Hermes Kanban.
+
+Criterios de aceptación:
+- El plan cubre el alcance identificado.
+- Cada actividad produce un resultado verificable.
+- Las dependencias son explícitas.
+- Se identifican responsables y controles.
+- El plan puede consultarse y modificarse desde el Dashboard.
+
+----------------------------------------------------------------------
+
+HU-ORQ-005 — Descomposición automática de tareas mediante Hermes Kanban
+
+Historia técnica
+Como orquestador José, quiero utilizar las capacidades nativas de Hermes Kanban, Auto Decomposition y Kanban Dispatcher para transformar los planes de trabajo en tareas persistentes y ejecutables, evitando desarrollar un sistema de planificación paralelo.
+
+Comportamiento esperado:
+1. José registra el objetivo.
+2. El mecanismo de descomposición genera subtareas.
+3. Cada tarea obtiene un identificador.
+4. Se establecen relaciones de dependencia.
+5. Se asigna su perfil responsable o especialidad requerida.
+6. Se establecen criterios de finalización.
+7. Las tareas quedan persistidas en Hermes Kanban.
+8. El Dispatcher determina cuáles están listas para ejecutarse.
+
+Criterios de aceptación:
+- Las tareas utilizan el mecanismo persistente oficial de Hermes.
+- No se generan dependencias circulares.
+- Las tareas dependientes no se ejecutan prematuramente.
+- La descomposición puede revisarse.
+- El estado permanece disponible entre sesiones y reinicios.
+
+----------------------------------------------------------------------
+
+HU-ORQ-006 — Selección inteligente de agentes
+
+Historia de usuario
+Como agente José, quiero seleccionar automáticamente al especialista más adecuado para cada tarea, considerando su rol, capacidades, disponibilidad y carga de trabajo, para aprovechar eficientemente los recursos de la fábrica.
+
+Criterios de selección:
+- Especialidad.
+- Skills requeridas.
+- Herramientas autorizadas.
+- Experiencia registrada.
+- Disponibilidad.
+- Tareas concurrentes.
+- Prioridad.
+- Dependencias.
+- Riesgo.
+- Rendimiento histórico verificable.
+
+Flujo de atención:
+1. José analiza los requisitos de la tarea.
+2. Identifica las competencias necesarias.
+3. Consulta los perfiles registrados en Hermes.
+4. Evalúa disponibilidad y permisos.
+5. Selecciona el agente.
+6. Registra la justificación.
+7. Asigna la tarea.
+8. Notifica el cambio al sistema de supervisión.
+
+Criterios de aceptación:
+- La asignación corresponde a las capacidades de la tarea.
+- Se respetan permisos y límites de concurrencia.
+- Se evita asignar trabajo a agentes desactivados o no disponibles.
+- El usuario puede identificar el responsable.
+- Las reasignaciones mantienen historial.
+
+----------------------------------------------------------------------
+
+HU-ORQ-007 — Evaluación de complejidad de las tareas
+
+Historia técnica
+Como agente José, quiero clasificar las tareas según su complejidad, riesgo y necesidad de razonamiento, para determinar qué capacidad de modelo de inteligencia artificial resulta apropiada para ejecutarlas.
+
+Clasificación:
+- Nivel 1 — Trivial: Clasificación, extracción y transformaciones simples.
+- Nivel 2 — Baja: Documentación sencilla y modificaciones menores.
+- Nivel 3 — Media: Componentes, endpoints y pruebas habituales.
+- Nivel 4 — Alta: Arquitectura, integraciones y depuración compleja.
+- Nivel 5 — Crítica: Decisiones estratégicas, seguridad crítica y problemas de alta incertidumbre.
+
+Criterios de aceptación:
+- Las tareas reciben una clasificación justificada.
+- La clasificación considera riesgo y no solamente esfuerzo.
+- El nivel puede ajustarse cuando surja nueva información.
+- Las tareas críticas utilizan controles de validación adicionales.
+- El historial permite evaluar la precisión de las clasificaciones.
+
+----------------------------------------------------------------------
+
+HU-ORQ-008 — Selección automática del modelo de inteligencia artificial
+
+Historia de usuario
+Como administrador de la fábrica, quiero que José, apoyado por Sergio, seleccione automáticamente el modelo de inteligencia artificial que ofrezca la mejor relación entre capacidad, calidad, latencia y costo para cada tarea, evitando utilizar modelos costosos cuando no sean necesarios.
+
+Comportamiento esperado:
+1. José identifica la complejidad y requisitos de la tarea.
+2. Consulta la política de routing.
+3. Sergio proporciona información de capacidades, costos y evaluaciones.
+4. Se identifican modelos elegibles.
+5. Se verifica disponibilidad y compatibilidad.
+6. Se estima el costo.
+7. Se selecciona el modelo.
+8. Se registra la justificación.
+9. Se ejecuta mediante el proveedor configurado en Hermes.
+10. Se registran las métricas disponibles.
+
+Criterios de aceptación:
+- El modelo existe en un catálogo verificado.
+- La elección considera calidad y costo.
+- Se respetan restricciones presupuestarias.
+- Existen alternativas ante indisponibilidad.
+- El usuario puede consultar y modificar políticas autorizadas.
+- No se presentan estimaciones como costos reales.
+
+----------------------------------------------------------------------
+
+HU-ORQ-009 — Control presupuestario previo a la ejecución
+
+Historia técnica
+Como administrador de la fábrica, quiero que cada tarea tenga controles de presupuesto antes y durante su ejecución, para evitar consumo excesivo de tokens, modelos o servicios externos.
+
+Comportamiento esperado:
+1. Se consulta el presupuesto disponible.
+2. Se estima el costo.
+3. Se valida el modelo.
+4. Se aplican límites.
+5. Se inicia la ejecución autorizada.
+6. Se registra el consumo disponible.
+7. Se generan alertas ante umbrales.
+8. Se suspende o escala cuando se superan límites obligatorios.
+
+Criterios de aceptación:
+- Existen presupuestos por tarea y proyecto.
+- No se exceden límites obligatorios sin autorización.
+- Los reintentos también consumen presupuesto.
+- El Dashboard muestra consumo y disponibilidad.
+- La política de selección puede priorizar alternativas más económicas.
+
+----------------------------------------------------------------------
+
+HU-ORQ-010 — Preparación del contexto de ejecución
+
+Historia técnica
+Como agente especializado, quiero recibir un contexto completo, relevante y acotado para cada tarea, incluyendo requerimientos, arquitectura, memoria, Skills y herramientas autorizadas, para ejecutarla correctamente sin consumir información innecesaria.
+
+Comportamiento esperado:
+1. José identifica la información requerida.
+2. Recupera requerimientos relacionados.
+3. Recupera decisiones arquitectónicas aplicables.
+4. Obtiene memoria autorizada del proyecto y del agente.
+5. Asocia las Skills necesarias.
+6. Identifica herramientas permitidas.
+7. Define los criterios de aceptación.
+8. Prepara el paquete de ejecución.
+9. Entrega la tarea al agente.
+
+Criterios de aceptación:
+- El agente recibe información pertinente.
+- El contexto mantiene referencias a sus fuentes.
+- Se respetan los permisos de memoria.
+- No se cargan todas las Skills indiscriminadamente.
+- La información recuperada no puede modificar políticas de mayor prioridad.
+
+----------------------------------------------------------------------
+
+HU-ORQ-011 — Despacho y ejecución persistente de tareas
+
+Historia técnica
+Como agente José, quiero que Hermes Kanban Dispatcher gestione la activación y ejecución de las tareas que estén listas, para mantener el trabajo coordinado y persistente sin depender de una conversación abierta.
+
+Comportamiento esperado:
+1. El Dispatcher identifica tareas elegibles.
+2. Verifica dependencias.
+3. Verifica agente y disponibilidad.
+4. Comprueba restricciones operativas.
+5. Inicia la ejecución mediante el perfil Hermes asignado.
+6. Registra la sesión o ejecución correspondiente.
+7. Actualiza el estado.
+8. Recibe eventos de progreso.
+9. Registra el resultado final.
+
+Criterios de aceptación:
+- Las tareas se ejecutan mediante los mecanismos admitidos por Hermes.
+- No se inician tareas con dependencias pendientes.
+- Se controlan límites de concurrencia.
+- Las ejecuciones tienen identificadores correlacionables.
+- Los resultados son persistentes.
+- El proceso admite recuperación ante reinicios y fallos.
+
+----------------------------------------------------------------------
+
+HU-ORQ-012 — Ejecución paralela inteligente
+
+Historia de usuario
+Como usuario de la fábrica, quiero que los agentes puedan desarrollar actividades independientes en paralelo, para reducir el tiempo total de entrega sin generar conflictos entre componentes o archivos.
+
+Ejemplo:
+Después de validar arquitectura y contratos:
+- Sofía puede finalizar componentes visuales.
+- Valentina puede desarrollar frontend.
+- Mateo puede implementar backend.
+- Daniela puede preparar estructuras de datos.
+- Andrés puede desarrollar integraciones independientes.
+Las actividades podrán avanzar simultáneamente cuando sus dependencias lo permitan.
+
+Reglas de orquestación:
+1. José identifica tareas independientes.
+2. Evalúa disponibilidad.
+3. Verifica que existan contratos suficientes.
+4. Asigna espacios de trabajo aislados cuando sea necesario.
+5. Ejecuta tareas concurrentes.
+6. Supervisa conflictos.
+7. Consolida resultados.
+8. Coordina la integración.
+
+Criterios de aceptación:
+- No se ejecutan tareas dependientes antes de tiempo.
+- Se respetan los límites de concurrencia.
+- Los cambios simultáneos no sobrescriben trabajo ajeno.
+- Los agentes pueden usar worktrees o mecanismos de aislamiento compatibles.
+- La ejecución paralela reduce esperas sin comprometer la calidad.
+
+----------------------------------------------------------------------
+
+HU-ORQ-013 — Coordinación de arquitectura y diseño
+
+Historia de usuario
+Como agente José, quiero coordinar a Ignacio, Camilo, Daniela, Andrés y Sofía durante la fase de diseño, para generar una arquitectura consistente y contratos suficientemente definidos antes de asignar las tareas principales de implementación.
+
+Flujo de atención:
+1. Ignacio diseña la arquitectura de solución.
+2. Camilo define la arquitectura interna y los módulos.
+3. Daniela diseña las estructuras de datos.
+4. Andrés define contratos de integración.
+5. Sofía diseña la experiencia e interfaces.
+6. José revisa dependencias e inconsistencias.
+7. Los especialistas corrigen diferencias.
+8. Se consolidan los entregables.
+9. Se establecen las condiciones para iniciar desarrollo.
+
+Criterios de aceptación:
+- Las decisiones y contratos son consistentes.
+- Se identifican dependencias relevantes.
+- Existen entregables de diseño apropiados.
+- Las diferencias arquitectónicas se resuelven o registran.
+- El diseño se encuentra disponible para los agentes desarrolladores.
+
+----------------------------------------------------------------------
+
+HU-ORQ-014 — Ejecución especializada del desarrollo
+
+Historia de usuario
+Como agente José, quiero asignar automáticamente las tareas de implementación a Valentina, Mateo, Daniela y Andrés según su especialidad, para desarrollar los componentes del sistema de forma coordinada y conforme a la arquitectura.
+
+Flujo de atención:
+1. José identifica tareas listas.
+2. Asigna frontend a Valentina.
+3. Asigna backend a Mateo.
+4. Asigna actividades de datos a Daniela.
+5. Asigna integraciones a Andrés.
+6. Cada agente recibe contexto y herramientas.
+7. Los agentes generan o modifican código.
+8. Ejecutan verificaciones iniciales.
+9. Registran cambios y evidencias.
+10. Solicitan revisión cuando corresponda.
+
+Criterios de aceptación:
+- Las implementaciones respetan contratos y arquitectura.
+- Los cambios quedan vinculados con las tareas.
+- El código puede identificarse y revisarse.
+- Las verificaciones iniciales se ejecutan.
+- El resultado no se considera aprobado únicamente porque el agente haya terminado de escribir código.
+
+----------------------------------------------------------------------
+
+HU-ORQ-015 — Seguimiento operacional en tiempo real
+
+Historia de usuario
+Como usuario de la fábrica, quiero visualizar desde Hermes Web Dashboard qué agentes están trabajando, qué tareas ejecutan y cuál es el progreso de cada actividad, para mantener control sobre los proyectos sin revisar manualmente todas las sesiones.
+
+Información requerida:
+- Agente.
+- Avatar.
+- Proyecto.
+- Tarea.
+- Estado.
+- Modelo.
+- Duración.
+- Eventos.
+- Progreso verificable.
+- Costos.
+- Bloqueos.
+- Resultados.
+
+Criterios de aceptación:
+1. El Dashboard refleja eventos reales de Hermes.
+2. Las tarjetas de agentes muestran estados consistentes.
+3. El mapa de orquestación refleja asignaciones y transferencias reales.
+4. Las tareas permiten consultar detalles.
+5. Los errores y bloqueos son visibles.
+6. No se presentan porcentajes inventados de progreso.
+7. La interfaz identifica claramente la información estimada.
+
+----------------------------------------------------------------------
+
+HU-ORQ-016 — Revisión técnica independiente
+
+Historia de usuario
+Como agente José, quiero que las implementaciones relevantes sean revisadas por especialistas distintos de quienes las desarrollaron, para detectar defectos estructurales, desviaciones arquitectónicas y problemas de mantenibilidad.
+
+Flujo de atención:
+1. El desarrollador finaliza una implementación.
+2. Registra evidencias.
+3. Solicita revisión.
+4. José determina los revisores necesarios.
+5. Camilo revisa calidad de software cuando corresponda.
+6. Ignacio revisa cumplimiento arquitectónico en cambios relevantes.
+7. Se registran observaciones.
+8. El responsable corrige los hallazgos.
+9. Se repite la revisión cuando sea necesario.
+10. La tarea avanza si cumple las condiciones establecidas.
+
+Criterios de aceptación:
+- Las revisiones tienen evidencias.
+- Los hallazgos quedan vinculados con la tarea.
+- Los defectos relevantes se corrigen.
+- Se evita la autoaprobación de cambios críticos.
+- Los controles no pueden omitirse mediante modificaciones de estado no autorizadas.
+
+----------------------------------------------------------------------
+
+HU-ORQ-017 — Pruebas y validación de calidad
+
+Historia de usuario
+Como agente José, quiero que Paola valide las implementaciones mediante pruebas apropiadas y verificaciones de aceptación, para garantizar que las funcionalidades entregadas cumplen los requisitos establecidos.
+
+Flujo de atención:
+1. Se recibe el componente desarrollado.
+2. Paola identifica criterios de aceptación.
+3. Prepara o selecciona pruebas.
+4. Ejecuta las verificaciones.
+5. Registra los resultados.
+6. Identifica defectos.
+7. Devuelve el trabajo al especialista responsable si falla.
+8. Verifica las correcciones.
+9. Ejecuta regresión cuando corresponda.
+10. Recomienda aprobación cuando se cumplen los criterios.
+
+Criterios de aceptación:
+- Los resultados de pruebas son reproducibles.
+- Existen evidencias.
+- Los defectos críticos bloquean el avance.
+- Los retrabajos mantienen historial.
+- Los criterios de aceptación están validados antes del cierre técnico.
+
+----------------------------------------------------------------------
+
+HU-ORQ-018 — Evaluación de seguridad
+
+Historia de usuario
+Como agente José, quiero incorporar a Julián en la revisión de componentes y cambios que impliquen riesgos de seguridad, para prevenir vulnerabilidades antes de integrar o liberar software.
+
+Flujo de atención:
+1. José identifica requisitos de seguridad.
+2. Julián analiza los cambios.
+3. Ejecuta las verificaciones pertinentes.
+4. Clasifica los hallazgos.
+5. Registra evidencias.
+6. Solicita correcciones.
+7. Valida nuevamente.
+8. Comunica riesgos residuales.
+9. Se solicita aceptación humana cuando la política lo permita.
+
+Criterios de aceptación:
+- Se aplican controles proporcionales al riesgo.
+- Los hallazgos críticos bloquean las promociones correspondientes.
+- Las excepciones quedan documentadas y autorizadas.
+- Las credenciales y datos sensibles están protegidos.
+- Existe trazabilidad de las verificaciones.
+
+----------------------------------------------------------------------
+
+HU-ORQ-019 — Gestión de errores, bloqueos y reintentos
+
+Historia técnica
+Como agente José, quiero detectar automáticamente fallos, bloqueos y tareas estancadas, para recuperar la ejecución cuando sea posible y evitar que el proyecto quede indefinidamente detenido.
+
+Tipos de problemas:
+- Fallo de herramienta.
+- Error de código.
+- Prueba fallida.
+- Modelo no disponible.
+- Timeout.
+- Dependencia no satisfecha.
+- Conflicto de archivos.
+- Presupuesto excedido.
+- Permiso insuficiente.
+- Información funcional faltante.
+
+Flujo de atención:
+1. El sistema detecta el problema.
+2. Registra el evento.
+3. Identifica la causa.
+4. Clasifica si es recuperable.
+5. Si es transitorio, aplica un reintento controlado.
+6. Si requiere corrección, genera trabajo de subsanación.
+7. Si afecta dependencias, bloquea las tareas correspondientes.
+8. Si requiere intervención humana, solicita aprobación o información.
+9. Reanuda únicamente cuando se cumplen las condiciones.
+
+Criterios de aceptación:
+- Los errores quedan registrados.
+- Los reintentos son limitados y configurables.
+- No se repiten indefinidamente acciones fallidas.
+- Los fallos no provocan pérdida silenciosa de tareas.
+- El Dashboard muestra causas y medidas de recuperación.
+
+----------------------------------------------------------------------
+
+HU-ORQ-020 — Replanificación dinámica
+
+Historia de usuario
+Como agente José, quiero reevaluar y modificar el plan cuando aparezcan cambios de requerimientos, nuevos riesgos, defectos o dependencias, para mantener el proyecto alineado con sus objetivos sin perder el trabajo completado.
+
+Flujo de atención:
+1. Se identifica un evento que afecta el plan.
+2. José analiza su impacto.
+3. Consulta a los especialistas pertinentes.
+4. Identifica tareas afectadas.
+5. Conserva entregables válidos.
+6. Propone ajustes.
+7. Solicita autorización cuando cambie alcance, presupuesto o compromisos relevantes.
+8. Actualiza tareas y dependencias.
+9. Reasigna actividades si es necesario.
+10. Continúa la ejecución.
+
+Criterios de aceptación:
+- Las modificaciones mantienen historial.
+- No se pierden resultados válidos.
+- Las dependencias se actualizan consistentemente.
+- Los cambios relevantes son visibles para el usuario.
+- Las decisiones de negocio que requieren aprobación no se toman unilateralmente.
+
+----------------------------------------------------------------------
+
+HU-ORQ-021 — Intervención y supervisión humana
+
+Historia de usuario
+Como usuario administrador, quiero intervenir sobre las actividades de la fábrica para aprobar, rechazar, pausar, reanudar, cancelar o reasignar tareas, manteniendo control sobre las decisiones y operaciones sensibles.
+
+Operaciones requeridas:
+- Aprobar planes.
+- Rechazar entregables.
+- Solicitar correcciones.
+- Pausar tareas.
+- Reanudar tareas.
+- Cancelar ejecuciones.
+- Reasignar agentes.
+- Cambiar prioridades.
+- Ajustar presupuestos autorizados.
+- Cambiar modelos.
+- Aprobar operaciones críticas.
+- Autorizar despliegues.
+
+Criterios de aceptación:
+1. Las operaciones respetan los permisos del usuario.
+2. Los cambios se reflejan en el estado persistente.
+3. La fábrica responde de manera consistente.
+4. Las acciones sensibles quedan auditadas.
+5. No se confunde una pausa solicitada con una cancelación o fallo.
+6. Los agentes no pueden eludir decisiones humanas obligatorias.
+
+----------------------------------------------------------------------
+
+HU-ORQ-022 — Integración de componentes y ejecución de CI/CD
+
+Historia de usuario
+Como agente José, quiero que Ricardo coordine la integración de los componentes aprobados y ejecute los pipelines correspondientes, para consolidar una versión consistente y verificable de la aplicación.
+
+Flujo de atención:
+1. Los especialistas finalizan sus desarrollos.
+2. Se verifican las revisiones correspondientes.
+3. Ricardo prepara la integración.
+4. Se consolidan ramas o cambios mediante el flujo autorizado.
+5. Se ejecutan builds.
+6. Se ejecutan pruebas automatizadas.
+7. Se ejecutan controles de seguridad.
+8. Se verifican contratos.
+9. Se registran resultados.
+10. Se prepara el paquete de entrega.
+
+Criterios de aceptación:
+- Los componentes integrados son compatibles.
+- El build es reproducible.
+- Los Quality Gates definidos son satisfactorios.
+- Los errores se registran y devuelven al responsable.
+- El resultado queda asociado con una versión identificable.
+
+----------------------------------------------------------------------
+
+HU-ORQ-023 — Preparación y aprobación de liberaciones
+
+Historia de usuario
+Como responsable de las entregas, quiero que Elena coordine la preparación del release y que José supervise los requisitos de aprobación, para garantizar que una nueva versión pueda liberarse de forma controlada.
+
+Flujo de atención:
+1. Elena recibe la versión candidata.
+2. Revisa resultados de pruebas.
+3. Revisa controles de seguridad.
+4. Verifica documentación.
+5. Confirma las dependencias operativas.
+6. Prepara el plan de despliegue.
+7. Prepara el procedimiento de rollback.
+8. Solicita aprobación humana si corresponde.
+9. Ricardo ejecuta el despliegue autorizado.
+10. Lucía supervisa la verificación posterior.
+
+Criterios de aceptación:
+- La liberación cuenta con versión y evidencias.
+- Los controles exigidos están satisfechos.
+- Los riesgos residuales son visibles.
+- Producción requiere autorización explícita.
+- Existe un procedimiento de reversión.
+- El resultado del despliegue queda registrado.
+
+----------------------------------------------------------------------
+
+HU-ORQ-024 — Cierre y consolidación de resultados
+
+Historia de usuario
+Como usuario de la fábrica, quiero que José consolide los entregables y resultados de las actividades completadas, para verificar el cumplimiento del objetivo y conocer el estado final del proyecto.
+
+Flujo de atención:
+1. José verifica las tareas del plan.
+2. Comprueba que no existan dependencias obligatorias pendientes.
+3. Consulta resultados de QA y seguridad.
+4. Consolida los entregables.
+5. Solicita a Natalia actualizar documentación.
+6. Obtiene métricas de ejecución y costos.
+7. Prepara un informe de resultados.
+8. Comunica pendientes, limitaciones y riesgos.
+9. Solicita aceptación final cuando corresponda.
+10. Cierra o archiva las tareas conforme al flujo de Hermes.
+
+Criterios de aceptación:
+- El cierre se sustenta en evidencias.
+- Los entregables están identificados.
+- Los criterios de aceptación se encuentran verificados.
+- Los defectos pendientes están documentados.
+- El usuario dispone de un resumen de trabajo, tiempo y costos.
+- Las tareas mantienen su historial.
+
+----------------------------------------------------------------------
+
+HU-ORQ-025 — Actualización de memoria y aprendizaje reutilizable
+
+Historia técnica
+Como agente José, quiero que al finalizar las actividades se consoliden los conocimientos y aprendizajes relevantes, para mejorar la eficiencia de futuras ejecuciones y evitar repetir errores conocidos.
+
+Flujo de atención:
+1. Se identifican decisiones relevantes.
+2. Se analizan errores y correcciones.
+3. Se extraen patrones reutilizables.
+4. Se determina el ámbito de memoria adecuado.
+5. Se eliminan duplicidades y contenido innecesario.
+6. Se actualiza la memoria autorizada.
+7. Se proponen mejoras de Skills.
+8. Se registran recomendaciones.
+9. Se conservan referencias a evidencias.
+10. Los futuros agentes recuperan el conocimiento pertinente.
+
+Criterios de aceptación:
+- Los aprendizajes se relacionan con sus fuentes.
+- Se respeta el aislamiento entre proyectos.
+- La memoria no incorpora secretos innecesarios.
+- La información obsoleta puede depurarse.
+- Las nuevas ejecuciones pueden recuperar conocimiento relevante.
+- La memoria no modifica controles de seguridad.
+
+----------------------------------------------------------------------
+
+HU-ORQ-026 — Optimización continua de desempeño y costos
+
+Historia de usuario
+Como administrador de la fábrica, quiero que Sergio analice periódicamente el comportamiento de agentes y modelos y proponga optimizaciones al orquestador, para mejorar productividad, calidad y eficiencia económica.
+
+Flujo de atención:
+1. Sergio recopila métricas.
+2. Analiza costos por modelo y tarea.
+3. Identifica diferencias de latencia.
+4. Evalúa resultados de calidad.
+5. Detecta retrabajos.
+6. Identifica cuellos de botella.
+7. Recomienda cambios.
+8. José evalúa el impacto operacional.
+9. Se aplican las mejoras autorizadas.
+10. Se compara el desempeño antes y después.
+
+Criterios de aceptación:
+- Las recomendaciones utilizan mediciones verificables.
+- No se prioriza precio sacrificando calidad obligatoria.
+- Se identifican las políticas modificadas.
+- Los resultados se comparan con una línea base.
+- Las modificaciones pueden revertirse cuando corresponda.
+
+----------------------------------------------------------------------
+
+HU-ORQ-027 — Recuperación y continuidad entre sesiones
+
+Historia técnica
+Como usuario, quiero que la fábrica conserve el estado de los proyectos y pueda continuar los trabajos después de un reinicio o interrupción, para evitar pérdidas de información y ejecuciones duplicadas.
+
+Comportamiento esperado:
+1. Las tareas permanecen registradas en Hermes Kanban.
+2. Los resultados y evidencias se conservan.
+3. Las sesiones se relacionan con sus tareas.
+4. Se detectan ejecuciones interrumpidas.
+5. Se verifica si una operación sigue activa.
+6. Se recupera su estado.
+7. Se reanuda o reintenta de forma segura.
+8. El Dashboard reconstruye la información operacional.
+
+Criterios de aceptación:
+- No se pierde el backlog al reiniciar Hermes.
+- Las tareas mantienen estado e historial.
+- Se evita duplicar operaciones no idempotentes.
+- Las tareas interrumpidas pueden identificarse.
+- Se conservan las aprobaciones anteriores.
+- La recuperación respeta dependencias y presupuestos.
+
+
+======================================================================
+FLUJO OPERACIONAL INTEGRAL DE LA FÁBRICA DE SOFTWARE
+======================================================================
+
+Etapa | Responsable principal | Actividad | Resultado esperado
+1. Recepción | José | Recibir y registrar solicitud | Solicitud identificada
+2. Clasificación | José | Evaluar tipo, riesgo y complejidad | Ruta de atención
+3. Requerimientos | Viviana | Levantar y estructurar necesidades | Requerimientos verificables
+4. Priorización | María | Definir alcance, MVP y prioridades | Backlog priorizado
+5. Planificación | José | Elaborar fases y tareas | Plan de ejecución
+6. Descomposición | José / Hermes Kanban | Crear tareas y dependencias | Backlog ejecutable
+7. Arquitectura de solución | Ignacio | Diseñar solución e integraciones | Arquitectura y ADR
+8. Arquitectura de software | Camilo | Diseñar módulos y contratos | Diseño técnico
+9. Datos | Daniela | Definir persistencia y estructuras | Modelo de datos
+10. UX/UI | Sofía | Diseñar experiencia e interfaces | Diseños y prototipos
+11. Asignación | José | Seleccionar especialistas | Tareas asignadas
+12. Selección de modelos | José / Sergio | Optimizar capacidad y costo | Modelo seleccionado
+13. Desarrollo frontend | Valentina | Implementar interfaces | Componentes frontend
+14. Desarrollo backend | Mateo | Implementar servicios y APIs | Componentes backend
+15. Integraciones | Andrés | Implementar contratos e intercambios | Integraciones funcionales
+16. Revisión técnica | Camilo / Ignacio | Revisar diseño e implementación | Revisión arquitectónica
+17. Calidad | Paola | Ejecutar pruebas | Evidencias de pruebas
+18. Seguridad | Julián | Evaluar vulnerabilidades | Validación de seguridad
+19. Integración continua | Ricardo | Integrar y construir | Build validado
+20. Documentación | Natalia | Actualizar documentación | Documentación consistente
+21. Preparación de release | Elena | Verificar condiciones de liberación | Release candidato
+22. Despliegue | Ricardo | Ejecutar despliegue autorizado | Versión desplegada
+23. Observabilidad | Lucía | Supervisar funcionamiento | Métricas y alertas
+24. Mantenimiento | Gabriel | Corregir y mejorar | Cambios evolutivos o correctivos
+25. Optimización | Sergio | Analizar desempeño y costos | Recomendaciones
+26. Cierre y aprendizaje | José | Consolidar resultados y memoria | Entrega y conocimiento reutilizable
+
+
+======================================================================
+REGLAS GENERALES DE ORQUESTACIÓN
+======================================================================
+
+RG-01 — Orquestador único: José será el responsable de coordinar las asignaciones, dependencias y resultados del trabajo de la fábrica. Otros agentes podrán coordinar subtareas delegadas dentro de los límites autorizados.
+
+RG-02 — Especialización: Cada actividad deberá asignarse preferentemente al agente cuya especialidad corresponda al trabajo solicitado.
+
+RG-03 — Persistencia: Hermes Kanban será la fuente principal de estado operacional de las tareas. El estado no deberá depender exclusivamente de la conversación.
+
+RG-04 — Dependencias: Una tarea solamente podrá ejecutarse cuando sus dependencias obligatorias estén satisfechas.
+
+RG-05 — Paralelismo: Se permitirá la ejecución simultánea de actividades independientes, respetando concurrencia, recursos, presupuestos y aislamiento.
+
+RG-06 — Selección inteligente: El modelo se seleccionará considerando complejidad, especialidad, calidad esperada, riesgo, costo y disponibilidad.
+
+RG-07 — Control económico: Toda ejecución estará sujeta a políticas presupuestarias, límites y alertas.
+
+RG-08 — Calidad: Ninguna actividad se considerará técnicamente aprobada cuando existan validaciones obligatorias pendientes o fallidas.
+
+RG-09 — Revisión independiente: Los cambios relevantes deberán ser revisados por especialistas distintos del agente desarrollador cuando las políticas lo requieran.
+
+RG-10 — Seguridad: Las herramientas, memorias, repositorios y permisos estarán limitados según el rol y las políticas aplicables.
+
+RG-11 — Recuperación: Los errores transitorios podrán gestionarse mediante reintentos controlados; los problemas persistentes requerirán corrección o escalación.
+
+RG-12 — Trazabilidad: Todas las asignaciones, cambios de estado, resultados, revisiones y aprobaciones relevantes deberán registrarse.
+
+RG-13 — Supervisión: Hermes Web Dashboard mostrará las tareas, los agentes y los eventos operacionales utilizando información real del sistema.
+
+RG-14 — Replanificación: José podrá reorganizar tareas y dependencias ante cambios o bloqueos, conservando historial y respetando las aprobaciones necesarias.
+
+RG-15 — Intervención humana: Las decisiones críticas, los cambios de alcance significativos y los despliegues a producción deberán respetar las políticas de aprobación humana.
+
+RG-16 — Memoria: El conocimiento generado durante las ejecuciones se consolidará en los ámbitos de memoria autorizados.
+
+RG-17 — Eficiencia: La fábrica priorizará reutilización, reducción de retrabajos, optimización de contexto y selección apropiada de modelos.
+
+RG-18 — Finalización: El orquestador solamente podrá declarar concluido un trabajo cuando los entregables cumplan sus criterios de aceptación y existan evidencias suficientes de validación.
