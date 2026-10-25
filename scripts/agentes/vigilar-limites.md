@@ -80,11 +80,21 @@ Código de salida: 0 si no hubo que parar nada; 1 si se detuvo alguna tarea.
 (fuera de este repo por la convención de Hermes: los scripts de cron viven en
 la carpeta del perfil). Entrega y aviso de fallo a `bot-chat:arkysupabase`.
 
-## Relación con apagar `auto_decompose`
+## Relación con `auto_decompose`
 
-Son complementarios, no alternativas — ver la comparación entregada aparte.
-Apagar `auto_decompose` quita el disparador automático y desatendido; este
-script sigue haciendo falta porque **la misma `_insert_decomposed_child` se
-ejecuta igual si alguien dispara `hermes kanban decompose <id>` a mano**, y
-porque `hermes kanban create --parent ...` sin `--max-runtime` tiene
-exactamente el mismo hueco, con o sin auto-decompose.
+`auto_decompose` se apagó el 2026-10-25 tras el incidente, y se volvió a
+encender el mismo día una vez construidos este script y el hook del motor:
+la descomposición manual no daba ninguna revisión real de contenido (ejecuta
+la misma `_insert_decomposed_child` igual de automática en cuanto se
+dispara), así que mantenerlo apagado solo costaba autonomía a cambio de una
+protección aparente. Historia completa en `arkysupabase/config.yaml`, junto
+a la propia línea.
+
+## Hueco conocido que queda abierto a propósito
+
+Ni este script ni el hook del motor atrapan **una hija que hace algo
+indebido y breve**: no toca el motor (el hook no aplica) y termina antes de
+que este vigilante la alcance en su ventana de sondeo de ~2 minutos. No se
+cierra porque cerrarlo exigiría vigilancia continua en vez de por sondeo, que
+sería desproporcionado para lo que se sabe hoy. Queda dicho, no resuelto —
+revisar si algún día aparece un caso real de este tipo.
