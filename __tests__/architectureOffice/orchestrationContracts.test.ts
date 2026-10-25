@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyCoordinationBrief,
   evaluateRecommendationFields,
-  readCoordinationBrief,
   readRecommendation,
   readSpecialistAnalysis,
   renderRecommendation,
 } from '../../services/architectureOffice/domain/orchestrationContracts';
 import {
+  buildDeterministicFraming,
   executeOfficeOrchestration,
   planOfficeWorkstreams,
 } from '../../services/architectureOffice/application/officeOrchestration';
@@ -33,13 +32,6 @@ describe('contratos de orquestación (18.0)', () => {
     expect(renderRecommendation(ok!)).toMatch(/Conditional/i);
   });
 
-  it('el brief nunca deja el equipo vacío', () => {
-    const plan = planOfficeWorkstreams('@Lucía coordina AWS y MuleSoft');
-    const everyone = readCoordinationBrief({ summary: 's', order: [], dependencies: [], extraConstraints: [],
-      dropWorkstreams: plan.workstreams.map((w) => w.id) }).value;
-    expect(applyCoordinationBrief(everyone, plan.workstreams).keep).toHaveLength(plan.workstreams.length);
-  });
-
   it('exige declarar la parcialidad si un especialista falló', () => {
     const plan = planOfficeWorkstreams('@Lucía coordina AWS y MuleSoft');
     const reading = readRecommendation(JSON.parse(recommendation('ready'))).value!;
@@ -62,13 +54,33 @@ describe('executeOfficeOrchestration con contratos', () => {
   it('lee el JSON válido como datos y entrega el markdown renderizado', async () => {
     const plan = planOfficeWorkstreams('@Lucía coordina AWS y MuleSoft');
     const result = await executeOfficeOrchestration(plan, async (id) => {
-      if (id === 'lucia') return JSON.stringify({ summary: 'Brief', order: [], dependencies: [], dropWorkstreams: [], extraConstraints: ['Sin nube pública'] });
       if (id === 'alejandro') return recommendation('blocked', { openQuestions: ['¿Falta algo?'] });
       return analysis;
     });
-    expect(result.coordinationBrief?.summary).toBe('Brief');
+    expect(result.coordination).toMatch(/^Encuadre determinista/);
     expect(result.recommendation?.verdict).toBe('blocked');
     expect(Object.keys(result.analyses ?? {})).toHaveLength(plan.workstreams.length);
     expect(result.workstreamResults[0].output).toContain('Resumen');
+  });
+});
+
+describe('encuadre determinista (21.2 · D-A3 = B)', () => {
+  it('ninguna operación invoca a la coordinadora', async () => {
+    const plan = planOfficeWorkstreams('@Lucía coordina AWS y MuleSoft');
+    const called: string[] = [];
+    const result = await executeOfficeOrchestration(plan, async (id) => {
+      called.push(id);
+      return id === 'alejandro' ? recommendation('ready') : analysis;
+    }, { maxConsolidationRefinements: 0 });
+    expect(called).not.toContain(plan.coordinatorId);
+    expect(called).toHaveLength(plan.workstreams.length + 1);
+    expect(result.invocations?.some((invocation) => invocation.personaId === plan.coordinatorId) ?? false).toBe(false);
+  });
+
+  it('el encuadre nombra a cada especialista con su objetivo, sin la solicitud', () => {
+    const plan = planOfficeWorkstreams('@Lucía coordina AWS y MuleSoft');
+    const framing = buildDeterministicFraming(plan);
+    for (const workstream of plan.workstreams) expect(framing).toContain(workstream.objective);
+    expect(framing).not.toContain('coordina AWS y MuleSoft');
   });
 });

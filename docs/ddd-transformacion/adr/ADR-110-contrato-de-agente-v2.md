@@ -40,6 +40,10 @@ sistema, sólo recibir texto.
 
 - Cambiar una plantilla sin subir su versión falla la suite.
 - Una alternativa se adopta si el banco la mejora: 19.2 se midió y no se adoptó.
+- La llamada estructurada de la coordinadora (18.0) tampoco pasó esa regla: el
+  banco no puede mostrar su mejora, así que por D-A3 se aplicó B en la
+  remediación 21.2. El encuadre es el plan determinista, sin llamada:
+  `llamadasPorOperacion` 4,6 → 3,6 y menos tokens en cada caso del banco.
 - No se construyó una política de memoria con ámbitos ni una de herramientas de
   escritura: serían superficie de gobierno sin nada que gobernar (ver ADR-004).
 - El coste de un agente nuevo sube: ficha, esquema, caso de banco y entrada en

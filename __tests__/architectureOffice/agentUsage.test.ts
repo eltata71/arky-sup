@@ -5,16 +5,18 @@ import { executeOfficeOrchestration, planOfficeWorkstreams } from '../../service
 describe('medición de una operación de la Oficina', () => {
   it('conserva tokens y latencia por agente y nunca convierte uso ausente en cero', async () => {
     const plan = planOfficeWorkstreams('Lucía coordina una revisión de arquitectura de software.');
+    // Un especialista sin uso informado: el total no puede presentarse como medido.
+    const unmeasured = plan.workstreams[0].personaId;
     let calls = 0;
     const result = await executeOfficeOrchestration(plan, async (personaId) => {
       calls += 1;
       return {
         text: personaId === 'alejandro' ? 'Ready: recomendación con evidencia.' : 'Análisis de arquitectura con evidencia.',
         model: 'gemini-2.5-flash',
-        usage: personaId === 'lucia' ? null : { promptTokens: 100, completionTokens: 20, totalTokens: 120 },
+        usage: personaId === unmeasured ? null : { promptTokens: 100, completionTokens: 20, totalTokens: 120 },
         latencyMs: 25,
         traceId: `trace-${calls}`,
-        estimatedCostUsd: personaId === 'lucia' ? null : estimateAgentCostUsd('gemini-2.5-flash', { promptTokens: 100, completionTokens: 20 }),
+        estimatedCostUsd: personaId === unmeasured ? null : estimateAgentCostUsd('gemini-2.5-flash', { promptTokens: 100, completionTokens: 20 }),
       };
     }, { maxConsolidationRefinements: 0 });
 
@@ -23,7 +25,8 @@ describe('medición de una operación de la Oficina', () => {
     expect(result.usage.total.totalTokens).toBeNull();
     expect(result.usage.total.estimatedCostUsd).toBeNull();
     expect(result.usage.total.latencyMs).toBe(calls * 25);
-    expect(result.usage.byAgent.lucia?.totalTokens).toBeNull();
+    expect(result.usage.byAgent[unmeasured]?.totalTokens).toBeNull();
+    expect(result.usage.byAgent.lucia).toBeUndefined();
     expect(result.usage.byAgent.alejandro?.totalTokens).toBe(120);
   });
 

@@ -18,15 +18,13 @@ vi.mock('../../services/architectureOffice/application/projectConversation', () 
   const reply = async (...args: unknown[]) => {
     transport.calls.push(args);
     const id = args[4];
-    if (id === 'lucia' && transport.mode === 'failed') throw new Error('proveedor no disponible');
-    const text = id === 'lucia'
-      ? JSON.stringify({ summary: 'Analizar AWS', order: [], dependencies: [], dropWorkstreams: [], extraConstraints: [] })
-      : id === 'alejandro'
+    if (id !== 'alejandro' && transport.mode === 'failed') throw new Error('proveedor no disponible');
+    const text = id === 'alejandro'
         ? transport.mode === 'unresolved' ? 'Texto sin veredicto.' : JSON.stringify({
           verdict: 'ready', rationale: 'Evidencia suficiente.', contributions: [{ agent: 'felipe', use: 'used', note: 'AWS' }],
           contradictions: [], conditions: [], openQuestions: [],
         })
-        : JSON.stringify({ summary: 'Análisis AWS', findings: [], assumptions: [], risks: [], decisions: [], outOfScope: [], evidence: [], confidence: 'high' });
+      : JSON.stringify({ summary: 'Análisis AWS', findings: [], assumptions: [], risks: [], decisions: [], outOfScope: [], evidence: [], confidence: 'high' });
     return { text, usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 }, model: null, latencyMs: 5, traceId: 'trace-test', estimatedCostUsd: null };
   };
   return { chatWithProjectMeasured: vi.fn(reply), chatWithProject: vi.fn(async (...args: unknown[]) => (await reply(...args)).text) };
@@ -96,7 +94,8 @@ describe('16.3 · dock y copiloto usan la misma coordinación', () => {
     expect(transport.calls).toHaveLength(1);
     expect(summary).toContain('Handoffs rechazados:');
     expect(summary).toContain('budget-exhausted');
-    expect(summary).toContain('Lucía → Nube propia');
+    // Con una llamada, la gasta el especialista y la consolidación se rechaza.
+    expect(summary).toContain(`Lucía → ${nameOf('alejandro')}`);
     expect(summary).toContain('Evaluador: sin evaluar');
   });
 
@@ -109,13 +108,14 @@ describe('16.3 · dock y copiloto usan la misma coordinación', () => {
     expect(summary).toContain('veredicto');
   });
 
-  it('un fallo de coordinación sigue visible y no firma una recomendación', async () => {
+  it('si ningún especialista responde, sigue visible y no firma una recomendación', async () => {
     transport.mode = 'failed';
     const summary = await runCopilotOrchestration(request, project, settings, profiles);
-    expect(transport.calls).toHaveLength(1);
+    // Fallan los especialistas y el consolidador no llega a llamarse (21.2).
+    expect(transport.calls.some((call) => call[4] === 'alejandro')).toBe(false);
     expect(summary).toContain('FAILED');
     expect(summary).toContain('Evaluador: sin evaluar');
-    expect(summary).toContain('falló');
+    expect(summary).toContain('Ningún especialista entregó su análisis');
   });
 
   it('una cancelación previa no gasta llamadas', async () => {

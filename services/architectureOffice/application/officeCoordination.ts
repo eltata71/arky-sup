@@ -31,6 +31,7 @@ import { wrapUntrustedContent } from '../../../lib/untrustedContent';
 import type { OfficeAgentId } from '../domain/officeAgentPersonas';
 import { OFFICE_AGENT_PERSONAS } from '../domain/officeAgentPersonas';
 import {
+  buildDeterministicFraming,
   executeOfficeOrchestration,
   planOfficeWorkstreams,
   type OfficeAgentInvoker,
@@ -362,6 +363,13 @@ export const coordinateRequest = async (
 
   emit('team-assembled', 'framing', plan.coordinatorId, null,
     `Equipo convocado: ${team.filter((member) => member.role === 'specialist').length} especialista(s), coordina ${nameOf(plan.coordinatorId)}, consolida ${nameOf(plan.consolidatorId)}.`);
+
+  // El encuadre no llama a la coordinadora (21.2 · D-A3 = B), y el panel lo
+  // dice. Es un `handoff`, no un `agent-reported`: éste cierra una llamada a un
+  // modelo y lleva su sello, y aquí no hubo ninguna.
+  emit('handoff', 'delegating', plan.coordinatorId, null,
+    `${nameOf(plan.coordinatorId)} encuadra el trabajo con el plan determinista, sin llamar al modelo.`,
+    buildDeterministicFraming(plan));
 
   for (const workstream of plan.workstreams) {
     emit('assignment', 'delegating', plan.coordinatorId, workstream.personaId,

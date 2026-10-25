@@ -12,7 +12,7 @@ La unidad operativa es el proyecto nativo de Hermes `arky-sup-factory`
 de navegación con el mismo nombre: sirve para agrupar sesiones, pero no
 sustituye al proyecto nativo ni al Canvas.
 
-La fuente de verdad funcional es `docs/plan-agentes-ia.md`, olas 15–20. José
+La fuente de verdad funcional es `docs/plan-remediacion-agentes.md` (ola 21), que cierra lo que el doble chequeo encontró en `docs/plan-agentes-ia.md` (olas 15–20). José
 coordina el ingreso, comprueba plan/PR/worktrees y conserva la trazabilidad en
 Canvas; no escribe código de producto. José es el primero de los doce Bots y
 enruta a los otros once: Sofía (producto), Alba
@@ -120,6 +120,7 @@ Cada plan con tabla de seguimiento está en `PLANES`, en
 |---|---|---|
 | `docs/plan-clase-mundial.md` (olas 9–14) | `clase-mundial/` | Cerrado el 2026-10-13 |
 | `docs/plan-agentes-ia.md` (olas 15–20) | `agentes/` | Cerrado el 2026-10-23 |
+| `docs/plan-remediacion-agentes.md` (ola 21) | `remediacion/` | En ejecución desde el 2026-10-24 |
 
 Un plan nuevo se añade a esa lista en el mismo commit que lo aprueba; si no,
 `nueva-tarea.sh` no encuentra sus tareas. La tabla se lee tal como está en

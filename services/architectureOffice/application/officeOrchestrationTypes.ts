@@ -5,7 +5,7 @@ import type { ContextManifest } from '../domain/agentContextPolicy';
 import type { HandoffRejection } from '../domain/agentHandoff';
 import type { AgentInvocationMeasurement, AgentInvocationResult, AgentUsageSummary } from '../../../lib/ai/agentUsage';
 import type { ConsolidationReview, OfficeWorkstreamResult } from '../domain/officeConsolidationReview';
-import type { CoordinationBrief, Recommendation, SpecialistAnalysis } from '../domain/orchestrationContracts';
+import type { Recommendation, SpecialistAnalysis } from '../domain/orchestrationContracts';
 
 export type { OfficeWorkstreamResult } from '../domain/officeConsolidationReview';
 
@@ -88,13 +88,11 @@ export interface OfficeOrchestrationResult {
   refined?: boolean;
   /**
    * 18.0: lo que el modelo devolvió como datos. Cuando una respuesta no se pudo
-   * leer, el texto crudo sigue en `coordination` / `output` / `consolidation` y
+   * leer, el texto crudo sigue en `output` / `consolidation` y
    * el motivo queda en `structuredDegraded`: degradar sin decirlo es el defecto.
    */
-  coordinationBrief?: CoordinationBrief;
   analyses?: Partial<Record<string, SpecialistAnalysis>>;
   recommendation?: Recommendation;
-  droppedWorkstreams?: string[];
   structuredDegraded?: string[];
   usage: { total: AgentUsageSummary; byAgent: Partial<Record<OfficeAgentId, AgentUsageSummary>> };
 }

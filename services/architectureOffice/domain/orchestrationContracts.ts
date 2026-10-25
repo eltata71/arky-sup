@@ -13,7 +13,6 @@
  */
 
 import { OFFICE_AGENT_PERSONAS } from './officeAgentPersonas';
-import type { OfficeAgentId } from './agentDefinition';
 import type { OfficeWorkstreamResult } from './officeConsolidationReview';
 
 export type FindingSeverity = 'low' | 'medium' | 'high';
@@ -32,14 +31,6 @@ export interface SpecialistAnalysis {
   outOfScope: SpecialistOutOfScope[];
   evidence: string[];
   confidence: 'low' | 'medium' | 'high' | null;
-}
-
-export interface CoordinationBrief {
-  summary: string;
-  order: string[];
-  dependencies: string[];
-  dropWorkstreams: string[];
-  extraConstraints: string[];
 }
 
 export interface RecommendationContribution {
@@ -126,20 +117,6 @@ export const readSpecialistAnalysis = (raw: unknown): ContractReading<Specialist
   return { value: hasContent ? value : null, discarded };
 };
 
-export const readCoordinationBrief = (raw: unknown): ContractReading<CoordinationBrief> => {
-  const discarded: string[] = [];
-  if (!isRecord(raw)) return { value: null, discarded: ['La respuesta no era un objeto.'] };
-  const value: CoordinationBrief = {
-    summary: text(raw.summary),
-    order: textList(raw.order, 'order', discarded),
-    dependencies: textList(raw.dependencies, 'dependencies', discarded),
-    dropWorkstreams: textList(raw.dropWorkstreams, 'dropWorkstreams', discarded),
-    extraConstraints: textList(raw.extraConstraints, 'extraConstraints', discarded),
-  };
-  if (!value.summary) discarded.push('Falta «summary».');
-  return { value: value.summary ? value : null, discarded };
-};
-
 export const readRecommendation = (raw: unknown): ContractReading<Recommendation> => {
   const discarded: string[] = [];
   if (!isRecord(raw)) return { value: null, discarded: ['La respuesta no era un objeto.'] };
@@ -192,14 +169,6 @@ export const renderSpecialistAnalysis = (analysis: SpecialistAnalysis): string =
   ...(analysis.confidence ? ['', `Confianza: ${analysis.confidence}`] : []),
 ].join('\n').trim();
 
-export const renderCoordinationBrief = (brief: CoordinationBrief): string => [
-  brief.summary,
-  ...bullets('Orden', brief.order),
-  ...bullets('Dependencias', brief.dependencies),
-  ...bullets('Restricciones adicionales', brief.extraConstraints),
-  ...bullets('Se omiten', brief.dropWorkstreams),
-].join('\n').trim();
-
 export const renderRecommendation = (recommendation: Recommendation): string => [
   `**Veredicto: ${verdictLabel(recommendation.verdict)}**`,
   '',
@@ -211,38 +180,6 @@ export const renderRecommendation = (recommendation: Recommendation): string => 
   ...bullets('Condiciones', recommendation.conditions),
   ...bullets('Preguntas abiertas', recommendation.openQuestions),
 ].join('\n').trim();
-
-/**
- * Lo único que el brief puede cambiar del plan: quitar a un especialista y
- * añadir restricciones. Nunca añade agentes ni sube los topes —un modelo que
- * pudiera hacerlo escribiría el plan desde dentro de un JSON.
- */
-export interface BriefApplication {
-  /** Ids de workstream que se mantienen. */
-  keep: string[];
-  dropped: string[];
-  extraConstraints: string[];
-}
-
-export const applyCoordinationBrief = (
-  brief: CoordinationBrief | null,
-  workstreams: readonly { id: string; personaId: OfficeAgentId }[],
-): BriefApplication => {
-  if (!brief) return { keep: workstreams.map((w) => w.id), dropped: [], extraConstraints: [] };
-  const wanted = brief.dropWorkstreams.map((entry) => entry.toLowerCase());
-  const matches = (w: { id: string; personaId: OfficeAgentId }): boolean => {
-    const alias = OFFICE_AGENT_PERSONAS[w.personaId].alias.toLowerCase();
-    return wanted.some((entry) => entry === w.id.toLowerCase() || entry === alias || entry === w.personaId);
-  };
-  let dropped = workstreams.filter(matches).map((w) => w.id);
-  // Un equipo vacío no es una orquestación: quitar a todos se ignora.
-  if (dropped.length >= workstreams.length) dropped = [];
-  return {
-    keep: workstreams.filter((w) => !dropped.includes(w.id)).map((w) => w.id),
-    dropped,
-    extraConstraints: brief.extraConstraints.slice(0, 5),
-  };
-};
 
 /** Qué exige el evaluador sobre una recomendación leída como objeto. */
 export const evaluateRecommendationFields = (

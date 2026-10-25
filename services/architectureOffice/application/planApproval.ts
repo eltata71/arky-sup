@@ -31,8 +31,8 @@ export interface PlanApprovalProposal {
   consolidatorId: OfficeAgentId;
   specialists: { personaId: OfficeAgentId; objective: string; acceptanceCriteria: string[] }[];
   /**
-   * Cota de llamadas al modelo: la coordinadora, un análisis por especialista,
-   * la consolidación y la única corrección posible. Es un tope, no una
+   * Cota de llamadas al modelo: un análisis por especialista (el encuadre es
+   * determinista desde 21.2 y no llama a nadie), la consolidación y la única corrección posible. Es un tope, no una
    * previsión; el coste real se mide al terminar y nunca se estima aquí con un
    * número que parezca medido.
    */
@@ -60,7 +60,7 @@ export const proposeFromPlan = (plan: OfficeOrchestrationPlan): PlanApprovalProp
     objective: workstream.objective,
     acceptanceCriteria: [...workstream.acceptanceCriteria],
   })),
-  maxModelCalls: 1 + plan.workstreams.length + 1 + 1,
+  maxModelCalls: plan.workstreams.length + 1 + 1,
 });
 
 export type ApprovalApplication =

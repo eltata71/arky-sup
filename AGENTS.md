@@ -150,7 +150,9 @@ Reglas que no se negocian al trabajar aquí:
    revisor apagaría la razón de existir de la Oficina.
 8. **La orquestación tiene topes declarados**, no emergentes: 4 especialistas
    por operación, 3 en paralelo y **una** corrección del consolidador
-   (evaluador-optimizador acotado, `officeConsolidationReview.ts`).
+   (evaluador-optimizador acotado, `officeConsolidationReview.ts`). El encuadre
+   no llama a la coordinadora: es el plan determinista (`buildDeterministicFraming`,
+   D-A3 = B, remediación 21.2), y sin ningún análisis entregado no se consolida.
 9. **Un formulario no se orquesta.** Completar un campo es tarea de un solo
    agente (`services/ai/generation/capture/`); el equipo completo se reserva
    para una pregunta de arquitectura. El razonamiento, con la tabla de cuándo
@@ -448,6 +450,9 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    **El plan de agentes de IA (olas 15–20) está cerrado desde 2026-10-23**:
    `docs/plan-agentes-ia.md` no tiene tareas abiertas. El trabajo nuevo requiere
    un plan nuevo; sus tareas usaron ramas `agentes/<id>-<tema>`.
+   **El plan de remediación de agentes (ola 21) está en ejecución desde 2026-10-24**:
+   `docs/plan-remediacion-agentes.md` cierra los nueve criterios del doble chequeo;
+   ramas `remediacion/<id>-<tema>`.
 19. **Iniciativas es el contexto piloto: copia su forma** (F3-05,
     `docs/ddd-transformacion/09-cierre-fase-3.md`). `domain/` guarda las reglas
     sin E/S, sin React y sin reloj implícito (`now` entra por parámetro);

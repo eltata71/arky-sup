@@ -34,7 +34,6 @@ describe('la orquestación sella cada invocación', () => {
 
     expect(result.promptStamps).toEqual(received);
     expect(idsOf(received)).toEqual([
-      'office.coordination',
       ...plan.workstreams.map(() => 'office.workstream'),
       'office.consolidation',
     ]);

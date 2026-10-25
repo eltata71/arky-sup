@@ -141,7 +141,8 @@ describe('el corpus del banco de agentes', () => {
     expect(new Set(corpus.revision.map((c) => (typeof c.critica === 'string' ? c.critica : 'json'))))
       .toEqual(new Set(['json', 'falla', 'texto-roto', 'vacia']));
     expect(new Set(corpus.consolidacion.map((c) => c.camino))).toEqual(new Set(['coordinacion', 'encargo']));
-    expect(results.vallado.length).toBeGreaterThanOrEqual(7);
+    // Seis sitios: el del coordinador salió con su prompt (21.2 · D-A3 = B).
+    expect(results.vallado.length).toBeGreaterThanOrEqual(6);
   });
 
   it('cada sitio de vallado pone de verdad el texto del usuario en el prompt', () => {

@@ -115,6 +115,7 @@ describe('nueva-tarea.sh ya no está atado a un plan', () => {
     expect(planes.map(([, plan, prefijo]) => `${plan}|${prefijo}`)).toEqual([
       'docs/plan-clase-mundial.md|clase-mundial',
       'docs/plan-agentes-ia.md|agentes',
+      'docs/plan-remediacion-agentes.md|remediacion',
     ]);
     for (const [, plan] of planes) expect(existsSync(plan)).toBe(true);
   });

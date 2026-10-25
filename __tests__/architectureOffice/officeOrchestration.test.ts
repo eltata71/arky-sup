@@ -105,7 +105,7 @@ describe('officeOrchestration', () => {
     expect(result.status).toBe('completed');
   });
 
-  it('invokes Lucia as the coordinator model before any specialist', async () => {
+  it('frames deterministically: Lucía is never invoked, and consolidation comes last (21.2)', async () => {
     const plan = planOfficeWorkstreams('@Lucía coordina AWS y MuleSoft');
     const events: string[] = [];
     const invoke = vi.fn(async (personaId: string) => {
@@ -115,8 +115,8 @@ describe('officeOrchestration', () => {
 
     const result = await executeOfficeOrchestration(plan, invoke);
 
-    expect(events[0]).toBe('lucia');
-    expect(result.coordination).toBe('resultado-lucia');
+    expect(events).not.toContain('lucia');
+    expect(result.coordination).toMatch(/^Encuadre determinista/);
     expect(events.indexOf('alejandro')).toBeGreaterThan(events.indexOf('mauricio'));
   });
 

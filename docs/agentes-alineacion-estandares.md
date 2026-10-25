@@ -232,7 +232,9 @@ producto.
   detector de PII sin catálogo del dominio marca nombres de sistemas y de
   personas —que es de lo que trata una arquitectura— y el que se apaga por
   ruidoso es el mismo que comprobaba las claves.
-- **No degradamos el fallo del coordinador a un plan silencioso.** Cuando Lucía
-  no puede encuadrar, la operación falla y lo dice. Presentar como recomendación
-  del equipo algo que el equipo no llegó a coordinar sería mentir con la
-  interfaz.
+- **No firmamos una recomendación sobre ningún análisis.** El encuadre es el
+  plan determinista desde la remediación 21.2 (D-A3 = B): la llamada a Lucía no
+  demostró mejora medible y costaba una por operación. Si ningún especialista
+  entrega su análisis, la operación falla y lo dice, sin llamar al consolidador.
+  Presentar como recomendación del equipo algo que el equipo no llegó a analizar
+  sería mentir con la interfaz.

@@ -57,8 +57,8 @@ describe('applyApprovalDecision', () => {
     if (result.outcome === 'approved') expect(result.plan.workstreams).toHaveLength(plan.workstreams.length);
   });
 
-  it('la propuesta acota las llamadas: coordinadora, un análisis por especialista, consolidación y una corrección', () => {
-    expect(proposeFromPlan(plan).maxModelCalls).toBe(plan.workstreams.length + 3);
+  it('la propuesta acota las llamadas: un análisis por especialista, consolidación y una corrección (sin coordinadora, 21.2)', () => {
+    expect(proposeFromPlan(plan).maxModelCalls).toBe(plan.workstreams.length + 2);
   });
 });
 
