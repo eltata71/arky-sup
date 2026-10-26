@@ -1,27 +1,49 @@
 #!/usr/bin/env bash
 # Centinela de cron para scripts/agentes/vigilar-limites.py (repo arky-sup).
-# Corre --cron contra cada tablero real -- lista a mano, igual que HUELLAS en
-# vigilancia-tarjetas.sh. Silencio total en stdout = nada que avisar (patron
-# --no-agent de Hermes cron: "Empty stdout = silent"). Si algo falla, el
-# script real escribe su propio latido con el error y termina con codigo
-# distinto de cero, lo que dispara --failure-deliver de este job.
+# Corre --cron contra CADA tablero que exista de verdad ahora mismo, consultado
+# en cada pasada -- no una lista escrita a mano. El fallo real que esto corrige
+# (2026-10-25): Hermes crea tableros por su cuenta, sin que nadie los registre
+# (confirmado en vivo: la prueba del coordinador generó uno nuevo simplemente
+# al nombrarlo en una llamada), así que cualquier lista fija siempre va por
+# detrás de la realidad -- no es un problema de olvido, es estructural.
+# Silencio total en stdout = nada que avisar (patron --no-agent de Hermes
+# cron: "Empty stdout = silent"). Si algo falla, el script real escribe su
+# propio latido con el error y termina con codigo distinto de cero, lo que
+# dispara --failure-deliver de este job.
 set -u
 REPO=/home/tata/workspace/arky-sup
-BOARDS=(
-  "arky-maintenance:/home/tata/.hermes/kanban/boards/arky-maintenance/kanban.db"
-  "latam-factory:/home/tata/.hermes/kanban/boards/latam-factory/kanban.db"
-)
+BOARDS_FILE="$(mktemp)"
+trap 'rm -f "$BOARDS_FILE"' EXIT
+
+if ! hermes kanban boards list --json > "$BOARDS_FILE" 2>&1; then
+  echo "VIGILAR-LIMITES: no se pudo listar los tableros -- $(cat "$BOARDS_FILE")"
+  exit 1
+fi
+
 EXIT=0
-for entry in "${BOARDS[@]}"; do
-  tablero="${entry%%:*}"
-  db="${entry#*:}"
+while IFS=$'\t' read -r tablero db; do
+  [ -z "$tablero" ] && continue
   if [ ! -f "$db" ]; then
-    echo "VIGILAR-LIMITES: no existe la base de $tablero ($db)"
+    echo "VIGILAR-LIMITES: tablero '$tablero' registrado pero sin base en disco ($db)"
     EXIT=1
     continue
   fi
   python3 "${REPO}/scripts/agentes/vigilar-limites.py" "$db" "$tablero" --profile arkysupabase --cron
   rc=$?
   [ "$rc" != 0 ] && EXIT=$rc
-done
+done < <(python3 -c "
+import json, sys
+try:
+    with open('${BOARDS_FILE}', encoding='utf-8') as f:
+        boards = json.load(f)
+except Exception as exc:
+    print(f'VIGILAR-LIMITES: respuesta de boards list no es JSON valido -- {exc}', file=sys.stderr)
+    sys.exit(1)
+for b in boards:
+    slug = b.get('slug')
+    db = b.get('db_path')
+    if slug and db:
+        print(f'{slug}\t{db}')
+")
+
 exit "$EXIT"
