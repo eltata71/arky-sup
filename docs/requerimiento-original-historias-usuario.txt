@@ -4,7 +4,7 @@ LATAM AI SOFTWARE FACTORY — HERMES AGENT
 HU-AG-001 — José: Agente Orquestador General
 
 Nombre: José
-Perfil Hermes: jose-orchestrator
+Perfil Hermes: jose   [enmienda E-06 — ver NOTA E-06 al final del Bloque 1]
 Rol: Chief AI Software Factory Orchestrator
 Especialidad: Planificación, coordinación, delegación, supervisión y optimización integral de la fábrica de software.
 
@@ -162,7 +162,7 @@ Criterios de aceptación:
 HU-AG-005 — Camilo: Arquitecto de Software
 
 Nombre: Camilo
-Perfil Hermes: camilo-software-architect
+Perfil Hermes: camilo   [enmienda E-06 — ver NOTA E-06 al final del Bloque 1]
 Rol: Software Architect Agent
 Especialidad: Diseño interno, modularidad y calidad estructural del software.
 
@@ -711,6 +711,92 @@ Criterios de aceptación:
 6. No se permite alterar políticas obligatorias mediante cambios de personalidad o memoria.
 7. Los agentes conservan sus identidades y configuraciones después de reiniciar Hermes.
 
+Los dos ámbitos de la configuración de un agente [enmienda E-10]:
+Los criterios 1 y 7 de arriba ya no son del todo ciertos tal como están
+escritos, porque parte de la configuración de un agente vive fuera de su
+perfil. Hay dos ámbitos, y conviene no fusionarlos:
+
+- **Lo propio del perfil**: identidad, modelo, memoria, toolsets — lo que
+  cada agente trae consigo y conserva tras reiniciar Hermes, exactamente lo
+  que describen los criterios 1 y 7.
+- **Lo compartido y versionado en el repositorio**: las instrucciones de
+  orquestación que varios agentes usan por igual (ver RG-20). Un perfil no
+  copia ese contenido dentro de sí mismo: lo **referencia**. Copiarlo es
+  exactamente el defecto que RG-20 existe para impedir.
+
+----------------------------------------------------------------------
+
+HU-AG-020 — Rafael y Alexis: Revisores Independientes
+[enmienda E-07, 2026-10-25]
+
+Nombre: Rafael (principal) / Alexis (continuidad y segunda opinión)
+Perfil Hermes: rafael / alexis
+Rol: Independent Reviewer Agent
+Especialidad: Revisión adversarial read-only del resultado final.
+
+Historia de usuario
+Como responsable de la fábrica, quiero contar con un revisor que verifique el
+resultado final sin haber participado en producirlo, para que ninguna
+implementación pueda aprobarse a sí misma.
+
+Responsabilidades:
+- Revisar correctitud, contratos, concurrencia, seguridad, mantenibilidad,
+  rendimiento y cobertura.
+- Revisar el diff y las pruebas del SHA exacto que se va a fusionar.
+- Priorizar hallazgos Critical, High, Medium y Low.
+- Declarar explícitamente los límites de la revisión y las pruebas no ejecutadas.
+- Operar siempre read-only: no modificar el worktree revisado.
+
+Entregables:
+- Hallazgos con archivo, línea, consecuencia y corrección mínima.
+- Veredicto sobre el SHA final.
+
+Emite hallazgos, no abre trabajo:
+No crea tarjetas de corrección ni de re-revisión, ni asigna a nadie. Eso es
+coordinación y corresponde a José (RG-01). Mezclar al juez con quien reparte el
+trabajo que su propio veredicto generó deshace la separación que esta figura
+existe para dar.
+
+Reparto entre los dos:
+- Una revisión que vuelve con cambios se queda con quien la revisó la primera
+  vez: nunca cambia de juez a mitad de un hilo.
+- Una revisión nueva va a quien esté libre; Rafael es el predeterminado.
+- Alexis entra además como segunda opinión obligatoria cuando la tarea se
+  clasifica de complejidad crítica (Nivel 5, HU-ORQ-007).
+
+Criterios de aceptación:
+1. El revisor asignado no es quien implementó el cambio ni quien diseñó la
+   materia que se revisa como estructura.
+2. Los hallazgos quedan vinculados a la tarea con severidad y evidencia.
+3. Un cambio posterior al SHA revisado invalida el veredicto.
+4. El revisor no crea ni asigna tareas.
+5. Sin evidencia suficiente, el veredicto es bloqueado, nunca aprobado con
+   reservas.
+
+----------------------------------------------------------------------
+
+NOTA E-06 — Identificadores de los perfiles de José y Camilo
+[enmienda E-06, 2026-10-25]
+
+Los identificadores de estos dos perfiles son `jose` y `camilo`, y no siguen la
+convención `nombre-rol` que sí cumplen los dieciséis especialistas. Es una
+decisión consciente, tomada el 2026-10-25 tras medir el coste del renombrado:
+cambiarlos exigiría mover el directorio del perfil con su base de estado, sus
+credenciales y sus sesiones; actualizar `kanban.orchestrator_profile` en varios
+`config.yaml`; reescribir identificadores, perfiles y rutas en el roster del
+panel y el perfil de sus tableros; cambiar el entorno de las unidades systemd;
+corregir las referencias cruzadas en los SOUL; y migrar las asignaciones
+históricas en las bases de los tableros.
+
+A cambio no corrige ningún defecto observado. La colisión de nombres que se le
+atribuía venía de los perfiles heredados del roster antiguo —nombres cortos
+duplicando a los nuevos—, y esos ya fueron retirados del panel.
+
+Se documenta la excepción en lugar de dejar el requerimiento permanentemente
+incumplido en dos líneas: un requerimiento que exige algo que se decidió
+deliberadamente no hacer obliga a toda auditoría futura a reabrir el mismo
+debate y cerrarlo igual.
+
 
 ======================================================================
 BLOQUE 2 — HISTORIAS DE USUARIO: ORQUESTACIÓN DE AGENTES Y FLUJOS DE TRABAJO
@@ -905,6 +991,20 @@ Criterios de aceptación:
 - El nivel puede ajustarse cuando surja nueva información.
 - Las tareas críticas utilizan controles de validación adicionales.
 - El historial permite evaluar la precisión de las clasificaciones.
+- El nivel asignado se persiste en la tarjeta y es consultable después, no solo
+  razonado en el momento de clasificar. [enmienda E-04]
+- Existe una regla explícita nivel → capacidad de modelo, y esa regla es lo que
+  decide el modelo; clasificar sin que nada consuma el nivel es trabajo sin
+  efecto. [enmienda E-04]
+
+Alcance de esta historia, y su frontera con HU-ORQ-002 [enmienda E-04]:
+Los cinco niveles de esta historia deciden **la capacidad de modelo**. La **ruta
+de atención** —tarea directa o planificación completa, y por tanto qué etapas
+del flujo se recorren— la decide la clasificación de HU-ORQ-002, cuyo resultado
+esperado en el flujo operacional es literalmente «Ruta de atención». Son dos
+decisiones distintas que se alimentan de la misma evaluación de complejidad y
+riesgo, y conviene no fusionarlas: hacerlo repetiría el defecto que la enmienda
+E-01 corrige en la etapa 16.
 
 ----------------------------------------------------------------------
 
@@ -1134,19 +1234,43 @@ Flujo de atención:
 2. Registra evidencias.
 3. Solicita revisión.
 4. José determina los revisores necesarios.
-5. Camilo revisa calidad de software cuando corresponda.
-6. Ignacio revisa cumplimiento arquitectónico en cambios relevantes.
+5. Camilo revisa calidad de software cuando corresponda (componente 16a).
+6. Ignacio revisa cumplimiento arquitectónico en cambios relevantes (componente 16a).
 7. Se registran observaciones.
 8. El responsable corrige los hallazgos.
-9. Se repite la revisión cuando sea necesario.
-10. La tarea avanza si cumple las condiciones establecidas.
+9. Un revisor independiente —Rafael por defecto, Alexis por continuidad o como
+   segunda opinión en complejidad crítica— revisa el diff y las pruebas del SHA
+   que se va a fusionar, sin haber participado en producirlo (componente 16b).
+   [enmienda E-02]
+10. Se repite la revisión cuando sea necesario.
+11. La tarea avanza si cumple las condiciones establecidas.
+
+Las dos garantías de esta historia, y por qué no se sustituyen [enmienda E-02]:
+La revisión especializada aporta **criterio experto**; la independencia exige a
+**quien no produjo el trabajo**. Son dos garantías distintas. Camilo e Ignacio
+revisan legítimamente la materia que ellos mismos diseñaron en las etapas 7 y 8
+y en HU-ORQ-013 —ahí el valor es el dominio técnico—, pero por eso mismo su
+revisión no es independiente respecto de ese diseño y no sustituye al componente
+16b. Un requerimiento que exija independencia en el mismo punto en que asigna la
+revisión al autor del diseño no la obtiene en ninguno.
 
 Criterios de aceptación:
 - Las revisiones tienen evidencias.
 - Los hallazgos quedan vinculados con la tarea.
 - Los defectos relevantes se corrigen.
-- Se evita la autoaprobación de cambios críticos.
+- Se evita la autoaprobación de cambios críticos (ver RG-09, que fija el criterio
+  verificable y su implementación).
 - Los controles no pueden omitirse mediante modificaciones de estado no autorizadas.
+- La etapa 16 no se cierra sin sus dos componentes, 16a y 16b. [enmienda E-02]
+- La verificación independiente vale sobre **el SHA que se fusiona**. Una revisión
+  aprobada sobre un SHA que la rama superó con commits posteriores no acredita el
+  resultado final y exige una revisión nueva. [enmienda E-09]
+- Límite declarado de la enmienda E-09: esta condición **no es verificable desde
+  los datos del tablero**. El SHA aprobado solo existe como texto libre en
+  comentarios y eventos, sin campo que lo ate a un commit real, y el histórico
+  posterior de la rama vive en GitHub. La comprueba el propietario en el momento
+  de fusionar. Ningún vigilante la cubre, y queda dicho para que no se dé por
+  vigilada. Caso real: PR #255.
 
 ----------------------------------------------------------------------
 
@@ -1454,6 +1578,25 @@ Criterios de aceptación:
 FLUJO OPERACIONAL INTEGRAL DE LA FÁBRICA DE SOFTWARE
 ======================================================================
 
+Alcance de este flujo [enmienda E-05]:
+Las 26 etapas describen la **ruta completa**, aplicable a las solicitudes de
+complejidad alta y crítica. La etapa 2 ya produce como resultado esperado una
+«Ruta de atención», y HU-ORQ-002 ya exige que no se apliquen procesos
+excesivamente complejos a actividades triviales y que se determine si la
+solicitud «puede atenderse mediante una tarea directa o requiere planificación
+completa». Esta enmienda solo hace ejecutable lo que esas dos frases ya piden,
+enumerando la ruta corta:
+
+  Ruta corta (tarea directa): etapas 1, 2, 11, 12, la etapa de desarrollo que
+  corresponda (13, 14, 15 o 24), 16, 17 y 26.
+
+  Ruta completa: las 26 etapas.
+
+La etapa 16 y sus dos componentes pertenecen a las dos rutas: ninguna
+clasificación de complejidad exime de la verificación independiente del SHA que
+se fusiona. Las etapas 18 a 23 se incorporan a la ruta corta cuando el cambio
+toca seguridad, despliegue o liberación, con independencia de su complejidad.
+
 Etapa | Responsable principal | Actividad | Resultado esperado
 1. Recepción | José | Recibir y registrar solicitud | Solicitud identificada
 2. Clasificación | José | Evaluar tipo, riesgo y complejidad | Ruta de atención
@@ -1470,7 +1613,12 @@ Etapa | Responsable principal | Actividad | Resultado esperado
 13. Desarrollo frontend | Valentina | Implementar interfaces | Componentes frontend
 14. Desarrollo backend | Mateo | Implementar servicios y APIs | Componentes backend
 15. Integraciones | Andrés | Implementar contratos e intercambios | Integraciones funcionales
-16. Revisión técnica | Camilo / Ignacio | Revisar diseño e implementación | Revisión arquitectónica
+16a. Revisión especializada | Camilo / Ignacio | Revisar diseño e implementación, cada uno en su materia | Revisión estructural y arquitectónica
+16b. Verificación independiente | Rafael (por defecto) / Alexis | Revisar diff y pruebas del SHA que se va a fusionar, sin haber participado en producirlo | Veredicto independiente sobre el SHA final
+      [enmienda E-01] La etapa 16 se cierra solo con sus dos componentes. 16b es
+      el último. Cualquier cambio posterior invalida 16b, y también 16a si tocó
+      contratos. La revisión especializada aporta criterio experto; la
+      independencia exige a quien no produjo el trabajo.
 17. Calidad | Paola | Ejecutar pruebas | Evidencias de pruebas
 18. Seguridad | Julián | Evaluar vulnerabilidades | Validación de seguridad
 19. Integración continua | Ricardo | Integrar y construir | Build validado
@@ -1503,7 +1651,37 @@ RG-07 — Control económico: Toda ejecución estará sujeta a políticas presup
 
 RG-08 — Calidad: Ninguna actividad se considerará técnicamente aprobada cuando existan validaciones obligatorias pendientes o fallidas.
 
-RG-09 — Revisión independiente: Los cambios relevantes deberán ser revisados por especialistas distintos del agente desarrollador cuando las políticas lo requieran.
+RG-09 — Revisión independiente [reescrita, enmienda E-03]: Ninguna tarjeta podrá
+salir del estado de revisión si el revisor registrado en el evento de solicitud
+de revisión es nulo o igual al implementador.
+
+Esta regla sustituye la redacción anterior, que decía «cuando las políticas lo
+requieran» sin nombrar ninguna política: una regla cuya aplicación depende de
+una condición que el propio documento no define no se puede incumplir, y por
+tanto tampoco cumplir.
+
+Por qué requiere comprobación externa: en Hermes v0.22.2, `request_review` mueve
+la tarjeta a `review` **conservando el assignee** cuando nadie pasa un revisor
+explícito, de modo que el despachador vuelve a ejecutar al implementador en la
+columna de revisión. El motor contempla el caso de revisor igual a implementador
+y responde no registrando procedencia, no rechazándolo. Hermes es software de
+terceros y no se modifica, así que la garantía tiene que vivir fuera.
+
+Implementación de esta regla: `scripts/agentes/vigilar-autorrevision.py`, que
+detecta la condición, contiene la tarjeta por defecto y admite una anulación
+humana explícita (`--override --by --reason`) que queda escrita en la tarjeta y,
+cuando hay un PR identificable sin ambigüedad, también como comentario en ese PR
+—nunca como revisión nativa de GitHub, porque una anulación no es una
+aprobación de código.
+
+Límite de identidad, declarado: `--by` es texto libre. Nada en Hermes ata un
+comentario a una identidad verificable; `author` no se valida contra ningún
+perfil ni sesión. La anulación garantiza que la decisión **deja rastro con
+nombre y motivo**; **no acredita quién la tomó**. Es el mismo nivel de confianza
+que ya rige `assignee`, `implementer` y los propios revisores en este tablero,
+donde todo corre bajo una identidad compartida. Resolverlo de verdad exigiría
+revisiones nativas de GitHub con una segunda cuenta, que está dimensionado
+aparte.
 
 RG-10 — Seguridad: Las herramientas, memorias, repositorios y permisos estarán limitados según el rol y las políticas aplicables.
 
@@ -1522,3 +1700,40 @@ RG-16 — Memoria: El conocimiento generado durante las ejecuciones se consolida
 RG-17 — Eficiencia: La fábrica priorizará reutilización, reducción de retrabajos, optimización de contexto y selección apropiada de modelos.
 
 RG-18 — Finalización: El orquestador solamente podrá declarar concluido un trabajo cuando los entregables cumplan sus criterios de aceptación y existan evidencias suficientes de validación.
+
+RG-19 — Cadena de suministro del revisor [enmienda E-07]: Los dos revisores
+independientes correrán sobre proveedores y cuentas distintas, y el modelo
+primario de cada uno será el fallback del otro, para que la verificación
+independiente no dependa de una sola cuota ni de un solo punto ciego de modelo.
+Estado al 2026-10-25: Rafael `claude-opus-5-5` (anthropic), Alexis
+`gpt-6.1-sol` (openai-codex), ambos con razonamiento alto. Esta regla es el
+motivo por el que existen dos revisores y no uno: no duplican criterio,
+duplican disponibilidad.
+
+RG-20 — Fuente única de instrucciones compartidas [enmienda E-11]: Las
+instrucciones compartidas por varios agentes viven en un único fichero
+versionado. Un perfil lo referencia y nunca conserva una copia divergente.
+Una referencia que no resuelve bloquea al agente, nunca lo deja correr sin
+instrucciones.
+
+Por qué la segunda frase es la que importa, no solo la primera: hoy ese
+fallo es abierto y silencioso — un enlace roto en una carpeta de skills no
+da ningún error visible, Hermes simplemente deja de cargar la skill — y un
+agente sin instrucciones no se queja, **contesta**. Responde con la misma
+confianza que si las tuviera, sin que nada en esa respuesta delate que
+faltan. Dejarlo correr así es peor que pararlo: un agente parado se nota: uno
+que contesta sin sus reglas, no.
+
+Disciplina de edición de ese fichero compartido: no se edita en el
+checkout principal — se edita en un worktree de tarea y entra por su
+propio PR; los perfiles lo recogen solos cuando aterriza en `main`.
+Editarlo directamente en el sitio que los agentes leen en vivo gobierna su
+conducta antes de que nadie independiente lo revise — la misma forma del
+defecto de autoaprobación que RG-09 existe para impedir, aplicada a una
+instrucción en vez de a una revisión.
+
+Implementación de esta regla para `latam-factory-orchestration`:
+`scripts/agentes/enlazar-skill-canonica.sh` (enlace simbólico relativo,
+idempotente, repara una copia divergente hacia el canónico) y la
+comprobación en `estado-fabrica.py` (`broken_canonical_skill_links`), que
+avisa si algún perfil deja de estar enlazado o el enlace deja de resolver.
