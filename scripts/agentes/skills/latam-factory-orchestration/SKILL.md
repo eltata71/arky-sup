@@ -46,16 +46,45 @@ se cumple, la garantía no.
 
 Pasó de verdad en la primera ejecución de prueba con este procedimiento
 (2026-10-26, auditoría): José escribió el contenido del fichero en su propio
-turno antes de que Natalia, la autora asignada, pudiera reclamar la tarjeta.
-No rompió la cadena — Natalia igual hizo su propio trabajo real bajo
-despacho normal, con su propio proceso y su propia evidencia — pero fue un
-atajo que no debía tomar.
+turno antes de que Natalia, la autora asignada, pudiera reclamar la tarjeta
+— y, además, dejó que Natalia reclamara después una tarea que ya estaba
+hecha. No rompió la cadena — Natalia igual produjo su propio proceso y su
+propia evidencia — pero su turno quedó reducido a una firma sobre un trabajo
+que no hizo.
 
 **Regla**: José asigna y supervisa; no hace el trabajo de la tarjeta que
 acaba de crear, aunque crea que sería más rápido. Si de verdad es más rápido
-que lo haga él, esa es la señal de que la tarea nunca necesitó delegarse —
-y lo correcto entonces es no crear la tarjeta, no crearla y adelantarse al
-especialista.
+que lo haga él, esa es la señal de que la tarea nunca necesitó delegarse. Lo
+correcto entonces es no crear la tarjeta; lo incorrecto es crearla y
+adelantarse al especialista.
+
+**Especificar no es ejecutar**: José escribe la especificación de la
+tarjeta — objetivo, requerimientos, criterios de aceptación — y el asignado
+escribe el entregable. Redactar criterios de aceptación es coordinar;
+redactar el entregable es ejecutar. Esta distinción no autoriza una tarjeta
+escueta: lo que ya pedían los pasos 1 y 2 (objetivo, requerimientos,
+aceptación verificable, riesgo, fase SDLC, presupuesto, clasificación) sigue
+siendo obligatorio — la regla de arriba no es excusa para escribir menos,
+es prohibición de producir el artefacto.
+
+**Lo que José sí hace por su cuenta, sin que esto lo contradiga**:
+clasificar la solicitud, registrar la tarjeta con su especificación
+completa, construir el grafo con sus dependencias y sus límites de tiempo,
+supervisar el avance, bloquear cuando haga falta, reasignar, pedir revisión
+independiente, y consolidar al cierre. Ninguna de estas acciones produce el
+entregable que le pidió a otro — todas son coordinación, no ejecución.
+
+**Si el atajo ya ocurrió** — José ya escribió el entregable antes de que el
+asignado lo reclamara — la tarjeta no se despacha como si estuviera
+pendiente: se bloquea, registrando en el cuerpo o en un comentario quién
+hizo realmente el trabajo. Dejar que el asignado la reclame y la confirme
+convierte su turno en una firma sobre algo que no hizo, que es exactamente
+el defecto que esta regla existe para evitar, solo que ya consumado.
+
+**Generalización**: la regla no es específica de José. Quien crea y asigna
+una tarjeta no la ejecuta — José es el caso principal porque es quien
+asigna casi todo, pero el mismo límite aplica a cualquier perfil que delegue
+trabajo a otro.
 
 **Lo que se reconoce de ese mismo incidente, porque también importa**: José
 lo declaró él mismo, sin que nadie preguntara, y calificó su propio
@@ -85,7 +114,7 @@ motivos propios, está junto a la línea en el `config.yaml` de cada perfil.
 
 Qué significa en la práctica:
 - `triage` ya no se vacía solo. Una tarjeta que llega sin clasificar se queda
-  ahí hasta que alguien (José) la clasifique y la planifique — es la etapa 1
+  ahí hasta que alguien (José) la clasifique y la planifique — es el paso 1
   de este procedimiento, ahora ejecutable de verdad.
 - `hermes kanban decompose` sigue instalado y sigue funcionando a mano, pero
   **no debe usarse** (ver paso 3): comparte el mismo agujero del reloj que la
