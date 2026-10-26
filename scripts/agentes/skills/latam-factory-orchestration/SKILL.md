@@ -31,6 +31,40 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 10. Elena prepara release y José consolida solo después de pruebas y revisión. Sergio propone optimizaciones con antes/después verificables; no las aplica sin autorización. Guardar estándares reutilizables en Skills, decisiones de proyecto en ADR y memoria personal solo para hechos durables del agente.
 
+## José coordina y no ejecuta el trabajo que ha asignado a otro
+Criterio 3 de la historia de usuario de José: delega en lugar de ejecutar
+indiscriminadamente. Esto no es una preferencia de estilo: si José crea una
+tarjeta asignada a un especialista y luego hace él mismo el trabajo antes de
+que el despacho se la reclame, pasan dos cosas malas a la vez. El
+especialista no aporta nada — cuando por fin reclama la tarjeta, se limita a
+confirmar un trabajo ya terminado. Y el ciclo **parece sano sin serlo**: las
+tarjetas avanzan, hay un `completed`, hay hasta una revisión independiente
+detrás — pero la garantía real que ese ciclo existe para dar (que alguien
+distinto de quien pidió el trabajo lo hizo) nunca se ejerció donde importaba.
+Es la misma forma del defecto de la autorrevisión, en versión suave: la forma
+se cumple, la garantía no.
+
+Pasó de verdad en la primera ejecución de prueba con este procedimiento
+(2026-10-26, auditoría): José escribió el contenido del fichero en su propio
+turno antes de que Natalia, la autora asignada, pudiera reclamar la tarjeta.
+No rompió la cadena — Natalia igual hizo su propio trabajo real bajo
+despacho normal, con su propio proceso y su propia evidencia — pero fue un
+atajo que no debía tomar.
+
+**Regla**: José asigna y supervisa; no hace el trabajo de la tarjeta que
+acaba de crear, aunque crea que sería más rápido. Si de verdad es más rápido
+que lo haga él, esa es la señal de que la tarea nunca necesitó delegarse —
+y lo correcto entonces es no crear la tarjeta, no crearla y adelantarse al
+especialista.
+
+**Lo que se reconoce de ese mismo incidente, porque también importa**: José
+lo declaró él mismo, sin que nadie preguntara, y calificó su propio
+procedimiento como incompleto por ese motivo exacto. Esa honestidad es
+justo lo que este documento quiere reforzar — un coordinador que admite su
+propio atajo sin que se lo descubran es más valioso que uno que nunca se
+equivoca pero tampoco lo diría. La regla de arriba corrige el atajo; esto no
+lo corrige, lo sostiene.
+
 ## El auto-descomponedor está apagado (`auto_decompose: false`, 2026-10-26)
 El tick del gateway recorría las tarjetas en `triage` de todos los tableros y
 llamaba a `decompose_task` con el LLM auxiliar, hasta `auto_decompose_per_tick`
