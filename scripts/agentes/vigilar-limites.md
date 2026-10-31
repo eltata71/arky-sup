@@ -1,100 +1,112 @@
-# vigilar-limites
+# Vigilante externo de límites — detección, no contención
 
-## Qué problema resuelve, y qué deliberadamente no
+Candidata no instalada. Este documento describe el código de esta rama, no
+acredita instalación, actividad de cron ni protección operacional completa.
+La auditoría del 31 de octubre de 2026 no acreditó ejecución reciente del cron
+existente. No se instala ni reactiva como parte de esta preparación local.
 
-Confirmado leyendo el código de Hermes (no supuesto): una hija del
-auto-decomposer nunca hereda `max_runtime_seconds` ni `max_retries`
-(`_insert_decomposed_child`, `hermes_cli/kanban_db_graph.py:200` — el
-`INSERT` omite las dos columnas). El asesino de tareas por tiempo del propio
-despachador ni siquiera la evalúa: su consulta, `kanban_db_dispatch.py:726`,
-lleva `WHERE ... max_runtime_seconds IS NOT NULL`. No es un plazo generoso —
-es ningún plazo.
+## Alcance entregado
 
-No se puede arreglar desde un hook (los eventos de ciclo de vida del kanban
-son observadores, no bloquean ni modifican) ni desde la CLI de tareas ya
-creadas (`kanban edit` no toca esos campos). El arreglo de raíz exige
-parchear el motor instalado — software de terceros (Nous Research, MIT) —, y
-José decidió no modificarlo. Reportado río arriba por separado.
+El motor auditado admite `max_runtime_seconds=NULL` y excluye esas tareas de
+su evaluación de timeout. Este script no corrige la admisión nativa ni garantiza
+que una tarea nazca con reloj. **Se excluye toda intervención reactiva
+automática**, tanto para implementación como para ejecuciones originadas en
+`review`, desde la primera detección y con independencia del historial.
 
-**Encargo explícito: la opción más barata que resuelva el problema real, no
-la más completa.** Por eso este script hace una sola cosa — parar una tarea
-que se desboca — y deliberadamente NO vigila `kanban.max_in_progress` (el
-tope de flota): eso habría sido empezar a replicar el sistema de límites de
-Hermes desde fuera, que es justo lo que no se pidió.
+1. **Detección reactiva, primero:** `check_runtime` solo lee las tareas
+   `running` aún sin límite. Mide desde
+   `COALESCE(task_runs.started_at, tasks.started_at)`; `worker_started_at` es
+   identidad de proceso, NO reloj. Detecta desde el techo inclusive. Nunca
+   llama a `reclaim`, `block`, otra CLI ni señales a procesos; no modifica la DB.
+   En `--dry-run` devuelve detecciones, nunca acciones aplicadas o escaladas.
+   En modo mutante, una vencida provoca fallo explícito con ids y tiempos,
+   solicitando **recuperación manual con dispatcher detenido y verificado**.
+   No se parchea después de ese fallo para no esconder el vencimiento.
+2. **Mitigación proactiva histórica:** si la comprobación anterior no falla,
+   busca tareas `ready`, `todo` o `running` sin límite y les asigna 600 segundos
+   por defecto. Escribe directamente UNA columna de UNA fila con condición
+   `IS NULL` y estado comprobado de nuevo; después registra un comentario CLI.
+   Esta es la excepción histórica acotada del encabezado del script, no una
+   autorización general para escribir DB ni para ejecutar contra producción.
+   Si el UPDATE no aplica por cambio concurrente, esa entrada no se devuelve,
+   no se comenta ni cuenta en salida/heartbeat como escritura. En dry-run se
+   conserva la detección sin aplicar cambios.
 
-## Qué hace
+El techo externo de 600 segundos NO es la admisión de 300 segundos exigida por
+el flujo compartido. Puede pasarse explícitamente por CLI; aquí no se cambia
+configuración alguna. Las tareas parcheadas dependen del dispatcher nativo
+para aplicar el límite. Esta dependencia no acredita terminación.
 
-Cada 2 minutos: tareas `running` sin `max_runtime_seconds` que llevan más de
-`--runtime-ceiling-seconds` (600 por defecto) corriendo se paran con
-`hermes kanban reclaim --board <tablero> <id>` — que **termina el proceso
-real del worker** (confirmado leyendo `reclaim_task`/
-`_terminate_reclaimed_worker`, no solo libera el candado en la base de
-datos) y deja un evento `manual_reclaim` con el motivo. Nunca escribe en la
-base de datos directamente.
+## Por qué no se entrega recuperación automática
 
-## Probado contra el escenario real, no contra uno imaginado
+La revisión Alexis de `8854e09e0d6c9960c4b06acde7a1a686692b6aed` identificó:
 
-Tablero desechable, borrado al terminar cada vez. Encontré y corregí un
-fallo real antes de activarlo: la primera versión no pasaba `--board` a la
-llamada de `reclaim`, así que habría actuado contra el tablero por defecto en
-vez del indicado. Y descubrí un efecto secundario real: el gateway de
-`arkysupabase` vigila y redespacha *cualquier* tablero del perfil, incluso
-uno desechable — una tarea sintética con `claim_lock` nulo disparó la propia
-reconciliación de huérfanos de Hermes antes de que este script llegara a
-actuar; la prueba limpia tuvo que fijar un `claim_lock` sintético no nulo
-para aislar el efecto de este script del de Hermes.
+- `reclaim` puede devolver una implementación a `ready`, habilitando un nuevo
+  despacho antes de `block`. Este último puede limpiar la identidad del worker
+  nuevo sin terminarlo. El orden de ambas CLI no garantiza contención.
+- Para un intento originado en `review`, `reclaim` puede restaurar `review`,
+  donde `block` no es válido. La secuencia puede fallar y dejarla elegible.
 
-## Latencia de reacción y qué se escapa
+No hay una exclusión efectiva compartida con el dispatcher en este alcance.
+No se añaden mutex locales, bloqueos caseros, cambios al motor ni un flag
+booleano que finja acreditar su detención. El vigilante **no detiene ni verifica
+el dispatcher**: la recuperación queda a cargo del operador, fuera de este
+script, con evidencia real de detención y ausencia de redespacho durante toda
+la operación. Una relectura de la tarjeta tampoco acredita esa exclusión.
 
-- **Techo real de exposición**: ~600s + hasta 2 min de espera al siguiente
-  sondeo ≈ **10–12 minutos como máximo** por ocurrencia, frente a "sin
-  límite" que es lo que hay hoy.
-- **Qué se escapa**: una tarea que empieza y termina todo su daño dentro de
-  una sola ventana de sondeo (hasta 2 minutos). Es una foto entre dos
-  chequeos, no vigilancia continua — la misma limitación honesta de
-  `vigilar-tarjetas.py`.
-- **Resuelto, no solo nombrado: la correa recurrente escala al segundo golpe.**
-  `reclaim` por sí solo devuelve la tarea a `ready` — la segunda vez que este
-  script interviene sobre la MISMA tarea (contado por su propia firma en
-  `task_events`, no por el contador de fallos de Hermes, que `reclaim_task`
-  resetea a propósito en cada intervención manual), ya no la reclama otra
-  vez: reclama (sigue haciendo falta para matar el proceso real) y a
-  continuación bloquea con `kind=needs_input`, que no se autopromueve — pide
-  un humano. Confirmado leyendo el código que `block` *sin* `reclaim` antes
-  no mata el proceso real — por eso siempre va reclaim primero, incluso en
-  la escalada. Probado contra dos rondas reales seguidas (tablero desechable):
-  1ª vez → `ready`; 2ª vez → `blocked`, confirmado que no se autopromueve.
+## Fallos y garantías limitadas
 
-## Uso
+- Relojes ausentes, ilegibles, no finitos o fuera de rango provocan error. Se
+  recorre el lote completo antes de fallar y el diagnóstico incluye también
+  las otras tareas vencidas, sin intervenir sobre ninguna. Esto se aplica en
+  dry-run y modo mutante; no se anuncia vigilancia exitosa.
+- El comentario proactivo exige éxito CLI y tiene timeout de 30 segundos.
+  UPDATE y comentario NO son atómicos: un fallo de comentario deja el límite
+  cambiado sin comentario confirmado y aborta el lote. No se repara esa
+  auditoría automáticamente ni se devuelve éxito.
+- `main` detecta antes del parche, pero no es una transacción compartida con
+  el dispatcher: nuevas tareas, cambios de estado y vencimientos posteriores
+  a la lectura pueden escapar. No se ofrece contención ni exposición máxima
+  de 10–12 minutos. Cron configurado no equivale a cron activo.
+- `--dry-run` abre la DB en lectura, no llama a CLI ni parchea tareas, pero
+  `main` SÍ escribe heartbeat local, también ante errores. Para auditoría sin
+  escrituras usar las funciones con conexión de solo lectura, no `main`.
+- En error, el heartbeat conserva el diagnóstico en `error`; su contador
+  `runtime_hits=0` no significa ausencia de vencidas. En éxito cuenta detecciones
+  dry-run o escrituras proactivas realmente aplicadas, nunca terminaciones.
+- No se promete cobertura global, fábrica completa, hooks/snapshots ni aptitud
+  operacional. RG-09 sigue pendiente y autorrevisión continúa fuera del alcance.
 
-```bash
-python3 scripts/agentes/vigilar-limites.py <kanban.db> <tablero> --profile arkysupabase [--dry-run] [--cron]
+## Uso sujeto a revisión y aprobación
+
+```sh
+python3 scripts/agentes/vigilar-limites.py <kanban.db> <tablero> --profile <perfil> --dry-run
 ```
 
-Código de salida: 0 si no hubo que parar nada; 1 si se detuvo alguna tarea.
+No ejecutar contra DB operacional ni instalar sin los gates y aprobación.
+`--cron` solo controla el silencio, no programa cron ni oculta errores.
+Resultado 0: sin detecciones ni escrituras aplicadas; 1: detecciones dry-run o
+parches aplicados; excepciones: error, incluida cualquier vencida en modo
+mutante. Ningún resultado significa «worker detenido».
 
-## Programado en cron
+## Pruebas locales y evidencia histórica
 
-`vigilar-limites-watch` (`e44230fb1638`), cada 2 minutos, perfil
-`arkysupabase`, vía `~/.hermes/profiles/arkysupabase/scripts/vigilar-limites.sh`
-(fuera de este repo por la convención de Hermes: los scripts de cron viven en
-la carpeta del perfil). Entrega y aviso de fallo a `bot-chat:arkysupabase`.
+```sh
+python3 -B -m unittest discover -s scripts/agentes/tests -v
+python3 -m py_compile scripts/agentes/vigilar-limites.py scripts/agentes/tests/test_vigilar_limites.py
+git diff --check
+```
 
-## Relación con `auto_decompose`
+Para `py_compile`, dirigir `PYTHONPYCACHEPREFIX` fuera del repositorio.
+Las pruebas usan SQLite en memoria/archivos temporales y CLI sustituida:
+reloj por intento, fallback legado, umbral, relojes inválidos y multitarea,
+detección de origen review, inalcanzabilidad del intercalado reclaim/redespacho/
+block porque no se invoca ninguna CLI reactiva, dry-run, heartbeat temporal,
+auditoría proactiva e interferencia con UPDATE no aplicado.
 
-`auto_decompose` se apagó el 2026-10-25 tras el incidente, y se volvió a
-encender el mismo día una vez construidos este script y el hook del motor:
-la descomposición manual no daba ninguna revisión real de contenido (ejecuta
-la misma `_insert_decomposed_child` igual de automática en cuanto se
-dispara), así que mantenerlo apagado solo costaba autonomía a cambio de una
-protección aparente. Historia completa en `arkysupabase/config.yaml`, junto
-a la propia línea.
-
-## Hueco conocido que queda abierto a propósito
-
-Ni este script ni el hook del motor atrapan **una hija que hace algo
-indebido y breve**: no toca el motor (el hook no aplica) y termina antes de
-que este vigilante la alcance en su ventana de sondeo de ~2 minutos. No se
-cierra porque cerrarlo exigiría vigilancia continua en vez de por sondeo, que
-sería desproporcionado para lo que se sabe hoy. Queda dicho, no resuelto —
-revisar si algún día aparece un caso real de este tipo.
+**No son pruebas de terminación de procesos.** Las pruebas operacionales y de
+terminación previas validaban la versión anterior y su recorrido secuencial;
+no validan esta nueva versión ni resuelven concurrencia. El SHA anterior se
+conserva como historial, no como aprobación trasladable. Este rework requiere
+nueva revisión 16b y quality final antes de cualquier publicación; tampoco
+autorizan por sí solos instalación o protección operacional completa.
