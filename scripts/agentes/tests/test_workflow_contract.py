@@ -14,6 +14,12 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn('--max-runtime 300', example)
         self.assertNotIn('--max-runtime 1800', text)
 
+    def test_excluded_self_review_guard_is_not_claimed_as_delivered(self):
+        document = (CANONICAL.parents[4] / 'docs/requerimiento-original-historias-usuario.txt').read_text()
+        self.assertNotIn('Implementación de esta regla: `scripts/agentes/vigilar-autorrevision.py`', document)
+        self.assertIn('EXCLUIDA de este paquete', document)
+        self.assertIn('no acredita cumplimiento efectivo de RG-09', document)
+
     def test_short_route_contains_quality_and_both_reviews(self):
         text = CANONICAL.read_text()
         self.assertRegex(text, r'16a\+16b, 17 \(Calidad, Paola')

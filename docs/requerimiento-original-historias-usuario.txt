@@ -1667,21 +1667,25 @@ columna de revisión. El motor contempla el caso de revisor igual a implementado
 y responde no registrando procedencia, no rechazándolo. Hermes es software de
 terceros y no se modifica, así que la garantía tiene que vivir fuera.
 
-Implementación de esta regla: `scripts/agentes/vigilar-autorrevision.py`, que
-detecta la condición, contiene la tarjeta por defecto y admite una anulación
-humana explícita (`--override --by --reason`) que queda escrita en la tarjeta y,
-cuando hay un PR identificable sin ambigüedad, también como comentario en ese PR
-—nunca como revisión nativa de GitHub, porque una anulación no es una
-aprobación de código.
+Estado de implementación de RG-09 en esta candidata (2026-10-31):
+`scripts/agentes/vigilar-autorrevision.py` pertenece al trabajo histórico.
+Su implementación queda EXCLUIDA de este paquete tras hallazgos High de contención y
+desbloqueo y Medium de identificación de eventos. No existe en el árbol
+entregado; no se reincorpora el código rechazado ni se acreditan sus garantías.
+Esta entrega no acredita cumplimiento efectivo de RG-09. Su corrección,
+validación, publicación e instalación quedan pendientes y separadas.
 
-Límite de identidad, declarado: `--by` es texto libre. Nada en Hermes ata un
-comentario a una identidad verificable; `author` no se valida contra ningún
-perfil ni sesión. La anulación garantiza que la decisión **deja rastro con
-nombre y motivo**; **no acredita quién la tomó**. Es el mismo nivel de confianza
-que ya rige `assignee`, `implementer` y los propios revisores en este tablero,
-donde todo corre bajo una identidad compartida. Resolverlo de verdad exigiría
-revisiones nativas de GitHub con una segunda cuenta, que está dimensionado
-aparte.
+Diseño histórico, NO capacidad entregada ni validada aquí: ese vigilante
+pretendía detectar autorrevisión, contener tarjetas y registrar una anulación
+humana (`--override --by --reason`) en la tarjeta y, cuando el PR fuera
+identificable, como comentario, nunca como aprobación nativa de código.
+
+Límite de identidad del diseño histórico: `--by` es texto libre. Nada en Hermes
+ata un comentario a una identidad verificable; `author` no se valida contra
+ningún perfil ni sesión. Un nombre y motivo escritos no acreditan quién tomó
+la decisión. Este paquete no garantiza esa auditoría ni habilita anulaciones.
+Una solución con identidad verificable y revisiones nativas de GitHub con una
+segunda cuenta requiere diseño y validación separados.
 
 RG-10 — Seguridad: Las herramientas, memorias, repositorios y permisos estarán limitados según el rol y las políticas aplicables.
 
