@@ -12,6 +12,14 @@ metadata:
 
 # Orquestación LATAM AI Software Factory
 
+> **Este fichero lo leen 18 agentes en vivo, por un enlace simbólico desde
+> cada perfil; por eso no se edita aquí.** Se edita en un worktree de tarea
+> (`nueva-tarea.sh`), pasa por su PR y su revisión independiente, y los 18 lo
+> recogen solos cuando aterriza en `main` — editar directamente el árbol de
+> trabajo del checkout principal cambia la conducta de los 18 antes de que
+> nadie lo haya visto, que es la misma forma del defecto de autoaprobación
+> que el resto de este documento existe para evitar.
+
 ## Cuándo utilizar
 Al recibir o ejecutar trabajo del tablero `latam-factory`. No cambia reglas de proyectos o tableros ajenos ni sustituye controles obligatorios de seguridad.
 
