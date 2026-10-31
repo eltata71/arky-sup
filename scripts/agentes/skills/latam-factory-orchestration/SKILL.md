@@ -12,6 +12,14 @@ metadata:
 
 # Orquestación LATAM AI Software Factory
 
+> **Este fichero lo leen 18 agentes en vivo, por un enlace simbólico desde
+> cada perfil; por eso no se edita aquí.** Se edita en un worktree de tarea
+> (`nueva-tarea.sh`), pasa por su PR y su revisión independiente, y los 18 lo
+> recogen solos cuando aterriza en `main` — editar directamente el árbol de
+> trabajo del checkout principal cambia la conducta de los 18 antes de que
+> nadie lo haya visto, que es la misma forma del defecto de autoaprobación
+> que el resto de este documento existe para evitar.
+
 ## Cuándo utilizar
 Al recibir o ejecutar trabajo del tablero `latam-factory`. No cambia reglas de proyectos o tableros ajenos ni sustituye controles obligatorios de seguridad.
 
@@ -19,9 +27,27 @@ Al recibir o ejecutar trabajo del tablero `latam-factory`. No cambia reglas de p
 Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` confirmadas en la versión instalada, modelo accesible y workspace autorizado. Leer la tarjeta y el contexto de repositorio antes de actuar. La ausencia de credenciales bloquea la ejecución, no autoriza inventar resultados.
 
 ## Procedimiento
-1. Recibir la solicitud y **clasificarla antes de crear ninguna tarjeta**: José decide `complejidad` (1–5, decide la capacidad de modelo) y `ruta` (`corta` o `completa`, decide qué etapas del flujo se recorren). Correspondencia: 1–2 → corta; 3 → corta salvo que toque contratos, datos o arquitectura; 4–5 → completa. Seguridad, despliegue o liberación añaden sus etapas en cualquier ruta. La **etapa 16 está en las dos rutas** con sus dos componentes (16a especializada: Camilo y Ignacio; 16b independiente del SHA final: Rafael o Alexis), y no se cierra sin las dos. Sin los dos atributos decididos, no hay tarjeta todavía — este paso es la admisión, no un trámite posterior a ella.
+1. Recibir la solicitud y **clasificarla antes de crear ninguna tarjeta**: José decide `complejidad` (1–5, decide la capacidad de modelo) y `ruta` (`corta` o `completa`, decide qué etapas del flujo se recorren). Correspondencia base: 1–2 → corta; 3 → corta salvo que toque contratos, datos o arquitectura; 4–5 → completa.
+
+   **La severidad del defecto eleva la complejidad, aunque el parche sea mecánico** [corrección 2026-10-26, primera prueba real sobre código de producción: `t_3eb92119`]: **un defecto de severidad High o Critical es como mínimo complejidad 4 y ruta completa**, sin excepción por tamaño del cambio. HU-ORQ-007 lo dice en su propio criterio de aceptación — *"la clasificación considera riesgo y no solamente esfuerzo"* — y la tabla de niveles por sí sola no lo aplicaba: en esa primera prueba, un defecto High (el árbol de trazas de H2 dependiendo del orden de llegada en vez de una identidad estable) se clasificó como complejidad 2 porque el arreglo cabía en una función. El tamaño del parche no es el riesgo de equivocarse con él: un fallo que rompe la confianza en un dato de auditoría no se vuelve menos grave porque se arregle en diez líneas.
+
+   Seguridad, despliegue o liberación añaden sus etapas en cualquier ruta. La **etapa 16 está en las dos rutas** con sus dos componentes (16a especializada: Camilo y Ignacio; 16b independiente del SHA final: Rafael o Alexis), y no se cierra sin las dos.
+
+   **Las etapas de la ruta corta, enumeradas aquí para no reconstruirlas de memoria** [corrección 2026-10-26: la primera prueba real omitió la etapa 17 dos veces por esto mismo — el canónico no las enumeraba y hubo que recordarlas de memoria durante la clasificación]: **1, 2, 11, 12, la etapa de desarrollo que corresponda (13 frontend / 14 backend / 15 integraciones / 24 mantenimiento), 16a+16b, 17 (Calidad, Paola — no se omite) y 26.** La ruta completa son las 26, sin excepción.
+
+   Sin los dos atributos decididos, no hay tarjeta todavía — este paso es la admisión, no un trámite posterior a ella.
 2. Registrar la solicitud ya clasificada en Kanban nativo con idempotency-key, objetivo, requerimientos, aceptación verificable, riesgo, fase SDLC, presupuesto, y `complejidad`/`ruta` del paso 1 escritos en el cuerpo. Utilizar IDs nativos como autoridad; proyecto no es perfil. Usar operaciones locales para transformaciones deterministas; `execute_code` para lotes mecánicos; `delegate_task` solo para razonamiento breve. Todo trabajo durable, con aprobación o interperfil permanece en Kanban.
-3. Planificar **construyendo el grafo tarea por tarea**, con `hermes kanban create --parent <id-raíz> --max-runtime <segundos> --assignee <perfil>` por cada hija (y `kanban link` para dependencias que no sean de la raíz). No fan-out trivial. Asignar cada tarjeta a un especialista del catálogo; no hacer todo como José. Vincular dependencias, aceptación y revisión independiente.
+3. Planificar **construyendo el grafo tarea por tarea**, con `kanban link` para dependencias que no sean de la raíz. No fan-out trivial. Asignar cada tarjeta a un especialista del catálogo; no hacer todo como José. Vincular dependencias, aceptación y revisión independiente.
+
+   **El reloj va en la misma frase que el comando, siempre, sin excepción** [corrección 2026-10-26: esta regla ya existía y falló en su primera prueba real — `t_0e4d6e31` se creó bien con `create --parent` pero sin `--max-runtime`, y quedó corriendo sin límite de tiempo]. Cada hija se crea con su límite puesto en el mismo comando que la crea, nunca en uno posterior:
+
+   ```
+   hermes kanban --board <tablero> create "<título>" --parent <id-raíz> --max-runtime 300 --assignee <perfil>
+   ```
+
+   `300` segundos es el techo por intento de ejecución de este flujo (paso 5), no un plazo agregado de toda la tarjeta. Un presupuesto distinto requiere aprobación humana explícita antes de crear o despachar; el ejemplo no concede una excepción. El `--max-runtime` en esa misma línea no es negociable y el tablero se indica explícitamente.
+
+   Si una tarjeta ya existe sin límite, **no se despacha**: se conserva su ID e historial, se registra el bloqueo y se solicita recuperación autorizada. La CLI instalada auditada no tiene una vía soportada para editar ese campo después de crear la tarjeta; no inventar un comando ni recrearla silenciosamente. El vigilante externo es una mitigación posterior, no cumplimiento del requisito de admisión ni permiso para reanudar.
    **No usar `hermes kanban decompose`** para planificar, aunque sea tentador por ser un solo comando: comparte el mismo insertador que una hija auto-descompuesta (`_insert_decomposed_child` en `kanban_db_graph.py`) y **nunca copia `max_runtime_seconds` ni `max_retries`**, se invoque a mano o automáticamente — el agujero del reloj no es de la automatización, es del propio comando. Confirmado leyendo su código, no suponiéndolo (auditoría 2026-10-26). Construir el grafo con `create --parent` es más lento que un solo comando, y es la diferencia entre una hija con límite de tiempo desde que nace y una que lo recibe media hora después, parcheada desde fuera por un vigilante.
 4. Resolver modelo/proveedor en Hermes. Elegir por costo solo cuando existan evaluaciones reales y precio/alcance/vigencia conocidos. El costo estimado no es facturado; desconocido no es cero. Sin datos suficientes solicitar aprobación de un pin explícito, nunca fabricar benchmarks. El router complementario no controla por sí mismo todos los procesos Hermes.
 5. Respetar máximo global de 3 y uno por perfil en este flujo, 20 turnos por nuevo perfil, 300 segundos por ejecución y una tentativa de ejecución inicial. Usar límites nativos y no iniciar Dispatchers/Cron adicionales. El gateway operacional es el único Dispatcher automático. Fallo de cuota/autenticación bloquea y requiere intervención; no reintentar en bucle.
