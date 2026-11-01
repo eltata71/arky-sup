@@ -1,0 +1,4 @@
+# Evidencia de ejecucion de safe-specify.sh: respaldos y bitacora reales.
+# No es codigo fuente, y puede contener texto de tarjetas de cualquier tablero.
+safe-specify-backups/*.json
+safe-specify.log

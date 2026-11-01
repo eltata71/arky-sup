@@ -1,0 +1,17 @@
+{
+  "board": "latam-factory",
+  "captured_at": "2026-10-24T20:30:57.349370+00:00",
+  "db": "/home/tata/.hermes/kanban/boards/latam-factory/kanban.db",
+  "task_count": 1,
+  "tasks": {
+    "t_cb82843c": {
+      "assignee": "jose",
+      "body": "Seguimiento persistente del plan maestro LATAM AI SOFTWARE FACTORY. Fuente: /home/tata/workspace/hermes-factory-webui/integrations/factory-dashboard/docs/MASTER_IMPLEMENTATION_PLAN.md. Aceptación: docs/ACCEPTANCE_REPORT.md y acceptance.json (CA01..CA40), matriz de agentes y reglas. No declarar completado por perfiles creados o mocks. Implementado: 18 perfiles solicitados + legacy preservado; plugin oficial1.1.0 instalado y salud/auth verificada,3 tableros permitidos, pruebas runtime nativo, inferencia real OpenAI y Anthropic. Ensayo nativo independiente root t_a65891c7 en DB /home/tata/workspace/latam-factory-e2e/kanban.db, NO crear duplicados de sus tareas. Pendiente: login de navegador Dashboard (vault prompt_unavailable), validación visual autenticada, controles no evadibles de presupuesto/RBAC/aprobación, completar gestión visual/versionado y aceptación SDLC. Esta tarjeta permanece bloqueada para evitar otro escritor sobre cambios controlados por sesión operadora; NO levantar seguridad ni autoaprobar producción. Handoff debe consultar evidencia actual y ejecutar siguientes tareas independientes con propiedad explícita. Sin producción ni publicaciones remotas.",
+      "body_sha256": "8c2046af396b0f2a0d89fc09a5a500d2abc09e486c2ed7b48d46c9b9a1d6da8e",
+      "created_at": 1792822832,
+      "status": "blocked",
+      "title": "Completar plan maestro y aceptación CA01–CA40 — LATAM Factory",
+      "title_sha256": "385621a66707ac9819a7c21b8dc8eba5641f16067d1034424a46775747a61610"
+    }
+  }
+}
