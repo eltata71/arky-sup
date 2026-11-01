@@ -15,14 +15,48 @@ llama -- hermano de `block-hermes-engine-writes.py` y de
 `require-max-runtime-on-create.py`, mismo mecanismo `pre_tool_call`/
 `fail_closed: true`. Bloquea una escritura (`write_file`/`patch`, o un
 `terminal` que la imite) cuya ruta resuelta -- tras unir con el `cwd` que el
-propio hook recibe y resolver symlinks -- sea EXACTAMENTE la ruta real del
-canónico `scripts/agentes/skills/latam-factory-orchestration/SKILL.md` en el
-checkout principal. Un worktree de tarea vive en una ruta real distinta
-(confirmado en vivo, no solo por construcción: un worktree real en
-`arky-sup-worktrees/`, y los anidados en `.worktrees/<id>` dentro del propio
-checkout principal, resuelven a algo distinto de la ruta exacta del
-canónico), así que nunca lo bloquea -- la disciplina de "editar en worktree,
-entrar por PR" sigue funcionando exactamente igual.
+propio hook recibe, expandir `~` y resolver symlinks -- sea EXACTAMENTE la
+ruta real del canónico
+`scripts/agentes/skills/latam-factory-orchestration/SKILL.md` en el checkout
+principal. Un worktree de tarea vive en una ruta real distinta (confirmado en
+vivo, no solo por construcción: un worktree real en `arky-sup-worktrees/`, y
+los anidados en `.worktrees/<id>` dentro del propio checkout principal,
+resuelven a algo distinto de la ruta exacta del canónico), así que nunca lo
+bloquea -- la disciplina de "editar en worktree, entrar por PR" sigue
+funcionando exactamente igual.
+
+Esquema del payload comprobado con una invocación real del motor (no
+supuesto): se disparó `agent.shell_hooks._make_callback` -- la misma función
+que Hermes registra para cada llamada real a una herramienta -- con un
+`write_file` y un `terminal` reales, y se capturó el stdin exacto que recibe
+este hook. `cwd` llega como cadena absoluta y `tool_input["path"]` /
+`tool_input["command"]` llegan tal como aquí se asume.
+
+**La rama `terminal` resuelve rutas, no compara texto** (revisión
+independiente sobre PR #304, 2026-11-02; la versión anterior comparaba
+subcadenas contra `cmd` y tenía tres huecos reales: `rm` no estaba en la
+lista de verbos, el límite `\b` antes de `>` nunca podía cumplirse porque un
+espacio no es un carácter de palabra, y una escritura a través del enlace
+simbólico de un perfil -- `~/.hermes/profiles/<perfil>/skills/.../SKILL.md`,
+que SÍ resuelve con `realpath` al canónico -- pasaba inadvertida porque el
+texto nunca coincidía). Ahora la rama `terminal` separa el comando en
+segmentos por `;`/`&&`/`||`/`|`/salto de línea, tokeniza cada segmento con
+`shlex` y, para cada token con forma de ruta, lo resuelve exactamente igual
+que la rama `write_file` (mismo `_resolve()`, ahora también corregido para
+expandir `~` antes de comprobar si es absoluta -- un fallo silencioso previo
+que nunca se había probado contra una ruta con `~`). Un comando de git que
+reescribe el árbol de trabajo sin nombrar ningún fichero
+(`git reset --hard`, `git checkout <rama>`, `git stash pop`, `git clean -f`)
+se trata como "toca todo el checkout", y por tanto toca el canónico, cuando
+el `cwd` resuelto cae dentro del checkout principal.
+
+Límite conocido, declarado en vez de supuesto (misma regla que el resto de
+este canónico pide: no afirmar enforcement que no existe): esto es
+tokenización de mejor esfuerzo con `shlex`, no un parser de shell completo.
+Un alias, una variable de entorno que oculte el nombre del comando, o un
+script que primero escribe el comando a un fichero y luego lo ejecuta, no se
+detectan aquí -- el mismo límite que tiene cualquier hook basado en
+coincidencia de patrones, nombrado explícitamente en vez de dejarlo implícito.
 
 Confirmado antes de construir, no supuesto: el curador de Hermes nunca ha
 tocado esta skill (buscado en todos los `.curator_ledger.jsonl` de la
@@ -37,6 +71,7 @@ seguidos es alguien insistiendo en evitarla.
 import json
 import os
 import re
+import shlex
 import sys
 import time
 from datetime import datetime, timezone
@@ -48,13 +83,20 @@ CANONICAL_PATH = "/home/tata/workspace/arky-sup/scripts/agentes/skills/latam-fac
 CANONICAL_REAL = os.path.realpath(CANONICAL_PATH)
 CANONICAL_SUFFIX = "scripts/agentes/skills/latam-factory-orchestration/SKILL.md"
 REPO_ROOT = CANONICAL_REAL[: -len(CANONICAL_SUFFIX)].rstrip("/")
-SKILL_DIR = os.path.dirname(CANONICAL_REAL)
 
-# Mismo vocabulario de verbos de escritura que block-hermes-engine-writes.py,
-# para el mejor esfuerzo sobre `terminal` -- write_file/patch es la vía real.
-_WRITE_VERBS = re.compile(
-    r"\b(cp\s|mv\s|sed\s+-i|patch\s|>{1,2}\s*\S)",
-)
+# Separadores de comandos encadenados -- cada segmento se tokeniza y se
+# examina por separado, para que "cd /tmp && rm SKILL.md" no se escape por
+# mirar solo el primer trozo.
+_SHELL_SPLIT_RE = re.compile(r"&&|\|\||[;|\n]")
+
+# Verbos que escriben o borran incondicionalmente, por nombre de programa.
+_WRITE_VERB_NAMES = {"cp", "mv", "rm", "patch", "tee", "dd", "truncate", "shred"}
+
+# Subcomandos de git que reescriben ficheros del árbol de trabajo. Sin un
+# argumento con forma de ruta (o tras "--"), se tratan como "tocan todo el
+# checkout" -- `git reset --hard HEAD~3` no nombra el canónico y aun así lo
+# revierte.
+_GIT_MUTATING_SUBCOMMANDS = {"checkout", "restore", "reset", "clean", "apply", "stash"}
 
 BLOCK_MSG = (
     "Canónico intocable en el checkout principal: scripts/agentes/skills/"
@@ -67,11 +109,92 @@ BLOCK_MSG = (
 
 
 def _resolve(cwd: str, raw_path: str) -> str:
-    candidate = raw_path if os.path.isabs(raw_path) else os.path.join(cwd or ".", raw_path)
+    # `~` se expande ANTES de comprobar si es absoluta -- expandirla después
+    # de unir con cwd no funciona, porque expanduser solo actúa cuando `~` es
+    # el primer carácter de la cadena completa.
+    expanded = os.path.expanduser(raw_path)
+    candidate = expanded if os.path.isabs(expanded) else os.path.join(cwd or ".", expanded)
     try:
-        return os.path.realpath(os.path.expanduser(candidate))
+        return os.path.realpath(candidate)
     except OSError:
-        return os.path.normpath(os.path.expanduser(candidate))
+        return os.path.normpath(candidate)
+
+
+def _in_main_checkout(cwd_real: str) -> bool:
+    """True si cwd_real es el checkout principal o cae dentro de él, pero NO
+    dentro de un worktree anidado (.worktrees/<id>), que es una ruta real
+    distinta aunque viva físicamente bajo el mismo árbol."""
+    if cwd_real == REPO_ROOT:
+        return True
+    prefix = REPO_ROOT + os.sep
+    if not cwd_real.startswith(prefix):
+        return False
+    remainder = cwd_real[len(prefix):]
+    return remainder != ".worktrees" and not remainder.startswith(".worktrees" + os.sep)
+
+
+def _looks_like_path(token: str) -> bool:
+    return bool(token) and ("/" in token or token.startswith("~") or token == "SKILL.md")
+
+
+def _candidate_paths(tokens: list) -> list:
+    """Tokens con forma de ruta, incluido el destino de una redirección --
+    tanto "> file" (dos tokens) como ">file" (uno, pegado)."""
+    out = []
+    for i, tok in enumerate(tokens):
+        if tok in (">", ">>", "<"):
+            if i + 1 < len(tokens) and _looks_like_path(tokens[i + 1]):
+                out.append(tokens[i + 1])
+            continue
+        m = re.match(r"^(?:>{1,2}|<)(\S+)$", tok)
+        if m and _looks_like_path(m.group(1)):
+            out.append(m.group(1))
+            continue
+        if _looks_like_path(tok):
+            out.append(tok)
+    return out
+
+
+def _segment_hits_canonical(tokens: list, cwd: str, cwd_real: str):
+    """Devuelve el detalle del hallazgo si este segmento de comando escribe
+    sobre el canónico, o None si no. Resuelve rutas -- no compara texto."""
+    if not tokens:
+        return None
+
+    verb = tokens[0]
+    rest = tokens[1:]
+    non_flag_args = [t for t in rest if not t.startswith("-")]
+
+    has_redirect = any(
+        t in (">", ">>") or re.match(r"^>{1,2}\S", t) for t in tokens
+    )
+    is_sed_in_place = verb == "sed" and any(
+        t in ("-i", "--in-place") or t.startswith("-i") or t.startswith("--in-place=")
+        for t in rest
+    )
+    is_git_mutation = verb == "git" and non_flag_args and non_flag_args[0] in _GIT_MUTATING_SUBCOMMANDS
+
+    if is_git_mutation:
+        subcommand_args = non_flag_args[1:]
+        # Sin "--" ni un argumento con forma de ruta, el subcomando actúa
+        # sobre todo el árbol de trabajo (una rama, un commit, nada) --
+        # "toca todo" incluye el canónico si estamos en el checkout principal.
+        has_pathspec = "--" in rest or any(_looks_like_path(a) for a in subcommand_args)
+        if not has_pathspec:
+            if _in_main_checkout(cwd_real):
+                return f"git:{' '.join(tokens)[:200]}"
+            return None
+
+    is_write_context = (
+        verb in _WRITE_VERB_NAMES or is_sed_in_place or is_git_mutation or has_redirect
+    )
+    if not is_write_context:
+        return None
+
+    for cand in _candidate_paths(tokens):
+        if _resolve(cwd, cand) == CANONICAL_REAL:
+            return f"{verb}:{cand}"
+    return None
 
 
 def log_block(tool: str, detail: str, profile: str, task_id: str) -> None:
@@ -116,12 +239,15 @@ def main() -> None:
     elif tool == "terminal":
         cmd = tool_input.get("command", "") or ""
         cwd_real = os.path.realpath(cwd or ".")
-        if _WRITE_VERBS.search(cmd) and (
-            CANONICAL_PATH in cmd
-            or (cwd_real == SKILL_DIR and "SKILL.md" in cmd)
-            or (cwd_real == REPO_ROOT and CANONICAL_SUFFIX in cmd)
-        ):
-            hit, detail = True, f"terminal:{cmd[:200]}"
+        for segment in _SHELL_SPLIT_RE.split(cmd):
+            try:
+                tokens = shlex.split(segment)
+            except ValueError:
+                tokens = segment.split()
+            found = _segment_hits_canonical(tokens, cwd, cwd_real)
+            if found:
+                hit, detail = True, f"terminal:{found}"
+                break
 
     if hit:
         log_block(tool, detail, profile, task_id)
