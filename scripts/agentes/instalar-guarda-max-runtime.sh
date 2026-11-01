@@ -29,7 +29,10 @@ OLD_BLOCK = (
     '      fail_closed: true\n'
 )
 NEW_ENTRY = (
-    f'    - matcher: "terminal"\n'
+    # terminal: la propia línea de comando. write_file/patch: el contenido
+    # que escriben -- cierra la evasión de "escribir el comando a un
+    # fichero y ejecutarlo luego" (revisión independiente, 2026-11-02).
+    f'    - matcher: "terminal|write_file|patch"\n'
     f'      command: "{live_hook}"\n'
     f'      timeout: 5\n'
     f'      fail_closed: true\n'
