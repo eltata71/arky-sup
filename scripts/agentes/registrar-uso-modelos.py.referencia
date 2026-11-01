@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""Shell hook observador (post_api_request, post_auxiliary_call): registra
+conteo de tokens por llamada real, pensado para desbloquear tres criterios a
+la vez, no solo el tope de gasto -- decisión de José, 2026-10-25:
+
+- CA17 (tope de gasto): necesita saber cuánto se gasta por tarea para poder
+  frenar algo.
+- CA26 (enrutamiento): necesita saber qué modelo/proveedor se usa de verdad
+  por tarea -- hoy el catálogo de precios no cubre openai-codex porque nadie
+  había registrado que es el proveedor real en uso.
+- CA28 / la mitad FinOps de CA32: la tabla nativa de Hermes
+  (session_model_usage) está contaminada por la migración v20 sin marcador
+  de origen (ver evidence/triage-2026-10-25.md en hermes-factory-webui) --
+  este registro es limpio desde cero, no un intento de arreglar esa tabla.
+
+SIN PRECIOS todavía, a propósito: solo conteo de tokens por tarea/modelo/
+proveedor. El precio es una tabla estática que se aplica después, sin tocar
+este registro.
+
+No bloquea nada -- es un observador puro, igual que el resto de los eventos
+post_*. Un fallo al escribir el registro nunca debe impedir la llamada real.
+"""
+import json
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+LOG = Path.home() / ".hermes" / "logs" / "uso-modelos.jsonl"
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        print("{}")
+        return
+
+    event = payload.get("hook_event_name")
+    extra = payload.get("extra") or {}
+    usage = extra.get("usage") or {}
+
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "epoch": time.time(),
+        "event": event,
+        "profile": payload.get("profile"),
+        "task_id": extra.get("task_id") or None,
+        "aux_task": extra.get("aux_task") or None,
+        "model": extra.get("model") or extra.get("response_model"),
+        "provider": extra.get("provider"),
+        "input_tokens": (usage or {}).get("input_tokens"),
+        "output_tokens": (usage or {}).get("output_tokens"),
+        "api_duration": extra.get("api_duration"),
+        "finish_reason": extra.get("finish_reason"),
+    }
+    # Nada que registrar si no hubo uso reportado (p.ej. un fallo sin usage).
+    if entry["input_tokens"] is None and entry["output_tokens"] is None:
+        print("{}")
+        return
+
+    try:
+        LOG.parent.mkdir(parents=True, exist_ok=True)
+        with LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        pass  # el registro es best-effort; nunca debe impedir la llamada real
+
+    print("{}")
+
+
+if __name__ == "__main__":
+    main()
