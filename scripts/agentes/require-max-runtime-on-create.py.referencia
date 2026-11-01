@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""pre_tool_call shell hook: cierra la puerta nativa que crear-tarea-hija.sh
+deja abierta al lado.
+
+Por qué existe: el envoltorio `crear-tarea-hija.sh` hace más difícil crear
+una tarea hija sin reloj nativo, pero no lo hace imposible -- `hermes kanban
+create --parent` sigue siendo un comando real que cualquiera de los 20
+perfiles puede llamar directamente, y el canónico solo lo prohíbe con
+prosa, que es el mismo instrumento que ya falló una vez (t_0e4d6e31,
+2026-10-26). Esta es la frontera de verdad: un pre_tool_call shell hook (ver
+website/docs/user-guide/features/hooks.md), el punto de intercepción más
+cercano al momento real de ejecución, antes de que la herramienta corra,
+para cualquier superficie (CLI, gateway, dispatcher) y cualquier agente --
+hermano de `block-hermes-engine-writes.py`, mismo mecanismo, asunto
+distinto: aquél protege la instalación de Hermes; éste protege una regla de
+admisión del propio tablero. Viven en ficheros separados a propósito --
+mezclar "no toques el motor" con "no crees sin reloj" en un solo fichero
+haría que una PR que corrija uno arriesgue el otro sin que nadie lo pida.
+
+Qué bloquea: un `terminal` cuyo comando invoca `hermes kanban ... create`
+con `--parent` presente y `--max-runtime` ausente. No bloquea una creación
+sin `--parent` (una tarea raíz no hereda el hueco de `_insert_decomposed_
+child`) ni una que ya lleve `--max-runtime` en la misma línea -- lo cual
+deja pasar `crear-tarea-hija.sh` cuando se usa como está escrito, porque su
+propio comando interno incluye el flag.
+
+No cubre `hermes kanban decompose`: ese comando no acepta `--max-runtime` en
+absoluto (el hueco está en que nunca copia el campo del padre, no en que se
+pueda omitir un flag), así que no hay patrón de "flag que falta" que
+detectar aquí. El canónico sigue prohibiéndolo con prosa; es la única vía
+disponible para ese caso.
+
+Deliberadamente NO bloquea lectura ni ningún otro subcomando de kanban
+(`list`, `show`, `comment`, `archive`...). Cada bloqueo real se anota en
+~/.hermes/logs/kanban-create-sin-reloj.jsonl, mismo patrón que el hook
+hermano, por la misma razón: un bloqueo aislado es un agente topándose con
+la regla una vez; varios en poco tiempo es algo insistiendo en evitarla.
+"""
+import json
+import re
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+AUDIT_LOG = Path.home() / ".hermes" / "logs" / "kanban-create-sin-reloj.jsonl"
+
+_KANBAN_CREATE = re.compile(r"\bkanban\b[^|;&\n]*\bcreate\b")
+_HAS_PARENT = re.compile(r"--parent\b")
+_HAS_MAX_RUNTIME = re.compile(r"--max-runtime\b")
+
+BLOCK_MSG = (
+    "Tarea hija sin --max-runtime: este comando crea una hija con --parent "
+    "pero sin --max-runtime, el hueco exacto que produjo t_0e4d6e31 "
+    "(2026-10-26). Usa scripts/agentes/crear-tarea-hija.sh --parent <id> "
+    "--max-runtime <segundos> --assignee <perfil> -- \"<título>\", que se "
+    "niega a llamar a Hermes si falta el reloj. Si de verdad hace falta "
+    "crear sin él, pide promoción humana explícita (no este camino "
+    "automático)."
+)
+
+
+def is_unsafe_create(cmd: str) -> bool:
+    return bool(
+        _KANBAN_CREATE.search(cmd)
+        and _HAS_PARENT.search(cmd)
+        and not _HAS_MAX_RUNTIME.search(cmd)
+    )
+
+
+def log_block(cmd: str, profile: str, task_id: str) -> None:
+    """Best-effort -- un fallo al escribir el registro nunca debe impedir el
+    bloqueo en sí, que es lo que de verdad importa."""
+    try:
+        AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "epoch": time.time(),
+            "command": cmd,
+            "profile": profile,
+            "task_id": task_id,
+        }
+        with AUDIT_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        print("{}")
+        return
+
+    if payload.get("tool_name") != "terminal":
+        print("{}")
+        return
+
+    cmd = (payload.get("tool_input") or {}).get("command", "") or ""
+    if is_unsafe_create(cmd):
+        profile = payload.get("profile") or "?"
+        task_id = (payload.get("extra") or {}).get("task_id") or ""
+        log_block(cmd, profile, task_id)
+        print(json.dumps({"action": "block", "message": BLOCK_MSG}))
+        return
+
+    print("{}")
+
+
+if __name__ == "__main__":
+    main()
