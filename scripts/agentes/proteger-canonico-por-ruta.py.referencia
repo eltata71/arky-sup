@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""pre_tool_call shell hook: cierra por ruta el hueco que el mecanismo nativo
+de Hermes no puede cerrar por nombre.
+
+`security.protected_instruction_extra_patterns` (evaluado 2026-11-01, PR
+#303/politica-por-perfil.md) solo compara el BASENAME del fichero, nunca la
+ruta -- y `SKILL.md` es el nombre genérico de las 1 840 skills de Hermes en
+esta máquina, incluidas las que el propio curador de Hermes reescribe de
+forma automática y desatendida (`.curator_ledger.jsonl`, visto tan reciente
+como 2026-10-31). Proteger por nombre habría exigido aprobación humana para
+ese mantenimiento nativo también -- por eso no se usó esa vía.
+
+Esta es la vía que sí funciona, porque mira dónde está el fichero, no cómo se
+llama -- hermano de `block-hermes-engine-writes.py` y de
+`require-max-runtime-on-create.py`, mismo mecanismo `pre_tool_call`/
+`fail_closed: true`. Bloquea una escritura (`write_file`/`patch`, o un
+`terminal` que la imite) cuya ruta resuelta -- tras unir con el `cwd` que el
+propio hook recibe y resolver symlinks -- sea EXACTAMENTE la ruta real del
+canónico `scripts/agentes/skills/latam-factory-orchestration/SKILL.md` en el
+checkout principal. Un worktree de tarea vive en una ruta real distinta
+(confirmado en vivo, no solo por construcción: un worktree real en
+`arky-sup-worktrees/`, y los anidados en `.worktrees/<id>` dentro del propio
+checkout principal, resuelven a algo distinto de la ruta exacta del
+canónico), así que nunca lo bloquea -- la disciplina de "editar en worktree,
+entrar por PR" sigue funcionando exactamente igual.
+
+Confirmado antes de construir, no supuesto: el curador de Hermes nunca ha
+tocado esta skill (buscado en todos los `.curator_ledger.jsonl` de la
+máquina, cero coincidencias con "latam-factory-orchestration").
+
+No protege ningún otro fichero -- a propósito, es la contrapartida exacta
+del hueco encontrado, no una política general nueva. Cada bloqueo real se
+anota en ~/.hermes/logs/canonico-bloqueado.jsonl, mismo patrón que los hooks
+hermanos: un bloqueo aislado es alguien topándose con la regla; varios
+seguidos es alguien insistiendo en evitarla.
+"""
+import json
+import os
+import re
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+AUDIT_LOG = Path.home() / ".hermes" / "logs" / "canonico-bloqueado.jsonl"
+
+CANONICAL_PATH = "/home/tata/workspace/arky-sup/scripts/agentes/skills/latam-factory-orchestration/SKILL.md"
+CANONICAL_REAL = os.path.realpath(CANONICAL_PATH)
+CANONICAL_SUFFIX = "scripts/agentes/skills/latam-factory-orchestration/SKILL.md"
+REPO_ROOT = CANONICAL_REAL[: -len(CANONICAL_SUFFIX)].rstrip("/")
+SKILL_DIR = os.path.dirname(CANONICAL_REAL)
+
+# Mismo vocabulario de verbos de escritura que block-hermes-engine-writes.py,
+# para el mejor esfuerzo sobre `terminal` -- write_file/patch es la vía real.
+_WRITE_VERBS = re.compile(
+    r"\b(cp\s|mv\s|sed\s+-i|patch\s|>{1,2}\s*\S)",
+)
+
+BLOCK_MSG = (
+    "Canónico intocable en el checkout principal: scripts/agentes/skills/"
+    "latam-factory-orchestration/SKILL.md no se edita aquí. Trabaja en un "
+    "worktree de tarea (nueva-tarea.sh) y entra por su PR -- los 20 perfiles "
+    "lo recogen solos cuando aterriza en main. Si de verdad hace falta "
+    "editarlo en este checkout, pide promoción humana explícita (no este "
+    "camino automático)."
+)
+
+
+def _resolve(cwd: str, raw_path: str) -> str:
+    candidate = raw_path if os.path.isabs(raw_path) else os.path.join(cwd or ".", raw_path)
+    try:
+        return os.path.realpath(os.path.expanduser(candidate))
+    except OSError:
+        return os.path.normpath(os.path.expanduser(candidate))
+
+
+def log_block(tool: str, detail: str, profile: str, task_id: str) -> None:
+    """Best-effort -- un fallo al escribir el registro nunca debe impedir el
+    bloqueo en sí, que es lo que de verdad importa."""
+    try:
+        AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "epoch": time.time(),
+            "tool": tool,
+            "detail": detail,
+            "profile": profile,
+            "task_id": task_id,
+        }
+        with AUDIT_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        print("{}")
+        return
+
+    tool = payload.get("tool_name")
+    tool_input = payload.get("tool_input") or {}
+    cwd = payload.get("cwd") or ""
+    profile = payload.get("profile") or "?"
+    task_id = (payload.get("extra") or {}).get("task_id") or ""
+
+    hit = False
+    detail = ""
+
+    if tool in ("write_file", "patch"):
+        raw_path = tool_input.get("path") or ""
+        if raw_path and _resolve(cwd, raw_path) == CANONICAL_REAL:
+            hit, detail = True, f"{tool}:{raw_path}"
+    elif tool == "terminal":
+        cmd = tool_input.get("command", "") or ""
+        cwd_real = os.path.realpath(cwd or ".")
+        if _WRITE_VERBS.search(cmd) and (
+            CANONICAL_PATH in cmd
+            or (cwd_real == SKILL_DIR and "SKILL.md" in cmd)
+            or (cwd_real == REPO_ROOT and CANONICAL_SUFFIX in cmd)
+        ):
+            hit, detail = True, f"terminal:{cmd[:200]}"
+
+    if hit:
+        log_block(tool, detail, profile, task_id)
+        print(json.dumps({"action": "block", "message": BLOCK_MSG}))
+        return
+
+    print("{}")
+
+
+if __name__ == "__main__":
+    main()
