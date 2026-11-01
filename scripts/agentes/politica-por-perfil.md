@@ -87,3 +87,69 @@ Reporta como "ATENCIÓN" los perfiles que se desvíen, con el perfil y la
 clave exacta que falta — el mismo formato que ya usa para gates humanos
 pendientes. No decide la política (qué valor es correcto); solo dice dónde
 diverge de lo que el propietario ya declaró en los perfiles que sí corrigió.
+
+## Lo que `command_allowlist` dejó ver, y las tres decisiones del propietario (2026-11-01)
+
+El mismo hallazgo abrió una pregunta sobre `command_allowlist`: no son 4
+configuraciones sueltas entre los perfiles de producción, es una escalera
+estrictamente creciente — 16 especialistas con lista vacía; `alexis`,
+`camilo` y `rafael` con 11 patrones peligrosos pre-aprobados (borrar en
+rutas raíz, `execute_code` sin aprobación, sobrescribir ficheros de
+sistema, descargar-y-ejecutar, código inline, comandos de shell empaquetados,
+y 5 hallazgos del escáner externo Tirith); `jose` con esos 11 más heredocs
+(12); `arkysupabase`/`latamfactory` con esos 12 más `protected_instruction_file`
+(13). José decidió tres cosas sobre esta escalera:
+
+**1. Quitados los 11 a `alexis` y `rafael`.** Su SOUL declara "siempre
+read-only", pero no hay ningún control técnico que lo haga cumplir — ni
+modo solo-lectura, ni toolset acotado, solo esta lista. El SOUL es una
+instrucción al modelo, no un control; ganaba la configuración. Verificado
+antes de quitarlos, no supuesto: el SOUL de los dos ya convierte "no pude
+ejecutar esto" en un veredicto bloqueado válido, así que el rol no
+necesita estos permisos para funcionar, y ninguno de los 6 patrones
+no-Tirith coincide con un comando de lectura real (`git diff/log/show/
+blame`, `cat`, `grep`, `npm test`/`lint`) — probado contra las expresiones
+regulares exactas del motor instalado. Razonamiento fechado en el
+`command_allowlist: []` de cada perfil.
+
+**`camilo` queda sin tocar, a propósito.** Comparte el mismo grupo de 11
+pero es el arquitecto (etapa 16a), un rol de escritura por diseño, no el
+revisor independiente (16b) que son `alexis`/`rafael`. No hay evidencia
+equivalente de que no necesite estos permisos — es la pieza que queda
+pendiente de mirar aparte, no una corrección de hoy.
+
+**2. Quitado `protected_instruction_file` a `arkysupabase` y `latamfactory`.**
+Ese permiso dejaba escribir `AGENTS.md`/`CLAUDE.md`/`SOUL.md`/`.cursorrules`
+de un proyecto sin la aprobación humana que esos ficheros siempre exigen
+("incluso con `--yolo`", según el propio motor) — la excepción exacta que
+rodeaba la disciplina de que las instrucciones compartidas pasen por
+worktree+PR+revisión, y sin dejar rastro: ningún log se escribe cuando este
+permiso evita el aviso (confirmado leyendo `tools/approval.py`/
+`file_tools_write_guards.py` — los únicos avisos registrados son por
+configuración mal formada, nunca por un uso real de la lista permanente).
+Verificado antes de quitarlo: ningún cron ni script de estos dos perfiles
+toca `CLAUDE.md`/`AGENTS.md` hoy, y el historial reciente de esos dos
+ficheros llega siempre por PR fusionada — quitarlo no rompe ningún uso
+rutinario existente.
+
+**3. Evaluado añadir el canónico a `security.protected_instruction_extra_patterns`
+— y descartado, por un efecto real que no era visible sin comprobarlo.**
+El propio mecanismo que protege `AGENTS.md`/`CLAUDE.md`/`SOUL.md` solo
+compara el **nombre del fichero (basename)**, nunca la ruta completa —
+confirmado leyendo `file_tools_write_guards.py`: `fnmatch` corre sobre
+`os.path.basename(candidate)`, con la ruta ya descartada. Y `SKILL.md` no
+es un nombre exclusivo del canónico de `latam-factory-orchestration`: es
+la convención genérica de **todas** las skills de Hermes — 1.840 ficheros
+con ese nombre exacto en este árbol. Añadir el patrón protegería los 1.840
+por igual, no solo el nuestro, sin ninguna forma de acotarlo a una carpeta
+con este mecanismo tal como existe hoy. Y no es hipotético: el propio
+curador de Hermes reescribe ficheros `SKILL.md` de forma automática y
+desatendida como parte de su mantenimiento rutinario (`actor: "curator"`,
+`action: "patch"` en `.curator_ledger.jsonl`, visto tan reciente como
+2026-10-31) — exigir aprobación humana para cada escritura a un `SKILL.md`
+habría interferido con ese proceso nativo de Hermes, no solo con el
+nuestro. **No se aplicó.** La disciplina de worktree+PR sigue siendo, hoy,
+la única cosa que protege de verdad al canónico — un acuerdo entre
+personas, no un control técnico — y este hallazgo queda registrado para
+que nadie proponga este mismo arreglo dentro de un mes sin saber que ya se
+evaluó y por qué no sirve tal como está construido el mecanismo.
