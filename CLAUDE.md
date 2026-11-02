@@ -651,7 +651,8 @@ npm run eval:agents    # The agent evaluation bench: routing, intent, handoffs, 
 npm run test:coverage  # Vitest + v8 coverage (applies the thresholds)
 npm run test:shard -- --shard=1/4   # One CI shard: coverage into a blob report
 npm run test:merge-reports          # Merge the shards' blobs and enforce the thresholds
-npm run quality        # everything the CI `quality` job runs — static gates + coverage + build + bundle checks
+npm run quality        # everything CI's `quality` + `tests`/`coverage` jobs run together: static gates + build + bundle checks + coverage
+npm run quality:gate   # just the CI `quality` job: static gates + build + bundle checks (no tests)
 npm run quality:fast   # the same static gates + `test:ci`, for the inner loop
 npm run quality:static # typecheck, strict, lint and the four budgets only
 npm run check:module-boundaries  # ni ciclo, ni componente conexo mayor, ni import ascendente, profundo o fan-out nuevo
@@ -2126,9 +2127,13 @@ the only screen still linking to `/users` and `/settings`.
   job is to check the deployed artefact was checking a dev transform instead.
   `PLAYWRIGHT_DEV_SERVER=1` restores the old behaviour for a fast inner loop.
 - Run `npm run quality` before proposing a change; report the real output. It
-  now composes exactly what CI's `quality` job composes, so green locally means
-  green in CI — it did not before, and a coverage or bundle regression only
-  surfaced after eleven minutes of waiting.
+  composes exactly what CI's `quality`, `tests` and `coverage` jobs compose
+  together, so green locally means green in CI — it did not before, and a
+  coverage or bundle regression only surfaced after eleven minutes of waiting.
+  A single long-lived worker that both runs the suite and then builds in the
+  same process can hold both at once; `npm run quality:gate` (build) and
+  `npm run test:coverage` (tests) run as two separate invocations for that
+  case — see AGENTS.md §26.
 
 ---
 

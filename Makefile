@@ -61,6 +61,14 @@ test-watch:
 quality:
 	npm run quality
 
+# La mitad de la puerta sin tests: estatica + build + bundle (job `quality` de CI).
+quality-gate:
+	npm run quality:gate
+
+# La otra mitad: suite + cobertura, sin build (jobs `tests`+`coverage` de CI).
+test-coverage:
+	npm run test:coverage
+
 e2e:
 	npm run e2e
 

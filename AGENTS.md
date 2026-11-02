@@ -693,7 +693,18 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
     (tarda lo que un modelo y emite por partes), publica el informe
     `generation-experience` como artefacto de CI.
 26. Antes de cerrar una tarea de código:
-   - correr la puerta de calidad (`npm run quality` compone exactamente lo mismo que el job de CI;
+   - correr la puerta de calidad. Un worker de la fábrica (Hermes) la corre como
+     **dos invocaciones separadas, nunca encadenadas en un solo comando**:
+     `npm run quality:gate` (estática + build + bundle) y `npm run test:coverage`
+     (suite + cobertura) — así ningún worker mantiene en memoria a la vez un
+     build de producción y una suite de tests completa (el VPS de la fábrica
+     no tiene margen para ambos a la vez; ver el incidente OOM del 2026-11-02,
+     tarea t_8c2134ab). Para una tarjeta del catálogo de 26 etapas, la etapa 17
+     (Calidad, Paola) corre sólo `test:coverage`; la etapa de integración
+     continua (Ricardo) corre sólo `quality:gate`. Fuera de la fábrica (un
+     desarrollador en su máquina), `npm run quality` sigue siendo el comando
+     único de siempre —compone exactamente lo mismo que los jobs de CI
+     (`quality` + `tests` + `coverage`);
      `npm run quality:fast` es la variante rápida del bucle de desarrollo;
      ESLint debe quedar en 0 errores y 0 avisos),
    - si se tocó una migración, correr además `bash scripts/supabase/local.sh test`
@@ -782,7 +793,9 @@ Esta sección es un contrato adicional y **no reemplaza** las reglas de arriba.
 4. Cambios mínimos, trazables, testeables; registrar deuda técnica en `docs/technical-debt-audit.md`.
 5. Documentar comandos ejecutados y riesgos detectados en cada tarea cerrada.
 6. Usar ramas de feature (`make new-feature`) y PRs contra `main`.
-7. Antes de cerrar: `npm run quality` y reportar el estado con evidencia real.
+7. Antes de cerrar: `npm run quality:gate` y `npm run test:coverage` como dos
+   comandos separados (nunca `npm run quality` encadenado dentro de un mismo
+   worker — ver punto 26), y reportar el estado con evidencia real.
 8. **Varios agentes, un solo estado** (`docs/operacion/multiagente.md`). El
    checkout principal sólo sigue a `main` y no se edita; cada tarea se reserva
    con `bash scripts/agentes/nueva-tarea.sh <agente> <id> <tema>` (worktree
