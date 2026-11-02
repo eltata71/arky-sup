@@ -695,18 +695,19 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
 26. Antes de cerrar una tarea de código:
    - correr la puerta de calidad. Un worker de la fábrica (Hermes) la corre como
      **dos invocaciones separadas, nunca encadenadas en un solo comando**:
-     `npm run quality:gate` (estática + build + bundle) y `npm run test:coverage`
-     (suite + cobertura) — así ningún worker mantiene en memoria a la vez un
-     build de producción y una suite de tests completa (el VPS de la fábrica
-     no tiene margen para ambos a la vez; ver el incidente OOM del 2026-11-02,
-     tarea t_8c2134ab). Para una tarjeta del catálogo de 26 etapas, la etapa 17
-     (Calidad, Paola) corre sólo `test:coverage`; la etapa de integración
-     continua (Ricardo) corre sólo `quality:gate`. Fuera de la fábrica (un
-     desarrollador en su máquina), `npm run quality` sigue siendo el comando
-     único de siempre —compone exactamente lo mismo que los jobs de CI
-     (`quality` + `tests` + `coverage`);
-     `npm run quality:fast` es la variante rápida del bucle de desarrollo;
-     ESLint debe quedar en 0 errores y 0 avisos),
+     `npm run quality:gate` (estática + build + bundle; incluye además
+     `check:i18n-sections`, que hoy no es un paso propio de CI) y
+     `npm run test:coverage` (suite + cobertura) — así ningún worker mantiene
+     en memoria a la vez un build de producción y una suite de tests completa
+     (el VPS de la fábrica no tiene margen para ambos a la vez; ver el
+     incidente OOM del 2026-11-02, tarea t_8c2134ab). Para una tarjeta del
+     catálogo de 26 etapas, la etapa 17 (Calidad, Paola) corre sólo
+     `test:coverage`; la etapa de integración continua (Ricardo) corre sólo
+     `quality:gate`. Fuera de la fábrica (un desarrollador en su máquina),
+     `npm run quality` sigue siendo el comando único de siempre, con las
+     mismas dos mitades encadenadas (`npm run quality:fast` es la variante
+     rápida del bucle de desarrollo). ESLint debe quedar en 0 errores y 0
+     avisos,
    - si se tocó una migración, correr además `bash scripts/supabase/local.sh test`
      contra una base real: leer el SQL es exactamente lo que no detectó D-4,
    - documentar comandos ejecutados,

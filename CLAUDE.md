@@ -652,7 +652,7 @@ npm run test:coverage  # Vitest + v8 coverage (applies the thresholds)
 npm run test:shard -- --shard=1/4   # One CI shard: coverage into a blob report
 npm run test:merge-reports          # Merge the shards' blobs and enforce the thresholds
 npm run quality        # everything CI's `quality` + `tests`/`coverage` jobs run together: static gates + build + bundle checks + coverage
-npm run quality:gate   # just the CI `quality` job: static gates + build + bundle checks (no tests)
+npm run quality:gate   # the CI `quality` job's checks, no tests (plus check:i18n-sections, which isn't its own CI step)
 npm run quality:fast   # the same static gates + `test:ci`, for the inner loop
 npm run quality:static # typecheck, strict, lint and the four budgets only
 npm run check:module-boundaries  # ni ciclo, ni componente conexo mayor, ni import ascendente, profundo o fan-out nuevo
@@ -662,7 +662,7 @@ npm run e2e:install    # Download chromium + webkit browsers
 bash scripts/supabase/local.sh verify   # esquema, contratos pgTAP, lint, advisors y tipos (necesita Docker)
 ```
 
-`Makefile` and `run.sh` wrap the same targets (`./run.sh quality`, `./run.sh ci-check`, `./run.sh health`, `./run.sh status`). `run.sh` exists because `make` is usually absent on Windows/git-bash. `make health` runs `.hermes/bin/health.sh`.
+`Makefile` and `run.sh` wrap the same targets (`./run.sh quality`, `./run.sh quality-gate`, `./run.sh test-coverage`, `./run.sh ci-check`, `./run.sh health`, `./run.sh status`). `run.sh` exists because `make` is usually absent on Windows/git-bash. `make health` runs `.hermes/bin/health.sh`.
 
 ### Quality gate — current state (medido 2026-09-25, tras F6-05)
 
