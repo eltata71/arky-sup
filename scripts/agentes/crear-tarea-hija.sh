@@ -81,48 +81,73 @@ body_file=""
 extra_args=()
 titulo=""
 
+# Bandera con valor obligatorio: rechaza que falte un segundo token Y rechaza
+# que ese token sea justo el delimitador '--' del título -- sin esto, omitir
+# el valor de una bandera de texto (--priority-reason, --parent-reason, ...)
+# se come el '--' real y el error apunta al título en vez de a la bandera que
+# de verdad falló (hallazgo de la revisión independiente del PR #310).
+exigir_valor() {
+  local bandera="$1"
+  if [ "$ARGS_RESTANTES" -lt 2 ] || [ "$CANDIDATO_VALOR" = "--" ]; then
+    echo "crear-tarea-hija.sh: $bandera necesita un valor (no puede faltar ni ser el delimitador '--' del título). No se crea ninguna tarea." >&2
+    exit 2
+  fi
+}
+
 while [ $# -gt 0 ]; do
+  ARGS_RESTANTES=$#
+  CANDIDATO_VALOR="${2-}"
   case "$1" in
     --parent)
-      parents+=("${2:?--parent necesita un valor}")
+      exigir_valor --parent
+      parents+=("$2")
       extra_args+=(--parent "$2")
       shift 2
       ;;
     --parent-reason)
-      parent_reason="${2:?--parent-reason necesita un valor}"
+      exigir_valor --parent-reason
+      parent_reason="$2"
       shift 2
       ;;
     --max-runtime)
-      max_runtime="${2:?--max-runtime necesita un valor}"
+      exigir_valor --max-runtime
+      max_runtime="$2"
       shift 2
       ;;
     --assignee)
-      assignee="${2:?--assignee necesita un valor}"
+      exigir_valor --assignee
+      assignee="$2"
       extra_args+=(--assignee "$2")
       shift 2
       ;;
     --board)
-      board="${2:?--board necesita un valor}"
+      exigir_valor --board
+      board="$2"
       shift 2
       ;;
     --override-ceiling-reason)
-      override_reason="${2:?--override-ceiling-reason necesita un valor}"
+      exigir_valor --override-ceiling-reason
+      override_reason="$2"
       shift 2
       ;;
     --priority)
-      priority="${2:?--priority necesita un valor}"
+      exigir_valor --priority
+      priority="$2"
       shift 2
       ;;
     --priority-reason)
-      priority_reason="${2:?--priority-reason necesita un valor}"
+      exigir_valor --priority-reason
+      priority_reason="$2"
       shift 2
       ;;
     --body)
-      body_text="${2:?--body necesita un valor}"
+      exigir_valor --body
+      body_text="$2"
       shift 2
       ;;
     --body-file)
-      body_file="${2:?--body-file necesita un valor}"
+      exigir_valor --body-file
+      body_file="$2"
       shift 2
       ;;
     --)
@@ -207,15 +232,21 @@ if [ -n "$override_reason" ] && [ "$max_runtime" -gt "$RUNTIME_CEILING" ]; then
   echo "crear-tarea-hija.sh: --max-runtime $max_runtime excede el techo de ${RUNTIME_CEILING}s -- motivo registrado: $override_reason" >&2
 fi
 
-# El cuerpo original (si lo hay) se conserva entero; la nota de prioridad y
-# dependencia va delante, para que se lea sin tener que bajar a buscarla.
+# El cuerpo original (si lo hay) se conserva entero, byte a byte -- incluidas
+# las líneas en blanco finales, que `$(...)` recortaría en silencio si se
+# asignara directamente (hallazgo de la revisión independiente del PR #310).
+# El centinela 'x' sobrevive al recorte y se quita después.
+# --body-file - drena stdin por completo aquí: si `hermes` necesitara leer
+# algo de stdin en este mismo invocación, no lo vería -- limitación conocida,
+# aceptable porque esta llamada nunca es interactiva.
 cuerpo_original=""
 if [ -n "$body_file" ]; then
   if [ "$body_file" = "-" ]; then
-    cuerpo_original="$(cat)"
+    cuerpo_original="$(cat; printf x)"
   else
-    cuerpo_original="$(cat "$body_file")"
+    cuerpo_original="$(cat "$body_file"; printf x)"
   fi
+  cuerpo_original="${cuerpo_original%x}"
 elif [ -n "$body_text" ]; then
   cuerpo_original="$body_text"
 fi
@@ -244,7 +275,10 @@ cmd+=("$titulo" "${extra_args[@]}")
 echo "+ ${cmd[*]}" >&2
 # No exec: el temporal del cuerpo tiene que sobrevivir hasta que hermes lo
 # lea, y exec sustituye este proceso sin pasar por el trap de limpieza.
+# Sin captura manual de estado a propósito: bajo `set -e`, un fallo de este
+# comando termina el script aquí mismo con su código de salida real, y es
+# el trap EXIT -- no una línea posterior que nunca llegaría a ejecutarse --
+# el que borra el temporal en ese camino (hallazgo de la revisión
+# independiente del PR #310: el código explícito que había aquí antes
+# jamás corría en el fallo que decía cubrir).
 "${cmd[@]}"
-estado=$?
-rm -f "$tmp_body"
-exit "$estado"

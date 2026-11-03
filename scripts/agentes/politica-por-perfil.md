@@ -233,7 +233,7 @@ Dimensionado por rol, sin telemetría directa de ninguno de los cuatro:
   ejecutan comprobaciones focalizadas sobre el SHA final, no la suite
   completa — no triviales, pero tampoco del tamaño de quien implementa.
 
-Los tres comparten `run_budget_seconds: 900`: ninguno corre la puerta de
+Los cuatro comparten `run_budget_seconds: 900`: ninguno corre la puerta de
 calidad completa, así que no necesitan el suelo de 1200s medido para esa
 carga; 900s es margen sobre varias comprobaciones focalizadas encadenadas,
 no una medición directa de ninguno de los cuatro.
