@@ -153,3 +153,55 @@ la única cosa que protege de verdad al canónico — un acuerdo entre
 personas, no un control técnico — y este hallazgo queda registrado para
 que nadie proponga este mismo arreglo dentro de un mes sin saber que ya se
 evaluó y por qué no sirve tal como está construido el mecanismo.
+
+## `run_budget_seconds`/`max_turns`: el mismo patrón, un tercer caso (2026-11-03)
+
+`t_8c2134ab` murió dos veces cerca de los 300 segundos. El propietario subió
+`max_runtime_seconds` de la tarjeta a 7200 en kanban, autorizado
+explícitamente, y el worker se paró otra vez a los 251s — el runtime
+efectivo no venía de la tarjeta, venía de `run_budget_seconds: 300` en
+`andres-integration/config.yaml`, un límite distinto que nadie tocó porque
+nadie sabía que había dos. Auditoría perfil por perfil, la misma disciplina
+de este documento: **16 de 33 perfiles** (todos los creados por el bootstrap
+de "nuevo perfil" — ver `latam-factory-orchestration/SKILL.md`, "20 turnos
+..., 300 segundos...") tenían exactamente `max_turns: 20` /
+`run_budget_seconds: 300`; los otros 17 no tienen el campo y corren con el
+valor por defecto del motor.
+
+Subidos los 16, dimensionados por lo que su rol ejecuta de verdad, no a ojo
+ni todos igual:
+
+**Pesados — ejecutan test o build real** (`max_turns: 30`,
+`run_budget_seconds: 1200`): `andres-integration`, `paola-qa` (etapa 17,
+corre `test:coverage` directamente), `ricardo-devops` (integración continua,
+corre `quality:gate`/build directamente), `mateo-backend`,
+`valentina-frontend`, `gabriel-maintenance`, `daniela-data-architect`. El
+suelo es evidencia medida, no estimación: `test:coverage` solo (vitest +
+cobertura, 659 ficheros/6.134 tests) tardó 305s en este repositorio
+(`t_8c2134ab-quality.log`, 2026-11-02); el job `Static gates` de CI —el
+equivalente de `quality:gate`— tardó entre 1m45s y 2m45s en varias PRs de
+esta misma sesión. 1200s es ~4× el peor comando individual medido, con
+margen para `npm ci`, reintentos y contención — por debajo de los 7200s que
+el propietario usó como escotilla de emergencia para una sola tarea
+atascada corriendo la cadena vieja sin dividir.
+
+**Ligeros — revisan, clasifican o deciden, no ejecutan test/build de
+producto** (`max_turns: 25`, `run_budget_seconds: 600`):
+`ignacio-solution-architect` (16a, confirmado por el propio caso de
+`t_8c2134ab`: lee y dictamina, no ejecuta), `julian-security`,
+`maria-product-owner`, `natalia-documentation`, `sofia-ux-designer`,
+`viviana-business-analyst`, `elena-release`, `lucia-sre`, `sergio-llmops`.
+Sin evidencia medida de su carga real salvo `ignacio-solution-architect`
+(por el caso de `t_8c2134ab`) — clasificados por lo que su rol implica, no
+por telemetría. Si alguno de estos corre código real que esta nota no vio,
+sube ese perfil al nivel pesado.
+
+20 turnos y 300 segundos siguen siendo el valor que entrega el bootstrap de
+perfil nuevo — no se cambió el bootstrap, solo los 16 que ya existían y
+estaban demasiado ajustados para lo que de verdad hacen.
+
+**Lo que esta subida no arregla:** que `max_runtime_seconds` (tarjeta) y
+`run_budget_seconds` (perfil) sean dos verdades sin conciliar sigue siendo
+un defecto de diseño — registrado como tarjeta `t_dc22118e` en el tablero
+`latam-factory`, con una propuesta de reconciliación dimensionada y sin
+construir (es código de Hermes, no de este repositorio).
