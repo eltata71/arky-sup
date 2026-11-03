@@ -57,8 +57,11 @@ gh pr list --state open --json number,title,headRefName,isDraft \
 
 echo
 echo "== Ramas remotas con la PR ya fusionada (candidatas a limpieza.sh)"
-git for-each-ref refs/remotes/origin --format='%(refname:lstrip=3)' | grep -vxE 'main|HEAD|origin' \
-  | while read -r rama; do grep -qxF "$rama" <<<"$FUSIONADAS" && echo "  $rama"; done | sed -n '1,200p' | awk '{print} END {print "  (" NR " ramas)"}'
+git for-each-ref refs/remotes/origin --format='%(refname:lstrip=3)' \
+  | while read -r rama; do
+      case "$rama" in main|HEAD|origin) continue ;; esac
+      if grep -qxF "$rama" <<<"$FUSIONADAS"; then echo "  $rama"; fi
+    done | sed -n '1,200p' | awk '{print} END {print "  (" NR " ramas)"}'
 
 echo
 if [ "$avisos" = 0 ]; then echo "Sin avisos."; else echo "$avisos aviso(s): resuélvelos antes de empezar."; exit 1; fi

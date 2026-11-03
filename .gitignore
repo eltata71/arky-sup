@@ -62,3 +62,7 @@ e2e-report/
 
 # Worktrees de sesiones de Claude Code: nunca son parte del repositorio
 .claude/worktrees/
+
+# Latidos de los vigilantes externos de cron (scripts/agentes/vigilar-*.py):
+# estado efímero, se reescribe en cada pasada, nunca es historia a conservar.
+scripts/agentes/vigilar-*.heartbeat.json

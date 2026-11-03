@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""pre_tool_call shell hook: blocks writes against the Hermes engine itself.
+
+Qué protege, y por qué aquí y no en otro sitio: el 2026-10-24 el auto-decomposer
+mandó a un agente a abrir un worktree y una rama reales dentro del checkout de
+Hermes que sostiene toda la fábrica, para "corregir" un defecto que nadie le
+encargó a ese nivel (ver t_d45578c2 en el tablero arky-maintenance). No hay
+nada en Hermes que impida eso desde dentro de su propio despachador -- esto es
+un pre_tool_call shell hook (ver website/docs/user-guide/features/hooks.md),
+el punto de intercepción más cercano al momento real de escritura, antes de
+que la herramienta se ejecute, para cualquier superficie (CLI, gateway,
+dispatcher) y cualquier agente, no solo el que escribió este fichero.
+
+Deliberadamente NO bloquea lectura (grep/cat/git status/git log/git diff) --
+leer el código de Hermes para entender un defecto es trabajo legítimo, y
+bloquearlo habría estorbado la propia investigación que encontró este hueco.
+Tampoco es un sandbox general: es una lista corta de rutas y una lista corta
+de verbos de escritura, proporcionada al riesgo real que ya ocurrió una vez.
+
+Cada bloqueo real se anota en ~/.hermes/logs/motor-bloqueado.jsonl -- un
+intento aislado es un agente topándose con el límite una vez; varios en poco
+tiempo es algo insistiendo en lo prohibido, y eso es exactamente lo que
+distingue "normal" de "crítico" en el aviso a José. Sin este registro, nada
+podría distinguir las dos cosas desde fuera.
+"""
+import json
+import re
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+AUDIT_LOG = Path.home() / ".hermes" / "logs" / "motor-bloqueado.jsonl"
+
+FORBIDDEN_PREFIXES = (
+    "/usr/local/lib/hermes-agent",
+    "/home/tata/.local/share/hermes-agent-",
+)
+
+_WRITE_VERBS = re.compile(
+    # No se exige "git" inmediatamente antes del verbo -- comandos reales como
+    # 'git -C <ruta> commit ...' meten flags entre medias, y "commit"/"push"/
+    # "worktree add" sueltos ya son suficiente señal de escritura aquí.
+    r"\b(commit|merge\b|push\b|worktree\s+add"
+    r"|rm\s|sed\s+-i|patch\s|mv\s|cp\s|chmod\s|chown\s)",
+)
+_REDIRECT = re.compile(r"(^|\s)>{1,2}\s*\S")
+
+BLOCK_MSG = (
+    "Ruta intocable: {reason} contra la instalación de Hermes "
+    "({path}). Es la herramienta con la que se construye todo lo demás -- "
+    "si se rompe, no se pierde un dato, se pierde la capacidad de seguir "
+    "trabajando. Si de verdad hace falta tocarla, pide promoción humana "
+    "explícita (no este camino automático)."
+)
+
+
+def touches_forbidden(text: str) -> str | None:
+    for prefix in FORBIDDEN_PREFIXES:
+        if prefix in text:
+            return prefix
+    return None
+
+
+def log_block(tool: str, path: str, profile: str, task_id: str) -> None:
+    """Best-effort -- un fallo al escribir el registro nunca debe impedir el
+    bloqueo en sí, que es lo que de verdad importa."""
+    try:
+        AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "epoch": time.time(),
+            "tool": tool,
+            "path": path,
+            "profile": profile,
+            "task_id": task_id,
+        }
+        with AUDIT_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        print("{}")
+        return
+
+    tool = payload.get("tool_name")
+    tool_input = payload.get("tool_input") or {}
+    profile = payload.get("profile") or "?"
+    task_id = (payload.get("extra") or {}).get("task_id") or ""
+
+    if tool in ("write_file", "patch"):
+        hit = touches_forbidden(json.dumps(tool_input))
+        if hit:
+            log_block(tool, hit, profile, task_id)
+            print(json.dumps({
+                "action": "block",
+                "message": BLOCK_MSG.format(reason=f"escritura ({tool})", path=hit),
+            }))
+            return
+    elif tool == "terminal":
+        cmd = tool_input.get("command", "") or ""
+        hit = touches_forbidden(cmd)
+        if hit and (_WRITE_VERBS.search(cmd) or _REDIRECT.search(cmd)):
+            log_block(tool, hit, profile, task_id)
+            print(json.dumps({
+                "action": "block",
+                "message": BLOCK_MSG.format(reason="comando de escritura", path=hit),
+            }))
+            return
+
+    print("{}")
+
+
+if __name__ == "__main__":
+    main()
