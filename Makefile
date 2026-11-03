@@ -6,7 +6,7 @@
 # ============================================================================
 
 .PHONY: help install dev build typecheck lint lint-fix test test-ci test-watch \
-        quality e2e e2e-install health audit build-check ci-check report \
+        quality quality-gate test-coverage e2e e2e-install health audit build-check ci-check report \
         doctor baseline status branch new-feature
 
 # --- Ayuda ------------------------------------------------------------------
@@ -20,6 +20,8 @@ help:
 	@echo "  make test          Vitest en watch mode"
 	@echo "  make test-ci       Vitest una sola pasada"
 	@echo "  make quality       Puerta de calidad: typecheck + lint + test-ci"
+	@echo "  make quality-gate  Mitad sin tests: estatica + build + bundle (para un worker de Hermes)"
+	@echo "  make test-coverage Mitad de tests: suite + cobertura (para un worker de Hermes)"
 	@echo "  make build         Build de produccion + warning de code-splitting"
 	@echo "  make e2e           Playwright (e2e)"
 	@echo "  make e2e-install   Instala navegadores Playwright"
@@ -60,6 +62,14 @@ test-watch:
 
 quality:
 	npm run quality
+
+# La mitad de la puerta sin tests: estatica + build + bundle (job `quality` de CI).
+quality-gate:
+	npm run quality:gate
+
+# La otra mitad: suite + cobertura, sin build (jobs `tests`+`coverage` de CI).
+test-coverage:
+	npm run test:coverage
 
 e2e:
 	npm run e2e
