@@ -4,8 +4,7 @@
  * Verifies that:
  * - `officeRunnerAdapters.ts` invokes the persona with `responseSchema` and
  *   a low `REVIEWER_TEMPERATURE`.
- * - No `parseStructured<T>(...)` calls are made without a schema in runner
- *   adapters (the scanner requirement).
+ * - The anti-cast scanner lives in `runnerAdapterReads.test.ts` (AST, #264 M3).
  * - `officeReviewPrompt.ts` passes acceptance criteria as a numbered list.
  * - The `ReviewCritique` contract is correctly read and validated.
  */
@@ -18,10 +17,6 @@ import { REVIEWER_TEMPERATURE } from '../../services/architectureOffice/domain/a
 import { readReviewCritique } from '../../services/architectureOffice/domain/reviewCritique';
 
 const servicesRoot = resolve(__dirname, '../../services/architectureOffice');
-const adaptersSource = readFileSync(
-  resolve(servicesRoot, 'infrastructure/OfficeRunnerAdapters.ts'),
-  'utf8',
-);
 const reviewPromptSource = readFileSync(
   resolve(servicesRoot, 'infrastructure/officeReviewPrompt.ts'),
   'utf8',
@@ -74,21 +69,10 @@ describe('review logic changes (task 18.1)', () => {
     expect(reading.discarded.length).toBeGreaterThan(0);
   });
 
-  it('no runner adapter parses structured output without a schema (scanner)', () => {
-    // `parseStructured<...>` sin un esquema conocido en el mismo archivo del
-    // runner sería una lectura por cast silencioso: la revisión exige que la
-    // forma se declare al llamar al modelo y se lea con tolerancia al volver.
-    const parses = adaptersSource.match(/parseStructured\s*<[^>]*>\s*\(/g) ?? [];
-    expect(parses.length).toBeGreaterThan(0);
-    // En `OfficeRunnerAdapters.ts` el único uso es sobre `unknown`, con el
-    // esquema declarado en la invocación y la lectura en `readReviewCritique`.
-    for (const match of parses) {
-      expect(match).toBe('parseStructured<unknown>(');
-    }
-    expect(adaptersSource).toContain('REVIEW_CRITIQUE_SCHEMA');
-    expect(adaptersSource).toContain('readReviewCritique');
-    expect(adaptersSource).not.toContain('interface ModelCritique');
-  });
+  // El escáner anti-cast (antes una regex sobre un único archivo, evadible con
+  // `as`, aserciones de ángulo, alias o `JSON.parse`) vive ahora en
+  // `runnerAdapterReads.test.ts`: AST sobre todos los adaptadores del runner,
+  // cada lectura atada a su validador y un mutante por regla (#264 M3).
 
   it('numbers the acceptance criteria in the review prompt', () => {
     expect(reviewPromptSource).toContain('`${index + 1}. ${item}`');
