@@ -205,3 +205,51 @@ estaban demasiado ajustados para lo que de verdad hacen.
 un defecto de diseño — registrado como tarjeta `t_dc22118e` en el tablero
 `latam-factory`, con una propuesta de reconciliación dimensionada y sin
 construir (es código de Hermes, no de este repositorio).
+
+## Ocho perfiles del elenco original de los 12 Bots (2026-11-03)
+
+Al subir los 16 perfiles sin presupuesto razonado quedaron sin tocar ocho
+del elenco original (`multiagente.md`): `alba`, `andres`, `diego`, `elena`,
+`lucia`, `mateo`, `sofia`, `valentina` — ninguno tenía `max_turns` ni
+`run_budget_seconds`. Antes de dimensionarlos hacía falta responder una
+cosa primero: **¿pueden recibir trabajo hoy, o están fuera del circuito por
+haber sido superados por los perfiles especialistas con sufijo?**
+
+Comprobado, no supuesto: los 8 tienen `auth.json` con credenciales reales
+(1245-1455 bytes), los 8 ejecutaron tareas de verdad en el pasado (entre 1
+y 38 runs cada uno, todos entre el 21 y el 23 de octubre — justo antes de
+que aparecieran los perfiles especialistas), y no existe ningún catálogo
+ni lista de perfiles permitidos en el despachador (`kanban_db.py`,
+`kanban_db_dispatch.py`) que filtre el campo `assignee`. Son retirados de
+hecho —nadie les asigna nada desde el 23 de octubre—, no retirados del
+sistema: basta escribir su nombre en `--assignee` para que reciban trabajo.
+Por tanto, el mismo riesgo que los 16 anteriores, no ceremonia sobre
+perfiles inertes.
+
+Dimensionados por el rol que `multiagente.md` les da, no por telemetría de
+estos 8 en concreto (sí hay telemetría del tipo de trabajo del rol, vía los
+16 y los 4 anteriores):
+
+- **`andres`** (backend) y **`mateo`** (datos) — implementadores, igual
+  que `andres-integration`/`mateo-backend`: `max_turns: 30`,
+  `run_budget_seconds: 1200`.
+- **`alba`** (solución) — arquitectura con investigación real, mismo nivel
+  que `camilo` (16a): `max_turns: 30`, `run_budget_seconds: 900`.
+- **`lucia`** (seguridad) y **`valentina`** (QA) — `multiagente.md` los
+  nombra explícitamente como "revisor independiente" junto a Rafael (paso
+  4): mismo nivel que `alexis`/`rafael`, `max_turns: 25`,
+  `run_budget_seconds: 900`.
+- **`diego`** (DevOps) — "verifica CI/despliegue" (paso 5 de
+  `multiagente.md`): comprueba el estado, no ejecuta la puerta de calidad
+  él mismo. Mismo nivel que `elena-release`, que hace lo mismo sobre PRs:
+  `max_turns: 25`, `run_budget_seconds: 600`.
+- **`elena`** (UX) y **`sofia`** (producto) — deciden/diseñan, no ejecutan
+  código: `max_turns: 25`, `run_budget_seconds: 600`.
+
+Con esto, todos los perfiles que ejecutan tareas kanban tienen
+`max_turns`/`run_budget_seconds` razonados y escritos: estos 8, los 16 de
+la subida anterior, y `jose`/`camilo`/`alexis`/`rafael`. Quedan sin tocar,
+a propósito, solo los perfiles de prueba ya apagados
+(`pruebacoordinador20261025`, `pruebacoordinador220261025`) y los que son
+gateway puro (`arkyaws`, `arkysupabase`, `latamfactory`), que no ejecutan
+tareas kanban por sí mismos.
