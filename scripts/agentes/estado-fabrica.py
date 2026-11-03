@@ -37,6 +37,24 @@ Qué comprueba, y con qué umbral, y por qué:
   `block-hermes-engine-writes.py`): CRÍTICO si hay 2 o más en los últimos 60
   minutos. Uno aislado es un agente topándose con el límite una vez; varios
   seguidos es algo insistiendo en lo prohibido.
+- **`auto_decompose` ausente o en `true` en un perfil con el hook del motor
+  registrado** (hallazgo 2026-11-01, perfil `jose`): la clave falta en
+  `True` por defecto en el motor instalado (confirmado leyendo
+  `gateway/kanban_watchers_common.py`), así que su ausencia no es neutra --
+  es el mismo riesgo que estar en `true` explícito. El roster a comprobar
+  se descubre en vivo igual que arriba: cualquier perfil que ya tenga
+  `block-hermes-engine-writes.py` en `pre_tool_call` es del alcance; esto
+  detecta divergencia de la política, no decide a quién aplicarla -- un
+  perfil fuera de ese roster no se evalúa.
+- **Un hook declarado en `config.yaml` sin su aprobación en
+  `shell-hooks-allowlist.json`** (hallazgo 2026-11-01, perfil
+  `latamfactory`): confirmado leyendo `agent/shell_hooks.py` que un hook no
+  aprobado **falla abierto** -- se omite en silencio, con un aviso solo en
+  el log, nunca bloquea nada. `fail_closed: true` no protege contra esto:
+  esa bandera solo rige un hook ya registrado que falla en ejecución, nunca
+  uno que nunca llegó a registrarse por falta de aprobación. CRÍTICO
+  siempre que aparece, sin umbral: no hay lectura inocua de un hook de
+  seguridad que nunca corre.
 - **Enlaces de la skill canónica `latam-factory-orchestration` rotos o
   sustituidos por una copia real** (hallazgo 3, revisión del PR #293,
   2026-10-25): se creó la fuente única porque 18 copias ya habían divergido
@@ -58,6 +76,17 @@ para esto, igual que para todo lo demás que hemos construido. Si alguna vez
 se construye una señal para cualquiera de los dos, se añade aquí; hasta
 entonces, el veredicto de este script no los cubre y no hay que leerlo como
 si lo hiciera.
+
+Tampoco compara `command_allowlist`, `reasoning_effort` ni
+`fallback_providers` entre perfiles -- **bloqueado en una decisión de
+política, no en esfuerzo de construcción** (hallazgo 2026-11-01): esos tres
+varían legítimamente por rol (un revisor puede necesitar `reasoning_effort:
+high`, un especialista rutinario no) y hoy nadie ha declarado qué
+combinación es la correcta por rol. Sin esa base, un chequeo automático no
+puede distinguir "roles distintos, a propósito" de "lo mismo, por
+descuido" -- que es exactamente la pregunta sin responder sobre
+`command_allowlist` (ver `scripts/agentes/politica-por-perfil.md`). Añadir
+esto aquí es barato en líneas; cuesta la decisión previa, no el código.
 
 Uso:
     python3 scripts/agentes/estado-fabrica.py [--json]
@@ -83,6 +112,8 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+
+import yaml
 
 MOTOR_LOG = Path.home() / ".hermes" / "logs" / "motor-bloqueado.jsonl"
 RESULT_FILE = Path.home() / ".hermes" / "logs" / "estado-fabrica.json"
@@ -266,6 +297,89 @@ def broken_canonical_skill_links() -> list[dict]:
     return broken
 
 
+ENGINE_GUARD_COMMAND = "/home/tata/.hermes/agent-hooks/block-hermes-engine-writes.py"
+
+
+def _engine_guard_roster() -> list[Path]:
+    """Perfiles del alcance de esta comprobación: cualquiera que ya tenga el
+    hook del motor registrado en `pre_tool_call`, descubierto en vivo -- nunca
+    una lista escrita a mano, por la misma razón que los tableros y los
+    gateways de arriba. Un perfil que nunca tuvo ese hook está fuera del
+    alcance, no es un hallazgo."""
+    if not PROFILES_DIR.is_dir():
+        return []
+    roster = []
+    for profile_dir in sorted(PROFILES_DIR.iterdir()):
+        if not profile_dir.is_dir() or profile_dir.name == ".deleted":
+            continue
+        cfg_path = profile_dir / "config.yaml"
+        if not cfg_path.is_file():
+            continue
+        try:
+            text = cfg_path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if ENGINE_GUARD_COMMAND in text:
+            roster.append(profile_dir)
+    return roster
+
+
+def policy_drift_findings() -> list[dict]:
+    """Dos ajustes donde la ausencia ya se confirmó peligrosa, no neutra
+    (hallazgo 2026-11-01, perfil `jose` quedó fuera de la corrección del
+    26-10 una semana entera sin que nadie lo notara):
+
+    1. `auto_decompose` ausente o en `true` en un perfil del roster del
+       hook del motor -- el valor por defecto del motor instalado es
+       `true` (confirmado leyendo el código, no supuesto).
+    2. Un hook declarado en `config.yaml` sin su aprobación exacta en
+       `shell-hooks-allowlist.json` -- falla abierto, no cerrado.
+
+    No juzga `command_allowlist`/`reasoning_effort`/`fallback_providers`:
+    ver la nota en el docstring del módulo."""
+    findings = []
+    for profile_dir in _engine_guard_roster():
+        cfg_path = profile_dir / "config.yaml"
+        try:
+            data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as exc:
+            findings.append({"profile": profile_dir.name, "problem": f"config.yaml no se pudo leer: {exc}"})
+            continue
+        if not isinstance(data, dict):
+            continue
+
+        kanban_cfg = data.get("kanban") or {}
+        if kanban_cfg.get("auto_decompose") is not False:
+            estado = "ausente (por defecto true en el motor)" if "auto_decompose" not in kanban_cfg \
+                else f"en {kanban_cfg.get('auto_decompose')!r}"
+            findings.append({"profile": profile_dir.name, "kind": "auto_decompose",
+                              "problem": f"auto_decompose {estado}, sin blindaje explícito"})
+
+        declared = []
+        for event_name, entries in (data.get("hooks") or {}).items():
+            if not isinstance(entries, list):
+                continue
+            for entry in entries:
+                command = (entry or {}).get("command") if isinstance(entry, dict) else None
+                if command:
+                    declared.append((event_name, command))
+        if declared:
+            allow_path = profile_dir / "shell-hooks-allowlist.json"
+            approved = set()
+            if allow_path.is_file():
+                try:
+                    allow_data = json.loads(allow_path.read_text(encoding="utf-8"))
+                    approved = {(a.get("event"), a.get("command")) for a in allow_data.get("approvals", [])}
+                except (OSError, json.JSONDecodeError):
+                    approved = set()
+            for event_name, command in declared:
+                if (event_name, command) not in approved:
+                    findings.append({"profile": profile_dir.name, "kind": "hook_sin_allowlist",
+                                      "problem": f"hook {event_name}:{command} declarado pero sin aprobar en "
+                                                 f"shell-hooks-allowlist.json -- falla abierto, nunca corre"})
+    return findings
+
+
 def motor_blocks_recent(now: float) -> list[dict]:
     if not MOTOR_LOG.exists():
         return []
@@ -339,6 +453,15 @@ def main() -> int:
                             f"canónico de latam-factory-orchestration -- repara con "
                             f"scripts/agentes/enlazar-skill-canonica.sh")
 
+    policy_findings = policy_drift_findings()
+    for f in policy_findings:
+        if f.get("kind") == "auto_decompose":
+            razones.append(f"POLITICA SIN BLINDAR: perfil '{f['profile']}' -- {f['problem']}")
+        elif f.get("kind") == "hook_sin_allowlist":
+            razones.append(f"HOOK SIN REGISTRAR: perfil '{f['profile']}' -- {f['problem']}")
+        else:
+            razones.append(f"POLITICA: perfil '{f['profile']}' -- {f['problem']}")
+
     critico = bool(razones)
     result = {
         "verdict": "ATENCION" if critico else "OK",
@@ -352,6 +475,7 @@ def main() -> int:
         "stale_blocked_count": len(stale),
         "motor_block_hits_last_hour": len(motor_hits),
         "broken_skill_links": broken_links,
+        "policy_drift": policy_findings,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
                         "un agente trabajando fuera de Kanban por completo (sin tarjeta) sigue siendo invisible"],

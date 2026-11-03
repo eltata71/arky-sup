@@ -25,6 +25,8 @@ Arky 10 - Mantenimiento. Targets disponibles:
   test          Vitest en watch mode
   test-ci       Vitest una sola pasada
   quality       Puerta de calidad: typecheck + lint + test-ci
+  quality-gate  Mitad sin tests: estatica + build + bundle (para un worker de Hermes)
+  test-coverage Mitad de tests: suite + cobertura (para un worker de Hermes)
   build         Build de produccion + warning de code-splitting
   e2e           Playwright (e2e)
   e2e-install   Instala navegadores Playwright
@@ -46,6 +48,8 @@ case "${1:-help}" in
   test)         npm test ;;
   test-ci)      npm run test:ci ;;
   quality)      npm run quality ;;
+  quality-gate) npm run quality:gate ;;
+  test-coverage) npm run test:coverage ;;
   build)        npm run build ;;
   e2e)          npm run e2e ;;
   e2e-install)  npm run e2e:install ;;
