@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""pre_tool_call shell hook: cierra la puerta nativa que crear-tarea-hija.sh
+deja abierta al lado.
+
+Por qué existe: el envoltorio `crear-tarea-hija.sh` hace más difícil crear
+una tarea hija sin reloj nativo, pero no lo hace imposible -- `hermes kanban
+create --parent` sigue siendo un comando real que cualquiera de los 20
+perfiles puede llamar directamente, y el canónico solo lo prohíbe con
+prosa, que es el mismo instrumento que ya falló una vez (t_0e4d6e31,
+2026-10-26). Esta es la frontera de verdad: un pre_tool_call shell hook (ver
+website/docs/user-guide/features/hooks.md), el punto de intercepción más
+cercano al momento real de ejecución, antes de que la herramienta corra,
+para cualquier superficie (CLI, gateway, dispatcher) y cualquier agente --
+hermano de `block-hermes-engine-writes.py`, mismo mecanismo, asunto
+distinto: aquél protege la instalación de Hermes; éste protege una regla de
+admisión del propio tablero. Viven en ficheros separados a propósito --
+mezclar "no toques el motor" con "no crees sin reloj" en un solo fichero
+haría que una PR que corrija uno arriesgue el otro sin que nadie lo pida.
+
+Qué bloquea: un `terminal` cuyo comando invoca `hermes kanban ... create`
+con `--parent` presente y `--max-runtime` ausente -- **dentro del mismo
+segmento de comando**, mirando los TOKENS reales, no una subcadena sobre la
+línea entera. No bloquea una creación sin `--parent` (una tarea raíz no
+hereda el hueco de `_insert_decomposed_child`) ni una que ya lleve
+`--max-runtime` en la misma línea -- lo cual deja pasar
+`crear-tarea-hija.sh` cuando se usa como está escrito, porque su propio
+comando interno incluye el flag.
+
+**Revisión independiente (2026-11-02) encontró tres evasiones reales y las
+tres están cerradas aquí:**
+
+1. *El emparejador solo cubría `terminal`.* Escribir el comando a un
+   fichero y ejecutarlo luego (`bash script.sh`) evadía el hook porque la
+   llamada a `terminal` que de verdad corre nunca contiene el texto
+   "kanban"/"create". Ahora también se examina el **contenido** que
+   `write_file`/`patch` escribe: si el texto escrito contiene el mismo
+   patrón inseguro, se bloquea la escritura misma -- no se puede fabricar el
+   script peligroso ni ejecutarlo directamente. Límite declarado, no
+   supuesto: contenido obtenido por otra vía (descarga, variable de entorno,
+   `base64 -d`) sigue sin ser visible aquí, el mismo límite de cualquier
+   hook por coincidencia de patrones.
+2. *`--parent`/`--max-runtime` se buscaban en la línea completa, no en el
+   mismo segmento que `create`.* Un título de tarea que contuviera
+   literalmente el texto "--max-runtime" (`hermes kanban create "Arreglar
+   --max-runtime" --parent t_x`) satisfacía la comprobación aunque el flag
+   real no estuviera. Ahora el comando se separa en segmentos
+   (`;`/`&&`/`||`/`|`/salto de línea) y cada segmento se tokeniza con
+   `shlex`: un título entre comillas es UN SOLO token (shlex respeta las
+   comillas), así que nunca coincide con el token exacto `--parent` o
+   `--max-runtime` -- solo una bandera real, no texto dentro de un argumento,
+   cuenta.
+3. *`hermes kanban decompose` solo estaba prohibido por prosa.* Ese comando
+   no acepta `--max-runtime` en absoluto -- el hueco está en que nunca copia
+   el campo del padre, no en que se pueda omitir una bandera -- así que no
+   hay patrón de "falta un flag" que detectar. Pero sigue siendo un comando
+   real e interceptable: ahora este mismo hook bloquea `kanban decompose`
+   sin condición, con mensaje propio, cerrando el hueco con enforcement en
+   vez de con la frase del canónico que la propia revisión señaló como
+   insuficiente.
+
+Deliberadamente NO bloquea lectura ni ningún otro subcomando de kanban
+(`list`, `show`, `comment`, `archive`...). Cada bloqueo real se anota en
+~/.hermes/logs/kanban-create-sin-reloj.jsonl, mismo patrón que el hook
+hermano, por la misma razón: un bloqueo aislado es un agente topándose con
+la regla una vez; varios en poco tiempo es algo insistiendo en evitarla.
+"""
+import json
+import re
+import shlex
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+AUDIT_LOG = Path.home() / ".hermes" / "logs" / "kanban-create-sin-reloj.jsonl"
+
+_SHELL_SPLIT_RE = re.compile(r"&&|\|\||[;|\n]")
+
+BLOCK_MSG = (
+    "Tarea hija sin --max-runtime: este comando crea una hija con --parent "
+    "pero sin --max-runtime, el hueco exacto que produjo t_0e4d6e31 "
+    "(2026-10-26). Usa scripts/agentes/crear-tarea-hija.sh --parent <id> "
+    "--max-runtime <segundos> --assignee <perfil> -- \"<título>\", que se "
+    "niega a llamar a Hermes si falta el reloj. Si de verdad hace falta "
+    "crear sin él, pide promoción humana explícita (no este camino "
+    "automático)."
+)
+
+DECOMPOSE_BLOCK_MSG = (
+    "hermes kanban decompose está prohibido: nunca copia max_runtime_seconds"
+    "/max_retries del padre a la hija (_insert_decomposed_child, el mismo "
+    "hueco que t_0e4d6e31), se invoque como se invoque. Construye el grafo "
+    "con scripts/agentes/crear-tarea-hija.sh, tarea por tarea, con reloj "
+    "explícito en cada una."
+)
+
+
+def _tokenize(segment: str) -> list:
+    try:
+        return shlex.split(segment)
+    except ValueError:
+        return segment.split()
+
+
+def _is_unsafe_create_segment(tokens: list) -> bool:
+    if "kanban" not in tokens or "create" not in tokens:
+        return False
+    kanban_idx = tokens.index("kanban")
+    if "create" not in tokens[kanban_idx:]:
+        return False
+    has_parent = any(t == "--parent" or t.startswith("--parent=") for t in tokens)
+    has_max_runtime = any(t == "--max-runtime" or t.startswith("--max-runtime=") for t in tokens)
+    return has_parent and not has_max_runtime
+
+
+def _is_decompose_segment(tokens: list) -> bool:
+    if "kanban" not in tokens or "decompose" not in tokens:
+        return False
+    kanban_idx = tokens.index("kanban")
+    return "decompose" in tokens[kanban_idx:]
+
+
+def is_unsafe_create(cmd: str) -> bool:
+    """Tokeniza por segmento -- un título entre comillas con el texto de un
+    flag es un solo token y nunca coincide con el flag real."""
+    return any(_is_unsafe_create_segment(_tokenize(seg)) for seg in _SHELL_SPLIT_RE.split(cmd))
+
+
+def is_decompose(cmd: str) -> bool:
+    return any(_is_decompose_segment(_tokenize(seg)) for seg in _SHELL_SPLIT_RE.split(cmd))
+
+
+def log_block(log_name: str, detail: str, profile: str, task_id: str) -> None:
+    """Best-effort -- un fallo al escribir el registro nunca debe impedir el
+    bloqueo en sí, que es lo que de verdad importa."""
+    try:
+        AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "epoch": time.time(),
+            "detail": detail,
+            "profile": profile,
+            "task_id": task_id,
+        }
+        with AUDIT_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        print("{}")
+        return
+
+    tool = payload.get("tool_name")
+    tool_input = payload.get("tool_input") or {}
+    profile = payload.get("profile") or "?"
+    task_id = (payload.get("extra") or {}).get("task_id") or ""
+
+    if tool == "terminal":
+        cmd = tool_input.get("command", "") or ""
+        if is_decompose(cmd):
+            log_block("decompose", cmd, profile, task_id)
+            print(json.dumps({"action": "block", "message": DECOMPOSE_BLOCK_MSG}))
+            return
+        if is_unsafe_create(cmd):
+            log_block("create", cmd, profile, task_id)
+            print(json.dumps({"action": "block", "message": BLOCK_MSG}))
+            return
+    elif tool in ("write_file", "patch"):
+        # Escribir el comando peligroso a un fichero para ejecutarlo luego
+        # evade la rama de arriba -- la llamada a `terminal` real nunca
+        # contiene el texto. Se bloquea la escritura misma en su lugar.
+        for key in ("content", "new_string", "patch"):
+            text = tool_input.get(key)
+            if text and (is_unsafe_create(text) or is_decompose(text)):
+                log_block("write", f"{key} en {tool_input.get('path') or '?'}", profile, task_id)
+                msg = DECOMPOSE_BLOCK_MSG if is_decompose(text) else BLOCK_MSG
+                print(json.dumps({"action": "block", "message": msg}))
+                return
+
+    print("{}")
+
+
+if __name__ == "__main__":
+    main()
