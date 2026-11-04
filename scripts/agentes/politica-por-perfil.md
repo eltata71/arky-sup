@@ -205,3 +205,48 @@ estaban demasiado ajustados para lo que de verdad hacen.
 un defecto de diseño — registrado como tarjeta `t_dc22118e` en el tablero
 `latam-factory`, con una propuesta de reconciliación dimensionada y sin
 construir (es código de Hermes, no de este repositorio).
+
+## Ocho perfiles del elenco original de los 12 Bots (2026-11-03)
+
+Al subir los 16 perfiles sin presupuesto razonado quedaron sin tocar ocho
+del elenco original (`multiagente.md`): `alba`, `andres`, `diego`, `elena`,
+`lucia`, `mateo`, `sofia`, `valentina` — ninguno tenía `max_turns` ni
+`run_budget_seconds`. Antes de dimensionarlos hacía falta responder una
+cosa primero: **¿pueden recibir trabajo hoy, o están fuera del circuito por
+haber sido superados por los perfiles especialistas con sufijo?**
+
+Comprobado, no supuesto: los 8 tienen `auth.json` con credenciales reales
+(1245-1455 bytes), los 8 ejecutaron tareas de verdad en el pasado (entre 1
+y 38 runs cada uno, todos entre el 21 y el 23 de octubre — justo antes de
+que aparecieran los perfiles especialistas), y no existe ningún catálogo
+ni lista de perfiles permitidos en el despachador (`kanban_db.py`,
+`kanban_db_dispatch.py`) que filtre el campo `assignee`. Son retirados de
+hecho —nadie les asigna nada desde el 23 de octubre—, no retirados del
+sistema: basta escribir su nombre en `--assignee` para que reciban trabajo.
+Por tanto, el mismo riesgo que los 16 anteriores, no ceremonia sobre
+perfiles inertes.
+
+Dimensionados en un primer momento por el rol que `multiagente.md` les
+da, no por telemetría de estos 8 en concreto: `andres` y `mateo`
+(implementadores, nivel pesado), `alba` (solución, nivel de `camilo`),
+`lucia` y `valentina` (nombradas "revisor independiente" en el paso 4 de
+`multiagente.md`, nivel de `alexis`/`rafael`), `diego` (verifica
+CI/despliegue, nivel de `elena-release`), `elena` y `sofia` (deciden/
+diseñan, nivel ligero).
+
+**Corregido horas después, en la misma sesión: ese reparto pesado/ligero
+no sobrevivió al primer caso real.** Ver "El piso uniforme" más abajo —
+el coordinador asignó a Lucía (una de las "ligeras" de arriba) a
+implementar, no a revisar, y murió tres veces sin turnos. Los 8 quedan
+finalmente en el mismo piso que todos los demás: `max_turns: 30`,
+`run_budget_seconds: 1200`, sin distinguir pesado/ligero — salvo que
+alguno de estos 8 tenga, como `jose`, una regla real (no una suposición)
+que le impida estructuralmente implementar, y no es el caso de ninguno de
+los 8.
+
+Con esto, todos los perfiles que ejecutan tareas kanban quedan en el
+mismo piso de implementación, con la única excepción razonada de `jose`.
+Quedan sin tocar, a propósito, solo los perfiles de prueba ya apagados
+(`pruebacoordinador20261025`, `pruebacoordinador220261025`) y los que son
+gateway puro (`arkyaws`, `arkysupabase`, `latamfactory`), que no ejecutan
+tareas kanban por sí mismos.
