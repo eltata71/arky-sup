@@ -205,3 +205,70 @@ estaban demasiado ajustados para lo que de verdad hacen.
 un defecto de diseño — registrado como tarjeta `t_dc22118e` en el tablero
 `latam-factory`, con una propuesta de reconciliación dimensionada y sin
 construir (es código de Hermes, no de este repositorio).
+
+## El piso uniforme — dimensionar por rol supuesto no funciona (2026-11-03/04)
+
+Las dos subidas anteriores (16 + 4 perfiles) repartieron presupuesto por
+el rol que cada perfil **parecía** tener: pesado si ejecuta test/build,
+ligero si revisa o decide. Horas después, el coordinador asignó
+`t_d1ad10c7` a **Lucía** (clasificada "ligera", `max_turns: 25`) para
+**implementar**, no revisar. Lucía hizo el trabajo real — escáner AST,
+PR #312, SHA `de0839c3` — y al escribir el cierre del traspaso se quedó
+sin turnos: `Iteration budget reached (25/25)`. Reintentó dos veces más,
+murió igual las dos. Tres intentos para un trabajo que ya estaba hecho a
+la primera.
+
+**La causa no es que el número de Lucía estuviera mal calculado: es que
+la clasificación entera partía de una suposición que no manda.** El
+coordinador asigna por su propio criterio, no por mis categorías — José
+eligió a Lucía porque le pareció la persona adecuada para esa tarea, no
+porque este documento la hubiera etiquetado "ligera". No hay catálogo que
+impida que cualquier perfil termine implementando (confirmado en la
+subida de los 8: no hay lista de assignees permitidos en el despachador),
+así que cualquier perfil necesita presupuesto para implementar, no el que
+le pareció suficiente a quien escribió este documento.
+
+Y el argumento de coste cierra el caso, no solo el de riesgo: **tres
+intentos fallidos cuestan más que uno que termina.** Es el mismo patrón
+que ya costó caro con los 300 segundos de `run_budget_seconds` —
+quedarse corto no ahorra, duplica.
+
+**Corrección: piso uniforme.** Los 18 perfiles que seguían por debajo del
+nivel de implementación suben a `max_turns: 30`, `run_budget_seconds:
+1200` — los mismos valores de quien ya ejecutaba test/build, sin
+distinguir pesado/ligero:
+`ignacio-solution-architect`, `julian-security`, `maria-product-owner`,
+`natalia-documentation`, `sofia-ux-designer`, `viviana-business-analyst`,
+`elena-release`, `lucia-sre`, `sergio-llmops`, `camilo`, `alexis`,
+`rafael`, `alba`, `lucia`, `valentina`, `diego`, `elena`, `sofia`.
+
+**La única excepción: `jose`** (se queda en `max_turns: 40`,
+`run_budget_seconds: 900`). No es una suposición de rol como las demás —
+es una regla del propio contrato operativo (`docs/operacion/multiagente.md`:
+"José... no escribe código de producto"). José coordina, descompone y
+asigna a otros; no es el despachador quien decide si José implementa,
+así que el riesgo de reparto impredecible que rompió a Lucía no le
+aplica a él de la misma forma. Si algún día se le asigna una tarea de
+implementación real, revisar esto.
+
+Con esto, todo perfil que ejecuta tareas kanban queda al mismo piso,
+salvo `jose` por la razón de arriba.
+
+## Dos cosas que salieron bien, y también merecen registro
+
+**El preflight `estado.sh` funcionó en producción, por primera vez bajo
+fuego real.** El checkout principal quedó en una rama de PR por un error
+operativo (revisión de la PR #310 ejecutada ahí en vez de en un
+worktree, 2026-11-03). Tres workers distintos (Andrés, Camilo, y el
+intento sobre `t_5d609ea4`) corrieron su preflight obligatorio, lo
+detectaron, y **se negaron a tocar nada** en vez de seguir adelante sobre
+la rama equivocada — exactamente la regla 1 de `multiagente.md`
+funcionando, no solo escrita. Hace dos semanas habría significado commits
+reales sobre la rama de una PR.
+
+**El coordinador reservó capacidad correctamente.** Asignó `t_d13b3589` a
+Mateo-backend y la dejó en `scheduled` a propósito: *"en espera para
+reservar capacidad: no liberar hasta que haya cupo tras la reanudación de
+t_8c2134ab y las dos entradas prioritarias"* — sin que se le indicara
+cómo hacerlo, siguiendo la instrucción de no saturar las tres plazas de
+golpe.

@@ -125,7 +125,31 @@ visible que el propio worker decide si recoger en su siguiente turno, y que
 un humano también puede leer. Nadie lo construyó todavía; esta nota es
 suficiente para que la próxima vez no haga falta redescubrirlo.
 
-## Las herramientas
+## La regla 1 falló por fuera, y la guarda la atajó por dentro (2026-11-03)
+
+El checkout principal quedó en la rama de una PR (`pr-310`) en vez de
+`main` — no por un worker, sino por una revisión independiente ejecutada
+ahí en vez de en un worktree aparte, un error operativo de quien mantiene
+este documento. Tres workers distintos, sobre tres tarjetas distintas,
+corrieron su preflight obligatorio (`estado.sh`), lo detectaron, y se
+negaron a seguir — exactamente la regla 1 ("el checkout principal sólo
+sigue a `main` y no se edita") funcionando bajo fuego real, no solo
+escrita. Es la contraparte en producción del incidente del 2026-10-07 que
+abre este documento: aquella vez nadie lo notó durante días; esta vez tres
+agentes lo notaron en minutos y ninguno tocó nada.
+
+**Pero esa protección es un hábito de quien trabaja en la tarea (correr
+`estado.sh` antes de empezar), no un cerrojo de `git`.** Nada en el propio
+`git` impide dejar el checkout principal en otra rama — lo confirmé
+comprobando `core.hooksPath` tras el incidente: sigue sin instalar (ver
+`instalar-guarda.sh` abajo). Si estuviera instalado, `post-checkout`
+**avisaría** en el momento exacto del `git checkout` ("el checkout
+principal está ahora en «rama»") — pero solo avisa, no lo impide; solo
+`pre-commit` rechaza de verdad, y rechaza *commits*, no cambios de rama.
+Así que sí, puede volver a pasar — la próxima vez que alguien (persona o
+agente) ejecute `git checkout`/`gh pr checkout` directamente en el
+checkout principal en vez de en un worktree, nada se lo impide, y sin el
+hook instalado, tampoco avisa.
 
 | Script | Qué hace | ¿Cambia algo? |
 |---|---|---|
