@@ -186,6 +186,85 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(run.call_args.args[0][6], 'comment')
         self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 600)
 
+    def reconcile(self, dry_run=False, piso=1200):
+        with patch.object(vigilante, '_profile_run_budget_seconds', return_value=piso):
+            with patch.object(vigilante.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as run:
+                return vigilante.patch_mismatched_runtime_ceiling(self.db, 'perfil', 'tablero', dry_run), run
+
+    def test_reconcile_raises_card_below_profile_floor(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        hits, run = self.reconcile(piso=1200)
+        self.assertEqual([h['id'] for h in hits], ['t_test'])
+        self.assertEqual(hits[0]['old'], 300)
+        self.assertEqual(hits[0]['new'], 1200)
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 1200)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[0][6], 'comment')
+        self.assertIn('t_dc22118e', run.call_args.args[0][8])
+
+    def test_reconcile_never_lowers_a_card_above_the_floor(self):
+        # Excepción puntual concedida (como Andrés a 7200s): pedir más que el
+        # perfil no es el defecto, y este vigilante no la toca.
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=7200, status='ready'")
+        with patch.object(vigilante.subprocess, 'run') as run:
+            hits, _ = self.reconcile(piso=300)
+            self.assertEqual(hits, [])
+            run.assert_not_called()
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 7200)
+
+    def test_reconcile_skips_card_already_at_the_floor(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=1200, status='ready'")
+        with patch.object(vigilante.subprocess, 'run') as run:
+            hits, _ = self.reconcile(piso=1200)
+            self.assertEqual(hits, [])
+            run.assert_not_called()
+
+    def test_reconcile_skips_when_profile_has_no_known_floor(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        with patch.object(vigilante, '_profile_run_budget_seconds', return_value=None):
+            with patch.object(vigilante.subprocess, 'run') as run:
+                hits = vigilante.patch_mismatched_runtime_ceiling(self.db, 'perfil', 'tablero', False)
+                self.assertEqual(hits, [])
+                run.assert_not_called()
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 300)
+
+    def test_reconcile_dry_run_never_writes(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        before = list(self.db.iterdump())
+        hits, run = self.reconcile(dry_run=True, piso=1200)
+        self.assertEqual([h['id'] for h in hits], ['t_test'])
+        run.assert_not_called()
+        self.assertEqual(list(self.db.iterdump()), before)
+
+    def test_reconcile_is_idempotent_against_concurrent_change(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        self.db.executescript('''
+            CREATE TRIGGER concurrent_reconcile BEFORE UPDATE OF max_runtime_seconds ON tasks
+            WHEN OLD.max_runtime_seconds=300 BEGIN
+                UPDATE tasks SET max_runtime_seconds=900 WHERE id=OLD.id;
+                SELECT RAISE(IGNORE);
+            END;
+        ''')
+        with patch.object(vigilante, '_profile_run_budget_seconds', return_value=1200):
+            with patch.object(vigilante.subprocess, 'run') as run:
+                hits = vigilante.patch_mismatched_runtime_ceiling(self.db, 'perfil', 'tablero', False)
+                self.assertEqual(hits, [])
+                run.assert_not_called()
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 900)
+
+    def test_profile_run_budget_seconds_reads_real_yaml(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            profiles_dir = Path(tmp)
+            (profiles_dir / 'camilo').mkdir()
+            (profiles_dir / 'camilo' / 'config.yaml').write_text('agent:\n  run_budget_seconds: 900\n')
+            (profiles_dir / 'sin-agent').mkdir()
+            (profiles_dir / 'sin-agent' / 'config.yaml').write_text('model:\n  default: x\n')
+            with patch.object(vigilante, 'PROFILES_DIR', profiles_dir):
+                self.assertEqual(vigilante._profile_run_budget_seconds('camilo'), 900)
+                self.assertIsNone(vigilante._profile_run_budget_seconds('sin-agent'))
+                self.assertIsNone(vigilante._profile_run_budget_seconds('no-existe'))
+
 
     def install_concurrent_ceiling_trigger(self):
         # Simular otra escritura entre SELECT y UPDATE sin tocar una DB real.

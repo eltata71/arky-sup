@@ -37,6 +37,15 @@ el flujo compartido. Puede pasarse explícitamente por CLI; aquí no se cambia
 configuración alguna. Las tareas parcheadas dependen del dispatcher nativo
 para aplicar el límite. Esta dependencia no acredita terminación.
 
+3. **Conciliación proactiva (2026-11-04):** `patch_mismatched_runtime_ceiling`
+   usa la misma excepción para un segundo hueco real -- `max_runtime_seconds`
+   (la tarjeta) y `run_budget_seconds` (`agent:` del perfil asignado) son dos
+   verdades sin conciliar, y mordió tres veces en un día (ver `t_dc22118e`,
+   tablero `latam-factory`). Solo SUBE: si la tarjeta pide menos que el piso
+   de su perfil, se iguala al perfil; si pide más (una excepción puntual ya
+   concedida), no se toca. Mismas tres condiciones de la excepción: una sola
+   columna, `WHERE` con el valor viejo exacto, comentario auditable.
+
 ## Por qué no se entrega recuperación automática
 
 La revisión Alexis de `8854e09e0d6c9960c4b06acde7a1a686692b6aed` identificó:
