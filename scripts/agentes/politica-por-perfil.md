@@ -226,30 +226,27 @@ sistema: basta escribir su nombre en `--assignee` para que reciban trabajo.
 Por tanto, el mismo riesgo que los 16 anteriores, no ceremonia sobre
 perfiles inertes.
 
-Dimensionados por el rol que `multiagente.md` les da, no por telemetría de
-estos 8 en concreto (sí hay telemetría del tipo de trabajo del rol, vía los
-16 y los 4 anteriores):
+Dimensionados en un primer momento por el rol que `multiagente.md` les
+da, no por telemetría de estos 8 en concreto: `andres` y `mateo`
+(implementadores, nivel pesado), `alba` (solución, nivel de `camilo`),
+`lucia` y `valentina` (nombradas "revisor independiente" en el paso 4 de
+`multiagente.md`, nivel de `alexis`/`rafael`), `diego` (verifica
+CI/despliegue, nivel de `elena-release`), `elena` y `sofia` (deciden/
+diseñan, nivel ligero).
 
-- **`andres`** (backend) y **`mateo`** (datos) — implementadores, igual
-  que `andres-integration`/`mateo-backend`: `max_turns: 30`,
-  `run_budget_seconds: 1200`.
-- **`alba`** (solución) — arquitectura con investigación real, mismo nivel
-  que `camilo` (16a): `max_turns: 30`, `run_budget_seconds: 900`.
-- **`lucia`** (seguridad) y **`valentina`** (QA) — `multiagente.md` los
-  nombra explícitamente como "revisor independiente" junto a Rafael (paso
-  4): mismo nivel que `alexis`/`rafael`, `max_turns: 25`,
-  `run_budget_seconds: 900`.
-- **`diego`** (DevOps) — "verifica CI/despliegue" (paso 5 de
-  `multiagente.md`): comprueba el estado, no ejecuta la puerta de calidad
-  él mismo. Mismo nivel que `elena-release`, que hace lo mismo sobre PRs:
-  `max_turns: 25`, `run_budget_seconds: 600`.
-- **`elena`** (UX) y **`sofia`** (producto) — deciden/diseñan, no ejecutan
-  código: `max_turns: 25`, `run_budget_seconds: 600`.
+**Corregido horas después, en la misma sesión: ese reparto pesado/ligero
+no sobrevivió al primer caso real.** Ver "El piso uniforme" más abajo —
+el coordinador asignó a Lucía (una de las "ligeras" de arriba) a
+implementar, no a revisar, y murió tres veces sin turnos. Los 8 quedan
+finalmente en el mismo piso que todos los demás: `max_turns: 30`,
+`run_budget_seconds: 1200`, sin distinguir pesado/ligero — salvo que
+alguno de estos 8 tenga, como `jose`, una regla real (no una suposición)
+que le impida estructuralmente implementar, y no es el caso de ninguno de
+los 8.
 
-Con esto, todos los perfiles que ejecutan tareas kanban tienen
-`max_turns`/`run_budget_seconds` razonados y escritos: estos 8, los 16 de
-la subida anterior, y `jose`/`camilo`/`alexis`/`rafael`. Quedan sin tocar,
-a propósito, solo los perfiles de prueba ya apagados
+Con esto, todos los perfiles que ejecutan tareas kanban quedan en el
+mismo piso de implementación, con la única excepción razonada de `jose`.
+Quedan sin tocar, a propósito, solo los perfiles de prueba ya apagados
 (`pruebacoordinador20261025`, `pruebacoordinador220261025`) y los que son
 gateway puro (`arkyaws`, `arkysupabase`, `latamfactory`), que no ejecutan
 tareas kanban por sí mismos.
