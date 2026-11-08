@@ -5,6 +5,8 @@ import {
   exportOperationTrace,
 } from '../../../../services/architectureOffice/application/officeOperationTrace';
 import type { CoordinationOutcome } from '../../../../services/architectureOffice/application/officeCoordination';
+import type { OfficeInvocationRecord } from '../../../../services/architectureOffice/application/officeOrchestrationTypes';
+import type { OperationTraceSource } from '../../../../services/architectureOffice/application/officeOperationTrace';
 
 const KEY = 'AIza' + 'A'.repeat(35);
 
@@ -19,6 +21,55 @@ const outcome = (): CoordinationOutcome =>
   }) as unknown as CoordinationOutcome;
 
 describe('officeOperationTrace', () => {
+  it('canonicalizes invocation, handoff, event and trace identities without mutating semantic sequences', () => {
+    const permutations = <T,>(items: T[]): T[][] => items.length === 0 ? [[]]
+      : items.flatMap((item, index) => permutations(items.filter((_, i) => i !== index)).map((rest) => [item, ...rest]));
+    const freeze = (value: unknown): void => {
+      if (value && typeof value === 'object') {
+        Object.values(value).forEach(freeze);
+        Object.freeze(value);
+      }
+    };
+    const invocations: OfficeInvocationRecord[] = ['c', 'b', 'a'].map((id) => ({
+      invocationId: id, personaId: 'elena', role: 'specialist', promptId: 'test', promptStamp: `stamp:${id}`,
+      handoffId: id === 'c' ? undefined : 'handoff:a', attempt: 'primary', status: 'completed', startedAtMs: 0,
+      measurement: { aiCalls: 1, model: 'test', usage: null, latencyMs: 1, traceId: `trace:${id}`,
+        estimatedCostUsd: null, toolCalls: ['second', 'first'] },
+    }));
+    const events = invocations.flatMap(({ invocationId }) => ['2', '1'].map((suffix) => ({
+      id: `${invocationId}:${suffix}`, invocationId, kind: 'agent-started' as const,
+      from: 'elena' as const, to: 'elena' as const, summary: suffix,
+      phase: 'working' as const, elapsedMs: 0,
+    })));
+    const base: OperationTraceSource = { ...outcome(), team: [], invocations, events,
+      promptStamps: ['second', 'first'] };
+    const before = JSON.stringify(base);
+    freeze(base);
+    const expected = describeOperation(base);
+    const exported = exportOperationTrace(base);
+    expect(expected.children.map((node) => node.id)).toEqual(['handoff:a', 'unattributed:c']);
+    expect(expected.children[0].children.map((node) => node.id)).toEqual(['a', 'b']);
+    expect(expected.children[0].children[0].children.map((node) => node.id)).toEqual(['a:model', 'a:1', 'a:2']);
+    expect(expected.traceIds).toEqual(['trace:a', 'trace:b', 'trace:c']);
+    expect(expected.children[0].children[0].measurement?.toolCalls).toEqual(['second', 'first']);
+    expect(JSON.parse(exported).promptStamps).toEqual(['second', 'first']);
+    for (const reordered of permutations(invocations)) {
+      for (const reorderedEvents of [events, [...events].reverse(), [...events.slice(2), ...events.slice(0, 2)]]) {
+        const candidate = { ...base, invocations: reordered, events: reorderedEvents };
+        freeze(candidate);
+        expect(describeOperation(candidate)).toEqual(expected);
+        expect(exportOperationTrace(candidate)).toBe(exported);
+      }
+    }
+    for (const traceIds of permutations(['trace:c', 'trace:a', 'trace:b'])) {
+      freeze(traceIds);
+      expect(describeOperation({ ...base, traceIds })).toEqual(expected);
+      expect(exportOperationTrace({ ...base, traceIds })).toBe(exported);
+    }
+    expect(describeOperation({ ...base, traceIds: [] }).traceIds).toEqual([]);
+    expect(JSON.stringify(base)).toBe(before);
+  });
+
   it('removes complete and truncated PEM material from every free-text field in tree and JSON', () => {
     const pem = generateKeyPairSync('ec', { namedCurve: 'prime256v1' }).privateKey
       .export({ type: 'sec1', format: 'pem' }).toString();
