@@ -1714,6 +1714,41 @@ Estado al 2026-10-25: Rafael `claude-opus-5-5` (anthropic), Alexis
 motivo por el que existen dos revisores y no uno: no duplican criterio,
 duplican disponibilidad.
 
+[enmienda E-13, 2026-11-08] **La mitad que sigue siendo cierta, confirmada
+en el propio config, no solo en esta prosa**: el espejo está bien
+configurado y sigue vigente. `fallback_providers` en el perfil de Rafael
+tiene a Alexis como primer respaldo exacto (`openai-codex`/`gpt-6.1-sol`);
+el de Alexis tiene a Rafael como uno de los suyos
+(`anthropic`/`claude-sonnet-5-5`). Esa configuración protege de verdad ante
+un límite de tasa genérico (HTTP 429, texto "rate limit") y ante un fallo
+duro del proveedor: confirmado leyendo `agent/error_classifier.py` -- ese
+tipo de error lleva el verdicto `should_fallback=True`, y el motor rota a
+la cadena configurada sin que nadie tenga que intervenir. Que esta
+enmienda corrija la otra mitad no quiere decir que el espejo no sirva.
+
+**La mitad que la regla prometía y el motor de Hermes no daba**: un
+agotamiento de cuota que el motor clasifica de forma estructurada
+(`resource_exhausted`/`throttled`/`rate_limit_exceeded` -- lo que el
+despachador registra como "quota wall", código de salida 75) lleva un
+verdicto distinto, `should_rotate_credential` sin `should_fallback`: el
+motor reintenta el mismo proveedor en bucle, sin consultar nunca la cadena
+de respaldo. No es hipotético: `t_5d609ea4` (2026-11-04/05) quedó 3h22m en
+ese bucle sobre Rafael -- reclamada, lanzada, agotada, en espera, y otra
+vez, docenas de veces -- hasta una intervención manual
+(`model_override` a `openai-codex`, el proveedor que ya era su respaldo
+configurado, solo que nada lo activó solo). No se modifica el motor de
+Hermes para cerrar este camino -- es software de terceros y José decidió
+explícitamente no tocarlo.
+
+**Por qué esta mitad importa más que un fallo técnico cualquiera**: la
+frase original prometía que la verificación independiente "no depende de
+una sola cuota". Para este camino de fallo concreto, sí dependía -- y una
+garantía escrita que el sistema no da es peor que no tener la garantía,
+porque hace que nadie vigile lo que cree cubierto. Mientras no exista una
+señal externa que detecte este bucle (evaluada, no construida, al cierre
+de esta enmienda), un agotamiento de cuota estructurado en cualquiera de
+los dos revisores seguirá dependiendo de que una persona lo note.
+
 RG-20 — Fuente única de instrucciones compartidas [enmienda E-11]: Las
 instrucciones compartidas por varios agentes viven en un único fichero
 versionado. Un perfil lo referencia y nunca conserva una copia divergente.
