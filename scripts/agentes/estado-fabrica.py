@@ -46,6 +46,28 @@ Qué comprueba, y con qué umbral, y por qué:
   `block-hermes-engine-writes.py` en `pre_tool_call` es del alcance; esto
   detecta divergencia de la política, no decide a quién aplicarla -- un
   perfil fuera de ese roster no se evalúa.
+- **Ningún perfil de la máquina con `auto_decompose` efectivo en `true`**
+  (hallazgo 2026-11-09): el chequeo de arriba protege solo el roster del hook
+  del motor, que es un subconjunto. El 8-nov un perfil de prueba
+  (`pruebacoordinador220261025`, fuera de ese roster) ganó la carrera por el
+  candado del despachador embebido con `auto_decompose: true` todavía puesto
+  y descompuso una tarjeta ajena sin que nada lo detectara -- el roster
+  angosto no cubre a un perfil nuevo o de prueba que nunca tuvo el hook. Este
+  chequeo recorre **todos** los `~/.hermes/profiles/*/config.yaml` sin
+  excepción de roster, calcula el valor efectivo (explícito, o `true` por
+  defecto si la clave falta) y es CRÍTICO ante cualquiera en `true`. Es el
+  mismo defecto en dos sitios: la clave vive copiada en N ficheros, y el
+  único blindaje existente no cubría a todos.
+- **El candado del despachador embebido (`~/.hermes/kanban/.dispatcher.lock`)
+  sin dueño** (hallazgo 2026-11-09): un gateway "activo" no implica que su
+  despachador esté de verdad despachando -- `arkysupabase` y `latamfactory`
+  corrieron 21+ horas "activos" sin que ninguno tuviera el candado, porque
+  el que lo ganó al arrancar murió sin que el perdedor reintentara (no hay
+  reintento tras la derrota inicial, confirmado leyendo
+  `gateway/kanban_watchers.py`). CRÍTICO si el candado está libre (nadie lo
+  tiene) mientras al menos un gateway `hermes-gateway-*.service` está activo
+  -- un despachador vivo en papel y muerto en la práctica es exactamente la
+  clase de fallo que costó un mes sin que nadie se enterara.
 - **Un hook declarado en `config.yaml` sin su aprobación en
   `shell-hooks-allowlist.json`** (hallazgo 2026-11-01, perfil
   `latamfactory`): confirmado leyendo `agent/shell_hooks.py` que un hook no
@@ -103,6 +125,7 @@ siempre) y avisar (quien lea RESULT_FILE y decida a quién molestar) son dos
 trabajos distintos a propósito -- el primero no debe depender del segundo.
 """
 import argparse
+import fcntl
 import json
 import os
 import re
@@ -117,6 +140,7 @@ import yaml
 
 MOTOR_LOG = Path.home() / ".hermes" / "logs" / "motor-bloqueado.jsonl"
 RESULT_FILE = Path.home() / ".hermes" / "logs" / "estado-fabrica.json"
+DISPATCHER_LOCK = Path.home() / ".hermes" / "kanban" / ".dispatcher.lock"
 
 STALE_BLOCKED_HOURS = 4
 HUMAN_GATE_KINDS = {"needs_input", "capability"}
@@ -402,6 +426,70 @@ def motor_blocks_recent(now: float) -> list[dict]:
     return hits
 
 
+def auto_decompose_true_everywhere() -> list[dict]:
+    """Todo perfil de la máquina cuyo `auto_decompose` EFECTIVO sea `true` --
+    explícito o por ausencia de clave (el motor instalado por defecto en
+    `true`, confirmado leyendo `gateway/kanban_watchers_common.py`). A
+    diferencia de `policy_drift_findings`, no se limita al roster del hook del
+    motor: un perfil de prueba o recién creado que nunca tuvo ese hook queda
+    fuera de aquel chequeo y dentro de éste -- es la brecha real que dejó a
+    `pruebacoordinador220261025` descomponer una tarjeta ajena el 8-nov."""
+    if not PROFILES_DIR.is_dir():
+        return []
+    findings = []
+    for profile_dir in sorted(PROFILES_DIR.iterdir()):
+        if not profile_dir.is_dir() or profile_dir.name == ".deleted":
+            continue
+        cfg_path = profile_dir / "config.yaml"
+        if not cfg_path.is_file():
+            continue
+        try:
+            data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as exc:
+            findings.append({"profile": profile_dir.name, "problem": f"config.yaml no se pudo leer: {exc}"})
+            continue
+        if not isinstance(data, dict):
+            continue
+        kanban_cfg = data.get("kanban") or {}
+        if kanban_cfg.get("auto_decompose") is not False:
+            estado = "ausente (true por defecto en el motor)" if "auto_decompose" not in kanban_cfg \
+                else f"en {kanban_cfg.get('auto_decompose')!r}"
+            findings.append({"profile": profile_dir.name, "problem": f"auto_decompose {estado}"})
+    return findings
+
+
+def dispatcher_lock_status(gw_states: dict[str, str]) -> dict:
+    """¿Alguien tiene de verdad el candado del despachador embebido?
+
+    Un gateway `active` no es prueba -- `arkysupabase` y `latamfactory`
+    corrieron 21+ horas "activos" con el candado libre (nadie reintenta tras
+    perder la carrera inicial al arrancar). La única prueba real es intentar
+    adquirirlo: si se consigue, estaba libre (se libera al instante, nunca se
+    retiene); si falla con recurso no disponible, alguien más lo tiene --
+    exactamente lo mismo que mide `lslocks`/`fuser`/el barrido de `/proc/*/fd`,
+    sin depender de ninguno de los tres estar instalado."""
+    any_gateway_active = any(v == "active" for v in gw_states.values())
+    if not DISPATCHER_LOCK.exists():
+        return {"held": None, "reason": "no existe el fichero del candado todavía", "critical": False}
+    try:
+        with DISPATCHER_LOCK.open("a+") as fh:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                return {"held": True, "reason": "candado en uso (correcto)", "critical": False}
+            else:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+                critical = any_gateway_active
+                return {
+                    "held": False,
+                    "reason": "candado LIBRE -- ningún despachador embebido lo tiene" +
+                               (" mientras al menos un gateway está activo" if any_gateway_active else ""),
+                    "critical": critical,
+                }
+    except OSError as exc:
+        return {"held": None, "reason": f"no se pudo comprobar: {exc}", "critical": False}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--json", action="store_true")
@@ -462,6 +550,21 @@ def main() -> int:
         else:
             razones.append(f"POLITICA: perfil '{f['profile']}' -- {f['problem']}")
 
+    auto_decompose_global = auto_decompose_true_everywhere()
+    for f in auto_decompose_global:
+        razones.append(f"AUTO_DECOMPOSE ACTIVO: perfil '{f['profile']}' -- {f['problem']} -- "
+                        f"cualquier gateway que arranque con este perfil puede descomponer tarjetas por su cuenta")
+
+    # Nunca "if alive else ..." -- `alive` exige TODOS los gateways activos, y
+    # un solo gateway de prueba caído (inactivo a propósito) apagaría este
+    # chequeo aunque arkysupabase/latamfactory sí estén despachando de verdad.
+    # `dispatcher_lock_status` decide su propio "hay algo que vigilar" mirando
+    # si ALGUNO está activo, no si lo están todos.
+    lock_status = dispatcher_lock_status(gw_states)
+    if lock_status["critical"]:
+        razones.append(f"CANDADO DEL DESPACHADOR SIN DUEÑO: {lock_status['reason']} -- "
+                        f"un gateway 'activo' no implica que esté despachando de verdad")
+
     critico = bool(razones)
     result = {
         "verdict": "ATENCION" if critico else "OK",
@@ -476,6 +579,8 @@ def main() -> int:
         "motor_block_hits_last_hour": len(motor_hits),
         "broken_skill_links": broken_links,
         "policy_drift": policy_findings,
+        "auto_decompose_global": auto_decompose_global,
+        "dispatcher_lock": lock_status,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
                         "un agente trabajando fuera de Kanban por completo (sin tarjeta) sigue siendo invisible"],

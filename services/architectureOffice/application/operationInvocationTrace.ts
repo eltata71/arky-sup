@@ -29,7 +29,12 @@ export const invocationBranches = (
   eventNode: (event: CoordinationEvent) => OperationTraceNode,
 ): OperationTraceNode[] => {
   const handoffs = new Map<string, OperationTraceNode>();
-  for (const invocation of invocations) {
+  // Compare identities before redaction, without locale or arrival-order dependence.
+  const compare = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
+  const handoffKey = (item: OfficeInvocationRecord): string => item.handoffId ?? `unattributed:${item.invocationId}`;
+  const ordered = [...invocations].sort((a, b) => compare(handoffKey(a), handoffKey(b))
+    || compare(a.invocationId, b.invocationId));
+  for (const invocation of ordered) {
     const handoffId = invocation.handoffId ?? `unattributed:${invocation.invocationId}`;
     let handoff = handoffs.get(handoffId);
     if (!handoff) {
@@ -52,7 +57,8 @@ export const invocationBranches = (
       prompt: redactSecretShapes(invocation.promptStamp),
       elapsedMs: measurement.latencyMs,
       measurement,
-      children: [modelNode, ...events.filter((event) => event.invocationId === invocation.invocationId).map(eventNode)],
+      children: [modelNode, ...events.filter((event) => event.invocationId === invocation.invocationId)
+        .sort((a, b) => compare(a.id, b.id)).map(eventNode)],
     });
   }
   return [...handoffs.values()];
