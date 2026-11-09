@@ -168,12 +168,26 @@ function scanContractUse(file: string, source: string, seed: ReadonlySet<string>
   return out;
 }
 
-/** Un adaptador del runner es todo archivo que llama a `invokePersona`: recibe texto del modelo. */
+/** Un adaptador del runner es todo archivo que llama a `invokePersona` -- también por un alias de
+ * desestructuración (`const { invokePersona: invoke } = deps`), que el nombre textual por sí solo
+ * no sigue (hallazgo M2, revisión de Rafael sobre de0839c3: un adaptador con ese alias quedaba
+ * fuera del suelo conocido y `scanAdapter` nunca se ejecutaba sobre él). */
 function isRunnerAdapter(file: string, source: string): boolean {
   if (!source.includes('invokePersona')) return false;
+  const sf = parse(file, source);
+  const localNames = new Set(['invokePersona']);
+  walk(sf, (node) => {
+    if (ts.isBindingElement(node) && node.propertyName && ts.isIdentifier(node.propertyName)
+      && node.propertyName.text === 'invokePersona' && ts.isIdentifier(node.name)) {
+      localNames.add(node.name.text);
+    }
+  });
   let calls = false;
-  walk(parse(file, source), (node) => {
-    if (ts.isCallExpression(node) && calleeName(node.expression) === 'invokePersona') calls = true;
+  walk(sf, (node) => {
+    if (ts.isCallExpression(node)) {
+      const name = calleeName(node.expression);
+      if (name && localNames.has(name)) calls = true;
+    }
   });
   return calls;
 }
@@ -228,6 +242,53 @@ function scanAdapter(file: string, source: string): { violations: Violation[]; v
     });
   };
 
+  // Cierre explícito del mundo de fuentes legítimas (hallazgo M1, revisión de Rafael sobre
+  // de0839c3): `checkRead` sólo vigilaba la constante que recibe `parseStructured(...)` directamente,
+  // así que un helper con otro nombre (`decodeCritique`, con un `JSON.parse` propio) que asigna
+  // directo a una variable ya tipada como el contrato se colaba entero -- ni cast, ni `any`, ni
+  // parser conocido, ni lectura sin atar: ninguna regla existente lo nombraba. Cualquier variable
+  // declarada con el tipo del contrato sólo puede recibir `null`/`undefined`, el `.value` de una
+  // lectura ya atada a un validador (siguiendo la constante hasta su propia declaración), o la
+  // llamada directa a un validador -- cualquier otra fuente es la misma fabricación sin validar.
+  const contractNames = contractNamesIn(sf, new Set(CONTRACT_TYPES));
+  const constDeclByName = new Map<string, ts.VariableDeclaration>();
+  walk(sf, (node) => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer
+      && (node.parent.flags & ts.NodeFlags.Const)) {
+      constDeclByName.set(node.name.text, node);
+    }
+  });
+  const isKnownValidatorCall = (expr: ts.Expression): boolean => {
+    const u = unwrap(expr);
+    return ts.isCallExpression(u) && ts.isIdentifier(u.expression) && validators.has(u.expression.text);
+  };
+  const isValidatedSource = (expr: ts.Expression): boolean => {
+    const u = unwrap(expr);
+    if (u.kind === ts.SyntaxKind.NullKeyword) return true;
+    if (ts.isIdentifier(u) && u.text === 'undefined') return true;
+    if (isKnownValidatorCall(u)) return true;
+    if (ts.isPropertyAccessExpression(u) && u.name.text === 'value') {
+      const base = u.expression;
+      if (isKnownValidatorCall(base)) return true;
+      if (ts.isIdentifier(base)) {
+        const decl = constDeclByName.get(base.text);
+        if (decl?.initializer && isKnownValidatorCall(decl.initializer)) return true;
+      }
+    }
+    return false;
+  };
+  walk(sf, (node) => {
+    if (!ts.isVariableDeclaration(node) || !ts.isIdentifier(node.name) || !node.type || !mentions(node.type, contractNames)) return;
+    const varName = node.name.text;
+    const scope = ts.findAncestor(node, (ancestor) => ts.isBlock(ancestor) || ts.isSourceFile(ancestor)) ?? sf;
+    walk(scope, (ref) => {
+      if (!ts.isIdentifier(ref) || ref.text !== varName || ref === node.name) return;
+      const parent = ref.parent;
+      if (!ts.isBinaryExpression(parent) || parent.left !== ref || parent.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
+      if (!isValidatedSource(parent.right)) out.push(at(sf, parent, 'unvalidated-read'));
+    });
+  });
+
   walk(sf, (node) => {
     if ((ts.isAsExpression(node) || ts.isTypeAssertionExpression(node))
       && !(ts.isTypeReferenceNode(node.type) && ts.isIdentifier(node.type.typeName) && node.type.typeName.text === 'const')) {
@@ -274,6 +335,11 @@ describe('lecturas del modelo en los adaptadores del runner (#264 M3)', () => {
     // Quien define `invokePersona` no es un adaptador; quien lo llama, sí —también uno nuevo.
     expect(isRunnerAdapter('context/x.tsx', 'const deps = { invokePersona: async () => "" };')).toBe(false);
     expect(isRunnerAdapter('services/architectureOffice/infrastructure/newPort.ts', 'export const p = (d: D) => d.invokePersona("a", "b");')).toBe(true);
+    // M2, revisión de Rafael: un alias por desestructuración del parámetro también cuenta.
+    expect(isRunnerAdapter(
+      'services/architectureOffice/infrastructure/aliasPort.ts',
+      "export const p = (deps: D) => { const { invokePersona: invoke } = deps; return invoke('a', 'b'); };",
+    )).toBe(true);
   });
 
   it('ningún adaptador real infringe las reglas, y el revisor se lee por su validador', () => {
@@ -330,6 +396,7 @@ describe('lecturas del modelo en los adaptadores del runner (#264 M3)', () => {
         "import { parseStructured } from '../../ai/structuredOutput';\nimport { parseAiJson as pj } from '../../../lib/aiJson';\nvoid pj;",
       ), ['raw-parser']],
       ['directiva `@ts-expect-error`', () => replaceOnce(runnerSource, READ, `// @ts-expect-error\n        critique = parsed.value;\n        ${READ}`), ['ts-directive', 'unvalidated-read']],
+      ['helper ajeno fabrica el contrato sin pasar por el validador (M1, revisión de Rafael)', () => replaceOnce(runnerSource, READ, `critique = decodeCritique(typeof raw === 'string' ? raw : raw.text);\n        ${READ}`), ['unvalidated-read']],
     ])('%s', (_name, mutant, rules) => {
       const mutated = mutant();
       expect(mutated).not.toBe(runnerSource);
