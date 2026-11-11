@@ -77,6 +77,14 @@ Qué comprueba, y con qué umbral, y por qué:
   uno que nunca llegó a registrarse por falta de aprobación. CRÍTICO
   siempre que aparece, sin umbral: no hay lectura inocua de un hook de
   seguridad que nunca corre.
+- **Un job de `hermes cron` activo con 3 o más fallos seguidos** (hallazgo
+  2026-11-11): `kanban-dispatch` lleva días compilando un wrapper bash como
+  Python (el motor elige intérprete por extensión de archivo, nunca por
+  shebang) y nada lo dijo hasta una auditoría manual -- el mismo defecto que
+  ya tuvo `estado-fabrica-watch` con 808 fallos en silencio, esta vez en un
+  job distinto. Se lee `cron/jobs.json` de cada perfil; un job pausado o
+  deshabilitado no cuenta, por diseño -- eso ya es una decisión tomada, no
+  un fallo.
 - **Enlaces de la skill canónica `latam-factory-orchestration` rotos o
   sustituidos por una copia real** (hallazgo 3, revisión del PR #293,
   2026-10-25): se creó la fuente única porque 18 copias ya habían divergido
@@ -458,6 +466,51 @@ def auto_decompose_true_everywhere() -> list[dict]:
     return findings
 
 
+CRON_FAILURE_STREAK_THRESHOLD = 3
+
+
+def cron_job_failure_streaks() -> list[dict]:
+    """Todo job de `hermes cron` ACTIVO (enabled, no pausado/completado) con
+    `failure_streak` >= CRON_FAILURE_STREAK_THRESHOLD en cualquier perfil.
+
+    Hallazgo 2026-11-11: `kanban-dispatch` (perfil arkysupabase) lleva desde
+    el 9-nov compilando un wrapper bash como Python (el motor elige
+    intérprete por extensión de archivo, nunca por shebang) -- 47 fallos
+    seguidos, y nada lo dijo hasta una auditoría manual. Es el mismo defecto
+    de fondo que ya tuvo `estado-fabrica-watch` con 808 fallos en silencio:
+    un job puede estar "activo" en el sentido de seguir programado y
+    reintentando, y aun así no hacer nada útil desde hace días. Se lee
+    `cron/jobs.json` de cada perfil directamente (no hay `hermes cron list
+    --json`); un perfil sin ese fichero, o con JSON corrupto, se omite sin
+    hacer caer el chequeo entero."""
+    if not PROFILES_DIR.is_dir():
+        return []
+    findings = []
+    for profile_dir in sorted(PROFILES_DIR.iterdir()):
+        if not profile_dir.is_dir() or profile_dir.name == ".deleted":
+            continue
+        jobs_path = profile_dir / "cron" / "jobs.json"
+        if not jobs_path.is_file():
+            continue
+        try:
+            data = json.loads(jobs_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        for job in data.get("jobs", []) if isinstance(data, dict) else []:
+            if not isinstance(job, dict) or not job.get("enabled"):
+                continue
+            streak = job.get("failure_streak") or 0
+            if streak >= CRON_FAILURE_STREAK_THRESHOLD:
+                findings.append({
+                    "profile": profile_dir.name,
+                    "job_id": job.get("id"),
+                    "name": job.get("name"),
+                    "failure_streak": streak,
+                    "last_error": (job.get("last_error") or "").splitlines()[0] if job.get("last_error") else None,
+                })
+    return findings
+
+
 def dispatcher_lock_status(gw_states: dict[str, str]) -> dict:
     """¿Alguien tiene de verdad el candado del despachador embebido?
 
@@ -565,6 +618,11 @@ def main() -> int:
         razones.append(f"CANDADO DEL DESPACHADOR SIN DUEÑO: {lock_status['reason']} -- "
                         f"un gateway 'activo' no implica que esté despachando de verdad")
 
+    cron_streaks = cron_job_failure_streaks()
+    for c in cron_streaks:
+        razones.append(f"CRON ROTO: perfil '{c['profile']}', job '{c['name']}' ({c['job_id']}) -- "
+                        f"{c['failure_streak']} fallos seguidos -- \"{c['last_error']}\"")
+
     critico = bool(razones)
     result = {
         "verdict": "ATENCION" if critico else "OK",
@@ -581,6 +639,7 @@ def main() -> int:
         "policy_drift": policy_findings,
         "auto_decompose_global": auto_decompose_global,
         "dispatcher_lock": lock_status,
+        "cron_failure_streaks": cron_streaks,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
                         "un agente trabajando fuera de Kanban por completo (sin tarjeta) sigue siendo invisible"],
