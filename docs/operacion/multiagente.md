@@ -138,6 +138,15 @@ suficiente para que la próxima vez no haga falta redescubrirlo.
 «Fusionada» se mide preguntando a GitHub por la PR de la rama, porque las PR se
 fusionan con *squash* y la rama nunca llega a ser ancestro de `main`.
 
+## Redespacho manual de una tarjeta de Canvas
+
+Sacar una tarjeta de `blocked` a mano (`unblock`, `kanban_unblock`, arrastre en
+el dashboard) no tiene hoy ningún límite estructural. El control decidido el
+2026-11-11 es un comentario que explique qué cambió, obligatorio desde el
+segundo redespacho; no hay tope numérico. Está **especificado, no
+implementado**: contrato, reglas, capas y plan de cortes en
+`scripts/agentes/redespacho-manual.md` (tarjeta `t_0c2ba14a`).
+
 ## Por agente
 
 - **Claude Code** abre sus sesiones en `.claude/worktrees/bridge-*` y las

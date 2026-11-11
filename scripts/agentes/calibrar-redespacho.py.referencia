@@ -1,0 +1,84 @@
+"""Calibración de solo lectura de las reglas del spec contra el tablero real."""
+import json, re, sqlite3, sys, unicodedata, collections
+
+DB = sys.argv[1]
+c = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+c.row_factory = sqlite3.Row
+
+STOP = set("el la los las un una unos unas de del al y o u e en a con por para que se su sus lo es son fue ya no ni sin sobre como mas pero si the of to and in for is a an".split())
+GENERIC = ["reintentando", "reintento", "retry", "reanudar", "reanudo", "continuar", "continuo", "desbloqueo", "desbloquear", "ok", "listo", "ya esta", "de nuevo", "otra vez"]
+
+def norm(s):
+    s = unicodedata.normalize("NFKD", s.casefold())
+    return "".join(ch for ch in s if not unicodedata.combining(ch))
+
+def toks(s):
+    return [t for t in re.findall(r"[a-z0-9_#./>-]+", norm(s)) if t not in STOP and len(t) > 1]
+
+REF_PATTERNS = {
+    "sha": r"\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b",
+    "pr": r"(?:#|\bPR\s?)\d{2,}",
+    "card": r"\bt_[0-9a-f]{8}\b",
+    "path": r"\b[\w.-]+/[\w./-]+|\b[\w-]+\.(?:sh|py|md|ts|tsx|json|yaml|yml|sql)\b",
+    "delta": r"\d+\s*(?:->|→|=>|a)\s*\d+|\bde\s+\S+\s+a\s+\S+",
+    "kv": r"\b[a-z_]{3,}\s*[=:]\s*\S+",
+}
+
+def referents(s):
+    out = {}
+    for k, p in REF_PATTERNS.items():
+        m = re.findall(p, s, flags=re.I if k != "sha" else 0)
+        if m:
+            out[k] = m
+    return out
+
+def jac(a, b):
+    a, b = set(a), set(b)
+    return len(a & b) / len(a | b) if a | b else 0.0
+
+def check(reason, title, prev_block, prev_comment):
+    fails = []
+    t = toks(reason)
+    if len(reason) < 40 or len(set(t)) < 6:
+        fails.append("R2-corto")
+    tt = set(toks(title))
+    ct = [x for x in set(t)]
+    if ct and sum(1 for x in ct if x not in tt) / len(ct) < 0.5:
+        fails.append("R3-eco-titulo")
+    if prev_block and jac(t, toks(prev_block)) >= 0.6:
+        fails.append("R4a-repite-bloqueo")
+    if prev_comment and jac(t, toks(prev_comment)) >= 0.8:
+        fails.append("R4b-repite-comentario")
+    n = norm(reason)
+    if any(re.search(rf"\b{re.escape(g)}\b", n) for g in GENERIC) and len(t) < 8:
+        fails.append("R4c-generico")
+    if not referents(reason):
+        fails.append("R5-sin-referente")
+    return fails
+
+tasks = [r["task_id"] for r in c.execute("select distinct task_id from task_events where kind in ('unblocked','review_reopened')")]
+stats = collections.Counter()
+rows_out = []
+for tid in tasks:
+    title = c.execute("select title from tasks where id=?", (tid,)).fetchone()["title"]
+    evs = c.execute("select id,kind,created_at from task_events where task_id=? and kind in ('unblocked','review_reopened') order by id", (tid,)).fetchall()
+    prev_comment = None
+    for n, ev in enumerate(evs, 1):
+        pb = c.execute("select payload from task_events where task_id=? and id<? and kind in ('blocked','block_loop_detected') order by id desc limit 1", (tid, ev["id"])).fetchone()
+        prev_block = (json.loads(pb["payload"]).get("reason") if pb and pb["payload"] else "") or ""
+        lastrun = c.execute("select max(ended_at) e from task_runs where task_id=? and ended_at is not null and ended_at<=?", (tid, ev["created_at"])).fetchone()["e"] or 0
+        com = c.execute("select author,body,created_at from task_comments where task_id=? and created_at between ? and ? and (body like 'UNBLOCK:%' or body like 'CHANGES REQUESTED:%') order by id desc limit 1", (tid, lastrun, ev["created_at"] + 2)).fetchone()
+        gated = n >= 2
+        if not com:
+            res = ["R1-sin-comentario"]
+            body = ""
+        else:
+            body = com["body"].split(":", 1)[1].strip()
+            res = check(body, title, prev_block, prev_comment)
+            prev_comment = body
+        stats[(gated, "ok" if not res else "falla")] += 1
+        rows_out.append((tid, n, ev["id"], gated, res, body[:90].replace("\n", " ")))
+print(dict(stats))
+for r in rows_out:
+    if r[3] or r[4]:
+        print(r[0], "n=%d" % r[1], "evt", r[2], "GATED" if r[3] else "libre", r[4] or "OK", "|", r[5])
