@@ -92,6 +92,39 @@ sólo existía en un disco. Las reglas de abajo hacen visible cada una.
    checkout principal no está limpio en `main`, si hay cambios sin commit sobre
    una tarea ya fusionada o sobre una base anterior a `main`.
 
+## Una tarea en vuelo no sigue a `main` — a propósito
+
+Una tarea fija su base al reservarse (`nueva-tarea.sh` crea la rama desde
+`origin/main` en ese instante) y no se actualiza sola después. Si `main`
+recibe una corrección mientras la tarea sigue abierta —un script, una regla
+de `AGENTS.md`, un límite de un perfil—, esa corrección **no llega** a la
+tarea en vuelo. Fusionar no es lo mismo que propagar.
+
+Confirmado en vivo el 2026-11-02/03: el PR #307 (separa pruebas de build
+para que un worker no las encadene en el mismo proceso, evitando agotar su
+techo de memoria) se fusionó mientras `t_8c2134ab` estaba bloqueada. Al
+reanudarla, su rama seguía en la base de antes del #307 — nadie la había
+traído a `main` — y repitió la cadena vieja sin dividir, sin ningún
+beneficio del PR que se acababa de fusionar para arreglar justo eso.
+
+**Es intencional, no un descuido.** La regla 4 (16a/16b) ata la revisión a
+un SHA inmutable exacto —"el mismo SHA sin editarlo"—; traer `main` a mitad
+de una revisión en curso invalidaría en silencio ese SHA y lo que ya se
+dictaminó sobre él. Un rebase automático de toda tarea en vuelo contra cada
+cambio en `main` resolvería la propagación al coste de romper esa
+disciplina, por un beneficio que en la práctica es raro: con el tope de 3
+tareas simultáneas, muy pocas veces hay una tarea en vuelo justo cuando se
+fusiona algo que de verdad le afecta. No se adopta.
+
+**Lo que sí queda dimensionado, sin construir:** cuando se fusione un
+cambio en una categoría concreta y pequeña —`scripts/agentes/`, una regla
+operativa de `AGENTS.md`, o el `config.yaml` nativo de un perfil—, dejar un
+comentario en kanban en cada tarea abierta que use ese mecanismo o ese
+perfil, señalando el PR y lo que cambia. No un rebase forzado: una señal
+visible que el propio worker decide si recoger en su siguiente turno, y que
+un humano también puede leer. Nadie lo construyó todavía; esta nota es
+suficiente para que la próxima vez no haga falta redescubrirlo.
+
 ## Las herramientas
 
 | Script | Qué hace | ¿Cambia algo? |
