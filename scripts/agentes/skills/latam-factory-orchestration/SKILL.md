@@ -68,6 +68,53 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 10. Elena prepara release y José consolida solo después de pruebas y revisión. Sergio propone optimizaciones con antes/después verificables; no las aplica sin autorización. Guardar estándares reutilizables en Skills, decisiones de proyecto en ADR y memoria personal solo para hechos durables del agente.
 
+## Cerrar una revisión de PR: campo estructurado, nunca solo prosa [2026-11-12]
+
+El camino para cualquier cambio de código sigue siendo el mismo:
+**worktree + PR, revisión independiente de Rafael o Alexis, y el merge se le
+pide a José** — nunca se fusiona porque el propio revisor lo apruebe, ni
+porque el autor decida que ya está listo.
+
+**Lo que cambia hoy es cómo se deja constancia del veredicto.** Diagnóstico
+real, 12 revisiones del mismo día, mismos dos revisores: cada una escribió
+"Veredicto: ..." en una frase distinta — `sobre <sha>`, `en <sha>`, `SHA:
+<sha>` en línea aparte, `sobre SHA <sha>`, `sobre el SHA exacto <sha>` —
+hasta el mismo revisor entre dos tarjetas suyas. Un lector automático
+(`auto_merge_watch.py`) solo pudo confiar en 2 de los 10 veredictos reales
+emitidos. **El fallo no es de quien lee la prosa — es que la prosa nunca
+tuvo un contrato.** Hacer el lector más permisivo es la trampa de siempre:
+el día que alguien escriba "aprobado, con reservas menores" un lector
+permisivo tiene que adivinar si eso cuenta o no. La solución es que quien
+**emite** el veredicto lo escriba siempre igual.
+
+**Por eso, al cerrar cualquier tarjeta de revisión de un PR** (`hermes
+kanban complete` o `kanban edit`), el campo `--metadata` es obligatorio y
+lleva exactamente estas tres claves — además de la prosa de siempre, nunca
+en lugar de ella:
+
+```
+--metadata '{"veredicto": "APROBADO", "sha": "<40 hex del head exacto>", "pr": <número entero>}'
+```
+
+`veredicto` es `"APROBADO"` o `"CAMBIOS_PEDIDOS"`, en mayúsculas y con guión
+bajo — nunca "Aprobado", "cambios pedidos" ni ninguna otra variante.
+`sha` es el SHA completo de 40 caracteres hexadecimales del commit que de
+verdad se revisó — el mismo que ya se cita en la prosa, aquí además en un
+campo que una máquina puede comparar sin interpretar nada. `pr` es el
+número del PR, como entero, no como texto ni con el símbolo `#`.
+
+**La prosa sigue siendo necesaria y no se reduce**: hallazgos, evidencia
+ejecutada y límites explícitos siguen yendo en el comentario o en
+`--result`, exactamente como hoy. El campo estructurado no sustituye el
+informe — es el resumen de una línea que hace que el informe sea legible
+sin tener que leerlo entero.
+
+**Un "cambios pedidos" posterior invalida cualquier aprobación anterior**,
+aunque sea de otro revisor — es la regla de José del 12-nov-2026 para la
+fusión automática, pero vale igual para cualquier lectura humana: el
+veredicto que cuenta es siempre el más reciente de la tarjeta, nunca "hubo
+una aprobación en algún momento".
+
 ## José coordina y no ejecuta el trabajo que ha asignado a otro
 Criterio 3 de la historia de usuario de José: delega en lugar de ejecutar
 indiscriminadamente. Esto no es una preferencia de estilo: si José crea una
