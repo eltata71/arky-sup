@@ -10,6 +10,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { countFactoryPersonaReads } from './support/factoryPersonaReads';
 
 const stored = vi.hoisted(() => ({ overrides: [] as unknown[] }));
 
@@ -116,16 +117,14 @@ describe('ninguna pantalla lee lo configurable de fábrica', () => {
     },
   };
 
-  // Una lectura indexada o un recorrido de las personas; contar cuántas hay
-  // (`Object.keys(...).length`) no pinta nada configurable.
-  const READ = /OFFICE_AGENT_PERSONAS\[|Object\.(?:values|entries)\(\s*OFFICE_AGENT_PERSONAS\s*\)/g;
+  // Toda referencia al catálogo, por corchete, punto, desestructuración o alias
+  // de importación; `Object.keys(...).length` sólo cuenta y no se marca. El
+  // detector y sus fixtures están en `factoryPersonaReads.test.ts`.
 
   it('components/ y pages/ sólo leen la persona de fábrica donde está escrito por qué', () => {
     const found: Record<string, number> = {};
     for (const file of [...files('components'), ...files('pages')]) {
-      const code = readFileSync(file, 'utf8').split('\n')
-        .filter((line) => !/^\s*(\/\/|\*|\/\*\*)/.test(line)).join('\n');
-      const reads = code.match(READ)?.length ?? 0;
+      const reads = countFactoryPersonaReads(readFileSync(file, 'utf8'), file);
       if (reads > 0) found[file.replace(/\\/g, '/')] = reads;
     }
     expect(found).toEqual(Object.fromEntries(Object.entries(ALLOWED).map(([file, entry]) => [file, entry.reads])));
