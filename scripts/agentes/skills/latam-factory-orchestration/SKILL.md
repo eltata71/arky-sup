@@ -65,7 +65,7 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 6. Antes de modificar código, exigir repositorio autorizado y worktree por escritor; un solo propietario por archivo. Si hay conflicto, serializar con dependencia. Un worktree o toolset no es un sandbox ni impide acceso a secretos del host. No atribuir aislamiento sin evidencia.
 7. Ejecutar pruebas RED/GREEN, lint/type-check/build y verificaciones aplicables. Registrar comandos, exit codes, SHA, archivos y evidencias adjuntas a la tarjeta. Indicar gates no disponibles y por qué. No usar simulaciones como prueba de inferencia real.
 8. Mantener heartbeat y comentarios para trabajo prolongado. Respetar estados nativos, bloqueo con motivo, reintento acotado, recuperación nativa y referencias a sesión/ejecución. No almacenar un estado alternativo en metadatos.
-9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
+9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. **`request-review` siempre lleva `--reviewer <perfil>` y nunca el propio nombre** — ver más abajo "`request-review` siempre lleva `--reviewer`" para el porqué y qué hacer si el despachador devuelve la tarjeta igual. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 10. Elena prepara release y José consolida solo después de pruebas y revisión. Sergio propone optimizaciones con antes/después verificables; no las aplica sin autorización. Guardar estándares reutilizables en Skills, decisiones de proyecto en ADR y memoria personal solo para hechos durables del agente.
 
 ## José coordina y no ejecuta el trabajo que ha asignado a otro
@@ -130,6 +130,54 @@ justo lo que este documento quiere reforzar — un coordinador que admite su
 propio atajo sin que se lo descubran es más valioso que uno que nunca se
 equivoca pero tampoco lo diría. La regla de arriba corrige el atajo; esto no
 lo corrige, lo sostiene.
+
+## `request-review` siempre lleva `--reviewer`, y nunca el propio nombre (2026-11-12)
+
+`hermes kanban request-review <id>` acepta `--reviewer <perfil>` y **reasigna
+la tarjeta antes del siguiente despacho** — pero si se llama sin esa opción,
+la tarjeta queda con `reviewer: None` y el despachador, en su siguiente
+pasada, la vuelve a reclamar bajo el **mismo `assignee` que ya tenía**: el
+implementador. No es un fallo del motor, es la consecuencia de no haberle
+dicho a quién dar el trabajo — confirmado leyendo `claim_review_task` y el
+bucle de despacho del motor instalado: la tarea `review` se reclama con el
+`assignee` que tenga la fila en ese momento, sea quien sea.
+
+Pasó de verdad tres veces el 2026-11-11/12 (`t_c76f34e8`, `t_8e7c7e0a`,
+`t_0c2ba14a`): tres implementadores pidieron revisión sin `--reviewer`, los
+tres se recibieron a sí mismos de vuelta, y los tres murieron (`exit 1`) en
+el segundo intento porque ninguna instrucción les decía qué hacer al
+encontrarse de nuevo con su propia tarjeta ya entregada. Uno de los tres lo
+vio venir y lo dijo con sus propias palabras antes de caer: **"Coordinación:
+solicité revisión, pero el dispatcher volvió a asignarla a ricardo-devops.
+Dejé aviso a José: hace falta otro revisor; no he autoaprobado la
+entrega."** — el diagnóstico correcto, hecho por el propio agente, sin
+instrucción que lo recompensara ni manera de actuar sobre él.
+
+**Regla, en dos partes:**
+
+1. **Toda llamada a `request-review` lleva `--reviewer <perfil>`, nunca se
+   omite.** El perfil nombrado nunca es el propio implementador — eso es
+   autoaprobación con otro nombre. Para el tablero `arky-maintenance`, el
+   revisor es Rafael o Alexis, el que tenga menos tarjetas activas en ese
+   momento (`hermes kanban stats` o una consulta de conteo); en empate,
+   Rafael. Para otro tablero, cualquier perfil con capacidad de revisión
+   distinto del implementador, nunca decidido por el propio implementador
+   sobre sí mismo.
+
+   ```
+   hermes kanban request-review <id> --reviewer rafael \
+     --summary "<qué se implementó y cómo se verificó>"
+   ```
+
+2. **Si el despachador entrega de vuelta una tarjeta propia que ya está en
+   revisión, eso es un error de asignación, no una señal para seguir
+   trabajando.** Nunca autoaprobar ni declarar el trabajo revisado por
+   seguir adelante. El agente que se encuentra en esta situación debe
+   bloquear la tarjeta con el motivo declarado — "redespachada a mí mismo
+   sin revisor asignado, pendiente de reasignación" — y detenerse ahí, en
+   vez de intentar continuar sin saber qué hacer y caer con `exit 1` sin
+   dejar nada escrito. Un bloqueo con motivo es recuperable por cualquiera
+   que lo lea; un `crashed` sin comentario solo deja un código de salida.
 
 ## El auto-descomponedor está apagado (`auto_decompose: false`, 2026-10-26)
 El tick del gateway recorría las tarjetas en `triage` de todos los tableros y
