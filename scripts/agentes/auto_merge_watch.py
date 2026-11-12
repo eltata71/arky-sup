@@ -15,6 +15,15 @@ a que una persona note un PR aprobado con CI verde, pero tampoco debe poder
 fusionar nada por su cuenta en el primer día ni tocar nada que roce permisos,
 seguridad o el motor de Hermes.
 
+## La condición primera -- "el visto bueno de Rafael y Alexis es
+## prerrequisito para poder realizar una fusión automática" (Jose, 2026-11-12)
+
+Ver `check_current_approval` y el bloque de comentario que la precede en el
+código: es la PRIMERA cosa que `evaluate_pr` comprueba, antes de clasificar
+rutas, antes de mirar CI, antes de nada. No es una clase de riesgo ni un
+parámetro del libro de decisiones -- es estructura. Nada en este fichero la
+desactiva.
+
 ## Las tres clasificaciones, en ese orden
 
 1. **ALTO_RIESGO** -- cualquier ruta en `SIEMPRE_ALTO_RIESGO`, o el diff/título/
@@ -286,11 +295,19 @@ class Verdict:
     task_id: str
 
 
-def find_review_verdict(pr_number: int, *, db_path: Path = BOARD_DB) -> Optional[Verdict]:
+def find_review_verdict(pr_number: int, *, db_path: Optional[Path] = None) -> Optional[Verdict]:
     """Última tarjeta cuyo título cita `PR #<N>` (convención de hoy), y su
-    comentario más reciente con un `Veredicto:` reconocible. None si no hay
-    tarjeta o ningún comentario tiene el patrón -- nunca se inventa un
-    veredicto."""
+    rastro de veredicto más reciente -- en comentarios (`task_comments`) O
+    en el resumen del cierre (`task_runs.summary`, escrito por
+    `hermes kanban complete --result`). Hoy ocurren las dos: #312/#316
+    comentaron "Veredicto: ..." mientras corrían; #313 solo lo dejó en el
+    resumen al completar. Las dos fuentes se mezclan por fecha real y gana
+    la más reciente -- nunca "la que se encontró primero". None si no hay
+    tarjeta o nada tiene el patrón -- nunca se inventa un veredicto.
+    ``db_path`` se resuelve contra el global ``BOARD_DB`` en el momento de
+    la llamada, no al definir la función -- para que una prueba pueda
+    sustituir ``amw.BOARD_DB`` sin tener que pasar el argumento."""
+    db_path = db_path if db_path is not None else BOARD_DB
     if not db_path.is_file():
         return None
     con = sqlite3.connect(str(db_path))
@@ -304,12 +321,23 @@ def find_review_verdict(pr_number: int, *, db_path: Path = BOARD_DB) -> Optional
         if row is None:
             return None
         task_id = row[0]
+
+        candidates: list[tuple[float, str, str]] = []  # (timestamp, author, text)
         cur.execute(
-            "SELECT author, body FROM task_comments WHERE task_id = ? ORDER BY created_at DESC",
+            "SELECT author, body, created_at FROM task_comments WHERE task_id = ?",
             (task_id,),
         )
-        for author, body in cur.fetchall():
-            m = _VERDICT_RE.search(body or "")
+        candidates.extend((float(ts or 0), author, body or "") for author, body, ts in cur.fetchall())
+
+        cur.execute(
+            "SELECT profile, summary, ended_at FROM task_runs WHERE task_id = ? AND summary IS NOT NULL",
+            (task_id,),
+        )
+        candidates.extend((float(ts or 0), profile or "", summary or "") for profile, summary, ts in cur.fetchall())
+
+        candidates.sort(key=lambda c: c[0], reverse=True)
+        for _ts, author, text in candidates:
+            m = _VERDICT_RE.search(text)
             if m:
                 return Verdict(outcome=m.group(1).upper(), sha=m.group(2).lower(), author=author, task_id=task_id)
         return None
@@ -341,37 +369,107 @@ class Decision:
 
 REVIEWER_PROFILES = {"rafael", "alexis"}
 
+# ---------------------------------------------------------------------------
+# REGLA DE JOSE, 2026-11-12, TEXTUAL: "el visto bueno de Rafael y Alexis es
+# prerrequisito para poder realizar una fusión automática". No es un
+# chequeo más de evaluate_pr -- es la PRIMERA comprobación, y si falla, el
+# resto de la función NO SE EJECUTA. Da igual la clase de riesgo, da igual
+# que el CI esté verde, da igual que las rutas sean inocentes.
+#
+# No es una clase de riesgo que se pueda ensanchar con una línea del libro
+# de decisiones (enabled_classes_from_ledger) -- esa palanca ensancha QUÉ
+# RUTAS son candidatas, nunca SI hace falta aprobación. Esta función no lee
+# el libro de decisiones ni ninguna variable de entorno: no hay ningún
+# parámetro, en código ni en configuración, que la desactive. Quien quiera
+# fusionar sin pasar por Rafael o Alexis lo hace a mano, con `gh pr merge`
+# y su propio nombre -- no a través de este programa.
+#
+# "Vigente" = sobre el SHA actual exacto, por Rafael o Alexis, y el
+# veredicto MÁS RECIENTE de la tarjeta manda (nunca "hubo una aprobación en
+# algún momento"): un "cambios pedidos" posterior invalida una aprobación
+# anterior, aunque sea de otro revisor -- el más restrictivo manda. Fallar
+# cerrado ante cualquier duda: sin tarjeta, sin comentario reconocible,
+# autor que no es Rafael ni Alexis, SHA que no coincide, o un error al
+# consultar `gh`/la base de Kanban -- todo cuenta como "no hay aprobación",
+# nunca como "se asume que sí".
+#
+# No lo "optimices" quitándolo de aquí arriba ni fundiéndolo con las demás
+# comprobaciones: que viva solo, primero y con este comentario es a
+# propósito, para que nadie lo lea como un chequeo redundante y lo mueva.
+# ---------------------------------------------------------------------------
+
+def _sha_matches(a: str, b: str) -> bool:
+    """Coincidencia exacta de prefijo entre dos SHA, en cualquier longitud
+    (7-40 hex). Cadenas vacías nunca coinciden -- un SHA ausente no es un
+    comodín."""
+    a, b = (a or "").lower(), (b or "").lower()
+    if len(a) < 7 or len(b) < 7:
+        return False
+    shorter, longer = (a, b) if len(a) <= len(b) else (b, a)
+    return longer.startswith(shorter)
+
+
+@dataclass
+class ApprovalCheck:
+    ok: bool
+    reason: str
+    verdict: Optional["Verdict"] = None
+
+
+def check_current_approval(pr_number: int, head_sha: str) -> ApprovalCheck:
+    """La regla de Jose, aislada en una función para que `evaluate_pr` la
+    llame una vez, primero, y nada más. No decide clase de riesgo, no mira
+    CI, no mira rutas -- solo responde "¿hay un APROBADO de Rafael o Alexis
+    sobre `head_sha`, y es el veredicto más reciente de la tarjeta?"."""
+    if not head_sha:
+        return ApprovalCheck(False, "no se pudo determinar el SHA actual del PR (gh no respondió con certeza)")
+    try:
+        verdict = find_review_verdict(pr_number)
+    except Exception as exc:  # sqlite bloqueada, fichero corrupto, lo que sea -- fallar cerrado
+        return ApprovalCheck(False, f"no se pudo leer el veredicto con certeza ({exc}); se trata como ausente")
+    if verdict is None:
+        return ApprovalCheck(False, "sin veredicto reconocible todavía")
+    if verdict.author not in REVIEWER_PROFILES:
+        return ApprovalCheck(False, f"veredicto de '{verdict.author}', no es Rafael ni Alexis", verdict)
+    if verdict.outcome != "APROBADO":
+        return ApprovalCheck(False, "el veredicto más reciente es CAMBIOS PEDIDOS", verdict)
+    if not _sha_matches(verdict.sha, head_sha):
+        return ApprovalCheck(False, f"el SHA aprobado ({verdict.sha}) no coincide con el actual ({head_sha[:12]})", verdict)
+    return ApprovalCheck(True, f"{verdict.author} aprobó {verdict.sha}, vigente sobre el SHA actual", verdict)
+
 
 def evaluate_pr(pr_number: int, *, enabled_classes: set[str]) -> Decision:
-    meta = gh_pr_view(pr_number, "title,headRefOid,mergeStateStatus,mergeable,isDraft,body")
+    try:
+        meta = gh_pr_view(pr_number, "title,headRefOid,mergeStateStatus,mergeable,isDraft,body")
+    except Exception as exc:
+        return Decision(pr_number, f"PR #{pr_number}", "RETENER", "SIN_APROBACION",
+                         f"no se pudo consultar gh con certeza ({exc}); se trata como sin aprobación")
     title = meta.get("title", "")
     head_sha = meta.get("headRefOid", "")
 
+    # PRIMERA COMPROBACIÓN, INVIOLABLE -- ver el bloque de comentarios arriba.
+    # Si esto falla, no se calcula clase de riesgo, no se lee el diff, no se
+    # mira CI: se detiene aquí mismo.
+    approval = check_current_approval(pr_number, head_sha)
+    if not approval.ok:
+        return Decision(pr_number, title, "RETENER", "SIN_APROBACION", approval.reason, approval.verdict, head_sha)
+
+    # A partir de aquí YA hay aprobación vigente de Rafael o Alexis. Lo que
+    # sigue son controles adicionales -- clase de riesgo, CI, mergeabilidad
+    # -- nunca un sustituto de la comprobación de arriba.
+    verdict = approval.verdict
     if meta.get("isDraft"):
-        return Decision(pr_number, title, "RETENER", "ALTO_RIESGO", "PR en borrador", head_sha=head_sha)
+        return Decision(pr_number, title, "RETENER", "ALTO_RIESGO", "PR en borrador", verdict, head_sha)
 
     files = gh_pr_diff_names(pr_number)
     diff_text = gh_pr_diff_text(pr_number)
     backstop = content_backstop_hit(title=title, body=meta.get("body", ""), diff_text=diff_text)
     if backstop:
-        return Decision(pr_number, title, "RETENER", "ALTO_RIESGO", backstop, head_sha=head_sha)
+        return Decision(pr_number, title, "RETENER", "ALTO_RIESGO", backstop, verdict, head_sha)
 
     cls = classify_paths(files, enabled_classes=enabled_classes)
     if cls.risk_class == "ALTO_RIESGO":
-        return Decision(pr_number, title, "RETENER", "ALTO_RIESGO", cls.reason, head_sha=head_sha)
-
-    verdict = find_review_verdict(pr_number)
-    if verdict is None:
-        return Decision(pr_number, title, "RETENER", cls.risk_class, "sin veredicto reconocible todavía", head_sha=head_sha)
-    if verdict.author not in REVIEWER_PROFILES:
-        return Decision(pr_number, title, "RETENER", cls.risk_class,
-                         f"veredicto de '{verdict.author}', no es un revisor reconocido", verdict, head_sha)
-    if verdict.outcome != "APROBADO":
-        return Decision(pr_number, title, "RETENER", cls.risk_class, "cambios pedidos vigentes", verdict, head_sha)
-    if not head_sha.startswith(verdict.sha) and not verdict.sha.startswith(head_sha[: len(verdict.sha)]):
-        return Decision(pr_number, title, "RETENER", cls.risk_class,
-                         f"el SHA aprobado ({verdict.sha}) no coincide con el actual ({head_sha[:12]})",
-                         verdict, head_sha)
+        return Decision(pr_number, title, "RETENER", "ALTO_RIESGO", cls.reason, verdict, head_sha)
 
     ci = gh_commit_ci_status(head_sha)
     if ci != "green":

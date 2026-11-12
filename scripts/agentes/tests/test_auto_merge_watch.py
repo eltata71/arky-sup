@@ -4,11 +4,13 @@ Ejecutar: python3 scripts/agentes/tests/test_auto_merge_watch.py
 
 Cubre, en orden: clasificación por rutas (caso #312/#313/#319 reales de
 hoy), el backstop de contenido, el libro de decisiones (incluida la falla
-cerrada ante una línea mal formada), y el freno -- simulando una fusión que
-rompe el CI y comprobando que el fichero de corte se escribe y que bloquea
-TODAS las clases, no solo la que falló.
+cerrada ante una línea mal formada), la REGLA DE JOSE del 12-nov (aprobación
+vigente de Rafael/Alexis como primera comprobación inviolable), y el freno
+-- simulando una fusión que rompe el CI y comprobando que el fichero de
+corte se escribe y que bloquea TODAS las clases, no solo la que falló.
 """
 import json
+import sqlite3
 import sys
 import tempfile
 from pathlib import Path
@@ -106,6 +108,123 @@ def test_decision_ledger():
               amw.enabled_classes_from_ledger(missing) == set())
 
 
+def _make_review_board(tmp_dir: Path, pr_number: int, comments: list[tuple[str, str, int]]) -> Path:
+    """comments: [(author, body, created_at)], más viejo primero.
+    Crea una tarjeta "Revisión PR #<N>..." con esos comentarios, igual que
+    las de hoy en el tablero real."""
+    db = tmp_dir / f"board-{pr_number}.db"
+    con = sqlite3.connect(str(db))
+    con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER)")
+    con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
+    con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, ended_at INTEGER)")
+    con.execute("INSERT INTO tasks VALUES (?, ?, ?)", (f"t_fake{pr_number}", f"Revisión PR #{pr_number}: algo", 1))
+    for author, body, ts in comments:
+        con.execute("INSERT INTO task_comments VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", author, body, ts))
+    con.commit()
+    con.close()
+    return db
+
+
+def test_approval_is_the_first_and_only_gate_when_it_fails():
+    print("=== REGLA DE JOSE (12-nov): aprobación vigente, primera e inviolable ===")
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+
+        def check_approval(pr, sha, db_path):
+            amw.BOARD_DB = db_path
+            return amw.check_current_approval(pr, sha)
+
+        # Caso 1: sin ningún veredicto -> no hay aprobación.
+        db = _make_review_board(tmp, 501, [])
+        a = check_approval(501, "a" * 40, db)
+        check("sin veredicto -> ok=False", a.ok is False)
+
+        # Caso 2: aprobado, pero sobre un SHA ANTERIOR (el error que casi
+        # cometimos con #313) -> no cuenta.
+        db = _make_review_board(tmp, 502, [
+            ("rafael", "Veredicto: APROBADO sobre aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 100),
+        ])
+        a = check_approval(502, "b" * 40, db)
+        check("aprobación sobre un SHA anterior -> ok=False (el error de #313)", a.ok is False)
+
+        a = check_approval(502, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", db)
+        check("mismo SHA que el aprobado -> ok=True", a.ok is True)
+
+        # Caso 2b (real, encontrado en la prueba en seco de hoy): el
+        # veredicto llegó por `kanban complete --result`, en task_runs.summary,
+        # no como comentario -- exactamente lo que pasó con #313 hoy.
+        con = sqlite3.connect(str(db))
+        con.execute(
+            "INSERT INTO task_runs VALUES (?, ?, ?, ?)",
+            ("t_fake502", "alexis", "Veredicto: APROBADO sobre aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, reconfirmación", 150),
+        )
+        con.commit()
+        con.close()
+        a = check_approval(502, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", db)
+        check("veredicto solo en task_runs.summary (sin comentario) -> se encuentra igual (caso real #313)",
+              a.ok is True and a.verdict.author == "alexis")
+
+        # Caso 3: Rafael aprueba, LUEGO Alexis pide cambios sobre el mismo SHA
+        # -> el más restrictivo manda, aunque el de Rafael sea una
+        # aprobación real.
+        sha = "c" * 40
+        db = _make_review_board(tmp, 503, [
+            ("rafael", f"Veredicto: APROBADO sobre {sha}", 100),
+            ("alexis", f"Veredicto: CAMBIOS PEDIDOS sobre {sha}", 200),
+        ])
+        a = check_approval(503, sha, db)
+        check("cambios pedidos DESPUÉS de una aprobación de otro revisor -> ok=False", a.ok is False)
+
+        # Caso 4: autor que no es Rafael ni Alexis -> no cuenta, aunque diga
+        # APROBADO sobre el SHA correcto.
+        db = _make_review_board(tmp, 504, [
+            ("jose", f"Veredicto: APROBADO sobre {sha}", 100),
+        ])
+        a = check_approval(504, sha, db)
+        check("veredicto de un autor que no es Rafael/Alexis -> ok=False", a.ok is False)
+
+        # Caso 5: el orden de evaluate_pr -- si la aprobación falla, no debe
+        # llegar a llamar classify_paths ni content_backstop_hit ni pedir CI.
+        # Se comprueba sustituyendo esas funciones por espías que fallan si
+        # se les llama.
+        def _boom(*a, **k):
+            raise AssertionError("se evaluó algo después de que la aprobación fallara -- viola la regla de Jose")
+
+        orig_classify = amw.classify_paths
+        orig_backstop = amw.content_backstop_hit
+        orig_ci = amw.gh_commit_ci_status
+        orig_diff_names = amw.gh_pr_diff_names
+        orig_diff_text = amw.gh_pr_diff_text
+        orig_pr_view = amw.gh_pr_view
+        orig_find_verdict = amw.find_review_verdict
+        amw.classify_paths = _boom
+        amw.content_backstop_hit = _boom
+        amw.gh_commit_ci_status = _boom
+        amw.gh_pr_diff_names = _boom
+        amw.gh_pr_diff_text = _boom
+        amw.gh_pr_view = lambda pr, fields: {"title": "x", "headRefOid": "d" * 40, "isDraft": False, "body": ""}
+        amw.find_review_verdict = lambda pr, db_path=None: None  # nunca hay veredicto en este caso
+        try:
+            decision = amw.evaluate_pr(505, enabled_classes={"A1"})
+            check("evaluate_pr no revienta, y se detiene en SIN_APROBACION sin evaluar nada más",
+                  decision.action == "RETENER" and decision.risk_class == "SIN_APROBACION")
+        except AssertionError as exc:
+            check(str(exc), False)
+        finally:
+            amw.classify_paths = orig_classify
+            amw.content_backstop_hit = orig_backstop
+            amw.gh_commit_ci_status = orig_ci
+            amw.gh_pr_diff_names = orig_diff_names
+            amw.gh_pr_diff_text = orig_diff_text
+            amw.gh_pr_view = orig_pr_view
+            amw.find_review_verdict = orig_find_verdict
+
+        # Caso 6: gh no responde con certeza (headRefOid vacío/ausente) ->
+        # se trata como sin aprobación, nunca como "se asume que sí".
+        a = amw.check_current_approval(506, "")
+        check("sin SHA actual determinado -> ok=False (falla cerrado)", a.ok is False)
+
+
 def test_breaker_trips_and_blocks_everything():
     print("=== el freno: simular una fusión que rompe CI ===")
     with tempfile.TemporaryDirectory() as d:
@@ -149,6 +268,7 @@ def main():
     test_classification_deny_wins()
     test_content_backstop()
     test_decision_ledger()
+    test_approval_is_the_first_and_only_gate_when_it_fails()
     test_breaker_trips_and_blocks_everything()
     print(f"\n{PASS} ok, {FAIL} fallo(s)")
     return 1 if FAIL else 0
