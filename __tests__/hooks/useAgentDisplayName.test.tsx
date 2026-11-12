@@ -124,7 +124,7 @@ describe('ninguna pantalla lee lo configurable de fábrica', () => {
   it('components/ y pages/ sólo leen la persona de fábrica donde está escrito por qué', () => {
     const found: Record<string, number> = {};
     for (const file of [...files('components'), ...files('pages')]) {
-      const reads = countFactoryPersonaReads(readFileSync(file, 'utf8'));
+      const reads = countFactoryPersonaReads(readFileSync(file, 'utf8'), file);
       if (reads > 0) found[file.replace(/\\/g, '/')] = reads;
     }
     expect(found).toEqual(Object.fromEntries(Object.entries(ALLOWED).map(([file, entry]) => [file, entry.reads])));
