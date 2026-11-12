@@ -89,8 +89,27 @@ sólo existía en un disco. Las reglas de abajo hacen visible cada una.
 4. **El trabajo se publica el mismo día.** Una rama que sólo existe en un disco
    es trabajo que nadie puede revisar, continuar ni recuperar.
 5. **Antes de empezar, `estado.sh` sin avisos.** Sale con código 1 si el
-   checkout principal no está limpio en `main`, si hay cambios sin commit sobre
-   una tarea ya fusionada o sobre una base anterior a `main`.
+   checkout principal no está limpio en `main`, o si **tu propio worktree**
+   tiene cambios sin commit sobre una tarea ya fusionada o sobre una base
+   anterior a `main`. El checkout principal es un chequeo global a propósito
+   —es el recurso único que describe «Lo que pasó y por qué existe esto»
+   arriba—; el de tu worktree es sobre ti, nunca sobre el de otra tarea.
+
+   **No siempre fue así.** Hasta el 2026-11-12 el segundo chequeo también era
+   global: bloqueaba a *cualquiera* si *cualquier* worktree de la flota estaba
+   sucio sobre base antigua o fusionada, sin importar de quién fuera. Una
+   auditoría legítima en curso (`t_c3a8b0d7`), bloqueada esperando una
+   decisión y por tanto con cambios sin comitear sobre una base que mientras
+   tanto envejeció, dejó a diez correcciones no relacionadas sin poder
+   empezar. Revisando el incidente original de arriba no se encontró ninguna
+   razón escrita para ese alcance cruzado — las tres causas que motivaron la
+   regla son todas sobre el propio agente, nunca sobre el trabajo ajeno. Con
+   autorización de Jose (2026-11-12) se acotó el bloqueo al worktree de quien
+   invoca; un worktree ajeno sucio **sigue imprimiéndose** en la tabla de
+   `estado.sh` (no desaparece) y además se reporta como `WORKTREE SUCIO` en
+   `estado-fabrica.py` (el vigilante) — se quitó el frenazo a quien no tiene
+   nada que ver, no la señal de que algo anda raro en otro sitio. Ver el
+   comentario al principio de `scripts/agentes/estado.sh` para el detalle.
 
 ## Una tarea en vuelo no sigue a `main` — a propósito
 
