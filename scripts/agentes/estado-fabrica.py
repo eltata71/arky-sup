@@ -87,6 +87,15 @@ Qué comprueba, y con qué umbral, y por qué:
   vez (`.curator_ledger.jsonl`/`.curator_backups` con fecha, no hipotético).
   CRÍTICO si algún perfil que tiene el directorio de la skill no tiene un
   enlace que resuelva al canónico del repo.
+- **Perfil con tarea de worktree activa y sin `terminal` en su toolset**
+  (hallazgo 2026-11-12): `natalia-documentation` tenía `code_execution` en
+  vez de `terminal` -- el mismo patrón que todo perfil que edita código
+  necesita, confirmado comparando contra seis perfiles que sí hacen ese
+  trabajo -- y dos tarjetas de worktree activas no pudieron ni correr
+  `estado.sh`. Nadie lo vio hasta que las dos se bloquearon pidiendo
+  ejecución autorizada. Esto avisa ANTES de ese bloqueo: cruza tareas
+  `ready`/`todo`/`running`/`triage`/`scheduled` de `workspace_kind='worktree'`
+  contra el `platform_toolsets.cli` del perfil asignado. CRÍTICO si falta.
 
 Qué NO comprueba, a propósito, para que no se asuma cubierto: **gasto
 desbocado** y **pérdida de datos** no tienen hoy ninguna señal barata que
@@ -281,6 +290,50 @@ def blocked_tasks(now: float, boards: dict[str, Path]) -> list[dict]:
                 "ever_started": r["started_at"] is not None,
             })
     return out
+
+
+def profiles_missing_terminal_for_worktree_work(boards: dict[str, Path]) -> list[dict]:
+    """Perfil con al menos una tarea activa de workspace_kind 'worktree' --
+    necesita terminal para editar, comitear y correr estado.sh -- pero sin
+    'terminal' en su platform_toolsets.cli. Pensado para avisar ANTES de que
+    la tarjeta se bloquee, no después (hallazgo 2026-11-12: natalia-documentation
+    tenía dos tarjetas de worktree activas con code_execution en vez de
+    terminal, y nadie lo vio hasta que ambas se bloquearon solicitando
+    ejecución autorizada). Solo mira tareas en NON_TERMINAL_STATUSES -- una
+    ya bloqueada por esto la reporta blocked_tasks(), no esta función."""
+    por_perfil: dict[str, list[dict]] = {}
+    placeholders = ",".join("?" * len(NON_TERMINAL_STATUSES))
+    for board, db in boards.items():
+        if not db.exists():
+            continue
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        con.row_factory = sqlite3.Row
+        rows = con.execute(
+            f"SELECT id, title, assignee FROM tasks "
+            f"WHERE status IN ({placeholders}) AND workspace_kind = 'worktree' "
+            f"AND assignee IS NOT NULL",
+            tuple(NON_TERMINAL_STATUSES),
+        ).fetchall()
+        for r in rows:
+            por_perfil.setdefault(r["assignee"], []).append({"board": board, "id": r["id"]})
+
+    hallazgos = []
+    for perfil, tareas in sorted(por_perfil.items()):
+        cfg_path = PROFILES_DIR / perfil / "config.yaml"
+        if not cfg_path.is_file():
+            continue
+        try:
+            cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            continue
+        herramientas = (cfg.get("platform_toolsets") or {}).get("cli") or []
+        if "terminal" not in herramientas:
+            hallazgos.append({
+                "profile": perfil,
+                "tasks": [t["id"] for t in tareas],
+                "problem": f"{len(tareas)} tarea(s) de worktree activa(s) sin 'terminal' en platform_toolsets.cli",
+            })
+    return hallazgos
 
 
 CANON_SKILL = Path("/home/tata/workspace/arky-sup/scripts/agentes/skills/latam-factory-orchestration/SKILL.md")
@@ -555,6 +608,11 @@ def main() -> int:
         razones.append(f"AUTO_DECOMPOSE ACTIVO: perfil '{f['profile']}' -- {f['problem']} -- "
                         f"cualquier gateway que arranque con este perfil puede descomponer tarjetas por su cuenta")
 
+    missing_terminal = profiles_missing_terminal_for_worktree_work(boards)
+    for f in missing_terminal:
+        razones.append(f"PERFIL SIN HERRAMIENTA: '{f['profile']}' -- {f['problem']} "
+                        f"(tarjetas: {', '.join(f['tasks'])})")
+
     # Nunca "if alive else ..." -- `alive` exige TODOS los gateways activos, y
     # un solo gateway de prueba caído (inactivo a propósito) apagaría este
     # chequeo aunque arkysupabase/latamfactory sí estén despachando de verdad.
@@ -580,6 +638,7 @@ def main() -> int:
         "broken_skill_links": broken_links,
         "policy_drift": policy_findings,
         "auto_decompose_global": auto_decompose_global,
+        "missing_terminal_for_worktree_work": missing_terminal,
         "dispatcher_lock": lock_status,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
