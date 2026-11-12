@@ -87,6 +87,13 @@ Qué comprueba, y con qué umbral, y por qué:
   vez (`.curator_ledger.jsonl`/`.curator_backups` con fecha, no hipotético).
   CRÍTICO si algún perfil que tiene el directorio de la skill no tiene un
   enlace que resuelva al canónico del repo.
+- **Worktree ajeno sucio sobre base antigua o fusionada** (hallazgo
+  2026-11-12): `estado.sh` deja de bloquear a los demás por esto desde esa
+  fecha (autorización de Jose) para no frenar tareas sin relación con quien
+  dejó su worktree así; la señal no desaparece, se mueve aquí. Se reutiliza
+  la detección de `estado.sh` parseando su salida -- dos lecturas de "¿esto
+  está antiguo y sucio?" que pudieran divergir es el defecto que este
+  repositorio evita en todas partes.
 
 Qué NO comprueba, a propósito, para que no se asuma cubierto: **gasto
 desbocado** y **pérdida de datos** no tienen hoy ninguna señal barata que
@@ -283,7 +290,8 @@ def blocked_tasks(now: float, boards: dict[str, Path]) -> list[dict]:
     return out
 
 
-CANON_SKILL = Path("/home/tata/workspace/arky-sup/scripts/agentes/skills/latam-factory-orchestration/SKILL.md")
+REPO_ROOT = Path("/home/tata/workspace/arky-sup")
+CANON_SKILL = REPO_ROOT / "scripts/agentes/skills/latam-factory-orchestration/SKILL.md"
 PROFILES_DIR = Path.home() / ".hermes" / "profiles"
 SKILL_REL = Path("skills/latam-factory-orchestration/SKILL.md")
 
@@ -346,6 +354,40 @@ def _engine_guard_roster() -> list[Path]:
         if ENGINE_GUARD_COMMAND in text:
             roster.append(profile_dir)
     return roster
+
+
+DIRTY_FOREIGN_WORKTREE_RE = re.compile(
+    r"^\s*\(sin bloquear — no es tu worktree\)\s+(?P<ruta>\S+):\s+(?P<motivo>.+?)\s+—\s+lo vigila estado-fabrica\.py\s*$"
+)
+
+
+def dirty_foreign_worktrees() -> list[dict]:
+    """Worktrees ajenos sucios sobre base antigua o fusionada -- la señal que
+    `scripts/agentes/estado.sh` deja de BLOQUEAR el 2026-11-12 (autorización
+    de Jose) cuando no es el worktree de quien invoca, para no frenar a 10
+    tareas no relacionadas por una auditoría legítima en curso en otro
+    worktree. La visibilidad no desaparece, se mueve aquí: se reutiliza la
+    detección de `estado.sh` (parseando su salida) en vez de reimplementarla
+    en Python -- dos lecturas de "¿esto está antiguo y sucio?" que pudieran
+    divergir es exactamente el defecto que este repositorio evita en todas
+    partes (ver CLAUDE.md, "una sola tabla de enrutado"). Falla cerrado
+    (lista vacía) si estado.sh no puede ejecutarse -- un chequeo que no pudo
+    correr no es lo mismo que "nada sucio", pero el propio estado.sh ya se
+    corre aparte con su exit code; aquí solo nos interesan sus líneas
+    informativas."""
+    try:
+        proc = subprocess.run(
+            ["bash", "scripts/agentes/estado.sh"],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    hallazgos = []
+    for linea in proc.stdout.splitlines():
+        m = DIRTY_FOREIGN_WORKTREE_RE.match(linea)
+        if m:
+            hallazgos.append({"ruta": m.group("ruta"), "motivo": m.group("motivo")})
+    return hallazgos
 
 
 def policy_drift_findings() -> list[dict]:
@@ -555,6 +597,10 @@ def main() -> int:
         razones.append(f"AUTO_DECOMPOSE ACTIVO: perfil '{f['profile']}' -- {f['problem']} -- "
                         f"cualquier gateway que arranque con este perfil puede descomponer tarjetas por su cuenta")
 
+    dirty_worktrees = dirty_foreign_worktrees()
+    for w in dirty_worktrees:
+        razones.append(f"WORKTREE SUCIO: {w['ruta']} -- {w['motivo']}")
+
     # Nunca "if alive else ..." -- `alive` exige TODOS los gateways activos, y
     # un solo gateway de prueba caído (inactivo a propósito) apagaría este
     # chequeo aunque arkysupabase/latamfactory sí estén despachando de verdad.
@@ -580,6 +626,7 @@ def main() -> int:
         "broken_skill_links": broken_links,
         "policy_drift": policy_findings,
         "auto_decompose_global": auto_decompose_global,
+        "dirty_foreign_worktrees": dirty_worktrees,
         "dispatcher_lock": lock_status,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",

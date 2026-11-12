@@ -3,10 +3,35 @@
 # Sale con 1 si hay avisos: un agente no empieza una tarea con avisos abiertos.
 #   bash scripts/agentes/estado.sh
 # Ver docs/operacion/multiagente.md.
+#
+# Alcance de cada chequeo, fijado el 2026-11-12 con autorización de Jose
+# (relayada: "autorizo los dos temas que me propusiste y sugeriste"), tras
+# que una auditoría legítima en curso (t_c3a8b0d7, worktree ajeno antiguo y
+# sucio por estar bloqueada esperando una decisión) bloqueara 10 de 12
+# correcciones no relacionadas con ella:
+#   - El checkout principal (abajo) sigue siendo GLOBAL: es el recurso que
+#     documenta docs/operacion/multiagente.md como origen de la regla (el
+#     incidente real del 2026-10-07 fue sobre él, no sobre worktrees
+#     ajenos), y es el único sitio que todos comparten — no hay "worktree
+#     propio" que lo sustituya.
+#   - El bucle de worktrees de abajo sólo BLOQUEA (cuenta un aviso, exit 1)
+#     sobre el worktree desde el que se invoca este script — el de la
+#     tarea que está a punto de empezar. El texto original de la regla 5
+#     en multiagente.md ya hablaba en singular ("una tarea", no "cualquier
+#     tarea de la flota"); el bucle global era el modo en que
+#     `listar_worktrees` se implementó, no una decisión escrita aparte.
+#   - La fila de cada worktree ajeno SIGUE IMPRIMIÉNDOSE (visibilidad), y
+#     un worktree ajeno sucio sobre base antigua/fusionada sigue
+#     reportándose — pero como ATENCION en estado-fabrica.py (el
+#     vigilante, que ya revisa la flota por edad), no como bloqueo aquí.
+#     Lo que se quita es el frenazo a quien no tiene nada que ver; la
+#     señal de que algo anda raro en otro worktree no desaparece, cambia
+#     de canal.
 
 source "$(dirname "$0")/comun.sh"
 actualizar_remoto
 FUSIONADAS="$(ramas_con_pr_fusionada)"
+AQUI="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 avisos=0
 
 echo "== main"
@@ -33,12 +58,14 @@ while IFS='|' read -r ruta rama head bloq; do
   elif contenido_en_main "$head"; then estado=antigua
   else estado=activa; fi
   printf '%-9s %-6s %-5s %-45s %s\n' "$estado" "$sucio" "$bloq" "${rama:-(separado $head)}" "$ruta"
-  if [ "$sucio" != 0 ] && [ "$estado" = fusionada ]; then
-    echo "  AVISO: cambios sin commit sobre una tarea ya fusionada — ¿alguien la reabrió?"
-    avisos=$((avisos + 1))
-  elif [ "$sucio" != 0 ] && [ "$estado" = antigua ]; then
-    echo "  AVISO: cambios sin commit sobre una base anterior a main — rebasa antes de seguir."
-    avisos=$((avisos + 1))
+  if [ "$sucio" != 0 ] && { [ "$estado" = fusionada ] || [ "$estado" = antigua ]; }; then
+    motivo="cambios sin commit sobre $([ "$estado" = fusionada ] && echo 'una tarea ya fusionada — ¿alguien la reabrió?' || echo 'una base anterior a main — rebasa antes de seguir.')"
+    if [ "$ruta" = "$AQUI" ]; then
+      echo "  AVISO: $motivo"
+      avisos=$((avisos + 1))
+    else
+      echo "  (sin bloquear — no es tu worktree) $ruta: $motivo — lo vigila estado-fabrica.py"
+    fi
   fi
 done < <(listar_worktrees)
 
