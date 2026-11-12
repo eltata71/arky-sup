@@ -76,32 +76,45 @@ pide a José** — nunca se fusiona porque el propio revisor lo apruebe, ni
 porque el autor decida que ya está listo.
 
 **Lo que cambia hoy es cómo se deja constancia del veredicto.** Diagnóstico
-real, 12 revisiones del mismo día, mismos dos revisores: cada una escribió
-"Veredicto: ..." en una frase distinta — `sobre <sha>`, `en <sha>`, `SHA:
-<sha>` en línea aparte, `sobre SHA <sha>`, `sobre el SHA exacto <sha>` —
-hasta el mismo revisor entre dos tarjetas suyas. Un lector automático
+real, 12 revisiones del mismo día, mismos dos revisores: en prosa, cada una
+escribió "Veredicto: ..." en una frase distinta — `sobre <sha>`, `en <sha>`,
+`SHA: <sha>` en línea aparte, `sobre SHA <sha>`, `sobre el SHA exacto <sha>`
+— hasta el mismo revisor entre dos tarjetas suyas. Un lector automático
 (`auto_merge_watch.py`) solo pudo confiar en 2 de los 10 veredictos reales
-emitidos. **El fallo no es de quien lee la prosa — es que la prosa nunca
-tuvo un contrato.** Hacer el lector más permisivo es la trampa de siempre:
-el día que alguien escriba "aprobado, con reservas menores" un lector
-permisivo tiene que adivinar si eso cuenta o no. La solución es que quien
-**emite** el veredicto lo escriba siempre igual.
+por la prosa.
+
+**Y al mirar si ya existía metadata estructurada, el mismo defecto apareció
+otra vez, con otra forma.** 9 de las 10 tarjetas SÍ llevaban un
+`--metadata` con algo parecido a un veredicto — pero en **cuatro esquemas
+distintos**: `verdict` o `review_outcome` para el campo; `sha`,
+`reviewed_sha` o `final_sha` para el SHA; `pr` como entero en unas y como
+URL completa de GitHub en otras; `"approved_reconfirmation"` como un
+tercer valor no documentado en ningún sitio. **El fallo nunca fue "prosa
+en vez de estructura" — es que nada fijaba el esquema**, y la prosa libre
+y el JSON libre convergen al mismo sitio sin un contrato. Por eso esta
+sección no inventa un esquema nuevo: fija el que ya usaban 6 de las 9
+tarjetas, que es el que de hecho ya predominaba.
 
 **Por eso, al cerrar cualquier tarjeta de revisión de un PR** (`hermes
 kanban complete` o `kanban edit`), el campo `--metadata` es obligatorio y
-lleva exactamente estas tres claves — además de la prosa de siempre, nunca
-en lugar de ella:
+lleva exactamente estas tres claves — además de la prosa y de cualquier
+otro campo que ya se esté guardando (hallazgos, pruebas corridas, límites:
+esos siguen siendo útiles y no se retiran), nunca en lugar de las tres:
 
 ```
---metadata '{"veredicto": "APROBADO", "sha": "<40 hex del head exacto>", "pr": <número entero>}'
+--metadata '{"verdict": "approved", "sha": "<40 hex del head exacto>", "pr": <número entero>}'
 ```
 
-`veredicto` es `"APROBADO"` o `"CAMBIOS_PEDIDOS"`, en mayúsculas y con guión
-bajo — nunca "Aprobado", "cambios pedidos" ni ninguna otra variante.
-`sha` es el SHA completo de 40 caracteres hexadecimales del commit que de
-verdad se revisó — el mismo que ya se cita en la prosa, aquí además en un
-campo que una máquina puede comparar sin interpretar nada. `pr` es el
-número del PR, como entero, no como texto ni con el símbolo `#`.
+`verdict` es, en inglés y en minúscula, `"approved"` o
+`"changes_requested"` — nunca "Aprobado", "APROBADO",
+"approved_reconfirmation" ni ninguna otra variante: una reconfirmación de
+una aprobación sigue siendo `"approved"`, el campo no distingue "primera
+vez" de "reconfirmada", eso es trabajo de la prosa. `sha` es el SHA
+completo de 40 caracteres hexadecimales del commit que de verdad se
+revisó — el mismo que ya se cita en la prosa, aquí además en un campo que
+una máquina puede comparar sin interpretar nada. `pr` es el número del PR,
+**como entero** — nunca la URL completa de GitHub ni un texto con el
+símbolo `#`.
 
 **La prosa sigue siendo necesaria y no se reduce**: hallazgos, evidencia
 ejecutada y límites explícitos siguen yendo en el comentario o en
