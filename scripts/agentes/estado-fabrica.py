@@ -77,6 +77,15 @@ Qué comprueba, y con qué umbral, y por qué:
   uno que nunca llegó a registrarse por falta de aprobación. CRÍTICO
   siempre que aparece, sin umbral: no hay lectura inocua de un hook de
   seguridad que nunca corre.
+- **Un PR abierto hace 4h o más sin ninguna tarjeta de revisión**
+  (hallazgo 2026-11-12): 11 de los PRs abiertos llevaban hasta 19 días sin
+  que nadie le pidiera veredicto a Rafael o a Alexis, no porque revisaran
+  lento (una revisión real tarda 1-10 minutos), sino porque abrir un PR no
+  disparaba nada. `pr_review_trigger.py` cierra ese circuito desde hoy;
+  este chequeo es la pregunta "¿y si el disparador deja de correr?" --
+  mismo umbral que las tareas bloqueadas, mismo criterio aplicado a un
+  sitio nuevo. Falla hacia "no reportar" si `gh` o un tablero no
+  responden -- un error de red no es un disparador roto.
 - **Enlaces de la skill canónica `latam-factory-orchestration` rotos o
   sustituidos por una copia real** (hallazgo 3, revisión del PR #293,
   2026-10-25): se creó la fuente única porque 18 copias ya habían divergido
@@ -134,6 +143,7 @@ import sqlite3
 import sys
 import tempfile
 import time
+from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -148,6 +158,9 @@ MOTOR_BLOCK_WINDOW_MINUTES = 60
 MOTOR_BLOCK_THRESHOLD = 2
 NON_TERMINAL_STATUSES = {"ready", "todo", "running", "triage", "scheduled"}
 _GATEWAY_UNIT_RE = re.compile(r"^hermes-gateway-([a-z0-9]+)\.service$")
+
+PR_WITHOUT_REVIEW_HOURS = 4  # mismo umbral que STALE_BLOCKED_HOURS, misma razón
+PR_REPO = "eltata71/arky-sup"
 
 
 def discover_boards() -> dict[str, Path]:
@@ -458,6 +471,70 @@ def auto_decompose_true_everywhere() -> list[dict]:
     return findings
 
 
+def prs_without_review_card(now: float, boards: dict[str, Path]) -> list[dict]:
+    """Todo PR abierto, de más de PR_WITHOUT_REVIEW_HOURS, sin ninguna
+    tarjeta cuyo título empiece por "Revisión PR #<N>" en ningún tablero
+    conocido.
+
+    Hallazgo 2026-11-12: 11 de los PRs abiertos llevaban hasta 19 días sin
+    que nadie le pidiera veredicto a Rafael o Alexis -- no porque
+    revisaran lento, sino porque abrir un PR no disparaba nada
+    (pr_review_trigger.py lo soluciona desde hoy). Este chequeo es el
+    "¿y si el disparador deja de correr?" -- la misma lección que ya
+    costó 808 fallos en silencio de otro vigilante y 47 de un cron: un
+    disparador que muere callado devuelve exactamente al punto de
+    partida. CRÍTICO sin esperar más que el mismo umbral que ya usa
+    `blocked_tasks` -- no es un chequeo nuevo con criterio nuevo, es el
+    mismo criterio aplicado a un sitio nuevo.
+
+    Falla cerrado hacia "no reportar", no hacia "reportar de más": si
+    `gh` no responde, o un tablero no se puede leer, esa fuente de PRs o
+    de tarjetas se omite en silencio -- un error de red no debe
+    convertirse en un CRÍTICO sobre algo que no se pudo comprobar.
+    """
+    try:
+        out = subprocess.run(
+            ["gh", "pr", "list", "--repo", PR_REPO, "--state", "open",
+             "--json", "number,title,createdAt"],
+            capture_output=True, text=True, timeout=30,
+        )
+        prs = json.loads(out.stdout) if out.returncode == 0 else []
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError):
+        return []
+
+    titles_lower: list[str] = []
+    for db_path in boards.values():
+        if not db_path.is_file():
+            continue
+        try:
+            con = sqlite3.connect(str(db_path))
+            try:
+                cur = con.cursor()
+                cur.execute("SELECT title FROM tasks WHERE title LIKE 'Revisión PR #%'")
+                titles_lower.extend((row[0] or "").strip().lower() for row in cur.fetchall())
+            finally:
+                con.close()
+        except sqlite3.Error:
+            continue
+
+    findings = []
+    for pr in prs:
+        n = pr.get("number")
+        if n is None:
+            continue
+        prefix = f"revisión pr #{n}"
+        if any(t.startswith(prefix) for t in titles_lower):
+            continue
+        try:
+            created = datetime.fromisoformat(pr["createdAt"].replace("Z", "+00:00")).timestamp()
+        except (KeyError, ValueError):
+            continue
+        age_hours = round((now - created) / 3600, 1)
+        if age_hours >= PR_WITHOUT_REVIEW_HOURS:
+            findings.append({"number": n, "title": pr.get("title", ""), "age_hours": age_hours})
+    return findings
+
+
 def dispatcher_lock_status(gw_states: dict[str, str]) -> dict:
     """¿Alguien tiene de verdad el candado del despachador embebido?
 
@@ -565,6 +642,12 @@ def main() -> int:
         razones.append(f"CANDADO DEL DESPACHADOR SIN DUEÑO: {lock_status['reason']} -- "
                         f"un gateway 'activo' no implica que esté despachando de verdad")
 
+    prs_sin_revision = prs_without_review_card(now, boards) if not boards_error else []
+    for p in prs_sin_revision:
+        razones.append(f"PR SIN REVISIÓN: #{p['number']} abierto hace {p['age_hours']}h "
+                        f"(>= {PR_WITHOUT_REVIEW_HOURS}h) sin tarjeta de revisión -- "
+                        f"¿pr_review_trigger.py dejó de correr? \"{p['title']}\"")
+
     critico = bool(razones)
     result = {
         "verdict": "ATENCION" if critico else "OK",
@@ -581,6 +664,7 @@ def main() -> int:
         "policy_drift": policy_findings,
         "auto_decompose_global": auto_decompose_global,
         "dispatcher_lock": lock_status,
+        "prs_without_review_card": prs_sin_revision,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
                         "un agente trabajando fuera de Kanban por completo (sin tarjeta) sigue siendo invisible"],
