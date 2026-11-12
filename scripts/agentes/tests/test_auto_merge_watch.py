@@ -116,7 +116,7 @@ def _make_review_board(tmp_dir: Path, pr_number: int, comments: list[tuple[str, 
     con = sqlite3.connect(str(db))
     con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER)")
     con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
-    con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, ended_at INTEGER)")
+    con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
     con.execute("INSERT INTO tasks VALUES (?, ?, ?)", (f"t_fake{pr_number}", f"Revisión PR #{pr_number}: algo", 1))
     for author, body, ts in comments:
         con.execute("INSERT INTO task_comments VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", author, body, ts))
@@ -155,7 +155,7 @@ def test_approval_is_the_first_and_only_gate_when_it_fails():
         # no como comentario -- exactamente lo que pasó con #313 hoy.
         con = sqlite3.connect(str(db))
         con.execute(
-            "INSERT INTO task_runs VALUES (?, ?, ?, ?)",
+            "INSERT INTO task_runs (task_id, profile, summary, ended_at) VALUES (?, ?, ?, ?)",
             ("t_fake502", "alexis", "Veredicto: APROBADO sobre aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, reconfirmación", 150),
         )
         con.commit()
@@ -225,6 +225,94 @@ def test_approval_is_the_first_and_only_gate_when_it_fails():
         check("sin SHA actual determinado -> ok=False (falla cerrado)", a.ok is False)
 
 
+def test_structured_metadata_schema():
+    print("=== metadata estructurada (esquema fijado el 12-nov) ===")
+    v = amw._verdict_from_metadata(
+        '{"verdict": "approved", "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "pr": 291}',
+        "alexis", "t_x", 291,
+    )
+    check("verdict/sha válidos -> se reconoce como APROBADO", v is not None and v.outcome == "APROBADO")
+
+    v = amw._verdict_from_metadata(
+        json.dumps({"review_outcome": "changes_requested", "reviewed_sha": "b" * 40, "pr": 316}),
+        "rafael", "t_y", 316,
+    )
+    check("esquema distinto (review_outcome/reviewed_sha) -> NO se reconoce, no se adivina", v is None)
+
+    v = amw._verdict_from_metadata(
+        '{"verdict": "approved_reconfirmation", "sha": "' + "c" * 40 + '", "pr": 313}',
+        "alexis", "t_z", 313,
+    )
+    check("valor no documentado (approved_reconfirmation) -> no se reconoce", v is None)
+
+    v = amw._verdict_from_metadata(
+        json.dumps({"verdict": "changes_requested", "sha": "f" * 40, "pr": "https://github.com/eltata71/arky-sup/pull/318"}),
+        "alexis", "t_w", 318,
+    )
+    check("pr como URL en vez de entero -> NO se reconoce (caso real #318)", v is None)
+
+    v = amw._verdict_from_metadata(
+        json.dumps({"verdict": "approved", "sha": "a" * 40, "pr": 291}),
+        "alexis", "t_v", 999,
+    )
+    check("pr no coincide con el PR que se evalúa -> NO se reconoce", v is None)
+
+    # find_review_verdict: la metadata y la prosa se mezclan por fecha real.
+    with tempfile.TemporaryDirectory() as d:
+        db = Path(d) / "board.db"
+        con = sqlite3.connect(str(db))
+        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER)")
+        con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
+        con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
+        con.execute("INSERT INTO tasks VALUES ('t_600', 'Revisión PR #600: x', 1)")
+        sha = "d" * 40
+        con.execute(
+            "INSERT INTO task_runs (task_id, profile, summary, metadata, ended_at) VALUES (?, ?, NULL, ?, ?)",
+            ("t_600", "rafael", json.dumps({"verdict": "approved", "sha": sha, "pr": 600}), 100),
+        )
+        con.commit()
+        con.close()
+        v = amw.find_review_verdict(600, db_path=db)
+        check("solo metadata, sin comentarios -> se encuentra vía metadata", v is not None and v.outcome == "APROBADO")
+
+        # Un comentario POSTERIOR en prosa con cambios pedidos debe ganar
+        # (más reciente manda, sea cual sea la fuente).
+        con = sqlite3.connect(str(db))
+        con.execute(
+            "INSERT INTO task_comments VALUES (?, ?, ?, ?)",
+            ("t_600", "alexis", f"Veredicto: CAMBIOS PEDIDOS sobre {sha}", 200),
+        )
+        con.commit()
+        con.close()
+        v = amw.find_review_verdict(600, db_path=db)
+        check("comentario en prosa POSTERIOR a la metadata -> gana el más reciente, no la metadata",
+              v is not None and v.outcome == "CAMBIOS PEDIDOS" and v.author == "alexis")
+
+
+def test_task_lookup_ignores_followup_cards_mentioning_the_pr():
+    print("=== búsqueda de tarjeta: prefijo exacto, no subcadena (caso real #291) ===")
+    with tempfile.TemporaryDirectory() as d:
+        db = Path(d) / "board.db"
+        con = sqlite3.connect(str(db))
+        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER)")
+        con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
+        con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
+        sha = "e" * 40
+        con.execute("INSERT INTO tasks VALUES ('t_real', 'Revisión PR #291: x', 100)")
+        con.execute(
+            "INSERT INTO task_runs (task_id, profile, metadata, ended_at) VALUES (?, ?, ?, ?)",
+            ("t_real", "alexis", json.dumps({"verdict": "approved", "sha": sha, "pr": 291}), 150),
+        )
+        # Tarjeta de SEGUIMIENTO creada DESPUÉS, que menciona "PR #291" en el
+        # título pero no es una revisión -- exactamente lo que pasó hoy.
+        con.execute("INSERT INTO tasks VALUES ('t_followup', 'Endurecer algo (L1 de Alexis, PR #291)', 200)")
+        con.commit()
+        con.close()
+        v = amw.find_review_verdict(291, db_path=db)
+        check("la tarjeta de seguimiento (más reciente) no esconde el veredicto real",
+              v is not None and v.task_id == "t_real" and v.outcome == "APROBADO")
+
+
 def test_breaker_trips_and_blocks_everything():
     print("=== el freno: simular una fusión que rompe CI ===")
     with tempfile.TemporaryDirectory() as d:
@@ -269,6 +357,8 @@ def main():
     test_content_backstop()
     test_decision_ledger()
     test_approval_is_the_first_and_only_gate_when_it_fails()
+    test_structured_metadata_schema()
+    test_task_lookup_ignores_followup_cards_mentioning_the_pr()
     test_breaker_trips_and_blocks_everything()
     print(f"\n{PASS} ok, {FAIL} fallo(s)")
     return 1 if FAIL else 0

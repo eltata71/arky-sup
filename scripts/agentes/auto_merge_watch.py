@@ -295,32 +295,87 @@ class Verdict:
     task_id: str
 
 
+_METADATA_OUTCOME = {"approved": "APROBADO", "changes_requested": "CAMBIOS PEDIDOS"}
+
+
+def _verdict_from_metadata(raw_metadata: Optional[str], author: str, task_id: str, pr_number: int) -> Optional[Verdict]:
+    """El esquema fijado en la skill canónica el 12-nov: `verdict`
+    ("approved"|"changes_requested"), `sha` (40 hex), `pr` (entero, y debe
+    coincidir con `pr_number` -- una URL completa de GitHub, un texto con
+    "#", o un número de otro PR no cuentan: #318 real llevaba justo eso,
+    `"pr": "https://github.com/.../pull/318"`, antes de corregirse) -- es
+    el esquema que ya predominaba en 6 de 9 tarjetas antes de fijarse.
+    Cualquier cosa que no encaje exactamente (clave distinta, valor no
+    reconocido) no cuenta como veredicto estructurado -- cae al parseo de
+    prosa, nunca se adivina."""
+    if not raw_metadata:
+        return None
+    try:
+        data = json.loads(raw_metadata)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    outcome = _METADATA_OUTCOME.get(data.get("verdict"))
+    sha = data.get("sha")
+    pr = data.get("pr")
+    if outcome is None or not isinstance(sha, str) or len(sha) < 7:
+        return None
+    if not isinstance(pr, int) or isinstance(pr, bool) or pr != pr_number:
+        return None
+    return Verdict(outcome=outcome, sha=sha.lower(), author=author, task_id=task_id)
+
+
 def find_review_verdict(pr_number: int, *, db_path: Optional[Path] = None) -> Optional[Verdict]:
     """Última tarjeta cuyo título cita `PR #<N>` (convención de hoy), y su
-    rastro de veredicto más reciente -- en comentarios (`task_comments`) O
-    en el resumen del cierre (`task_runs.summary`, escrito por
-    `hermes kanban complete --result`). Hoy ocurren las dos: #312/#316
-    comentaron "Veredicto: ..." mientras corrían; #313 solo lo dejó en el
-    resumen al completar. Las dos fuentes se mezclan por fecha real y gana
-    la más reciente -- nunca "la que se encontró primero". None si no hay
-    tarjeta o nada tiene el patrón -- nunca se inventa un veredicto.
-    ``db_path`` se resuelve contra el global ``BOARD_DB`` en el momento de
-    la llamada, no al definir la función -- para que una prueba pueda
-    sustituir ``amw.BOARD_DB`` sin tener que pasar el argumento."""
+    rastro de veredicto más reciente -- de tres fuentes, mezcladas por
+    fecha real y nunca "la que se encontró primero": la metadata
+    estructurada de `task_runs.metadata` (esquema fijado el 12-nov,
+    `_verdict_from_metadata`), el resumen del cierre (`task_runs.summary`),
+    y los comentarios (`task_comments`). Antes de fijar el esquema, 9 de
+    10 tarjetas ya llevaban metadata, pero en cuatro esquemas distintos
+    (`verdict`/`review_outcome`, `sha`/`reviewed_sha`/`final_sha`...) --
+    por eso la metadata NO es automáticamente la fuente de verdad: solo
+    cuenta si encaja exactamente con el esquema fijado, igual que la
+    prosa solo cuenta si encaja con el patrón `Veredicto: ... sobre
+    <sha>`. None si no hay tarjeta o nada tiene un patrón reconocible --
+    nunca se inventa un veredicto. ``db_path`` se resuelve contra el
+    global ``BOARD_DB`` en el momento de la llamada, no al definir la
+    función -- para que una prueba pueda sustituir ``amw.BOARD_DB`` sin
+    tener que pasar el argumento."""
     db_path = db_path if db_path is not None else BOARD_DB
     if not db_path.is_file():
         return None
     con = sqlite3.connect(str(db_path))
     try:
         cur = con.cursor()
-        cur.execute(
-            "SELECT id FROM tasks WHERE title LIKE ? ORDER BY created_at DESC LIMIT 1",
-            (f"%PR #{pr_number}%",),
-        )
-        row = cur.fetchone()
-        if row is None:
+        # Prefijo exacto ("Revisión PR #<N>"), no subcadena -- hallazgo real
+        # de hoy: una tarjeta de SEGUIMIENTO de #291 ("... (L1 de Alexis, PR
+        # #291)"), creada después de la de revisión y por tanto más
+        # reciente, se colaba por el ORDER BY ... LIMIT 1 de una búsqueda
+        # por subcadena y escondía el veredicto real detrás de una tarjeta
+        # que no es una revisión. Mismo arreglo que ya se aplicó en
+        # pr_review_trigger.py.
+        cur.execute("SELECT id, title, created_at FROM tasks WHERE title LIKE ?", (f"%PR #{pr_number}%",))
+        prefix = f"revisión pr #{pr_number}"
+        matches = [(tid, created) for tid, title, created in cur.fetchall()
+                   if (title or "").strip().lower().startswith(prefix)]
+        if not matches:
             return None
-        task_id = row[0]
+        matches.sort(key=lambda m: m[1], reverse=True)
+        task_id = matches[0][0]
+
+        # (timestamp, Verdict-ya-resuelto) para la metadata estructurada,
+        # y (timestamp, author, text) para lo que hay que parsear en prosa.
+        structured: list[tuple[float, Verdict]] = []
+        cur.execute(
+            "SELECT profile, metadata, ended_at FROM task_runs WHERE task_id = ? AND metadata IS NOT NULL",
+            (task_id,),
+        )
+        for profile, metadata, ts in cur.fetchall():
+            v = _verdict_from_metadata(metadata, profile or "", task_id, pr_number)
+            if v is not None:
+                structured.append((float(ts or 0), v))
 
         candidates: list[tuple[float, str, str]] = []  # (timestamp, author, text)
         cur.execute(
@@ -335,12 +390,16 @@ def find_review_verdict(pr_number: int, *, db_path: Optional[Path] = None) -> Op
         )
         candidates.extend((float(ts or 0), profile or "", summary or "") for profile, summary, ts in cur.fetchall())
 
-        candidates.sort(key=lambda c: c[0], reverse=True)
-        for _ts, author, text in candidates:
+        resolved: list[tuple[float, Verdict]] = list(structured)
+        for ts, author, text in candidates:
             m = _VERDICT_RE.search(text)
             if m:
-                return Verdict(outcome=m.group(1).upper(), sha=m.group(2).lower(), author=author, task_id=task_id)
-        return None
+                resolved.append((ts, Verdict(outcome=m.group(1).upper(), sha=m.group(2).lower(),
+                                              author=author, task_id=task_id)))
+        if not resolved:
+            return None
+        resolved.sort(key=lambda r: r[0], reverse=True)
+        return resolved[0][1]
     finally:
         con.close()
 
