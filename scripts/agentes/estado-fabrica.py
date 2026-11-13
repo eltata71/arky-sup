@@ -96,6 +96,17 @@ Qué comprueba, y con qué umbral, y por qué:
   ejecución autorizada. Esto avisa ANTES de ese bloqueo: cruza tareas
   `ready`/`todo`/`running`/`triage`/`scheduled` de `workspace_kind='worktree'`
   contra el `platform_toolsets.cli` del perfil asignado. CRÍTICO si falta.
+- **Worktree ajeno sucio sobre base antigua o fusionada** (hallazgo
+  2026-11-12): `estado.sh` deja de bloquear a los demás por esto desde esa
+  fecha (autorización de Jose) para no frenar tareas sin relación con quien
+  dejó su worktree así; la señal no desaparece, se mueve aquí. Se reutiliza
+  la detección de `estado.sh` leyendo su línea de máquina (`WORKTREE_AJENO_SUCIO`,
+  tabulada, no la prosa con rayas -- revisión de Rafael en PR #328, M1) en
+  vez de reimplementarla en Python. **No falla cerrado en silencio** (misma
+  revisión, H1): si `estado.sh` no se pudo ejecutar, devolvió un código fuera
+  de {0,1}, o su salida no tiene la cabecera/cierre esperados (un `gh` o
+  `git fetch` roto bajo `set -euo pipefail` puede salir así, sin una sola
+  línea útil), se reporta como chequeo fallido -- nunca como "nada sucio".
 
 Qué NO comprueba, a propósito, para que no se asuma cubierto: **gasto
 desbocado** y **pérdida de datos** no tienen hoy ninguna señal barata que
@@ -365,7 +376,8 @@ def profiles_missing_terminal_for_worktree_work(boards: dict[str, Path]) -> list
     return hallazgos
 
 
-CANON_SKILL = Path("/home/tata/workspace/arky-sup/scripts/agentes/skills/latam-factory-orchestration/SKILL.md")
+REPO_ROOT = Path("/home/tata/workspace/arky-sup")
+CANON_SKILL = REPO_ROOT / "scripts/agentes/skills/latam-factory-orchestration/SKILL.md"
 PROFILES_DIR = Path.home() / ".hermes" / "profiles"
 SKILL_REL = Path("skills/latam-factory-orchestration/SKILL.md")
 
@@ -428,6 +440,52 @@ def _engine_guard_roster() -> list[Path]:
         if ENGINE_GUARD_COMMAND in text:
             roster.append(profile_dir)
     return roster
+
+
+def dirty_foreign_worktrees() -> dict:
+    """{"items": [...], "check_failed": str | None}. Worktrees ajenos sucios
+    sobre base antigua o fusionada -- la señal que `scripts/agentes/estado.sh`
+    deja de BLOQUEAR el 2026-11-12 (autorización de Jose) cuando no es el
+    worktree de quien invoca, para no frenar tareas no relacionadas por una
+    auditoría legítima en curso en otro worktree. La visibilidad no
+    desaparece, se mueve aquí: se reutiliza la detección de `estado.sh`
+    (leyendo su salida) en vez de reimplementarla en Python -- dos lecturas de
+    "¿esto está antiguo y sucio?" que pudieran divergir es exactamente el
+    defecto que este repositorio evita en todas partes.
+
+    Lee la línea de máquina `WORKTREE_AJENO_SUCIO<TAB>estado<TAB>ruta`, no la
+    prosa con rayas -- esa frase es el contrato de verdad entre los dos
+    scripts (M1, revisión de Rafael en PR #328): una reescritura del texto
+    humano para un lector ya no la rompe.
+
+    **No falla cerrado en silencio** (H1, misma revisión -- un hallazgo real:
+    la versión anterior devolvía `[]` tanto si "nada está sucio" como si
+    `estado.sh` falló por un `gh`/`git fetch` roto bajo `set -euo pipefail`,
+    y las dos se leían igual: veredicto OK). Un returncode fuera de {0, 1},
+    una excepción al lanzarlo, o una salida sin la cabecera `== Worktrees` ni
+    la línea final de cierre (`Sin avisos.` / `N aviso(s)`) se reportan en
+    `check_failed`, nunca como "nada que reportar"."""
+    try:
+        proc = subprocess.run(
+            ["bash", "scripts/agentes/estado.sh"],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {"items": [], "check_failed": f"no se pudo ejecutar estado.sh ({type(exc).__name__})"}
+    lineas = proc.stdout.splitlines()
+    if proc.returncode not in (0, 1):
+        return {"items": [], "check_failed": f"estado.sh exit {proc.returncode}: {proc.stderr.strip()[:200]}"}
+    if not any(l.strip() == "== Worktrees" for l in lineas) or not any(
+        l.strip() == "Sin avisos." or re.match(r"^\d+ aviso\(s\)", l.strip()) for l in lineas
+    ):
+        return {"items": [], "check_failed": f"salida de estado.sh incompleta (exit {proc.returncode}, "
+                                              f"sin cabecera/cierre esperado): {proc.stderr.strip()[:200]}"}
+    items = []
+    for linea in lineas:
+        partes = linea.split("\t")
+        if len(partes) == 3 and partes[0] == "WORKTREE_AJENO_SUCIO":
+            items.append({"estado": partes[1], "ruta": partes[2]})
+    return {"items": items, "check_failed": None}
 
 
 def policy_drift_findings() -> list[dict]:
@@ -641,6 +699,11 @@ def main() -> int:
     for f in missing_terminal:
         razones.append(f"PERFIL SIN HERRAMIENTA: '{f['profile']}' -- {f['problem']} "
                         f"(tarjetas: {', '.join(f['tasks'])})")
+    dirty_worktrees = dirty_foreign_worktrees()
+    if dirty_worktrees["check_failed"]:
+        razones.append(f"WORKTREE SUCIO: no se pudo comprobar -- {dirty_worktrees['check_failed']}")
+    for w in dirty_worktrees["items"]:
+        razones.append(f"WORKTREE SUCIO: {w['ruta']} -- cambios sin commit sobre worktree {w['estado']}")
 
     # Nunca "if alive else ..." -- `alive` exige TODOS los gateways activos, y
     # un solo gateway de prueba caído (inactivo a propósito) apagaría este
@@ -668,6 +731,7 @@ def main() -> int:
         "policy_drift": policy_findings,
         "auto_decompose_global": auto_decompose_global,
         "missing_terminal_for_worktree_work": missing_terminal,
+        "dirty_foreign_worktrees": dirty_worktrees,
         "dispatcher_lock": lock_status,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",

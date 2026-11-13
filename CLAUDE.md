@@ -3170,7 +3170,15 @@ contrato y `scripts/agentes/` lo comprueba: el checkout principal sólo sigue a
 `main`; una tarea se reserva con `nueva-tarea.sh` (worktree propio y PR en
 borrador, la única reserva que ven todos); una tarea `Hecha` o `Descartada`
 no se reabre;
-`estado.sh` sale con 1 si algo está fuera de su sitio, y `limpieza.sh` borra
+`estado.sh` sale con 1 si el checkout principal no está limpio en `main` o si
+**el worktree de quien lo invoca** tiene cambios sin commit sobre una tarea
+ya fusionada o sobre una base anterior a `main` (acotado el 2026-11-13; un
+worktree ajeno sucio ya no bloquea a los demás, lo reporta `estado-fabrica.py`
+en su lugar — ver `docs/operacion/multiagente.md` regla 5). Al retomar una
+tarea se ejecuta desde su worktree: «propio» es el cwd resuelto por Git;
+desde el principal sólo bloquea el chequeo del principal. El script hace
+`git fetch --prune` y consulta GitHub: un error de esas operaciones se
+reporta como comprobación fallida, no como inventario limpio. `limpieza.sh` borra
 sólo lo fusionado y limpio, en seco por defecto. **Cada plan con tabla de seguimiento está en `PLANES`
 (`scripts/agentes/comun.sh`) con su prefijo de rama**, y `localizar-tarea.sh`
 dice en cuál vive una tarea: `clase-mundial/<id>-<tema>` para
