@@ -20,7 +20,7 @@ REF_PATTERNS = {
     "pr": r"(?:#|\bPR\s?)\d{2,}",
     "card": r"\bt_[0-9a-f]{8}\b",
     "path": r"\b[\w.-]+/[\w./-]+|\b[\w-]+\.(?:sh|py|md|ts|tsx|json|yaml|yml|sql)\b",
-    "delta": r"\d+\s*(?:->|→|=>|a)\s*\d+|\bde\s+\S+\s+a\s+\S+",
+    "delta": r"\d+\s*(?:->|→|=>|a)\s*\d+",
     "kv": r"\b[a-z_]{3,}\s*[=:]\s*\S+",
 }
 

@@ -1,6 +1,7 @@
 """Contrato de la referencia de calibración: SQLite aislado y sólo lectura."""
 import ast
 import hashlib
+import json
 import sqlite3
 import subprocess
 import sys
@@ -22,8 +23,9 @@ class CalibrationTests(unittest.TestCase):
                                   'CREATE TABLE task_runs (task_id TEXT,ended_at INTEGER);'
                                   'CREATE TABLE task_comments (id INTEGER,task_id TEXT,author TEXT,body TEXT,created_at INTEGER);')
                 con.execute("INSERT INTO tasks VALUES ('t_fixture','Resolver bloqueo documentado')")
-                for event_id, kind, timestamp in events:
-                    con.execute('INSERT INTO task_events VALUES (?,\'t_fixture\',?,?,NULL)', (event_id, kind, timestamp))
+                for event_id, kind, timestamp, *payload in events:
+                    con.execute('INSERT INTO task_events VALUES (?,\'t_fixture\',?,?,?)',
+                                (event_id, kind, timestamp, json.dumps(payload[0]) if payload else None))
                 for i, (body, timestamp) in enumerate(comments):
                     con.execute('INSERT INTO task_comments VALUES (?,\'t_fixture\',\'operator\',?,?)', (i, body, timestamp))
             before = hashlib.sha256(db.read_bytes()).hexdigest()
@@ -42,6 +44,26 @@ class CalibrationTests(unittest.TestCase):
                                  (3, 'unblocked', 120)],
                                 [('UNBLOCK: '+REASON, 99), ('UNBLOCK: '+REASON, 119)])
         self.assertEqual(actual, {(False, 'ok'): 2})
+
+    def test_completed_excludes_previous_block_reason_but_not_current_cycle(self):
+        for kind in ('blocked', 'block_loop_detected'):
+            for timestamp, completed_id, block_id, category in (
+                    (100, 2, 1, 'ok'), (115, 1, 2, 'falla')):
+                with self.subTest(kind=kind, timestamp=timestamp):
+                    events = sorted([(block_id, kind, timestamp, {'reason': REASON}),
+                                     (completed_id, 'completed', 110),
+                                     (3, 'unblocked', 120)])
+                    actual = self.calibrate(events, [('UNBLOCK: '+REASON, 119)])
+                    self.assertEqual(actual, {(False, category): 1})
+
+    def test_numeric_delta_is_required_when_there_is_no_other_referent(self):
+        base = 'El ajuste modifica el intervalo observado y verifica resultados distintos '
+        for change, category in [('de lento a rapido', 'falla'),
+                                 ('de 30 a 60', 'ok'), ('30->60', 'ok')]:
+            with self.subTest(change=change):
+                actual = self.calibrate([(1, 'unblocked', 100)],
+                                        [('UNBLOCK: '+base+change, 99)])
+                self.assertEqual(actual, {(False, category): 1})
 
     def test_comment_prefix_belongs_to_its_manual_event(self):
         for kind, prefix, category in [
