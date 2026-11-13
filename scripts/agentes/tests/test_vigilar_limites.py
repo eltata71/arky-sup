@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -186,6 +187,177 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(run.call_args.args[0][6], 'comment')
         self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 600)
 
+    def reconcile(self, dry_run=False, piso=1200):
+        with patch.object(vigilante, '_profile_run_budget_seconds', return_value=piso):
+            with patch.object(vigilante.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as run:
+                return vigilante.patch_mismatched_runtime_ceiling(self.db, 'perfil', 'tablero', dry_run), run
+
+    def test_reconcile_only_detects_card_below_profile_budget(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        hits, run = self.reconcile(piso=1200)
+        self.assertEqual([h['id'] for h in hits], ['t_test'])
+        self.assertEqual(hits[0]['old'], 300)
+        self.assertEqual(hits[0]['new'], 1200)
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 300)
+        self.assertFalse(hits[0]['applied'])
+        run.assert_not_called()
+
+    def test_reconcile_never_lowers_a_card_above_the_floor(self):
+        # Excepción puntual concedida (como Andrés a 7200s): pedir más que el
+        # perfil no es el defecto, y este vigilante no la toca.
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=7200, status='ready'")
+        with patch.object(vigilante.subprocess, 'run') as run:
+            hits, _ = self.reconcile(piso=300)
+            self.assertEqual(hits, [])
+            run.assert_not_called()
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 7200)
+
+    def test_reconcile_skips_card_already_at_the_floor(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=1200, status='ready'")
+        with patch.object(vigilante.subprocess, 'run') as run:
+            hits, _ = self.reconcile(piso=1200)
+            self.assertEqual(hits, [])
+            run.assert_not_called()
+
+    def test_reconcile_skips_when_profile_has_no_known_floor(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        with patch.object(vigilante, '_profile_run_budget_seconds', return_value=None):
+            with patch.object(vigilante.subprocess, 'run') as run:
+                hits = vigilante.patch_mismatched_runtime_ceiling(self.db, 'perfil', 'tablero', False)
+                self.assertEqual(hits, [])
+                run.assert_not_called()
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 300)
+
+    def test_reconcile_dry_run_never_writes(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        before = list(self.db.iterdump())
+        hits, run = self.reconcile(dry_run=True, piso=1200)
+        self.assertEqual([h['id'] for h in hits], ['t_test'])
+        run.assert_not_called()
+        self.assertEqual(list(self.db.iterdump()), before)
+
+    def test_reconcile_never_attempts_update_even_with_trigger(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        self.db.executescript('''
+            CREATE TRIGGER concurrent_reconcile BEFORE UPDATE OF max_runtime_seconds ON tasks
+            WHEN OLD.max_runtime_seconds=300 BEGIN
+                UPDATE tasks SET max_runtime_seconds=900 WHERE id=OLD.id;
+                SELECT RAISE(IGNORE);
+            END;
+        ''')
+        with patch.object(vigilante, '_profile_run_budget_seconds', return_value=1200):
+            with patch.object(vigilante.subprocess, 'run') as run:
+                hits = vigilante.patch_mismatched_runtime_ceiling(self.db, 'perfil', 'tablero', False)
+                self.assertEqual([hit['id'] for hit in hits], ['t_test'])
+                run.assert_not_called()
+        self.assertEqual(self.db.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0], 300)
+
+    @unittest.skipUnless(importlib.util.find_spec('yaml'), 'PyYAML no instalado en este intérprete')
+    def test_profile_run_budget_seconds_reads_real_yaml(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            profiles_dir = Path(tmp)
+            (profiles_dir / 'camilo').mkdir()
+            (profiles_dir / 'camilo' / 'config.yaml').write_text('agent:\n  run_budget_seconds: 900\n')
+            (profiles_dir / 'sin-agent').mkdir()
+            (profiles_dir / 'sin-agent' / 'config.yaml').write_text('model:\n  default: x\n')
+            with patch.object(vigilante, 'PROFILES_DIR', profiles_dir):
+                self.assertEqual(vigilante._profile_run_budget_seconds('camilo'), 900)
+                for literal, expected in [('1200.0', 1200.0), ('"1200"', 1200.0),
+                                          ('true', None), ('false', None), ('0', None)]:
+                    (profiles_dir / 'camilo' / 'config.yaml').write_text(
+                        f'agent:\n  run_budget_seconds: {literal}\n')
+                    self.assertEqual(vigilante._profile_run_budget_seconds('camilo'), expected)
+                (profiles_dir / 'camilo' / 'config.yaml').write_text('agent: [')
+                with self.assertRaisesRegex(vigilante.ProfileBudgetError, 'YAML'):
+                    vigilante._profile_run_budget_seconds('camilo')
+                self.assertIsNone(vigilante._profile_run_budget_seconds('sin-agent'))
+                self.assertIsNone(vigilante._profile_run_budget_seconds('no-existe'))
+
+    def test_normalize_budget_matches_hermes_numeric_forms(self):
+        for value, expected in [(1200, 1200.0), (1200.0, 1200.0), ('1200', 1200.0),
+                                ('1.5', 1.5), (True, None), (False, None),
+                                (None, None), ('bad', None), (-1, None), (0, None),
+                                ('nan', None)]:
+            with self.subTest(value=value):
+                self.assertEqual(vigilante._normalize_run_budget_seconds(value), expected)
+
+    def test_main_without_yaml_preserves_detection_and_heartbeat(self):
+        self.db.execute("INSERT INTO tasks VALUES ('t_bounded', 'autor', 'Acotada', 'ready', 300, NULL, NULL, NULL)")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'autor').mkdir()
+            (root / 'autor' / 'config.yaml').write_text('agent:\n  run_budget_seconds: 1200\n')
+            with patch.dict(sys.modules, {'yaml': None}), patch.object(vigilante, 'PROFILES_DIR', root):
+                # También debe poder cargarse el módulo sin la dependencia.
+                assert SPEC is not None and SPEC.loader is not None
+                module = importlib.util.module_from_spec(SPEC)
+                SPEC.loader.exec_module(module)
+                for options in [('--dry-run', '--cron'), ('--cron',)]:
+                    self.db.execute("UPDATE tasks SET status=? WHERE id='t_test'",
+                                    ('running' if '--dry-run' in options else 'ready',))
+                    with self.subTest(options=options), self.main_fixture(*options) as (db, heartbeat, out, err, run), \
+                            patch.object(vigilante, 'PROFILES_DIR', root):
+                        self.assertEqual(vigilante.main(), 1)
+                        self.assertIn('RELOJ_FALTANTE: t_test', out.getvalue())
+                        if '--dry-run' in options:
+                            self.assertIn('ALERTA_RUNTIME: t_test', out.getvalue())
+                        self.assertIn('PyYAML no disponible', err.getvalue())
+                        self.assertIn('PyYAML no disponible', json.loads(heartbeat.read_text())['error'])
+                        with closing(sqlite3.connect(db)) as copy:
+                            values = dict(copy.execute('SELECT id, max_runtime_seconds FROM tasks'))
+                        self.assertEqual(values['t_bounded'], 300)
+                        self.assertEqual(values['t_test'], None if '--dry-run' in options else 600)
+                        self.assertEqual(run.call_count, 0 if '--dry-run' in options else 1)
+
+    def test_main_profile_error_without_hits_is_not_silent_success(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, status='ready'")
+        with self.main_fixture('--cron', '--dry-run') as (_, heartbeat, out, err, run), \
+                patch.object(vigilante, '_profile_run_budget_seconds',
+                             side_effect=vigilante.ProfileBudgetError('autor: prueba de error')):
+            self.assertEqual(vigilante.main(), 1)
+            self.assertIn('ERROR_CONCILIACION', err.getvalue())
+            self.assertEqual(json.loads(heartbeat.read_text())['runtime_hits'], 0)
+            self.assertIn('prueba de error', json.loads(heartbeat.read_text())['error'])
+            run.assert_not_called()
+
+    def test_non_utf8_profile_does_not_starve_other_profiles(self):
+        self.db.execute("UPDATE tasks SET max_runtime_seconds=300, assignee='bad', status='ready'")
+        self.db.execute("INSERT INTO tasks VALUES ('t_good', 'good', 'Sana', 'ready', 300, NULL, NULL, NULL)")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'bad').mkdir()
+            (root / 'bad' / 'config.yaml').write_bytes(b'\xff')
+            read_budget = vigilante._profile_run_budget_seconds
+
+            def budget(profile):
+                return 1200 if profile == 'good' else read_budget(profile)
+
+            errors = []
+            with patch.object(vigilante, 'PROFILES_DIR', root), \
+                    patch.object(vigilante, '_profile_run_budget_seconds', side_effect=budget), \
+                    redirect_stderr(io.StringIO()) as err:
+                hits = vigilante.patch_mismatched_runtime_ceiling(self.db, 'p', 'b', False, errors)
+            self.assertEqual([hit['id'] for hit in hits], ['t_good'])
+            self.assertIn('UnicodeDecodeError', errors[0])
+            self.assertIn('ERROR_CONCILIACION', err.getvalue())
+
+    def test_main_null_ceiling_is_written_once_and_matches_dry_run(self):
+        self.db.execute("UPDATE tasks SET status='ready'")
+        for options in [('--runtime-ceiling-seconds', '300', '--dry-run'),
+                        ('--runtime-ceiling-seconds', '300')]:
+            with self.subTest(options=options), \
+                    patch.object(vigilante, '_profile_run_budget_seconds', return_value=1200), \
+                    self.main_fixture(*options) as (db, heartbeat, out, err, run):
+                self.assertEqual(vigilante.main(), 1)
+                self.assertIn('300s', out.getvalue())
+                self.assertNotIn('DOS_VERDADES', out.getvalue())
+                self.assertEqual(json.loads(heartbeat.read_text())['runtime_hits'], 1)
+                with closing(sqlite3.connect(db)) as copy:
+                    value = copy.execute('SELECT max_runtime_seconds FROM tasks').fetchone()[0]
+                self.assertEqual(value, None if '--dry-run' in options else 300)
+                self.assertEqual(run.call_count, 0 if '--dry-run' in options else 1)
+
 
     def install_concurrent_ceiling_trigger(self):
         # Simular otra escritura entre SELECT y UPDATE sin tocar una DB real.
@@ -231,6 +403,7 @@ class RuntimeTests(unittest.TestCase):
             argv = ['vigilar-limites.py', str(db_path), 'tablero', '--profile', 'perfil', *options]
             with (patch.object(vigilante.sys, 'argv', argv),
                   patch.object(vigilante, 'HEARTBEAT', heartbeat),
+                  patch.object(vigilante, 'PROFILES_DIR', Path(directory) / 'profiles'),
                   patch.object(vigilante.time, 'time', return_value=1000),
                   patch.object(vigilante.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as run,
                   redirect_stdout(stdout), redirect_stderr(stderr)):

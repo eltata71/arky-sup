@@ -1,9 +1,12 @@
 # Vigilante externo de límites — detección, no contención
 
-Candidata no instalada. Este documento describe el código de esta rama, no
-acredita instalación, actividad de cron ni protección operacional completa.
-La auditoría del 31 de octubre de 2026 no acreditó ejecución reciente del cron
-existente. No se instala ni reactiva como parte de esta preparación local.
+El crontab de sistema instalado ejecuta cada dos minutos el wrapper
+`~/.hermes/profiles/arkysupabase/scripts/vigilar-limites.sh`. Este apunta al
+script del checkout principal con `--runtime-ceiling-seconds 300 --dry-run
+--cron`, usando el Python de `hermes-agent-v0.22.2`. Fusionar este cambio sí
+cambia el código que ejecutará ese cron cuando el checkout se actualice.
+Esta corrección no instala, reactiva ni modifica el cron o su wrapper;
+configuración instalada no acredita por sí sola actividad reciente ni contención.
 
 ## Alcance entregado
 
@@ -36,6 +39,24 @@ El techo externo de 600 segundos NO es la admisión de 300 segundos exigida por
 el flujo compartido. Puede pasarse explícitamente por CLI; aquí no se cambia
 configuración alguna. Las tareas parcheadas dependen del dispatcher nativo
 para aplicar el límite. Esta dependencia no acredita terminación.
+
+3. **Desajustes, solo detección:** `patch_mismatched_runtime_ceiling` conserva
+   su nombre por compatibilidad, pero no escribe ni llama a CLI en ningún modo.
+   Reporta `DOS_VERDADES` si el límite de tarjeta es menor que el presupuesto
+   del perfil; requiere decisión humana. No hay aprobación explícita para
+   sobrescribir no-NULL y la excepción histórica no lo permite. La foto se
+   toma antes del parche NULL: dry-run y mutante predicen el mismo techo
+   configurado y el mutante deja una sola escritura y comentario por NULL.
+   `run_budget_seconds` es blando (aviso al 80% y tope de timeouts obsoletos),
+   no un kill duro; no se puede concluir que el perfil «ganó» como techo duro
+   en `t_8c2134ab`. Ver `t_dc22118e`.
+4. **Degradación visible:** PyYAML se importa solo al leer un perfil existente.
+   Sin esa dependencia, o ante config ilegible/no UTF-8/YAML inválido, se
+   deshabilita solo la comprobación del perfil afectado: `ERROR_CONCILIACION`
+   en stderr, `error` en heartbeat y rc=1. Se conservan `RELOJ_FALTANTE`,
+   detección reactiva y el resto del lote. No se instalan dependencias en el
+   Python operacional. Los números se normalizan como Hermes (float y string
+   positivos admitidos, bool rechazado).
 
 ## Por qué no se entrega recuperación automática
 
@@ -86,7 +107,7 @@ python3 scripts/agentes/vigilar-limites.py <kanban.db> <tablero> --profile <perf
 No ejecutar contra DB operacional ni instalar sin los gates y aprobación.
 `--cron` solo controla el silencio, no programa cron ni oculta errores.
 Resultado 0: sin detecciones ni escrituras aplicadas; 1: detecciones dry-run o
-parches aplicados; excepciones: error, incluida cualquier vencida en modo
+parches aplicados o error parcial de conciliación; excepciones: error, incluida cualquier vencida en modo
 mutante. Ningún resultado significa «worker detenido».
 
 ## Pruebas locales y evidencia histórica

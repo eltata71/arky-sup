@@ -29,6 +29,17 @@ hace falta escribir algo que no cumple las tres condiciones, el camino es
 pedir la función que falta río arriba, no ampliar esta excepción.
 ==============================================================================
 
+DESAJUSTES DE PRESUPUESTO: SOLO DETECCIÓN
+==============================================================================
+`max_runtime_seconds` es el límite del dispatcher para la tarjeta.
+`run_budget_seconds` es un presupuesto blando del perfil: aviso al 80% y
+tope de timeouts obsoletos, no un kill duro. No cabe afirmar que el perfil
+"ganó" como techo duro en t_8c2134ab. Ver t_dc22118e.
+La excepción histórica solo permite rellenar NULL. Sin aprobación explícita
+de José, ningún valor no-NULL se sobrescribe: los desajustes se informan
+para decisión humana, incluso en modo mutante.
+==============================================================================
+
 Confirmado leyendo su propio código (no supuesto): una tarea hija creada por
 el auto-decomposer nunca hereda `max_runtime_seconds` ni `max_retries` de su
 padre (`_insert_decomposed_child` en `hermes_cli/kanban_db_graph.py` -- el
@@ -74,7 +85,7 @@ foto entre sondeos; no vigila el tope de flota ni garantiza detener procesos.
 Las pruebas previas de terminación corresponden a la versión anterior, no
 validan este contrato nuevo. Ver vigilar-limites.md para riesgos y gates.
 
-Uso (candidata no instalada):
+Uso (el cron instalado apunta al checkout principal en dry-run):
     python3 scripts/agentes/vigilar-limites.py <kanban.db> <board> --profile arkysupabase [--dry-run] [--cron]
 
 Salida: 0 sin hallazgos/escrituras; 1 con detecciones dry-run o parches
@@ -91,12 +102,59 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+
 DEFAULT_RUNTIME_CEILING_SECONDS = 600  # 10 min: techo de seguridad, no un plazo "razonable" calculado
 
 HEARTBEAT = Path(__file__).resolve().parent / "vigilar-limites.heartbeat.json"
 
+PROFILES_DIR = Path.home() / ".hermes" / "profiles"  # mismo sitio que estado-fabrica.py
 
-def write_heartbeat(board: str, runtime_hits: int, error: str = None) -> None:
+
+class ProfileBudgetError(ValueError):
+    """No se puede evaluar el presupuesto; no equivale a ausencia de piso."""
+
+
+def _normalize_run_budget_seconds(value) -> float | None:
+    """Normalización numérica de Hermes; bool no es un presupuesto."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError):
+        return None
+    return seconds if seconds > 0 else None
+
+
+def _profile_run_budget_seconds(profile: str) -> float | None:
+    """`run_budget_seconds` del `config.yaml` del perfil, o `None` si el
+    perfil no existe, no tiene `config.yaml`, no declara el campo, o el
+    fichero no existe. Un fallo de dependencia, lectura o parseo es visible
+    y solo deshabilita la detección de desajustes de ese perfil."""
+    cfg_path = PROFILES_DIR / profile / "config.yaml"
+    try:
+        text = cfg_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except (OSError, UnicodeError) as exc:
+        raise ProfileBudgetError(f"{profile}: config.yaml ilegible ({type(exc).__name__})") from exc
+    try:
+        import yaml
+    except ImportError as exc:
+        raise ProfileBudgetError(f"{profile}: PyYAML no disponible; conciliación deshabilitada") from exc
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ProfileBudgetError(f"{profile}: config.yaml inválido (YAML)") from exc
+    if not isinstance(data, dict):
+        return None
+    agent = data.get("agent")
+    if not isinstance(agent, dict):
+        return None
+    value = agent.get("run_budget_seconds")
+    return _normalize_run_budget_seconds(value)
+
+
+def write_heartbeat(board: str, runtime_hits: int, error: str | None = None) -> None:
     payload = {
         "last_run_at": datetime.now(timezone.utc).isoformat(),
         "board": board,
@@ -156,6 +214,39 @@ def patch_missing_runtime_ceiling(
             check=True,
             timeout=30,
         ).check_returncode()
+        patched.append(entry)
+    return patched
+
+
+def patch_mismatched_runtime_ceiling(
+    con: sqlite3.Connection, profile: str, board: str, dry_run: bool,
+    errors: list[str] | None = None,
+) -> list[dict]:
+    """Solo detección, también en modo mutante. Nombre conservado por compatibilidad.
+    La excepción histórica no autoriza sobrescribir valores no-NULL."""
+    rows = con.execute(
+        "SELECT id, assignee, status, max_runtime_seconds, title FROM tasks "
+        "WHERE max_runtime_seconds IS NOT NULL AND assignee IS NOT NULL "
+        "AND status IN ('ready','todo','running')",
+    ).fetchall()
+    patched = []
+    for row in rows:
+        try:
+            piso = _profile_run_budget_seconds(row["assignee"])
+        except ProfileBudgetError as exc:
+            diagnostic = str(exc)
+            print(f"ERROR_CONCILIACION: {diagnostic}", file=sys.stderr)
+            if errors is not None and diagnostic not in errors:
+                errors.append(diagnostic)
+            continue
+        if piso is None or row["max_runtime_seconds"] >= piso:
+            continue  # sin piso conocido, o la tarjeta ya pide lo mismo o más
+        valor_viejo = row["max_runtime_seconds"]
+        entry = {
+            "id": row["id"], "assignee": row["assignee"], "status": row["status"],
+            "title": row["title"], "old": valor_viejo, "new": piso,
+        }
+        entry["applied"] = False
         patched.append(entry)
     return patched
 
@@ -225,9 +316,15 @@ def main() -> int:
         con.execute("PRAGMA busy_timeout=5000")
         # Detectar antes del parche: no ocultar una vencida dándole reloj.
         runtime_hits = check_runtime(con, args.profile, args.board, args.runtime_ceiling_seconds, args.dry_run)
+        reconciliation_errors = []
+        # Foto previa al parche NULL: ambos modos evalúan las mismas tarjetas.
+        reconciled = patch_mismatched_runtime_ceiling(
+            con, args.profile, args.board, args.dry_run, reconciliation_errors,
+        )
         patched = patch_missing_runtime_ceiling(
             con, args.profile, args.board, args.runtime_ceiling_seconds, args.dry_run,
         )
+
     except Exception as exc:  # un vigilante que se traga su propio fallo es peor que ninguno
         write_heartbeat(args.board, 0, error=f"{type(exc).__name__}: {exc}")
         print(f"VIGILAR-LIMITES: fallo al comprobar {args.board}: {type(exc).__name__}: {exc}", file=sys.stderr)
@@ -236,26 +333,33 @@ def main() -> int:
         if con is not None:
             con.close()
 
-    write_heartbeat(args.board, len(runtime_hits) + len(patched))
+    write_heartbeat(args.board, len(runtime_hits) + len(patched) + len(reconciled),
+                    error="; ".join(reconciliation_errors) or None)
 
-    if args.cron and not runtime_hits and not patched:
+    if args.cron and not runtime_hits and not patched and not reconciled and not reconciliation_errors:
         return 0
 
     if not args.cron:
         print(f"== vigilar-limites: {args.board} ({args.db}) ==")
-        if not runtime_hits and not patched:
-            print("sin tareas corriendo sin reloj por encima del techo, y ninguna sin reloj que parchear")
+        if not runtime_hits and not patched and not reconciled:
+            print("sin tareas corriendo sin reloj por encima del techo, ninguna sin reloj que "
+                  "parchear, y ninguna por debajo del piso de su perfil")
 
     for p in patched:
         action = "se le habría puesto" if args.dry_run else "se le puso"
         print(f"RELOJ_FALTANTE: {p['id']} ({p['assignee']}, {p['status']}) {action} techo de "
               f"{args.runtime_ceiling_seconds}s -- \"{p['title']}\"")
 
+    for r in reconciled:
+        print(f"DOS_VERDADES: {r['id']} ({r['assignee']}, {r['status']}) "
+              f"tarjeta {r['old']}s < presupuesto blando del perfil {r['new']}s; "
+              f"solo detección, requiere decisión humana -- \"{r['title']}\"")
+
     for hit in runtime_hits:
         print(f"ALERTA_RUNTIME: {hit['id']} ({hit['assignee']}) detectada tras {hit['elapsed_seconds']}s "
               f"sin max_runtime_seconds; solo detección, sin contención -- \"{hit['title']}\"")
 
-    return 1 if (runtime_hits or patched) else 0
+    return 1 if (runtime_hits or patched or reconciled or reconciliation_errors) else 0
 
 
 if __name__ == "__main__":
