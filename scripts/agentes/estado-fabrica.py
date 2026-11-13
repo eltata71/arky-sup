@@ -77,6 +77,16 @@ Qué comprueba, y con qué umbral, y por qué:
   uno que nunca llegó a registrarse por falta de aprobación. CRÍTICO
   siempre que aparece, sin umbral: no hay lectura inocua de un hook de
   seguridad que nunca corre.
+- **Un job de `hermes cron` activo con 3 o más salidas fallidas seguidas**
+  (hallazgo 2026-11-11): `kanban-dispatch` compilaba un wrapper bash como
+  Python y fallaba con SyntaxError. No era lo mismo que `estado-fabrica-watch`:
+  de sus 50 salidas retenidas revisadas por Rafael, 48 eran ATENCION (exit 1
+  por diseño) y una un fallo puntual por falta de yaml; no 808 fallos en
+  silencio. Se lee `cron/jobs.json` de cada perfil, incluido el raíz.
+  Un registro ilegible también es CRÍTICO. Se excluye este mismo script para
+  no autoenganchar el vigilante; otros detectores que salgan con exit != 0
+  por diseño aún pueden producir falsos positivos. Un job deshabilitado o
+  con marcadores de pausa no cuenta, conforme a `is_job_runnable` del motor.
 - **Enlaces de la skill canónica `latam-factory-orchestration` rotos o
   sustituidos por una copia real** (hallazgo 3, revisión del PR #293,
   2026-10-25): se creó la fuente única porque 18 copias ya habían divergido
@@ -516,6 +526,80 @@ def auto_decompose_true_everywhere() -> list[dict]:
     return findings
 
 
+CRON_FAILURE_STREAK_THRESHOLD = 3
+
+
+def cron_job_failure_streaks() -> list[dict]:
+    """Rachas de salidas fallidas y errores de lectura, sin ejecutar jobs.
+
+    La racha no demuestra la causa: ATENCION también sale con exit 1. Por
+    eso se excluye estado-fabrica.py por script, no por nombre configurable
+    del job. Otros detectores con exit != 0 deliberado pueden dar falsos
+    positivos. Un fichero ausente es normal; uno ilegible nunca equivale a
+    una lista sana vacía. No cubre crontab ni jobs que dejan de dispararse.
+    """
+    findings = []
+
+    def registry_error(profile: str, problem: str) -> None:
+        findings.append({"profile": profile, "kind": "cron_registry_error", "problem": problem})
+
+    # El raíz existe aunque nunca se hayan creado perfiles nombrados.
+    roots = [("root", PROFILES_DIR.parent)]
+    try:
+        roots.extend((p.name, p) for p in sorted(PROFILES_DIR.iterdir())
+                     if p.is_dir() and p.name != ".deleted")
+    except FileNotFoundError:
+        pass
+    except OSError:
+        registry_error("profiles", "no se pudo enumerar el directorio de perfiles")
+    for profile, root in roots:
+        jobs_path = root / "cron" / "jobs.json"
+        try:
+            data = json.loads(jobs_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            continue
+        except (OSError, ValueError):
+            # No volcar contenido ni excepciones del JSON: podría contener secretos.
+            registry_error(profile, "jobs.json ilegible o JSON inválido")
+            continue
+        jobs = data.get("jobs") if isinstance(data, dict) else data
+        if not isinstance(jobs, list):
+            registry_error(profile, "jobs.json con forma inesperada: se esperaba una lista de jobs")
+            continue
+        for index, job in enumerate(jobs):
+            if not isinstance(job, dict):
+                registry_error(profile, f"jobs.json: registro {index} no es un objeto")
+                continue
+            # Misma puerta que cron/jobs.py:is_job_runnable (Hermes v0.22.2).
+            if (not job.get("enabled", True) or str(job.get("state") or "").strip() == "paused"
+                    or job.get("paused_at")):
+                continue
+            script = job.get("script")
+            if isinstance(script, str) and Path(script).name == "estado-fabrica.py":
+                continue
+            raw_streak = job.get("failure_streak")
+            try:
+                if raw_streak is not None and (isinstance(raw_streak, bool)
+                                               or not isinstance(raw_streak, (int, str))):
+                    raise ValueError
+                streak = 0 if raw_streak is None else int(raw_streak)
+                if streak < 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                registry_error(profile, f"jobs.json: registro {index} tiene failure_streak inválido")
+                continue
+            if streak >= CRON_FAILURE_STREAK_THRESHOLD:
+                error_lines = str(job.get("last_error") or "").splitlines()
+                findings.append({
+                    "profile": profile,
+                    "job_id": job.get("id"),
+                    "name": job.get("name"),
+                    "failure_streak": streak,
+                    "last_error": next((line.strip() for line in error_lines if line.strip()), None),
+                })
+    return findings
+
+
 def dispatcher_lock_status(gw_states: dict[str, str]) -> dict:
     """¿Alguien tiene de verdad el candado del despachador embebido?
 
@@ -629,6 +713,14 @@ def main() -> int:
         razones.append(f"CANDADO DEL DESPACHADOR SIN DUEÑO: {lock_status['reason']} -- "
                         f"un gateway 'activo' no implica que esté despachando de verdad")
 
+    cron_streaks = cron_job_failure_streaks()
+    for c in cron_streaks:
+        if c.get("kind") == "cron_registry_error":
+            razones.append(f"CRON REGISTRO ILEGIBLE: perfil '{c['profile']}' -- {c['problem']}")
+            continue
+        razones.append(f"CRON ROTO: perfil '{c['profile']}', job '{c['name']}' ({c['job_id']}) -- "
+                        f"{c['failure_streak']} salidas fallidas seguidas -- \"{c['last_error']}\"")
+
     critico = bool(razones)
     result = {
         "verdict": "ATENCION" if critico else "OK",
@@ -646,8 +738,11 @@ def main() -> int:
         "auto_decompose_global": auto_decompose_global,
         "dirty_foreign_worktrees": dirty_worktrees,
         "dispatcher_lock": lock_status,
+        "cron_failure_streaks": cron_streaks,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
+                        "jobs del crontab del sistema",
+                        "job activo que deja de dispararse sin que el streak lo delate",
                         "un agente trabajando fuera de Kanban por completo (sin tarjeta) sigue siendo invisible"],
     }
 
