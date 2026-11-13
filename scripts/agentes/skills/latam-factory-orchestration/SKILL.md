@@ -64,6 +64,40 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 5. Respetar máximo global de 3 y uno por perfil en este flujo, 20 turnos por nuevo perfil, 300 segundos por ejecución y una tentativa de ejecución inicial. Usar límites nativos y no iniciar Dispatchers/Cron adicionales. El gateway operacional es el único Dispatcher automático. Fallo de cuota/autenticación bloquea y requiere intervención; no reintentar en bucle.
 6. Antes de modificar código, exigir repositorio autorizado y worktree por escritor; un solo propietario por archivo. Si hay conflicto, serializar con dependencia. Un worktree o toolset no es un sandbox ni impide acceso a secretos del host. No atribuir aislamiento sin evidencia.
 7. Ejecutar pruebas RED/GREEN, lint/type-check/build y verificaciones aplicables. Registrar comandos, exit codes, SHA, archivos y evidencias adjuntas a la tarjeta. Indicar gates no disponibles y por qué. No usar simulaciones como prueba de inferencia real.
+
+   **`npm run quality:gate` y `npm run test:coverage` se corren partidos en
+   llamadas cortas, nunca encadenados en una sola** [hallazgo 2026-11-13]:
+   la herramienta de terminal tiene un timeout por defecto de **180s** y un
+   tope duro de **600s** (`TERMINAL_TIMEOUT`/`TERMINAL_MAX_FOREGROUND_TIMEOUT`,
+   confirmado en `tools/terminal_tool.py` del motor instalado) — pasar un
+   `timeout` mayor no espera más, convierte la llamada en un proceso de
+   fondo rastreado. Seis tarjetas reales (#310, #312, #314, #315, #318,
+   #319) murieron con `exit 124` intentando correr el gate completo en una
+   sola llamada con un `timeout` insuficiente (300–420s): no era el
+   presupuesto de la tarea el que se agotaba —todas tenían 1200–2400s de
+   sobra— era el `timeout` de esa única llamada de terminal.
+
+   Medido en frío sobre este repositorio (2026-11-13, worktree limpio):
+
+   | Llamada | Tiempo medido | `timeout` a pasar |
+   |---|---|---|
+   | `npm run typecheck` | 270–400s según carga — **la más cerca del tope, incluso sola** | 550 |
+   | `npm run typecheck:strict` | 26s | 180 |
+   | `npm run lint` | 104s | 300 |
+   | `npm run check:any-budget && npm run check:no-orphan-scripts && npm run check:module-size && npm run check:module-boundaries` | 8s | 180 |
+   | `npm run check:i18n-sections` | no medido individualmente; históricamente rápido | 180 |
+   | `npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget` | 130s | 300 |
+   | `npm run test:coverage` | 451s | 580 |
+
+   Siete llamadas, cada una con margen real bajo los 600s salvo
+   `typecheck`: en una medición distinta llegó a 400s bajo carga, y es el
+   único paso que puede acercarse al tope incluso yendo solo. Si eso
+   resulta insuficiente en la práctica, subir su `timeout` hasta el tope
+   de 600s es lo máximo que la herramienta permite en pie — por encima de
+   eso pasa a fondo, que es un modo de trabajo distinto (sondear con
+   `process_manage`, no asumir que terminó). No se encadenan dos de estas
+   llamadas con `&&` dentro de la misma invocación de terminal: cada paso
+   es su propia llamada, con su propio `timeout`.
 8. Mantener heartbeat y comentarios para trabajo prolongado. Respetar estados nativos, bloqueo con motivo, reintento acotado, recuperación nativa y referencias a sesión/ejecución. No almacenar un estado alternativo en metadatos.
 9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 10. Elena prepara release y José consolida solo después de pruebas y revisión. Sergio propone optimizaciones con antes/después verificables; no las aplica sin autorización. Guardar estándares reutilizables en Skills, decisiones de proyecto en ADR y memoria personal solo para hechos durables del agente.
