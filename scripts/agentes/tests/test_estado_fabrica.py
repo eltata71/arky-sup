@@ -159,10 +159,13 @@ class CronTests(unittest.TestCase):
                 'broken_canonical_skill_links': [], 'policy_drift_findings': [],
                 'auto_decompose_true_everywhere': [],
                 'dispatcher_lock_status': {'critical': False},
+                'dirty_foreign_worktrees': {'items': [], 'check_failed': None},
             }.items():
                 stack.enter_context(patch.object(estado, name, return_value=value))
             stack.enter_context(patch.object(estado, 'RESULT_FILE', result_path))
             stack.enter_context(patch('sys.argv', ['estado-fabrica.py', '--json']))
+            # Toda E/S externa debe quedar explícitamente sustituida.
+            stack.enter_context(patch.object(estado.subprocess, 'run', side_effect=AssertionError('subproceso real en fixture aislada')))
             output = stack.enter_context(redirect_stdout(io.StringIO()))
             self.assertEqual(estado.main(), expected_code)
         result = json.loads(output.getvalue())
