@@ -1,111 +1,28 @@
 #!/usr/bin/env python3
-"""Dispara una tarjeta de corrección en cuanto una revisión deja veredicto
-CAMBIOS PEDIDOS -- el espejo de pr_review_trigger.py. Ese script cerró "abrir
-un PR no crea su tarjeta de revisión"; este cierra el hueco gemelo: un
-veredicto de cambios pedidos tampoco creaba nada por sí solo, así que el
-trabajo quedaba esperando a que alguien (hasta ahora, un humano o Claude)
-leyera el comentario y abriera la tarjeta a mano.
+"""Prepara correcciones por episodios independientes verificables; sin activación.
 
-No llama a un modelo -- solo `gh`, el tablero Kanban `arky-maintenance` y los
-metadatos estructurados que la skill canónica ya pide a cada revisor
-(`verdict`/`sha`/`pr`, más `findings` cuando el revisor los declara). Mismo
-patrón que estado-fabrica.py / auto_merge_watch.py / pr_review_trigger.py:
-corre fuera del alcance de Hermes, vía el mismo crontab de sistema.
+- Sólo metadata canónica completa de runs terminados de Rafael/Alexis.
+- Episodio = tarea/run de revisión; búsqueda exacta de idempotency_key en
+  TODAS las tarjetas, incluidas done/archived. Un run nuevo es otro episodio.
+- El candado global excluye instancias de este disparador; la clave se pasa
+  también al creador nativo. No se atribuye al candado control del dispatcher.
+- Trigger y vigilante comparten elegibilidad: PR OPEN, mismo SHA y episodio
+  no consumido. Divergencia/error GitHub son diagnósticos, no ausencia limpia.
+- Procedencia: evento review_requested y su run productor, anteriores al
+  comienzo de esta revisión. Nunca assignee mutable ni reloj inventado.
+- Sólo presupuesto comprobable positivo <=300, por el envoltorio canónico,
+  con razones de prioridad/dependencia. NULL, inválido o exceso se abstiene;
+  el script no genera una excepción humana ni instala presupuestos nuevos.
+- Resumen y referencia tarea/run siempre conservados; findings numéricos son
+  estadísticas, no instrucciones. La metadata histórica sin contrato queda
+  fuera de la automatización. prose_verdicts_seen no inventaría esa deuda.
 
-## Por qué esto, y no arreglar `kanban_request_changes`
-
-El motor instalado (v0.22.2) tiene una herramienta nativa para esto
--- `kanban_request_changes`, devolver el run de revisión al implementador --
-y falla con "review handoff has no valid implementer provenance" en al
-menos un caso real (`t_d1ad10c7`, 6 crashes). Hermes es software de
-terceros y no se modifica (la misma razón que ya dio RG-09 para la
-autorrevisión). Este script no pelea con esa limitación: la rodea. No
-necesita que el motor traspase el veredicto si el veredicto genera trabajo
-nuevo por sí mismo, con una tarjeta corriente que el despachador ya sabe
-entregar.
-
-## El EPISODIO, no el PR, es la unidad -- corrección tras revisión de Alexis
-(2026-11-13, PR #331, H1)
-
-La primera versión identificaba el trabajo pendiente por número de PR:
-"¿hay ya una corrección activa para el PR N?". Eso confunde dos preguntas
-distintas -- *qué PR tiene trabajo pendiente* (sí es por PR) y *qué
-veredicto concreto ya generó una tarjeta* (es por RONDA de revisión, no por
-PR). Una corrección que se cierra `done` sin que exista todavía una
-aprobación estructurada posterior no demuestra una ronda nueva: el mismo
-veredicto histórico seguiría generando otra tarjeta en el siguiente tick,
-indefinidamente. Y dos invocaciones concurrentes pueden leer ambas "no
-existe" antes de que ninguna termine de crear.
-
-La identidad real de un episodio es `(review_task_id, review_run_id)` --
-una fila de `task_runs`, inmutable una vez escrita. Se usa como
-`--idempotency-key` nativo de Hermes (`create --idempotency-key`, que el
-propio motor documenta como "si ya existe una tarea no archivada con esta
-clave, devuelve su id en vez de duplicar"): el motor, no este script,
-decide atómicamente si dos invocaciones concurrentes crean la misma
-tarjeta o se reparten el mismo id. Una ronda nueva (`run_id` distinto)
-tiene una clave distinta y sí puede crear su propia tarjeta, aunque la
-anterior ya esté `done`. El filtro "¿hay ya una corrección ACTIVA para
-este PR?" se conserva como capa aparte -- no apilar una segunda corrección
-mientras la primera sigue en curso -- pero ya no es la única defensa contra
-la duplicación.
-
-## Quién es el implementador -- corrección tras revisión de Alexis (H2)
-
-La primera versión leía `assignee` de la tarea cuyo `branch_name` coincide
-con la rama del PR, asumiendo que el dueño actual de la tarjeta es quien
-implementó. Falso en el flujo real: `assignee` es el dueño ACTUAL, que
-cambia con una reasignación o una revisión -- el propio Alexis lo
-demostró con `t_d1ad10c7`, asignada a `rafael` mientras el historial
-identifica a `lucia` como productora.
-
-La fuente correcta es el evento `review_requested` de la propia ronda de
-revisión: lleva un campo `implementer` escrito en el momento exacto en que
-se pidió esa revisión, antes de que nada pudiera reasignar la tarjeta.
-Cuando ese campo falta (pasa: `t_d1ad10c7` lo tiene nulo en su ronda más
-reciente) se cae al `branch_name`, pero entonces se exige una respuesta
-INEQUÍVOCA -- si dos tareas con asignees distintos comparten esa rama, se
-informa la ambigüedad y no se crea nada. Nunca se elige silenciosamente
-"la más nueva".
-
-## Idempotencia por título, además -- sigue vigente
-
-Antes de crear, también se busca si ya existe una tarjeta **no terminal**
-cuyo título empiece por "Corregir PR #<N>" (prefijo con delimitador, no
-subcadena). Probarlo contra el tablero real encontró su propio falso
-positivo cuando una primera versión también miraba el cuerpo -- una
-tarjeta de coordinación que solo *menciona* un número de PR de pasada
-quedó marcada como su corrección. Se revirtió a título-solo.
-
-## El reloj y la prioridad nunca se omiten, por el camino canónico
-
-La primera versión llamaba a `hermes kanban create` directamente, sin
-pasar por `crear-tarea-hija.sh` -- la misma puerta nativa que el propio
-canónico (`SKILL.md`, paso 3) prohíbe para planificar precisamente porque
-no exige reloj. Corregido (M3): toda tarjeta nace por el envoltorio, con
-`--max-runtime` heredado de la tarea de implementación original (ya
-demostró cuánto necesita) y, cuando eso supera el techo de 300s del paso 5
--- el caso normal para una corrección que corre el mismo gate -- con
-`--override-ceiling-reason` explícito y auditable, no un valor inventado
-en silencio.
-
-## Qué desencadena -- el aviso si el disparador deja de funcionar
-
-Igual que `prs_without_review_card` en `estado-fabrica.py`: si un veredicto
-de cambios pedidos lleva más de 4 horas sin una tarjeta de corrección no
-terminal, el vigilante lo dice. Detectar y avisar son trabajos distintos a
-propósito.
-
-## Lo que NO se ejecutó, y por qué
-
-Las pruebas de este script fueron de lectura: las funciones que consultan
-el tablero y GitHub, contra los 14 veredictos reales vigentes. `main()` no
-se ejecutó contra el tablero real -- crearía tarjetas de verdad -- y,
-señalado por la propia revisión independiente, las cuatro funciones de
-lectura no bastan para certificar `main()`/`create_correction_card()`: hace
-falta un ensayo con `gh`/Hermes simulados y una base de datos de fixture,
-sin tocar el tablero operativo, antes de instalarlo en cron. Queda
-pendiente, declarado, no asumido.
+Pruebas en scripts/agentes/tests/test_correction_card_regressions.py usan
+SQLite temporal, puertos sustituidos y exclusión POSIX real. No acreditan un
+cron instalado ni una corrección creada en el tablero operativo. Ningún
+ensayo de esta entrega invoca main contra el tablero real. No modifica el
+motor de Hermes ni sustituye kanban_request_changes cuando su procedencia
+nativa sea válida. La activación sigue necesitando autorización separada.
 """
 from __future__ import annotations
 
@@ -164,7 +81,7 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
     try:
         rows = con.execute(
             "SELECT task_id, id, metadata, summary, ended_at FROM task_runs "
-            "WHERE outcome = 'completed' ORDER BY id DESC"
+            "WHERE outcome = 'completed' AND profile IN ('rafael','alexis') ORDER BY id DESC"
         ).fetchall()
     finally:
         con.close()
@@ -182,7 +99,9 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
             continue
         pr = meta.get("pr")
         verdict = meta.get("verdict")
-        if not isinstance(pr, int) or verdict not in ("approved", "changes_requested"):
+        if (type(pr) is not int or pr <= 0 or meta.get("repo") != REPO
+                or meta.get("review_type") != "independent"
+                or verdict not in ("approved", "changes_requested")):
             if summary and ("CAMBIOS PEDIDOS" in summary.upper() or "APROBADO" in summary.upper()):
                 prose_verdicts_seen += 1
             continue
@@ -367,14 +286,11 @@ class CreatedCard:
 
 
 def create_correction_card(cr: ChangesRequested, title: str, impl: Implementer) -> CreatedCard:
-    """Crea por el envoltorio canónico (`crear-tarea-hija.sh`), nunca por
-    `hermes kanban create` directo (corrección tras revisión de Alexis,
-    M3): esa puerta nativa no exige reloj, y es precisamente la que el
-    canónico (SKILL.md, paso 3) prohíbe para planificar. El envoltorio
-    exige `--override-ceiling-reason` por encima de 300s -- el caso normal
-    aquí, porque una corrección corre el mismo gate que la implementación
-    original -- y aquí se declara, auditable, en vez de inventarse en
-    silencio."""
+    """Crea sólo dentro del techo; nunca fabrica aprobación del exceso.
+
+    El presupuesto del run productor es dato de procedencia, no permiso
+    para superar el techo del flujo. Si no cabe, se abstiene y coordina.
+    """
     if type(impl.max_runtime_seconds) is not int or not 0 < impl.max_runtime_seconds <= RUNTIME_CEILING:
         raise ValueError("presupuesto ausente/inválido o superior al techo: requiere coordinación humana; no se autoautoriza")
     findings_block = format_findings(cr.findings)

@@ -17,6 +17,7 @@ sys.path.insert(0, str(SCRIPTS))
 import correction_card_trigger as trigger
 
 SHA = 'a' * 40
+REAL_RUN = subprocess.run
 
 
 class CorrectionTests(unittest.TestCase):
@@ -34,6 +35,45 @@ class CorrectionTests(unittest.TestCase):
         self.guard = patch.object(trigger.subprocess, 'run', side_effect=AssertionError('E/S externa no sustituida'))
         self.guard.start()
         self.addCleanup(self.guard.stop)
+
+    def test_real_wrapper_roundtrip_with_fake_hermes_and_quoted_body(self):
+        captured = self.root/'argv.json'
+        fake = self.root/'hermes'
+        fake.write_text('#!'+sys.executable+'\n'
+                        'import json,sys,pathlib\n'
+                        'args=sys.argv[1:]\n'
+                        'body=pathlib.Path(args[args.index("--body-file")+1]).read_text()\n'
+                        f'pathlib.Path({str(captured)!r}).write_text(json.dumps({{"args":args,"body":body}}))\n'
+                        'print(json.dumps({"id":"t_created"}))\n')
+        fake.chmod(0o700)
+        env = dict(os.environ, PATH=str(self.root)+os.pathsep+os.environ['PATH'])
+        def wrapper(cmd, **kwargs):
+            return REAL_RUN(cmd, env=env, **kwargs)
+        self.cr.summary = 'Detalle con "comillas", $VARIABLE y salto\nsegunda línea'
+        with patch.object(trigger.subprocess, 'run', side_effect=wrapper):
+            result = trigger.create_correction_card(self.cr, 'título "citado"', trigger.Implementer('t_impl','lucia',300))
+        self.assertEqual(result.task_id, 't_created')
+        got = json.loads(captured.read_text())
+        self.assertIn(self.cr.summary, got['body'])
+        self.assertIn('**Depende de t_review.**', got['body'])
+        self.assertIn('**Prioridad 80.**', got['body'])
+        args = got['args']
+        self.assertEqual(args[args.index('--idempotency-key')+1], 'correction-t_review-12')
+        self.assertNotIn('--override-ceiling-reason', args)
+
+    def test_latest_verdict_requires_independent_identity_and_reviewer_provenance(self):
+        valid = {'repo':trigger.REPO, 'review_type':'independent', 'pr':331, 'sha':SHA, 'verdict':'changes_requested'}
+        for i, (profile, meta) in enumerate([
+            ('lucia', valid), ('alexis', dict(valid, repo='other/repo')),
+            ('alexis', dict(valid, review_type='implementation')), ('alexis', dict(valid, pr=True)),
+            ('alexis', dict(valid, sha='invalid')), ('alexis', valid),
+        ]):
+            self.con.execute('DELETE FROM task_runs')
+            self.con.execute('INSERT INTO task_runs (id,task_id,profile,metadata,summary,started_at,ended_at,outcome) VALUES (?,?,?,?,?,?,?,?)',
+                             (i+1, 't_review', profile, json.dumps(meta), 'informe', 150, 200, 'completed'))
+            self.con.commit()
+            changes, _ = trigger.latest_changes_requested(db_path=self.db)
+            self.assertEqual(len(changes), 1 if i == 5 else 0)
 
     @unittest.skipUnless(hasattr(os, 'fork'), 'exclusión real requiere fork POSIX')
     def test_concurrent_invocation_cannot_create_while_lock_is_held(self):
