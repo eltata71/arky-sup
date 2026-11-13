@@ -142,6 +142,9 @@ class ReviewRegressions(unittest.TestCase):
                 "motor_blocks_recent": [], "broken_canonical_skill_links": [],
                 "policy_drift_findings": [], "auto_decompose_true_everywhere": [],
                 "dispatcher_lock_status": {"critical": False},
+                # Comprobación independiente integrada por #328. El fixture de
+                # este test controla únicamente el historial de lectura de PR.
+                "dirty_foreign_worktrees": {"items": [], "check_failed": None},
             }
             for name, value in defaults.items():
                 stack.enter_context(patch.object(watch, name, return_value=value))
