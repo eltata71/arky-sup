@@ -68,8 +68,11 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
    **`npm run quality:gate` y `npm run test:coverage` se corren partidos en
    llamadas cortas, nunca encadenados en una sola** [hallazgo 2026-11-13]:
    la herramienta de terminal tiene un timeout por defecto de **180s** y un
-   tope duro de **600s** (`TERMINAL_TIMEOUT`/`TERMINAL_MAX_FOREGROUND_TIMEOUT`,
-   confirmado en `tools/terminal_tool.py` del motor instalado) — pasar un
+   tope de **600s** (`TERMINAL_TIMEOUT`/`TERMINAL_MAX_FOREGROUND_TIMEOUT`,
+   confirmados en `tools/terminal_tool.py` del motor instalado — son los
+   valores por defecto de ESTE despliegue; cada uno puede sobreescribirse
+   por entorno o perfil, así que conviene comprobar overrides antes de
+   fiarse de estos dos números a ciegas) — pasar un
    `timeout` mayor no espera más, convierte la llamada en un proceso de
    fondo rastreado. Seis tarjetas reales (#310, #312, #314, #315, #318,
    #319) murieron con `exit 124` intentando correr el gate completo en una
@@ -77,12 +80,29 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
    presupuesto de la tarea el que se agotaba —todas tenían 1200–2400s de
    sobra— era el `timeout` de esa única llamada de terminal.
 
-   Medido en frío sobre este repositorio (2026-11-13, worktree limpio):
+   **Precondición de memoria para `typecheck` — sin ella, `tsc` muere por
+   heap antes de llegar a ningún timeout** [corrección 2026-11-13,
+   revisión independiente de Alexis]: la medición de abajo se hizo con
+   `NODE_OPTIONS="--max-old-space-size=6144"`; sin ese ajuste, `tsc
+   --noEmit` agotó el heap por defecto de Node y abortó con
+   `FATAL ERROR: Ineffective mark-compacts near heap limit` en una medición
+   anterior sobre este mismo repositorio — un fallo de memoria, no de
+   tiempo, y ningún timeout de la tabla lo evita. Prefijar el comando de
+   `typecheck` (y `typecheck:strict`, que comparte el mismo binario) con
+   esa variable en cada llamada, en vez de exportarla una vez y confiar en
+   que persista entre terminales o backends:
+
+   ```
+   NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck
+   ```
+
+   Medido en frío sobre este repositorio con ese ajuste (2026-11-13,
+   worktree limpio):
 
    | Llamada | Tiempo medido | `timeout` a pasar |
    |---|---|---|
-   | `npm run typecheck` | 270–400s según carga — **la más cerca del tope, incluso sola** | 550 |
-   | `npm run typecheck:strict` | 26s | 180 |
+   | `NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck` | 270–400s según carga — **la más cerca del tope, incluso sola** | 550 |
+   | `NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck:strict` | 26s | 180 |
    | `npm run lint` | 104s | 300 |
    | `npm run check:any-budget && npm run check:no-orphan-scripts && npm run check:module-size && npm run check:module-boundaries` | 8s | 180 |
    | `npm run check:i18n-sections` | no medido individualmente; históricamente rápido | 180 |
@@ -93,7 +113,8 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
    `typecheck`: en una medición distinta llegó a 400s bajo carga, y es el
    único paso que puede acercarse al tope incluso yendo solo. Si eso
    resulta insuficiente en la práctica, subir su `timeout` hasta el tope
-   de 600s es lo máximo que la herramienta permite en pie — por encima de
+   configurado (600s por defecto en este despliegue) es lo máximo que la
+   herramienta permite en pie sin tocar su configuración — por encima de
    eso pasa a fondo, que es un modo de trabajo distinto (sondear con
    `process_manage`, no asumir que terminó). No se encadenan dos de estas
    llamadas con `&&` dentro de la misma invocación de terminal: cada paso
