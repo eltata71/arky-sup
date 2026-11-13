@@ -130,65 +130,86 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. **Toda solicitud de revisión nombra explícitamente a quien revisa, nunca el propio nombre** — ver más abajo "`request-review` siempre lleva `reviewer`" para el porqué, a quién nombrar según la etapa, y qué hacer si el despachador devuelve la tarjeta igual. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 10. Elena prepara release y José consolida solo después de pruebas y revisión. Sergio propone optimizaciones con antes/después verificables; no las aplica sin autorización. Guardar estándares reutilizables en Skills, decisiones de proyecto en ADR y memoria personal solo para hechos durables del agente.
 
-## Cerrar una revisión de PR: campo estructurado, nunca solo prosa [2026-11-12]
+## Cerrar una revisión de PR: contrato del emisor y del lector
 
-El camino para cualquier cambio de código sigue siendo el mismo:
-**worktree + PR, revisión independiente de Rafael o Alexis, y el merge se le
-pide a José** — nunca se fusiona porque el propio revisor lo apruebe, ni
-porque el autor decida que ya está listo.
+Worktree propio, pruebas y revisión independiente del **SHA final** siguen
+siendo obligatorios. El revisor no fusiona ni crea tarjetas de corrección;
+José coordina y la autorización humana de merge sigue separada.
 
-**Lo que cambia hoy es cómo se deja constancia del veredicto.** Diagnóstico
-real, 12 revisiones del mismo día, mismos dos revisores: en prosa, cada una
-escribió "Veredicto: ..." en una frase distinta — `sobre <sha>`, `en <sha>`,
-`SHA: <sha>` en línea aparte, `sobre SHA <sha>`, `sobre el SHA exacto <sha>`
-— hasta el mismo revisor entre dos tarjetas suyas. Un lector automático
-(`auto_merge_watch.py`) solo pudo confiar en 2 de los 10 veredictos reales
-por la prosa.
+### Identidad inequívoca
 
-**Y al mirar si ya existía metadata estructurada, el mismo defecto apareció
-otra vez, con otra forma.** 9 de las 10 tarjetas SÍ llevaban un
-`--metadata` con algo parecido a un veredicto — pero en **cuatro esquemas
-distintos**: `verdict` o `review_outcome` para el campo; `sha`,
-`reviewed_sha` o `final_sha` para el SHA; `pr` como entero en unas y como
-URL completa de GitHub en otras; `"approved_reconfirmation"` como un
-tercer valor no documentado en ningún sitio. **El fallo nunca fue "prosa
-en vez de estructura" — es que nada fijaba el esquema**, y la prosa libre
-y el JSON libre convergen al mismo sitio sin un contrato. Por eso esta
-sección no inventa un esquema nuevo: fija el que ya usaban 6 de las 9
-tarjetas, que es el que de hecho ya predominaba.
+Cada solicitud fija en el cuerpo de la tarjeta, antes de despachar, una línea:
 
-**Por eso, al cerrar cualquier tarjeta de revisión de un PR** (`hermes
-kanban complete` o `kanban edit`), el campo `--metadata` es obligatorio y
-lleva exactamente estas tres claves — además de la prosa y de cualquier
-otro campo que ya se esté guardando (hallazgos, pruebas corridas, límites:
-esos siguen siendo útiles y no se retiran), nunca en lugar de las tres:
-
-```
---metadata '{"verdict": "approved", "sha": "<40 hex del head exacto>", "pr": <número entero>}'
+```text
+AUTO_MERGE_REVIEW {"repo":"eltata71/arky-sup","pr":123,"sha":"<sha40>","review_type":"independent"}
 ```
 
-`verdict` es, en inglés y en minúscula, `"approved"` o
-`"changes_requested"` — nunca "Aprobado", "APROBADO",
-"approved_reconfirmation" ni ninguna otra variante: una reconfirmación de
-una aprobación sigue siendo `"approved"`, el campo no distingue "primera
-vez" de "reconfirmada", eso es trabajo de la prosa. `sha` es el SHA
-completo de 40 caracteres hexadecimales del commit que de verdad se
-revisó — el mismo que ya se cita en la prosa, aquí además en un campo que
-una máquina puede comparar sin interpretar nada. `pr` es el número del PR,
-**como entero** — nunca la URL completa de GitHub ni un texto con el
-símbolo `#`.
+`<sha40>` se sustituye por los 40 caracteres hexadecimales del head revisado;
+`pr` es entero positivo, no URL, booleano ni texto. Una tarjeta sin esa
+identidad no puede autorizar auto-merge. La prosa histórica no se convierte
+silenciosamente en aprobación estructurada ni se reescriben runs anteriores.
 
-**La prosa sigue siendo necesaria y no se reduce**: hallazgos, evidencia
-ejecutada y límites explícitos siguen yendo en el comentario o en
-`--result`, exactamente como hoy. El campo estructurado no sustituye el
-informe — es el resumen de una línea que hace que el informe sea legible
-sin tener que leerlo entero.
+El resultado lleva las mismas cuatro claves de identidad más `verdict`:
 
-**Un "cambios pedidos" posterior invalida cualquier aprobación anterior**,
-aunque sea de otro revisor — es la regla de José del 12-nov-2026 para la
-fusión automática, pero vale igual para cualquier lectura humana: el
-veredicto que cuenta es siempre el más reciente de la tarjeta, nunca "hubo
-una aprobación en algún momento".
+```text
+--metadata '{"verdict":"approved","sha":"<sha40>","pr":123,"repo":"eltata71/arky-sup","review_type":"independent"}'
+```
+
+La forma nativa del worker es **`kanban_complete(metadata={...})`**, un dict
+con esas cinco claves, además de `task_id`, `result` y `board` explícitos según
+el esquema instalado. No se obliga al worker a usar una shell vallada. El CLI
+anterior es para el operador autorizado; comprobar `--help` en la versión
+instalada antes de modificar metadata, y preservar campos adicionales e
+historia. No se promete que `edit --metadata` sea una combinación aditiva.
+
+`verdict` sólo es `approved` o `changes_requested`. **BLOQUEADO se codifica
+como `changes_requested`**, con `blocked: true` adicional y el motivo en la
+prosa, nunca como `approved`. No significa que se haya identificado un defecto:
+conserva el estado de evidencia insuficiente en forma fail-closed. Sólo una
+nueva revisión del SHA exacto puede levantar el bloqueo.
+
+### Transiciones que no admiten metadata
+
+`kanban_request_changes` / `hermes kanban request-changes` y `kanban_block`
+no admiten metadata en el runtime cotejado. Su `reason` debe empezar por la
+línea exacta **`Veredicto: CAMBIOS PEDIDOS sobre <sha40>`**, seguida del
+informe y la referencia PR/repositorio. Esa prosa sólo puede **vetar**, nunca
+autorizar. La ausencia de metadata no se inventa ni se suple mediante una
+aprobación antigua. Un resultado BLOQUEADO usa la misma línea de veto y
+explica el impedimento. La tarjeta queda pendiente/bloqueada; no se fuerza a
+`done` para satisfacer un lector automático.
+
+### Reglas de lectura y continuidad
+
+Cualquier crítica aplicable al repo/PR/SHA veta, incluso si otra tarjeta o un
+run posterior aprobó ese mismo SHA. Una tarjeta reabierta, no `done` o con
+run abierto también retiene la fusión; el lector #324 comprueba su estado y
+sus runs en una instantánea de sólo lectura. Resolver el hallazgo exige un
+SHA nuevo y la revisión correspondiente, no elegir la aprobación favorable.
+Cambiar el SHA invalida la aprobación anterior. Los checks de CI y el
+permiso humano de merge se verifican aparte.
+
+La prosa sigue siendo obligatoria: hallazgos Critical/High/Medium/Low con
+archivo/línea/consecuencia/corrección mínima, comandos realmente ejecutados,
+resultados y límites. `findings` es opcional: los contadores son estadísticas,
+no el texto de los hallazgos. Siempre conservar resumen y referencias exactas
+a tarea/run/comentario o informe recuperable.
+
+### Entrega a quienes emiten el veredicto
+
+**Precondición operacional de esta PR:** Hermes/default, como operador de la
+estabilización autorizada, añade un puntero explícito a esta sección en
+`Entregables` de los SOUL de **Rafael y Alexis**, que sí cargan al iniciar.
+No se presupone que carguen `latam-factory-orchestration` ni se cambian sus
+skills, toolsets, permisos, modelos o presupuestos. Conservar copia anterior,
+verificar el texto y su destino, y hacer una nueva sesión read-only con cada
+revisor que demuestre haber leído el contrato y produzca la identidad
+canónica sobre un SHA conocido. El readback de un fichero por sí solo no
+acredita que una sesión anterior haya recargado instrucciones.
+
+Hasta completar y adjuntar esa verificación, H1 de #327 sigue pendiente para
+el cierre operacional; fusionar documentación no prueba recepción ni
+enforcement. Este contrato tampoco instala auto-merge ni nuevos cron.
 
 ## José coordina y no ejecuta el trabajo que ha asignado a otro
 Criterio 3 de la historia de usuario de José: delega en lugar de ejecutar
