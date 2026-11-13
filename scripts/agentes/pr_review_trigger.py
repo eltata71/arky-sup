@@ -21,9 +21,8 @@ explícitamente antes de escribir.
 
 Cuenta cuántas tarjetas "Revisión PR #..." tiene cada uno hoy en un estado
 no terminal (todo/triage/ready/blocked/running -- nunca done/archived) y
-asigna al que tenga MENOS. Un empate se rompe por la paridad del número de
-PR (par -> Rafael, impar -> Alexis), para que el reparto no dependa del
-orden en que `gh pr list` devuelva los PRs.
+asigna al que tenga MENOS. Un empate va siempre a Rafael, según el contrato
+de los perfiles.
 
 Por qué por carga y no por turno: responde directamente a "si uno está
 saturado... que no se quede la cola parada esperándole" -- un revisor con
@@ -37,7 +36,7 @@ aparte (p. ej. consecutive_failures alto), no está construida todavía.
 ## Qué desencadena -- el aviso si el disparador deja de funcionar
 
 Este script no se vigila a sí mismo: eso es trabajo de
-`estado-fabrica.py` (ver `pr_abierto_sin_revision`, que usa el mismo
+`estado-fabrica.py` (ver `prs_without_review_card`, que usa el mismo
 umbral de 4 horas que el resto de sus chequeos). Si este script deja de
 correr, un PR sin tarjeta pasadas 4 horas lo dice el vigilante, no el
 silencio.
@@ -45,6 +44,7 @@ silencio.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sqlite3
 import sys
@@ -65,10 +65,10 @@ def gh_json(args: list[str]):
 
 
 def open_prs() -> list[dict]:
-    return gh_json([
+    return [pr for pr in gh_json([
         "pr", "list", "--repo", REPO, "--state", "open",
-        "--json", "number,title,createdAt",
-    ])
+        "--limit", "1000", "--json", "number,title,createdAt,isDraft",
+    ]) if not pr["isDraft"]]
 
 
 def pr_diff_names(pr_number: int) -> list[str]:
@@ -87,13 +87,13 @@ def existing_review_task(pr_number: int, *, db_path: Path = BOARD_DB) -> Optiona
     tarjeta de #316."""
     if not db_path.is_file():
         return None
-    con = sqlite3.connect(str(db_path))
+    con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
     try:
         cur = con.cursor()
         cur.execute("SELECT id, title FROM tasks WHERE title LIKE ?", (f"%PR #{pr_number}%",))
-        prefix = f"revisión pr #{pr_number}"
+        prefix = re.compile(rf"^revisión pr #{pr_number}(?!\d)")
         for task_id, title in cur.fetchall():
-            if (title or "").strip().lower().startswith(prefix):
+            if prefix.match((title or "").strip().lower()):
                 return task_id
         return None
     finally:
@@ -103,7 +103,7 @@ def existing_review_task(pr_number: int, *, db_path: Path = BOARD_DB) -> Optiona
 def reviewer_load(profile: str, *, db_path: Path = BOARD_DB) -> int:
     if not db_path.is_file():
         return 0
-    con = sqlite3.connect(str(db_path))
+    con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
     try:
         cur = con.cursor()
         cur.execute(
@@ -120,7 +120,7 @@ def pick_reviewer(pr_number: int) -> str:
     loads = {p: reviewer_load(p) for p in REVIEWERS}
     if loads["rafael"] != loads["alexis"]:
         return min(loads, key=loads.get)
-    return "rafael" if pr_number % 2 == 0 else "alexis"
+    return "rafael"
 
 
 def detect_overlaps(pr_number: int, files: set[str], all_prs_files: dict[int, set[str]]) -> list[int]:
@@ -183,26 +183,44 @@ def create_review_card(pr: dict, files: list[str], overlaps: list[int]) -> Creat
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    prs = open_prs()
-    all_files = {pr["number"]: set(pr_diff_names(pr["number"])) for pr in prs}
+    errors = []
+    try:
+        prs = open_prs()
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        print(f"No se pudieron listar PRs: {type(exc).__name__}", file=sys.stderr)
+        return 1
+    all_files = {}
+    for pr in prs:
+        n = pr["number"]
+        try:
+            all_files[n] = set(pr_diff_names(n))
+        except (OSError, subprocess.SubprocessError) as exc:
+            errors.append(n)
+            print(f"#{n}: diff no comprobado ({type(exc).__name__})", file=sys.stderr)
     created: list[CreatedCard] = []
     skipped: list[int] = []
     for pr in prs:
         n = pr["number"]
-        existing = existing_review_task(n)
-        if existing:
-            skipped.append(n)
+        if n not in all_files:
             continue
-        overlaps = detect_overlaps(n, all_files[n], all_files)
-        card = create_review_card(pr, list(all_files[n]), overlaps)
-        created.append(card)
+        try:
+            existing = existing_review_task(n)
+            if existing:
+                skipped.append(n)
+                continue
+            overlaps = detect_overlaps(n, all_files[n], all_files)
+            card = create_review_card(pr, sorted(all_files[n]), overlaps)
+            created.append(card)
+        except (OSError, subprocess.SubprocessError, sqlite3.Error, ValueError, KeyError) as exc:
+            errors.append(n)
+            print(f"#{n}: tarjeta no confirmada ({type(exc).__name__})", file=sys.stderr)
 
     for c in created:
         print(f"#{c.pr_number} -> tarjeta nueva {c.task_id}, asignada a {c.assignee}")
     if skipped:
         print(f"{len(skipped)} PR(s) ya tenían tarjeta, sin tocar: {skipped}")
     print(f"\n{len(created)} creada(s), {len(skipped)} ya existían, {len(prs)} PRs abiertos en total.")
-    return 0
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":

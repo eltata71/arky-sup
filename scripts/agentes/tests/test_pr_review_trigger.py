@@ -82,7 +82,7 @@ def test_load_based_picking():
         trg2.reviewer_load = lambda p, db_path=None: {"rafael": 1, "alexis": 1}[p]
         try:
             check("empate -> par va a rafael", trg2.pick_reviewer(100) == "rafael")
-            check("empate -> impar va a alexis", trg2.pick_reviewer(101) == "alexis")
+            check("empate -> impar también va a rafael", trg2.pick_reviewer(101) == "rafael")
         finally:
             trg2.reviewer_load = orig
 

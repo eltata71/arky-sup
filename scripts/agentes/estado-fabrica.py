@@ -84,8 +84,8 @@ Qué comprueba, y con qué umbral, y por qué:
   disparaba nada. `pr_review_trigger.py` cierra ese circuito desde hoy;
   este chequeo es la pregunta "¿y si el disparador deja de correr?" --
   mismo umbral que las tareas bloqueadas, mismo criterio aplicado a un
-  sitio nuevo. Falla hacia "no reportar" si `gh` o un tablero no
-  responden -- un error de red no es un disparador roto.
+  sitio nuevo. Si `gh` o un tablero no responden publica "no comprobado"
+  con motivo; tras 4h consecutivas sin comprobarlo se convierte en CRÍTICO.
 - **Enlaces de la skill canónica `latam-factory-orchestration` rotos o
   sustituidos por una copia real** (hallazgo 3, revisión del PR #293,
   2026-10-25): se creó la fuente única porque 18 copias ya habían divergido
@@ -122,7 +122,7 @@ esto aquí es barato en líneas; cuesta la decisión previa, no el código.
 Uso:
     python3 scripts/agentes/estado-fabrica.py [--json]
 
-Código de salida: 0 si OK; 1 si hay algo crítico.
+Código de salida: 0 si OK; 1 si hay algo crítico; 2 si revisión PR no comprobada.
 
 Desde 2026-10-25 también se registra en el cron de Hermes (no solo invocado
 a mano): corre cada 15 minutos, sin agente (coste cero, es Python puro, sin
@@ -471,68 +471,73 @@ def auto_decompose_true_everywhere() -> list[dict]:
     return findings
 
 
-def prs_without_review_card(now: float, boards: dict[str, Path]) -> list[dict]:
-    """Todo PR abierto, de más de PR_WITHOUT_REVIEW_HOURS, sin ninguna
-    tarjeta cuyo título empiece por "Revisión PR #<N>" en ningún tablero
-    conocido.
+def prs_without_review_card(now: float, boards: dict[str, Path], *, previous=None) -> dict:
+    """PRs no borrador sin tarjeta tras 4h, o estado explícito no comprobado.
 
-    Hallazgo 2026-11-12: 11 de los PRs abiertos llevaban hasta 19 días sin
-    que nadie le pidiera veredicto a Rafael o Alexis -- no porque
-    revisaran lento, sino porque abrir un PR no disparaba nada
-    (pr_review_trigger.py lo soluciona desde hoy). Este chequeo es el
-    "¿y si el disparador deja de correr?" -- la misma lección que ya
-    costó 808 fallos en silencio de otro vigilante y 47 de un cron: un
-    disparador que muere callado devuelve exactamente al punto de
-    partida. CRÍTICO sin esperar más que el mismo umbral que ya usa
-    `blocked_tasks` -- no es un chequeo nuevo con criterio nuevo, es el
-    mismo criterio aplicado a un sitio nuevo.
-
-    Falla cerrado hacia "no reportar", no hacia "reportar de más": si
-    `gh` no responde, o un tablero no se puede leer, esa fuente de PRs o
-    de tarjetas se omite en silencio -- un error de red no debe
-    convertirse en un CRÍTICO sobre algo que no se pudo comprobar.
+    main conserva el inicio del fallo en RESULT_FILE entre ejecuciones.
+    Un éxito reinicia el reloj. Nunca incluir stderr de proveedores.
     """
+    def unchecked(reason):
+        since = (previous or {}).get("unchecked_since")
+        if not isinstance(since, (int, float)) or since > now:
+            since = now
+        return {"status": "not_checked", "reason": reason, "findings": [],
+                "unchecked_since": since,
+                "critical": now - since >= PR_WITHOUT_REVIEW_HOURS * 3600}
+
+    if not boards:
+        return unchecked("no se descubrieron tableros")
     try:
         out = subprocess.run(
             ["gh", "pr", "list", "--repo", PR_REPO, "--state", "open",
-             "--json", "number,title,createdAt"],
+             "--limit", "1000", "--json", "number,title,createdAt,isDraft"],
             capture_output=True, text=True, timeout=30,
         )
-        prs = json.loads(out.stdout) if out.returncode == 0 else []
-    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError):
-        return []
+        if out.returncode != 0:
+            return unchecked(f"gh pr list falló (exit {out.returncode})")
+        prs = json.loads(out.stdout)
+        if not isinstance(prs, list) or any(
+            not isinstance(p, dict) or not isinstance(p.get("number"), int)
+            or not isinstance(p.get("isDraft"), bool) or not isinstance(p.get("createdAt"), str)
+            for p in prs
+        ):
+            return unchecked("respuesta gh inválida")
+        if len(prs) >= 1000:
+            return unchecked("listado gh posiblemente truncado (1000 PRs)")
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+        return unchecked(f"gh no disponible ({type(exc).__name__})")
 
     titles_lower: list[str] = []
     for db_path in boards.values():
         if not db_path.is_file():
-            continue
+            return unchecked("un tablero no existe")
         try:
-            con = sqlite3.connect(str(db_path))
+            con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
             try:
-                cur = con.cursor()
-                cur.execute("SELECT title FROM tasks WHERE title LIKE 'Revisión PR #%'")
-                titles_lower.extend((row[0] or "").strip().lower() for row in cur.fetchall())
+                rows = con.execute("SELECT title FROM tasks WHERE title LIKE 'Revisión PR #%'").fetchall()
+                titles_lower.extend((row[0] or "").strip().lower() for row in rows)
             finally:
                 con.close()
         except sqlite3.Error:
-            continue
+            return unchecked("un tablero no se pudo leer")
 
     findings = []
     for pr in prs:
-        n = pr.get("number")
-        if n is None:
+        if pr["isDraft"]:
             continue
-        prefix = f"revisión pr #{n}"
-        if any(t.startswith(prefix) for t in titles_lower):
+        n = pr["number"]
+        prefix = re.compile(rf"^revisión pr #{n}(?!\d)")
+        if any(prefix.match(t) for t in titles_lower):
             continue
         try:
             created = datetime.fromisoformat(pr["createdAt"].replace("Z", "+00:00")).timestamp()
-        except (KeyError, ValueError):
-            continue
-        age_hours = round((now - created) / 3600, 1)
+        except ValueError:
+            return unchecked(f"fecha de PR #{n} inválida")
+        age_hours = (now - created) / 3600
         if age_hours >= PR_WITHOUT_REVIEW_HOURS:
-            findings.append({"number": n, "title": pr.get("title", ""), "age_hours": age_hours})
-    return findings
+            findings.append({"number": n, "title": pr.get("title", ""), "age_hours": round(age_hours, 1)})
+    return {"status": "checked", "reason": None, "findings": findings,
+            "unchecked_since": None, "critical": False}
 
 
 def dispatcher_lock_status(gw_states: dict[str, str]) -> dict:
@@ -642,7 +647,16 @@ def main() -> int:
         razones.append(f"CANDADO DEL DESPACHADOR SIN DUEÑO: {lock_status['reason']} -- "
                         f"un gateway 'activo' no implica que esté despachando de verdad")
 
-    prs_sin_revision = prs_without_review_card(now, boards) if not boards_error else []
+    try:
+        previous = json.loads(RESULT_FILE.read_text(encoding="utf-8")).get("pr_review_check", {})
+        if not isinstance(previous, dict):
+            previous = {}
+    except (OSError, ValueError, AttributeError):
+        previous = {}
+    pr_check = prs_without_review_card(now, boards, previous=previous)
+    prs_sin_revision = pr_check["findings"]
+    if pr_check["critical"]:
+        razones.append(f"REVISIÓN PR NO COMPROBADA durante >= {PR_WITHOUT_REVIEW_HOURS}h: {pr_check['reason']}")
     for p in prs_sin_revision:
         razones.append(f"PR SIN REVISIÓN: #{p['number']} abierto hace {p['age_hours']}h "
                         f"(>= {PR_WITHOUT_REVIEW_HOURS}h) sin tarjeta de revisión -- "
@@ -650,7 +664,7 @@ def main() -> int:
 
     critico = bool(razones)
     result = {
-        "verdict": "ATENCION" if critico else "OK",
+        "verdict": "ATENCION" if critico else ("NO COMPROBADO" if pr_check["status"] == "not_checked" else "OK"),
         "checked_at": now,
         "reasons": razones,
         "boards_discovered": sorted(boards.keys()),
@@ -665,6 +679,7 @@ def main() -> int:
         "auto_decompose_global": auto_decompose_global,
         "dispatcher_lock": lock_status,
         "prs_without_review_card": prs_sin_revision,
+        "pr_review_check": pr_check,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
                         "un agente trabajando fuera de Kanban por completo (sin tarjeta) sigue siendo invisible"],
@@ -688,11 +703,13 @@ def main() -> int:
         print(f"ATENCION: {len(razones)} motivo(s)")
         for r in razones:
             print(f"  - {r}")
+    elif pr_check["status"] == "not_checked":
+        print(f"NO COMPROBADO -- revisión PR: {pr_check['reason']}")
     else:
         print(f"OK -- gateways {gw_states}, {len(blocked)} bloqueada(s) (ninguna crítica), "
               f"{len(motor_hits)} intento(s) de motor en la última hora")
 
-    return 1 if critico else 0
+    return 1 if critico else (2 if pr_check["status"] == "not_checked" else 0)
 
 
 if __name__ == "__main__":
