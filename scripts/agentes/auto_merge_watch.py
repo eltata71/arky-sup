@@ -80,7 +80,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 REPO = "eltata71/arky-sup"
 BOARD_DB = Path.home() / ".hermes" / "kanban" / "boards" / "arky-maintenance" / "kanban.db"
@@ -101,6 +101,13 @@ REQUIRED_CHECKS = {
     *(f"Vitest (shard {n}/4)" for n in range(1, 5)),
 }
 DEPLOY_CHECK = "Deploy to Vercel (production)"
+# e2e.yml y security.yml sólo tienen pull_request (o schedule); no push.
+# El freno posmerge exige todos los jobs de ci.yml que sí corren en main.
+MAIN_REQUIRED_CHECKS = (REQUIRED_CHECKS - {
+    "CodeQL (JavaScript/TypeScript)", "Dependency audit",
+    "Playwright smoke (desktop + iPad)",
+}) | {DEPLOY_CHECK}
+PR_REQUIRED_STATUS_CONTEXTS = {"Vercel"}
 
 # ---------------------------------------------------------------------------
 # Clasificación por rutas -- SIEMPRE_ALTO_RIESGO gana sobre cualquier clase.
@@ -299,12 +306,23 @@ def gh_pr_comment(pr_number: int, body: str) -> None:
     )
 
 
-def gh_api(endpoint: str, *, paginate: bool = False):
+def gh_api(endpoint: str, *, paginate: bool = False) -> Any:
     out = subprocess.run(
-        ["gh", "api", endpoint, *(["--paginate", "--slurp"] if paginate else [])],
+        ["gh", "api", endpoint, *(["--paginate"] if paginate else [])],
         capture_output=True, text=True, timeout=60, check=True,
     )
-    return json.loads(out.stdout)
+    if not paginate:
+        return json.loads(out.stdout)
+    # gh 2.45 admite --paginate pero no --slurp. Su salida son documentos
+    # JSON concatenados, no necesariamente una línea por página.
+    remaining = out.stdout.lstrip()
+    decoder = json.JSONDecoder()
+    pages = []
+    while remaining:
+        page, end = decoder.raw_decode(remaining)
+        pages.append(page)
+        remaining = remaining[end:].lstrip()
+    return pages
 
 
 def gh_main_head() -> str:
@@ -351,8 +369,11 @@ def gh_commit_ci_status(sha: str, *, main: bool = False) -> str:
                 states.append("pending")
         if "red" in states:
             return "red"
-        required = REQUIRED_CHECKS | ({DEPLOY_CHECK} if main else set())
-        if not statuses or not required.issubset(successful) or "pending" in states:
+        required = MAIN_REQUIRED_CHECKS if main else REQUIRED_CHECKS
+        required_statuses = set() if main else PR_REQUIRED_STATUS_CONTEXTS
+        successful_statuses = {s.get("context") for s in statuses if s.get("state") == "success"}
+        if (not required.issubset(successful)
+                or not required_statuses.issubset(successful_statuses) or "pending" in states):
             return "pending"
         return "green"
     except (subprocess.SubprocessError, ValueError, KeyError, TypeError):
@@ -417,9 +438,9 @@ def find_review_verdict(pr_number: int, *, head_sha: str = "", db_path: Optional
         con.execute("BEGIN")  # identidad, resultados y críticas: una instantánea
         # El título no concede autoridad. La identidad explícita se fija en
         # el cuerpo ANTES de despachar, también para revisiones pendientes.
-        cur.execute("SELECT id, body FROM tasks")
+        cur.execute("SELECT id, body, status FROM tasks")
         applicable = []
-        for task_id, body in cur.fetchall():
+        for task_id, body, status in cur.fetchall():
             for line in (body or "").splitlines():
                 if not line.startswith("AUTO_MERGE_REVIEW "):
                     continue
@@ -428,9 +449,13 @@ def find_review_verdict(pr_number: int, *, head_sha: str = "", db_path: Optional
                         and identity["pr"] == pr_number
                         and identity.get("review_type") == "independent"
                         and _sha_matches(identity.get("sha", ""), head_sha)):
-                    applicable.append(task_id)
+                    applicable.append((task_id, status))
         approved = []
-        for task_id in set(applicable):
+        pending = False
+        for task_id, status in set(applicable):
+            cur.execute("SELECT 1 FROM task_runs WHERE task_id = ? AND ended_at IS NULL LIMIT 1", (task_id,))
+            if status != "done" or cur.fetchone() is not None:
+                pending = True  # reapertura/ejecución vigente invalida el PASS histórico
             cur.execute("SELECT profile, metadata FROM task_runs WHERE task_id = ? AND ended_at IS NOT NULL", (task_id,))
             resolved = []
             for profile, metadata in cur.fetchall():
@@ -448,9 +473,9 @@ def find_review_verdict(pr_number: int, *, head_sha: str = "", db_path: Optional
             if rejected:
                 return rejected
             if not resolved:
-                return None  # revisión exigida todavía pendiente/no verificable
+                pending = True  # revisar también las demás críticas antes de retener
             approved.extend(resolved)
-        return approved[0] if approved else None
+        return approved[0] if approved and not pending else None
     finally:
         con.close()
 

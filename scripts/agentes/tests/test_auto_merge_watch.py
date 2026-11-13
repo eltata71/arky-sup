@@ -114,12 +114,12 @@ def _make_review_board(tmp_dir: Path, pr_number: int, comments: list[tuple[str, 
     las de hoy en el tablero real."""
     db = tmp_dir / f"board-{pr_number}.db"
     con = sqlite3.connect(str(db))
-    con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT)")
+    con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT, status TEXT DEFAULT 'done')")
     con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
     con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
     sha = next((amw._VERDICT_RE.search(body)[2] for _, body, _ in comments if amw._VERDICT_RE.search(body)), "a" * 40)
     identity = {"repo": amw.REPO, "pr": pr_number, "sha": sha, "review_type": "independent"}
-    con.execute("INSERT INTO tasks VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", f"Revisión PR #{pr_number}: algo", 1, "AUTO_MERGE_REVIEW " + json.dumps(identity)))
+    con.execute("INSERT INTO tasks (id,title,created_at,body) VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", f"Revisión PR #{pr_number}: algo", 1, "AUTO_MERGE_REVIEW " + json.dumps(identity)))
     for author, body, ts in comments:
         con.execute("INSERT INTO task_comments VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", author, body, ts))
         match = amw._VERDICT_RE.search(body)
@@ -267,12 +267,12 @@ def test_structured_metadata_schema():
     with tempfile.TemporaryDirectory() as d:
         db = Path(d) / "board.db"
         con = sqlite3.connect(str(db))
-        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT)")
+        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT, status TEXT DEFAULT 'done')")
         con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
         con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
         sha = "d" * 40
         identity = {"repo": amw.REPO, "pr": 600, "sha": sha, "review_type": "independent"}
-        con.execute("INSERT INTO tasks VALUES ('t_600', 'Revisión PR #600: x', 1, ?)", ("AUTO_MERGE_REVIEW " + json.dumps(identity),))
+        con.execute("INSERT INTO tasks (id,title,created_at,body) VALUES ('t_600', 'Revisión PR #600: x', 1, ?)", ("AUTO_MERGE_REVIEW " + json.dumps(identity),))
         con.execute(
             "INSERT INTO task_runs (task_id, profile, summary, metadata, ended_at) VALUES (?, ?, NULL, ?, ?)",
             ("t_600", "rafael", json.dumps(dict(identity, verdict="approved")), 100),
@@ -301,19 +301,19 @@ def test_task_lookup_ignores_followup_cards_mentioning_the_pr():
     with tempfile.TemporaryDirectory() as d:
         db = Path(d) / "board.db"
         con = sqlite3.connect(str(db))
-        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT)")
+        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT, status TEXT DEFAULT 'done')")
         con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
         con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
         sha = "e" * 40
         identity = {"repo": amw.REPO, "pr": 291, "sha": sha, "review_type": "independent"}
-        con.execute("INSERT INTO tasks VALUES ('t_real', 'Revisión PR #291: x', 100, ?)", ("AUTO_MERGE_REVIEW " + json.dumps(identity),))
+        con.execute("INSERT INTO tasks (id,title,created_at,body) VALUES ('t_real', 'Revisión PR #291: x', 100, ?)", ("AUTO_MERGE_REVIEW " + json.dumps(identity),))
         con.execute(
             "INSERT INTO task_runs (task_id, profile, metadata, ended_at) VALUES (?, ?, ?, ?)",
             ("t_real", "alexis", json.dumps(dict(identity, verdict="approved")), 150),
         )
         # Tarjeta de SEGUIMIENTO creada DESPUÉS, que menciona "PR #291" en el
         # título pero no es una revisión -- exactamente lo que pasó hoy.
-        con.execute("INSERT INTO tasks VALUES ('t_followup', 'Endurecer algo (L1 de Alexis, PR #291)', 200, '')")
+        con.execute("INSERT INTO tasks (id,title,created_at,body) VALUES ('t_followup', 'Endurecer algo (L1 de Alexis, PR #291)', 200, '')")
         con.commit()
         con.close()
         v = amw.find_review_verdict(291, head_sha=sha, db_path=db)

@@ -76,6 +76,21 @@ class SafetyTests(unittest.TestCase):
         self.assertEqual(self.ci(checks(main=True), main=True), "green")
         self.assertEqual(self.ci(checks(), main=True), "pending")
 
+    def test_main_contract_matches_push_workflow_without_pr_only_checks(self):
+        # Foto fiel de ci.yml en push: e2e.yml/security.yml sólo corren en PR.
+        names = {"Static gates (typecheck + lint + budgets + build)",
+                 "Merged coverage (thresholds)", "Deploy to Vercel (production)",
+                 *(f"Vitest (shard {n}/4)" for n in range(1, 5))}
+        runs = [{"name": n, "app": {"slug": "github-actions"}, "head_sha": HEAD,
+                 "status": "completed", "conclusion": "success"} for n in sorted(names)]
+        self.assertEqual(self.ci(runs, statuses=[], main=True), "green")
+        self.assertEqual(self.ci(runs, statuses=[]), "pending")
+        for index in range(len(runs)):
+            self.assertEqual(self.ci(runs[:index] + runs[index + 1:], statuses=[], main=True), "pending")
+        bad = copy.deepcopy(runs)
+        bad[0]["conclusion"] = "failure"
+        self.assertEqual(self.ci(bad, statuses=[], main=True), "red")
+
     def test_vercel_success_does_not_hide_actions_pending_or_red(self):
         for state, conclusion, expected in [("in_progress", None, "pending"),
                                              ("completed", "failure", "red"),
@@ -102,9 +117,11 @@ class SafetyTests(unittest.TestCase):
 
     def test_api_wrapper_really_requests_pagination(self):
         self.shell.side_effect = None
-        self.shell.return_value = Mock(stdout='[{"statuses": []}]')
-        amw.gh_api("repos/test/status?per_page=100", paginate=True)
-        self.assertEqual(self.shell.call_args.args[0][-2:], ["--paginate", "--slurp"])
+        self.shell.return_value = Mock(stdout='{"statuses": [{"state":"success"}]}\n{"statuses": []}\n')
+        pages = amw.gh_api("repos/test/status?per_page=100", paginate=True)
+        self.assertEqual(pages, [{"statuses": [{"state": "success"}]}, {"statuses": []}])
+        self.assertIn("--paginate", self.shell.call_args.args[0])
+        self.assertNotIn("--slurp", self.shell.call_args.args[0])
 
     def test_merge_command_pins_sha(self):
         self.shell.side_effect = None
@@ -327,7 +344,7 @@ class SafetyTests(unittest.TestCase):
 
     def board(self):
         con = sqlite3.connect(amw.BOARD_DB)
-        con.executescript("CREATE TABLE tasks (id TEXT, title TEXT, body TEXT);"
+        con.executescript("CREATE TABLE tasks (id TEXT, title TEXT, body TEXT, status TEXT DEFAULT 'done');"
                           "CREATE TABLE task_runs (task_id TEXT, profile TEXT, metadata TEXT, ended_at INTEGER);"
                           "CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT);")
         self.addCleanup(con.close)
@@ -335,7 +352,7 @@ class SafetyTests(unittest.TestCase):
 
     def add_review(self, con, tid, verdict="approved", *, identity=None, title="arbitrary", actor="alexis", sha=None):
         identity = IDENTITY if identity is None else identity
-        con.execute("INSERT INTO tasks VALUES (?, ?, ?)", (tid, title, "AUTO_MERGE_REVIEW " + json.dumps(identity)))
+        con.execute("INSERT INTO tasks (id,title,body) VALUES (?, ?, ?)", (tid, title, "AUTO_MERGE_REVIEW " + json.dumps(identity)))
         if verdict:
             data = dict(identity, verdict=verdict)
             if sha is not None:
@@ -350,6 +367,20 @@ class SafetyTests(unittest.TestCase):
         self.assertFalse(amw.check_current_approval(324, HEAD).ok)
         # Incluso un APROBADO posterior en LA MISMA tarjeta no borra la crítica.
         con.execute("INSERT INTO task_runs VALUES ('old', 'alexis', ?, 200)", (json.dumps(dict(IDENTITY, verdict="approved")),))
+        con.commit()
+        self.assertFalse(amw.check_current_approval(324, HEAD).ok)
+
+    def test_reopened_same_sha_and_active_run_veto_historical_approval(self):
+        con = self.board()
+        self.add_review(con, "approved")
+        self.assertTrue(amw.check_current_approval(324, HEAD).ok)
+        for status in ("ready", "todo", "running", "triage", "scheduled", "review", "blocked", "archived"):
+            with self.subTest(status=status):
+                con.execute("UPDATE tasks SET status=?", (status,))
+                con.commit()
+                self.assertFalse(amw.check_current_approval(324, HEAD).ok)
+        con.execute("UPDATE tasks SET status='done'")
+        con.execute("INSERT INTO task_runs VALUES ('approved', 'alexis', NULL, NULL)")
         con.commit()
         self.assertFalse(amw.check_current_approval(324, HEAD).ok)
 
