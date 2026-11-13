@@ -44,17 +44,24 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
    **Las etapas de la ruta corta, enumeradas aquí para no reconstruirlas de memoria** [corrección 2026-10-26: la primera prueba real omitió la etapa 17 dos veces por esto mismo — el canónico no las enumeraba y hubo que recordarlas de memoria durante la clasificación]: **1, 2, 11, 12, la etapa de desarrollo que corresponda (13 frontend / 14 backend / 15 integraciones / 24 mantenimiento), 16a+16b, 17 (Calidad, Paola — no se omite) y 26.** La ruta completa son las 26, sin excepción.
 
    Sin los dos atributos decididos, no hay tarjeta todavía — este paso es la admisión, no un trámite posterior a ella.
-2. Registrar la solicitud ya clasificada en Kanban nativo con idempotency-key, objetivo, requerimientos, aceptación verificable, riesgo, fase SDLC, presupuesto, y `complejidad`/`ruta` del paso 1 escritos en el cuerpo. Utilizar IDs nativos como autoridad; proyecto no es perfil. Usar operaciones locales para transformaciones deterministas; `execute_code` para lotes mecánicos; `delegate_task` solo para razonamiento breve. Todo trabajo durable, con aprobación o interperfil permanece en Kanban.
+2. Registrar la solicitud ya clasificada en Kanban nativo con idempotency-key, objetivo, requerimientos, aceptación verificable, riesgo, fase SDLC, presupuesto, y `complejidad`/`ruta` del paso 1 escritos en el cuerpo. Utilizar IDs nativos como autoridad; proyecto no es perfil. Usar operaciones locales para transformaciones deterministas; `execute_code` para lotes mecánicos **salvo cualquier mutación de Kanban por CLI** (`create`, `link`/`unlink`, `block`/`unblock`, `archive`, `comment`, `assign`, `edit`, `promote`, `request-review`...) **— no delegarlas a `execute_code` ni a `delegate_task`. Cambiar a `terminal` directo no garantiza autorización: también los subprocesos del propio worker reciben el fence del motor instalado; ver el alcance por contexto del paso 3**. `delegate_task` solo para razonamiento breve. Todo trabajo durable, con aprobación o interperfil permanece en Kanban.
 3. Planificar **construyendo el grafo tarea por tarea**, con `kanban link` para dependencias que no sean de la raíz. No fan-out trivial. Asignar cada tarjeta a un especialista del catálogo; no hacer todo como José. Vincular dependencias, aceptación y revisión independiente.
 
-   **El reloj no se arregla con prosa — se construye para que no se pueda omitir** [corrección 2026-10-26, agravada 2026-11-01: esta regla ya existía escrita, con énfasis y con su motivo al lado, y falló igual en su primera prueba real — `t_0e4d6e31` se creó bien con `create --parent` pero sin `--max-runtime`, y quedó corriendo sin límite de tiempo. Repetir la frase más fuerte trata un fallo estructural como un fallo de atención]. Por eso toda hija se crea con **`scripts/agentes/crear-tarea-hija.sh`**, nunca con `hermes kanban create` a mano: el envoltorio exige `--parent` y `--max-runtime` y **se niega a llamar a Hermes si falta cualquiera de los dos** — no hay valor por defecto a propósito, el número lo decide la tarea:
+   **El reloj no se arregla con prosa — se construye para que no se pueda omitir** [corrección 2026-10-26, agravada 2026-11-01: esta regla ya existía escrita, con énfasis y con su motivo al lado, y falló igual en su primera prueba real — `t_0e4d6e31` se creó bien con `create --parent` pero sin `--max-runtime`, y quedó corriendo sin límite de tiempo. Repetir la frase más fuerte trata un fallo estructural como un fallo de atención]. Por eso toda hija se crea con **`scripts/agentes/crear-tarea-hija.sh`**, nunca con `hermes kanban create` a mano: el envoltorio exige `--assignee`, `--parent`/`--parent-reason`, `--max-runtime`, y `--priority`/`--priority-reason`, y **se niega a llamar a Hermes si falta cualquiera de los seis** — no hay valor por defecto para los números a propósito, los decide la tarea:
+
+   **La prioridad tiene la misma enfermedad que el reloj, con un segundo incidente real** [corrección 2026-11-03: el tablero `arky-maintenance` tenía 16 tarjetas bloqueadas numeradas con la convención Unix (0 = más urgente) mientras el despachador ordena `priority DESC` — el número MÁS ALTO se atiende primero. Lo más crítico quedaba al final de la cola y nadie podía leer el tablero y saber qué seguía. No fue un número mal puesto una vez: nada obligaba a razonarlo, así que cada quien usó la convención que tenía en la cabeza]. **El despachador de Hermes ordena `priority DESC`: el número más alto se atiende primero — no la convención Unix de severidad (P0 = más urgente), que es la contraria.** Por eso el envoltorio exige también `--priority <N> --priority-reason "<texto>"` y `--parent-reason "<texto>"` (por qué depende de ese padre, no solo que depende): las razones no van al número, van al cuerpo de la tarjeta en texto plano, para leerse al abrirla sin preguntar a quien la creó.
 
    ```
    bash scripts/agentes/crear-tarea-hija.sh --board <tablero> --parent <id-raíz> \
-     --max-runtime 300 --max-retries 1 --assignee <perfil> -- "<título>"
+     --parent-reason "<por qué depende de ese padre>" \
+     --max-runtime 300 --max-retries 1 --assignee <perfil> \
+     --priority <N> --priority-reason "<por qué ese número y no otro>" \
+     -- "<título>"
    ```
 
-   El envoltorio valida que `--max-runtime` sea un entero positivo (rechaza `0`, negativos y no-numéricos) y aplica de verdad el techo de `300` segundos por intento de ejecución de este flujo (paso 5) — no es un plazo agregado de toda la tarjeta, y no es solo una cifra en este texto: pedir más de 300 sin `--override-ceiling-reason "<motivo>"` se rechaza, no solo se desaconseja. Un presupuesto distinto requiere esa aprobación humana explícita, registrada en la propia llamada, antes de crear o despachar.
+   **El terminal directo no elimina el bloqueo de contexto** [corrección de M1/M2 del PR #319; motor instalado en `hermes-agent-v0.22.2`, SHA `788dcdccbf7349330c5cd1d16073a8b40b20069a`]. En `agent/delegation_context.py`, `delegated_child_subprocess_env` llama a `scrub_kanban_env` tanto para descendientes de `delegate_task` como cuando existe `HERMES_KANBAN_TASK`: retira la identidad del worker y conserva un marcador de fence. `tools/environments/local.py` aplica esa función al entorno hijo del terminal. Por eso el CLI lanzado incluso desde el terminal propio de un worker queda sujeto al fence sobre su tablero (`hermes_cli/kanban_db.py:_assert_not_delegated_child_mutation`, `hermes_cli/kanban.py:_is_delegated_child_cli_mutation`). Un shell directo del operador, sin ese contexto heredado, es un caso distinto; probarlo allí no demuestra que funcione desde un worker delegado real. La herramienta estructurada `kanban_create` **sí declara `max_runtime_seconds`** en `tools/kanban_tools_schemas.py`, pero `tools/kanban_tools.py:_handle_create` llama al guard separado `_reject_delegated_child_mutation`, que rechaza los contextos hijo de delegación; no escribe desde cualquier contexto. Admitir ese campo no impone por sí solo que sea obligatorio ni el techo de 300 segundos del envoltorio. No se sustituye aquí el envoltorio por esa herramienta ni se declara verificado un canal alternativo: **crear tarjetas con reloj nativo desde el contexto delegado de `t_cdb3998c` sigue bloqueado** hasta disponer de un canal autorizado y comprobado desde un worker delegado real. Corregir este texto no crea ese canal ni autoriza eludir los guards; resolverlo en el motor requiere decisión de José.
+
+   El envoltorio valida que `--max-runtime` sea un entero positivo (rechaza `0`, negativos y no-numéricos) y aplica de verdad el techo de `300` segundos por intento de ejecución de este flujo (paso 5) — no es un plazo agregado de toda la tarjeta, y no es solo una cifra en este texto: pedir más de 300 sin `--override-ceiling-reason "<motivo>"` se rechaza, no solo se desaconseja. Un presupuesto distinto requiere esa aprobación humana explícita, registrada en la propia llamada, antes de crear o despachar. `--priority` solo exige ser entero (puede ser negativo: no hay suelo) y que `--priority-reason`/`--parent-reason` no estén vacíos — el envoltorio no puede juzgar si el razonamiento es bueno, solo que exista.
 
    **La puerta nativa debería cerrarse en la frontera del motor, no solo con el envoltorio** [revisión independiente 2026-11-01/02 — corrección urgente: este párrafo afirmaba instalado un control que no lo está, violando la regla de este mismo documento en "Errores frecuentes": "No afirmar allowlist fuerte si no existe enforcement"]: el envoltorio hace la omisión más difícil, nunca imposible — `hermes kanban create --parent` sigue siendo un comando real que cualquier perfil puede llamar directamente, y prohibirlo solo con prosa es el mismo instrumento que ya falló una vez. `scripts/agentes/require-max-runtime-on-create.py.referencia` es un `pre_tool_call` hermano de `block-hermes-engine-writes.py`, pensado para rechazar un `terminal` que invoque `hermes kanban ... create` con `--parent` y sin `--max-runtime` — **está escrito, no instalado en ningún perfil**, y la revisión independiente encontró además evasiones triviales en su diseño actual (ver el historial del PR #300/#304 para el detalle). Hasta que esté instalado, probado contra el payload real que Hermes entrega, y sin las evasiones conocidas, **esta frase no es cumplimiento**: es intención escrita, y el envoltorio sigue siendo la única cosa que de verdad exige el reloj hoy.
 
@@ -64,6 +71,61 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 5. Respetar máximo global de 3 y uno por perfil en este flujo, 20 turnos por nuevo perfil, 300 segundos por ejecución y una tentativa de ejecución inicial. Usar límites nativos y no iniciar Dispatchers/Cron adicionales. El gateway operacional es el único Dispatcher automático. Fallo de cuota/autenticación bloquea y requiere intervención; no reintentar en bucle.
 6. Antes de modificar código, exigir repositorio autorizado y worktree por escritor; un solo propietario por archivo. Si hay conflicto, serializar con dependencia. Un worktree o toolset no es un sandbox ni impide acceso a secretos del host. No atribuir aislamiento sin evidencia.
 7. Ejecutar pruebas RED/GREEN, lint/type-check/build y verificaciones aplicables. Registrar comandos, exit codes, SHA, archivos y evidencias adjuntas a la tarjeta. Indicar gates no disponibles y por qué. No usar simulaciones como prueba de inferencia real.
+
+   **`npm run quality:gate` y `npm run test:coverage` se corren partidos en
+   llamadas cortas, nunca encadenados en una sola** [hallazgo 2026-11-13]:
+   la herramienta de terminal tiene un timeout por defecto de **180s** y un
+   tope de **600s** (`TERMINAL_TIMEOUT`/`TERMINAL_MAX_FOREGROUND_TIMEOUT`,
+   confirmados en `tools/terminal_tool.py` del motor instalado — son los
+   valores por defecto de ESTE despliegue; cada uno puede sobreescribirse
+   por entorno o perfil, así que conviene comprobar overrides antes de
+   fiarse de estos dos números a ciegas) — pasar un
+   `timeout` mayor no espera más, convierte la llamada en un proceso de
+   fondo rastreado. Seis tarjetas reales (#310, #312, #314, #315, #318,
+   #319) murieron con `exit 124` intentando correr el gate completo en una
+   sola llamada con un `timeout` insuficiente (300–420s): no era el
+   presupuesto de la tarea el que se agotaba —todas tenían 1200–2400s de
+   sobra— era el `timeout` de esa única llamada de terminal.
+
+   **Precondición de memoria para `typecheck` — sin ella, `tsc` muere por
+   heap antes de llegar a ningún timeout** [corrección 2026-11-13,
+   revisión independiente de Alexis]: la medición de abajo se hizo con
+   `NODE_OPTIONS="--max-old-space-size=6144"`; sin ese ajuste, `tsc
+   --noEmit` agotó el heap por defecto de Node y abortó con
+   `FATAL ERROR: Ineffective mark-compacts near heap limit` en una medición
+   anterior sobre este mismo repositorio — un fallo de memoria, no de
+   tiempo, y ningún timeout de la tabla lo evita. Prefijar el comando de
+   `typecheck` (y `typecheck:strict`, que comparte el mismo binario) con
+   esa variable en cada llamada, en vez de exportarla una vez y confiar en
+   que persista entre terminales o backends:
+
+   ```
+   NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck
+   ```
+
+   Medido en frío sobre este repositorio con ese ajuste (2026-11-13,
+   worktree limpio):
+
+   | Llamada | Tiempo medido | `timeout` a pasar |
+   |---|---|---|
+   | `NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck` | 270–400s según carga — **la más cerca del tope, incluso sola** | 550 |
+   | `NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck:strict` | 26s | 180 |
+   | `npm run lint` | 104s | 300 |
+   | `npm run check:any-budget && npm run check:no-orphan-scripts && npm run check:module-size && npm run check:module-boundaries` | 8s | 180 |
+   | `npm run check:i18n-sections` | no medido individualmente; históricamente rápido | 180 |
+   | `npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget` | 130s | 300 |
+   | `npm run test:coverage` | 451s | 580 |
+
+   Siete llamadas, cada una con margen real bajo los 600s salvo
+   `typecheck`: en una medición distinta llegó a 400s bajo carga, y es el
+   único paso que puede acercarse al tope incluso yendo solo. Si eso
+   resulta insuficiente en la práctica, subir su `timeout` hasta el tope
+   configurado (600s por defecto en este despliegue) es lo máximo que la
+   herramienta permite en pie sin tocar su configuración — por encima de
+   eso pasa a fondo, que es un modo de trabajo distinto (sondear con
+   `process_manage`, no asumir que terminó). No se encadenan dos de estas
+   llamadas con `&&` dentro de la misma invocación de terminal: cada paso
+   es su propia llamada, con su propio `timeout`.
 8. Mantener heartbeat y comentarios para trabajo prolongado. Respetar estados nativos, bloqueo con motivo, reintento acotado, recuperación nativa y referencias a sesión/ejecución. No almacenar un estado alternativo en metadatos.
 9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. **Toda solicitud de revisión nombra explícitamente a quien revisa, nunca el propio nombre** — ver más abajo "`request-review` siempre lleva `reviewer`" para el porqué, a quién nombrar según la etapa, y qué hacer si el despachador devuelve la tarjeta igual. Producción, merge, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 
