@@ -87,7 +87,8 @@ export const buildReviewPrompt = (
     '',
     'Emite un veredicto sobre si el artefacto es utilizable como entregable de la Oficina.',
     'No inventes defectos: cada hallazgo debe citar algo presente o ausente en el contenido.',
-    'Cada hallazgo declara qué criterio de aceptación numerado incumple en «criterion» (el número que aparece delante del criterio). Si el hallazgo no corresponde a ningún criterio, omite «criterion».',
+    'En cada hallazgo, «criterion» y «evidence» son obligatorios: «criterion» es un entero >= 1 que corresponde al número exacto de un criterio de aceptación existente; «evidence» es una cita o referencia verificable no vacía de lo presente o ausente en el contenido.',
+    'No incluyas observaciones generales en «findings»: todos sus hallazgos son de aceptación. Si no hay criterios de aceptación, devuelve «findings» vacío. Nunca inventes criterios ni evidencia.',
     'Responde únicamente con JSON: {"verdict":"approved"|"changes-requested"|"rejected","summary":"...","findings":[{"severity":"critical"|"high"|"medium"|"low","message":"...","criterion":2,"evidence":"..."}]}',
   ].join('\n');
 };

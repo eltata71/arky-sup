@@ -206,6 +206,46 @@ un defecto de diseño — registrado como tarjeta `t_dc22118e` en el tablero
 `latam-factory`, con una propuesta de reconciliación dimensionada y sin
 construir (es código de Hermes, no de este repositorio).
 
+## Los cuatro que faltaban — y ocho más del mismo tipo (2026-11-03)
+
+La subida de los 16 anteriores se centró en quien implementa y se saltó
+cuatro perfiles sin razonarlo: `jose`, `camilo`, `rafael`, `alexis`. Los
+cuatro tenían bloque `agent:` pero **sin `max_turns` ni `run_budget_seconds`
+en absoluto** — no es el mismo síntoma que los 16 (ajustados pero cortos),
+es la otra mitad del mismo defecto: correr sin presupuesto alguno, con el
+valor por defecto del motor (`run_budget_seconds=None`,
+`max_iterations=sys.maxsize` — genuinamente ilimitado).
+
+Dimensionado por rol, sin telemetría directa de ninguno de los cuatro:
+
+- **`jose`** (`max_turns: 40`, `run_budget_seconds: 900`). Coordina,
+  descompone y consolida sobre muchas tarjetas en una sola sesión — más
+  pasos que una revisión de una sola tarjeta, aunque cada paso sea barato
+  (`gh pr list`, `hermes kanban show`). No ejecuta código de producto
+  (`multiagente.md`: "no escribe código de producto"), así que no necesita
+  el presupuesto de tiempo de quien corre tests/build.
+- **`camilo`** (`max_turns: 30`, `run_budget_seconds: 900`). Arquitecto de
+  la etapa 16a: escribe dictámenes tras investigación real, no solo
+  lectura — el propio caso de `t_8c2134ab` lo confirma ("Probes reales...
+  36 permutaciones invocations×events"). Entre el nivel ligero y el pesado.
+- **`alexis`** y **`rafael`** (`max_turns: 25`, `run_budget_seconds: 900`
+  los dos). Revisores independientes de la etapa 16b: leen diffs y
+  ejecutan comprobaciones focalizadas sobre el SHA final, no la suite
+  completa — no triviales, pero tampoco del tamaño de quien implementa.
+
+Los cuatro comparten `run_budget_seconds: 900`: ninguno corre la puerta de
+calidad completa, así que no necesitan el suelo de 1200s medido para esa
+carga; 900s es margen sobre varias comprobaciones focalizadas encadenadas,
+no una medición directa de ninguno de los cuatro.
+
+**Lo que no se tocó, y es el mismo desajuste:** al revisar estos cuatro
+aparecieron **ocho perfiles más del elenco original de los 12 Bots**
+(`multiagente.md`) con el mismo vacío — ni `max_turns` ni
+`run_budget_seconds`: `alba`, `andres`, `diego`, `elena`, `lucia`, `mateo`,
+`sofia`, `valentina`. No se tocaron sin que el propietario lo pida
+explícitamente para estos ocho (a diferencia de los cuatro de arriba, que
+sí se nombraron) — se deja anotado para no tener que redescubrirlo.
+
 ## Nueve perfiles del elenco original de los 12 Bots (2026-11-03; corrección de cobertura 2026-11-12)
 
 Al dimensionar los 16 perfiles que tenían un presupuesto de 20/300 quedaron sin tocar nueve
