@@ -61,13 +61,23 @@ stats = collections.Counter()
 rows_out = []
 for tid in tasks:
     title = c.execute("select title from tasks where id=?", (tid,)).fetchone()["title"]
-    evs = c.execute("select id,kind,created_at from task_events where task_id=? and kind in ('unblocked','review_reopened') order by id", (tid,)).fetchall()
+    evs = c.execute("select id,kind,created_at from task_events where task_id=? and kind in ('unblocked','review_reopened','completed') order by id", (tid,)).fetchall()
     prev_comment = None
-    for n, ev in enumerate(evs, 1):
-        pb = c.execute("select payload from task_events where task_id=? and id<? and kind in ('blocked','block_loop_detected') order by id desc limit 1", (tid, ev["id"])).fetchone()
+    n = cycle_event_id = cycle_started = 0
+    for ev in evs:
+        if ev["kind"] == "completed":
+            n = 0
+            prev_comment = None
+            cycle_event_id, cycle_started = ev["id"], ev["created_at"]
+            continue
+        n += 1
+        pb = c.execute("select payload from task_events where task_id=? and id>? and id<? and kind in ('blocked','block_loop_detected') order by id desc limit 1", (tid, cycle_event_id, ev["id"])).fetchone()
         prev_block = (json.loads(pb["payload"]).get("reason") if pb and pb["payload"] else "") or ""
-        lastrun = c.execute("select max(ended_at) e from task_runs where task_id=? and ended_at is not null and ended_at<=?", (tid, ev["created_at"])).fetchone()["e"] or 0
-        com = c.execute("select author,body,created_at from task_comments where task_id=? and created_at between ? and ? and (body like 'UNBLOCK:%' or body like 'CHANGES REQUESTED:%') order by id desc limit 1", (tid, lastrun, ev["created_at"] + 2)).fetchone()
+        lastrun = max(cycle_started, c.execute("select max(ended_at) e from task_runs where task_id=? and ended_at is not null and ended_at<=?", (tid, ev["created_at"])).fetchone()["e"] or 0)
+        prefix = {"unblocked": "UNBLOCK:", "review_reopened": "CHANGES REQUESTED:"}[ev["kind"]]
+        if ev["kind"] == "review_reopened":
+            lastrun = max(lastrun, ev["created_at"])  # CLI comenta después de reabrir
+        com = c.execute("select author,body,created_at from task_comments where task_id=? and created_at between ? and ? and body like ? order by id desc limit 1", (tid, lastrun, ev["created_at"] + 2, prefix + "%")).fetchone()
         gated = n >= 2
         if not com:
             res = ["R1-sin-comentario"]

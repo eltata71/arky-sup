@@ -1,6 +1,6 @@
 # Redespacho manual: comentario obligatorio desde el segundo
 
-Estado: **ESPECIFICACIÓN. No hay código, hook ni cron instalado.** Este
+Estado: **ESPECIFICACIÓN. No hay código de enforcement, hook ni cron instalado.** La referencia de calibración y sus pruebas aisladas no son una guarda operativa. Este
 documento no acredita enforcement; el cumplimiento sólo existirá cuando los
 cortes de la sección 9 estén implementados, revisados sobre su SHA final e
 instalados con aprobación. Una frase en un SOUL o en una skill tampoco lo
@@ -75,9 +75,21 @@ así hubo redespachos manuales: no se cubrían entre sí.
 
 ## 3. Qué cuenta como «explicar qué cambió»
 
-El comentario es el texto de `--reason` de `hermes kanban unblock` (el CLI lo
-escribe como `UNBLOCK: <reason>` **antes** de desbloquear) o, equivalente, un
-comentario con prefijo `UNBLOCK:` escrito en la ventana de la regla R1.
+La asociación es por evento, no por una bolsa común de comentarios:
+
+| Evento | CLI y orden nativo v0.22.2 | Prefijo exacto | Ventana R1 |
+|---|---|---|---|
+| `unblocked` | `unblock --reason`: comenta antes de desbloquear | `UNBLOCK:` | desde el mayor de fin del último run y comienzo del ciclo hasta evento + 2 s |
+| `review_reopened` | `reopen-review --reason`: reabre antes de comentar | `CHANGES REQUESTED:` | desde el mayor de fin del último run, comienzo del ciclo y hora del evento hasta evento + 2 s |
+
+Los prefijos cruzados no sirven. Un comentario de veredicto anterior a una
+reapertura no explica esa reapertura, aunque use `CHANGES REQUESTED:`. La
+herramienta `kanban_unblock` no lleva razón: necesita el `UNBLOCK:` previo
+verificado en su propia tarjeta y ventana. La correlación por segundos no
+prueba identidad del autor ni causalidad perfecta: si hay varias operaciones
+concurrentes en el mismo segundo, la futura implementación debe declarar la
+asociación ambigua y escalar, no inventar una correspondencia. La referencia
+es calibración temporal, no acredita esa protección concurrente.
 
 Dos niveles, que no se confunden:
 
@@ -91,7 +103,7 @@ Dos niveles, que no se confunden:
 
 | Regla | Condición | Rechaza |
 |---|---|---|
-| R1 presencia y ventana | existe comentario `UNBLOCK:` de la misma tarjeta con `created_at` en `[fin del último run, created_at del evento + 2 s]` (el CLI comenta primero y desbloquea después, mismo segundo) | redespacho mudo; comentario viejo reutilizado |
+| R1 presencia y ventana | comentario de la misma tarjeta con el prefijo y la ventana específicos del evento en la tabla anterior; nunca intercambiables | redespacho mudo, prefijo cruzado o comentario de veredicto anterior reutilizado |
 | R2 sustancia mínima | al quitar el prefijo, ≥ 40 caracteres y ≥ 6 tokens distintos (sin palabras vacías) | «Reintentando», «ok», «listo» |
 | R3 no es eco del título | al menos 50 % de los tokens distintos del comentario no aparecen en el título | repetir el título (el caso que nombra la tarjeta) |
 | R4 no es repetición | Jaccard de tokens < 0,6 contra el motivo del bloqueo previo (`blocked`/`block_loop_detected.reason`) y < 0,8 contra el comentario del redespacho anterior; y no es una frase genérica (`reintentando`, `retry`, `reanudar`, `continuar`, `desbloqueo`, `ya está`, `de nuevo`…) de menos de 8 tokens | repetir el bloqueo como «explicación»; pegar lo mismo cada vuelta |
@@ -132,7 +144,7 @@ es cómo aparecen dos tablas que discrepan.
 
 | Capa | Mecanismo | Qué da | Qué no cubre |
 |---|---|---|---|
-| **L1 preventiva** | `pre_tool_call` shell hook `require-reason-on-redispatch.py.referencia`, hermano de `require-max-runtime-on-create.py.referencia` (mismo mecanismo, mismo estilo de instalación y de registro de bloqueos). Dos entradas: (a) `terminal` con `hermes kanban [--board X] unblock\|reopen-review`: valida el `--reason` del propio comando; (b) herramienta `kanban_unblock` (no lleva razón): valida el comentario `UNBLOCK:` ya escrito en la ventana de R1 | Bloquea, antes de ejecutar, cuando `ordinal >= 2` y la razón falta o no pasa R2–R5; el mensaje dice qué comando usar (`--reason` con referente, o `kanban_comment` con prefijo `UNBLOCK:` y reintentar la herramienta) | dashboard (arrastre), ejecución por un humano en su shell, perfiles sin el hook, razón construida fuera de la línea (ver abajo) |
+| **L1 preventiva** | `pre_tool_call` shell hook `require-reason-on-redispatch.py.referencia`, hermano de `require-max-runtime-on-create.py.referencia` (mismo mecanismo, mismo estilo de instalación y de registro de bloqueos). Dos entradas: (a) `terminal` con `hermes kanban [--board X] unblock\|reopen-review`: valida el `--reason` del propio comando; (b) herramienta `kanban_unblock` (no lleva razón): valida el comentario `UNBLOCK:` ya escrito para `unblocked`; `reopen-review` valida su `--reason` literal y L2 exige el `CHANGES REQUESTED:` posterior, según R1 | Bloquea, antes de ejecutar, cuando `ordinal >= 2` y la razón falta o no pasa R2–R5; el mensaje dice qué comando usar (`--reason` con referente, o `kanban_comment` con prefijo `UNBLOCK:` y reintentar la herramienta) | dashboard (arrastre), ejecución por un humano en su shell, perfiles sin el hook, razón construida fuera de la línea (ver abajo) |
 | **L2 detectiva** | `vigilar-redespacho.py`, sólo lectura de `kanban.db`, patrón de `vigilar-autorrevision.py` | Recorre `unblocked`/`review_reopened` con `ordinal >= 2` sin comentario válido (R1–R5) y deja un comentario de escalada con firma estable `REDESPACHO-SIN-EXPLICACION: evt=<id>`; idempotente; salida 1 si hay hallazgos nuevos | Es posterior: la tarjeta ya se redespachó. **No contiene** (no bloquea, no reclama): el mismo razonamiento de `vigilar-limites.md` — una intervención reactiva compite con el despachador |
 | **L3 revisión** | En la etapa 16, el revisor lee el historial de redespachos de la tarjeta; un redespacho con escalada `REDESPACHO-SIN-EXPLICACION` sin excepción registrada es un hallazgo | Cubre el juicio «¿es el cambio relevante?», que R1–R5 no puede | No automatizable |
 
@@ -150,8 +162,25 @@ se anota en `~/.hermes/logs/kanban-redespacho-sin-explicacion.jsonl` (el mismo
 patrón: uno aislado es un agente topándose con la regla; varios seguidos es
 algo insistiendo en evitarla).
 
-El tablero y su DB salen de `--board` del propio comando, o del tablero activo
-(`~/.hermes/kanban/current`). El hook sólo abre la DB en modo `mode=ro`.
+La futura L1 debe reutilizar **`hermes_cli.kanban_db.kanban_db_path(board=...)`**
+del mismo runtime operacional y con el mismo contexto de perfil/kanban home y
+entorno que la operación interceptada. El argumento explícito sale de
+`--board` del CLI o de `board` de `kanban_unblock`; no se reconstruye la ruta
+con `~/.hermes/kanban/current`. El resolver nativo aplica
+`HERMES_KANBAN_DB`, `HERMES_KANBAN_BOARD`, el tablero activo y los fences de
+`HERMES_KANBAN_TASK`/delegación: bajo fencing un `--board` explícito no
+permite escapar de la DB fijada. Se conserva ese resultado, sin limpiar el
+entorno operativo ni cambiar el motor.
+
+Resolver la ruta no autoriza mutarla: se abre únicamente mediante SQLite
+`mode=ro`; no usar `connect()` nativo que pueda inicializar/escribir tablas.
+Si el resolver no existe, es incompatible o no se puede demostrar la misma
+resolución, una operación de redespacho reconocida se bloquea con diagnóstico.
+La interfaz se cotejó con v0.22.2; no se declara estable entre versiones.
+La aceptación de la futura L1 incluye `current=A` y pin/destino efectivo=B,
+argumentos de CLI/herramienta, perfil/default y `--board` bajo fencing.
+Los tests nativos de resolución son opcionales explícitos fuera del host del
+runtime, y prueban sólo selección de ruta: no un hook instalado ni enforcement.
 
 ## 5. Excepción humana
 
