@@ -2912,6 +2912,13 @@ the next run continues to consolidation. It used to read «el entregable cumple
 su contrato» about a review nobody made. A review whose content was cut at
 `REVIEW_CONTENT_LIMIT` carries `truncated`.
 
+Every model finding in `ReviewCritique` is an acceptance finding: `criterion`
+and `evidence` are required. `readReviewCritique(raw, task)` checks the integer
+ordinal against `task.acceptanceCriteria` (1..length) and requires nonblank
+text evidence. Invalid findings are discarded with reasons; any discarded
+content makes an approval `evidence-only`, with the reasons preserved in the
+summary. Deterministic findings remain a separate contract.
+
 ### Agent evaluation bench
 
 A change to an agent is measured, not argued (plan de agentes, 15.0).

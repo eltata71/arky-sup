@@ -29,7 +29,6 @@ const OperationTracePanel = lazyWithRetry(
 );
 import { PersonaAvatar } from './PersonaAvatar';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import { OFFICE_AGENT_PERSONAS } from '../../services/architectureOffice/domain/officeAgentPersonas';
 import { planOfficeWorkstreams } from '../../services/architectureOffice/application/officeOrchestration';
 import {
   coordinateRequest,
@@ -42,7 +41,7 @@ import {
 import { buildCoordinationInvoker } from '../../services/architectureOffice/application/officeCoordinationInvoker';
 import { chatWithProjectMeasured, configuredModelTiers, disabledAgentIds } from '../../services/architectureOffice';
 import { useAgentProfiles } from '../../hooks/useAgentProfiles';
-import { useAgentDisplayName } from '../../hooks/useAgentDisplayName';
+import { useAgentDisplayName, useAgentDisplayRole } from '../../hooks/useAgentDisplayName';
 import { usePlanApprovalGate } from '../../hooks/usePlanApprovalGate';
 import { PlanApprovalPanel } from './PlanApprovalPanel';
 import type { Settings } from '../../types';
@@ -109,6 +108,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
    */
   const { profiles } = useAgentProfiles();
   const displayName = useAgentDisplayName();
+  const displayRole = useAgentDisplayRole();
   const unavailableAgents = useMemo(() => disabledAgentIds(profiles), [profiles]);
   const agentModelTiers = useMemo(() => configuredModelTiers(profiles), [profiles]);
   const dialogRef = useFocusTrap<HTMLDivElement>(open);
@@ -353,7 +353,7 @@ export const AssistantDock: React.FC<AssistantDockProps> = ({
                             <div key={contribution.personaId} className="rounded-lg bg-white/70 p-2 dark:bg-gray-950/50">
                               <p className="flex items-center gap-1.5 text-2xs font-semibold text-gray-700 dark:text-gray-200">
                                 <PersonaAvatar personaId={contribution.personaId} size="xs" decorative />
-                                {displayName(contribution.personaId)} · {OFFICE_AGENT_PERSONAS[contribution.personaId].role}
+                                {displayName(contribution.personaId)} · {displayRole(contribution.personaId)}
                                 {contribution.status === 'failed' && (
                                   <span className="text-[#dc2626] dark:text-[#ef4444]">{t("ui.no-entrego.f52d6b")}</span>
                                 )}
