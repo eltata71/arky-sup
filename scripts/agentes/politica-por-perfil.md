@@ -206,69 +206,62 @@ un defecto de diseño — registrado como tarjeta `t_dc22118e` en el tablero
 `latam-factory`, con una propuesta de reconciliación dimensionada y sin
 construir (es código de Hermes, no de este repositorio).
 
-## El piso uniforme — dimensionar por rol supuesto no funciona (2026-11-03/04)
+## El piso uniforme y el diagnóstico corregido del caso Lucía (2026-11-12)
 
-Las dos subidas anteriores (16 + 4 perfiles) repartieron presupuesto por
-el rol que cada perfil **parecía** tener: pesado si ejecuta test/build,
-ligero si revisa o decide. Horas después, el coordinador asignó
-`t_d1ad10c7` a **Lucía** (clasificada "ligera", `max_turns: 25`) para
-**implementar**, no revisar. Lucía hizo el trabajo real — escáner AST,
-PR #312, SHA `de0839c3` — y al escribir el cierre del traspaso se quedó
-sin turnos: `Iteration budget reached (25/25)`. Reintentó dos veces más,
-murió igual las dos. Tres intentos para un trabajo que ya estaba hecho a
-la primera.
+**Lucía sí hizo el traspaso a la primera.** En `arky-maintenance`, tarea
+`t_d1ad10c7`, el **run 302** conserva `status: review`,
+`outcome: review_requested` y el SHA
+`de0839c3ad0eb7a44782d089b7105e617351a53e` de la PR #312. Estaba
+clasificada con `max_turns: 25` (nivel revisor, 25/900, no ligero 25/600).
+No quedó pendiente el cierre por falta de turnos.
 
-**La causa no es que el número de Lucía estuviera mal calculado: es que
-la clasificación entera partía de una suposición que no manda.** El
-coordinador asigna por su propio criterio, no por mis categorías — José
-eligió a Lucía porque le pareció la persona adecuada para esa tarea, no
-porque este documento la hubiera etiquetado "ligera". No hay catálogo que
-impida que cualquier perfil termine implementando (confirmado en la
-subida de los 8: no hay lista de assignees permitidos en el despachador),
-así que cualquier perfil necesita presupuesto para implementar, no el que
-le pareció suficiente a quien escribió este documento.
+La revisión independiente de Rafael (`latam-factory`, `t_4d915961`,
+comentario 422, sobre `068a515d7e82cd14de92307bd477780b590117b2`)
+documenta la secuencia del 2026-11-03: `kanban_request_review` a las
+19:26:30, llamada **25/25**, seguida a las 19:26:43 de un registro
+`timed_out` con `retry_status: ready` sobre la transición ya exitosa.
+Los runs **303, 304, 307, 309, 314 y 315** terminaron con `exit_code: 1`
+y repitieron el mismo `worker_output` con el aviso 25/25; Rafael comprobó
+en `agent.log` que no hubo nuevas llamadas a la API. Son seis caídas del
+despachador posteriores al traspaso, no tres implementaciones fallidas.
 
-Y el argumento de coste cierra el caso, no solo el de riesgo: **tres
-intentos fallidos cuestan más que uno que termina.** Es el mismo patrón
-que ya costó caro con los 300 segundos de `run_budget_seconds` —
-quedarse corto no ahorra, duplica.
+**El defecto observado está en el despacho y la preservación de la
+transición a revisión, no en el presupuesto de turnos.** La lectura nativa
+de la tarjeta confirma los resultados de esos runs; las horas, la llamada
+25/25 y la ausencia de nuevas llamadas se citan de la revisión de Rafael,
+no de una nueva inspección del log. La causa interna del motor sigue siendo
+una inferencia de los eventos: esta corrección documental no inspecciona ni
+repara el despachador. Subir a 30 turnos no demuestra corregir ese defecto,
+y no hay medición de coste que permita atribuirle un ahorro.
 
-**Corrección: piso uniforme.** Los 18 perfiles que seguían por debajo del
-nivel de implementación suben a `max_turns: 30`, `run_budget_seconds:
-1200` — los mismos valores de quien ya ejecutaba test/build, sin
-distinguir pesado/ligero:
-`ignacio-solution-architect`, `julian-security`, `maria-product-owner`,
-`natalia-documentation`, `sofia-ux-designer`, `viviana-business-analyst`,
-`elena-release`, `lucia-sre`, `sergio-llmops`, `camilo`, `alexis`,
-`rafael`, `alba`, `lucia`, `valentina`, `diego`, `elena`, `sofia`.
+**El piso uniforme se justifica como prevención del riesgo de reparto.**
+Lucía recibió implementación pese a figurar como revisora: dimensionar solo
+por un rol supuesto puede dejar poco margen cuando cambia el encargo.
+Eso justifica proponer margen común; no prueba que el run 302 necesitara
+más turnos. El límite de tarjeta y el de perfil siguen siendo distintos
+(ver `t_dc22118e` arriba).
 
-**La única excepción: `jose`** (se queda en `max_turns: 40`,
-`run_budget_seconds: 900`). No es una suposición de rol como las demás —
-es una regla del propio contrato operativo (`docs/operacion/multiagente.md`:
-"José... no escribe código de producto"). José coordina, descompone y
-asigna a otros; no es el despachador quien decide si José implementa,
-así que el riesgo de reparto impredecible que rompió a Lucía no le
-aplica a él de la misma forma. Si algún día se le asigna una tarea de
-implementación real, revisar esto.
+### Alcance y estado de la propuesta
 
-Con esto, todo perfil que ejecuta tareas kanban queda al mismo piso,
-salvo `jose` por la razón de arriba.
+Las subidas históricas de 16 perfiles, 4 revisores y los 8 del elenco
+original se documentan en cambios separados (#309, #310 y #311). No se
+suman como si fueran conjuntos disjuntos ni como prueba de cobertura.
+Al comprobar GitHub el 2026-11-12, #311 seguía abierta en `7365d56a`:
+también omite `viviana` y repite el diagnóstico erróneo de Lucía. Debe
+corregirse al integrar la cadena #310 → #311 → #314, con una sola
+afirmación final de cobertura y revisión del SHA integrado.
 
-## Dos cosas que salieron bien, y también merecen registro
+| Perfiles incluidos en esta propuesta | `max_turns` objetivo | `run_budget_seconds` objetivo | Evidencia / pendiente |
+|---|---|---|---|
+| `ignacio-solution-architect`, `julian-security`, `maria-product-owner`, `natalia-documentation`, `sofia-ux-designer`, `viviana-business-analyst`, `elena-release`, `lucia-sre`, `sergio-llmops`, `camilo`, `alexis`, `rafael`, `alba`, `lucia`, `valentina`, `diego`, `elena`, `sofia` | 30 | 1200 | Rafael observó estos valores en los 18 perfiles durante su revisión del 2026-11-12; no es una auditoría en vivo de esta corrección. |
+| `viviana` (Bot frontend del elenco original; no es `viviana-business-analyst`) | 30 | 1200 | Omisión detectada por Rafael en #311 y #314: sin ambos campos en su auditoría. Objetivo documental; aplicación pendiente de aprobación humana explícita y comprobación de configuración. |
+| `jose` (excepción por contrato de coordinación) | 40 | 900 | Valores observados por Rafael; no escribe código de producto según `docs/operacion/multiagente.md`. Revisar si cambia ese contrato. |
 
-**El preflight `estado.sh` funcionó en producción, por primera vez bajo
-fuego real.** El checkout principal quedó en una rama de PR por un error
-operativo (revisión de la PR #310 ejecutada ahí en vez de en un
-worktree, 2026-11-03). Tres workers distintos (Andrés, Camilo, y el
-intento sobre `t_5d609ea4`) corrieron su preflight obligatorio, lo
-detectaron, y **se negaron a tocar nada** en vez de seguir adelante sobre
-la rama equivocada — exactamente la regla 1 de `multiagente.md`
-funcionando, no solo escrita. Hace dos semanas habría significado commits
-reales sobre la rama de una PR.
+Esta tarjeta no modifica configuraciones ni aumenta presupuestos en vivo.
+**No se declara cobertura universal aplicada**: añadir `viviana` a la tabla
+no configura el perfil. Tampoco esta lista parcial demuestra el estado de
+otros perfiles. Para cerrar la cobertura se requiere autorización de la
+aplicación pendiente y auditoría perfil por perfil sobre el roster vigente.
 
-**El coordinador reservó capacidad correctamente.** Asignó `t_d13b3589` a
-Mateo-backend y la dejó en `scheduled` a propósito: *"en espera para
-reservar capacidad: no liberar hasta que haya cupo tras la reanudación de
-t_8c2134ab y las dos entradas prioritarias"* — sin que se le indicara
-cómo hacerlo, siguiendo la instrucción de no saturar las tres plazas de
-golpe.
+El incidente del checkout principal y la evidencia del preflight tienen un
+único relato en [la guía multiagente](../../docs/operacion/multiagente.md#la-regla-1-falló-por-fuera-y-la-guarda-la-atajó-por-dentro-2026-11-0304).
