@@ -87,6 +87,13 @@ Qué comprueba, y con qué umbral, y por qué:
   vez (`.curator_ledger.jsonl`/`.curator_backups` con fecha, no hipotético).
   CRÍTICO si algún perfil que tiene el directorio de la skill no tiene un
   enlace que resuelva al canónico del repo.
+- **Veredicto CAMBIOS PEDIDOS sin tarjeta de corrección pasadas 4h**
+  (hallazgo 2026-11-13): el espejo de "PR sin tarjeta de revisión" de
+  arriba. `correction_card_trigger.py` crea la tarjeta de corrección en
+  cuanto una revisión deja metadata `verdict: changes_requested`; si deja
+  de correr (cron roto, PID muerto) o no encuentra a quién asignarla, el
+  trabajo se queda esperando sin que nadie lo note -- exactamente el hueco
+  que motivó este cambio. CRÍTICO si pasan 4h sin tarjeta no terminal.
 
 Qué NO comprueba, a propósito, para que no se asuma cubierto: **gasto
 desbocado** y **pérdida de datos** no tienen hoy ninguna señal barata que
@@ -137,6 +144,9 @@ import time
 from pathlib import Path
 
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from correction_card_trigger import existing_correction_card, latest_changes_requested  # noqa: E402
 
 MOTOR_LOG = Path.home() / ".hermes" / "logs" / "motor-bloqueado.jsonl"
 RESULT_FILE = Path.home() / ".hermes" / "logs" / "estado-fabrica.json"
@@ -348,6 +358,33 @@ def _engine_guard_roster() -> list[Path]:
     return roster
 
 
+CHANGES_REQUESTED_WITHOUT_CARD_HOURS = 4  # mismo umbral que el resto, misma razón
+
+
+def changes_requested_without_correction_card(now: float) -> list[dict]:
+    """Un veredicto CAMBIOS PEDIDOS lleva más de 4h sin una tarjeta de
+    corrección no terminal -- el espejo de `prs_without_review_card`, para
+    el hueco que `correction_card_trigger.py` existe para cerrar. Si el
+    propio disparador deja de correr (cron roto, PID muerto), esta es la
+    señal que lo dice en vez de dejarlo en silencio. Reutiliza la
+    detección de `correction_card_trigger.py` -- misma pregunta, un solo
+    sitio que la responda."""
+    try:
+        pending, _ = latest_changes_requested()
+    except sqlite3.Error as exc:
+        return [{"pr": None, "problem": f"no se pudo leer el tablero: {exc}"}]
+    findings = []
+    for cr in pending:
+        if existing_correction_card(cr.pr):
+            continue
+        if cr.ended_at is None:
+            continue
+        age_hours = (now - cr.ended_at) / 3600
+        if age_hours >= CHANGES_REQUESTED_WITHOUT_CARD_HOURS:
+            findings.append({"pr": cr.pr, "age_hours": round(age_hours, 1)})
+    return findings
+
+
 def policy_drift_findings() -> list[dict]:
     """Dos ajustes donde la ausencia ya se confirmó peligrosa, no neutra
     (hallazgo 2026-11-01, perfil `jose` quedó fuera de la corrección del
@@ -555,6 +592,15 @@ def main() -> int:
         razones.append(f"AUTO_DECOMPOSE ACTIVO: perfil '{f['profile']}' -- {f['problem']} -- "
                         f"cualquier gateway que arranque con este perfil puede descomponer tarjetas por su cuenta")
 
+    changes_requested_stale = changes_requested_without_correction_card(now)
+    for f in changes_requested_stale:
+        if f.get("pr") is None:
+            razones.append(f"VEREDICTO SIN COMPROBAR: {f['problem']}")
+        else:
+            razones.append(f"CAMBIOS PEDIDOS SIN CORRECCIÓN {f['age_hours']}h "
+                            f"(>= {CHANGES_REQUESTED_WITHOUT_CARD_HOURS}h): PR #{f['pr']} -- "
+                            f"correction_card_trigger.py no le creó tarjeta, o dejó de correr")
+
     # Nunca "if alive else ..." -- `alive` exige TODOS los gateways activos, y
     # un solo gateway de prueba caído (inactivo a propósito) apagaría este
     # chequeo aunque arkysupabase/latamfactory sí estén despachando de verdad.
@@ -580,6 +626,7 @@ def main() -> int:
         "broken_skill_links": broken_links,
         "policy_drift": policy_findings,
         "auto_decompose_global": auto_decompose_global,
+        "changes_requested_without_correction_card": changes_requested_stale,
         "dispatcher_lock": lock_status,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
                         "pérdida de datos (sin detector todavía)",
