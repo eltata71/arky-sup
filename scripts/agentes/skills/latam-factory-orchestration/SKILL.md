@@ -44,7 +44,7 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
    **Las etapas de la ruta corta, enumeradas aquí para no reconstruirlas de memoria** [corrección 2026-10-26: la primera prueba real omitió la etapa 17 dos veces por esto mismo — el canónico no las enumeraba y hubo que recordarlas de memoria durante la clasificación]: **1, 2, 11, 12, la etapa de desarrollo que corresponda (13 frontend / 14 backend / 15 integraciones / 24 mantenimiento), 16a+16b, 17 (Calidad, Paola — no se omite) y 26.** La ruta completa son las 26, sin excepción.
 
    Sin los dos atributos decididos, no hay tarjeta todavía — este paso es la admisión, no un trámite posterior a ella.
-2. Registrar la solicitud ya clasificada en Kanban nativo con idempotency-key, objetivo, requerimientos, aceptación verificable, riesgo, fase SDLC, presupuesto, y `complejidad`/`ruta` del paso 1 escritos en el cuerpo. Utilizar IDs nativos como autoridad; proyecto no es perfil. Usar operaciones locales para transformaciones deterministas; `execute_code` para lotes mecánicos; `delegate_task` solo para razonamiento breve. Todo trabajo durable, con aprobación o interperfil permanece en Kanban.
+2. Registrar la solicitud ya clasificada en Kanban nativo con idempotency-key, objetivo, requerimientos, aceptación verificable, riesgo, fase SDLC, presupuesto, y `complejidad`/`ruta` del paso 1 escritos en el cuerpo. Utilizar IDs nativos como autoridad; proyecto no es perfil. Usar operaciones locales para transformaciones deterministas; `execute_code` para lotes mecánicos **salvo cualquier mutación de Kanban por CLI** (`create`, `link`/`unlink`, `block`/`unblock`, `archive`, `comment`, `assign`, `edit`, `promote`, `request-review`...) **— no delegarlas a `execute_code` ni a `delegate_task`. Cambiar a `terminal` directo no garantiza autorización: también los subprocesos del propio worker reciben el fence del motor instalado; ver el alcance por contexto del paso 3**. `delegate_task` solo para razonamiento breve. Todo trabajo durable, con aprobación o interperfil permanece en Kanban.
 3. Planificar **construyendo el grafo tarea por tarea**, con `kanban link` para dependencias que no sean de la raíz. No fan-out trivial. Asignar cada tarjeta a un especialista del catálogo; no hacer todo como José. Vincular dependencias, aceptación y revisión independiente.
 
    **El reloj no se arregla con prosa — se construye para que no se pueda omitir** [corrección 2026-10-26, agravada 2026-11-01: esta regla ya existía escrita, con énfasis y con su motivo al lado, y falló igual en su primera prueba real — `t_0e4d6e31` se creó bien con `create --parent` pero sin `--max-runtime`, y quedó corriendo sin límite de tiempo. Repetir la frase más fuerte trata un fallo estructural como un fallo de atención]. Por eso toda hija se crea con **`scripts/agentes/crear-tarea-hija.sh`**, nunca con `hermes kanban create` a mano: el envoltorio exige `--assignee`, `--parent`/`--parent-reason`, `--max-runtime`, y `--priority`/`--priority-reason`, y **se niega a llamar a Hermes si falta cualquiera de los seis** — no hay valor por defecto para los números a propósito, los decide la tarea:
@@ -58,6 +58,8 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
      --priority <N> --priority-reason "<por qué ese número y no otro>" \
      -- "<título>"
    ```
+
+   **El terminal directo no elimina el bloqueo de contexto** [corrección de M1/M2 del PR #319; motor instalado en `hermes-agent-v0.22.2`, SHA `788dcdccbf7349330c5cd1d16073a8b40b20069a`]. En `agent/delegation_context.py`, `delegated_child_subprocess_env` llama a `scrub_kanban_env` tanto para descendientes de `delegate_task` como cuando existe `HERMES_KANBAN_TASK`: retira la identidad del worker y conserva un marcador de fence. `tools/environments/local.py` aplica esa función al entorno hijo del terminal. Por eso el CLI lanzado incluso desde el terminal propio de un worker queda sujeto al fence sobre su tablero (`hermes_cli/kanban_db.py:_assert_not_delegated_child_mutation`, `hermes_cli/kanban.py:_is_delegated_child_cli_mutation`). Un shell directo del operador, sin ese contexto heredado, es un caso distinto; probarlo allí no demuestra que funcione desde un worker delegado real. La herramienta estructurada `kanban_create` **sí declara `max_runtime_seconds`** en `tools/kanban_tools_schemas.py`, pero `tools/kanban_tools.py:_handle_create` llama al guard separado `_reject_delegated_child_mutation`, que rechaza los contextos hijo de delegación; no escribe desde cualquier contexto. Admitir ese campo no impone por sí solo que sea obligatorio ni el techo de 300 segundos del envoltorio. No se sustituye aquí el envoltorio por esa herramienta ni se declara verificado un canal alternativo: **crear tarjetas con reloj nativo desde el contexto delegado de `t_cdb3998c` sigue bloqueado** hasta disponer de un canal autorizado y comprobado desde un worker delegado real. Corregir este texto no crea ese canal ni autoriza eludir los guards; resolverlo en el motor requiere decisión de José.
 
    El envoltorio valida que `--max-runtime` sea un entero positivo (rechaza `0`, negativos y no-numéricos) y aplica de verdad el techo de `300` segundos por intento de ejecución de este flujo (paso 5) — no es un plazo agregado de toda la tarjeta, y no es solo una cifra en este texto: pedir más de 300 sin `--override-ceiling-reason "<motivo>"` se rechaza, no solo se desaconseja. Un presupuesto distinto requiere esa aprobación humana explícita, registrada en la propia llamada, antes de crear o despachar. `--priority` solo exige ser entero (puede ser negativo: no hay suelo) y que `--priority-reason`/`--parent-reason` no estén vacíos — el envoltorio no puede juzgar si el razonamiento es bueno, solo que exista.
 
@@ -127,6 +129,87 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 8. Mantener heartbeat y comentarios para trabajo prolongado. Respetar estados nativos, bloqueo con motivo, reintento acotado, recuperación nativa y referencias a sesión/ejecución. No almacenar un estado alternativo en metadatos.
 9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. **Toda solicitud de revisión nombra explícitamente a quien revisa, nunca el propio nombre** — ver más abajo "`request-review` siempre lleva `reviewer`" para el porqué, a quién nombrar según la etapa, y qué hacer si el despachador devuelve la tarjeta igual. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 10. Elena prepara release y José consolida solo después de pruebas y revisión. Sergio propone optimizaciones con antes/después verificables; no las aplica sin autorización. Guardar estándares reutilizables en Skills, decisiones de proyecto en ADR y memoria personal solo para hechos durables del agente.
+
+## Cerrar una revisión de PR: contrato del emisor y del lector
+
+Worktree propio, pruebas y revisión independiente del **SHA final** siguen
+siendo obligatorios. El revisor no fusiona ni crea tarjetas de corrección;
+José coordina y la autorización humana de merge sigue separada.
+
+### Identidad inequívoca
+
+Cada solicitud fija en el cuerpo de la tarjeta, antes de despachar, una línea:
+
+```text
+AUTO_MERGE_REVIEW {"repo":"eltata71/arky-sup","pr":123,"sha":"<sha40>","review_type":"independent"}
+```
+
+`<sha40>` se sustituye por los 40 caracteres hexadecimales del head revisado;
+`pr` es entero positivo, no URL, booleano ni texto. Una tarjeta sin esa
+identidad no puede autorizar auto-merge. La prosa histórica no se convierte
+silenciosamente en aprobación estructurada ni se reescriben runs anteriores.
+
+El resultado lleva las mismas cuatro claves de identidad más `verdict`:
+
+```text
+--metadata '{"verdict":"approved","sha":"<sha40>","pr":123,"repo":"eltata71/arky-sup","review_type":"independent"}'
+```
+
+La forma nativa del worker es **`kanban_complete(metadata={...})`**, un dict
+con esas cinco claves, además de `task_id`, `result` y `board` explícitos según
+el esquema instalado. No se obliga al worker a usar una shell vallada. El CLI
+anterior es para el operador autorizado; comprobar `--help` en la versión
+instalada antes de modificar metadata, y preservar campos adicionales e
+historia. No se promete que `edit --metadata` sea una combinación aditiva.
+
+`verdict` sólo es `approved` o `changes_requested`. **BLOQUEADO se codifica
+como `changes_requested`**, con `blocked: true` adicional y el motivo en la
+prosa, nunca como `approved`. No significa que se haya identificado un defecto:
+conserva el estado de evidencia insuficiente en forma fail-closed. Sólo una
+nueva revisión del SHA exacto puede levantar el bloqueo.
+
+### Transiciones que no admiten metadata
+
+`kanban_request_changes` / `hermes kanban request-changes` y `kanban_block`
+no admiten metadata en el runtime cotejado. Su `reason` debe empezar por la
+línea exacta **`Veredicto: CAMBIOS PEDIDOS sobre <sha40>`**, seguida del
+informe y la referencia PR/repositorio. Esa prosa sólo puede **vetar**, nunca
+autorizar. La ausencia de metadata no se inventa ni se suple mediante una
+aprobación antigua. Un resultado BLOQUEADO usa la misma línea de veto y
+explica el impedimento. La tarjeta queda pendiente/bloqueada; no se fuerza a
+`done` para satisfacer un lector automático.
+
+### Reglas de lectura y continuidad
+
+Cualquier crítica aplicable al repo/PR/SHA veta, incluso si otra tarjeta o un
+run posterior aprobó ese mismo SHA. Una tarjeta reabierta, no `done` o con
+run abierto también retiene la fusión; el lector #324 comprueba su estado y
+sus runs en una instantánea de sólo lectura. Resolver el hallazgo exige un
+SHA nuevo y la revisión correspondiente, no elegir la aprobación favorable.
+Cambiar el SHA invalida la aprobación anterior. Los checks de CI y el
+permiso humano de merge se verifican aparte.
+
+La prosa sigue siendo obligatoria: hallazgos Critical/High/Medium/Low con
+archivo/línea/consecuencia/corrección mínima, comandos realmente ejecutados,
+resultados y límites. `findings` es opcional: los contadores son estadísticas,
+no el texto de los hallazgos. Siempre conservar resumen y referencias exactas
+a tarea/run/comentario o informe recuperable.
+
+### Entrega a quienes emiten el veredicto
+
+**Precondición operacional de esta PR:** Hermes/default, como operador de la
+estabilización autorizada, añade un puntero explícito a esta sección en
+`Entregables` de los SOUL de **Rafael y Alexis**, que sí cargan al iniciar.
+No se presupone que carguen `latam-factory-orchestration` ni se cambian sus
+skills, toolsets, permisos, modelos o presupuestos. Conservar copia anterior,
+verificar el texto y su destino, y hacer una nueva sesión read-only con cada
+revisor que demuestre haber leído el contrato y produzca la identidad
+canónica sobre un SHA conocido. El readback de un fichero por sí solo no
+acredita que una sesión anterior haya recargado instrucciones.
+
+Hasta completar y adjuntar esa verificación, H1 de #327 sigue pendiente para
+el cierre operacional; fusionar documentación no prueba recepción ni
+enforcement. Este contrato tampoco instala auto-merge ni nuevos cron.
 
 ## José coordina y no ejecuta el trabajo que ha asignado a otro
 Criterio 3 de la historia de usuario de José: delega en lugar de ejecutar
