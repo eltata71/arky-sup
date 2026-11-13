@@ -109,7 +109,9 @@ pendiente, declarado, no asumido.
 """
 from __future__ import annotations
 
+import fcntl
 import json
+from contextlib import contextmanager
 import re
 import subprocess
 import sqlite3
@@ -122,7 +124,8 @@ REPO = "eltata71/arky-sup"
 BOARD_DB = Path.home() / ".hermes" / "kanban" / "boards" / "arky-maintenance" / "kanban.db"
 WRAPPER = Path(__file__).resolve().parent / "crear-tarea-hija.sh"
 RUNTIME_CEILING = 300
-DEFAULT_MAX_RUNTIME = 1800
+EXECUTION_LOCK = Path.home() / ".hermes" / "logs" / "correction-card-trigger.lock"
+
 BASE_PRIORITY = 80
 
 
@@ -199,6 +202,21 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
     return out, prose_verdicts_seen
 
 
+def episode_key(cr: ChangesRequested) -> str:
+    return f"correction-{cr.review_task_id}-{cr.review_run_id}"
+
+
+def episode_correction_card(cr: ChangesRequested, *, db_path: Path = BOARD_DB) -> Optional[str]:
+    """Un episodio consumido no revive por completar o archivar su tarjeta."""
+    con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
+    try:
+        row = con.execute("SELECT id FROM tasks WHERE idempotency_key = ? ORDER BY id LIMIT 1",
+                          (episode_key(cr),)).fetchone()
+        return row[0] if row else None
+    finally:
+        con.close()
+
+
 def existing_correction_card(pr_number: int, *, db_path: Path = BOARD_DB) -> Optional[str]:
     """Id de una tarjeta de corrección NO terminal para este PR, o None --
     "ya hay una corrección en curso, no apilar otra". Mira solo el título,
@@ -228,38 +246,30 @@ def pr_info(pr_number: int) -> Optional[dict]:
     un PR cerrado/fusionado no debe resucitar una corrección."""
     try:
         return gh_json(["pr", "view", str(pr_number), "--repo", REPO,
-                         "--json", "headRefName,title,state"])
+                         "--json", "headRefName,title,state,headRefOid"])
     except (OSError, subprocess.SubprocessError, ValueError):
         return None
 
 
-def review_requested_implementer(review_task_id: str, review_run_id: int,
-                                  *, db_path: Path = BOARD_DB) -> Optional[str]:
-    """El `implementer` que el propio evento `review_requested` de esta
-    ronda registró, en el momento exacto de pedir revisión -- antes de que
-    nada pudiera reasignar la tarjeta. Preferido sobre `tasks.assignee`
-    (corrección tras revisión de Alexis, H2): `assignee` es el dueño
-    ACTUAL, que una reasignación o una revisión cambian; este campo es un
-    hecho fijado en el pasado. Puede faltar (pasa de verdad: t_d1ad10c7 lo
-    tiene nulo en su ronda más reciente) -- entonces se vuelve None y el
-    llamador cae al siguiente candidato."""
-    con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
-    try:
-        row = con.execute(
-            "SELECT payload FROM task_events WHERE task_id = ? AND kind = 'review_requested' "
-            "ORDER BY id DESC LIMIT 1",
-            (review_task_id,),
-        ).fetchone()
-    finally:
-        con.close()
-    if row is None or not row[0]:
-        return None
-    try:
-        payload = json.loads(row[0])
-    except (TypeError, ValueError):
-        return None
-    implementer = payload.get("implementer") if isinstance(payload, dict) else None
-    return implementer if isinstance(implementer, str) and implementer else None
+def assess_correction_episode(cr: ChangesRequested, *, db_path: Path = BOARD_DB) -> dict:
+    """Una sola elegibilidad para trigger y vigilante; desconocido no es vacío."""
+    consumed = episode_correction_card(cr, db_path=db_path)
+    if consumed:
+        return {"status": "consumed", "task_id": consumed}
+    active = existing_correction_card(cr.pr, db_path=db_path)
+    if active:
+        return {"status": "active", "task_id": active}
+    info = pr_info(cr.pr)
+    if not isinstance(info, dict) or info.get("state") not in {"OPEN", "CLOSED", "MERGED"}:
+        return {"status": "unknown", "reason": "estado de GitHub no comprobado"}
+    if info["state"] != "OPEN":
+        return {"status": "terminal"}
+    head = info.get("headRefOid")
+    if not isinstance(head, str) or re.fullmatch(r"[0-9a-f]{40}", head) is None or not info.get("headRefName"):
+        return {"status": "unknown", "reason": "head/rama de GitHub no comprobados"}
+    if head != cr.sha:
+        return {"status": "diverged", "reason": "el head avanzó: requiere coordinación/re-revisión, no corrección ciega"}
+    return {"status": "eligible", "info": info}
 
 
 @dataclass
@@ -271,51 +281,51 @@ class Implementer:
 
 def resolve_implementer(cr: ChangesRequested, branch: str,
                          *, db_path: Path = BOARD_DB) -> tuple[Optional[Implementer], Optional[str]]:
-    """(implementador, motivo_de_ambigüedad_si_lo_hay). Nunca elige
-    silenciosamente "el más nuevo" entre candidatos incompatibles
-    (corrección tras revisión de Alexis, H2): si el `review_requested` de
-    esta ronda nombra un implementador, se usa ese directamente (no hace
-    falta cruzar por `branch_name`, y por tanto no hay ambigüedad posible).
-    Solo cuando ese campo falta se cae a `branch_name`, y ahí sí puede
-    haber más de una tarea con asignees distintos sobre la misma rama --
-    en ese caso se informa la ambigüedad y no se crea nada."""
-    named = review_requested_implementer(cr.review_task_id, cr.review_run_id, db_path=db_path)
-    if not db_path.is_file():
-        return None, None
+    """Vincula el episodio a handoff+run previos, nunca al assignee mutable.
+
+    Un evento posterior al comienzo de este run de revisión no sirve. Una
+    rama reutilizada con productores incompatibles se abstiene, no se elige
+    al más nuevo. No se inventa presupuesto ni una tarea productora ausente.
+    """
     con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
     try:
-        if named:
-            row = con.execute(
-                "SELECT id, assignee, max_runtime_seconds FROM tasks "
-                "WHERE branch_name = ? AND assignee = ? ORDER BY created_at DESC LIMIT 1",
-                (branch, named),
-            ).fetchone()
-            if row is None:
-                # El implementador nombrado ya no tiene ninguna tarea visible
-                # sobre esta rama (archivada, o nunca tuvo tarjeta propia) --
-                # se usa el nombre igual, sin inventar una tarea ni un reloj:
-                # el reloj cae al valor por defecto, declarado como tal.
-                return Implementer(task_id=cr.review_task_id, assignee=named,
-                                    max_runtime_seconds=DEFAULT_MAX_RUNTIME), None
-            return Implementer(task_id=row[0], assignee=row[1],
-                                max_runtime_seconds=row[2] or DEFAULT_MAX_RUNTIME), None
+        con.execute("BEGIN")
+        review = con.execute("SELECT started_at FROM task_runs WHERE id=? AND task_id=?",
+                             (cr.review_run_id, cr.review_task_id)).fetchone()
+        if not review or not isinstance(review[0], (int, float)) or review[0] <= 0:
+            return None, "no hay comienzo verificable del run de revisión"
         rows = con.execute(
-            "SELECT id, assignee, max_runtime_seconds FROM tasks "
-            "WHERE branch_name = ? AND assignee IS NOT NULL",
-            (branch,),
+            "SELECT e.task_id, e.payload, r.profile, r.max_runtime_seconds "
+            "FROM task_events e JOIN task_runs r ON r.id=e.run_id AND r.task_id=e.task_id "
+            "JOIN tasks t ON t.id=e.task_id "
+            "WHERE e.kind='review_requested' AND r.outcome='review_requested' "
+            "AND e.created_at<=? AND r.ended_at IS NOT NULL AND r.ended_at<=? "
+            "AND (e.task_id=? OR t.branch_name=?) ORDER BY e.id DESC",
+            (review[0], review[0], cr.review_task_id, branch),
         ).fetchall()
+        # El handoff de la propia tarjeta prevalece sobre ramas históricas.
+        direct = [r for r in rows if r[0] == cr.review_task_id]
+        if direct:
+            rows = direct[:1]
+        candidates = set()
+        for task_id, payload_raw, profile, budget in rows:
+            try:
+                payload = json.loads(payload_raw) if payload_raw else {}
+            except (TypeError, ValueError):
+                return None, "handoff ilegible, procedencia no comprobada"
+            named = payload.get("implementer") if isinstance(payload, dict) else None
+            if (not isinstance(profile, str) or not profile or profile in {"rafael", "alexis", "jose"}
+                    or (named is not None and named != profile)):
+                return None, "handoff no coincide con un run productor comprobable"
+            if type(budget) is not int or budget <= 0:
+                return None, "run productor sin presupuesto válido; no se inventa un reloj"
+            candidates.add((task_id, profile, budget))
+        if len(candidates) != 1:
+            return None, "procedencia ausente o ambigua entre tareas/rondas de la rama"
+        task_id, profile, budget = candidates.pop()
+        return Implementer(task_id, profile, budget), None
     finally:
         con.close()
-    if not rows:
-        return None, None
-    distinct_assignees = {r[1] for r in rows}
-    if len(distinct_assignees) > 1:
-        return None, (f"branch_name '{branch}' tiene {len(rows)} tarea(s) con asignees "
-                       f"distintos ({sorted(distinct_assignees)}) y el evento review_requested "
-                       f"no nombró implementador -- ambiguo, no se elige el más nuevo")
-    task_id, assignee, max_runtime = max(rows, key=lambda r: r[0])
-    return Implementer(task_id=task_id, assignee=assignee,
-                        max_runtime_seconds=max_runtime or DEFAULT_MAX_RUNTIME), None
 
 
 def format_findings(findings: Optional[dict]) -> Optional[str]:
@@ -365,6 +375,8 @@ def create_correction_card(cr: ChangesRequested, title: str, impl: Implementer) 
     aquí, porque una corrección corre el mismo gate que la implementación
     original -- y aquí se declara, auditable, en vez de inventarse en
     silencio."""
+    if type(impl.max_runtime_seconds) is not int or not 0 < impl.max_runtime_seconds <= RUNTIME_CEILING:
+        raise ValueError("presupuesto ausente/inválido o superior al techo: requiere coordinación humana; no se autoautoriza")
     findings_block = format_findings(cr.findings)
     body = (
         f"Creada automáticamente por correction_card_trigger.py al detectar "
@@ -378,35 +390,33 @@ def create_correction_card(cr: ChangesRequested, title: str, impl: Implementer) 
         f"revisión independiente con `kanban_request_review(reviewer=<perfil>, ...)` "
         f"-- nunca omitir `reviewer`, nunca el propio perfil."
     )
-    idempotency_key = f"correction-{cr.review_task_id}-{cr.review_run_id}"
+    idempotency_key = episode_key(cr)
     cmd = [
         "bash", str(WRAPPER),
         "--board", "arky-maintenance",
         "--parent", cr.review_task_id,
+        "--parent-reason", f"atiende el veredicto del episodio {idempotency_key}, no trabajo independiente",
         "--assignee", impl.assignee,
         "--max-runtime", str(impl.max_runtime_seconds),
         "--priority", str(BASE_PRIORITY),
-        "--max-retries", "2",
+        "--priority-reason", "corrección prioritaria de hallazgos pendientes antes de integrar la PR",
+        "--max-retries", "0",
         "--workspace", "scratch",
         "--created-by", "correction-card-trigger",
         "--idempotency-key", idempotency_key,
         "--body", body,
     ]
-    if impl.max_runtime_seconds > RUNTIME_CEILING:
-        cmd += ["--override-ceiling-reason",
-                f"hereda el presupuesto ya demostrado necesario por la tarea de "
-                f"implementación original ({impl.task_id}: {impl.max_runtime_seconds}s) "
-                f"para rematar el mismo gate -- correction_card_trigger.py, episodio {idempotency_key}"]
+
     cmd += ["--json", "--", f"Corregir PR #{cr.pr}: {title}"]
     out = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=True)
     task = json.loads(out.stdout)
     return CreatedCard(cr.pr, task["id"], impl.assignee)
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def _run_tick(argv: Optional[list[str]] = None) -> int:
     errors = []
     try:
-        pending, prose_verdicts_seen = latest_changes_requested()
+        pending, prose_verdicts_seen = latest_changes_requested(db_path=BOARD_DB)
     except sqlite3.Error as exc:
         print(f"No se pudo leer el tablero: {type(exc).__name__}", file=sys.stderr)
         return 1
@@ -419,23 +429,25 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     for cr in pending:
         try:
-            if existing_correction_card(cr.pr):
+            assessment = assess_correction_episode(cr, db_path=BOARD_DB)
+            status = assessment["status"]
+            if status in {"consumed", "active"}:
                 skipped_existing.append(cr.pr)
                 continue
-            info = pr_info(cr.pr)
-            if info is None:
-                errors.append(cr.pr)
-                print(f"#{cr.pr}: no se pudo leer de GitHub", file=sys.stderr)
-                continue
-            if info.get("state") != "OPEN":
+            if status == "terminal":
                 skipped_not_open.append(cr.pr)
                 continue
+            if status != "eligible":
+                errors.append(cr.pr)
+                print(f"#{cr.pr}: {assessment.get('reason', status)}", file=sys.stderr)
+                continue
+            info = assessment["info"]
             branch = info.get("headRefName")
             title = info.get("title", "")
             if not branch:
                 skipped_no_implementer.append(cr.pr)
                 continue
-            impl, ambiguity = resolve_implementer(cr, branch)
+            impl, ambiguity = resolve_implementer(cr, branch, db_path=BOARD_DB)
             if ambiguity:
                 skipped_ambiguous.append((cr.pr, ambiguity))
                 continue
@@ -451,7 +463,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     for c in created:
         print(f"#{c.pr} -> tarjeta de corrección {c.task_id}, asignada a {c.assignee}")
     if skipped_existing:
-        print(f"{len(skipped_existing)} PR(s) ya tenían corrección activa, sin tocar: {skipped_existing}")
+        print(f"{len(skipped_existing)} PR(s) con corrección activa o episodio ya consumido, sin tocar: {skipped_existing}")
     if skipped_not_open:
         print(f"{len(skipped_not_open)} PR(s) ya no están OPEN (cerrados/fusionados), sin tarjeta: {skipped_not_open}")
     if skipped_no_implementer:
@@ -462,7 +474,26 @@ def main(argv: Optional[list[str]] = None) -> int:
     if prose_verdicts_seen:
         print(f"{prose_verdicts_seen} veredicto(s) en prosa detectados (no es inventario completo, ver docstring)")
     print(f"\n{len(created)} creada(s), {len(pending)} veredicto(s) de cambios pedidos vigentes en total.")
-    return 1 if errors else 0
+    return 1 if errors or skipped_ambiguous or skipped_no_implementer else 0
+
+
+@contextmanager
+def execution_lock():
+    EXECUTION_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    with EXECUTION_LOCK.open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        yield
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    # Exclusión compartida entre instancias de ESTE disparador; no es un
+    # candado del dispatcher ni autoriza instalar/activar un cron.
+    try:
+        with execution_lock():
+            return _run_tick(argv)
+    except BlockingIOError:
+        print("otra instancia del disparador ya está comprobando; no se duplica")
+        return 0
 
 
 if __name__ == "__main__":
