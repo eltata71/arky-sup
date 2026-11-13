@@ -116,6 +116,11 @@ beforeAll(async () => {
     import('../../services/architectureOffice/infrastructure/OfficeRunnerAdapters'),
     import('../../services/architectureOffice/application/OfficeEngagementRunner'),
     import('../../services/architectureOffice/application/agentConfiguration'),
+    // projectConversation sólo carga la fachada; estos imports reales se
+    // resuelven al componer el primer prompt y al entrar al servicio diferido.
+    // Prepararlos aquí separa la transformación fría del contrato del test.
+    import('../../services/ai/generation/assistant/projectChatInstruction'),
+    import('../../services/ai'),
   ]);
 }, 120_000);
 
