@@ -134,6 +134,7 @@ siempre) y avisar (quien lea RESULT_FILE y decida a quién molestar) son dos
 trabajos distintos a propósito -- el primero no debe depender del segundo.
 """
 import argparse
+from contextlib import closing
 import fcntl
 import json
 import os
@@ -292,46 +293,74 @@ def blocked_tasks(now: float, boards: dict[str, Path]) -> list[dict]:
     return out
 
 
+# Intérprete del runtime operacional, no el Python del cron (sin dependencias
+# de Hermes). Pin explícito de esta instalación; se puede resolver otra
+# instalación mediante HERMES_RUNTIME_PYTHON, nunca con una tabla de aliases.
+RUNTIME_PYTHON = Path(os.environ.get('HERMES_RUNTIME_PYTHON', str(
+    Path.home() / '.local/share/hermes-agent-v0.22.2/.venv/bin/python')))
+WORKTREE_CAPABILITY_STATUSES = NON_TERMINAL_STATUSES | {'review'}
+
+
+def effective_cli_toolsets(config: dict) -> set[str]:
+    """Reutiliza el resolver instalado sin editar configuración ni cargar MCP.
+
+    Una incompatibilidad/ausencia del runtime no equivale a terminal disponible.
+    No confundir herramienta habilitada con permisos para un comando concreto.
+    """
+    code = (
+        'import json,sys; from hermes_cli.tools_config import _get_platform_tools; '
+        'print(json.dumps(sorted(_get_platform_tools(json.load(sys.stdin), '
+        '"cli", include_default_mcp_servers=False))))'
+    )
+    result = subprocess.run([str(RUNTIME_PYTHON), '-c', code],
+                            cwd=RUNTIME_PYTHON.parent.parent.parent,
+                            input=json.dumps(config), capture_output=True, text=True,
+                            timeout=20, check=True)
+    tools = json.loads(result.stdout)
+    if not isinstance(tools, list) or any(not isinstance(t, str) for t in tools):
+        raise ValueError('resolución nativa con forma inválida')
+    return set(tools)
+
+
 def profiles_missing_terminal_for_worktree_work(boards: dict[str, Path]) -> list[dict]:
-    """Perfil con al menos una tarea activa de workspace_kind 'worktree' --
-    necesita terminal para editar, comitear y correr estado.sh -- pero sin
-    'terminal' en su platform_toolsets.cli. Pensado para avisar ANTES de que
-    la tarjeta se bloquee, no después (hallazgo 2026-11-12: natalia-documentation
-    tenía dos tarjetas de worktree activas con code_execution en vez de
-    terminal, y nadie lo vio hasta que ambas se bloquearon solicitando
-    ejecución autorizada). Solo mira tareas en NON_TERMINAL_STATUSES -- una
-    ya bloqueada por esto la reporta blocked_tasks(), no esta función."""
+    """Tareas de worktree que incluyen review, excluyen done/archived/blocked.
+    Evalúa herramientas efectivas con el resolver nativo, no aliases propios.
+    Un error de lectura/resolución produce un hallazgo visible por perfil.
+    """
     por_perfil: dict[str, list[dict]] = {}
-    placeholders = ",".join("?" * len(NON_TERMINAL_STATUSES))
+    placeholders = ",".join("?" * len(WORKTREE_CAPABILITY_STATUSES))
     for board, db in boards.items():
         if not db.exists():
             continue
-        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
-        con.row_factory = sqlite3.Row
-        rows = con.execute(
-            f"SELECT id, title, assignee FROM tasks "
-            f"WHERE status IN ({placeholders}) AND workspace_kind = 'worktree' "
-            f"AND assignee IS NOT NULL",
-            tuple(NON_TERMINAL_STATUSES),
-        ).fetchall()
+        with closing(sqlite3.connect(f"{db.resolve().as_uri()}?mode=ro", uri=True)) as con:
+            con.row_factory = sqlite3.Row
+            rows = con.execute(
+                f"SELECT id, title, assignee FROM tasks "
+                f"WHERE status IN ({placeholders}) AND workspace_kind = 'worktree' "
+                f"AND assignee IS NOT NULL",
+                tuple(WORKTREE_CAPABILITY_STATUSES),
+            ).fetchall()
         for r in rows:
             por_perfil.setdefault(r["assignee"], []).append({"board": board, "id": r["id"]})
 
     hallazgos = []
     for perfil, tareas in sorted(por_perfil.items()):
         cfg_path = PROFILES_DIR / perfil / "config.yaml"
-        if not cfg_path.is_file():
-            continue
+        problem = None
         try:
             cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
-        except (OSError, yaml.YAMLError):
-            continue
-        herramientas = (cfg.get("platform_toolsets") or {}).get("cli") or []
-        if "terminal" not in herramientas:
+            if not isinstance(cfg, dict):
+                raise ValueError('config no es un objeto')
+            herramientas = effective_cli_toolsets(cfg)
+            if 'terminal' not in herramientas:
+                problem = f"{len(tareas)} tarea(s) de worktree sin terminal efectivo en CLI"
+        except (OSError, UnicodeError, ValueError, yaml.YAMLError, subprocess.SubprocessError) as exc:
+            problem = f"no se pudo resolver terminal efectivo ({type(exc).__name__})"
+        if problem:
             hallazgos.append({
                 "profile": perfil,
                 "tasks": [t["id"] for t in tareas],
-                "problem": f"{len(tareas)} tarea(s) de worktree activa(s) sin 'terminal' en platform_toolsets.cli",
+                "problem": problem,
             })
     return hallazgos
 
