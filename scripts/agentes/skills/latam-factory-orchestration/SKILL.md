@@ -196,9 +196,9 @@ cargan esta skill) es una decisión y un seguimiento aparte, de José.
    en empate, Rafael. Esta consulta de **solo lectura** al CLI está permitida
    como excepción al protocolo general de worker (que pide usar la
    herramienta, no `hermes kanban`, para operaciones de tablero): no muta
-   nada, y `kanban_list`/el equivalente de estadísticas es solo del
-   orquestador. Si el agente prefiere no invocar el CLI, José hace esta
-   elección en su lugar.
+   nada, y `kanban_list` es solo del orquestador — no existe ninguna
+   herramienta de estadísticas, solo el CLI. Si el agente prefiere no
+   invocar el CLI, José hace esta elección en su lugar.
 
    **Una re-revisión no recalcula por carga.** Si la tarjeta ya tuvo un
    `changes_requested`, el motor manda la re-revisión al mismo revisor de ese
@@ -228,12 +228,24 @@ cargan esta skill) es una decisión y un seguimiento aparte, de José.
       cambios"): no hay nada que revisar todavía, porque no hay revisor.
    3. Nunca autoaprobar ni declarar el trabajo revisado por seguir adelante.
 
-   **Recuperación, en ese orden exacto — reasignar antes de desbloquear**:
-   no existe una herramienta de asignación en el motor instalado (v0.22.2);
-   el paso de reasignar es del orquestador, por CLI: primero
-   `hermes kanban assign <id> <revisor>` (`assign_task` lo permite sobre una
-   tarjeta `blocked`), y solo después `kanban_unblock(task_id=<id>)` si quien
-   recupera es el orquestador, o `hermes kanban unblock <id>` si es José.
+   **Recuperación, en ese orden exacto — reasignar antes de desbloquear, y
+   el camino lo decide el CONTEXTO DE EJECUCIÓN, nunca la persona**: no
+   existe una herramienta de asignación en el motor instalado (v0.22.2); el
+   paso de reasignar es siempre por CLI, `hermes kanban assign <id>
+   <revisor>` (`assign_task` lo permite sobre una tarjeta `blocked`) — y esa
+   llamada tampoco valida que el perfil exista (igual que el CLI de
+   `request-review` ya advertido arriba: una errata deja la tarjeta
+   reasignada a alguien que el despachador no puede lanzar). Comprobar el
+   perfil con `hermes profile list` antes si hay duda.
+
+   Para el `unblock`: **fuera de un worker despachado** (sin la variable de
+   entorno que marca una ejecución como tal) — José en su propia sesión de
+   chat o gateway, o un humano — usa `kanban_unblock(task_id=<id>)` si es
+   José, o `hermes kanban unblock <id>` si es un humano. **Dentro de un
+   worker despachado, incluido José cuando corre sobre su propia tarjeta,
+   ninguna de las dos funciona** — las dos puertas rechazan igual dentro de
+   ese contexto. Un worker en esa situación no intenta `unblock` por
+   ninguna vía: comenta y bloquea para que José lo resuelva desde fuera.
    `unblock` devuelve la tarjeta a `review` conservando el `assignee` que
    tenía — desbloquear sin reasignar primero repite exactamente el mismo
    bucle que causó el bloqueo.
@@ -278,7 +290,7 @@ Qué significa en la práctica:
 - Bot Mode visual de Desktop no implica esas vistas en Web Dashboard. Los Bots son los mismos perfiles persistentes; usar SDK Web para la interfaz.
 - La descomposición nativa puede ver perfiles ajenos al catálogo: revisar asignaciones antes de autorizar ejecución. No afirmar allowlist fuerte si no existe enforcement.
 - Poner una regla en SOUL.md no es enforcement de presupuesto, RBAC ni sandbox. Señalar la diferencia en cada informe.
-- Una instrucción de skill para el agente (como la de `request-review` con `reviewer` de arriba) no es el enforcement externo que RG-09 exige para la autorrevisión — es prosa, más barata y más frágil. `scripts/agentes/vigilar-autorrevision.py` fue el intento de construir ese enforcement y quedó excluido por contención/desbloqueo sin resolver; RG-09 sigue sin acreditarse. No presentar la instrucción de skill como si cerrara el requerimiento.
+- Una instrucción de skill para el agente (como la de `request-review` con `reviewer` de arriba) no es el enforcement externo que RG-09 exige para la autorrevisión — es prosa, más barata y más frágil. `scripts/agentes/vigilar-autorrevision.py` fue el intento de construir ese enforcement y quedó excluido por contención/desbloqueo sin resolver (sigue en `main`, sin instalar ni acreditar); RG-09 sigue sin acreditarse. No presentar la instrucción de skill como si cerrara el requerimiento.
 
 ## Verificación
 Cada entrega incluye ID de proyecto/tablero/tarea/perfil/modelo/sesión cuando exista, resultados de pruebas y evidencias reales. No cerrar por relato del agente. Una tarjeta bloqueada no es una entrega completada. Probar recuperación en ejecución aislada antes de habilitar automatización extensa.
