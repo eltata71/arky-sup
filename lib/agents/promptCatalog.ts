@@ -71,8 +71,8 @@ export const AGENT_PROMPTS: Readonly<Record<AgentPromptId, AgentPromptEntry>> = 
     description: 'La instrucción con la que un agente produce el artefacto de una tarea de encargo.',
   },
   'office.review': {
-    version: 4,
-    fingerprint: '1fe32590',
+    version: 5,
+    fingerprint: '1c2700b6',
     description: 'La revisión con criterios numerados y la forma declarada de la crítica (ReviewCritique).',
   },
   'office.engagement-consolidation': {

@@ -57,7 +57,7 @@ describe('review logic changes (task 18.1)', () => {
           message: 'El diagrama está incompleto.',
         },
       ],
-    });
+    }, { acceptanceCriteria: ['Incluye decisiones.', 'Cubre el flujo de error.'] });
     expect(reading.value).not.toBeNull();
     expect(reading.value!.verdict).toBe('changes-requested');
     expect(reading.value!.summary).toBe('Necesita ajustes en la sección de riesgos.');
@@ -69,7 +69,7 @@ describe('review logic changes (task 18.1)', () => {
   });
 
   it('drops a critique without a readable verdict (evidence-only path)', () => {
-    const reading = readReviewCritique({ summary: 'Está bien.' });
+    const reading = readReviewCritique({ summary: 'Está bien.' }, { acceptanceCriteria: [] });
     expect(reading.value).toBeNull();
     expect(reading.discarded.length).toBeGreaterThan(0);
   });

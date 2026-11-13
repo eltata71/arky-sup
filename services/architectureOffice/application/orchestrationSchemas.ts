@@ -91,10 +91,10 @@ export const REVIEW_CRITIQUE_SCHEMA: AIJsonSchema = {
         properties: {
           severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
           message: str('El hallazgo, citando algo presente o ausente en el contenido.'),
-          criterion: { type: 'integer', description: 'El número del criterio de aceptación incumplido (los criterios van numerados en el prompt).' },
-          evidence: str('La cita textual o el validator que respalda el hallazgo. Nunca inventado.'),
+          criterion: { type: 'integer', description: 'Entero >= 1 que corresponde a un criterio de aceptación existente, numerado en el prompt.' },
+          evidence: str('Texto no vacío: cita textual o validator que respalda el hallazgo. Nunca inventado.'),
         },
-        required: ['severity', 'message'],
+        required: ['severity', 'message', 'criterion', 'evidence'],
       },
     },
   },

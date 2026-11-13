@@ -9,9 +9,9 @@ import { useUiTranslation } from '../../../lib/i18n/UiTranslationContext';
 
 import React from 'react';
 import { Badge, Card, EmptyState, cn } from '../../ui';
-import { OFFICE_AGENT_PERSONAS, type OfficeAgentId } from '../../../services/architectureOffice/domain/officeAgentPersonas';
+import type { OfficeAgentId } from '../../../services/architectureOffice/domain/officeAgentPersonas';
 import { PersonaAvatar } from '../PersonaAvatar';
-import { useAgentDisplayName } from '../../../hooks/useAgentDisplayName';
+import { useAgentDisplayName, useAgentDisplayRole } from '../../../hooks/useAgentDisplayName';
 import { OFFICE_HEALTH_VISUALS } from '../officeChartTokens';
 import type { OfficeSpecialistLoad } from '../../../services/architectureOffice';
 
@@ -26,6 +26,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
 }) => {
   const t = useUiTranslation();
   const displayName = useAgentDisplayName();
+  const displayRole = useAgentDisplayRole();
   const busiest = Math.max(1, ...specialists.map((entry) => entry.active));
   const working = specialists.filter((entry) => entry.active > 0 || entry.completed > 0 || entry.reviewed > 0);
 
@@ -43,7 +44,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
   return (
     <div className={cn('grid gap-3 sm:grid-cols-2 xl:grid-cols-3', className)}>
       {working.map((entry) => {
-        const persona = OFFICE_AGENT_PERSONAS[entry.personaId as OfficeAgentId];
+        const role = displayRole(entry.personaId as OfficeAgentId);
         return (
           <Card key={entry.personaId} compact className="space-y-2.5">
             <div className="flex items-start gap-2.5">
@@ -53,7 +54,7 @@ export const SpecialistLoadPanel: React.FC<SpecialistLoadPanelProps> = ({
                   {displayName(entry.personaId as OfficeAgentId)}
                 </p>
                 <p className="truncate text-2xs text-gray-500 dark:text-gray-400">
-                  {persona?.role ?? t("uiExpr.especialista.8c8c55")}
+                  {role || t("uiExpr.especialista.8c8c55")}
                 </p>
               </div>
               {entry.active > 0 ? (
