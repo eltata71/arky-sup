@@ -15,7 +15,7 @@
  * en `application/orchestrationSchemas.ts`.
  */
 
-import type { OfficeFindingSeverity } from './OfficeTypes';
+import type { OfficeFindingSeverity, OfficeTask } from './OfficeTypes';
 
 /** La forma que se le pide al revisor. `criterion` es el criterio numerado incumplido. */
 export interface ReviewCritique {
@@ -27,9 +27,9 @@ export interface ReviewCritique {
 export interface ReviewCritiqueFinding {
   severity: OfficeFindingSeverity;
   message: string;
-  /** El criterio de aceptación numerado que el hallazgo declara incumplido, si lo hay. */
-  criterion?: number;
-  evidence?: string;
+  /** Ordinal de un criterio existente en la tarea (desde 1). */
+  criterion: number;
+  evidence: string;
 }
 
 /** Lo que se leyó y lo que no: `value` es `null` cuando no quedó nada utilizable. */
@@ -52,7 +52,10 @@ const SEVERITIES: readonly OfficeFindingSeverity[] = ['critical', 'high', 'mediu
  * descarta. Un objeto sin veredicto legible vale `null`: la revisión entonces
  * es `evidence-only` (17.1), nunca una aprobación silenciosa.
  */
-export const readReviewCritique = (raw: unknown): ContractReading<ReviewCritique> => {
+export const readReviewCritique = (
+  raw: unknown,
+  task: Pick<OfficeTask, 'acceptanceCriteria'>,
+): ContractReading<ReviewCritique> => {
   const discarded: string[] = [];
   if (!isRecord(raw)) return { value: null, discarded: ['La respuesta no era un objeto.'] };
 
@@ -72,20 +75,20 @@ export const readReviewCritique = (raw: unknown): ContractReading<ReviewCritique
       discarded.push(`«findings»: severidad fuera del vocabulario en «${message.slice(0, 40)}»; el hallazgo se descarta.`);
       continue;
     }
-    // El criterio numerado es opcional, pero lo que llega tiene que ser un
-    // número entero positivo: «criterio 2» como texto no viaja al campo.
-    const criterion = typeof item.criterion === 'number' && Number.isInteger(item.criterion) && item.criterion >= 1
+    // Sin coerciones ni referencias inventadas: el ordinal es el del prompt.
+    const criterion = typeof item.criterion === 'number' && Number.isInteger(item.criterion)
+      && item.criterion >= 1 && item.criterion <= task.acceptanceCriteria.length
       ? item.criterion
       : undefined;
-    if (item.criterion !== undefined && item.criterion !== null && criterion === undefined) {
-      discarded.push(`«findings»: el criterio de «${message.slice(0, 40)}» no era un número; se pierde la referencia.`);
+    const evidence = text(item.evidence);
+    if (criterion === undefined) {
+      discarded.push(`«findings»: «criterion» de «${message.slice(0, 40)}» debe ser un entero >= 1 que corresponda a un criterio existente; el hallazgo se descarta.`);
     }
-    findings.push({
-      severity,
-      message,
-      ...(criterion !== undefined ? { criterion } : {}),
-      ...(text(item.evidence) ? { evidence: text(item.evidence) } : {}),
-    });
+    if (!evidence) {
+      discarded.push(`«findings»: «evidence» de «${message.slice(0, 40)}» debe ser texto no vacío; el hallazgo se descarta.`);
+    }
+    if (criterion === undefined || !evidence) continue;
+    findings.push({ severity, message, criterion, evidence });
   }
 
   const summary = text(raw.summary);

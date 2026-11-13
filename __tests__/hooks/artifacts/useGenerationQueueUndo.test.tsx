@@ -48,7 +48,10 @@ const start = async (action: string, existingArtifact?: Artifact) => {
   });
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  // Se usa el clasificador real, pero su carga fría no es parte del contrato
+  // de esta prueba de persistencia/undo. No sustituirlo ni ampliar waitFor.
+  await import('../../../services/artifacts/application/generationFailure');
   Object.values(mocks).forEach(m => m.mockClear());
   mocks.run.mockResolvedValue({ content: 'x', type: 'markdown', name: 'Doc' });
 });
