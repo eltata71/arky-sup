@@ -94,8 +94,10 @@ Qué comprueba, y con qué umbral, y por qué:
   trabajo -- y dos tarjetas de worktree activas no pudieron ni correr
   `estado.sh`. Nadie lo vio hasta que las dos se bloquearon pidiendo
   ejecución autorizada. Esto avisa ANTES de ese bloqueo: cruza tareas
-  `ready`/`todo`/`running`/`triage`/`scheduled` de `workspace_kind='worktree'`
-  contra el `platform_toolsets.cli` del perfil asignado. CRÍTICO si falta.
+  `ready`/`todo`/`running`/`triage`/`scheduled`/`review` de `workspace_kind='worktree'`
+  contra las herramientas CLI efectivas del resolver instalado, incluidos defaults,
+  compuestos y disabled_toolsets. CRÍTICO si falta terminal o no se puede resolver.
+  Habilitación no equivale a permiso para ejecutar un comando concreto.
 - **Worktree ajeno sucio sobre base antigua o fusionada** (hallazgo
   2026-11-12): `estado.sh` deja de bloquear a los demás por esto desde esa
   fecha (autorización de Jose) para no frenar tareas sin relación con quien
