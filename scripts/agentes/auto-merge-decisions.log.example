@@ -1,0 +1,9 @@
+# Libro de decisiones de auto_merge_watch.py -- copiar a
+# ~/.hermes/logs/auto-merge-decisions.log (fuera del repo, no se versiona el
+# real). Solo apéndice: una línea mala hace fallar TODO el libro (ver
+# DecisionLedgerError). Nunca editar una línea ya escrita -- añadir una nueva.
+#
+# Formato exacto:
+# DECISION <fecha-ISO con zona> <quien> AUTORIZA|REVOCA clase=<NOMBRE> motivo="<texto>"
+
+DECISION 2026-11-12T00:00:00+01:00 jose AUTORIZA clase=A1 motivo="arranque gradual: documentación y pruebas únicamente, decisión de Jose 2026-11-12 (de acuerdo con la sugerencia, empezar por la clase más estrecha)"
