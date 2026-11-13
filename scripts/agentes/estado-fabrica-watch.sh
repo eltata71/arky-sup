@@ -31,10 +31,22 @@ STATE_FILE="${HOME}/.hermes/logs/estado-fabrica-watch.consecutive-failures"
 # a mitad de tick), pero mucho antes de llegar a los cientos que costaron un mes.
 SELF_FAILURE_ALERT_THRESHOLD=3
 
+if ! mkdir -p "$(dirname "$STATE_FILE")"; then
+  echo "VIGILANTE CAIDO: no se pudo preparar el directorio de estado para $STATE_FILE" >&2
+  exit 1
+fi
+
+persist_counter() {
+  if ! printf '%s\n' "$1" > "$STATE_FILE"; then
+    echo "VIGILANTE CAIDO: no se pudo persistir el contador en $STATE_FILE" >&2
+    exit 1
+  fi
+}
+
 fail() {
   local reason="$1" consecutive
   consecutive=$(($(cat "$STATE_FILE" 2>/dev/null || echo 0) + 1))
-  echo "$consecutive" > "$STATE_FILE"
+  persist_counter "$consecutive"
   echo "VIGILANTE CAIDO (intento $consecutive consecutivo): $reason"
   if [ "$consecutive" -ge "$SELF_FAILURE_ALERT_THRESHOLD" ]; then
     echo "ATENCION: el propio vigilante de estado-fabrica lleva $consecutive ticks seguidos sin producir una lectura válida -- esto es exactamente el fallo silencioso que costó un mes: un vigilante 'activo' en el cron que en la práctica no vigila nada. Repararlo es prioritario sobre cualquier otro hallazgo de este informe, porque mientras esté así no hay ningún otro hallazgo llegando."
@@ -49,20 +61,29 @@ if ! "$INTERPRETER" -c 'import yaml' >/dev/null 2>&1; then
   fail "el intérprete fijado ($INTERPRETER) no tiene pyyaml instalado -- el canónico lo necesita desde el commit daa7695 (2026-11-01, auto_decompose/hooks por perfil). Instala pyyaml en ese intérprete, o fija aquí otro que lo tenga"
 fi
 
-before=$(stat -c %Y "$RESULT_FILE" 2>/dev/null || echo 0)
+# El canónico publica con os.replace: identidad + tiempos con nanosegundos
+# distinguen una publicación incluso con contenido y mtime idénticos.
+before=$(stat -c '%d:%i:%y:%z' "$RESULT_FILE" 2>/dev/null || echo 0)
 OUTPUT=$("$INTERPRETER" "$SCRIPT" 2>&1)
 EXIT=$?
-after=$(stat -c %Y "$RESULT_FILE" 2>/dev/null || echo 0)
+after=$(stat -c '%d:%i:%y:%z' "$RESULT_FILE" 2>/dev/null || echo 0)
 
 # El script sale 1 también cuando ATENCION es un veredicto normal (hay hallazgos reales
 # que informar) -- eso NO es un fallo del vigilante. Lo que de verdad indica que se cayó
 # es que RESULT_FILE no se tocó: corrió y no llegó a escribir su resultado (traceback a
-# mitad, señal, lo que sea). Por eso la detección de fallo mira el fichero, no el exit code.
+# mitad, señal, lo que sea). Se exige publicación y un código válido (0 o 1).
 if [ "$after" = "$before" ]; then
   fail "el script corrió pero ${RESULT_FILE} no se actualizó -- no llegó a escribir su resultado. Salida cruda:
 ${OUTPUT}"
 fi
 
-echo 0 > "$STATE_FILE"
+if [ "$EXIT" -ne 0 ] && [ "$EXIT" -ne 1 ]; then
+  fail "el script terminó con código $EXIT. Salida cruda:
+${OUTPUT}"
+fi
+
+persist_counter 0
 echo "$OUTPUT"
-exit "$EXIT"
+# No-agent usa el exit code como salud del job, no como veredicto de dominio.
+# ATENCION se conserva en stdout/JSON, pero una lectura válida es éxito de cron.
+exit 0
