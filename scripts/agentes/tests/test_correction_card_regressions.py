@@ -75,6 +75,31 @@ class CorrectionTests(unittest.TestCase):
             changes, _ = trigger.latest_changes_requested(db_path=self.db)
             self.assertEqual(len(changes), 1 if i == 5 else 0)
 
+    def test_invalid_later_sha_never_hides_valid_pending_episode(self):
+        valid = {'repo': trigger.REPO, 'review_type': 'independent',
+                 'pr': 331, 'sha': SHA, 'verdict': 'changes_requested'}
+        for verdict in ('approved', 'changes_requested'):
+            for invalid in (None, '', 'invalid', 'a' * 39, 'g' * 40, 123):
+                with self.subTest(verdict=verdict, sha=invalid):
+                    self.con.execute('DELETE FROM task_runs')
+                    later = dict(valid, verdict=verdict)
+                    if invalid is None:
+                        del later['sha']
+                    else:
+                        later['sha'] = invalid
+                    for run_id, metadata in ((12, valid), (13, later)):
+                        self.con.execute(
+                            'INSERT INTO task_runs (id,task_id,profile,metadata,summary,started_at,ended_at,outcome) VALUES (?,?,?,?,?,?,?,?)',
+                            (run_id, 't_review', 'alexis', json.dumps(metadata), 'informe', 150, 200, 'completed'))
+                    self.con.commit()
+                    changes, _ = trigger.latest_changes_requested(db_path=self.db)
+                    self.assertEqual([(cr.review_run_id, cr.sha) for cr in changes], [(12, SHA)])
+        # Una aprobación posterior con identidad completa sí consume la ronda.
+        self.con.execute('UPDATE task_runs SET metadata=? WHERE id=13',
+                         (json.dumps(dict(valid, verdict='approved')),))
+        self.con.commit()
+        self.assertEqual(trigger.latest_changes_requested(db_path=self.db)[0], [])
+
     @unittest.skipUnless(hasattr(os, 'fork'), 'exclusión real requiere fork POSIX')
     def test_concurrent_invocation_cannot_create_while_lock_is_held(self):
         with patch.object(trigger, 'EXECUTION_LOCK', self.root/'global.lock'), \

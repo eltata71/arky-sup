@@ -63,8 +63,8 @@ class ChangesRequested:
 
 
 def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesRequested], int]:
-    """Una entrada por PR -- la ronda más reciente que declare `pr` en su
-    metadata, filtrada a verdict == changes_requested. Las filas se leen en
+    """Una entrada por PR -- la ronda más reciente con identidad completa
+    válida, filtrada a verdict == changes_requested. Las filas se leen en
     orden descendente de `id` (autoincremental, nunca ambiguo como una
     fecha de texto), así que la primera vez que se ve un `pr` es siempre su
     ronda más reciente.
@@ -105,13 +105,15 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
             if summary and ("CAMBIOS PEDIDOS" in summary.upper() or "APROBADO" in summary.upper()):
                 prose_verdicts_seen += 1
             continue
+        # Una fila incompleta no puede consumir ni ocultar una ronda válida,
+        # tampoco cuando su veredicto afirma approved (M4 de Alexis).
+        sha = meta.get("sha")
+        if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+            continue
         if pr in seen_prs:
             continue
         seen_prs.add(pr)
         if verdict != "changes_requested":
-            continue
-        sha = meta.get("sha")
-        if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
             continue
         out.append(ChangesRequested(
             pr=pr, sha=sha, review_task_id=task_id, review_run_id=run_id,
