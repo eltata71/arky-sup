@@ -24,6 +24,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  review-trigger:
+    name: PR review trigger regressions (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'PyYAML==6.0.3'
+      - run: python scripts/agentes/tests/test_pr_review_trigger.py
+      - run: python -m unittest discover -s scripts/agentes/tests -p 'test_pr_review_regressions.py'
+
   # The static gates and the build. Together they took 1 m 54 s of the old
   # single job, which is why they are no longer queued behind the test suite:
   # a typo that fails `tsc` should be visible in two minutes, not in twelve.
