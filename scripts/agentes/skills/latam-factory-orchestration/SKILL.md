@@ -193,7 +193,12 @@ cargan esta skill) es una decisión y un seguimiento aparte, de José.
    `arky-maintenance` sin una pareja ya fijada por otra etapa: Rafael o
    Alexis, el que tenga menos **carga** — `running` + `review` en
    `hermes kanban --board arky-maintenance stats`, no un conteo informal — y
-   en empate, Rafael.
+   en empate, Rafael. Esta consulta de **solo lectura** al CLI está permitida
+   como excepción al protocolo general de worker (que pide usar la
+   herramienta, no `hermes kanban`, para operaciones de tablero): no muta
+   nada, y `kanban_list`/el equivalente de estadísticas es solo del
+   orquestador. Si el agente prefiere no invocar el CLI, José hace esta
+   elección en su lugar.
 
    **Una re-revisión no recalcula por carga.** Si la tarjeta ya tuvo un
    `changes_requested`, el motor manda la re-revisión al mismo revisor de ese
@@ -206,9 +211,14 @@ cargan esta skill) es una decisión y un seguimiento aparte, de José.
 2. **Si el despachador entrega de vuelta una tarjeta propia que ya está en
    revisión, eso es un error de asignación — no una instrucción para seguir
    trabajando, y no la sigue cualquier otra skill que el carril de revisión
-   fuerce.** Señal para detectarlo: el `claimed` más reciente trae
-   `source_status: review` y el `review_requested` más reciente tiene
-   `implementer` igual al propio perfil (o `reviewer` nulo). Al detectarlo:
+   fuerce.** Señal para detectarlo, como condición **conjunta**, no como
+   disyunción: el `claimed` más reciente trae `source_status: review` **Y**
+   el `review_requested` más reciente tiene `implementer` igual al propio
+   perfil. `reviewer` nulo solo corrobora el caso, nunca basta por sí solo —
+   un revisor legítimo recién reasignado (`assign` + `unblock`, abajo) ve el
+   mismo `review_requested` con `reviewer` nulo porque la reasignación no
+   emite uno nuevo, y confundir eso con el error de asignación bloquearía de
+   nuevo justo a quien ya se reasignó bien. Al detectar el caso real:
 
    1. `kanban_comment` explicando lo que pasó (como hizo el agente citado
       arriba).
@@ -219,13 +229,18 @@ cargan esta skill) es una decisión y un seguimiento aparte, de José.
    3. Nunca autoaprobar ni declarar el trabajo revisado por seguir adelante.
 
    **Recuperación, en ese orden exacto — reasignar antes de desbloquear**:
-   quien resuelve el bloqueo llama primero `kanban_assign(<id>, <revisor>)` y
-   solo después `kanban_unblock(<id>)`. `unblock` devuelve la tarjeta a
-   `review` conservando el `assignee` que tenía — desbloquear sin reasignar
-   primero repite exactamente el mismo bucle que causó el bloqueo.
+   no existe una herramienta de asignación en el motor instalado (v0.22.2);
+   el paso de reasignar es del orquestador, por CLI: primero
+   `hermes kanban assign <id> <revisor>` (`assign_task` lo permite sobre una
+   tarjeta `blocked`), y solo después `kanban_unblock(task_id=<id>)` si quien
+   recupera es el orquestador, o `hermes kanban unblock <id>` si es José.
+   `unblock` devuelve la tarjeta a `review` conservando el `assignee` que
+   tenía — desbloquear sin reasignar primero repite exactamente el mismo
+   bucle que causó el bloqueo.
 
    Ver también "Errores frecuentes" (RG-09 y `vigilar-autorrevision.py`, el
-   intento previo y por qué quedó excluido) y el paso 8 de arriba (bloqueo
+   intento previo que sigue en `main` sin instalar ni acreditar) y el paso 8
+   de arriba (bloqueo
    con motivo declarado, nunca un `crashed` sin comentario).
 
 ## El auto-descomponedor está apagado (`auto_decompose: false`, 2026-10-26)
