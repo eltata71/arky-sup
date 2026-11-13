@@ -310,7 +310,7 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       );
       const parsed = parseStructured<unknown>(typeof raw === 'string' ? raw : raw.text);
       if (parsed.ok) {
-        const reading = readReviewCritique(parsed.value);
+        const reading = readReviewCritique(parsed.value, task);
         critique = reading.value;
         critiqueNotes.push(...reading.discarded);
       } else {
@@ -333,17 +333,15 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
         evidence: finding.evidence,
       })),
     ];
-    // Lo que la lectura descartó se nombra en el resumen: una severidad fuera
-    // de vocabulario o un criterio no numérico no desaparece sin decirlo (18.0).
+    // Lo descartado se nombra, no desaparece ni cuenta como revisión limpia.
     const critiqueSummary = critique?.summary ?? '';
     const summaryWithNotes = critiqueNotes.length > 0 && critique
       ? `${critiqueSummary}\n${critiqueNotes.map((note) => `(${note})`).join(' ')}`
       : critiqueSummary;
     const modelVerdict = critique?.verdict;
-    // La crítica cuenta sólo si dio un veredicto que se pueda leer: una llamada
-    // fallida, un JSON roto o una respuesta vacía no son una revisión
-    // (plan de agentes, 17.1). Con contrato, eso es `critique !== null`.
-    const critiqued = modelVerdict === 'approved' || modelVerdict === 'changes-requested' || modelVerdict === 'rejected';
+    // Una lectura parcial conserva los veredictos restrictivos, pero nunca
+    // acredita una aprobación sin la confirmación humana de 17.1.
+    const critiqued = critique !== null && critiqueNotes.length === 0;
 
     // Deterministic evidence outranks the model: a blocking validator or a
     // critical contract issue is `changes-requested` whatever the model said.
@@ -370,7 +368,7 @@ export const createReviewArtifactPort = (deps: OfficeRunnerAdapterDeps) =>
       ...(artifact.content.length > REVIEW_CONTENT_LIMIT ? { truncated: true } : {}),
       summary: !critiqued && verdict === 'approved'
         // Nunca «cumple su contrato» sin que nadie lo haya revisado.
-        ? 'La revisión del especialista no llegó: la evidencia determinista no encuentra defectos bloqueantes, pero nadie ha revisado el contenido. Confírmalo antes de seguir.'
+        ? ['La revisión del especialista no llegó completa: la evidencia determinista no encuentra defectos bloqueantes, pero no hay una crítica válida del contenido. Confírmalo antes de seguir.', summaryWithNotes].filter(Boolean).join('\n')
         : summaryWithNotes.trim().length > 0
           ? summaryWithNotes
           : verdict === 'approved'

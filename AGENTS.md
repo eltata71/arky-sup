@@ -322,6 +322,11 @@ de PR, esquema y despliegues cuando la tarea lo requiera.
    del especialista la aprobación es `basis: 'evidence-only'`, la tarea queda en
    `awaiting-review` y el encargo se bloquea hasta que una persona la confirme
    (`confirmEvidenceOnlyReview`, con actor en la auditoría).
+   En `ReviewCritique` cada hallazgo del modelo es de aceptación: exige
+   `criterion` entero que exista en `task.acceptanceCriteria` y `evidence`
+   textual no vacía. `readReviewCritique(raw, task)` nombra los descartes;
+   una aprobación con descartes es `evidence-only` y conserva los motivos en
+   el resumen. Los hallazgos deterministas son otro contrato.
    **Cada nivel de modelo tiene su propio id** (18.4, D-A4): `quick`, `default`
    y `deep` resuelven a tres modelos distintos por proveedor; sólo `default`
    respeta el modelo elegido en Ajustes, y la ficha del agente muestra el
