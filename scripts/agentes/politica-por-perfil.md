@@ -245,3 +245,139 @@ aparecieron **ocho perfiles más del elenco original de los 12 Bots**
 `sofia`, `valentina`. No se tocaron sin que el propietario lo pida
 explícitamente para estos ocho (a diferencia de los cuatro de arriba, que
 sí se nombraron) — se deja anotado para no tener que redescubrirlo.
+
+## Nueve perfiles del elenco original de los 12 Bots (2026-11-03; corrección de cobertura 2026-11-12)
+
+Al dimensionar los 16 perfiles que tenían un presupuesto de 20/300 quedaron sin tocar nueve
+del elenco original (`multiagente.md`): `alba`, `andres`, `diego`, `elena`,
+`lucia`, `mateo`, `sofia`, `valentina`, `viviana` — ninguno tenía `max_turns` ni
+`run_budget_seconds`. Antes de dimensionarlos hacía falta responder una
+cosa primero: **¿pueden recibir trabajo hoy, o están fuera del circuito por
+haber sido superados por los perfiles especialistas con sufijo?**
+
+La comprobación original abarcó solo los ocho primeros: tienen `auth.json` con credenciales reales
+(1245-1455 bytes), los 8 ejecutaron tareas de verdad en el pasado (entre 1
+y 38 runs cada uno, todos entre el 21 y el 23 de octubre — justo antes de
+que aparecieran los perfiles especialistas), y no existe ningún catálogo
+ni lista de perfiles permitidos en el despachador (`kanban_db.py`,
+`kanban_db_dispatch.py`) que filtre el campo `assignee`. Son retirados de
+hecho —sin runs desde el 23 de octubre en aquella comprobación—, no retirados del
+sistema: basta escribir su nombre en `--assignee` para que reciban trabajo.
+Por tanto, el mismo riesgo que los 16 anteriores, no ceremonia sobre
+perfiles inertes.
+
+Dimensionados en un primer momento por el rol que `multiagente.md` les
+da, no por telemetría de estos 8 en concreto: `andres` y `mateo`
+(implementadores, nivel pesado), `alba` (solución, nivel de `camilo`),
+`lucia` y `valentina` (nombradas "revisor independiente" en el paso 4 de
+`multiagente.md`, nivel de `alexis`/`rafael`), `diego` (verifica
+CI/despliegue, nivel de `elena-release`), `elena` y `sofia` (deciden/
+diseñan, nivel ligero).
+
+**El reparto pesado/ligero fue revisado, pero no es la causa probada del
+incidente de Lucía.** La revisión de Rafael (`t_4d915961`, 2026-11-12)
+confirmó que el run 302 sí ejecutó `request_review` en la llamada 25/25.
+Las seis caídas siguientes del despachador no volvieron a llamar a la API;
+no prueban tres agotamientos de turnos de Lucía. El piso uniforme de
+`max_turns: 30` / `run_budget_seconds: 1200` es un dimensionamiento
+preventivo por la posibilidad de recibir implementación, no una reparación
+acreditada de ese incidente ni una configuración aplicada por esta PR.
+La cronología y sus límites se concilian en #314.
+
+La revisión independiente de Rafael (`t_689a5a26`, SHA `7365d56a`)
+encontró el noveno omitido: `viviana`, frontend según el roster, tenía 31
+runs y carecía de ambos límites. Es evidencia de esa revisión, no una
+auditoría de configuración viva repetida en esta corrección documental.
+El piso dimensionado para los nueve es:
+
+| Perfil | `max_turns` | `run_budget_seconds` | Motivo del piso |
+|---|---|---|---|
+| `alba` | 30 | 1200 | Solución; el rol nominal no impide recibir implementación. |
+| `andres` | 30 | 1200 | Backend; implementación y pruebas reales. |
+| `diego` | 30 | 1200 | DevOps; verificación de CI/build y posible implementación. |
+| `elena` | 30 | 1200 | UX; el rol nominal no impide recibir implementación. |
+| `lucia` | 30 | 1200 | Seguridad/revisión; el caso real mostró asignación a implementación. |
+| `mateo` | 30 | 1200 | Datos; implementación y pruebas reales. |
+| `sofia` | 30 | 1200 | Producto; el rol nominal no impide recibir implementación. |
+| `valentina` | 30 | 1200 | QA/revisión; puede ejecutar pruebas o recibir implementación. |
+| `viviana` | 30 | 1200 | Frontend; puede implementar y ejecutar test/build, con el mismo margen que los demás. |
+
+Contraste con los doce Bots de `docs/operacion/multiagente.md`: los nueve
+de la tabla más `jose`, `camilo` y `rafael` completan el roster, sin otro
+Bot omitido. Estos tres no pertenecen al grupo de nueve: su dimensionamiento
+se trata en la corrección de los cuatro perfiles de #310. `viviana` no es
+`viviana-business-analyst`, el perfil con sufijo citado entre los 16.
+
+**Dimensionar no es aplicar:** esta corrección no cambia configuraciones
+externas ni eleva presupuestos vivos. Aplicar el piso a `viviana` requiere
+aprobación humana explícita y verificación posterior perfil por perfil.
+No se declara cobertura operativa total mientras eso esté pendiente; la
+uniformidad del resto del elenco se trata en #314. La integración conserva
+el orden #310 → #311 → #314 y exige revisar el SHA final tras el rebase.
+
+Fuera del alcance de este dimensionamiento quedan los perfiles de prueba ya apagados
+(`pruebacoordinador20261025`, `pruebacoordinador220261025`) y los que son
+gateway puro (`arkyaws`, `arkysupabase`, `latamfactory`), que no ejecutan
+tareas kanban por sí mismos.
+
+## El piso uniforme y el diagnóstico corregido del caso Lucía (2026-11-12)
+
+**Lucía sí hizo el traspaso a la primera.** En `arky-maintenance`, tarea
+`t_d1ad10c7`, el **run 302** conserva `status: review`,
+`outcome: review_requested` y el SHA
+`de0839c3ad0eb7a44782d089b7105e617351a53e` de la PR #312. Estaba
+clasificada con `max_turns: 25` (nivel revisor, 25/900, no ligero 25/600).
+No quedó pendiente el cierre por falta de turnos.
+
+La revisión independiente de Rafael (`latam-factory`, `t_4d915961`,
+comentario 422, sobre `068a515d7e82cd14de92307bd477780b590117b2`)
+documenta la secuencia del 2026-11-03: `kanban_request_review` a las
+19:26:30, llamada **25/25**, seguida a las 19:26:43 de un registro
+`timed_out` con `retry_status: ready` sobre la transición ya exitosa.
+Los runs **303, 304, 307, 309, 314 y 315** terminaron con `exit_code: 1`
+y repitieron el mismo `worker_output` con el aviso 25/25; Rafael comprobó
+en `agent.log` que no hubo nuevas llamadas a la API. Son seis caídas del
+despachador posteriores al traspaso, no tres implementaciones fallidas.
+
+**El defecto observado está en el despacho y la preservación de la
+transición a revisión, no en el presupuesto de turnos.** La lectura nativa
+de la tarjeta confirma los resultados de esos runs; las horas, la llamada
+25/25 y la ausencia de nuevas llamadas se citan de la revisión de Rafael,
+no de una nueva inspección del log. La causa interna del motor sigue siendo
+una inferencia de los eventos: esta corrección documental no inspecciona ni
+repara el despachador. Subir a 30 turnos no demuestra corregir ese defecto,
+y no hay medición de coste que permita atribuirle un ahorro.
+
+**El piso uniforme se justifica como prevención del riesgo de reparto.**
+Lucía recibió implementación pese a figurar como revisora: dimensionar solo
+por un rol supuesto puede dejar poco margen cuando cambia el encargo.
+Eso justifica proponer margen común; no prueba que el run 302 necesitara
+más turnos. El límite de tarjeta y el de perfil siguen siendo distintos
+(ver `t_dc22118e` arriba).
+
+### Alcance y estado de la propuesta
+
+Las subidas históricas de 16 perfiles, 4 revisores y los 8 del elenco
+original se documentan en cambios separados (#309, #310 y #311). No se
+suman como si fueran conjuntos disjuntos ni como prueba de cobertura.
+La revisión del 2026-11-12 encontró #311 en `7365d56a`, todavía con
+omisión de `viviana` y diagnóstico erróneo de Lucía. La integración actual
+conserva #310 (ya fusionada en `fe5d8e3`) y el candidato corregido de #311
+`4b6dda1`, que incorpora la tabla de nueve y distingue prevención de causa.
+Las tres secciones son historia de dimensionamiento, no grupos disjuntos
+ni cobertura operacional acreditada. Esta PR no aplica presupuestos vivos.
+
+| Perfiles incluidos en esta propuesta | `max_turns` objetivo | `run_budget_seconds` objetivo | Evidencia / pendiente |
+|---|---|---|---|
+| `ignacio-solution-architect`, `julian-security`, `maria-product-owner`, `natalia-documentation`, `sofia-ux-designer`, `viviana-business-analyst`, `elena-release`, `lucia-sre`, `sergio-llmops`, `camilo`, `alexis`, `rafael`, `alba`, `lucia`, `valentina`, `diego`, `elena`, `sofia` | 30 | 1200 | Rafael observó estos valores en los 18 perfiles durante su revisión del 2026-11-12; no es una auditoría en vivo de esta corrección. |
+| `viviana` (Bot frontend del elenco original; no es `viviana-business-analyst`) | 30 | 1200 | Omisión detectada por Rafael en #311 y #314: sin ambos campos en su auditoría. Objetivo documental; aplicación pendiente de aprobación humana explícita y comprobación de configuración. |
+| `jose` (excepción por contrato de coordinación) | 40 | 900 | Valores observados por Rafael; no escribe código de producto según `docs/operacion/multiagente.md`. Revisar si cambia ese contrato. |
+
+Esta tarjeta no modifica configuraciones ni aumenta presupuestos en vivo.
+**No se declara cobertura universal aplicada**: añadir `viviana` a la tabla
+no configura el perfil. Tampoco esta lista parcial demuestra el estado de
+otros perfiles. Para cerrar la cobertura se requiere autorización de la
+aplicación pendiente y auditoría perfil por perfil sobre el roster vigente.
+
+El incidente del checkout principal y la evidencia del preflight tienen un
+único relato en [la guía multiagente](../../docs/operacion/multiagente.md#la-regla-1-falló-por-fuera-y-la-guarda-la-atajó-por-dentro-2026-11-0304).

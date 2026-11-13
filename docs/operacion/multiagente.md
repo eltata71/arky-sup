@@ -149,6 +149,34 @@ visible que el propio worker decide si recoger en su siguiente turno, y que
 un humano también puede leer. Nadie lo construyó todavía; esta nota es
 suficiente para que la próxima vez no haga falta redescubrirlo.
 
+## La regla 1 falló por fuera, y la guarda la atajó por dentro (2026-11-03/04)
+
+El checkout principal quedó en la rama de una PR (`pr-310`) en vez de
+`main` — no por un worker, sino por una revisión independiente ejecutada
+ahí en vez de en un worktree aparte, un error operativo de quien mantiene
+este documento. La revisión independiente de Rafael (`t_4d915961`,
+comentario 422, 2026-11-12) identifica dos rechazos del preflight obligatorio
+(`estado.sh`): `camilo`, tarea `t_5d609ea4`, run 301, el 2026-11-03 a las
+19:19; y `andres-integration`, tarea `t_8c2134ab`, run 305, el 2026-11-04
+a las 02:54. Se negaron a seguir, de acuerdo con la regla 1 ("el checkout
+principal sólo sigue a `main` y no se edita"). Son dos workers, no tres;
+Andrés es aquí `andres-integration`, no el Bot `andres`. El checkout se
+restauró el 2026-11-04 a las 03:42: el aviso tardó horas en atenderse,
+no minutos. Las horas y los runs se citan de esa revisión, no de una nueva
+auditoría del incidente.
+
+**Pero esa protección es un hábito de quien trabaja en la tarea (correr
+`estado.sh` antes de empezar), no un cerrojo de `git`.** Nada en el propio
+`git` impide dejar el checkout principal en otra rama. La observación del
+2026-11-03 era que `core.hooksPath` no estaba instalado; no es el estado
+actual: Rafael lo verificó instalado el 2026-11-12, y esta corrección
+confirma `local core.hooksPath=scripts/agentes/hooks` con
+`git config --show-scope --get core.hooksPath`. No se conoce la fecha de
+instalación. Con la guarda instalada, `post-checkout` **avisa**, pero no
+impide cambiar de rama; `pre-commit` rechaza *commits* en el principal, no
+cambios de rama. Por eso sigue siendo obligatorio usar un worktree y
+ejecutar el preflight, aunque el hook esté instalado.
+
 ## Las herramientas
 
 | Script | Qué hace | ¿Cambia algo? |
