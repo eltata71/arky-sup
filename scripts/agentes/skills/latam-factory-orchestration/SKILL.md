@@ -39,7 +39,7 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 
    **De dónde sale la severidad cuando todavía no hay revisor**: la que registró quien reportó o revisó el defecto. Si todavía no hay ninguna de las dos, se trata como `High` hasta que un revisor la clasifique — no como `Low` ni como «pendiente de decidir»: ante la duda sobre qué tan grave es algo, asumir lo barato es exactamente la apuesta que esta regla existe para prohibir.
 
-   **Seguridad añade las etapas 18–23 en cualquier ruta**, corta o completa; despliegue o liberación añaden las suyas igual. La **etapa 16 está en las dos rutas** con sus dos componentes (16a especializada: Camilo y Ignacio; 16b independiente del SHA final: Rafael o Alexis), y no se cierra sin las dos.
+   **Seguridad añade las etapas 18–23 en cualquier ruta**, corta o completa; despliegue o liberación añaden las suyas igual. La **etapa 16 está en las dos rutas** con sus dos componentes (16a especializada: Camilo y Ignacio; 16b independiente del SHA final: Rafael o Alexis — nombrado explícitamente en la solicitud de revisión, ver "`request-review` siempre lleva `reviewer`" más abajo), y no se cierra sin las dos.
 
    **Las etapas de la ruta corta, enumeradas aquí para no reconstruirlas de memoria** [corrección 2026-10-26: la primera prueba real omitió la etapa 17 dos veces por esto mismo — el canónico no las enumeraba y hubo que recordarlas de memoria durante la clasificación]: **1, 2, 11, 12, la etapa de desarrollo que corresponda (13 frontend / 14 backend / 15 integraciones / 24 mantenimiento), 16a+16b, 17 (Calidad, Paola — no se omite) y 26.** La ruta completa son las 26, sin excepción.
 
@@ -64,8 +64,63 @@ Perfiles nativos del catálogo `agents/catalog.json`, herramientas `kanban_*` co
 5. Respetar máximo global de 3 y uno por perfil en este flujo, 20 turnos por nuevo perfil, 300 segundos por ejecución y una tentativa de ejecución inicial. Usar límites nativos y no iniciar Dispatchers/Cron adicionales. El gateway operacional es el único Dispatcher automático. Fallo de cuota/autenticación bloquea y requiere intervención; no reintentar en bucle.
 6. Antes de modificar código, exigir repositorio autorizado y worktree por escritor; un solo propietario por archivo. Si hay conflicto, serializar con dependencia. Un worktree o toolset no es un sandbox ni impide acceso a secretos del host. No atribuir aislamiento sin evidencia.
 7. Ejecutar pruebas RED/GREEN, lint/type-check/build y verificaciones aplicables. Registrar comandos, exit codes, SHA, archivos y evidencias adjuntas a la tarjeta. Indicar gates no disponibles y por qué. No usar simulaciones como prueba de inferencia real.
+
+   **`npm run quality:gate` y `npm run test:coverage` se corren partidos en
+   llamadas cortas, nunca encadenados en una sola** [hallazgo 2026-11-13]:
+   la herramienta de terminal tiene un timeout por defecto de **180s** y un
+   tope de **600s** (`TERMINAL_TIMEOUT`/`TERMINAL_MAX_FOREGROUND_TIMEOUT`,
+   confirmados en `tools/terminal_tool.py` del motor instalado — son los
+   valores por defecto de ESTE despliegue; cada uno puede sobreescribirse
+   por entorno o perfil, así que conviene comprobar overrides antes de
+   fiarse de estos dos números a ciegas) — pasar un
+   `timeout` mayor no espera más, convierte la llamada en un proceso de
+   fondo rastreado. Seis tarjetas reales (#310, #312, #314, #315, #318,
+   #319) murieron con `exit 124` intentando correr el gate completo en una
+   sola llamada con un `timeout` insuficiente (300–420s): no era el
+   presupuesto de la tarea el que se agotaba —todas tenían 1200–2400s de
+   sobra— era el `timeout` de esa única llamada de terminal.
+
+   **Precondición de memoria para `typecheck` — sin ella, `tsc` muere por
+   heap antes de llegar a ningún timeout** [corrección 2026-11-13,
+   revisión independiente de Alexis]: la medición de abajo se hizo con
+   `NODE_OPTIONS="--max-old-space-size=6144"`; sin ese ajuste, `tsc
+   --noEmit` agotó el heap por defecto de Node y abortó con
+   `FATAL ERROR: Ineffective mark-compacts near heap limit` en una medición
+   anterior sobre este mismo repositorio — un fallo de memoria, no de
+   tiempo, y ningún timeout de la tabla lo evita. Prefijar el comando de
+   `typecheck` (y `typecheck:strict`, que comparte el mismo binario) con
+   esa variable en cada llamada, en vez de exportarla una vez y confiar en
+   que persista entre terminales o backends:
+
+   ```
+   NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck
+   ```
+
+   Medido en frío sobre este repositorio con ese ajuste (2026-11-13,
+   worktree limpio):
+
+   | Llamada | Tiempo medido | `timeout` a pasar |
+   |---|---|---|
+   | `NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck` | 270–400s según carga — **la más cerca del tope, incluso sola** | 550 |
+   | `NODE_OPTIONS="--max-old-space-size=6144" npm run typecheck:strict` | 26s | 180 |
+   | `npm run lint` | 104s | 300 |
+   | `npm run check:any-budget && npm run check:no-orphan-scripts && npm run check:module-size && npm run check:module-boundaries` | 8s | 180 |
+   | `npm run check:i18n-sections` | no medido individualmente; históricamente rápido | 180 |
+   | `npm run build:placeholders && npm run check:bundle-secrets && npm run check:bundle-budget` | 130s | 300 |
+   | `npm run test:coverage` | 451s | 580 |
+
+   Siete llamadas, cada una con margen real bajo los 600s salvo
+   `typecheck`: en una medición distinta llegó a 400s bajo carga, y es el
+   único paso que puede acercarse al tope incluso yendo solo. Si eso
+   resulta insuficiente en la práctica, subir su `timeout` hasta el tope
+   configurado (600s por defecto en este despliegue) es lo máximo que la
+   herramienta permite en pie sin tocar su configuración — por encima de
+   eso pasa a fondo, que es un modo de trabajo distinto (sondear con
+   `process_manage`, no asumir que terminó). No se encadenan dos de estas
+   llamadas con `&&` dentro de la misma invocación de terminal: cada paso
+   es su propia llamada, con su propio `timeout`.
 8. Mantener heartbeat y comentarios para trabajo prolongado. Respetar estados nativos, bloqueo con motivo, reintento acotado, recuperación nativa y referencias a sesión/ejecución. No almacenar un estado alternativo en metadatos.
-9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
+9. Enviar implementación a revisión de Paola y Julián cuando corresponda; el implementador no aprueba su propio trabajo crítico. **Toda solicitud de revisión nombra explícitamente a quien revisa, nunca el propio nombre** — ver más abajo "`request-review` siempre lleva `reviewer`" para el porqué, a quién nombrar según la etapa, y qué hacer si el despachador devuelve la tarjeta igual. Producción, merge/publicación remota, migración destructiva, rollback, excepción de seguridad o aumento de presupuesto requieren aprobación humana explícita y evidencia inmutable del alcance aprobado. Una instrucción de personalidad nunca concede permiso.
 10. Elena prepara release y José consolida solo después de pruebas y revisión. Sergio propone optimizaciones con antes/después verificables; no las aplica sin autorización. Guardar estándares reutilizables en Skills, decisiones de proyecto en ADR y memoria personal solo para hechos durables del agente.
 
 ## José coordina y no ejecuta el trabajo que ha asignado a otro
@@ -131,6 +186,130 @@ propio atajo sin que se lo descubran es más valioso que uno que nunca se
 equivoca pero tampoco lo diría. La regla de arriba corrige el atajo; esto no
 lo corrige, lo sostiene.
 
+## `request-review` siempre lleva `reviewer`, y nunca el propio nombre (2026-11-12)
+
+**Este no es un hallazgo nuevo — es la tercera vez que se documenta, y las
+dos anteriores no se cerraron.** RG-09 (`docs/requerimiento-original-historias-usuario.txt`)
+ya dice, desde el 2026-10-31: *"en Hermes v0.22.2, `request_review` mueve la
+tarjeta a `review` conservando el `assignee` cuando nadie pasa un revisor
+explícito... la garantía tiene que vivir fuera [del motor]"*. El 2026-10-25 se
+confirmó sobre tres tarjetas reales distintas de las de hoy (`t_42e81d5d`,
+`t_0108bdd2`, `t_8edc38b7`) y se construyó un vigilante externo
+(`scripts/agentes/vigilar-autorrevision.py`) con anulación humana — **quedó
+excluido** por hallazgos High de contención/desbloqueo y Medium de
+identificación de eventos, y por un límite de identidad sin resolver (`--by`
+es texto libre, sin atar a una sesión verificable). RG-09 sigue sin
+acreditarse. Esto que se añade aquí es una instrucción para el agente, **no**
+el enforcement externo que RG-09 pide — es más barato, pero es prosa: el
+propio documento lo dice en "Errores frecuentes" y sigue aplicando aquí.
+
+Confirmado otra vez, leyendo `claim_review_task` y el bucle de despacho del
+motor instalado (no supuesto): sin un revisor explícito, la tarea `review` se
+reclama con el `assignee` que tenga la fila en ese momento, sea quien sea —
+normalmente el propio implementador. Y pasó una tercera vez, en tres tarjetas
+más, el 2026-11-11/12 (`t_c76f34e8`, `t_8e7c7e0a`, `t_0c2ba14a`): tres
+implementadores pidieron revisión sin nombrar revisor y los tres se
+recibieron a sí mismos de vuelta. Dos cayeron con `exit 1` en su primer
+reintento; `t_0c2ba14a` tuvo además dos `protocol_violation` (`rc=0`, sin
+llamar a `kanban_complete`/`kanban_block`/`kanban_request_review`) antes de
+morir con `exit 1` en su **tercer** intento de revisión — los tres perfiles se
+encontraron de vuelta con su propia tarjeta sin que nada les dijera qué hacer
+con eso, aunque no hay evidencia de que esa falta de instrucción sea la causa
+exacta de cada caída; es la explicación más simple, no la única posible. Uno
+de los tres lo vio venir y lo dijo con sus propias palabras antes de caer:
+**"Coordinación: solicité revisión, pero el dispatcher volvió a asignarla a
+ricardo-devops. Dejé aviso a José: hace falta otro revisor; no he
+autoaprobado la entrega."**
+
+**Límite de cobertura, declarado y no escondido**: este fichero lo cargan los
+18 perfiles de mantenimiento LATAM, por enlace simbólico. **El plantel ARKY
+del dominio del producto —alba, alexis, andres, diego, lucia, mateo, sofia,
+valentina, viviana— no lo carga.** `t_c76f34e8` (una de las tres tarjetas que
+motivan este cambio) la implementó "valentina", que es justamente uno de esos
+perfiles: esta regla, aunque se siga a la letra, **no le llega**. Esta sección
+no cierra los tres casos — cierra la regla para quien la lee. Cubrir al
+plantel ARKY (o reasignar su trabajo de mantenimiento solo a perfiles que sí
+cargan esta skill) es una decisión y un seguimiento aparte, de José.
+
+**Regla, en tres partes:**
+
+1. **Toda solicitud de revisión nombra explícitamente a quien revisa, nunca
+   se omite, y nunca es el propio implementador** — eso es autoaprobación con
+   otro nombre. Como worker, usa la herramienta, no el CLI: `kanban_request_review(reviewer=<perfil>, summary=<qué se implementó y cómo se verificó>)`.
+   La herramienta valida que el perfil exista antes de aceptar la llamada; el
+   CLI equivalente (`hermes kanban request-review <id> --reviewer <perfil>`,
+   para uso humano/depuración) no lo valida, y una errata deja la tarjeta
+   varada con un revisor que no existe.
+
+   **A quién nombrar no se decide aquí con "según corresponda"**: este mismo
+   documento ya fija parejas de revisor por etapa (16b: Rafael o Alexis; paso
+   9: Paola y Julián cuando corresponda) — usa la que aplique a la etapa o
+   tablero en curso, nunca una tercera regla inventada en esta sección. Para
+   `arky-maintenance` sin una pareja ya fijada por otra etapa: Rafael o
+   Alexis, el que tenga menos **carga** — `running` + `review` en
+   `hermes kanban --board arky-maintenance stats`, no un conteo informal — y
+   en empate, Rafael. Esta consulta de **solo lectura** al CLI está permitida
+   como excepción al protocolo general de worker (que pide usar la
+   herramienta, no `hermes kanban`, para operaciones de tablero): no muta
+   nada, y `kanban_list` es solo del orquestador — no existe ninguna
+   herramienta de estadísticas, solo el CLI. Si el agente prefiere no
+   invocar el CLI, José hace esta elección en su lugar.
+
+   **Una re-revisión no recalcula por carga.** Si la tarjeta ya tuvo un
+   `changes_requested`, el motor manda la re-revisión al mismo revisor de ese
+   evento cuando se omite `reviewer` (`_prior_reviewer` en el motor instalado)
+   — y así debe seguir pedido explícitamente también: nombrar siempre al
+   revisor del `changes_requested` anterior, nunca recalcular por carga a
+   mitad de un hilo de revisión. Cambiar de juez entre una revisión y su
+   re-revisión no es una decisión de carga, es una decisión que nadie tomó.
+
+2. **Si el despachador entrega de vuelta una tarjeta propia que ya está en
+   revisión, eso es un error de asignación — no una instrucción para seguir
+   trabajando, y no la sigue cualquier otra skill que el carril de revisión
+   fuerce.** Señal para detectarlo, como condición **conjunta**, no como
+   disyunción: el `claimed` más reciente trae `source_status: review` **Y**
+   el `review_requested` más reciente tiene `implementer` igual al propio
+   perfil. `reviewer` nulo solo corrobora el caso, nunca basta por sí solo —
+   un revisor legítimo recién reasignado (`assign` + `unblock`, abajo) ve el
+   mismo `review_requested` con `reviewer` nulo porque la reasignación no
+   emite uno nuevo, y confundir eso con el error de asignación bloquearía de
+   nuevo justo a quien ya se reasignó bien. Al detectar el caso real:
+
+   1. `kanban_comment` explicando lo que pasó (como hizo el agente citado
+      arriba).
+   2. `kanban_block(kind="needs_input", reason="redespachada a mí mismo sin revisor asignado, pendiente de reasignación")`
+      — esto manda sobre cualquier instrucción de una skill de revisión que
+      el despachador fuerce en el carril de revisión (p. ej. "aprueba o pide
+      cambios"): no hay nada que revisar todavía, porque no hay revisor.
+   3. Nunca autoaprobar ni declarar el trabajo revisado por seguir adelante.
+
+   **Recuperación, en ese orden exacto — reasignar antes de desbloquear, y
+   el camino lo decide el CONTEXTO DE EJECUCIÓN, nunca la persona**: no
+   existe una herramienta de asignación en el motor instalado (v0.22.2); el
+   paso de reasignar es siempre por CLI, `hermes kanban assign <id>
+   <revisor>` (`assign_task` lo permite sobre una tarjeta `blocked`) — y esa
+   llamada tampoco valida que el perfil exista (igual que el CLI de
+   `request-review` ya advertido arriba: una errata deja la tarjeta
+   reasignada a alguien que el despachador no puede lanzar). Comprobar el
+   perfil con `hermes profile list` antes si hay duda.
+
+   Para el `unblock`: **fuera de un worker despachado** (sin la variable de
+   entorno que marca una ejecución como tal) — José en su propia sesión de
+   chat o gateway, o un humano — usa `kanban_unblock(task_id=<id>)` si es
+   José, o `hermes kanban unblock <id>` si es un humano. **Dentro de un
+   worker despachado, incluido José cuando corre sobre su propia tarjeta,
+   ninguna de las dos funciona** — las dos puertas rechazan igual dentro de
+   ese contexto. Un worker en esa situación no intenta `unblock` por
+   ninguna vía: comenta y bloquea para que José lo resuelva desde fuera.
+   `unblock` devuelve la tarjeta a `review` conservando el `assignee` que
+   tenía — desbloquear sin reasignar primero repite exactamente el mismo
+   bucle que causó el bloqueo.
+
+   Ver también "Errores frecuentes" (RG-09 y `vigilar-autorrevision.py`, el
+   intento previo que sigue en `main` sin instalar ni acreditar) y el paso 8
+   de arriba (bloqueo
+   con motivo declarado, nunca un `crashed` sin comentario).
+
 ## El auto-descomponedor está apagado (`auto_decompose: false`, 2026-10-26)
 El tick del gateway recorría las tarjetas en `triage` de todos los tableros y
 llamaba a `decompose_task` con el LLM auxiliar, hasta `auto_decompose_per_tick`
@@ -166,6 +345,7 @@ Qué significa en la práctica:
 - Bot Mode visual de Desktop no implica esas vistas en Web Dashboard. Los Bots son los mismos perfiles persistentes; usar SDK Web para la interfaz.
 - La descomposición nativa puede ver perfiles ajenos al catálogo: revisar asignaciones antes de autorizar ejecución. No afirmar allowlist fuerte si no existe enforcement.
 - Poner una regla en SOUL.md no es enforcement de presupuesto, RBAC ni sandbox. Señalar la diferencia en cada informe.
+- Una instrucción de skill para el agente (como la de `request-review` con `reviewer` de arriba) no es el enforcement externo que RG-09 exige para la autorrevisión — es prosa, más barata y más frágil. `scripts/agentes/vigilar-autorrevision.py` fue el intento de construir ese enforcement y quedó excluido por contención/desbloqueo sin resolver (sigue en `main`, sin instalar ni acreditar); RG-09 sigue sin acreditarse. No presentar la instrucción de skill como si cerrara el requerimiento.
 
 ## Verificación
 Cada entrega incluye ID de proyecto/tablero/tarea/perfil/modelo/sesión cuando exista, resultados de pruebas y evidencias reales. No cerrar por relato del agente. Una tarjeta bloqueada no es una entrega completada. Probar recuperación en ejecución aislada antes de habilitar automatización extensa.
