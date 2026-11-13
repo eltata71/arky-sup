@@ -156,7 +156,8 @@ export const describeOperation = (outcome: OperationTraceSource): OperationTrace
   return {
     id: clean(outcome.operationId) ?? '',
     runId: clean(outcome.runId),
-    traceIds: (outcome.traceIds ?? outcome.invocations?.flatMap((item) => item.measurement.traceId ? [item.measurement.traceId] : []) ?? []).map(redactSecretShapes),
+    traceIds: [...(outcome.traceIds ?? outcome.invocations?.flatMap((item) => item.measurement.traceId ? [item.measurement.traceId] : []) ?? [])]
+      .sort().map(redactSecretShapes),
     kind: 'operation',
     label: clean(outcome.operationId) ?? '',
     status: outcome.status === 'completed' ? 'ok' : outcome.status === 'failed' ? 'failed' : 'warning',

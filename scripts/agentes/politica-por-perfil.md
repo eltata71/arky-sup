@@ -206,6 +206,120 @@ un defecto de diseño — registrado como tarjeta `t_dc22118e` en el tablero
 `latam-factory`, con una propuesta de reconciliación dimensionada y sin
 construir (es código de Hermes, no de este repositorio).
 
+## Los cuatro que faltaban — y ocho más del mismo tipo (2026-11-03)
+
+La subida de los 16 anteriores se centró en quien implementa y se saltó
+cuatro perfiles sin razonarlo: `jose`, `camilo`, `rafael`, `alexis`. Los
+cuatro tenían bloque `agent:` pero **sin `max_turns` ni `run_budget_seconds`
+en absoluto** — no es el mismo síntoma que los 16 (ajustados pero cortos),
+es la otra mitad del mismo defecto: correr sin presupuesto alguno, con el
+valor por defecto del motor (`run_budget_seconds=None`,
+`max_iterations=sys.maxsize` — genuinamente ilimitado).
+
+Dimensionado por rol, sin telemetría directa de ninguno de los cuatro:
+
+- **`jose`** (`max_turns: 40`, `run_budget_seconds: 900`). Coordina,
+  descompone y consolida sobre muchas tarjetas en una sola sesión — más
+  pasos que una revisión de una sola tarjeta, aunque cada paso sea barato
+  (`gh pr list`, `hermes kanban show`). No ejecuta código de producto
+  (`multiagente.md`: "no escribe código de producto"), así que no necesita
+  el presupuesto de tiempo de quien corre tests/build.
+- **`camilo`** (`max_turns: 30`, `run_budget_seconds: 900`). Arquitecto de
+  la etapa 16a: escribe dictámenes tras investigación real, no solo
+  lectura — el propio caso de `t_8c2134ab` lo confirma ("Probes reales...
+  36 permutaciones invocations×events"). Entre el nivel ligero y el pesado.
+- **`alexis`** y **`rafael`** (`max_turns: 25`, `run_budget_seconds: 900`
+  los dos). Revisores independientes de la etapa 16b: leen diffs y
+  ejecutan comprobaciones focalizadas sobre el SHA final, no la suite
+  completa — no triviales, pero tampoco del tamaño de quien implementa.
+
+Los cuatro comparten `run_budget_seconds: 900`: ninguno corre la puerta de
+calidad completa, así que no necesitan el suelo de 1200s medido para esa
+carga; 900s es margen sobre varias comprobaciones focalizadas encadenadas,
+no una medición directa de ninguno de los cuatro.
+
+**Lo que no se tocó, y es el mismo desajuste:** al revisar estos cuatro
+aparecieron **ocho perfiles más del elenco original de los 12 Bots**
+(`multiagente.md`) con el mismo vacío — ni `max_turns` ni
+`run_budget_seconds`: `alba`, `andres`, `diego`, `elena`, `lucia`, `mateo`,
+`sofia`, `valentina`. No se tocaron sin que el propietario lo pida
+explícitamente para estos ocho (a diferencia de los cuatro de arriba, que
+sí se nombraron) — se deja anotado para no tener que redescubrirlo.
+
+## Nueve perfiles del elenco original de los 12 Bots (2026-11-03; corrección de cobertura 2026-11-12)
+
+Al dimensionar los 16 perfiles que tenían un presupuesto de 20/300 quedaron sin tocar nueve
+del elenco original (`multiagente.md`): `alba`, `andres`, `diego`, `elena`,
+`lucia`, `mateo`, `sofia`, `valentina`, `viviana` — ninguno tenía `max_turns` ni
+`run_budget_seconds`. Antes de dimensionarlos hacía falta responder una
+cosa primero: **¿pueden recibir trabajo hoy, o están fuera del circuito por
+haber sido superados por los perfiles especialistas con sufijo?**
+
+La comprobación original abarcó solo los ocho primeros: tienen `auth.json` con credenciales reales
+(1245-1455 bytes), los 8 ejecutaron tareas de verdad en el pasado (entre 1
+y 38 runs cada uno, todos entre el 21 y el 23 de octubre — justo antes de
+que aparecieran los perfiles especialistas), y no existe ningún catálogo
+ni lista de perfiles permitidos en el despachador (`kanban_db.py`,
+`kanban_db_dispatch.py`) que filtre el campo `assignee`. Son retirados de
+hecho —sin runs desde el 23 de octubre en aquella comprobación—, no retirados del
+sistema: basta escribir su nombre en `--assignee` para que reciban trabajo.
+Por tanto, el mismo riesgo que los 16 anteriores, no ceremonia sobre
+perfiles inertes.
+
+Dimensionados en un primer momento por el rol que `multiagente.md` les
+da, no por telemetría de estos 8 en concreto: `andres` y `mateo`
+(implementadores, nivel pesado), `alba` (solución, nivel de `camilo`),
+`lucia` y `valentina` (nombradas "revisor independiente" en el paso 4 de
+`multiagente.md`, nivel de `alexis`/`rafael`), `diego` (verifica
+CI/despliegue, nivel de `elena-release`), `elena` y `sofia` (deciden/
+diseñan, nivel ligero).
+
+**El reparto pesado/ligero fue revisado, pero no es la causa probada del
+incidente de Lucía.** La revisión de Rafael (`t_4d915961`, 2026-11-12)
+confirmó que el run 302 sí ejecutó `request_review` en la llamada 25/25.
+Las seis caídas siguientes del despachador no volvieron a llamar a la API;
+no prueban tres agotamientos de turnos de Lucía. El piso uniforme de
+`max_turns: 30` / `run_budget_seconds: 1200` es un dimensionamiento
+preventivo por la posibilidad de recibir implementación, no una reparación
+acreditada de ese incidente ni una configuración aplicada por esta PR.
+La cronología y sus límites se concilian en #314.
+
+La revisión independiente de Rafael (`t_689a5a26`, SHA `7365d56a`)
+encontró el noveno omitido: `viviana`, frontend según el roster, tenía 31
+runs y carecía de ambos límites. Es evidencia de esa revisión, no una
+auditoría de configuración viva repetida en esta corrección documental.
+El piso dimensionado para los nueve es:
+
+| Perfil | `max_turns` | `run_budget_seconds` | Motivo del piso |
+|---|---|---|---|
+| `alba` | 30 | 1200 | Solución; el rol nominal no impide recibir implementación. |
+| `andres` | 30 | 1200 | Backend; implementación y pruebas reales. |
+| `diego` | 30 | 1200 | DevOps; verificación de CI/build y posible implementación. |
+| `elena` | 30 | 1200 | UX; el rol nominal no impide recibir implementación. |
+| `lucia` | 30 | 1200 | Seguridad/revisión; el caso real mostró asignación a implementación. |
+| `mateo` | 30 | 1200 | Datos; implementación y pruebas reales. |
+| `sofia` | 30 | 1200 | Producto; el rol nominal no impide recibir implementación. |
+| `valentina` | 30 | 1200 | QA/revisión; puede ejecutar pruebas o recibir implementación. |
+| `viviana` | 30 | 1200 | Frontend; puede implementar y ejecutar test/build, con el mismo margen que los demás. |
+
+Contraste con los doce Bots de `docs/operacion/multiagente.md`: los nueve
+de la tabla más `jose`, `camilo` y `rafael` completan el roster, sin otro
+Bot omitido. Estos tres no pertenecen al grupo de nueve: su dimensionamiento
+se trata en la corrección de los cuatro perfiles de #310. `viviana` no es
+`viviana-business-analyst`, el perfil con sufijo citado entre los 16.
+
+**Dimensionar no es aplicar:** esta corrección no cambia configuraciones
+externas ni eleva presupuestos vivos. Aplicar el piso a `viviana` requiere
+aprobación humana explícita y verificación posterior perfil por perfil.
+No se declara cobertura operativa total mientras eso esté pendiente; la
+uniformidad del resto del elenco se trata en #314. La integración conserva
+el orden #310 → #311 → #314 y exige revisar el SHA final tras el rebase.
+
+Fuera del alcance de este dimensionamiento quedan los perfiles de prueba ya apagados
+(`pruebacoordinador20261025`, `pruebacoordinador220261025`) y los que son
+gateway puro (`arkyaws`, `arkysupabase`, `latamfactory`), que no ejecutan
+tareas kanban por sí mismos.
+
 ## El piso uniforme y el diagnóstico corregido del caso Lucía (2026-11-12)
 
 **Lucía sí hizo el traspaso a la primera.** En `arky-maintenance`, tarea
@@ -246,10 +360,12 @@ más turnos. El límite de tarjeta y el de perfil siguen siendo distintos
 Las subidas históricas de 16 perfiles, 4 revisores y los 8 del elenco
 original se documentan en cambios separados (#309, #310 y #311). No se
 suman como si fueran conjuntos disjuntos ni como prueba de cobertura.
-Al comprobar GitHub el 2026-11-12, #311 seguía abierta en `7365d56a`:
-también omite `viviana` y repite el diagnóstico erróneo de Lucía. Debe
-corregirse al integrar la cadena #310 → #311 → #314, con una sola
-afirmación final de cobertura y revisión del SHA integrado.
+La revisión del 2026-11-12 encontró #311 en `7365d56a`, todavía con
+omisión de `viviana` y diagnóstico erróneo de Lucía. La integración actual
+conserva #310 (ya fusionada en `fe5d8e3`) y el candidato corregido de #311
+`4b6dda1`, que incorpora la tabla de nueve y distingue prevención de causa.
+Las tres secciones son historia de dimensionamiento, no grupos disjuntos
+ni cobertura operacional acreditada. Esta PR no aplica presupuestos vivos.
 
 | Perfiles incluidos en esta propuesta | `max_turns` objetivo | `run_budget_seconds` objetivo | Evidencia / pendiente |
 |---|---|---|---|
