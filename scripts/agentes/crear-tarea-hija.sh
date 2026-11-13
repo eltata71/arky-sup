@@ -241,10 +241,12 @@ fi
 # aceptable porque esta llamada nunca es interactiva.
 cuerpo_original=""
 if [ -n "$body_file" ]; then
-  if [ "$body_file" = "-" ]; then
-    cuerpo_original="$(cat; printf x)"
-  else
-    cuerpo_original="$(cat "$body_file"; printf x)"
+  # El centinela solo se emite si cat pudo leer: un printf incondicional
+  # ocultaría el error y crearía la tarjeta sin su especificación.
+  # cat interpreta '-' como stdin también en este camino.
+  if ! cuerpo_original="$(cat -- "$body_file" && printf x)"; then
+    echo "crear-tarea-hija.sh: no se pudo leer --body-file '$body_file'. No se crea ninguna tarea." >&2
+    exit 2
   fi
   cuerpo_original="${cuerpo_original%x}"
 elif [ -n "$body_text" ]; then

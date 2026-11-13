@@ -96,13 +96,32 @@ class CrearTareaHijaTests(unittest.TestCase):
         # Regresión del hallazgo de la revisión independiente del PR #310:
         # `$(cat ...)` recortaba en silencio las líneas en blanco finales.
         original = Path(self.tmp.name) / 'cuerpo.txt'
-        original.write_text('linea1\nlinea2\n\n\n\n')
+        contenido = b'linea1\nlinea2\n\n\n\n'
+        original.write_bytes(contenido)
         result = self.run_script(*self.BASE_OK, '--body-file', str(original),
                                   '--', 'Titulo real')
         self.assertEqual(result.returncode, 0, result.stderr)
-        body = (Path(self.tmp.name) / 'body-recibido.txt').read_text()
-        self.assertTrue(body.rstrip('\n').endswith('linea2'))
-        self.assertGreaterEqual(body.count('\n\n'), 2)
+        body = (Path(self.tmp.name) / 'body-recibido.txt').read_bytes()
+        self.assertEqual(body.split(b'\n\n---\n\n', 1)[1], contenido + b'\n')
+
+    def test_refuses_missing_body_file_without_calling_hermes(self):
+        missing = Path(self.tmp.name) / 'no-existe.txt'
+        result = self.run_script(*self.BASE_OK, '--body-file', str(missing),
+                                 '--', 'Titulo real')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('--body-file', result.stderr)
+        self.assertIn(str(missing), result.stderr)
+        self.assertIn('No se crea ninguna tarea', result.stderr)
+        self.assertFalse(self.captured.exists())
+
+    def test_refuses_directory_body_file_without_calling_hermes(self):
+        result = self.run_script(*self.BASE_OK, '--body-file', self.tmp.name,
+                                 '--', 'Titulo real')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('--body-file', result.stderr)
+        self.assertIn(self.tmp.name, result.stderr)
+        self.assertIn('No se crea ninguna tarea', result.stderr)
+        self.assertFalse(self.captured.exists())
 
     def test_temp_body_file_is_removed_after_success(self):
         result = self.run_script(*self.BASE_OK, '--', 'Titulo real')
