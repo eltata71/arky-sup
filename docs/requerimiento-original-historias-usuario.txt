@@ -1714,6 +1714,79 @@ Estado al 2026-10-25: Rafael `claude-opus-5-5` (anthropic), Alexis
 motivo por el que existen dos revisores y no uno: no duplican criterio,
 duplican disponibilidad.
 
+[enmienda E-12, 2026-11-08, corregida 2026-11-12] RG-19 prometía más de lo
+que la configuración y el motor de Hermes dan. Numeración: la serie de
+enmiendas de este requerimiento llega a E-11 (RG-20); esta es la E-12. No es
+el invariante E-12 de `docs/ddd-transformacion/07-invariantes.md`, que
+pertenece a otro espacio de nombres (invariantes del dominio, no enmiendas de
+este texto).
+
+**Estado de la cadena de respaldo, leído en los config de los perfiles el
+2026-11-12** (están fuera del repositorio y no versionados; es una lectura
+puntual, no una garantía). El espejo de RG-19 está **parcialmente**
+cumplido:
+- Rafael -> Alexis es exacto: el primer `fallback_providers` de Rafael es
+  `openai-codex`/`gpt-6.1-sol`, el primario de Alexis.
+- Alexis -> Rafael no lo es: el primer `fallback_providers` de Alexis es su
+  propio primario (`openai-codex`/`gpt-6.1-sol`, redundante) y el segundo es
+  `anthropic`/`claude-sonnet-5-5`, el mismo proveedor que Rafael pero no su
+  primario (`claude-opus-5-5`). La literalidad de RG-19 ("el modelo
+  primario de cada uno será el fallback del otro") no se cumple en esta
+  dirección.
+Cerrar esa brecha es una decisión de configuración de José, no de esta
+enmienda.
+
+**Lo que la regla prometía y no se ha demostrado**: que la verificación
+independiente "no dependa de una sola cuota". Que el respaldo esté
+configurado no implica que se active. Esta enmienda no afirma que ningún
+tipo de error de cuota quede cubierto sin intervención: la evidencia
+disponible dice lo contrario.
+
+**Incidente que lo refuta, con su causa evidenciada** (`t_5d609ea4`, tarea
+real, revisión de Rafael, 2026-11-04/05). Fuente: `agent.log` del perfil de
+Rafael (2026-11-04 21:40 a 2026-11-05 00:38; sesiones desde
+`20261104_214033_9c5d19` hasta `20261105_003841_e2239e`) y los 11 runs
+`rate_limited` de la tarjeta (317 a 327; salida 75, que el despachador
+reencola sin contar fallo). Entre la primera reclamación y la última salida
+pasaron 3 h 18 min; hasta el `model_override` manual a `openai-codex`
+pasaron 3 h 22 min.
+- El primario (`anthropic`/`claude-opus-5-5`) devolvió un HTTP 429
+  **genérico** (`rate_limit_error`, "This request would exceed your
+  account's rate limit"). Cero códigos estructurados (`resource_exhausted`,
+  `throttled`, `rate_limit_exceeded`) en `agent.log` y `errors.log`.
+- El motor **sí consultó la cadena** en los 11 runs (v0.22.2,
+  `agent/turn_recovery.py`: fallback inmediato por `reason` de límite de
+  tasa o facturación, omitido sólo si la rotación del pool de credenciales
+  aún puede recuperar). En los 11 omitió `openai-codex`/`gpt-6.1-sol`
+  ("credential pool is exhausted (every entry in cooldown)"). En 4 runs
+  activó `openrouter`/`z-ai/glm-5.3-flash`, que respondió HTTP 402
+  (créditos insuficientes); en los otros 7 también lo omitió por cooldown y
+  reintentó `anthropic` (esperas de 600 s) hasta salir con 75.
+- El respaldo no estaba roto: el 2026-11-05 a las 00:55 una llamada directa
+  de Rafael a `openai-codex` respondió. Lo que lo descartó fue el estado de
+  cooldown del pool de credenciales de ese proveedor en el perfil, más un
+  segundo respaldo sin crédito. La causa de ese cooldown no se investigó.
+- Lo resolvió una intervención manual (`model_override` a `openai-codex`).
+
+**Hipótesis no observada en este incidente**: `agent/error_classifier.py`
+(líneas 638-642) clasifica los códigos estructurados `resource_exhausted`,
+`throttled` y `rate_limit_exceeded` con `should_rotate_credential` y sin
+`should_fallback`. Leer sólo el clasificador no demuestra qué hace el motor
+ante ellos (el fallback eager de `turn_recovery.py` decide por `reason`, no
+por `should_fallback`), y ese camino no se observó en ningún log. No se
+afirma ni se descarta; no debe citarse como causa de `t_5d609ea4`.
+
+No se modifica el motor de Hermes: es software de terceros y José decidió
+explícitamente no tocarlo.
+
+**Por qué importa**: una garantía escrita que el sistema no da es peor que
+no tenerla, porque hace que nadie vigile lo que cree cubierto. Hoy la
+activación del respaldo depende del estado del pool de credenciales del
+proveedor de respaldo y del crédito de los demás respaldos, y ninguna señal
+externa avisa cuando todos están en cooldown (evaluada, no construida, al
+cierre de esta enmienda). Mientras tanto, un agotamiento de cuota de
+cualquiera de los dos revisores depende de que una persona lo note.
+
 RG-20 — Fuente única de instrucciones compartidas [enmienda E-11]: Las
 instrucciones compartidas por varios agentes viven en un único fichero
 versionado. Un perfil lo referencia y nunca conserva una copia divergente.
