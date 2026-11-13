@@ -114,12 +114,18 @@ def _make_review_board(tmp_dir: Path, pr_number: int, comments: list[tuple[str, 
     las de hoy en el tablero real."""
     db = tmp_dir / f"board-{pr_number}.db"
     con = sqlite3.connect(str(db))
-    con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER)")
+    con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT)")
     con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
     con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
-    con.execute("INSERT INTO tasks VALUES (?, ?, ?)", (f"t_fake{pr_number}", f"Revisión PR #{pr_number}: algo", 1))
+    sha = next((amw._VERDICT_RE.search(body)[2] for _, body, _ in comments if amw._VERDICT_RE.search(body)), "a" * 40)
+    identity = {"repo": amw.REPO, "pr": pr_number, "sha": sha, "review_type": "independent"}
+    con.execute("INSERT INTO tasks VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", f"Revisión PR #{pr_number}: algo", 1, "AUTO_MERGE_REVIEW " + json.dumps(identity)))
     for author, body, ts in comments:
         con.execute("INSERT INTO task_comments VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", author, body, ts))
+        match = amw._VERDICT_RE.search(body)
+        if match:
+            metadata = dict(identity, verdict="approved" if match[1] == "APROBADO" else "changes_requested")
+            con.execute("INSERT INTO task_runs (task_id, profile, metadata, ended_at) VALUES (?, ?, ?, ?)", (f"t_fake{pr_number}", author, json.dumps(metadata), ts))
     con.commit()
     con.close()
     return db
@@ -161,8 +167,8 @@ def test_approval_is_the_first_and_only_gate_when_it_fails():
         con.commit()
         con.close()
         a = check_approval(502, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", db)
-        check("veredicto solo en task_runs.summary (sin comentario) -> se encuentra igual (caso real #313)",
-              a.ok is True and a.verdict.author == "alexis")
+        check("summary no sustituye metadata explícita ya aprobada",
+              a.ok is True and a.verdict.author == "rafael")
 
         # Caso 3: Rafael aprueba, LUEGO Alexis pide cambios sobre el mismo SHA
         # -> el más restrictivo manda, aunque el de Rafael sea una
@@ -203,7 +209,7 @@ def test_approval_is_the_first_and_only_gate_when_it_fails():
         amw.gh_pr_diff_names = _boom
         amw.gh_pr_diff_text = _boom
         amw.gh_pr_view = lambda pr, fields: {"title": "x", "headRefOid": "d" * 40, "isDraft": False, "body": ""}
-        amw.find_review_verdict = lambda pr, db_path=None: None  # nunca hay veredicto en este caso
+        amw.find_review_verdict = lambda pr, **kwargs: None  # nunca hay veredicto en este caso
         try:
             decision = amw.evaluate_pr(505, enabled_classes={"A1"})
             check("evaluate_pr no revienta, y se detiene en SIN_APROBACION sin evaluar nada más",
@@ -228,7 +234,7 @@ def test_approval_is_the_first_and_only_gate_when_it_fails():
 def test_structured_metadata_schema():
     print("=== metadata estructurada (esquema fijado el 12-nov) ===")
     v = amw._verdict_from_metadata(
-        '{"verdict": "approved", "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "pr": 291}',
+        json.dumps({"verdict": "approved", "sha": "a" * 40, "pr": 291, "repo": amw.REPO, "review_type": "independent"}),
         "alexis", "t_x", 291,
     )
     check("verdict/sha válidos -> se reconoce como APROBADO", v is not None and v.outcome == "APROBADO")
@@ -257,22 +263,23 @@ def test_structured_metadata_schema():
     )
     check("pr no coincide con el PR que se evalúa -> NO se reconoce", v is None)
 
-    # find_review_verdict: la metadata y la prosa se mezclan por fecha real.
+    # Identidad explícita; una crítica veta aunque exista aprobación.
     with tempfile.TemporaryDirectory() as d:
         db = Path(d) / "board.db"
         con = sqlite3.connect(str(db))
-        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER)")
+        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT)")
         con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
         con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
-        con.execute("INSERT INTO tasks VALUES ('t_600', 'Revisión PR #600: x', 1)")
         sha = "d" * 40
+        identity = {"repo": amw.REPO, "pr": 600, "sha": sha, "review_type": "independent"}
+        con.execute("INSERT INTO tasks VALUES ('t_600', 'Revisión PR #600: x', 1, ?)", ("AUTO_MERGE_REVIEW " + json.dumps(identity),))
         con.execute(
             "INSERT INTO task_runs (task_id, profile, summary, metadata, ended_at) VALUES (?, ?, NULL, ?, ?)",
-            ("t_600", "rafael", json.dumps({"verdict": "approved", "sha": sha, "pr": 600}), 100),
+            ("t_600", "rafael", json.dumps(dict(identity, verdict="approved")), 100),
         )
         con.commit()
         con.close()
-        v = amw.find_review_verdict(600, db_path=db)
+        v = amw.find_review_verdict(600, head_sha=sha, db_path=db)
         check("solo metadata, sin comentarios -> se encuentra vía metadata", v is not None and v.outcome == "APROBADO")
 
         # Un comentario POSTERIOR en prosa con cambios pedidos debe ganar
@@ -284,31 +291,32 @@ def test_structured_metadata_schema():
         )
         con.commit()
         con.close()
-        v = amw.find_review_verdict(600, db_path=db)
+        v = amw.find_review_verdict(600, head_sha=sha, db_path=db)
         check("comentario en prosa POSTERIOR a la metadata -> gana el más reciente, no la metadata",
               v is not None and v.outcome == "CAMBIOS PEDIDOS" and v.author == "alexis")
 
 
 def test_task_lookup_ignores_followup_cards_mentioning_the_pr():
-    print("=== búsqueda de tarjeta: prefijo exacto, no subcadena (caso real #291) ===")
+    print("=== búsqueda de tarjeta: identidad explícita, no título (caso real #291) ===")
     with tempfile.TemporaryDirectory() as d:
         db = Path(d) / "board.db"
         con = sqlite3.connect(str(db))
-        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER)")
+        con.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT, created_at INTEGER, body TEXT)")
         con.execute("CREATE TABLE task_comments (task_id TEXT, author TEXT, body TEXT, created_at INTEGER)")
         con.execute("CREATE TABLE task_runs (task_id TEXT, profile TEXT, summary TEXT, metadata TEXT, ended_at INTEGER)")
         sha = "e" * 40
-        con.execute("INSERT INTO tasks VALUES ('t_real', 'Revisión PR #291: x', 100)")
+        identity = {"repo": amw.REPO, "pr": 291, "sha": sha, "review_type": "independent"}
+        con.execute("INSERT INTO tasks VALUES ('t_real', 'Revisión PR #291: x', 100, ?)", ("AUTO_MERGE_REVIEW " + json.dumps(identity),))
         con.execute(
             "INSERT INTO task_runs (task_id, profile, metadata, ended_at) VALUES (?, ?, ?, ?)",
-            ("t_real", "alexis", json.dumps({"verdict": "approved", "sha": sha, "pr": 291}), 150),
+            ("t_real", "alexis", json.dumps(dict(identity, verdict="approved")), 150),
         )
         # Tarjeta de SEGUIMIENTO creada DESPUÉS, que menciona "PR #291" en el
         # título pero no es una revisión -- exactamente lo que pasó hoy.
-        con.execute("INSERT INTO tasks VALUES ('t_followup', 'Endurecer algo (L1 de Alexis, PR #291)', 200)")
+        con.execute("INSERT INTO tasks VALUES ('t_followup', 'Endurecer algo (L1 de Alexis, PR #291)', 200, '')")
         con.commit()
         con.close()
-        v = amw.find_review_verdict(291, db_path=db)
+        v = amw.find_review_verdict(291, head_sha=sha, db_path=db)
         check("la tarjeta de seguimiento (más reciente) no esconde el veredicto real",
               v is not None and v.task_id == "t_real" and v.outcome == "APROBADO")
 
@@ -332,7 +340,7 @@ def test_breaker_trips_and_blocks_everything():
         # Simula que una fusión anterior quedó pendiente de confirmar, y que
         # el CI de ese commit de fusión viene en rojo.
         amw.PENDING_BREAKER_CHECK.write_text(json.dumps({"pr_number": 999, "merge_commit_sha": "deadbeef" * 5}))
-        amw.gh_commit_ci_status = lambda sha: "red"  # type: ignore[assignment]
+        amw.gh_commit_ci_status = lambda sha, **kwargs: "red"  # type: ignore[assignment]
 
         msg = amw.check_pending_breaker()
         check("check_pending_breaker() informa que el freno se disparó", msg is not None and "FRENO DISPARADO" in msg)
