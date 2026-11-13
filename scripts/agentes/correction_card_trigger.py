@@ -24,45 +24,70 @@ necesita que el motor traspase el veredicto si el veredicto genera trabajo
 nuevo por sí mismo, con una tarjeta corriente que el despachador ya sabe
 entregar.
 
-## De dónde sale el veredicto
+## El EPISODIO, no el PR, es la unidad -- corrección tras revisión de Alexis
+(2026-11-13, PR #331, H1)
 
-De `task_runs.metadata`, el esquema canónico que la skill ya exige:
-`{"verdict": "changes_requested", "sha": "<40 hex>", "pr": <int>, ...}`.
-Se toma el run más reciente (por `id`, no por fecha de texto) que declare un
-`pr` entero, uno por PR -- si la ronda más reciente de ese PR es
-`"approved"`, no hay nada que corregir y no se crea nada. Una revisión sin
-metadata estructurada (todavía las hay: formato libre, previo a la skill de
-hoy) no se procesa aquí -- no se adivina un veredicto de una frase en prosa.
-Es un hueco conocido, no un error silencioso: `legacy_verdicts_skipped` lo
-cuenta en la salida.
+La primera versión identificaba el trabajo pendiente por número de PR:
+"¿hay ya una corrección activa para el PR N?". Eso confunde dos preguntas
+distintas -- *qué PR tiene trabajo pendiente* (sí es por PR) y *qué
+veredicto concreto ya generó una tarjeta* (es por RONDA de revisión, no por
+PR). Una corrección que se cierra `done` sin que exista todavía una
+aprobación estructurada posterior no demuestra una ronda nueva: el mismo
+veredicto histórico seguiría generando otra tarjeta en el siguiente tick,
+indefinidamente. Y dos invocaciones concurrentes pueden leer ambas "no
+existe" antes de que ninguna termine de crear.
 
-## Quién es el implementador
+La identidad real de un episodio es `(review_task_id, review_run_id)` --
+una fila de `task_runs`, inmutable una vez escrita. Se usa como
+`--idempotency-key` nativo de Hermes (`create --idempotency-key`, que el
+propio motor documenta como "si ya existe una tarea no archivada con esta
+clave, devuelve su id en vez de duplicar"): el motor, no este script,
+decide atómicamente si dos invocaciones concurrentes crean la misma
+tarjeta o se reparten el mismo id. Una ronda nueva (`run_id` distinto)
+tiene una clave distinta y sí puede crear su propia tarjeta, aunque la
+anterior ya esté `done`. El filtro "¿hay ya una corrección ACTIVA para
+este PR?" se conserva como capa aparte -- no apilar una segunda corrección
+mientras la primera sigue en curso -- pero ya no es la única defensa contra
+la duplicación.
 
-Nunca se inventa. Se busca una tarea de Kanban (cualquier estado) cuyo
-`branch_name` coincida con el `headRefName` real del PR en GitHub -- la
-misma tarea cuyo trabajo se está corrigiendo. Si no existe ninguna (un PR
-abierto fuera del flujo de tareas, como los que abre un agente de
-mantenimiento sin tarjeta propia), no se crea nada y se informa por qué: una
-tarjeta de corrección sin saber a quién corregir sería una conjetura.
+## Quién es el implementador -- corrección tras revisión de Alexis (H2)
 
-## Idempotencia
+La primera versión leía `assignee` de la tarea cuyo `branch_name` coincide
+con la rama del PR, asumiendo que el dueño actual de la tarjeta es quien
+implementó. Falso en el flujo real: `assignee` es el dueño ACTUAL, que
+cambia con una reasignación o una revisión -- el propio Alexis lo
+demostró con `t_d1ad10c7`, asignada a `rafael` mientras el historial
+identifica a `lucia` como productora.
 
-Antes de crear una tarjeta para el PR #<N>, busca si ya existe una **no
-terminal** (ready/todo/triage/blocked/running) cuyo título empiece por
-"Corregir PR #<N>" (prefijo con delimitador, no subcadena -- el mismo bug
-que pr_review_trigger.py tuvo que corregir con "#32" vs "#3"). Si existe,
-no hace nada: ya hay una corrección en curso, apilar otra no ayuda. Si solo
-existen tarjetas `done`/`archived` para ese número, sí crea una nueva --- es
-la siguiente ronda, no un duplicado.
+La fuente correcta es el evento `review_requested` de la propia ronda de
+revisión: lleva un campo `implementer` escrito en el momento exacto en que
+se pidió esa revisión, antes de que nada pudiera reasignar la tarjeta.
+Cuando ese campo falta (pasa: `t_d1ad10c7` lo tiene nulo en su ronda más
+reciente) se cae al `branch_name`, pero entonces se exige una respuesta
+INEQUÍVOCA -- si dos tareas con asignees distintos comparten esa rama, se
+informa la ambigüedad y no se crea nada. Nunca se elige silenciosamente
+"la más nueva".
 
-## El reloj y la prioridad nunca se omiten
+## Idempotencia por título, además -- sigue vigente
 
-Igual que `crear-tarea-hija.sh`: cada tarjeta nace con `--max-runtime`
-heredado de la tarea de implementación original (la misma que ya hacía ese
-trabajo, así que ya demostró cuánto necesita) y con `--parent` apuntando a
-la tarea de revisión que emitió el veredicto -- la corrección es, de hecho,
-una continuación de ese hallazgo, y el enlace lo hace trazable sin tener
-que leer el comentario para saber de dónde salió.
+Antes de crear, también se busca si ya existe una tarjeta **no terminal**
+cuyo título empiece por "Corregir PR #<N>" (prefijo con delimitador, no
+subcadena). Probarlo contra el tablero real encontró su propio falso
+positivo cuando una primera versión también miraba el cuerpo -- una
+tarjeta de coordinación que solo *menciona* un número de PR de pasada
+quedó marcada como su corrección. Se revirtió a título-solo.
+
+## El reloj y la prioridad nunca se omiten, por el camino canónico
+
+La primera versión llamaba a `hermes kanban create` directamente, sin
+pasar por `crear-tarea-hija.sh` -- la misma puerta nativa que el propio
+canónico (`SKILL.md`, paso 3) prohíbe para planificar precisamente porque
+no exige reloj. Corregido (M3): toda tarjeta nace por el envoltorio, con
+`--max-runtime` heredado de la tarea de implementación original (ya
+demostró cuánto necesita) y, cuando eso supera el techo de 300s del paso 5
+-- el caso normal para una corrección que corre el mismo gate -- con
+`--override-ceiling-reason` explícito y auditable, no un valor inventado
+en silencio.
 
 ## Qué desencadena -- el aviso si el disparador deja de funcionar
 
@@ -70,6 +95,17 @@ Igual que `prs_without_review_card` en `estado-fabrica.py`: si un veredicto
 de cambios pedidos lleva más de 4 horas sin una tarjeta de corrección no
 terminal, el vigilante lo dice. Detectar y avisar son trabajos distintos a
 propósito.
+
+## Lo que NO se ejecutó, y por qué
+
+Las pruebas de este script fueron de lectura: las funciones que consultan
+el tablero y GitHub, contra los 14 veredictos reales vigentes. `main()` no
+se ejecutó contra el tablero real -- crearía tarjetas de verdad -- y,
+señalado por la propia revisión independiente, las cuatro funciones de
+lectura no bastan para certificar `main()`/`create_correction_card()`: hace
+falta un ensayo con `gh`/Hermes simulados y una base de datos de fixture,
+sin tocar el tablero operativo, antes de instalarlo en cron. Queda
+pendiente, declarado, no asumido.
 """
 from __future__ import annotations
 
@@ -84,6 +120,8 @@ from typing import Optional
 
 REPO = "eltata71/arky-sup"
 BOARD_DB = Path.home() / ".hermes" / "kanban" / "boards" / "arky-maintenance" / "kanban.db"
+WRAPPER = Path(__file__).resolve().parent / "crear-tarea-hija.sh"
+RUNTIME_CEILING = 300
 DEFAULT_MAX_RUNTIME = 1800
 BASE_PRIORITY = 80
 
@@ -98,6 +136,7 @@ class ChangesRequested:
     pr: int
     sha: str
     review_task_id: str
+    review_run_id: int
     findings: Optional[dict]
     summary: str
     ended_at: Optional[int]
@@ -108,9 +147,16 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
     metadata, filtrada a verdict == changes_requested. Las filas se leen en
     orden descendente de `id` (autoincremental, nunca ambiguo como una
     fecha de texto), así que la primera vez que se ve un `pr` es siempre su
-    ronda más reciente. Devuelve también cuántos runs de revisión tenían un
-    veredicto en prosa, sin metadata estructurada -- un hueco conocido, no
-    un error."""
+    ronda más reciente.
+
+    El segundo valor devuelto (`prose_verdicts_seen`) NO es un inventario
+    completo de veredictos sin metadata estructurada -- corrección tras
+    revisión de Alexis (L1): solo cuenta dos literales exactos
+    ("CAMBIOS PEDIDOS"/"APROBADO") en el resumen, y el historial real tiene
+    veredictos en prosa que no usan esas palabras exactas y no se cuentan
+    aquí. Es una señal aproximada para el log, nunca una cifra de
+    cobertura -- no se presenta como "N sin procesar" en ningún sitio que
+    sugiera que son todos los que hay."""
     con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
     try:
         rows = con.execute(
@@ -121,7 +167,7 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
         con.close()
     seen_prs: set[int] = set()
     out: list[ChangesRequested] = []
-    legacy_skipped = 0
+    prose_verdicts_seen = 0
     for task_id, run_id, metadata_raw, summary, ended_at in rows:
         if not metadata_raw:
             continue
@@ -134,8 +180,8 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
         pr = meta.get("pr")
         verdict = meta.get("verdict")
         if not isinstance(pr, int) or verdict not in ("approved", "changes_requested"):
-            if verdict in ("CAMBIOS PEDIDOS", "APROBADO"):
-                legacy_skipped += 1
+            if summary and ("CAMBIOS PEDIDOS" in summary.upper() or "APROBADO" in summary.upper()):
+                prose_verdicts_seen += 1
             continue
         if pr in seen_prs:
             continue
@@ -146,30 +192,19 @@ def latest_changes_requested(*, db_path: Path = BOARD_DB) -> tuple[list[ChangesR
         if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
             continue
         out.append(ChangesRequested(
-            pr=pr, sha=sha, review_task_id=task_id,
+            pr=pr, sha=sha, review_task_id=task_id, review_run_id=run_id,
             findings=meta.get("findings") if isinstance(meta.get("findings"), dict) else None,
             summary=summary or "", ended_at=ended_at,
         ))
-    return out, legacy_skipped
+    return out, prose_verdicts_seen
 
 
 def existing_correction_card(pr_number: int, *, db_path: Path = BOARD_DB) -> Optional[str]:
-    """Id de una tarjeta de corrección NO terminal para este PR, o None.
-    Una ya `done`/`archived` no cuenta -- la siguiente ronda sí debe poder
-    crear una tarjeta nueva.
-
-    Mira **solo el título**, con el mismo prefijo con delimitador que
-    `pr_review_trigger.py` ya usa para las suyas -- deliberado, no un
-    descuido: la primera versión de esta función también miraba el cuerpo,
-    para cubrir una tarjeta histórica (`t_513cbd5a`, la de #312) cuyo
-    título no mencionaba el número. Probándolo contra el tablero real
-    encontró su propio falso positivo en la primera pasada: una tarjeta de
-    coordinación de José que solo *menciona* "PR #312" de pasada quedó
-    marcada como su corrección. El cuerpo de una tarjeta es prosa libre y
-    cualquiera puede citar un número ahí sin que la tarjeta sea sobre eso;
-    el título de una tarjeta que este script crea nunca lo es. La tarjeta
-    histórica se renombró una vez (no es un patrón a mantener) para incluir
-    "PR #312" en su título; de aquí en adelante toda corrección nace así."""
+    """Id de una tarjeta de corrección NO terminal para este PR, o None --
+    "ya hay una corrección en curso, no apilar otra". Mira solo el título,
+    con prefijo delimitado: una versión anterior también miraba el cuerpo y
+    encontró su propio falso positivo contra el tablero real (una tarjeta
+    de coordinación que solo menciona un número de PR de pasada)."""
     if not db_path.is_file():
         return None
     con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
@@ -188,45 +223,130 @@ def existing_correction_card(pr_number: int, *, db_path: Path = BOARD_DB) -> Opt
     return None
 
 
-def pr_head_ref(pr_number: int) -> Optional[str]:
+def pr_info(pr_number: int) -> Optional[dict]:
+    """None si GitHub no responde. El estado se comprueba aparte (M2):
+    un PR cerrado/fusionado no debe resucitar una corrección."""
     try:
-        data = gh_json(["pr", "view", str(pr_number), "--repo", REPO, "--json", "headRefName,title"])
+        return gh_json(["pr", "view", str(pr_number), "--repo", REPO,
+                         "--json", "headRefName,title,state"])
     except (OSError, subprocess.SubprocessError, ValueError):
         return None
-    return data
 
 
-def implementer_for_branch(branch_name: str, *, db_path: Path = BOARD_DB) -> Optional[tuple[str, str, int]]:
-    """(task_id, assignee, max_runtime_seconds) de la tarea cuyo
-    `branch_name` coincide -- nunca se inventa un implementador."""
-    if not db_path.is_file():
-        return None
+def review_requested_implementer(review_task_id: str, review_run_id: int,
+                                  *, db_path: Path = BOARD_DB) -> Optional[str]:
+    """El `implementer` que el propio evento `review_requested` de esta
+    ronda registró, en el momento exacto de pedir revisión -- antes de que
+    nada pudiera reasignar la tarjeta. Preferido sobre `tasks.assignee`
+    (corrección tras revisión de Alexis, H2): `assignee` es el dueño
+    ACTUAL, que una reasignación o una revisión cambian; este campo es un
+    hecho fijado en el pasado. Puede faltar (pasa de verdad: t_d1ad10c7 lo
+    tiene nulo en su ronda más reciente) -- entonces se vuelve None y el
+    llamador cae al siguiente candidato."""
     con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
     try:
         row = con.execute(
-            "SELECT id, assignee, max_runtime_seconds FROM tasks WHERE branch_name = ? "
-            "AND assignee IS NOT NULL ORDER BY created_at DESC LIMIT 1",
-            (branch_name,),
+            "SELECT payload FROM task_events WHERE task_id = ? AND kind = 'review_requested' "
+            "ORDER BY id DESC LIMIT 1",
+            (review_task_id,),
         ).fetchone()
     finally:
         con.close()
-    if row is None:
+    if row is None or not row[0]:
         return None
-    return row[0], row[1], row[2] or DEFAULT_MAX_RUNTIME
+    try:
+        payload = json.loads(row[0])
+    except (TypeError, ValueError):
+        return None
+    implementer = payload.get("implementer") if isinstance(payload, dict) else None
+    return implementer if isinstance(implementer, str) and implementer else None
 
 
-def format_findings(findings: Optional[dict]) -> str:
+@dataclass
+class Implementer:
+    task_id: str
+    assignee: str
+    max_runtime_seconds: int
+
+
+def resolve_implementer(cr: ChangesRequested, branch: str,
+                         *, db_path: Path = BOARD_DB) -> tuple[Optional[Implementer], Optional[str]]:
+    """(implementador, motivo_de_ambigüedad_si_lo_hay). Nunca elige
+    silenciosamente "el más nuevo" entre candidatos incompatibles
+    (corrección tras revisión de Alexis, H2): si el `review_requested` de
+    esta ronda nombra un implementador, se usa ese directamente (no hace
+    falta cruzar por `branch_name`, y por tanto no hay ambigüedad posible).
+    Solo cuando ese campo falta se cae a `branch_name`, y ahí sí puede
+    haber más de una tarea con asignees distintos sobre la misma rama --
+    en ese caso se informa la ambigüedad y no se crea nada."""
+    named = review_requested_implementer(cr.review_task_id, cr.review_run_id, db_path=db_path)
+    if not db_path.is_file():
+        return None, None
+    con = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
+    try:
+        if named:
+            row = con.execute(
+                "SELECT id, assignee, max_runtime_seconds FROM tasks "
+                "WHERE branch_name = ? AND assignee = ? ORDER BY created_at DESC LIMIT 1",
+                (branch, named),
+            ).fetchone()
+            if row is None:
+                # El implementador nombrado ya no tiene ninguna tarea visible
+                # sobre esta rama (archivada, o nunca tuvo tarjeta propia) --
+                # se usa el nombre igual, sin inventar una tarea ni un reloj:
+                # el reloj cae al valor por defecto, declarado como tal.
+                return Implementer(task_id=cr.review_task_id, assignee=named,
+                                    max_runtime_seconds=DEFAULT_MAX_RUNTIME), None
+            return Implementer(task_id=row[0], assignee=row[1],
+                                max_runtime_seconds=row[2] or DEFAULT_MAX_RUNTIME), None
+        rows = con.execute(
+            "SELECT id, assignee, max_runtime_seconds FROM tasks "
+            "WHERE branch_name = ? AND assignee IS NOT NULL",
+            (branch,),
+        ).fetchall()
+    finally:
+        con.close()
+    if not rows:
+        return None, None
+    distinct_assignees = {r[1] for r in rows}
+    if len(distinct_assignees) > 1:
+        return None, (f"branch_name '{branch}' tiene {len(rows)} tarea(s) con asignees "
+                       f"distintos ({sorted(distinct_assignees)}) y el evento review_requested "
+                       f"no nombró implementador -- ambiguo, no se elige el más nuevo")
+    task_id, assignee, max_runtime = max(rows, key=lambda r: r[0])
+    return Implementer(task_id=task_id, assignee=assignee,
+                        max_runtime_seconds=max_runtime or DEFAULT_MAX_RUNTIME), None
+
+
+def format_findings(findings: Optional[dict]) -> Optional[str]:
+    """None si no hay nada que listar en detalle. Maneja DOS formas reales
+    de `findings` (corrección tras revisión de Alexis, M1): una lista de
+    textos por severidad, o un recuento de enteros por severidad (la forma
+    real que trajo la revisión de PR #330: {"critical":0,"high":0,
+    "medium":2,"low":0}) -- la primera versión solo sabía leer la primera,
+    y un recuento no vacío (`medium: 2`) hacía que se generara un bloque
+    vacío "- 2" en vez de nada. Un entero se reporta como recuento con un
+    aviso de que el detalle vive en el comentario de revisión, nunca
+    inventado."""
     if not findings:
-        return ""
+        return None
     lines = []
     for severity in ("critical", "high", "medium", "low"):
         items = findings.get(severity)
         if not items:
             continue
-        lines.append(f"\n### {severity.capitalize()}")
-        for item in items if isinstance(items, list) else [items]:
-            lines.append(f"- {item}")
-    return "\n".join(lines)
+        label = severity.capitalize()
+        if isinstance(items, list):
+            lines.append(f"\n### {label}")
+            for item in items:
+                lines.append(f"- {item}")
+        elif isinstance(items, int):
+            lines.append(f"\n### {label}: {items} hallazgo(s) -- "
+                          f"detalle en el comentario de revisión, no reproducido aquí")
+        else:
+            lines.append(f"\n### {label}")
+            lines.append(f"- {items}")
+    return "\n".join(lines) if lines else None
 
 
 @dataclass
@@ -236,69 +356,93 @@ class CreatedCard:
     assignee: str
 
 
-def create_correction_card(cr: ChangesRequested, title: str, impl_task: str, assignee: str, max_runtime: int) -> CreatedCard:
+def create_correction_card(cr: ChangesRequested, title: str, impl: Implementer) -> CreatedCard:
+    """Crea por el envoltorio canónico (`crear-tarea-hija.sh`), nunca por
+    `hermes kanban create` directo (corrección tras revisión de Alexis,
+    M3): esa puerta nativa no exige reloj, y es precisamente la que el
+    canónico (SKILL.md, paso 3) prohíbe para planificar. El envoltorio
+    exige `--override-ceiling-reason` por encima de 300s -- el caso normal
+    aquí, porque una corrección corre el mismo gate que la implementación
+    original -- y aquí se declara, auditable, en vez de inventarse en
+    silencio."""
     findings_block = format_findings(cr.findings)
     body = (
         f"Creada automáticamente por correction_card_trigger.py al detectar "
         f"un veredicto CAMBIOS PEDIDOS sin tarjeta de corrección.\n\n"
         f"## Qué corregir\nPR #{cr.pr} -- {title}, SHA {cr.sha}. "
-        f"Revisión: tarea {cr.review_task_id}.\n"
-        f"{findings_block if findings_block else f'Resumen del revisor: {cr.summary}'}\n\n"
+        f"Revisión: tarea {cr.review_task_id} (run {cr.review_run_id}).\n"
+        f"{findings_block if findings_block else ''}\n"
+        f"Resumen del revisor: {cr.summary}\n\n"
         f"## Encargo\nAplicar los hallazgos de arriba sobre el SHA citado, "
         f"sin reimplementar lo que ya pasó revisión. Al terminar, pedir "
         f"revisión independiente con `kanban_request_review(reviewer=<perfil>, ...)` "
         f"-- nunca omitir `reviewer`, nunca el propio perfil."
     )
-    out = subprocess.run(
-        [
-            "hermes", "--profile", "arkysupabase", "kanban", "--board", "arky-maintenance", "create",
-            f"Corregir PR #{cr.pr}: {title}",
-            "--body", body,
-            "--assignee", assignee,
-            "--parent", cr.review_task_id,
-            "--workspace", "scratch",
-            "--priority", str(BASE_PRIORITY),
-            "--max-runtime", str(max_runtime),
-            "--max-retries", "2",
-            "--created-by", "correction-card-trigger",
-            "--json",
-        ],
-        capture_output=True, text=True, timeout=60, check=True,
-    )
+    idempotency_key = f"correction-{cr.review_task_id}-{cr.review_run_id}"
+    cmd = [
+        "bash", str(WRAPPER),
+        "--board", "arky-maintenance",
+        "--parent", cr.review_task_id,
+        "--assignee", impl.assignee,
+        "--max-runtime", str(impl.max_runtime_seconds),
+        "--priority", str(BASE_PRIORITY),
+        "--max-retries", "2",
+        "--workspace", "scratch",
+        "--created-by", "correction-card-trigger",
+        "--idempotency-key", idempotency_key,
+        "--body", body,
+    ]
+    if impl.max_runtime_seconds > RUNTIME_CEILING:
+        cmd += ["--override-ceiling-reason",
+                f"hereda el presupuesto ya demostrado necesario por la tarea de "
+                f"implementación original ({impl.task_id}: {impl.max_runtime_seconds}s) "
+                f"para rematar el mismo gate -- correction_card_trigger.py, episodio {idempotency_key}"]
+    cmd += ["--json", "--", f"Corregir PR #{cr.pr}: {title}"]
+    out = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=True)
     task = json.loads(out.stdout)
-    return CreatedCard(cr.pr, task["id"], assignee)
+    return CreatedCard(cr.pr, task["id"], impl.assignee)
 
 
 def main(argv: Optional[list[str]] = None) -> int:
     errors = []
     try:
-        pending, legacy_skipped = latest_changes_requested()
+        pending, prose_verdicts_seen = latest_changes_requested()
     except sqlite3.Error as exc:
         print(f"No se pudo leer el tablero: {type(exc).__name__}", file=sys.stderr)
         return 1
 
     created: list[CreatedCard] = []
     skipped_existing: list[int] = []
+    skipped_not_open: list[int] = []
     skipped_no_implementer: list[int] = []
+    skipped_ambiguous: list[tuple] = []
 
     for cr in pending:
         try:
             if existing_correction_card(cr.pr):
                 skipped_existing.append(cr.pr)
                 continue
-            pr_info = pr_head_ref(cr.pr)
-            if pr_info is None:
+            info = pr_info(cr.pr)
+            if info is None:
                 errors.append(cr.pr)
                 print(f"#{cr.pr}: no se pudo leer de GitHub", file=sys.stderr)
                 continue
-            branch = pr_info.get("headRefName")
-            title = pr_info.get("title", "")
-            impl = implementer_for_branch(branch) if branch else None
+            if info.get("state") != "OPEN":
+                skipped_not_open.append(cr.pr)
+                continue
+            branch = info.get("headRefName")
+            title = info.get("title", "")
+            if not branch:
+                skipped_no_implementer.append(cr.pr)
+                continue
+            impl, ambiguity = resolve_implementer(cr, branch)
+            if ambiguity:
+                skipped_ambiguous.append((cr.pr, ambiguity))
+                continue
             if impl is None:
                 skipped_no_implementer.append(cr.pr)
                 continue
-            impl_task, assignee, max_runtime = impl
-            card = create_correction_card(cr, title, impl_task, assignee, max_runtime)
+            card = create_correction_card(cr, title, impl)
             created.append(card)
         except (OSError, subprocess.SubprocessError, sqlite3.Error, ValueError, KeyError) as exc:
             errors.append(cr.pr)
@@ -308,10 +452,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         print(f"#{c.pr} -> tarjeta de corrección {c.task_id}, asignada a {c.assignee}")
     if skipped_existing:
         print(f"{len(skipped_existing)} PR(s) ya tenían corrección activa, sin tocar: {skipped_existing}")
+    if skipped_not_open:
+        print(f"{len(skipped_not_open)} PR(s) ya no están OPEN (cerrados/fusionados), sin tarjeta: {skipped_not_open}")
     if skipped_no_implementer:
         print(f"{len(skipped_no_implementer)} PR(s) sin tarea de implementación identificable, sin tarjeta: {skipped_no_implementer}")
-    if legacy_skipped:
-        print(f"{legacy_skipped} veredicto(s) en prosa sin metadata estructurada, no procesados")
+    if skipped_ambiguous:
+        for pr, reason in skipped_ambiguous:
+            print(f"#{pr}: implementador ambiguo, sin tarjeta -- {reason}", file=sys.stderr)
+    if prose_verdicts_seen:
+        print(f"{prose_verdicts_seen} veredicto(s) en prosa detectados (no es inventario completo, ver docstring)")
     print(f"\n{len(created)} creada(s), {len(pending)} veredicto(s) de cambios pedidos vigentes en total.")
     return 1 if errors else 0
 
