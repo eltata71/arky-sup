@@ -65,6 +65,11 @@ while IFS='|' read -r ruta rama head bloq; do
       avisos=$((avisos + 1))
     else
       echo "  (sin bloquear — no es tu worktree) $ruta: $motivo — lo vigila estado-fabrica.py"
+      # Línea de máquina para estado-fabrica.py (M1, revisión de Rafael en
+      # PR #328): el contrato entre los dos scripts era una frase en prosa
+      # con rayas — si alguien la reescribe, el chequeo se apaga sin avisar.
+      # Tabulador como separador porque una ruta puede llevar espacios (L1).
+      printf 'WORKTREE_AJENO_SUCIO\t%s\t%s\n' "$estado" "$ruta"
     fi
   fi
 done < <(listar_worktrees)

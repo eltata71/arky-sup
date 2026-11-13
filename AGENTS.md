@@ -811,4 +811,7 @@ Esta sección es un contrato adicional y **no reemplaza** las reglas de arriba.
    `Hecha` o `Descartada` no se reabre —lo nuevo se propone al propietario—; el trabajo se
    publica el mismo día; y no se empieza si `bash scripts/agentes/estado.sh`
    sale con avisos. Las tareas programadas de Hermes llaman a `estado.sh` y
-   paran si sale con 1.
+   paran si sale con 1 — desde el 2026-11-13, ese aviso es sobre el checkout
+   principal o sobre **el worktree propio**, nunca sobre el de otra tarea.
+   Al retomar una tarea se ejecuta desde su worktree: «propio» es el cwd
+   resuelto por Git. Desde el principal sólo bloquea el chequeo del principal.

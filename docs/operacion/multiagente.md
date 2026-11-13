@@ -94,6 +94,11 @@ sólo existía en un disco. Las reglas de abajo hacen visible cada una.
    anterior a `main`. El checkout principal es un chequeo global a propósito
    —es el recurso único que describe «Lo que pasó y por qué existe esto»
    arriba—; el de tu worktree es sobre ti, nunca sobre el de otra tarea.
+   **Al retomar una tarea, ejecuta el script desde su worktree**: «propio»
+   se resuelve con `git rev-parse --show-toplevel` del cwd. Desde el checkout
+   principal sólo bloquea el chequeo del principal. Aunque no edita fuentes,
+   sí ejecuta `git fetch --prune` y consulta GitHub; un fallo de esas operaciones
+   debe reportarse como comprobación fallida, nunca como inventario limpio.
 
    **No siempre fue así.** Hasta el 2026-11-12 el segundo chequeo también era
    global: bloqueaba a *cualquiera* si *cualquier* worktree de la flota estaba
