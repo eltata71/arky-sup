@@ -87,6 +87,17 @@ Qué comprueba, y con qué umbral, y por qué:
   vez (`.curator_ledger.jsonl`/`.curator_backups` con fecha, no hipotético).
   CRÍTICO si algún perfil que tiene el directorio de la skill no tiene un
   enlace que resuelva al canónico del repo.
+- **Perfil con tarea de worktree activa y sin `terminal` en su toolset**
+  (hallazgo 2026-11-12): `natalia-documentation` tenía `code_execution` en
+  vez de `terminal` -- el mismo patrón que todo perfil que edita código
+  necesita, confirmado comparando contra seis perfiles que sí hacen ese
+  trabajo -- y dos tarjetas de worktree activas no pudieron ni correr
+  `estado.sh`. Nadie lo vio hasta que las dos se bloquearon pidiendo
+  ejecución autorizada. Esto avisa ANTES de ese bloqueo: cruza tareas
+  `ready`/`todo`/`running`/`triage`/`scheduled`/`review` de `workspace_kind='worktree'`
+  contra las herramientas CLI efectivas del resolver instalado, incluidos defaults,
+  compuestos y disabled_toolsets. CRÍTICO si falta terminal o no se puede resolver.
+  Habilitación no equivale a permiso para ejecutar un comando concreto.
 - **Worktree ajeno sucio sobre base antigua o fusionada** (hallazgo
   2026-11-12): `estado.sh` deja de bloquear a los demás por esto desde esa
   fecha (autorización de Jose) para no frenar tareas sin relación con quien
@@ -136,6 +147,7 @@ siempre) y avisar (quien lea RESULT_FILE y decida a quién molestar) son dos
 trabajos distintos a propósito -- el primero no debe depender del segundo.
 """
 import argparse
+from contextlib import closing
 import fcntl
 import json
 import os
@@ -292,6 +304,78 @@ def blocked_tasks(now: float, boards: dict[str, Path]) -> list[dict]:
                 "ever_started": r["started_at"] is not None,
             })
     return out
+
+
+# Intérprete del runtime operacional, no el Python del cron (sin dependencias
+# de Hermes). Pin explícito de esta instalación; se puede resolver otra
+# instalación mediante HERMES_RUNTIME_PYTHON, nunca con una tabla de aliases.
+RUNTIME_PYTHON = Path(os.environ.get('HERMES_RUNTIME_PYTHON', str(
+    Path.home() / '.local/share/hermes-agent-v0.22.2/.venv/bin/python')))
+WORKTREE_CAPABILITY_STATUSES = NON_TERMINAL_STATUSES | {'review'}
+
+
+def effective_cli_toolsets(config: dict) -> set[str]:
+    """Reutiliza el resolver instalado sin editar configuración ni cargar MCP.
+
+    Una incompatibilidad/ausencia del runtime no equivale a terminal disponible.
+    No confundir herramienta habilitada con permisos para un comando concreto.
+    """
+    code = (
+        'import json,sys; from hermes_cli.tools_config import _get_platform_tools; '
+        'print(json.dumps(sorted(_get_platform_tools(json.load(sys.stdin), '
+        '"cli", include_default_mcp_servers=False))))'
+    )
+    result = subprocess.run([str(RUNTIME_PYTHON), '-c', code],
+                            cwd=RUNTIME_PYTHON.parent.parent.parent,
+                            input=json.dumps(config), capture_output=True, text=True,
+                            timeout=20, check=True)
+    tools = json.loads(result.stdout)
+    if not isinstance(tools, list) or any(not isinstance(t, str) for t in tools):
+        raise ValueError('resolución nativa con forma inválida')
+    return set(tools)
+
+
+def profiles_missing_terminal_for_worktree_work(boards: dict[str, Path]) -> list[dict]:
+    """Tareas de worktree que incluyen review, excluyen done/archived/blocked.
+    Evalúa herramientas efectivas con el resolver nativo, no aliases propios.
+    Un error de lectura/resolución produce un hallazgo visible por perfil.
+    """
+    por_perfil: dict[str, list[dict]] = {}
+    placeholders = ",".join("?" * len(WORKTREE_CAPABILITY_STATUSES))
+    for board, db in boards.items():
+        if not db.exists():
+            continue
+        with closing(sqlite3.connect(f"{db.resolve().as_uri()}?mode=ro", uri=True)) as con:
+            con.row_factory = sqlite3.Row
+            rows = con.execute(
+                f"SELECT id, title, assignee FROM tasks "
+                f"WHERE status IN ({placeholders}) AND workspace_kind = 'worktree' "
+                f"AND assignee IS NOT NULL",
+                tuple(WORKTREE_CAPABILITY_STATUSES),
+            ).fetchall()
+        for r in rows:
+            por_perfil.setdefault(r["assignee"], []).append({"board": board, "id": r["id"]})
+
+    hallazgos = []
+    for perfil, tareas in sorted(por_perfil.items()):
+        cfg_path = PROFILES_DIR / perfil / "config.yaml"
+        problem = None
+        try:
+            cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+            if not isinstance(cfg, dict):
+                raise ValueError('config no es un objeto')
+            herramientas = effective_cli_toolsets(cfg)
+            if 'terminal' not in herramientas:
+                problem = f"{len(tareas)} tarea(s) de worktree sin terminal efectivo en CLI"
+        except (OSError, UnicodeError, ValueError, yaml.YAMLError, subprocess.SubprocessError) as exc:
+            problem = f"no se pudo resolver terminal efectivo ({type(exc).__name__})"
+        if problem:
+            hallazgos.append({
+                "profile": perfil,
+                "tasks": [t["id"] for t in tareas],
+                "problem": problem,
+            })
+    return hallazgos
 
 
 REPO_ROOT = Path("/home/tata/workspace/arky-sup")
@@ -613,6 +697,10 @@ def main() -> int:
         razones.append(f"AUTO_DECOMPOSE ACTIVO: perfil '{f['profile']}' -- {f['problem']} -- "
                         f"cualquier gateway que arranque con este perfil puede descomponer tarjetas por su cuenta")
 
+    missing_terminal = profiles_missing_terminal_for_worktree_work(boards)
+    for f in missing_terminal:
+        razones.append(f"PERFIL SIN HERRAMIENTA: '{f['profile']}' -- {f['problem']} "
+                        f"(tarjetas: {', '.join(f['tasks'])})")
     dirty_worktrees = dirty_foreign_worktrees()
     if dirty_worktrees["check_failed"]:
         razones.append(f"WORKTREE SUCIO: no se pudo comprobar -- {dirty_worktrees['check_failed']}")
@@ -644,6 +732,7 @@ def main() -> int:
         "broken_skill_links": broken_links,
         "policy_drift": policy_findings,
         "auto_decompose_global": auto_decompose_global,
+        "missing_terminal_for_worktree_work": missing_terminal,
         "dirty_foreign_worktrees": dirty_worktrees,
         "dispatcher_lock": lock_status,
         "not_covered": ["gasto desbocado (sin medición de coste por tarea todavía)",
